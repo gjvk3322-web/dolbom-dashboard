@@ -195,13 +195,13 @@ return groups}
 
 function assignSlot(slot){
 const groups=makeGroups(avail,slot.length);
-// 거리 적은 그룹 먼저
 groups.sort((a,b)=>{const da=a.reduce((s,e)=>s+(empDist[e]||0),0)/a.length;const db=b.reduce((s,e)=>s+(empDist[e]||0),0)/b.length;return da-db});
-const usedGroups=new Set();
-slot.forEach(j=>{if(A[j.id]){const gi=groups.findIndex(g=>g.some(m=>A[j.id].includes(m)));if(gi>=0)usedGroups.add(gi)}});
-const free=groups.filter((g,i)=>!usedGroups.has(i));
-let fi=0;
-slot.forEach(j=>{if(!A[j.id]&&fi<free.length){A[j.id]=free[fi];free[fi].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});fi++}})}
+// 미배정 건에 그룹 배정 (같은 그룹이 여러 건 가능)
+let gi=0;
+slot.forEach(j=>{if(!A[j.id]&&groups.length){
+A[j.id]=[...groups[gi%groups.length]];
+groups[gi%groups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
+gi++}})}
 
 assignSlot(am);assignSlot(pm)}
 
@@ -239,11 +239,21 @@ toast('📋 주소 복사됨!','copy')})}
 // ===== Render Schedule =====
 function renderSched(){
 const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
-const allDates=Object.keys(bd).sort();
+const jobDates=Object.keys(bd).sort();
 const today=new Date();const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-// 오늘+미래 먼저, 과거는 아래에
-const futureDates=allDates.filter(d=>d>=todayStr);
-const pastDates=allDates.filter(d=>d<todayStr);
+
+// 첫날~마지막날 사이 모든 날짜 생성
+function getAllDates(start,end){
+const dates=[];const cur=new Date(start);const last=new Date(end);
+while(cur<=last){dates.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0'));cur.setDate(cur.getDate()+1)}
+return dates}
+
+const firstDate=jobDates.length?jobDates[0]:todayStr;
+const lastDate=jobDates.length?jobDates[jobDates.length-1]:todayStr;
+// 오늘~마지막날 (과거 포함하려면 firstDate부터)
+const allDatesRange=getAllDates(firstDate,lastDate);
+const futureDates=allDatesRange.filter(d=>d>=todayStr);
+const pastDates=allDatesRange.filter(d=>d<todayStr);
 
 // Stats
 const total=J.length,assigned=J.filter(j=>A[j.id]).length,newCnt=J.filter(j=>j.isNew).length;
@@ -254,12 +264,25 @@ let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;m
 
 html+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn btn-blue" onclick="autoAssign()" style="flex:2;margin:0">🤖 자동 배정</button><button class="btn btn-red" onclick="resetAssign()" style="flex:1;margin:0">🔄 초기화</button></div>`;
 
-if(!allDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
+// 직원 색상 범례
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
+html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>`<span style="padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;background:${ecl[i%6]};color:${i===2||i===5?'#000':'#fff'}">${e}</span>`).join('')}</div>`;
+
+if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
 
 function renderDayCards(dates,dimmed){
 return dates.map(date=>{
-const jobs=bd[date];const d=new Date(date);const di=d.getDay();const dn=DOW[di];
+const jobs=bd[date]||[];const d=new Date(date);const di=d.getDay();const dn=DOW[di];
 const isToday=date===todayStr;
+const isSun=di===0;const isSat=di===6;
+const dateBorderColor=isSun?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue)':'var(--border)';
+const dateBorderWidth=isSun||isSat||isToday?'2px':'1px';
+const dateColor=isSun?'var(--red)':isSat?'var(--blue)':'var(--text)';
+
+if(!jobs.length){
+return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
+<div class="daycard-body"><div style="color:var(--dim);font-size:13px;padding:8px">${isSun?'🔴 일요일':'시공 없음'}</div></div></div>`}
 
 const offs=new Set();jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
 const offHtml=offs.size?'<div class="daycard-off">'+[...offs].map(n=>n+' 휴무').join(' · ')+'</div>':'';
@@ -279,10 +302,12 @@ const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='�
 const distH=j.dist?`<span class="tjob-dist">${j.dist}km</span>`:'';
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const curTeam=A[j.id]||[];
-const editBtns=E.map(e=>{
+const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
+const editBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
 const isIn=curTeam.includes(e);
-return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid ${isIn?'var(--green)':'var(--border)'};background:${isIn?'rgba(52,211,153,.2)':'var(--card2)'};color:${isOff?'var(--red)':isIn?'var(--green)':'var(--text)'};cursor:pointer;font-family:var(--font);margin:2px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
+const ec=empColors[ei%6];
+return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:2px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
 return `<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')">
 <span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
 <span class="tjob-addr">${j.addr}/${j.scope}</span>
@@ -293,7 +318,7 @@ return `<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safe
 <div style="text-align:right;margin-top:4px"><span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="font-size:11px;color:var(--dim);cursor:pointer;padding:2px 8px">✏️ 편집</span></div>`}).join('');
 
 return `<div class="tjob">
-<div><span class="tjob-team tc${tc}">${tg.team.join(' ')}</span>${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div>${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%6}" style="margin-right:4px">${m}</span>`).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobLines}</div>`}).join('');
 
 if(un.length){
@@ -305,7 +330,9 @@ const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='�
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
-return `<button style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--card2);color:${isOff?'var(--red)':'var(--text)'};cursor:pointer;font-family:var(--font);margin:3px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
+const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
+const ec=ecols[ei%6];
+return `<button style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:3px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div class="ujob">
 <div class="ujob-title">⚠️ 미배정${j.isNew?' 🆕 NEW':''}</div>
 <div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span></div>
@@ -313,8 +340,8 @@ return `<div class="ujob">
 <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('')}
 
-return `<div class="daycard" style="${dimmed?'opacity:.5':''}${isToday?';border:2px solid var(--blue)':''}">
-<div class="daycard-hd"><span class="daycard-date">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
+return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
 ${offHtml}<div class="daycard-body">${body||'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'}</div></div>`}).join('')}
 
 html+=renderDayCards(futureDates,false);
