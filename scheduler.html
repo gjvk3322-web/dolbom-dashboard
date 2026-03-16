@@ -199,6 +199,25 @@ toast('✅ 자동 배정 완료!','ok');renderAll()}
 
 function resetAssign(){if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});toast('초기화됨','ok');renderAll()}
 
+// 수동 배정 (직원 1명)
+function ma(jobId,emp){
+const cur=A[jobId];
+if(cur&&cur.includes(emp)){
+// 이미 이 사람이 배정되어있으면 제거
+A[jobId]=cur.filter(e=>e!==emp);
+if(A[jobId].length===0)delete A[jobId];
+}else if(cur){
+// 다른 사람이 배정되어있으면 추가
+A[jobId]=[...cur,emp];
+}else{
+// 미배정이면 새로 배정
+A[jobId]=[emp];
+}
+fbSave('assignments',A);toast('✅ 배정 업데이트','ok');renderAll()}
+
+// 배정 취소
+function unassign(jobId){delete A[jobId];fbSave('assignments',A);toast('배정 취소됨','ok');renderAll()}
+
 // ===== Copy Address =====
 function copyAddr(addr){
 navigator.clipboard.writeText(addr).then(()=>{toast('📋 주소 복사됨! 네비에 붙여넣기','copy')}).catch(()=>{
@@ -250,7 +269,8 @@ return `<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safe
 <span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
 <span class="tjob-addr">${j.addr}/${j.scope}</span>
 <span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span>
-</div><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}</div>`}).join('');
+</div><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="font-size:10px;color:var(--red);cursor:pointer;margin-left:auto;padding:2px 8px;border:1px solid rgba(248,113,113,.2);border-radius:6px">취소</span></div>`}).join('');
 
 return `<div class="tjob">
 <div><span class="tjob-team tc${tc}">${tg.team.join(' ')}</span>${hasNew?'<span class="new-badge">🆕</span>':''}</div>
@@ -260,9 +280,17 @@ if(un.length){
 body+=un.map(j=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
 const safeAddr=j.addr.replace(/'/g,"\\'");
+const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
+// 이날 쉬는 사람
+const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
+const empBtns=E.map((e,ei)=>{
+const isOff=dayOffSet.has(e);
+return `<button style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--card2);color:${isOff?'var(--red)':'var(--text)'};cursor:pointer;font-family:var(--font);margin:3px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div class="ujob">
 <div class="ujob-title">⚠️ 미배정${j.isNew?' 🆕 NEW':''}</div>
-<div class="tjob-line" onclick="copyAddr('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span></div>
+<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span></div>
+<div class="tjob-mat">${mats}</div>
+<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('')}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}${isToday?';border:2px solid var(--blue)':''}">
