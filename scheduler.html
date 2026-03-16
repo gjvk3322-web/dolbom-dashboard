@@ -267,6 +267,20 @@ const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
 const jobDates=Object.keys(bd).sort();
 const today=new Date();const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 
+// 휴무자 사전 정리 (렌더링 전에 항상 실행)
+const dateOffs={};
+J.forEach(j=>{if(j.doff.length){if(!dateOffs[j.date])dateOffs[j.date]=new Set();j.doff.forEach(n=>dateOffs[j.date].add(n))}});
+let needClean=false;
+J.forEach(j=>{
+const offs=dateOffs[j.date];
+if(A[j.id]&&offs&&offs.size){
+const filtered=A[j.id].filter(e=>!offs.has(e));
+if(filtered.length!==A[j.id].length){
+A[j.id]=filtered.length?filtered:undefined;
+if(!filtered.length)delete A[j.id];
+needClean=true}}});
+if(needClean)fbSave('assignments',A);
+
 // 첫날~마지막날 사이 모든 날짜 생성
 function getAllDates(start,end){
 const dates=[];const cur=new Date(start);const last=new Date(end);
@@ -314,7 +328,7 @@ const offHtml=offs.size?'<div class="daycard-off">'+[...offs].map(n=>n+' 휴무'
 
 // 팀별 그룹
 const tm={};const un=[];
-jobs.forEach(j=>{const t=A[j.id];if(t){const k=t.join('+');if(!tm[k])tm[k]={team:t,jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
+jobs.forEach(j=>{const t=A[j.id];if(t&&t.length){const k=t.join('+');if(!tm[k])tm[k]={team:t,jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
 
 let body=Object.values(tm).map(tg=>{
 const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
