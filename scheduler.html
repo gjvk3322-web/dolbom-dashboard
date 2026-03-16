@@ -106,7 +106,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.2';
+const VER='2026.03.17.3';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const MAPS_KEY='AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw';
@@ -260,8 +260,10 @@ function unassign(jobId){delete A[jobId];fbSave('assignments',A);toast('배정 �
 
 // ===== 네이버 네비 열기 =====
 function openNavi(addr){
-if(!confirm('🧭 네비 열기\n\n'+addr+'\n\n이 주소로 이동하시겠습니까?'))return;
-const encoded=encodeURIComponent(addr);
+// 네비용 주소: 동/호수 제거 (예: "부산레미안어반파크 116동 603호" → "부산레미안어반파크")
+const naviAddr=addr.replace(/\s*\d+동\s*\d*호?\s*/g,'').replace(/\s*\d+호\s*/g,'').trim();
+if(!confirm('🧭 네비 열기\n\n'+naviAddr+'\n\n이 주소로 이동하시겠습니까?'))return;
+const encoded=encodeURIComponent(naviAddr);
 const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
 const webUrl='https://map.naver.com/v5/search/'+encoded;
 const start=Date.now();
