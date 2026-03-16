@@ -451,12 +451,15 @@ const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
 // 새 일정 감지
 J.forEach(j=>{if(!prevJobIds.has(j.id))j.isNew=true});
 
-// 휴무자 자동 제거 - 엑셀에서 휴무 추가하면 배정에서 빠짐
+// 휴무자 자동 제거 - 같은 날짜의 모든 휴무자를 모아서 그 날짜 전체 배정에서 제거
 let changed=false;
+const dateOffs={};
+J.forEach(j=>{if(j.doff.length){if(!dateOffs[j.date])dateOffs[j.date]=new Set();j.doff.forEach(n=>dateOffs[j.date].add(n))}});
 J.forEach(j=>{
-if(A[j.id]&&j.doff.length){
+const offs=dateOffs[j.date];
+if(A[j.id]&&offs&&offs.size){
 const before=A[j.id].length;
-A[j.id]=A[j.id].filter(e=>!j.doff.includes(e));
+A[j.id]=A[j.id].filter(e=>!offs.has(e));
 if(A[j.id].length===0)delete A[j.id];
 if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
