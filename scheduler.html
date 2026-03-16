@@ -84,9 +84,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <body>
 
 <div class="hd">
-    <h1>🔧 돌봄매트 시공 스케줄러</h1>
+    <h1>🔧 돌봄매트 시공 스케줄러 <span id="verTag" style="font-size:10px;font-weight:400;color:var(--dim)"></span></h1>
     <div class="hd-sub" id="sub">로딩 중...</div>
 </div>
+
+<div id="updateBar" style="display:none;background:linear-gradient(135deg,#5b8def,#34d399);padding:10px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:#fff" onclick="location.reload(true)">🔄 새 버전이 있어요! 터치하면 업데이트</div>
 
 <div class="pane on" id="p-sched"><div id="schedView"></div></div>
 <div class="pane" id="p-team"><div id="teamView"></div></div>
@@ -104,6 +106,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
+const VER='2026.03.17.2';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const MAPS_KEY='AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw';
@@ -257,7 +260,7 @@ function unassign(jobId){delete A[jobId];fbSave('assignments',A);toast('배정 �
 
 // ===== 네이버 네비 열기 =====
 function openNavi(addr){
-// 네이버 지도 앱으로 바로 열기 (앱 없으면 웹으로)
+if(!confirm('🧭 네비 열기\n\n'+addr+'\n\n이 주소로 이동하시겠습니까?'))return;
 const encoded=encodeURIComponent(addr);
 const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
 const webUrl='https://map.naver.com/v5/search/'+encoded;
@@ -356,15 +359,18 @@ const isOff=dayOffSet.has(e);
 const isIn=curTeam.includes(e);
 const ec=empColors[ei%6];
 return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:2px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
-return `<div class="tjob-line" onclick="event.stopPropagation();openNavi('${safeAddr}')">
+return `<div class="tjob-line" style="margin-bottom:4px">
 <span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
 <span class="tjob-addr">${j.addr}/${j.scope}</span>
-<span style="font-size:11px;color:var(--green);flex-shrink:0">🧭네비</span>
-</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}</div>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="font-size:10px;color:var(--blue);cursor:pointer;padding:2px 8px;border:1px solid rgba(91,141,239,.2);border-radius:6px">📋복사</span>
-<span onclick="event.stopPropagation();unassign('${j.id}')" style="font-size:10px;color:var(--red);cursor:pointer;padding:2px 8px;border:1px solid rgba(248,113,113,.2);border-radius:6px">취소</span></div>
-<div id="edit_${j.id}" style="display:none;margin-top:6px;flex-wrap:wrap;gap:2px">${editBtns}</div>
-<div style="text-align:right;margin-top:4px"><span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="font-size:11px;color:var(--dim);cursor:pointer;padding:2px 8px">✏️ 편집</span></div>`}).join('');
+</div>
+<div class="tjob-mat" style="margin-bottom:8px">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0;border-top:1px solid var(--border);margin-top:4px">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭 네비</span>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋 복사</span>
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">취소</span>
+<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border);margin-left:auto">✏️ 편집</span>
+</div>
+<div id="edit_${j.id}" style="display:none;margin-top:6px;flex-wrap:wrap;gap:2px">${editBtns}</div>`}).join('');
 
 return `<div class="tjob">
 <div>${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%6}" style="margin-right:4px">${m}</span>`).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
@@ -384,9 +390,13 @@ const ec=ecols[ei%6];
 return `<button style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:3px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div class="ujob">
 <div class="ujob-title">⚠️ 미배정${j.isNew?' 🆕 NEW':''}</div>
-<div class="tjob-line" onclick="event.stopPropagation();openNavi('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--green);flex-shrink:0">🧭네비</span></div>
-<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><div class="tjob-mat">${mats}</div><span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="font-size:10px;color:var(--blue);cursor:pointer;padding:2px 8px;border:1px solid rgba(91,141,239,.2);border-radius:6px">📋복사</span></div>
-<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
+<div class="tjob-line" style="margin-bottom:4px"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span></div>
+<div class="tjob-mat" style="margin-bottom:8px">${mats}</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0;border-top:1px solid var(--border);margin-top:4px;margin-bottom:8px">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭 네비</span>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋 복사</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('')}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
@@ -489,11 +499,32 @@ if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
 if(changed){fbSave('assignments',A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
 
-document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀';
+const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · 갱신 '+hm;
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패'}
 renderAll()}
 
 init();
+
+// 버전 표시
+document.getElementById('verTag').textContent='v'+VER;
+
+// 5분마다 구글시트 자동 갱신 (배정 데이터는 Firebase가 실시간 처리)
+setInterval(()=>{
+fetch(CSV_URL).then(r=>r.text()).then(text=>{
+parseCSV(text);
+const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · 갱신 '+hm;
+renderAll()}).catch(()=>{})
+},5*60*1000);
+
+// 5분마다 새 버전 체크 (GitHub Pages에서 최신 파일 확인)
+setInterval(()=>{
+fetch(location.href+'?_='+Date.now()).then(r=>r.text()).then(html=>{
+const m=html.match(/const VER='([^']+)'/);
+if(m&&m[1]!==VER)document.getElementById('updateBar').style.display='block'
+}).catch(()=>{})
+},5*60*1000);
 </script>
 </body>
 </html>
