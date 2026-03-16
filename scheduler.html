@@ -106,7 +106,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.3';
+const VER='2026.03.17.4';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const MAPS_KEY='AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw';
@@ -182,7 +182,7 @@ const avail=E.filter(e=>!ao.has(e));
 if(!avail.length)continue;
 
 const am=dj.filter(j=>j.time==='오전'||j.time.includes('2:')).sort((a,b)=>(b.dist||0)-(a.dist||0));
-const pm=dj.filter(j=>j.time==='오후').sort((a,b)=>(b.dist||0)-(a.dist||0));
+const pm=dj.filter(j=>j.time==='오후'||j.time==='as').sort((a,b)=>(b.dist||0)-(a.dist||0));
 
 function makeGroups(pool,jobCnt){
 if(teams.length){
@@ -308,16 +308,8 @@ const allDatesRange=getAllDates(firstDate,lastDate);
 const futureDates=allDatesRange.filter(d=>d>=todayStr);
 const pastDates=allDatesRange.filter(d=>d<todayStr);
 
-// Stats
-const total=J.length,assigned=J.filter(j=>A[j.id]).length,newCnt=J.filter(j=>j.isNew).length;
-let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
-<div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:22px;font-weight:900;color:var(--blue)">${total}</div><div style="font-size:10px;color:var(--dim)">전체</div></div>
-<div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:22px;font-weight:900;color:var(--green)">${assigned}</div><div style="font-size:10px;color:var(--dim)">배정</div></div>
-<div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:22px;font-weight:900;color:${newCnt?'var(--red)':'var(--dim)'}">${newCnt}</div><div style="font-size:10px;color:var(--dim)">신규</div></div></div>`;
-
-html+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn btn-blue" onclick="autoAssign()" style="flex:2;margin:0">🤖 자동 배정</button><button class="btn btn-red" onclick="resetAssign()" style="flex:1;margin:0">🔄 초기화</button></div>`;
-
 // 직원 색상 범례
+let html='';
 const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
 html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>`<span style="padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;background:${ecl[i%6]};color:${i===2||i===5?'#000':'#fff'}">${e}</span>`).join('')}</div>`;
 
@@ -349,57 +341,77 @@ const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
 const tc=ti>=0?ti%6:0;
 const hasNew=tg.jobs.some(j=>j.isNew);
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
-const jobLines=tg.jobs.map(j=>{
+
+function renderJobCard(j){
 const isAm=j.time==='오전'||j.time.includes('2:');
 const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
-const distH=j.dist?`<span class="tjob-dist">${j.dist}km</span>`:'';
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const curTeam=A[j.id]||[];
 const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
 const editBtns=E.map((e,ei)=>{
-const isOff=dayOffSet.has(e);
-const isIn=curTeam.includes(e);
-const ec=empColors[ei%6];
-return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:2px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
-return `<div class="tjob-line" style="margin-bottom:4px">
-<span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
-<span class="tjob-addr">${j.addr}/${j.scope}</span>
+const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[ei%6];
+return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
+return `<div style="flex:1;min-width:0">
+<div style="margin-bottom:4px"><span class="tjob-time ${isAm?'am':'pm'}" style="font-size:11px">${j.time}</span>${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;margin-left:4px">NEW</span>':''}</div>
+<div style="font-size:13px;font-weight:500;margin-bottom:4px;word-break:keep-all">${j.addr}/${j.scope}</div>
+<div style="margin-bottom:6px">${mats}</div>
+<div style="display:flex;gap:4px;flex-wrap:wrap">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
+<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </div>
-<div class="tjob-mat" style="margin-bottom:8px">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}</div>
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0;border-top:1px solid var(--border);margin-top:4px">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭 네비</span>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋 복사</span>
-<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">취소</span>
-<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border);margin-left:auto">✏️ 편집</span>
-</div>
-<div id="edit_${j.id}" style="display:none;margin-top:6px;flex-wrap:wrap;gap:2px">${editBtns}</div>`}).join('');
+<div id="edit_${j.id}" style="display:none;margin-top:4px;flex-wrap:wrap;gap:2px">${editBtns}</div>
+</div>`}
+
+const amJobs=tg.jobs.filter(j=>j.time==='오전'||j.time.includes('2:'));
+const pmJobs=tg.jobs.filter(j=>j.time==='오후'||j.time==='as');
+const otherJobs=tg.jobs.filter(j=>!amJobs.includes(j)&&!pmJobs.includes(j));
+
+let jobContent='';
+if(amJobs.length||pmJobs.length){
+jobContent=`<div style="display:flex;gap:8px;margin-top:8px">`;
+if(amJobs.length) jobContent+=amJobs.map(j=>renderJobCard(j)).join('');
+else jobContent+=`<div style="flex:1"></div>`;
+if(pmJobs.length) jobContent+=pmJobs.map(j=>renderJobCard(j)).join('');
+else jobContent+=`<div style="flex:1"></div>`;
+jobContent+=`</div>`}
+if(otherJobs.length) jobContent+=otherJobs.map(j=>`<div style="margin-top:8px">${renderJobCard(j)}</div>`).join('');
 
 return `<div class="tjob">
 <div>${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%6}" style="margin-right:4px">${m}</span>`).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
-${jobLines}</div>`}).join('');
+${jobContent}</div>`}).join('');
 
 if(un.length){
-body+=un.map(j=>{
+// 미배정도 오전/오후 2열로
+const unAm=un.filter(j=>j.time==='오전'||j.time.includes('2:'));
+const unPm=un.filter(j=>j.time==='오후'||j.time==='as');
+const unOther=un.filter(j=>!unAm.includes(j)&&!unPm.includes(j));
+const allUn=[...unAm,...unPm,...unOther];
+
+body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${allUn.length}건</div>`;
+body+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">`;
+body+=allUn.map(j=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
-// 이날 쉬는 사람
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
 const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
 const ec=ecols[ei%6];
-return `<button style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:3px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
-return `<div class="ujob">
-<div class="ujob-title">⚠️ 미배정${j.isNew?' 🆕 NEW':''}</div>
-<div class="tjob-line" style="margin-bottom:4px"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span></div>
-<div class="tjob-mat" style="margin-bottom:8px">${mats}</div>
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0;border-top:1px solid var(--border);margin-top:4px;margin-bottom:8px">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭 네비</span>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋 복사</span>
+return `<button style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
+return `<div style="flex:1;min-width:45%;max-width:100%">
+<div style="margin-bottom:4px"><span class="tjob-time ${isAm?'am':'pm'}" style="font-size:11px">${j.time}</span>${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;margin-left:4px">NEW</span>':''}</div>
+<div style="font-size:13px;font-weight:500;margin-bottom:4px;word-break:keep-all">${j.addr}/${j.scope}</div>
+<div style="margin-bottom:6px">${mats}</div>
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
-</div>`}).join('')}
+</div>`}).join('');
+body+=`</div></div>`}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
 <div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
@@ -500,6 +512,10 @@ if(A[j.id].length===0)delete A[j.id];
 if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
 if(changed){fbSave('assignments',A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
+
+// 미배정 건이 있으면 자동 배정 실행
+const unassignedCnt=J.filter(j=>!A[j.id]).length;
+if(unassignedCnt>0){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
 document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · 갱신 '+hm;
