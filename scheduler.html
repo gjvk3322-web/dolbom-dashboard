@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.17';
+const VER='2026.03.17.19';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -222,10 +222,12 @@ for(let i=1;i<lines.length;i++){
 const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
 r.push(cur.trim().replace(/^"|"$/g,''));
-if(!r[0]||!r[1])continue;
+if(!r[1])continue;
 const doff=[];for(let j=8;j<=13;j++){if(r[j]&&r[j].trim())doff.push(r[j].trim())}
 const mat=[];if(r[5]&&parseInt(r[5])>0)mat.push({t:'마블',q:parseInt(r[5])});if(r[6]&&parseInt(r[6])>0)mat.push({t:'코튼',q:parseInt(r[6])});if(r[7]&&parseInt(r[7])>0)mat.push({t:'모던',q:parseInt(r[7])});
 let ds=r[1];if(ds.length===8)ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+// 시간 없으면 휴무 전용 행 (시공 건 아님)
+if(!r[0]||!r[0].trim()){if(doff.length){const id=ds+'_off_'+i;J.push({id,time:'',addr:'',date:ds,py:'',scope:'',doff,mat:[],dist:0,isNew:false,offOnly:true})}continue}
 const id=ds+'_'+r[0]+'_'+i;
 J.push({id,time:r[0],addr:r[2]||'',date:ds,py:r[3]||'',scope:r[4]||'',doff,mat,dist:0,isNew:false})}}
 
@@ -234,9 +236,9 @@ async function autoAssign(){
 toast('⏳ 자동 배정 중...','ok');
 
 // 거리 계산
-for(const j of J){if(j.addr&&!j.dist){j.dist=await calcDist(j.addr)}}
+for(const j of J){if(j.addr&&!j.offOnly&&!j.dist){j.dist=await calcDist(j.addr)}}
 
-const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
+const bd={};J.filter(j=>!j.offOnly).forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
 const empDist={};E.forEach(e=>empDist[e]=0);
 
 // 기존 배정 거리 반영
@@ -244,7 +246,8 @@ J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[
 
 for(const date of Object.keys(bd).sort()){
 const dj=bd[date];
-const ao=new Set();dj.forEach(j=>j.doff.forEach(n=>ao.add(n)));
+// 휴무자는 offOnly 포함 전체에서 수집
+const ao=new Set();J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao.add(n)));
 const avail=E.filter(e=>!ao.has(e));
 if(!avail.length)continue;
 
@@ -406,7 +409,7 @@ html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justif
 html+=`<div style="text-align:center;margin:-8px 0 12px;font-size:10px;color:var(--dim)">길게 누르면 캘린더 📅</div>`;
 
 // 최신화 버튼
-html+=`<div onclick="manualRefresh()" style="background:linear-gradient(135deg,var(--blue),var(--green));border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;active:transform:scale(.97)">
+html+=`<div id="refreshBtn" onclick="doRefresh()" style="background:linear-gradient(135deg,var(--blue),var(--green));border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;cursor:pointer;-webkit-tap-highlight-color:transparent">
 <div style="font-size:15px;font-weight:900;color:#fff">🔄 최신화</div>
 <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">엑셀 변경사항 즉시 반영</div>
 </div>`;
@@ -415,24 +418,25 @@ if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var
 
 function renderDayCards(dates,dimmed){
 return dates.map(date=>{
-const jobs=bd[date]||[];const d=new Date(date);const di=d.getDay();const dn=DOW[di];
+const jobs=bd[date]||[];const realJobs=jobs.filter(j=>!j.offOnly);const d=new Date(date);const di=d.getDay();const dn=DOW[di];
 const isToday=date===todayStr;
 const isSun=di===0;const isSat=di===6;
 const dateBorderColor=isSun?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue)':'var(--border)';
 const dateBorderWidth=isSun||isSat||isToday?'2px':'1px';
 const dateColor=isSun?'var(--red)':isSat?'var(--blue)':'var(--text)';
 
-if(!jobs.length){
-return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
-<div class="daycard-body"><div style="color:var(--dim);font-size:13px;padding:8px">${isSun?'🔴 일요일':'시공 없음'}</div></div></div>`}
-
+// 휴무 표시 (offOnly 포함 전체에서)
 const offs=new Set();jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
 const offHtml=offs.size?'<div class="daycard-off">'+[...offs].map(n=>n+' 휴무').join(' · ')+'</div>':'';
 
+if(!realJobs.length){
+return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
+${offHtml}<div class="daycard-body"><div style="color:var(--dim);font-size:13px;padding:8px">${isSun?'🔴 일요일':'시공 없음'}</div></div></div>`}
+
 // 팀별 그룹
 const tm={};const un=[];
-jobs.forEach(j=>{const t=A[j.id];if(t&&t.length){const k=t.join('+');if(!tm[k])tm[k]={team:t,jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
+realJobs.forEach(j=>{const t=A[j.id];if(t&&t.length){const k=t.join('+');if(!tm[k])tm[k]={team:t,jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
 
 let body=Object.values(tm).map(tg=>{
 const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
@@ -562,7 +566,7 @@ const curYear=now.getFullYear(),curMonth=now.getMonth();
 const monthStr=curYear+'년 '+(curMonth+1)+'월';
 
 // 이번 달 시공 건만 필터
-const mj=J.filter(j=>{const d=new Date(j.date);return d.getFullYear()===curYear&&d.getMonth()===curMonth});
+const mj=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===curYear&&new Date(j.date).getMonth()===curMonth);
 
 // 직원별 집계
 const es={};E.forEach(e=>es[e]={double:0,as:0,km:0,days:{},workDates:new Set()});
@@ -610,28 +614,23 @@ html+=`</div>`;
 const totalAddrs=new Set(mj.map(j=>j.addr).filter(Boolean));
 const calcAddrs=[...totalAddrs].filter(a=>DIST[a.replace(/[.#$/\[\]]/g,'_')]!==undefined);
 const maxTotalKm=Math.max(...E.map(e=>es[e].km),1);
-const maxAvgKm=Math.max(...E.map(e=>es[e].avgKm),1);
 html+=`<div class="fcard"><div class="sec">🚗 이동거리 <span style="font-size:11px;font-weight:400;color:var(--dim)">(${calcAddrs.length}/${totalAddrs.size} 주소 계산됨)</span></div>`;
 const hasKm=E.some(e=>es[e].km>0);
 if(hasKm){
-html+=`<div style="display:flex;gap:12px;justify-content:center;margin-bottom:10px;font-size:11px">
-<span style="color:var(--dim)">■ 배경: 총거리</span><span style="color:var(--dim)">■ 진하게: 일평균</span></div>`;
 html+=E.map((e,i)=>{
 const s=es[e];
 const wTotal=Math.round(s.km/maxTotalKm*100);
-const wAvg=Math.round(s.avgKm/maxAvgKm*100);
-return `<div style="margin:6px 0">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+const wAvg=s.km>0?Math.round(s.avgKm/maxTotalKm*s.workDays/1*100):0;
+return `<div style="margin:10px 0">
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px">
 <span class="fname">${e}</span>
-<span style="font-size:11px;color:var(--dim);margin-left:auto">${s.workDays}일 근무</span>
+<span style="font-size:11px;color:var(--dim)">${s.workDays}일 근무</span>
+<span style="font-size:13px;font-weight:900;color:${cl[i%6]};margin-left:auto">${s.avgKm}km/일</span>
+<span style="font-size:11px;color:var(--dim)">총 ${s.km}km</span>
 </div>
-<div style="position:relative;height:28px;background:var(--card2);border-radius:8px;overflow:hidden">
-<div style="position:absolute;height:100%;width:${Math.max(wTotal,5)}%;background:${cl[i%6]}33;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px">
-<span style="font-size:10px;color:${cl[i%6]};opacity:.7">${s.km}km</span>
-</div>
-<div style="position:absolute;height:100%;width:${Math.max(wAvg,5)}%;background:${cl[i%6]};border-radius:8px;display:flex;align-items:center;padding-left:10px">
-<span style="font-size:12px;font-weight:900;color:${i===2||i===5?'#000':'#fff'}">${s.avgKm}km/일</span>
-</div>
+<div style="position:relative;height:24px;background:var(--card2);border-radius:8px;overflow:hidden">
+<div style="position:absolute;height:100%;width:${Math.max(wTotal,3)}%;background:${cl[i%6]}33;border-radius:8px"></div>
+<div style="position:absolute;height:100%;width:${Math.max(Math.round(s.avgKm/(Math.max(...E.map(e2=>es[e2].avgKm),1))*100),5)}%;background:${cl[i%6]};border-radius:8px"></div>
 </div>
 </div>`}).join('');
 html+=`<div style="font-size:10px;color:var(--dim);margin-top:8px;text-align:center">일평균은 근무일 기준이라 연차·휴무와 무관해요</div>`}
@@ -772,11 +771,12 @@ if(!A[j.id])changed=true}});
 if(changed){fbSave('assignments',A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
 
 // 미배정 건이 있으면 자동 배정 실행
-const unassignedCnt=J.filter(j=>!A[j.id]).length;
+const realJ=J.filter(j=>!j.offOnly);
+const unassignedCnt=realJ.filter(j=>!A[j.id]).length;
 if(unassignedCnt>0){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
+document.getElementById('sub').textContent='✅ '+realJ.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
 renderAll()}
 
@@ -786,7 +786,7 @@ init();
 setTimeout(async()=>{
 let updated=false;
 for(const j of J){
-if(!j.addr)continue;
+if(!j.addr||j.offOnly)continue;
 // Firebase 키 안전하게 변환
 const key=j.addr.replace(/[.#$/\[\]]/g,'_');
 if(DIST[key]!==undefined)continue;
@@ -819,13 +819,21 @@ lastCSVHash=newHash;
 
 parseCSV(text);
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-sub.textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
+sub.textContent='✅ '+J.filter(j=>!j.offOnly).length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 renderAll();
 if(changed)toast('📋 엑셀 변경 감지! 최신 반영됨','ok');
 else if(showToast)toast('✅ 최신 상태예요','ok');
 }catch(e){if(showToast)toast('⚠️ 연결 실패','ok')}}
 
 function manualRefresh(){refreshSheet(true)}
+
+async function doRefresh(){
+const btn=document.getElementById('refreshBtn');
+if(btn){btn.innerHTML='<div style="font-size:14px;font-weight:700;color:#fff">⏳ 갱신 중...</div>';
+btn.style.opacity='.6';btn.style.pointerEvents='none'}
+await refreshSheet(false);
+if(btn){btn.style.display='none'}
+toast('✅ 최신 상태로 갱신됨!','ok')}
 
 // ===== 출발 확인 시스템 =====
 let pendingConfirmId='';
