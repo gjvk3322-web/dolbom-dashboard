@@ -4,500 +4,364 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>돌봄매트 시공 스케줄러</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-:root {
-    --bg: #0a0a0f;
-    --bg2: #12121a;
-    --bg3: #1a1a25;
-    --card: #16161f;
-    --border: rgba(255,255,255,.06);
-    --text: #e8e8f0;
-    --text2: #8888a0;
-    --blue: #5b8def;
-    --green: #34d399;
-    --red: #f87171;
-    --yellow: #fbbf24;
-    --pink: #f472b6;
-    --purple: #a78bfa;
-    --orange: #fb923c;
-    --font: 'Noto Sans KR', -apple-system, sans-serif;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; -webkit-tap-highlight-color:transparent; }
+:root{--bg:#0b0b12;--card:#151520;--card2:#1c1c2a;--border:rgba(255,255,255,.07);--text:#eaeaf2;--dim:#6e6e88;--blue:#5b8def;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--pink:#f472b6;--purple:#a78bfa;--orange:#fb923c;--font:'Noto Sans KR',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:600px;margin:0 auto;padding-bottom:80px}
+.hd{background:var(--card);border-bottom:1px solid var(--border);padding:16px;position:sticky;top:0;z-index:100}
+.hd h1{font-size:18px;font-weight:900}.hd-sub{font-size:11px;color:var(--dim);margin-top:3px}
+.nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:100;max-width:600px;margin:0 auto}
+.nav a{flex:1;padding:10px 4px;text-align:center;font-size:10px;font-weight:500;color:var(--dim);text-decoration:none;border-top:2px solid transparent}
+.nav a.on{color:var(--blue);border-top-color:var(--blue)}
+.nav a span{display:block;font-size:18px;margin-bottom:2px}
+.pane{display:none;padding:12px 12px 20px}.pane.on{display:block}
 
-/* Header */
-.header { background:var(--bg2); border-bottom:1px solid var(--border); padding:14px 16px; position:sticky; top:0; z-index:100; }
-.header h1 { font-size:17px; font-weight:700; letter-spacing:-.5px; }
-.header p { font-size:11px; color:var(--text2); margin-top:2px; }
+/* Day Card */
+.daycard{background:var(--card);border-radius:14px;margin-bottom:14px;overflow:hidden;border:1px solid var(--border)}
+.daycard-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card2)}
+.daycard-date{font-size:16px;font-weight:900}.daycard-dow{font-size:13px;font-weight:700;padding:4px 12px;border-radius:8px}
+.dow-mon{background:rgba(91,141,239,.15);color:var(--blue)}.dow-tue{background:rgba(52,211,153,.15);color:var(--green)}.dow-wed{background:rgba(251,191,36,.15);color:var(--yellow)}.dow-thu{background:rgba(167,139,250,.15);color:var(--purple)}.dow-fri{background:rgba(244,114,182,.15);color:var(--pink)}.dow-sat{background:rgba(91,141,239,.2);color:var(--blue)}.dow-sun{background:rgba(248,113,113,.15);color:var(--red)}
+.daycard-off{padding:6px 16px;font-size:12px;color:var(--red)}
+.daycard-body{padding:8px 12px}
 
-/* Tabs */
-.tabs { display:flex; gap:0; background:var(--bg2); border-bottom:1px solid var(--border); overflow-x:auto; -webkit-overflow-scrolling:touch; }
-.tab { flex:1; min-width:80px; padding:12px 8px; text-align:center; font-size:12px; font-weight:500; color:var(--text2); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; font-family:var(--font); }
-.tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+/* Team Job Block */
+.tjob{background:var(--card2);border-radius:12px;padding:12px 14px;margin:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s}
+.tjob:active{background:rgba(255,255,255,.05)}
+.tjob-team{display:inline-block;padding:4px 14px;border-radius:8px;font-size:14px;font-weight:700;margin-bottom:8px}
+.tjob-line{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:14px;line-height:1.6}
+.tjob-time{display:inline-block;padding:2px 10px;border-radius:6px;font-size:12px;font-weight:700;flex-shrink:0}
+.tjob-time.am{background:rgba(251,191,36,.15);color:var(--yellow)}.tjob-time.pm{background:rgba(167,139,250,.15);color:var(--purple)}
+.tjob-addr{flex:1;font-weight:500}
+.tjob-mat{display:flex;gap:4px;flex-wrap:wrap;padding:4px 0 0 0}
+.mat{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700}
+.mat-marble{background:rgba(91,141,239,.15);color:var(--blue)}.mat-cotton{background:rgba(52,211,153,.15);color:var(--green)}.mat-modern{background:rgba(248,113,113,.15);color:var(--red)}
+.tjob-dist{font-size:11px;color:var(--yellow);margin-left:auto}
+.new-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(248,113,113,.2);color:var(--red);margin-left:8px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* Content */
-.content { display:none; padding:12px; }
-.content.active { display:block; }
+/* Unassigned */
+.ujob{background:var(--card2);border:1px dashed rgba(251,191,36,.3);border-radius:12px;padding:12px 14px;margin:6px 0}
+.ujob-title{font-size:12px;color:var(--yellow);font-weight:700;margin-bottom:6px}
 
-/* Cards */
-.job-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
-.job-card.assigned { border-left:3px solid var(--green); }
-.job-card.unassigned { border-left:3px solid var(--yellow); }
-.job-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.job-date { font-size:13px; font-weight:700; color:var(--blue); }
-.job-time { font-size:11px; padding:3px 8px; border-radius:6px; font-weight:600; }
-.job-time.am { background:rgba(251,191,36,.15); color:var(--yellow); }
-.job-time.pm { background:rgba(168,85,247,.15); color:var(--purple); }
-.job-info { font-size:12px; color:var(--text2); line-height:1.8; }
-.job-info span { color:var(--text); font-weight:500; }
-.job-info .material { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; margin-left:4px; }
-.job-info .material.marble { background:rgba(91,141,239,.15); color:var(--blue); }
-.job-info .material.cotton { background:rgba(52,211,153,.15); color:var(--green); }
-.job-info .material.modern { background:rgba(248,113,113,.15); color:var(--red); }
+/* Team Setup */
+.tcard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.tcard h3{font-size:15px;font-weight:700;margin-bottom:12px}
+.tslot{min-height:50px;background:var(--card2);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.tmem{padding:8px 16px;border-radius:10px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.tmem .x{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
+.pool{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.pool-mem{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid transparent}
+.pool-mem:active{transform:scale(.95)}
 
-/* Assign section */
-.assign-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
-.assign-btn { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-family:var(--font); transition:all .15s; }
-.assign-btn:active { transform:scale(.95); }
-.assign-btn.selected { background:var(--green); color:#000; border-color:var(--green); }
-.assign-btn.off { background:rgba(248,113,113,.1); color:var(--red); border-color:rgba(248,113,113,.3); text-decoration:line-through; opacity:.5; pointer-events:none; }
-.assigned-name { display:inline-block; padding:4px 12px; border-radius:8px; font-size:13px; font-weight:700; background:rgba(52,211,153,.15); color:var(--green); }
-.unassign-btn { margin-left:6px; padding:4px 10px; border-radius:6px; font-size:11px; background:rgba(248,113,113,.1); color:var(--red); border:1px solid rgba(248,113,113,.2); cursor:pointer; font-family:var(--font); }
+/* Buttons */
+.btn{display:block;width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin:8px 0}
+.btn:active{transform:scale(.98)}
+.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#000}.btn-red{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.2)}
 
-/* Employee management */
-.emp-list { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
-.emp-chip { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:13px; font-weight:600; }
-.emp-remove { width:20px; height:20px; border-radius:50%; background:rgba(248,113,113,.2); color:var(--red); border:none; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:var(--font); }
-.add-row { display:flex; gap:8px; margin-top:12px; }
-.add-row input { flex:1; padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:10px; font-size:14px; font-family:var(--font); outline:none; }
-.add-row input:focus { border-color:var(--blue); }
-.add-row button { padding:10px 20px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; font-family:var(--font); }
+/* Fair */
+.fcard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.frow{display:flex;align-items:center;gap:10px;margin:8px 0}
+.fname{min-width:48px;font-size:13px;font-weight:700}
+.fbar{flex:1;height:24px;background:var(--card2);border-radius:8px;overflow:hidden}
+.ffill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;min-width:24px}
+.fval{min-width:50px;text-align:right;font-size:12px;font-family:monospace;color:var(--dim)}
+.score{text-align:center;padding:20px}.score-n{font-size:52px;font-weight:900}.score-l{font-size:12px;color:var(--dim)}
+.sec{font-size:15px;font-weight:700;margin-bottom:10px}
 
-/* Sheet URL */
-.url-section { margin-bottom:16px; }
-.url-input { width:100%; padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:10px; font-size:12px; font-family:var(--font); outline:none; }
-.url-input:focus { border-color:var(--blue); }
-.load-btn { width:100%; margin-top:8px; padding:12px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; font-family:var(--font); }
-.load-btn:active { transform:scale(.98); }
+/* Toast + Copy popup */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:12px;font-size:14px;font-weight:700;z-index:999;display:none;white-space:nowrap}
+.toast-ok{background:var(--green);color:#000}.toast-copy{background:var(--blue);color:#fff}
 
-/* Stats */
-.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
-.stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
-.stat-num { font-size:22px; font-weight:900; }
-.stat-label { font-size:10px; color:var(--text2); margin-top:2px; }
+/* Colors */
+.tc0{background:var(--blue);color:#fff}.tc1{background:var(--green);color:#000}.tc2{background:var(--yellow);color:#000}.tc3{background:var(--pink);color:#fff}.tc4{background:var(--purple);color:#fff}.tc5{background:var(--orange);color:#000}
+.tl0{background:rgba(91,141,239,.15);color:var(--blue)}.tl1{background:rgba(52,211,153,.15);color:var(--green)}.tl2{background:rgba(251,191,36,.15);color:var(--yellow)}.tl3{background:rgba(244,114,182,.15);color:var(--pink)}.tl4{background:rgba(167,139,250,.15);color:var(--purple)}.tl5{background:rgba(251,146,60,.15);color:var(--orange)}
 
-/* Week nav */
-.week-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.week-nav button { padding:8px 16px; background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:13px; cursor:pointer; font-family:var(--font); }
-.week-nav span { font-size:14px; font-weight:700; }
-
-/* Filter */
-.filter-row { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px; }
-.filter-btn { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:500; border:1px solid var(--border); background:var(--bg3); color:var(--text2); cursor:pointer; font-family:var(--font); white-space:nowrap; }
-.filter-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
-
-/* Workload */
-.workload { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
-.wl-row { display:flex; align-items:center; gap:10px; margin:8px 0; }
-.wl-name { min-width:50px; font-size:13px; font-weight:600; }
-.wl-bar { flex:1; height:20px; background:var(--bg3); border-radius:6px; overflow:hidden; }
-.wl-fill { height:100%; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#fff; min-width:24px; }
-.wl-count { min-width:30px; text-align:right; font-size:12px; font-family:monospace; }
-
-.section-title { font-size:15px; font-weight:700; margin-bottom:12px; }
-.empty-msg { text-align:center; padding:30px; color:var(--text2); font-size:13px; }
-
-/* Colors for employees */
-.ec0 { background:rgba(91,141,239,.15); color:var(--blue); }
-.ec1 { background:rgba(52,211,153,.15); color:var(--green); }
-.ec2 { background:rgba(251,191,36,.15); color:var(--yellow); }
-.ec3 { background:rgba(244,114,182,.15); color:var(--pink); }
-.ec4 { background:rgba(167,139,250,.15); color:var(--purple); }
-.ec5 { background:rgba(251,146,60,.15); color:var(--orange); }
-
-.efc0 { background:var(--blue); color:#fff; }
-.efc1 { background:var(--green); color:#000; }
-.efc2 { background:var(--yellow); color:#000; }
-.efc3 { background:var(--pink); color:#fff; }
-.efc4 { background:var(--purple); color:#fff; }
-.efc5 { background:var(--orange); color:#000; }
-
-.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--green); color:#000; padding:10px 24px; border-radius:10px; font-size:13px; font-weight:700; z-index:999; display:none; }
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row input{flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:14px;font-family:var(--font);outline:none}
 </style>
 </head>
 <body>
 
-<div class="header">
+<div class="hd">
     <h1>🔧 돌봄매트 시공 스케줄러</h1>
-    <p id="headerSub">시공 예약을 직원에게 쉽게 배정하세요</p>
+    <div class="hd-sub" id="sub">로딩 중...</div>
 </div>
 
-<div class="tabs">
-    <div class="tab active" onclick="switchTab('schedule')">📋 배정</div>
-    <div class="tab" onclick="switchTab('workload')">📊 업무량</div>
-    <div class="tab" onclick="switchTab('employees')">👷 직원</div>
-    <div class="tab" onclick="switchTab('settings')">⚙️ 설정</div>
-</div>
+<div class="pane on" id="p-sched"><div id="schedView"></div></div>
+<div class="pane" id="p-team"><div id="teamView"></div></div>
+<div class="pane" id="p-fair"><div id="fairView"></div></div>
 
-<!-- 배정 탭 -->
-<div class="content active" id="t-schedule">
-    <div class="stats" id="stats"></div>
-    <div class="filter-row" id="filterRow"></div>
-    <div id="jobList"></div>
-</div>
-
-<!-- 업무량 탭 -->
-<div class="content" id="t-workload">
-    <div class="section-title">📊 이번 주 직원별 업무량</div>
-    <div id="workloadChart"></div>
-    <div class="section-title" style="margin-top:20px">📅 날짜별 시공 현황</div>
-    <div id="dailyChart"></div>
-</div>
-
-<!-- 직원 탭 -->
-<div class="content" id="t-employees">
-    <div class="section-title">👷 직원 관리</div>
-    <div class="emp-list" id="empList"></div>
-    <div class="add-row">
-        <input type="text" id="newEmpName" placeholder="새 직원 이름">
-        <button onclick="addEmployee()">추가</button>
-    </div>
-</div>
-
-<!-- 설정 탭 -->
-<div class="content" id="t-settings">
-    <div class="section-title">🔗 구글시트 연결</div>
-    <div class="url-section">
-        <input type="text" class="url-input" id="sheetUrl" placeholder="구글시트 CSV URL 붙여넣기">
-        <button class="load-btn" onclick="loadFromSheet()">📥 데이터 불러오기</button>
-    </div>
-    <div style="margin-top:16px;font-size:12px;color:var(--text2);line-height:1.8">
-        <b>설정 방법:</b><br>
-        1. 구글시트 → 파일 → 공유 → 웹에 게시<br>
-        2. CSV 선택 → 게시<br>
-        3. 나오는 URL을 위에 붙여넣기<br>
-        4. "데이터 불러오기" 클릭
-    </div>
-    <div style="margin-top:20px">
-        <button class="load-btn" style="background:var(--red)" onclick="resetAll()">🗑 전체 초기화</button>
-    </div>
-</div>
+<nav class="nav">
+    <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
+    <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
+    <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
+</nav>
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-// ===== 데이터 =====
-let employees = JSON.parse(localStorage.getItem('db_employees') || '["준형","윤철","세욱"]');
-let assignments = JSON.parse(localStorage.getItem('db_assignments') || '{}');
-let jobs = JSON.parse(localStorage.getItem('db_jobs') || '[]');
-let sheetUrl = localStorage.getItem('db_sheetUrl') || '';
-let currentFilter = 'all';
+// ===== Config =====
+const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
+const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
+const MAPS_KEY='AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw';
+const OFF_B={lat:35.1253,lng:128.9736};
+const OFF_A={lat:37.3159,lng:126.8233};
+const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
+const DOW=['일','월','화','수','목','금','토'];
+const DOW_CLS=['dow-sun','dow-mon','dow-tue','dow-wed','dow-thu','dow-fri','dow-sat'];
 
-function save() {
-    localStorage.setItem('db_employees', JSON.stringify(employees));
-    localStorage.setItem('db_assignments', JSON.stringify(assignments));
-    localStorage.setItem('db_jobs', JSON.stringify(jobs));
-    localStorage.setItem('db_sheetUrl', sheetUrl);
-}
+// ===== Firebase =====
+firebase.initializeApp({databaseURL:FB_URL});
+const db=firebase.database();
 
-// ===== 구글시트 로드 =====
-async function loadFromSheet() {
-    const url = document.getElementById('sheetUrl').value.trim();
-    if (!url) { showToast('URL을 입력하세요'); return; }
-    
-    sheetUrl = url;
-    save();
-    
-    try {
-        showToast('불러오는 중...');
-        const r = await fetch(url);
-        const text = await r.text();
-        parseCSV(text);
-        showToast('✅ ' + jobs.length + '건 불러옴!');
-        switchTab('schedule');
-    } catch(e) {
-        showToast('❌ 불러오기 실패');
-    }
-}
+let E=['준형','윤철','세욱','승재','민석'];
+let teams=[];
+let A={};
+let J=[];
+let prevJobIds=new Set();
+let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 
-function parseCSV(text) {
-    const lines = text.split('\n').map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
-    if (lines.length < 2) return;
-    
-    jobs = [];
-    for (let i = 1; i < lines.length; i++) {
-        const row = lines[i];
-        if (!row[0] || !row[2]) continue;
-        
-        const time = row[0]; // 오전/오후
-        const region = row[1]; // 영업지역
-        const dateRaw = row[2]; // 20260101
-        const apt = row[3]; // 아파트
-        const pyeong = row[4]; // 평수
-        const scope = row[5]; // 시공범위
-        
-        // 휴무 직원 (G~K = index 6~10)
-        const dayOff = [];
-        for (let j = 6; j <= 10; j++) {
-            if (row[j] && row[j].trim()) dayOff.push(row[j].trim());
-        }
-        
-        // 자재 (M=12, N=13, O=14)
-        const materials = [];
-        if (row[12] && parseInt(row[12]) > 0) materials.push({type:'마블', qty:parseInt(row[12])});
-        if (row[13] && parseInt(row[13]) > 0) materials.push({type:'코튼', qty:parseInt(row[13])});
-        if (row[14] && parseInt(row[14]) > 0) materials.push({type:'모던', qty:parseInt(row[14])});
-        
-        // 날짜 포맷
-        let dateStr = dateRaw;
-        if (dateRaw.length === 8) {
-            dateStr = dateRaw.slice(0,4) + '-' + dateRaw.slice(4,6) + '-' + dateRaw.slice(6,8);
-        }
-        
-        const jobId = dateStr + '_' + time + '_' + i;
-        
-        jobs.push({
-            id: jobId,
-            time, region, date: dateStr, apt, pyeong, scope,
-            dayOff, materials
-        });
-    }
-    save();
-}
+// Firebase 실시간 리스너
+db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;renderAll()});
+db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];renderAll()});
+db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};renderAll()});
+db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 
-// ===== 탭 전환 =====
-function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
-    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-    document.getElementById('t-' + name).classList.add('active');
-    
-    const tabNames = ['schedule','workload','employees','settings'];
-    document.querySelectorAll('.tab')[tabNames.indexOf(name)].classList.add('active');
-    
-    if (name === 'schedule') renderSchedule();
-    if (name === 'workload') renderWorkload();
-    if (name === 'employees') renderEmployees();
-    if (name === 'settings') document.getElementById('sheetUrl').value = sheetUrl;
-}
+function fbSave(key,val){db.ref(key).set(val)}
 
-// ===== 배정 화면 =====
-function renderSchedule() {
-    // Stats
-    const total = jobs.length;
-    const assigned = jobs.filter(j => assignments[j.id]).length;
-    const unassigned = total - assigned;
-    
-    document.getElementById('stats').innerHTML = `
-        <div class="stat-card"><div class="stat-num" style="color:var(--blue)">${total}</div><div class="stat-label">전체</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${assigned}</div><div class="stat-label">배정완료</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--yellow)">${unassigned}</div><div class="stat-label">미배정</div></div>
-    `;
-    
-    // Filter buttons
-    const dates = [...new Set(jobs.map(j => j.date))].sort();
-    let filterHtml = '<div class="filter-btn ' + (currentFilter==='all'?'active':'') + '" onclick="setFilter(\'all\')">전체</div>';
-    filterHtml += '<div class="filter-btn ' + (currentFilter==='unassigned'?'active':'') + '" onclick="setFilter(\'unassigned\')">미배정</div>';
-    dates.forEach(d => {
-        const short = d.slice(5); // MM-DD
-        const dow = ['일','월','화','수','목','금','토'][new Date(d).getDay()];
-        filterHtml += `<div class="filter-btn ${currentFilter===d?'active':''}" onclick="setFilter('${d}')">${short}(${dow})</div>`;
-    });
-    document.getElementById('filterRow').innerHTML = filterHtml;
-    
-    // Job list
-    let filtered = [...jobs];
-    if (currentFilter === 'unassigned') filtered = filtered.filter(j => !assignments[j.id]);
-    else if (currentFilter !== 'all') filtered = filtered.filter(j => j.date === currentFilter);
-    
-    filtered.sort((a,b) => a.date.localeCompare(b.date) || (a.time==='오전'?0:1) - (b.time==='오전'?0:1));
-    
-    if (!filtered.length) {
-        document.getElementById('jobList').innerHTML = '<div class="empty-msg">표시할 시공 건이 없습니다.<br>⚙️ 설정에서 구글시트를 연결하세요.</div>';
-        return;
-    }
-    
-    document.getElementById('jobList').innerHTML = filtered.map(job => {
-        const isAssigned = !!assignments[job.id];
-        const assignedTo = assignments[job.id] || '';
-        const dow = ['일','월','화','수','목','금','토'][new Date(job.date).getDay()];
-        
-        const matHtml = job.materials.map(m => {
-            const cls = m.type==='마블'?'marble':m.type==='코튼'?'cotton':'modern';
-            return `<span class="material ${cls}">${m.type} ${m.qty}</span>`;
-        }).join('');
-        
-        let assignHtml = '';
-        if (isAssigned) {
-            const ei = employees.indexOf(assignedTo) % 6;
-            assignHtml = `<div class="assign-row">
-                <span class="assigned-name efc${ei}">${assignedTo}</span>
-                <button class="unassign-btn" onclick="unassign('${job.id}')">취소</button>
-            </div>`;
-        } else {
-            const btns = employees.map((emp, ei) => {
-                const isOff = job.dayOff.includes(emp);
-                const cls = isOff ? 'off' : '';
-                return `<button class="assign-btn ${cls}" onclick="assign('${job.id}','${emp}')">${emp}${isOff?' (휴무)':''}</button>`;
-            }).join('');
-            assignHtml = `<div class="assign-row">${btns}</div>`;
-        }
-        
-        return `<div class="job-card ${isAssigned?'assigned':'unassigned'}">
-            <div class="job-header">
-                <span class="job-date">${job.date.slice(5)} (${dow})</span>
-                <span class="job-time ${job.time==='오전'?'am':'pm'}">${job.time}</span>
-            </div>
-            <div class="job-info">
-                📍 <span>${job.region}</span> · ${job.apt} · <span>${job.pyeong}평</span><br>
-                🔧 ${job.scope} ${matHtml}
-            </div>
-            ${assignHtml}
-        </div>`;
-    }).join('');
-}
+// ===== Distance =====
+async function geo(addr){
+if(DC[addr])return DC[addr];
+try{const r=await fetch('https://maps.googleapis.com/maps/api/geocode/json?address='+encodeURIComponent(addr)+'&key='+MAPS_KEY+'&language=ko');
+const d=await r.json();if(d.results&&d.results[0]){const l=d.results[0].geometry.location;DC[addr]={lat:l.lat,lng:l.lng};localStorage.setItem('s4_dc',JSON.stringify(DC));return DC[addr]}}catch(e){}
+return null}
 
-function setFilter(f) {
-    currentFilter = f;
-    renderSchedule();
-}
+function hav(a1,n1,a2,n2){const R=6371,x=(a2-a1)*Math.PI/180,y=(n2-n1)*Math.PI/180,z=Math.sin(x/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z))}
 
-function assign(jobId, emp) {
-    // 같은 날 같은 시간대에 이미 배정된 건이 있는지 체크
-    const job = jobs.find(j => j.id === jobId);
-    const conflict = jobs.find(j => 
-        j.id !== jobId && 
-        j.date === job.date && 
-        j.time === job.time && 
-        assignments[j.id] === emp
-    );
-    
-    if (conflict) {
-        if (!confirm(`${emp}님이 같은 날 ${job.time}에 이미 배정되어 있어요. 그래도 배정할까요?`)) return;
-    }
-    
-    assignments[jobId] = emp;
-    save();
-    renderSchedule();
-    showToast(`✅ ${emp} 배정 완료`);
-}
+function getOffice(addr){return SOUTH.some(r=>addr.includes(r))?OFF_B:OFF_A}
 
-function unassign(jobId) {
-    delete assignments[jobId];
-    save();
-    renderSchedule();
-    showToast('배정 취소됨');
-}
+async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng))}
 
-// ===== 업무량 =====
-function renderWorkload() {
-    const empCount = {};
-    employees.forEach(e => empCount[e] = {am:0, pm:0, total:0});
-    
-    jobs.forEach(j => {
-        const emp = assignments[j.id];
-        if (emp && empCount[emp] !== undefined) {
-            empCount[emp].total++;
-            if (j.time === '오전') empCount[emp].am++;
-            else empCount[emp].pm++;
-        }
-    });
-    
-    const maxTotal = Math.max(...Object.values(empCount).map(v => v.total), 1);
-    
-    document.getElementById('workloadChart').innerHTML = employees.map((emp, i) => {
-        const c = empCount[emp];
-        const w = Math.round(c.total / maxTotal * 100);
-        return `<div class="workload">
-            <div class="wl-row">
-                <span class="wl-name">${emp}</span>
-                <div class="wl-bar">
-                    <div class="wl-fill efc${i%6}" style="width:${Math.max(w,8)}%">${c.total}</div>
-                </div>
-                <span class="wl-count">${c.am}+${c.pm}</span>
-            </div>
-            <div style="font-size:11px;color:var(--text2);padding-left:60px">오전 ${c.am}건 · 오후 ${c.pm}건</div>
-        </div>`;
-    }).join('');
-    
-    // 날짜별
-    const dateCount = {};
-    jobs.forEach(j => {
-        if (!dateCount[j.date]) dateCount[j.date] = {total:0, assigned:0};
-        dateCount[j.date].total++;
-        if (assignments[j.id]) dateCount[j.date].assigned++;
-    });
-    
-    const dates = Object.keys(dateCount).sort();
-    document.getElementById('dailyChart').innerHTML = dates.map(d => {
-        const c = dateCount[d];
-        const dow = ['일','월','화','수','목','금','토'][new Date(d).getDay()];
-        const pct = Math.round(c.assigned / c.total * 100);
-        return `<div class="workload">
-            <div class="wl-row">
-                <span class="wl-name" style="min-width:80px">${d.slice(5)}(${dow})</span>
-                <div class="wl-bar">
-                    <div class="wl-fill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--blue)'}">${c.assigned}/${c.total}</div>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-}
+// ===== CSV Parse =====
+function parseCSV(text){
+const lines=text.split('\n');J=[];
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[0]||!r[1])continue;
+const doff=[];for(let j=8;j<=13;j++){if(r[j]&&r[j].trim())doff.push(r[j].trim())}
+const mat=[];if(r[5]&&parseInt(r[5])>0)mat.push({t:'마블',q:parseInt(r[5])});if(r[6]&&parseInt(r[6])>0)mat.push({t:'코튼',q:parseInt(r[6])});if(r[7]&&parseInt(r[7])>0)mat.push({t:'모던',q:parseInt(r[7])});
+let ds=r[1];if(ds.length===8)ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+const id=ds+'_'+r[0]+'_'+i;
+J.push({id,time:r[0],addr:r[2]||'',date:ds,py:r[3]||'',scope:r[4]||'',doff,mat,dist:0,isNew:false})}}
 
-// ===== 직원 관리 =====
-function renderEmployees() {
-    document.getElementById('empList').innerHTML = employees.map((emp, i) => {
-        return `<div class="emp-chip ec${i%6}">
-            ${emp}
-            <button class="emp-remove" onclick="removeEmployee('${emp}')">×</button>
-        </div>`;
-    }).join('');
-}
+// ===== Auto Assign =====
+async function autoAssign(){
+if(!teams.length){toast('👥 팀 설정을 먼저 해주세요','ok');sw('team');return}
+toast('⏳ 자동 배정 중...','ok');
 
-function addEmployee() {
-    const input = document.getElementById('newEmpName');
-    const name = input.value.trim();
-    if (!name) return;
-    if (employees.includes(name)) { showToast('이미 있는 직원입니다'); return; }
-    employees.push(name);
-    input.value = '';
-    save();
-    renderEmployees();
-    showToast(`${name} 추가 완료`);
-}
+// 거리 계산
+for(const j of J){if(j.addr&&!j.dist){j.dist=await calcDist(j.addr)}}
 
-function removeEmployee(name) {
-    if (!confirm(`${name}님을 삭제할까요?`)) return;
-    employees = employees.filter(e => e !== name);
-    // 배정된 것도 삭제
-    Object.keys(assignments).forEach(k => {
-        if (assignments[k] === name) delete assignments[k];
-    });
-    save();
-    renderEmployees();
-    showToast(`${name} 삭제됨`);
-}
+const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
+const teamDist=teams.map(()=>0);
 
-// ===== 유틸 =====
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 2000);
-}
+// 기존 배정 거리 반영
+J.forEach(j=>{if(A[j.id]){const ti=teams.findIndex(tm=>tm.some(m=>A[j.id].includes(m)));if(ti>=0)teamDist[ti]+=j.dist||0}});
 
-function resetAll() {
-    if (!confirm('모든 데이터를 초기화할까요?')) return;
-    localStorage.removeItem('db_employees');
-    localStorage.removeItem('db_assignments');
-    localStorage.removeItem('db_jobs');
-    localStorage.removeItem('db_sheetUrl');
-    location.reload();
-}
+for(const date of Object.keys(bd).sort()){
+const dj=bd[date];
+const ao=new Set();dj.forEach(j=>j.doff.forEach(n=>ao.add(n)));
+const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>!ao.has(m)),full:t})).filter(t=>t.members.length>0);
+if(!avTeams.length)continue;
+
+const am=dj.filter(j=>j.time==='오전'||j.time.includes('2:')).sort((a,b)=>(b.dist||0)-(a.dist||0));
+const pm=dj.filter(j=>j.time==='오후').sort((a,b)=>(b.dist||0)-(a.dist||0));
+
+function assignSlot(slot){
+avTeams.sort((a,b)=>teamDist[a.idx]-teamDist[b.idx]);
+const usedTeams=new Set();
+slot.forEach(j=>{if(A[j.id]){const ti=avTeams.findIndex(t=>t.members.some(m=>A[j.id].includes(m)));if(ti>=0)usedTeams.add(ti)}});
+const free=avTeams.filter((t,i)=>!usedTeams.has(i));
+let fi=0;
+slot.forEach(j=>{if(!A[j.id]&&fi<free.length){A[j.id]=free[fi].members;teamDist[free[fi].idx]+=j.dist||0;fi++}})}
+
+assignSlot(am);assignSlot(pm)}
+
+fbSave('assignments',A);
+// 현재 job ID 저장 (새 일정 감지용)
+fbSave('prevJobIds',J.map(j=>j.id));
+toast('✅ 자동 배정 완료!','ok');renderAll()}
+
+function resetAssign(){if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});toast('초기화됨','ok');renderAll()}
+
+// ===== Copy Address =====
+function copyAddr(addr){
+navigator.clipboard.writeText(addr).then(()=>{toast('📋 주소 복사됨! 네비에 붙여넣기','copy')}).catch(()=>{
+const ta=document.createElement('textarea');ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+toast('📋 주소 복사됨!','copy')})}
+
+// ===== Render Schedule =====
+function renderSched(){
+const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
+const allDates=Object.keys(bd).sort();
+const today=new Date();const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+// 오늘+미래 먼저, 과거는 아래에
+const futureDates=allDates.filter(d=>d>=todayStr);
+const pastDates=allDates.filter(d=>d<todayStr);
+
+// Stats
+const total=J.length,assigned=J.filter(j=>A[j.id]).length,newCnt=J.filter(j=>j.isNew).length;
+let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+<div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:22px;font-weight:900;color:var(--blue)">${total}</div><div style="font-size:10px;color:var(--dim)">전체</div></div>
+<div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:22px;font-weight:900;color:var(--green)">${assigned}</div><div style="font-size:10px;color:var(--dim)">배정</div></div>
+<div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:22px;font-weight:900;color:${newCnt?'var(--red)':'var(--dim)'}">${newCnt}</div><div style="font-size:10px;color:var(--dim)">신규</div></div></div>`;
+
+html+=`<div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn btn-blue" onclick="autoAssign()" style="flex:2;margin:0">🤖 자동 배정</button><button class="btn btn-red" onclick="resetAssign()" style="flex:1;margin:0">🔄 초기화</button></div>`;
+
+if(!allDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
+
+function renderDayCards(dates,dimmed){
+return dates.map(date=>{
+const jobs=bd[date];const d=new Date(date);const di=d.getDay();const dn=DOW[di];
+const isToday=date===todayStr;
+
+const offs=new Set();jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
+const offHtml=offs.size?'<div class="daycard-off">'+[...offs].map(n=>n+' 휴무').join(' · ')+'</div>':'';
+
+// 팀별 그룹
+const tm={};const un=[];
+jobs.forEach(j=>{const t=A[j.id];if(t){const k=t.join('+');if(!tm[k])tm[k]={team:t,jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
+
+let body=Object.values(tm).map(tg=>{
+const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
+const tc=ti>=0?ti%6:0;
+const hasNew=tg.jobs.some(j=>j.isNew);
+const jobLines=tg.jobs.map(j=>{
+const isAm=j.time==='오전'||j.time.includes('2:');
+const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
+const distH=j.dist?`<span class="tjob-dist">${j.dist}km</span>`:'';
+const safeAddr=j.addr.replace(/'/g,"\\'");
+return `<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')">
+<span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
+<span class="tjob-addr">${j.addr}/${j.scope}</span>
+<span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span>
+</div><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}</div>`}).join('');
+
+return `<div class="tjob">
+<div><span class="tjob-team tc${tc}">${tg.team.join(' ')}</span>${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+${jobLines}</div>`}).join('');
+
+if(un.length){
+body+=un.map(j=>{
+const isAm=j.time==='오전'||j.time.includes('2:');
+const safeAddr=j.addr.replace(/'/g,"\\'");
+return `<div class="ujob">
+<div class="ujob-title">⚠️ 미배정${j.isNew?' 🆕 NEW':''}</div>
+<div class="tjob-line" onclick="copyAddr('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span></div>
+</div>`}).join('')}
+
+return `<div class="daycard" style="${dimmed?'opacity:.5':''}${isToday?';border:2px solid var(--blue)':''}">
+<div class="daycard-hd"><span class="daycard-date">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
+${offHtml}<div class="daycard-body">${body||'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'}</div></div>`}).join('')}
+
+html+=renderDayCards(futureDates,false);
+if(pastDates.length){
+html+=`<div style="margin:16px 0;text-align:center"><button onclick="document.getElementById('pastDays').style.display=document.getElementById('pastDays').style.display==='none'?'block':'none'" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
+html+=`<div id="pastDays" style="display:none">${renderDayCards(pastDates,true)}</div>`};
+
+document.getElementById('schedView').innerHTML=html}
+
+// ===== Render Team =====
+function renderTeam(){
+const colors=['tc0','tc1','tc2','tc3','tc4','tc5'];
+let html='<div class="sec">👥 이번 달 팀 구성</div>';
+html+='<p style="font-size:12px;color:var(--dim);margin-bottom:14px">팀을 구성하면 한 달간 같은 팀으로 운영됩니다</p>';
+
+if(teams.length){
+html+=teams.map((t,i)=>{
+const members=t.map(m=>`<span class="tmem ${colors[i%6]}">${m}<span class="x" onclick="rmMem(${i},'${m}')">×</span></span>`).join('');
+return `<div class="tcard"><h3 style="display:flex;justify-content:space-between">${i+1}팀<span style="font-size:12px;font-weight:400;color:var(--red);cursor:pointer" onclick="delTeam(${i})">삭제</span></h3><div class="tslot">${members||'<span style="color:var(--dim);font-size:13px">비어있음</span>'}</div></div>`}).join('')}
+
+const assigned=new Set();teams.forEach(t=>t.forEach(m=>assigned.add(m)));
+const unassigned=E.filter(e=>!assigned.has(e));
+if(unassigned.length){
+html+=`<div class="tcard"><h3>미배정 직원</h3><div class="pool">${unassigned.map(e=>`<div class="pool-mem tl${teams.length%6}" onclick="addMem('${e}')">${e}</div>`).join('')}</div></div>`}
+
+html+=`<button class="btn btn-blue" onclick="addTeam()">+ 새 팀 추가</button>`;
+
+// 직원 관리
+html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${E.map(e=>`<span style="padding:8px 14px;background:var(--card2);border-radius:8px;font-size:13px;display:inline-flex;align-items:center;gap:6px">${e}<span style="color:var(--red);cursor:pointer" onclick="delEmp('${e}')">×</span></span>`).join('')}</div>
+<div class="add-row"><input id="ne" placeholder="새 직원 이름"><button class="btn btn-blue" style="width:auto;padding:12px 24px;margin:0" onclick="addEmp()">추가</button></div></div>`;
+
+document.getElementById('teamView').innerHTML=html}
+
+function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam()}
+function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam()}
+function addMem(name){if(!teams.length)teams.push([]);let mi=0,ml=teams[0].length;teams.forEach((t,i)=>{if(t.length<ml){ml=t.length;mi=i}});teams[mi].push(name);fbSave('teams',teams);renderTeam()}
+function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam()}
+function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam()}
+
+// ===== Render Fair =====
+function renderFair(){
+const es={};E.forEach(e=>es[e]={d:0,c:0});
+J.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(es[e]){es[e].d+=j.dist||0;es[e].c++}})});
+const md=Math.max(...Object.values(es).map(s=>s.d),1);
+const mc=Math.max(...Object.values(es).map(s=>s.c),1);
+const cl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
+const dists=E.map(e=>es[e].d);const avg=dists.reduce((a,b)=>a+b,0)/dists.length||0;
+const mxd=Math.max(...dists.map(d=>Math.abs(d-avg)),0);
+const sc=avg>0?Math.max(0,Math.round(100-mxd/avg*100)):100;
+const hasDist=dists.some(d=>d>0);
+
+const pc={};
+J.forEach(j=>{const t=A[j.id];if(t&&t.length>=2){const k=[...t].sort().join('+');pc[k]=(pc[k]||0)+1}});
+
+document.getElementById('fairView').innerHTML=
+`<div class="fcard"><div class="score"><div class="score-l">공정성 점수</div><div class="score-n" style="color:${sc>=80?'var(--green)':sc>=60?'var(--yellow)':'var(--red)'}">${sc}<span style="font-size:20px">점</span></div><div class="score-l">거리 편차 ${Math.round(mxd)}km</div></div></div>`+
+(hasDist?`<div class="fcard"><div class="sec">📏 총 이동거리</div>${E.map((e,i)=>{const s=es[e];const w=Math.round(s.d/md*100);return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${Math.max(w,5)}%;background:${cl[i%6]}">${s.d}</div></div><span class="fval">${s.d}km</span></div>`}).join('')}</div>`:`<div class="fcard"><div style="color:var(--dim);font-size:13px">자동 배정 후 거리가 표시됩니다</div></div>`)+
+`<div class="fcard"><div class="sec">📊 시공 건수</div>${E.map((e,i)=>{const s=es[e];const w=Math.round(s.c/mc*100);return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${Math.max(w,5)}%;background:${cl[i%6]}">${s.c}</div></div><span class="fval">${s.c}건</span></div>`}).join('')}</div>`+
+`<div class="fcard"><div class="sec">🤝 팀 조합 횟수</div>${Object.keys(pc).length?Object.entries(pc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px"><span>${k.replace(/\+/g,' + ')}</span><span style="font-weight:700">${v}회</span></div>`).join(''):'<div style="color:var(--dim);font-size:13px">배정 후 표시됩니다</div>'}</div>`}
+
+// ===== Nav =====
+function sw(n){
+document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
+document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+document.getElementById('p-'+n).classList.add('on');
+const tabs=['sched','team','fair'];
+document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
+renderAll()}
+
+function renderAll(){renderSched();renderTeam();renderFair()}
+
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
 
 // ===== Init =====
-if (sheetUrl) document.getElementById('sheetUrl').value = sheetUrl;
-renderSchedule();
+async function init(){
+document.getElementById('sub').textContent='구글시트 불러오는 중...';
+try{
+const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
+
+// 새 일정 감지
+J.forEach(j=>{if(!prevJobIds.has(j.id))j.isNew=true});
+
+// 팀이 있고 미배정 건이 있으면 자동 배정
+const unassigned=J.filter(j=>!A[j.id]);
+if(teams.length&&unassigned.length){
+document.getElementById('sub').textContent='자동 배정 중...';
+await autoAssign()}
+
+document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀';
+}catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패'}
+renderAll()}
+
+init();
 </script>
 </body>
 </html>
