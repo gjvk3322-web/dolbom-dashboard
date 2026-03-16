@@ -102,11 +102,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .cal-legend .lg-work::before{background:rgba(52,211,153,.2)}
 .emp-badge{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative;user-select:none}
 .emp-badge::after{content:'📅';font-size:8px;position:absolute;top:-2px;right:-2px}
+
+/* 출발확인 */
+.confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.confirm-overlay.show{display:flex}
+.confirm-box{background:var(--card);border-radius:20px;max-width:400px;width:100%;padding:24px;animation:popIn .2s ease}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.confirm-title{font-size:18px;font-weight:900;text-align:center;margin-bottom:16px}
+.confirm-item{padding:12px;background:var(--card2);border-radius:12px;margin-bottom:8px}
+.confirm-label{font-size:10px;color:var(--dim);font-weight:700;margin-bottom:4px}
+.confirm-value{font-size:15px;font-weight:700}
+.confirm-btn{display:block;width:100%;padding:16px;border-radius:14px;font-size:16px;font-weight:900;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin-top:16px}
+.confirm-ok{background:var(--green);color:#000}
+.confirm-cancel{background:var(--card2);color:var(--dim);margin-top:8px}
+.confirmed-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)}
+.depart-btn{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(251,191,36,.2);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3);animation:pulseBtn 2s infinite}
+@keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.3)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
 </style>
 </head>
 <body>
 
-<div class="hd">
+<div class="hd" onclick="manualRefresh()" style="cursor:pointer">
     <h1>🔧 돌봄매트 시공 스케줄러 <span id="verTag" style="font-size:10px;font-weight:400;color:var(--dim)"></span></h1>
     <div class="hd-sub" id="sub">로딩 중...</div>
 </div>
@@ -124,6 +140,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 </nav>
 
 <div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
+<div class="confirm-box">
+<div class="confirm-title">🚗 출발 확인</div>
+<div id="confirmBody"></div>
+<button class="confirm-btn confirm-ok" id="confirmOkBtn" onclick="doConfirm()">✅ 자재 확인 완료 · 출발!</button>
+<button class="confirm-btn confirm-cancel" onclick="closeConfirm()">취소</button>
+</div>
+</div>
 
 <div class="cal-overlay" id="calOverlay" onclick="if(event.target===this)closeCal()">
 <div class="cal-sheet">
@@ -143,7 +168,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.6';
+const VER='2026.03.17.8';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const MAPS_KEY='AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw';
@@ -160,6 +185,7 @@ const db=firebase.database();
 let E=['준형','윤철','세욱','승재','민석'];
 let teams=[];
 let A={};
+let CF={};  // 출발확인 {jobId: {who:'준형', time:'08:30', mats:'모던180'}}
 let J=[];
 let prevJobIds=new Set();
 let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
@@ -168,6 +194,7 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;renderAll()});
 db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];renderAll()});
 db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};renderAll()});
+db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};renderAll()});
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 
 function fbSave(key,val){db.ref(key).set(val)}
@@ -403,6 +430,13 @@ ${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shr
 </div>
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
 ${mats}
+${(()=>{
+const cf=CF[j.id];
+if(!cf) return `<span class="depart-btn" onclick="event.stopPropagation();startConfirm('${j.id}')">🚗 출발확인</span>`;
+const curHash=j.mat.map(m=>m.t+m.q).join(',');
+if(cf.matHash&&cf.matHash!==curHash) return `<span class="depart-btn" onclick="event.stopPropagation();startConfirm('${j.id}')" style="background:rgba(248,113,113,.2);color:var(--red);border-color:rgba(248,113,113,.3);animation:pulseBtn 1s infinite">⚠️ 자재변경! 재확인</span>`;
+return `<span class="confirmed-badge">✅ 확인 ${cf.time}</span>`;
+})()}
 <span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
 <span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
@@ -601,6 +635,7 @@ async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
 try{
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
+lastCSVHash=text.length+'-'+text.slice(0,200);
 
 // 새 일정 감지
 J.forEach(j=>{if(!prevJobIds.has(j.id))j.isNew=true});
@@ -623,9 +658,9 @@ if(changed){fbSave('assignments',A);toast('⚠️ 휴무자 배정 자동 해제
 const unassignedCnt=J.filter(j=>!A[j.id]).length;
 if(unassignedCnt>0){await autoAssign()}
 
-const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · 갱신 '+hm;
-}catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패'}
+const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+' ↻ 터치';
+}catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
 renderAll()}
 
 init();
@@ -633,16 +668,106 @@ init();
 // 버전 표시
 document.getElementById('verTag').textContent='v'+VER;
 
-// 5분마다 구글시트 자동 갱신 (배정 데이터는 Firebase가 실시간 처리)
-setInterval(()=>{
-fetch(CSV_URL).then(r=>r.text()).then(text=>{
-parseCSV(text);
-const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · 갱신 '+hm;
-renderAll()}).catch(()=>{})
-},5*60*1000);
+// 구글시트 갱신 함수 (자동 + 수동 공용)
+let lastCSVHash='';
+async function refreshSheet(showToast){
+try{
+const sub=document.getElementById('sub');
+if(showToast)sub.textContent='🔄 갱신 중...';
+const r=await fetch(CSV_URL+'&_='+Date.now());
+const text=await r.text();
 
-// 5분마다 새 버전 체크 (GitHub Pages에서 최신 파일 확인)
+// 변경 감지 (내용이 바뀌었을 때만 알림)
+const newHash=text.length+'-'+text.slice(0,200);
+const changed=lastCSVHash&&lastCSVHash!==newHash;
+lastCSVHash=newHash;
+
+parseCSV(text);
+const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+sub.textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+' ↻ 터치';
+renderAll();
+if(changed)toast('📋 엑셀 변경 감지! 최신 반영됨','ok');
+else if(showToast)toast('✅ 최신 상태예요','ok');
+}catch(e){if(showToast)toast('⚠️ 연결 실패','ok')}}
+
+function manualRefresh(){refreshSheet(true)}
+
+// ===== 출발 확인 시스템 =====
+let pendingConfirmId='';
+
+async function startConfirm(jobId){
+// 1단계: 엑셀에서 최신 데이터 강제 불러오기
+document.getElementById('confirmBody').innerHTML='<div style="text-align:center;padding:20px;color:var(--dim)">🔄 최신 데이터 확인 중...</div>';
+document.getElementById('confirmOkBtn').style.display='none';
+document.getElementById('confirmOverlay').classList.add('show');
+
+try{
+const r=await fetch(CSV_URL+'&_='+Date.now());
+const text=await r.text();
+parseCSV(text);
+renderAll();
+}catch(e){}
+
+// 2단계: 해당 시공 건 최신 정보 표시
+const job=J.find(j=>j.id===jobId);
+if(!job){closeConfirm();toast('시공 건을 찾을 수 없어요','ok');return}
+
+const team=A[jobId]||[];
+const matsHtml=job.mat.length?job.mat.map(m=>{
+const cls=m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern';
+return `<span class="mat mat-${cls}" style="font-size:14px;padding:4px 12px">${m.t} ${m.q}장</span>`}).join(' '):'<span style="color:var(--dim)">자재 정보 없음</span>';
+
+document.getElementById('confirmBody').innerHTML=`
+<div class="confirm-item">
+<div class="confirm-label">📍 주소</div>
+<div class="confirm-value">${job.addr}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">🔨 시공 범위</div>
+<div class="confirm-value">${job.scope||'-'}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">🎨 자재 · 색상 · 수량</div>
+<div class="confirm-value" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${matsHtml}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">⏰ 시간</div>
+<div class="confirm-value">${job.time}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">👷 배정 팀원</div>
+<div class="confirm-value">${team.join(', ')||'미배정'}</div>
+</div>
+<div style="text-align:center;margin-top:12px;padding:10px;background:rgba(251,191,36,.1);border-radius:10px;border:1px solid rgba(251,191,36,.2)">
+<div style="font-size:12px;font-weight:700;color:var(--yellow)">⚠️ 위 자재가 맞는지 꼭 확인하세요!</div>
+<div style="font-size:11px;color:var(--dim);margin-top:4px">방금 엑셀에서 최신 데이터를 불러왔어요</div>
+</div>`;
+
+document.getElementById('confirmOkBtn').style.display='block';
+pendingConfirmId=jobId;
+}
+
+function doConfirm(){
+if(!pendingConfirmId)return;
+const job=J.find(j=>j.id===pendingConfirmId);
+const now=new Date();
+const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+const team=A[pendingConfirmId]||[];
+// 자재 정보 해시 저장 (나중에 변경 감지용)
+const matHash=job?job.mat.map(m=>m.t+m.q).join(','):'';
+CF[pendingConfirmId]={who:team.join('+'),time:hm,ts:Date.now(),matHash};
+fbSave('confirms',CF);
+closeConfirm();
+toast('✅ 출발 확인 완료!','ok');
+renderAll();
+}
+
+function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('show');pendingConfirmId=''}
+
+// 1분마다 구글시트 자동 갱신
+setInterval(()=>refreshSheet(false),60*1000);
+
+// 5분마다 새 버전 체크
 setInterval(()=>{
 fetch(location.href+'?_='+Date.now()).then(r=>r.text()).then(html=>{
 const m=html.match(/const VER='([^']+)'/);
