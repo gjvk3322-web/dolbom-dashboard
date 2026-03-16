@@ -182,11 +182,36 @@ const am=dj.filter(j=>j.time==='오전'||j.time.includes('2:')).sort((a,b)=>(b.d
 const pm=dj.filter(j=>j.time==='오후').sort((a,b)=>(b.dist||0)-(a.dist||0));
 
 function makeGroups(pool,jobCnt){
-// 팀이 있으면 팀 기반
 if(teams.length){
+// 팀 기반으로 먼저 그룹화
 const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
-return avTeams.map(t=>t.members)}
-// 팀 없으면 자동 2인 1조 (시공 건수 >= 인원이면 1인)
+const grouped=avTeams.map(t=>t.members);
+// 어떤 팀에도 속하지 않는 출근자
+const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
+const orphans=pool.filter(m=>!inTeam.has(m));
+
+// 혼자인 그룹끼리 합치기 (1인 팀원의 팀 동료가 쉬는 경우)
+const solos=grouped.filter(g=>g.length===1);
+const pairs=grouped.filter(g=>g.length>=2);
+const result=[...pairs];
+
+// 1인 그룹 + 미배정 직원 합쳐서 2인 1조로
+const singles=[...solos.map(g=>g[0]),...orphans];
+for(let i=0;i<singles.length;i+=2){
+if(i+1<singles.length)result.push([singles[i],singles[i+1]]);
+else result.push([singles[i]])}
+
+// 시공 건수가 그룹보다 많으면 쪼개기
+if(jobCnt>result.length){
+const expanded=[];
+result.forEach(g=>{
+if(jobCnt>expanded.length+result.length-expanded.length&&g.length>=2){
+g.forEach(m=>expanded.push([m]))}
+else expanded.push(g)});
+return expanded}
+return result}
+
+// 팀 없으면 자동 2인 1조
 const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
 const groups=[];
 if(jobCnt>=sorted.length){sorted.forEach(e=>groups.push([e]))}
