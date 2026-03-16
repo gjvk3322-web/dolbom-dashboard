@@ -255,9 +255,18 @@ fbSave('assignments',A);toast('✅ 배정 업데이트','ok');renderAll()}
 // 배정 취소
 function unassign(jobId){delete A[jobId];fbSave('assignments',A);toast('배정 취소됨','ok');renderAll()}
 
-// ===== Copy Address =====
+// ===== 네이버 네비 열기 =====
+function openNavi(addr){
+// 네이버 지도 앱으로 바로 열기 (앱 없으면 웹으로)
+const encoded=encodeURIComponent(addr);
+const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
+const webUrl='https://map.naver.com/v5/search/'+encoded;
+const start=Date.now();
+location.href=appUrl;
+setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500)}
+
 function copyAddr(addr){
-navigator.clipboard.writeText(addr).then(()=>{toast('📋 주소 복사됨! 네비에 붙여넣기','copy')}).catch(()=>{
+navigator.clipboard.writeText(addr).then(()=>{toast('📋 주소 복사됨!','copy')}).catch(()=>{
 const ta=document.createElement('textarea');ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
 toast('📋 주소 복사됨!','copy')})}
 
@@ -347,12 +356,13 @@ const isOff=dayOffSet.has(e);
 const isIn=curTeam.includes(e);
 const ec=empColors[ei%6];
 return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:2px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
-return `<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')">
+return `<div class="tjob-line" onclick="event.stopPropagation();openNavi('${safeAddr}')">
 <span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
 <span class="tjob-addr">${j.addr}/${j.scope}</span>
-<span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span>
-</div><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}
-<span onclick="event.stopPropagation();unassign('${j.id}')" style="font-size:10px;color:var(--red);cursor:pointer;margin-left:auto;padding:2px 8px;border:1px solid rgba(248,113,113,.2);border-radius:6px">취소</span></div>
+<span style="font-size:11px;color:var(--green);flex-shrink:0">🧭네비</span>
+</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}</div>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="font-size:10px;color:var(--blue);cursor:pointer;padding:2px 8px;border:1px solid rgba(91,141,239,.2);border-radius:6px">📋복사</span>
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="font-size:10px;color:var(--red);cursor:pointer;padding:2px 8px;border:1px solid rgba(248,113,113,.2);border-radius:6px">취소</span></div>
 <div id="edit_${j.id}" style="display:none;margin-top:6px;flex-wrap:wrap;gap:2px">${editBtns}</div>
 <div style="text-align:right;margin-top:4px"><span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="font-size:11px;color:var(--dim);cursor:pointer;padding:2px 8px">✏️ 편집</span></div>`}).join('');
 
@@ -374,8 +384,8 @@ const ec=ecols[ei%6];
 return `<button style="padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:3px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div class="ujob">
 <div class="ujob-title">⚠️ 미배정${j.isNew?' 🆕 NEW':''}</div>
-<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span></div>
-<div class="tjob-mat">${mats}</div>
+<div class="tjob-line" onclick="event.stopPropagation();openNavi('${safeAddr}')"><span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span><span class="tjob-addr">${j.addr}/${j.scope}</span><span style="font-size:11px;color:var(--green);flex-shrink:0">🧭네비</span></div>
+<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap"><div class="tjob-mat">${mats}</div><span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="font-size:10px;color:var(--blue);cursor:pointer;padding:2px 8px;border:1px solid rgba(91,141,239,.2);border-radius:6px">📋복사</span></div>
 <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('')}
 
