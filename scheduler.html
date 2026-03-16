@@ -161,39 +161,51 @@ J.push({id,time:r[0],addr:r[2]||'',date:ds,py:r[3]||'',scope:r[4]||'',doff,mat,d
 
 // ===== Auto Assign =====
 async function autoAssign(){
-if(!teams.length){toast('👥 팀 설정을 먼저 해주세요','ok');sw('team');return}
 toast('⏳ 자동 배정 중...','ok');
 
 // 거리 계산
 for(const j of J){if(j.addr&&!j.dist){j.dist=await calcDist(j.addr)}}
 
 const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
-const teamDist=teams.map(()=>0);
+const empDist={};E.forEach(e=>empDist[e]=0);
 
 // 기존 배정 거리 반영
-J.forEach(j=>{if(A[j.id]){const ti=teams.findIndex(tm=>tm.some(m=>A[j.id].includes(m)));if(ti>=0)teamDist[ti]+=j.dist||0}});
+J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}});
 
 for(const date of Object.keys(bd).sort()){
 const dj=bd[date];
 const ao=new Set();dj.forEach(j=>j.doff.forEach(n=>ao.add(n)));
-const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>!ao.has(m)),full:t})).filter(t=>t.members.length>0);
-if(!avTeams.length)continue;
+const avail=E.filter(e=>!ao.has(e));
+if(!avail.length)continue;
 
 const am=dj.filter(j=>j.time==='오전'||j.time.includes('2:')).sort((a,b)=>(b.dist||0)-(a.dist||0));
 const pm=dj.filter(j=>j.time==='오후').sort((a,b)=>(b.dist||0)-(a.dist||0));
 
+function makeGroups(pool,jobCnt){
+// 팀이 있으면 팀 기반
+if(teams.length){
+const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
+return avTeams.map(t=>t.members)}
+// 팀 없으면 자동 2인 1조 (시공 건수 >= 인원이면 1인)
+const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
+const groups=[];
+if(jobCnt>=sorted.length){sorted.forEach(e=>groups.push([e]))}
+else{for(let i=0;i<sorted.length;i+=2){if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]]);else groups.push([sorted[i]])}}
+return groups}
+
 function assignSlot(slot){
-avTeams.sort((a,b)=>teamDist[a.idx]-teamDist[b.idx]);
-const usedTeams=new Set();
-slot.forEach(j=>{if(A[j.id]){const ti=avTeams.findIndex(t=>t.members.some(m=>A[j.id].includes(m)));if(ti>=0)usedTeams.add(ti)}});
-const free=avTeams.filter((t,i)=>!usedTeams.has(i));
+const groups=makeGroups(avail,slot.length);
+// 거리 적은 그룹 먼저
+groups.sort((a,b)=>{const da=a.reduce((s,e)=>s+(empDist[e]||0),0)/a.length;const db=b.reduce((s,e)=>s+(empDist[e]||0),0)/b.length;return da-db});
+const usedGroups=new Set();
+slot.forEach(j=>{if(A[j.id]){const gi=groups.findIndex(g=>g.some(m=>A[j.id].includes(m)));if(gi>=0)usedGroups.add(gi)}});
+const free=groups.filter((g,i)=>!usedGroups.has(i));
 let fi=0;
-slot.forEach(j=>{if(!A[j.id]&&fi<free.length){A[j.id]=free[fi].members;teamDist[free[fi].idx]+=j.dist||0;fi++}})}
+slot.forEach(j=>{if(!A[j.id]&&fi<free.length){A[j.id]=free[fi];free[fi].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});fi++}})}
 
 assignSlot(am);assignSlot(pm)}
 
 fbSave('assignments',A);
-// 현재 job ID 저장 (새 일정 감지용)
 fbSave('prevJobIds',J.map(j=>j.id));
 toast('✅ 자동 배정 완료!','ok');renderAll()}
 
@@ -260,17 +272,25 @@ let body=Object.values(tm).map(tg=>{
 const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
 const tc=ti>=0?ti%6:0;
 const hasNew=tg.jobs.some(j=>j.isNew);
+const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 const jobLines=tg.jobs.map(j=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
 const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
 const distH=j.dist?`<span class="tjob-dist">${j.dist}km</span>`:'';
 const safeAddr=j.addr.replace(/'/g,"\\'");
+const curTeam=A[j.id]||[];
+const editBtns=E.map(e=>{
+const isOff=dayOffSet.has(e);
+const isIn=curTeam.includes(e);
+return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid ${isIn?'var(--green)':'var(--border)'};background:${isIn?'rgba(52,211,153,.2)':'var(--card2)'};color:${isOff?'var(--red)':isIn?'var(--green)':'var(--text)'};cursor:pointer;font-family:var(--font);margin:2px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
 return `<div class="tjob-line" onclick="event.stopPropagation();copyAddr('${safeAddr}')">
 <span class="tjob-time ${isAm?'am':'pm'}">${j.time}</span>
 <span class="tjob-addr">${j.addr}/${j.scope}</span>
 <span style="font-size:11px;color:var(--blue);flex-shrink:0">📋복사</span>
 </div><div class="tjob-mat">${mats}${distH}${j.isNew?'<span class="new-badge">🆕 NEW</span>':''}
-<span onclick="event.stopPropagation();unassign('${j.id}')" style="font-size:10px;color:var(--red);cursor:pointer;margin-left:auto;padding:2px 8px;border:1px solid rgba(248,113,113,.2);border-radius:6px">취소</span></div>`}).join('');
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="font-size:10px;color:var(--red);cursor:pointer;margin-left:auto;padding:2px 8px;border:1px solid rgba(248,113,113,.2);border-radius:6px">취소</span></div>
+<div id="edit_${j.id}" style="display:none;margin-top:6px;flex-wrap:wrap;gap:2px">${editBtns}</div>
+<div style="text-align:right;margin-top:4px"><span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="font-size:11px;color:var(--dim);cursor:pointer;padding:2px 8px">✏️ 편집</span></div>`}).join('');
 
 return `<div class="tjob">
 <div><span class="tjob-team tc${tc}">${tg.team.join(' ')}</span>${hasNew?'<span class="new-badge">🆕</span>':''}</div>
