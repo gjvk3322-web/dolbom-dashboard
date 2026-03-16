@@ -351,12 +351,6 @@ const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
 // 새 일정 감지
 J.forEach(j=>{if(!prevJobIds.has(j.id))j.isNew=true});
 
-// 팀이 있고 미배정 건이 있으면 자동 배정
-const unassigned=J.filter(j=>!A[j.id]);
-if(teams.length&&unassigned.length){
-document.getElementById('sub').textContent='자동 배정 중...';
-await autoAssign()}
-
 document.getElementById('sub').textContent='✅ '+J.length+'건 · '+E.length+'명 · '+teams.length+'팀';
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패'}
 renderAll()}
