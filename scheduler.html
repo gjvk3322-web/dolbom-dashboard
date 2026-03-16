@@ -79,6 +79,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 
 .add-row{display:flex;gap:8px;margin-top:12px}
 .add-row input{flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:14px;font-family:var(--font);outline:none}
+
+/* 직원 캘린더 팝업 */
+.cal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.cal-overlay.show{display:flex}
+.cal-sheet{background:var(--card);border-radius:20px 20px 0 0;max-width:500px;width:100%;padding:20px 16px 30px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.cal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.cal-hd h3{font-size:17px;font-weight:900}
+.cal-close{width:32px;height:32px;border-radius:50%;background:var(--card2);border:none;color:var(--dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-dow{font-size:10px;color:var(--dim);font-weight:700;padding:4px 0}
+.cal-day{padding:8px 0;border-radius:10px;font-size:13px;font-weight:500;color:var(--text)}
+.cal-day.off{background:rgba(248,113,113,.2);color:var(--red);font-weight:900}
+.cal-day.work{background:rgba(52,211,153,.1);color:var(--green)}
+.cal-day.today{border:2px solid var(--blue)}
+.cal-day.empty{color:transparent}
+.cal-day.sun{color:var(--red)}
+.cal-legend{display:flex;gap:16px;justify-content:center;margin-top:14px;font-size:11px;color:var(--dim)}
+.cal-legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.cal-legend .lg-off::before{background:rgba(248,113,113,.3)}
+.cal-legend .lg-work::before{background:rgba(52,211,153,.2)}
+.emp-badge{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative;user-select:none}
+.emp-badge::after{content:'📅';font-size:8px;position:absolute;top:-2px;right:-2px}
 </style>
 </head>
 <body>
@@ -102,11 +125,25 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 
 <div class="toast" id="toast"></div>
 
+<div class="cal-overlay" id="calOverlay" onclick="if(event.target===this)closeCal()">
+<div class="cal-sheet">
+<div class="cal-hd"><h3 id="calTitle"></h3><button class="cal-close" onclick="closeCal()">✕</button></div>
+<div id="calMonthNav" style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:12px">
+<span id="calPrev" onclick="calMove(-1)" style="font-size:18px;cursor:pointer;padding:4px 12px;color:var(--dim)">‹</span>
+<span id="calMonth" style="font-size:14px;font-weight:700"></span>
+<span id="calNext" onclick="calMove(1)" style="font-size:18px;cursor:pointer;padding:4px 12px;color:var(--dim)">›</span>
+</div>
+<div class="cal-grid" id="calGrid"></div>
+<div class="cal-legend"><span class="lg-off">휴무</span><span class="lg-work">시공</span></div>
+<div id="calSummary" style="text-align:center;margin-top:12px;font-size:12px;color:var(--dim)"></div>
+</div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.4';
+const VER='2026.03.17.6';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const MAPS_KEY='AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw';
@@ -311,7 +348,8 @@ const pastDates=allDatesRange.filter(d=>d<todayStr);
 // 직원 색상 범례
 let html='';
 const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
-html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>`<span style="padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;background:${ecl[i%6]};color:${i===2||i===5?'#000':'#fff'}">${e}</span>`).join('')}</div>`;
+html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>`<span class="emp-badge" style="background:${ecl[i%6]};color:${i===2||i===5?'#000':'#fff'}" ontouchstart="empDown('${e}')" ontouchend="empUp(event)" ontouchcancel="empUp(event)" onmousedown="empDown('${e}')" onmouseup="empUp(event)">${e}</span>`).join('')}</div>`;
+html+=`<div style="text-align:center;margin:-8px 0 12px;font-size:10px;color:var(--dim)">길게 누르면 캘린더 📅</div>`;
 
 if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
 
@@ -338,12 +376,17 @@ jobs.forEach(j=>{const t=A[j.id];if(t&&t.length){const k=t.join('+');if(!tm[k])t
 
 let body=Object.values(tm).map(tg=>{
 const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
-const tc=ti>=0?ti%6:0;
 const hasNew=tg.jobs.some(j=>j.isNew);
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 
-function renderJobCard(j){
+// 오전 → 오후 → as 순서로 정렬
+const timeOrder={'오전':0,'오후':1,'as':2};
+const sorted=[...tg.jobs].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
+
+const jobRows=sorted.map(j=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
+const isAs=j.time==='as';
+const timeCls=isAs?'pm':isAm?'am':'pm';
 const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const curTeam=A[j.id]||[];
@@ -351,67 +394,62 @@ const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var
 const editBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[ei%6];
 return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
-return `<div style="flex:1;min-width:0">
-<div style="margin-bottom:4px"><span class="tjob-time ${isAm?'am':'pm'}" style="font-size:11px">${j.time}</span>${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;margin-left:4px">NEW</span>':''}</div>
-<div style="font-size:13px;font-weight:500;margin-bottom:4px;word-break:keep-all">${j.addr}/${j.scope}</div>
-<div style="margin-bottom:6px">${mats}</div>
-<div style="display:flex;gap:4px;flex-wrap:wrap">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
-<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
-<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
+
+return `<div style="padding:8px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+<span class="tjob-time ${timeCls}" style="font-size:11px;flex-shrink:0">${j.time}</span>
+<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr}/${j.scope}</span>
+${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
+</div>
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+${mats}
+<span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
+<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
+</span>
 </div>
 <div id="edit_${j.id}" style="display:none;margin-top:4px;flex-wrap:wrap;gap:2px">${editBtns}</div>
-</div>`}
-
-const amJobs=tg.jobs.filter(j=>j.time==='오전'||j.time.includes('2:'));
-const pmJobs=tg.jobs.filter(j=>j.time==='오후'||j.time==='as');
-const otherJobs=tg.jobs.filter(j=>!amJobs.includes(j)&&!pmJobs.includes(j));
-
-let jobContent='';
-if(amJobs.length||pmJobs.length){
-jobContent=`<div style="display:flex;gap:8px;margin-top:8px">`;
-if(amJobs.length) jobContent+=amJobs.map(j=>renderJobCard(j)).join('');
-else jobContent+=`<div style="flex:1"></div>`;
-if(pmJobs.length) jobContent+=pmJobs.map(j=>renderJobCard(j)).join('');
-else jobContent+=`<div style="flex:1"></div>`;
-jobContent+=`</div>`}
-if(otherJobs.length) jobContent+=otherJobs.map(j=>`<div style="margin-top:8px">${renderJobCard(j)}</div>`).join('');
+</div>`}).join('');
 
 return `<div class="tjob">
-<div>${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%6}" style="margin-right:4px">${m}</span>`).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
-${jobContent}</div>`}).join('');
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%6}" style="margin-right:4px">${m}</span>`).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+${jobRows}</div>`}).join('');
 
 if(un.length){
-// 미배정도 오전/오후 2열로
-const unAm=un.filter(j=>j.time==='오전'||j.time.includes('2:'));
-const unPm=un.filter(j=>j.time==='오후'||j.time==='as');
-const unOther=un.filter(j=>!unAm.includes(j)&&!unPm.includes(j));
-const allUn=[...unAm,...unPm,...unOther];
+const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
+const timeOrder={'오전':0,'오후':1,'as':2};
+const sortedUn=[...un].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
-body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${allUn.length}건</div>`;
-body+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">`;
-body+=allUn.map(j=>{
+body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${sortedUn.length}건</div>`;
+body+=sortedUn.map((j,idx)=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
+const isAs=j.time==='as';
+const timeCls=isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const mats=j.mat.map(m=>`<span class="mat mat-${m.t==='마블'?'marble':m.t==='코튼'?'cotton':'modern'}">${m.t}${m.q}</span>`).join('');
-const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
 const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
 const ec=ecols[ei%6];
-return `<button style="padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
-return `<div style="flex:1;min-width:45%;max-width:100%">
-<div style="margin-bottom:4px"><span class="tjob-time ${isAm?'am':'pm'}" style="font-size:11px">${j.time}</span>${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;margin-left:4px">NEW</span>':''}</div>
-<div style="font-size:13px;font-weight:500;margin-bottom:4px;word-break:keep-all">${j.addr}/${j.scope}</div>
-<div style="margin-bottom:6px">${mats}</div>
-<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
+return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
+return `<div style="padding:8px 0;${idx>0?'border-top:1px solid var(--border);':''}">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+<span class="tjob-time ${timeCls}" style="font-size:11px;flex-shrink:0">${j.time}</span>
+<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr}/${j.scope}</span>
+${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
+</div>
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+${mats}
+<span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
+<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
+</span>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('');
-body+=`</div></div>`}
+body+=`</div>`}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
 <div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
@@ -489,6 +527,74 @@ renderAll()}
 function renderAll(){renderSched();renderTeam();renderFair()}
 
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+
+// ===== 직원 캘린더 =====
+let calEmp='',calYear=0,calMonth=0;
+
+function openCal(emp){
+calEmp=emp;
+const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
+renderCal();
+document.getElementById('calOverlay').classList.add('show');
+}
+function closeCal(){document.getElementById('calOverlay').classList.remove('show')}
+function calMove(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCal()}
+
+function renderCal(){
+const ei=E.indexOf(calEmp);
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
+const ec=ecl[ei%6];
+document.getElementById('calTitle').innerHTML=`<span style="color:${ec}">${calEmp}</span> 근무 캘린더`;
+document.getElementById('calMonth').textContent=calYear+'년 '+(calMonth+1)+'월';
+
+// 이 달의 휴무일 + 시공일 계산
+const offDays=new Set();const workDays=new Set();
+J.forEach(j=>{
+const jd=new Date(j.date);
+if(jd.getFullYear()===calYear&&jd.getMonth()===calMonth){
+// 이 날짜의 전체 휴무자
+const dateOffsAll=new Set();
+J.filter(jj=>jj.date===j.date).forEach(jj=>jj.doff.forEach(n=>dateOffsAll.add(n)));
+if(dateOffsAll.has(calEmp)){offDays.add(jd.getDate())}
+// 이 직원이 배정된 날
+const t=A[j.id];
+if(t&&t.includes(calEmp)){workDays.add(jd.getDate())}
+}});
+
+const today=new Date();
+const todayD=(today.getFullYear()===calYear&&today.getMonth()===calMonth)?today.getDate():-1;
+
+const first=new Date(calYear,calMonth,1);
+const lastDay=new Date(calYear,calMonth+1,0).getDate();
+const startDow=first.getDay();
+
+let grid='';
+['일','월','화','수','목','금','토'].forEach((d,i)=>{
+grid+=`<div class="cal-dow" style="${i===0?'color:var(--red)':i===6?'color:var(--blue)':''}">${d}</div>`});
+
+for(let i=0;i<startDow;i++) grid+=`<div class="cal-day empty">·</div>`;
+for(let d=1;d<=lastDay;d++){
+const dow=(startDow+d-1)%7;
+const isOff=offDays.has(d);
+const isWork=workDays.has(d);
+const isToday=d===todayD;
+const isSun=dow===0;
+let cls='cal-day';
+if(isOff) cls+=' off';
+else if(isWork) cls+=' work';
+if(isToday) cls+=' today';
+if(isSun&&!isOff) cls+=' sun';
+grid+=`<div class="${cls}">${d}</div>`}
+
+document.getElementById('calGrid').innerHTML=grid;
+document.getElementById('calSummary').textContent=
+`시공 ${workDays.size}일 · 휴무 ${offDays.size}일 · 근무일 ${lastDay-offDays.size}일`;
+}
+
+// 길게 누르기 핸들러
+let lpTimer=null;
+function empDown(emp){lpTimer=setTimeout(()=>{openCal(emp);lpTimer='fired'},300)}
+function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer);lpTimer=null}
 
 // ===== Init =====
 async function init(){
