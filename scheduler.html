@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.22';
+const VER='2026.03.17.23';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -520,7 +520,15 @@ body+=`</div>`}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
 <div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
-${offHtml}<div class="daycard-body">${body||'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'}</div></div>`}).join('')}
+${offHtml}${(()=>{
+// 출근했는데 배정 못 받은 직원 표시
+const assigned=new Set();
+realJobs.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>assigned.add(e))});
+const idle=E.filter(e=>!offs.has(e)&&!assigned.has(e));
+if(!idle.length||!realJobs.length)return '';
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)'];
+return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳ 대기: '+idle.map(e=>{const ei=E.indexOf(e);return '<span style="font-weight:700;color:'+ecl[ei%6]+'">'+e+'</span>'}).join(' · ')+'</div>'
+})()}<div class="daycard-body">${body||'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'}</div></div>`}).join('')}
 
 html+=renderDayCards(futureDates,false);
 if(pastDates.length){
