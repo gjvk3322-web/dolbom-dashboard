@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.28';
+const VER='2026.03.17.31';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -254,8 +254,9 @@ const ao=new Set();J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>a
 const avail=E.filter(e=>!ao.has(e));
 if(!avail.length)continue;
 
-const am=dj.filter(j=>j.time==='오전'||j.time.includes('2:')).sort((a,b)=>(b.dist||0)-(a.dist||0));
-const pm=dj.filter(j=>j.time==='오후'||j.time==='as').sort((a,b)=>(b.dist||0)-(a.dist||0));
+const am=dj.filter(j=>(j.time==='오전'||j.time.includes('2:'))&&j.addr&&j.addr.trim()).sort((a,b)=>(b.dist||0)-(a.dist||0));
+const pm=dj.filter(j=>(j.time==='오후'||j.time==='as')&&j.addr&&j.addr.trim()).sort((a,b)=>(b.dist||0)-(a.dist||0));
+if(!am.length&&!pm.length)continue;
 
 function makeGroups(pool,jobCnt){
 if(teams.length){
@@ -305,29 +306,29 @@ if(!empDateJobs[e][j.date])empDateJobs[e][j.date]=0;
 empDateJobs[e][j.date]++})}});
 E.forEach(e=>{if(empDateJobs[e]){Object.values(empDateJobs[e]).forEach(cnt=>{if(cnt>=2)empTwoTang[e]++})}});
 
-// 오전 먼저 배정 — 두탕 적은 팀 우선
-const amGroups=makeGroups(avail,am.length);
-amGroups.sort((a,b)=>{
-const ta=a.reduce((s,e)=>s+(empTwoTang[e]||0),0)/a.length;
-const tb=b.reduce((s,e)=>s+(empTwoTang[e]||0),0)/b.length;
-return ta-tb});
+// 주소 없는 건은 배정 안 함
+const amReal=am.filter(j=>j.addr&&j.addr.trim());
+const pmReal=pm.filter(j=>j.addr&&j.addr.trim());
+
+// 오전 먼저 배정 — 팀 순서 유지 (정렬 안 함)
+const amGroups=makeGroups(avail,amReal.length);
 let gi=0;
-am.forEach(j=>{if(!A[j.id]&&amGroups.length){
+amReal.forEach(j=>{if(!A[j.id]&&amGroups.length){
 A[j.id]=[...amGroups[gi%amGroups.length]];
 amGroups[gi%amGroups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}});
 
 // 오전에 배정된 사람 파악
 const amAssigned=new Set();
-am.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amAssigned.add(e))});
+amReal.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amAssigned.add(e))});
 
 // 오후는 오전에 안 한 사람 우선, 부족하면 두탕 적은 사람 투입
 const pmFresh=avail.filter(e=>!amAssigned.has(e));
 const pmTwoTang=avail.filter(e=>amAssigned.has(e)).sort((a,b)=>(empTwoTang[a]||0)-(empTwoTang[b]||0));
 const pmPool=pmFresh.length>=2?pmFresh:(pmFresh.length>0?[...pmFresh,...pmTwoTang]:(pmTwoTang.length?pmTwoTang:avail));
-const pmGroups=makeGroups(pmPool,pm.length);
+const pmGroups=makeGroups(pmPool,pmReal.length);
 gi=0;
-pm.forEach(j=>{if(!A[j.id]&&pmGroups.length){
+pmReal.forEach(j=>{if(!A[j.id]&&pmGroups.length){
 A[j.id]=[...pmGroups[gi%pmGroups.length]];
 pmGroups[gi%pmGroups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}})}
@@ -453,7 +454,7 @@ if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var
 
 function renderDayCards(dates,dimmed){
 return dates.map(date=>{
-const jobs=bd[date]||[];const realJobs=jobs.filter(j=>!j.offOnly);const d=new Date(date);const di=d.getDay();const dn=DOW[di];
+const jobs=bd[date]||[];const realJobs=jobs.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());const d=new Date(date);const di=d.getDay();const dn=DOW[di];
 const isToday=date===todayStr;
 const isSun=di===0;const isSat=di===6;
 const dateBorderColor=isSun?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue)':'var(--border)';
@@ -486,7 +487,7 @@ const jobRows=sorted.map(j=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
 const isAs=j.time==='as';
 const timeCls=isAs?'pm':isAm?'am':'pm';
-const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}${m.q}</span>`).join('');
+const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t} ${m.q}</span>`).join('');
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const curTeam=A[j.id]||[];
 const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
@@ -495,11 +496,12 @@ const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[e
 return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
 
 return `<div style="padding:8px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
 <span class="tjob-time ${timeCls}" style="font-size:11px;flex-shrink:0">${j.time}</span>
-<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr}/${j.scope}</span>
+<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
 </div>
+${j.py||j.scope?`<div style="font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?j.py+'평':''}${j.py&&j.scope?' · ':''}${j.scope||''}</div>`:''}
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
 ${mats}
 <span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
@@ -527,18 +529,19 @@ const isAm=j.time==='오전'||j.time.includes('2:');
 const isAs=j.time==='as';
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
-const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}${m.q}</span>`).join('');
+const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t} ${m.q}</span>`).join('');
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
 const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const ec=ecols[ei%10];
 return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div style="padding:8px 0;${idx>0?'border-top:1px solid var(--border);':''}">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
 <span class="tjob-time ${timeCls}" style="font-size:11px;flex-shrink:0">${j.time}</span>
-<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr}/${j.scope}</span>
+<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
 </div>
+${j.py||j.scope?`<div style="font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?j.py+'평':''}${j.py&&j.scope?' · ':''}${j.scope||''}</div>`:''}
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
 ${mats}
 <span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
@@ -813,22 +816,25 @@ if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
 if(changed){fbSave('assignments',A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
 
-// 1인 배정 자동 수정 (팀 있는데 혼자 배정된 경우 초기화)
+// 1인 배정 자동 수정 + 주소 없는 건 배정 제거
 const realJ=J.filter(j=>!j.offOnly);
 let badAssign=false;
+realJ.forEach(j=>{
+// 주소 없는 건은 배정 제거
+if(A[j.id]&&(!j.addr||!j.addr.trim())){delete A[j.id];badAssign=true}
+});
 if(teams.length){
 realJ.forEach(j=>{
 if(A[j.id]&&A[j.id].length===1){
-// 이 직원이 팀에 속하지 않은 미소속이면 OK, 팀 소속인데 혼자면 문제
 const emp=A[j.id][0];
 const inAnyTeam=teams.some(t=>t.includes(emp));
 if(!inAnyTeam){
-// 미소속 직원 혼자 배정 → 초기화 (팀 멤버가 먼저 배정되어야 함)
 delete A[j.id];badAssign=true}}})}
 if(badAssign){fbSave('assignments',A)}
 
-// 미배정 건이 있으면 자동 배정 실행
-const unassignedCnt=realJ.filter(j=>!A[j.id]).length;
+// 미배정 건이 있으면 자동 배정 실행 (주소 있는 건만)
+const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
+const unassignedCnt=assignableJ.filter(j=>!A[j.id]).length;
 if(unassignedCnt>0){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
