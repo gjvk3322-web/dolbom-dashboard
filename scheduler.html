@@ -6,93 +6,92 @@
 <title>돌봄매트 시공 스케줄러</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0b12;--card:#151520;--card2:#1c1c2a;--border:rgba(255,255,255,.07);--text:#eaeaf2;--dim:#6e6e88;--blue:#5b8def;--green:#34d399;--red:#f87171;--yellow:#fbbf24;--pink:#f472b6;--purple:#a78bfa;--orange:#fb923c;--cyan:#22d3ee;--lime:#a3e635;--rose:#fb7185;--teal:#2dd4bf;--font:'Noto Sans KR',sans-serif}
+:root{--bg:#191a20;--card:#21222c;--card2:#282a36;--border:rgba(255,255,255,.05);--text:#f2f2f7;--dim:#8e8e93;--sub:#aeaeb2;--blue:#5AC8FA;--green:#30D158;--red:#FF453A;--yellow:#FFD60A;--pink:#FF6482;--purple:#BF5AF2;--orange:#FF9F0A;--cyan:#64D2FF;--lime:#a3e635;--rose:#FF6482;--teal:#40E0D0;--font:'Noto Sans KR',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:600px;margin:0 auto;padding-bottom:80px}
-.hd{background:var(--card);border-bottom:1px solid var(--border);padding:16px;position:sticky;top:0;z-index:100}
-.hd h1{font-size:18px;font-weight:900}.hd-sub{font-size:11px;color:var(--dim);margin-top:3px}
-.nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:100;max-width:600px;margin:0 auto}
-.nav a{flex:1;padding:10px 4px;text-align:center;font-size:10px;font-weight:500;color:var(--dim);text-decoration:none;border-top:2px solid transparent}
-.nav a.on{color:var(--blue);border-top-color:var(--blue)}
+body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:600px;margin:0 auto;padding-bottom:80px;-webkit-font-smoothing:antialiased}
+.hd{padding:20px 16px 12px;position:sticky;top:0;z-index:100;background:var(--bg)}
+.hd h1{font-size:20px;font-weight:900;letter-spacing:-.3px}.hd-sub{font-size:12px;color:var(--dim);margin-top:4px}
+.nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);z-index:100;max-width:600px;margin:0 auto;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.nav a{flex:1;padding:8px 4px 12px;text-align:center;font-size:10px;font-weight:600;color:var(--dim);text-decoration:none;border-top:2px solid transparent;transition:color .15s}
+.nav a.on{color:var(--text);border-top-color:var(--text)}
 .nav a span{display:block;font-size:18px;margin-bottom:2px}
-.pane{display:none;padding:12px 12px 20px}.pane.on{display:block}
+.pane{display:none;padding:8px 16px 20px}.pane.on{display:block}
 
-/* Day Card */
-.daycard{background:var(--card);border-radius:14px;margin-bottom:14px;overflow:hidden;border:1px solid var(--border)}
-.daycard-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card2)}
-.daycard-date{font-size:16px;font-weight:900}.daycard-dow{font-size:13px;font-weight:700;padding:4px 12px;border-radius:8px}
-.dow-mon{background:rgba(91,141,239,.15);color:var(--blue)}.dow-tue{background:rgba(52,211,153,.15);color:var(--green)}.dow-wed{background:rgba(251,191,36,.15);color:var(--yellow)}.dow-thu{background:rgba(167,139,250,.15);color:var(--purple)}.dow-fri{background:rgba(244,114,182,.15);color:var(--pink)}.dow-sat{background:rgba(91,141,239,.2);color:var(--blue)}.dow-sun{background:rgba(248,113,113,.15);color:var(--red)}
-.daycard-off{padding:6px 16px;font-size:12px;color:var(--red)}
-.daycard-body{padding:8px 12px}
+/* Emp Badge */
+.emp-badge{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.emp-badge:active{transform:scale(.92)}
 
-/* Team Job Block */
-.tjob{background:var(--card2);border-radius:12px;padding:12px 14px;margin:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s}
-.tjob:active{background:rgba(255,255,255,.05)}
-.tjob-team{display:inline-block;padding:4px 14px;border-radius:8px;font-size:14px;font-weight:700;margin-bottom:8px}
-.tjob-line{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:14px;line-height:1.6}
-.tjob-time{display:inline-block;padding:2px 10px;border-radius:6px;font-size:12px;font-weight:700;flex-shrink:0}
-.tjob-time.am{background:rgba(251,191,36,.15);color:var(--yellow)}.tjob-time.pm{background:rgba(167,139,250,.15);color:var(--purple)}
-.tjob-addr{flex:1;font-weight:500}
-.tjob-mat{display:flex;gap:4px;flex-wrap:wrap;padding:4px 0 0 0}
-.mat{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700}
-.mat-marble{background:rgba(91,141,239,.15);color:var(--blue)}.mat-cotton{background:rgba(52,211,153,.15);color:var(--green)}.mat-modern{background:rgba(248,113,113,.15);color:var(--red)}.mat-beige{background:rgba(251,191,36,.15);color:var(--yellow)}
-.tjob-dist{font-size:11px;color:var(--yellow);margin-left:auto}
-.new-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(248,113,113,.2);color:var(--red);margin-left:8px;animation:pulse 1.5s infinite}
+/* Day Card - 토스 스타일 */
+.daycard{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden;border:none}
+.daycard-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px}
+.daycard-date{font-size:18px;font-weight:900;letter-spacing:-.5px}.daycard-dow{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px}
+.dow-mon{background:rgba(90,200,250,.12);color:var(--blue)}.dow-tue{background:rgba(48,209,88,.12);color:var(--green)}.dow-wed{background:rgba(255,214,10,.12);color:var(--yellow)}.dow-thu{background:rgba(191,90,242,.12);color:var(--purple)}.dow-fri{background:rgba(255,100,130,.12);color:var(--pink)}.dow-sat{background:rgba(90,200,250,.12);color:var(--blue)}.dow-sun{background:rgba(255,69,58,.12);color:var(--red)}
+.daycard-off{padding:6px 18px;font-size:11px;color:var(--red);font-weight:500}
+.daycard-body{padding:4px 14px 14px}
+
+/* Team Job Block - 토스 카드 */
+.tjob{background:var(--card2);border-radius:14px;padding:14px 16px;margin:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.tjob:active{background:rgba(255,255,255,.04);transform:scale(.99)}
+.tjob-team{display:inline-block;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:6px}
+.tjob-time{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;flex-shrink:0}
+.tjob-time.am{background:rgba(255,214,10,.1);color:var(--yellow)}.tjob-time.pm{background:rgba(191,90,242,.1);color:var(--purple)}
+.mat{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700}
+.mat-marble{background:rgba(90,200,250,.12);color:var(--blue)}.mat-cotton{background:rgba(48,209,88,.12);color:var(--green)}.mat-modern{background:rgba(255,69,58,.12);color:var(--red)}.mat-beige{background:rgba(255,214,10,.12);color:var(--yellow)}
+.new-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(255,69,58,.15);color:var(--red);animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* Unassigned */
-.ujob{background:var(--card2);border:1px dashed rgba(251,191,36,.3);border-radius:12px;padding:12px 14px;margin:6px 0}
-.ujob-title{font-size:12px;color:var(--yellow);font-weight:700;margin-bottom:6px}
+.ujob{background:var(--card2);border:1px dashed rgba(255,214,10,.2);border-radius:14px;padding:14px 16px;margin:6px 0}
+.ujob-title{font-size:11px;color:var(--yellow);font-weight:700;margin-bottom:8px}
 
 /* Team Setup */
-.tcard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
-.tcard h3{font-size:15px;font-weight:700;margin-bottom:12px}
-.tslot{min-height:50px;background:var(--card2);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
-.tmem{padding:8px 16px;border-radius:10px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
-.tmem .x{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
-.pool{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-.pool-mem{padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid transparent}
+.tcard{background:var(--card);border-radius:16px;padding:18px;margin-bottom:12px;border:none}
+.tcard h3{font-size:15px;font-weight:800;margin-bottom:14px}
+.tslot{min-height:50px;background:var(--card2);border-radius:12px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.tmem{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.tmem .x{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer}
+.pool{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.pool-mem{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:transform .1s}
 .pool-mem:active{transform:scale(.95)}
 
 /* Buttons */
-.btn{display:block;width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin:8px 0}
+.btn{display:block;width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin:8px 0;transition:transform .1s}
 .btn:active{transform:scale(.98)}
-.btn-blue{background:var(--blue);color:#fff}.btn-green{background:var(--green);color:#000}.btn-red{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.btn-blue{background:var(--blue);color:#000}.btn-green{background:var(--green);color:#000}.btn-red{background:rgba(255,69,58,.12);color:var(--red)}
 
 /* Fair */
-.fcard{background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.fcard{background:var(--card);border-radius:16px;padding:18px;margin-bottom:12px;border:none}
 .frow{display:flex;align-items:center;gap:10px;margin:8px 0}
-.fname{min-width:48px;font-size:13px;font-weight:700}
-.fbar{flex:1;height:24px;background:var(--card2);border-radius:8px;overflow:hidden}
-.ffill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;min-width:24px}
-.fval{min-width:50px;text-align:right;font-size:12px;font-family:monospace;color:var(--dim)}
-.score{text-align:center;padding:20px}.score-n{font-size:52px;font-weight:900}.score-l{font-size:12px;color:var(--dim)}
-.sec{font-size:15px;font-weight:700;margin-bottom:10px}
+.fname{min-width:44px;font-size:12px;font-weight:700}
+.fbar{flex:1;height:22px;background:var(--card2);border-radius:8px;overflow:hidden}
+.ffill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;min-width:20px}
+.fval{min-width:50px;text-align:right;font-size:11px;font-family:monospace;color:var(--dim)}
+.sec{font-size:14px;font-weight:800;margin-bottom:10px;letter-spacing:-.2px}
 
-/* Toast + Copy popup */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:12px;font-size:14px;font-weight:700;z-index:999;display:none;white-space:nowrap}
-.toast-ok{background:var(--green);color:#000}.toast-copy{background:var(--blue);color:#fff}
+/* Toast */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:14px;font-size:13px;font-weight:700;z-index:999;display:none;white-space:nowrap;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.toast-ok{background:rgba(48,209,88,.9);color:#000}.toast-copy{background:rgba(90,200,250,.9);color:#000}
 
 /* Colors */
-.tc0{background:var(--blue);color:#fff}.tc1{background:var(--green);color:#000}.tc2{background:var(--yellow);color:#000}.tc3{background:var(--pink);color:#fff}.tc4{background:var(--purple);color:#fff}.tc5{background:var(--orange);color:#000}.tc6{background:var(--cyan);color:#000}.tc7{background:var(--lime);color:#000}.tc8{background:var(--rose);color:#fff}.tc9{background:var(--teal);color:#000}
-.tl0{background:rgba(91,141,239,.15);color:var(--blue)}.tl1{background:rgba(52,211,153,.15);color:var(--green)}.tl2{background:rgba(251,191,36,.15);color:var(--yellow)}.tl3{background:rgba(244,114,182,.15);color:var(--pink)}.tl4{background:rgba(167,139,250,.15);color:var(--purple)}.tl5{background:rgba(251,146,60,.15);color:var(--orange)}.tl6{background:rgba(34,211,238,.15);color:var(--cyan)}.tl7{background:rgba(163,230,53,.15);color:var(--lime)}.tl8{background:rgba(251,113,133,.15);color:var(--rose)}.tl9{background:rgba(45,212,191,.15);color:var(--teal)}
+.tc0{background:var(--blue);color:#000}.tc1{background:var(--green);color:#000}.tc2{background:var(--yellow);color:#000}.tc3{background:var(--pink);color:#fff}.tc4{background:var(--purple);color:#fff}.tc5{background:var(--orange);color:#000}.tc6{background:var(--cyan);color:#000}.tc7{background:var(--lime);color:#000}.tc8{background:var(--rose);color:#fff}.tc9{background:var(--teal);color:#000}
+.tl0{background:rgba(90,200,250,.12);color:var(--blue)}.tl1{background:rgba(48,209,88,.12);color:var(--green)}.tl2{background:rgba(255,214,10,.12);color:var(--yellow)}.tl3{background:rgba(255,100,130,.12);color:var(--pink)}.tl4{background:rgba(191,90,242,.12);color:var(--purple)}.tl5{background:rgba(255,159,10,.12);color:var(--orange)}.tl6{background:rgba(100,210,255,.12);color:var(--cyan)}.tl7{background:rgba(163,230,53,.12);color:var(--lime)}.tl8{background:rgba(255,100,130,.12);color:var(--rose)}.tl9{background:rgba(64,224,208,.12);color:var(--teal)}
 
 .add-row{display:flex;gap:8px;margin-top:12px}
-.add-row input{flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:14px;font-family:var(--font);outline:none}
+.add-row input{flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:12px;font-size:14px;font-family:var(--font);outline:none}
 
-/* 직원 캘린더 팝업 */
-.cal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center}
+/* 캘린더 */
+.cal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .cal-overlay.show{display:flex}
-.cal-sheet{background:var(--card);border-radius:20px 20px 0 0;max-width:500px;width:100%;padding:20px 16px 30px;animation:slideUp .25s ease}
+.cal-sheet{background:var(--card);border-radius:24px 24px 0 0;max-width:500px;width:100%;padding:24px 18px 34px;animation:slideUp .25s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.cal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.cal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .cal-hd h3{font-size:17px;font-weight:900}
 .cal-close{width:32px;height:32px;border-radius:50%;background:var(--card2);border:none;color:var(--dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
 .cal-dow{font-size:10px;color:var(--dim);font-weight:700;padding:4px 0}
 .cal-day{padding:8px 0;border-radius:10px;font-size:13px;font-weight:500;color:var(--text)}
-.cal-day.off{background:rgba(248,113,113,.2);color:var(--red);font-weight:900}
-.cal-day.work{background:rgba(52,211,153,.1);color:var(--green)}
+.cal-day.off{background:rgba(255,69,58,.15);color:var(--red);font-weight:900}
+.cal-day.work{background:rgba(48,209,88,.08);color:var(--green)}
 .cal-day.today{border:2px solid var(--blue)}
 .cal-day.empty{color:transparent}
 .cal-day.sun{color:var(--red)}
@@ -123,7 +122,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <body>
 
 <div class="hd">
-    <h1>🔧 돌봄매트 시공 스케줄러 <span id="verTag" style="font-size:10px;font-weight:400;color:var(--dim)"></span></h1>
+    <h1>돌봄매트 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
     <div class="hd-sub" id="sub">로딩 중...</div>
 </div>
 
