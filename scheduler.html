@@ -185,11 +185,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 </div>
 </div>
 
+<div id="asReportOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:999;overflow-y:auto;padding:16px">
+<div style="max-width:400px;margin:0 auto">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<h3 style="font-size:15px;font-weight:900">🔧 AS 보고서</h3>
+<button onclick="closeAsReport()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:14px;cursor:pointer;font-family:var(--font)">✕ 닫기</button>
+</div>
+<div id="asReportForm"></div>
+<div id="asReportSubmitBtn" style="margin-top:10px">
+<button onclick="submitAsReport()" style="width:100%;padding:12px;border-radius:10px;background:var(--red);color:#fff;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">🔧 AS 보고서 제출</button>
+</div>
+<div id="asReportResult" style="display:none;margin-top:10px">
+<div style="background:var(--card2);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;line-height:1.6" id="asReportText"></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button onclick="copyAsReport()" style="flex:1;padding:10px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">📋 복사</button>
+<button onclick="window.open('https://invite.kakao.com/tc/nYMtGOOJ9L','_blank')" style="flex:1;padding:10px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--yellow);font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">💬 카톡방 열기</button>
+</div>
+</div>
+</div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.44';
+const VER='2026.03.17.45';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbxNJteGbk_keny95gTyUeg8sSA1eiSKsCfe5ygKivPJYY64Xyqf67vZazFi4wZe2bmvVQ/exec';
@@ -479,6 +498,86 @@ function copyReport(){
 const txt=document.getElementById('reportText').textContent;
 navigator.clipboard.writeText(txt).then(()=>toast('📋 복사됨! 카톡방에 붙여넣기','ok'))}
 
+// ===== AS 보고서 =====
+let asReportJobId='';
+function openAsReport(jobId){
+asReportJobId=jobId;
+const j=J.find(x=>x.id===jobId);if(!j)return;
+const team=(A[jobId]||[]).join('');
+const addr=j.addr||'';
+const region=addr.slice(0,2);
+const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채|알프스)/);
+const apt=aptMatch?aptMatch[0]:addr.replace(/[0-9\-번길동호층로 ]/g,'');
+const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
+const unit=unitMatch?unitMatch[1]:'';
+
+const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
+const eS='background:rgba(255,69,58,.06);border:1px solid rgba(255,69,58,.25);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
+const lA='color:var(--dim);font-size:10px';
+const lE='color:var(--red);font-size:10px;font-weight:600';
+
+const empOpts=E.map(e=>`<option>${e}</option>`).join('');
+
+const html=`
+<div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;gap:10px"><span>⬛ 자동</span><span style="color:var(--red)">🔴 입력</span></div>
+<div style="display:grid;grid-template-columns:78px 1fr;gap:4px;align-items:center">
+<span style="${lA}">1. 시공일자</span><input id="arDate" value="${j.date}" style="${aS}" readonly>
+<span style="${lA}">2. AS팀원</span><input id="arTeam" value="${team}" style="${aS}" readonly>
+<span style="${lA}">3. 지역</span><input id="arRegion" value="${region}" style="${aS}" readonly>
+<span style="${lA}">4. 아파트명</span><input id="arApt" value="${apt}" style="${aS}" readonly>
+<span style="${lA}">5. 동호수</span><input id="arUnit" value="${unit}" style="${aS}" readonly>
+<span style="${lA}">6. 연락처</span><input id="arPhone" value="${j.phone}" style="${aS}" readonly>
+<span style="${lA}">7. 평수</span><input id="arPy" value="${j.py}평" style="${aS}" readonly>
+<span style="${lE}">8. 이전작업자1</span><select id="arPrev1" style="${eS}"><option value="">선택</option>${empOpts}</select>
+<span style="${lE}">9. 이전작업자2</span><select id="arPrev2" style="${eS}"><option value="">선택</option>${empOpts}</select>
+<span style="${lE}">10. 내용</span><textarea id="arContent" rows="2" style="${eS};resize:vertical"></textarea>
+<span style="${lE}">11. 조치</span><textarea id="arAction" rows="2" style="${eS};resize:vertical"></textarea>
+<span style="${lE}">12. 들어간 장수</span><select id="arQty" style="${eS}"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option></select>
+<span style="${lE}">13. 결제금액</span><input id="arPrice" inputmode="numeric" style="${eS}">
+<span style="${lE}">14. 결제방법</span><select id="arPay" style="${eS}"><option>무료</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
+</div>`;
+document.getElementById('asReportForm').innerHTML=html;
+document.getElementById('asReportForm').style.display='block';
+document.getElementById('asReportResult').style.display='none';
+document.getElementById('asReportSubmitBtn').style.display='block';
+document.getElementById('asReportOverlay').style.display='block'}
+
+function closeAsReport(){document.getElementById('asReportOverlay').style.display='none'}
+
+function submitAsReport(){
+const g=id=>document.getElementById(id).value;
+const prev=[g('arPrev1'),g('arPrev2')].filter(Boolean).join(', ');
+const txt=`🔧 AS 보고서
+1. 시공일자 : ${g('arDate')}
+2. AS팀원 : ${g('arTeam')}
+3. 지역 : ${g('arRegion')}
+4. 아파트명 : ${g('arApt')}
+5. 동호수 : ${g('arUnit')}
+6. 연락처 : ${g('arPhone')}
+7. 평수 : ${g('arPy')}
+8. 이전 작업자 : ${prev}
+9. 내용 : ${g('arContent')}
+10. 조치 : ${g('arAction')}
+11. 들어간 장 수 : ${g('arQty')}
+12. 결제금액 : ${g('arPrice')}
+13. 결제방법 : ${g('arPay')}`;
+
+const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,content:g('arContent'),action:g('arAction'),qty:g('arQty'),price:g('arPrice'),pay:g('arPay'),submittedAt:new Date().toISOString()};
+fbSave('asReports/'+asReportJobId,reportData);
+
+if(SHEET_REPORT_URL){
+fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,sheetName:'AS보고'})}).catch(()=>{})}
+
+document.getElementById('asReportForm').style.display='none';
+document.getElementById('asReportSubmitBtn').style.display='none';
+document.getElementById('asReportText').textContent=txt;
+document.getElementById('asReportResult').style.display='block';
+toast('🔧 AS 보고서 저장됨!','ok')}
+
+function copyAsReport(){
+const txt=document.getElementById('asReportText').textContent;
+navigator.clipboard.writeText(txt).then(()=>toast('📋 복사됨!','ok'))}
+
 // ===== 네이버 네비 열기 =====
 function openNavi(addr){
 // 동/호수 추출
@@ -625,7 +724,9 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 <span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
 <span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
-<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">📝</span>
+${j.time==='as'?
+`<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">🔧</span>`:
+`<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">📝</span>`}
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </span>
@@ -952,7 +1053,10 @@ const unassignedCnt=assignableJ.filter(j=>!A[j.id]).length;
 if(unassignedCnt>0){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-document.getElementById('sub').textContent='✅ '+realJ.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
+const curM=new Date().getMonth()+1;
+const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()});
+const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.time==='as'});
+document.getElementById('sub').textContent=curM+'월 '+monthJobs.length+'건 · AS '+monthAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
 renderAll()}
 
@@ -1002,7 +1106,10 @@ const unCnt=realJ.filter(j=>!A[j.id]).length;
 if(unCnt>0)await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
-sub.textContent='✅ '+J.filter(j=>!j.offOnly).length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
+const curM2=new Date().getMonth()+1;
+const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim());
+const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.time==='as');
+sub.textContent=curM2+'월 '+mJobs.length+'건 · AS '+mAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 renderAll();
 if(changed)toast('📋 엑셀 변경 감지! 자동 배정 완료','ok');
 else if(showToast)toast('✅ 최신 상태예요','ok');
