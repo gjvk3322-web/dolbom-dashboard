@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.19';
+const VER='2026.03.17.21';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -256,45 +256,42 @@ const pm=dj.filter(j=>j.time==='오후'||j.time==='as').sort((a,b)=>(b.dist||0)-
 
 function makeGroups(pool,jobCnt){
 if(teams.length){
-// 팀 기반으로 먼저 그룹화
 const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
 const grouped=avTeams.map(t=>t.members);
-// 어떤 팀에도 속하지 않는 출근자
 const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
 const orphans=pool.filter(m=>!inTeam.has(m));
 
-// 혼자인 그룹끼리 합치기 (1인 팀원의 팀 동료가 쉬는 경우)
-const solos=grouped.filter(g=>g.length===1);
-const pairs=grouped.filter(g=>g.length>=2);
-const result=[...pairs];
+// 2인 이상 팀 먼저, 1인 팀원(동료 휴무)은 따로
+const fullTeams=grouped.filter(g=>g.length>=2);
+const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
 
-// 1인 그룹 + 미배정 직원 합쳐서 2인 1조로
-const singles=[...solos.map(g=>g[0]),...orphans];
+// 1인 팀원끼리 합치기
+const singles=[...soloTeam];
+const pairedSingles=[];
 for(let i=0;i<singles.length;i+=2){
-if(i+1<singles.length)result.push([singles[i],singles[i+1]]);
-else result.push([singles[i]])}
+if(i+1<singles.length)pairedSingles.push([singles[i],singles[i+1]]);
+else pairedSingles.push([singles[i]])}
 
-// 시공 건수가 그룹보다 많으면 쪼개기
-if(jobCnt>result.length){
-const expanded=[];
-result.forEach(g=>{
-if(jobCnt>expanded.length+result.length-expanded.length&&g.length>=2){
-g.forEach(m=>expanded.push([m]))}
-else expanded.push(g)});
-return expanded}
-return result}
+// 미소속은 서로 짝짓기
+const pairedOrphans=[];
+for(let i=0;i<orphans.length;i+=2){
+if(i+1<orphans.length)pairedOrphans.push([orphans[i],orphans[i+1]]);
+else pairedOrphans.push([orphans[i]])}
+
+// 순서: 정식팀 → 1인팀원 조합 → 미소속 (뒤에 있을수록 후순위)
+return [...fullTeams,...pairedSingles,...pairedOrphans]}
 
 // 팀 없으면 자동 2인 1조
 const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
 const groups=[];
-if(jobCnt>=sorted.length){sorted.forEach(e=>groups.push([e]))}
-else{for(let i=0;i<sorted.length;i+=2){if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]]);else groups.push([sorted[i]])}}
+for(let i=0;i<sorted.length;i+=2){
+if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]]);
+else groups.push([sorted[i]])}
 return groups}
 
 function assignSlot(slot){
+// 팀 순서 유지 (정식팀 먼저, 미소속 나중)
 const groups=makeGroups(avail,slot.length);
-groups.sort((a,b)=>{const da=a.reduce((s,e)=>s+(empDist[e]||0),0)/a.length;const db=b.reduce((s,e)=>s+(empDist[e]||0),0)/b.length;return da-db});
-// 미배정 건에 그룹 배정 (같은 그룹이 여러 건 가능)
 let gi=0;
 slot.forEach(j=>{if(!A[j.id]&&groups.length){
 A[j.id]=[...groups[gi%groups.length]];
