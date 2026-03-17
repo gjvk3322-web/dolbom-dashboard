@@ -166,7 +166,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 </div>
 </div>
 
-<div class="cal-overlay" id="reportOverlay" onclick="if(event.target===this)closeReport()">
+<div class="cal-overlay" id="reportOverlay" onclick="if(event.target===this)closeReport()" style="align-items:center">>
 <div class="cal-sheet" style="max-height:90vh;overflow-y:auto;width:95%;max-width:400px;padding:14px">
 <div class="cal-hd" style="margin-bottom:8px"><h3 style="font-size:15px">📋 시공보고서</h3><button class="cal-close" onclick="closeReport()">✕</button></div>
 <div id="reportForm" style="display:flex;flex-direction:column;gap:6px;font-size:11px">
@@ -188,10 +188,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.41';
+const VER='2026.03.17.43';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
-const SHEET_REPORT_URL=''; // 구글 Apps Script 웹앱 URL (나중에 설정)
+const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbxNJteGbk_keny95gTyUeg8sSA1eiSKsCfe5ygKivPJYY64Xyqf67vZazFi4wZe2bmvVQ/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
