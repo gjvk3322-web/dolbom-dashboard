@@ -166,11 +166,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 </div>
 </div>
 
+<div class="cal-overlay" id="reportOverlay" onclick="if(event.target===this)closeReport()">
+<div class="cal-sheet" style="max-height:90vh;overflow-y:auto;width:95%;max-width:420px">
+<div class="cal-hd"><h3>📋 시공보고서</h3><button class="cal-close" onclick="closeReport()">✕</button></div>
+<div id="reportForm" style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+</div>
+<div style="display:flex;gap:8px;margin-top:12px">
+<button onclick="submitReport()" style="flex:1;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
+</div>
+<div id="reportResult" style="display:none;margin-top:12px">
+<div style="background:var(--card2);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;line-height:1.6" id="reportText"></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button onclick="copyReport()" style="flex:1;padding:10px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">📋 복사</button>
+<button onclick="window.open('https://invite.kakao.com/tc/nYMtGOOJ9L','_blank')" style="flex:1;padding:10px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--yellow);font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">💬 카톡방 열기</button>
+</div>
+</div>
+</div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.38';
+const VER='2026.03.17.39';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -368,6 +386,77 @@ fbSave('assignments',A);toast('✅ 배정 업데이트','ok');renderAll()}
 // 배정 취소
 function unassign(jobId){delete A[jobId];fbSave('assignments',A);toast('배정 취소됨','ok');renderAll()}
 
+// ===== 시공보고서 =====
+let reportJobId='';
+function openReport(jobId){
+reportJobId=jobId;
+const j=J.find(x=>x.id===jobId);if(!j)return;
+const team=(A[jobId]||[]).join('');
+const addr=j.addr||'';
+const region=addr.slice(0,2);
+// 아파트명 추출 (숫자/동/호 제거)
+const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채)/);
+const apt=aptMatch?aptMatch[0]:addr.replace(/[0-9\-번길동호층로 ]/g,'');
+
+const html=`
+<div style="display:grid;grid-template-columns:90px 1fr;gap:6px;align-items:center">
+<span style="color:var(--dim)">1. 시공일자</span><input id="rDate" value="${j.date}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
+<span style="color:var(--dim)">2. 추천인</span><input id="rRef" value="없음" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">3. 시공팀원</span><input id="rTeam" value="${team}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
+<span style="color:var(--dim)">4. 지역</span><input id="rRegion" value="${region}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">5. 아파트명</span><input id="rApt" value="${apt}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">6. 동호수</span><input id="rUnit" placeholder="예: 604동2204호" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">7. 연락처</span><input id="rPhone" value="${j.phone}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">8. 평수</span><input id="rPy" value="${j.py}평" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
+<span style="color:var(--dim)">9. 시공범위</span><input id="rScope" value="${j.scope}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">10. 신축여부</span><select id="rNew" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)"><option>신축</option><option>구축</option></select>
+<span style="color:var(--dim)">11. 결제방법</span><select id="rPay" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)"><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
+<span style="color:var(--dim)">12. 색상</span><input id="rColor" value="${j.mat.length?j.mat[0].t:''}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
+<span style="color:var(--dim)">13. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">14. 판매비용</span><input id="rPrice" placeholder="예: 1,920,000" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">15. 미결제금액</span><input id="rUnpaid" placeholder="예: 920,000" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">16. 현금영수증</span><input id="rReceipt" placeholder="예: 예약금 20환급" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
+<span style="color:var(--dim)">17. 특이사항</span><textarea id="rNote" rows="2" placeholder="특이사항 입력" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font);resize:vertical"></textarea>
+</div>`;
+document.getElementById('reportForm').innerHTML=html;
+document.getElementById('reportResult').style.display='none';
+document.getElementById('reportOverlay').classList.add('show')}
+
+function closeReport(){document.getElementById('reportOverlay').classList.remove('show')}
+
+function submitReport(){
+const g=id=>document.getElementById(id).value;
+const txt=`📋 시공보고서
+1. 시공일자 : ${g('rDate')}
+2. 추천인 : ${g('rRef')}
+3. 시공팀원 : ${g('rTeam')}
+4. 지역 : ${g('rRegion')}
+5. 아파트명 : ${g('rApt')}
+6. 동호수 : ${g('rUnit')}
+7. 연락처 : ${g('rPhone')}
+8. 평수 : ${g('rPy')}
+9. 시공범위 : ${g('rScope')}
+10. 신축여부 : ${g('rNew')}
+11. 결제방법 : ${g('rPay')}
+12. 색상 : ${g('rColor')}
+13. 판매갯수 : ${g('rQty')}
+14. 판매비용 : ${g('rPrice')}
+15. 미결제금액 : ${g('rUnpaid')}
+16. 예약금 현금영수증 : ${g('rReceipt')}
+17. 특이사항 : ${g('rNote')}`;
+
+// Firebase에 저장
+const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),scope:g('rScope'),isNew:g('rNew'),pay:g('rPay'),color:g('rColor'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toISOString()};
+fbSave('reports/'+reportJobId,reportData);
+
+document.getElementById('reportText').textContent=txt;
+document.getElementById('reportResult').style.display='block';
+toast('✅ 보고서 저장됨!','ok')}
+
+function copyReport(){
+const txt=document.getElementById('reportText').textContent;
+navigator.clipboard.writeText(txt).then(()=>toast('📋 복사됨! 카톡방에 붙여넣기','ok'))}
+
 // ===== 네이버 네비 열기 =====
 function openNavi(addr){
 // 동/호수 추출
@@ -514,6 +603,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 <span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
 <span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
+<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">📝</span>
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </span>
