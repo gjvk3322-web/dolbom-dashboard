@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.31';
+const VER='2026.03.17.32';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -265,32 +265,28 @@ const grouped=avTeams.map(t=>t.members);
 const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
 const orphans=pool.filter(m=>!inTeam.has(m));
 
-// 2인 이상 팀 먼저, 1인 팀원(동료 휴무)은 따로
 const fullTeams=grouped.filter(g=>g.length>=2);
 const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
 
-// 1인 팀원끼리 합치기
-const singles=[...soloTeam];
-const pairedSingles=[];
-for(let i=0;i<singles.length;i+=2){
-if(i+1<singles.length)pairedSingles.push([singles[i],singles[i+1]]);
-else pairedSingles.push([singles[i]])}
+// 1인 팀원 + 미소속 전부 합쳐서 2인조로
+const allSingles=[...soloTeam,...orphans];
+const paired=[];
+for(let i=0;i<allSingles.length;i+=2){
+if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]]);
+else{
+// 홀수 1명은 기존 그룹에 합류
+if(fullTeams.length>0){fullTeams[fullTeams.length-1].push(allSingles[i])}
+else if(paired.length>0){paired[paired.length-1].push(allSingles[i])}
+else paired.push([allSingles[i]])}}
 
-// 미소속은 서로 짝짓기
-const pairedOrphans=[];
-for(let i=0;i<orphans.length;i+=2){
-if(i+1<orphans.length)pairedOrphans.push([orphans[i],orphans[i+1]]);
-else pairedOrphans.push([orphans[i]])}
-
-// 순서: 정식팀 → 1인팀원 조합 → 미소속 (뒤에 있을수록 후순위)
-return [...fullTeams,...pairedSingles,...pairedOrphans]}
+return [...fullTeams,...paired]}
 
 // 팀 없으면 자동 2인 1조
 const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
 const groups=[];
 for(let i=0;i<sorted.length;i+=2){
 if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]]);
-else groups.push([sorted[i]])}
+else{if(groups.length>0)groups[groups.length-1].push(sorted[i]);else groups.push([sorted[i]])}}
 return groups}
 
 // 이번 달 두탕 횟수 집계 (기존 배정 기준)
@@ -501,9 +497,8 @@ return `<div style="padding:8px 0;${j!==sorted[0]?'border-top:1px solid var(--bo
 <span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
 </div>
-${j.py||j.scope?`<div style="font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?j.py+'평':''}${j.py&&j.scope?' · ':''}${j.scope||''}</div>`:''}
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-${mats}
+${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
+<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:44px">
 <span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
 <span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
@@ -541,9 +536,8 @@ return `<div style="padding:8px 0;${idx>0?'border-top:1px solid var(--border);':
 <span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
 </div>
-${j.py||j.scope?`<div style="font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?j.py+'평':''}${j.py&&j.scope?' · ':''}${j.scope||''}</div>`:''}
+${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-${mats}
 <span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
 <span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
