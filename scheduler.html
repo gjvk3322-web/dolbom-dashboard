@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.36';
+const VER='2026.03.17.37';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -448,16 +448,10 @@ const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--pur
 html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>{const darkText=[2,5,6,7,9].includes(i%10);return `<span class="emp-badge" style="background:${ecl[i%10]};color:${darkText?'#000':'#fff'}" ontouchstart="empDown('${e}')" ontouchend="empUp(event)" ontouchcancel="empUp(event)" onmousedown="empDown('${e}')" onmouseup="empUp(event)">${e}</span>`}).join('')}</div>`;
 html+=`<div style="text-align:center;margin:-8px 0 12px;font-size:10px;color:var(--dim)">길게 누르면 캘린더 📅</div>`;
 
-// 최신화 + 재배정 버튼
-html+=`<div style="display:flex;gap:8px;margin-bottom:14px">
-<div id="refreshBtn" onclick="doRefresh()" style="flex:2;background:linear-gradient(135deg,var(--blue),var(--green));border-radius:12px;padding:12px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent">
-<div style="font-size:14px;font-weight:900;color:#fff">🔄 최신화</div>
-<div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:2px">엑셀 즉시 반영</div>
-</div>
-<div onclick="reAssign()" style="flex:1;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:12px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent">
-<div style="font-size:14px;font-weight:900;color:var(--yellow)">🤖 재배정</div>
-<div style="font-size:10px;color:var(--dim);margin-top:2px">전체 초기화</div>
-</div>
+// 최신화 + 재배정 버튼 (작게)
+html+=`<div style="display:flex;gap:6px;margin-bottom:10px">
+<div id="refreshBtn" onclick="doRefresh()" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;font-size:11px;font-weight:600;color:var(--green)">🔄 최신화</div>
+<div onclick="reAssign()" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;font-size:11px;font-weight:600;color:var(--yellow)">🤖 재배정</div>
 </div>`;
 
 if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
@@ -508,22 +502,22 @@ const editBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[ei%10];
 return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
 
-return `<div style="padding:8px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-<span class="tjob-time ${timeCls}" style="font-size:11px;flex-shrink:0">${j.time}</span>
-<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
-${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
+return `<div style="padding:6px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${j.time}</span>
+<span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
+${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
-${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:44px">
-<span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
-<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
-<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
+${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-left:38px;margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
+<div style="display:flex;align-items:center;gap:3px;margin-left:38px">
+<span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
+<span onclick="event.stopPropagation();window.open('https://business.kakao.com/_UMyBK/chats','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
+<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </span>
 </div>
-<div id="edit_${j.id}" style="display:none;margin-top:4px;flex-wrap:wrap;gap:2px">${editBtns}</div>
+<div id="edit_${j.id}" style="display:none;margin-top:3px;flex-wrap:wrap;gap:2px">${editBtns}</div>
 </div>`}).join('');
 
 return `<div class="tjob">
@@ -547,17 +541,17 @@ const isOff=dayOffSet.has(e);
 const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const ec=ecols[ei%10];
 return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
-return `<div style="padding:8px 0;${idx>0?'border-top:1px solid var(--border);':''}">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-<span class="tjob-time ${timeCls}" style="font-size:11px;flex-shrink:0">${j.time}</span>
-<span style="font-size:13px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
-${j.isNew?'<span class="new-badge" style="font-size:9px;padding:1px 6px;flex-shrink:0">NEW</span>':''}
+return `<div style="padding:6px 0;${idx>0?'border-top:1px solid var(--border);':''}">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${j.time}</span>
+<span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
+${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
-${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-left:44px;margin-bottom:4px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-<span style="margin-left:auto;display:flex;gap:4px;flex-shrink:0">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();copyAddr('${safeAddr}')" style="padding:6px 8px;border-radius:8px;font-size:11px;font-weight:600;background:rgba(91,141,239,.1);color:var(--blue);cursor:pointer;border:1px solid rgba(91,141,239,.2)">📋</span>
+${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-left:38px;margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
+<div style="display:flex;align-items:center;gap:3px;margin-left:38px;margin-bottom:3px">
+<span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
+<span onclick="event.stopPropagation();window.open('https://business.kakao.com/_UMyBK/chats','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
 </span>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
@@ -913,10 +907,9 @@ toast('✅ 재배정 완료!','ok');
 
 async function doRefresh(){
 const btn=document.getElementById('refreshBtn');
-if(btn){btn.innerHTML='<div style="font-size:14px;font-weight:700;color:#fff">⏳ 갱신 중...</div>';
-btn.style.opacity='.6';btn.style.pointerEvents='none'}
+if(btn){btn.textContent='⏳ 갱신중...';btn.style.opacity='.6';btn.style.pointerEvents='none'}
 await refreshSheet(false);
-if(btn){btn.style.display='none'}
+if(btn){btn.textContent='✅ 갱신됨';btn.style.opacity='1';btn.style.pointerEvents='auto';setTimeout(()=>{btn.textContent='🔄 최신화'},2000)}
 toast('✅ 최신 상태로 갱신됨!','ok')}
 
 // ===== 출발 확인 시스템 =====
