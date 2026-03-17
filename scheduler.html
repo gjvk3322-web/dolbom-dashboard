@@ -167,18 +167,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 </div>
 
 <div class="cal-overlay" id="reportOverlay" onclick="if(event.target===this)closeReport()">
-<div class="cal-sheet" style="max-height:90vh;overflow-y:auto;width:95%;max-width:420px">
-<div class="cal-hd"><h3>📋 시공보고서</h3><button class="cal-close" onclick="closeReport()">✕</button></div>
-<div id="reportForm" style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+<div class="cal-sheet" style="max-height:90vh;overflow-y:auto;width:95%;max-width:400px;padding:14px">
+<div class="cal-hd" style="margin-bottom:8px"><h3 style="font-size:15px">📋 시공보고서</h3><button class="cal-close" onclick="closeReport()">✕</button></div>
+<div id="reportForm" style="display:flex;flex-direction:column;gap:6px;font-size:11px">
 </div>
-<div style="display:flex;gap:8px;margin-top:12px">
-<button onclick="submitReport()" style="flex:1;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
+<div id="reportSubmitBtn" style="margin-top:10px">
+<button onclick="submitReport()" style="width:100%;padding:10px;border-radius:8px;background:var(--green);color:#000;font-weight:900;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
 </div>
-<div id="reportResult" style="display:none;margin-top:12px">
-<div style="background:var(--card2);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;line-height:1.6" id="reportText"></div>
-<div style="display:flex;gap:8px;margin-top:8px">
-<button onclick="copyReport()" style="flex:1;padding:10px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">📋 복사</button>
-<button onclick="window.open('https://invite.kakao.com/tc/nYMtGOOJ9L','_blank')" style="flex:1;padding:10px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--yellow);font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">💬 카톡방 열기</button>
+<div id="reportResult" style="display:none;margin-top:8px">
+<div style="background:var(--card2);border-radius:8px;padding:10px;font-size:10px;white-space:pre-wrap;line-height:1.5;max-height:200px;overflow-y:auto" id="reportText"></div>
+<div style="display:flex;gap:6px;margin-top:6px">
+<button onclick="copyReport()" style="flex:1;padding:8px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:11px;border:none;cursor:pointer;font-family:var(--font)">📋 복사</button>
+<button onclick="window.open('https://invite.kakao.com/tc/nYMtGOOJ9L','_blank')" style="flex:1;padding:8px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--yellow);font-weight:700;font-size:11px;border:none;cursor:pointer;font-family:var(--font)">💬 카톡방 열기</button>
 </div>
 </div>
 </div>
@@ -188,9 +188,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.40';
+const VER='2026.03.17.41';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
+const SHEET_REPORT_URL=''; // 구글 Apps Script 웹앱 URL (나중에 설정)
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
@@ -394,27 +395,29 @@ const j=J.find(x=>x.id===jobId);if(!j)return;
 const team=(A[jobId]||[]).join('');
 const addr=j.addr||'';
 const region=addr.slice(0,2);
-// 아파트명 추출 (숫자/동/호 제거)
-const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채)/);
+const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채|알프스)/);
 const apt=aptMatch?aptMatch[0]:addr.replace(/[0-9\-번길동호층로 ]/g,'');
+// 동호수 자동 추출
+const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
+const unit=unitMatch?unitMatch[1]:'';
 
 const colorVal=j.mat.length?j.mat[0].t:'';
 const colorOpts=['마블50','코튼50','모던50','모던1m17','모던1m22','베이지1m17','베이지1m22'];
 const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
-const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--dim);font-size:12px;font-family:var(--font)';
-const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)';
-const lA='color:var(--dim);font-size:11px';
-const lE='color:var(--blue);font-size:11px;font-weight:600';
+const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
+const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
+const lA='color:var(--dim);font-size:10px';
+const lE='color:var(--blue);font-size:10px;font-weight:600';
 
 const html=`
-<div style="font-size:10px;color:var(--dim);margin-bottom:4px;display:flex;gap:12px"><span>⬛ 자동입력</span><span style="color:var(--blue)">🔵 직접입력</span></div>
-<div style="display:grid;grid-template-columns:82px 1fr;gap:5px;align-items:center">
+<div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;gap:10px"><span>⬛ 자동</span><span style="color:var(--blue)">🔵 입력</span></div>
+<div style="display:grid;grid-template-columns:78px 1fr;gap:4px;align-items:center">
 <span style="${lA}">1. 시공일자</span><input id="rDate" value="${j.date}" style="${aS}" readonly>
 <span style="${lE}">2. 추천인</span><input id="rRef" value="없음" style="${eS}">
 <span style="${lA}">3. 시공팀원</span><input id="rTeam" value="${team}" style="${aS}" readonly>
 <span style="${lA}">4. 지역</span><input id="rRegion" value="${region}" style="${aS}" readonly>
 <span style="${lA}">5. 아파트명</span><input id="rApt" value="${apt}" style="${aS}" readonly>
-<span style="${lE}">6. 동호수</span><input id="rUnit" style="${eS}">
+<span style="${lA}">6. 동호수</span><input id="rUnit" value="${unit}" style="${aS}" readonly>
 <span style="${lA}">7. 연락처</span><input id="rPhone" value="${j.phone}" style="${aS}" readonly>
 <span style="${lA}">8. 평수</span><input id="rPy" value="${j.py}평" style="${aS}" readonly>
 <span style="${lE}">9. 시공범위</span><input id="rScope" value="${j.scope}" style="${eS}">
@@ -422,9 +425,9 @@ const html=`
 <span style="${lE}">11. 결제방법</span><select id="rPay" style="${eS}"><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
 <span style="${lE}">12. 색상</span><select id="rColor" style="${eS}">${colorSelect}</select>
 <span style="${lE}">13. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}">
-<span style="${lE}">14. 판매비용</span><input id="rPrice" style="${eS}">
-<span style="${lE}">15. 미결제금액</span><input id="rUnpaid" style="${eS}">
-<span style="${lE}">16. 현금영수증</span><input id="rReceipt" style="${eS}">
+<span style="${lE}">14. 판매비용</span><input id="rPrice" inputmode="numeric" style="${eS}">
+<span style="${lE}">15. 미결제금액</span><input id="rUnpaid" inputmode="numeric" style="${eS}">
+<span style="${lE}">16. 현금영수증</span><select id="rReceipt" style="${eS}"><option>예약금 환급</option><option>완료</option><option>해당없음</option></select>
 <span style="${lE}">17. 특이사항</span><textarea id="rNote" rows="2" style="${eS};resize:vertical"></textarea>
 </div>`;
 document.getElementById('reportForm').innerHTML=html;
@@ -458,6 +461,13 @@ const txt=`📋 시공보고서
 const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),scope:g('rScope'),isNew:g('rNew'),pay:g('rPay'),color:g('rColor'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toISOString()};
 fbSave('reports/'+reportJobId,reportData);
 
+// 구글시트에 저장
+if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
+fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportData)}).catch(()=>{})}
+
+// 폼 숨기고 결과만 표시
+document.getElementById('reportForm').style.display='none';
+document.getElementById('reportSubmitBtn').style.display='none';
 document.getElementById('reportText').textContent=txt;
 document.getElementById('reportResult').style.display='block';
 toast('✅ 보고서 저장됨!','ok')}
