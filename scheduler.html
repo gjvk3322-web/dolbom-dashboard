@@ -188,7 +188,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.39';
+const VER='2026.03.17.40';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -398,25 +398,34 @@ const region=addr.slice(0,2);
 const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채)/);
 const apt=aptMatch?aptMatch[0]:addr.replace(/[0-9\-번길동호층로 ]/g,'');
 
+const colorVal=j.mat.length?j.mat[0].t:'';
+const colorOpts=['마블50','코튼50','모던50','모던1m17','모던1m22','베이지1m17','베이지1m22'];
+const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
+const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--dim);font-size:12px;font-family:var(--font)';
+const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)';
+const lA='color:var(--dim);font-size:11px';
+const lE='color:var(--blue);font-size:11px;font-weight:600';
+
 const html=`
-<div style="display:grid;grid-template-columns:90px 1fr;gap:6px;align-items:center">
-<span style="color:var(--dim)">1. 시공일자</span><input id="rDate" value="${j.date}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
-<span style="color:var(--dim)">2. 추천인</span><input id="rRef" value="없음" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">3. 시공팀원</span><input id="rTeam" value="${team}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
-<span style="color:var(--dim)">4. 지역</span><input id="rRegion" value="${region}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">5. 아파트명</span><input id="rApt" value="${apt}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">6. 동호수</span><input id="rUnit" placeholder="예: 604동2204호" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">7. 연락처</span><input id="rPhone" value="${j.phone}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">8. 평수</span><input id="rPy" value="${j.py}평" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
-<span style="color:var(--dim)">9. 시공범위</span><input id="rScope" value="${j.scope}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">10. 신축여부</span><select id="rNew" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)"><option>신축</option><option>구축</option></select>
-<span style="color:var(--dim)">11. 결제방법</span><select id="rPay" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)"><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
-<span style="color:var(--dim)">12. 색상</span><input id="rColor" value="${j.mat.length?j.mat[0].t:''}" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)" readonly>
-<span style="color:var(--dim)">13. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">14. 판매비용</span><input id="rPrice" placeholder="예: 1,920,000" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">15. 미결제금액</span><input id="rUnpaid" placeholder="예: 920,000" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">16. 현금영수증</span><input id="rReceipt" placeholder="예: 예약금 20환급" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font)">
-<span style="color:var(--dim)">17. 특이사항</span><textarea id="rNote" rows="2" placeholder="특이사항 입력" style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--font);resize:vertical"></textarea>
+<div style="font-size:10px;color:var(--dim);margin-bottom:4px;display:flex;gap:12px"><span>⬛ 자동입력</span><span style="color:var(--blue)">🔵 직접입력</span></div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:5px;align-items:center">
+<span style="${lA}">1. 시공일자</span><input id="rDate" value="${j.date}" style="${aS}" readonly>
+<span style="${lE}">2. 추천인</span><input id="rRef" value="없음" style="${eS}">
+<span style="${lA}">3. 시공팀원</span><input id="rTeam" value="${team}" style="${aS}" readonly>
+<span style="${lA}">4. 지역</span><input id="rRegion" value="${region}" style="${aS}" readonly>
+<span style="${lA}">5. 아파트명</span><input id="rApt" value="${apt}" style="${aS}" readonly>
+<span style="${lE}">6. 동호수</span><input id="rUnit" style="${eS}">
+<span style="${lA}">7. 연락처</span><input id="rPhone" value="${j.phone}" style="${aS}" readonly>
+<span style="${lA}">8. 평수</span><input id="rPy" value="${j.py}평" style="${aS}" readonly>
+<span style="${lE}">9. 시공범위</span><input id="rScope" value="${j.scope}" style="${eS}">
+<span style="${lE}">10. 신축여부</span><select id="rNew" style="${eS}"><option>신축</option><option>구축</option></select>
+<span style="${lE}">11. 결제방법</span><select id="rPay" style="${eS}"><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
+<span style="${lE}">12. 색상</span><select id="rColor" style="${eS}">${colorSelect}</select>
+<span style="${lE}">13. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}">
+<span style="${lE}">14. 판매비용</span><input id="rPrice" style="${eS}">
+<span style="${lE}">15. 미결제금액</span><input id="rUnpaid" style="${eS}">
+<span style="${lE}">16. 현금영수증</span><input id="rReceipt" style="${eS}">
+<span style="${lE}">17. 특이사항</span><textarea id="rNote" rows="2" style="${eS};resize:vertical"></textarea>
 </div>`;
 document.getElementById('reportForm').innerHTML=html;
 document.getElementById('reportResult').style.display='none';
