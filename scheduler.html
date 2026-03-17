@@ -208,10 +208,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.45';
+const VER='2026.03.17.47';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
-const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbxNJteGbk_keny95gTyUeg8sSA1eiSKsCfe5ygKivPJYY64Xyqf67vZazFi4wZe2bmvVQ/exec';
+const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbyqd_n0QhE4K83B__Lwh9dXTPC6LW8yZKDGL1kev7h1gSjQPpkBHZ-V_5KIMdiIy_2g/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
@@ -489,14 +489,17 @@ fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'ap
 
 // 폼 숨기고 결과만 표시
 document.getElementById('reportForm').style.display='none';
-document.getElementById('reportSubmitBtn').style.display='none';
+document.getElementById('reportSubmitBtn').innerHTML='<div style="text-align:center;padding:12px;color:var(--green);font-weight:900;font-size:14px">✅ 시공보고서 제출 완료!</div>';
 document.getElementById('reportText').textContent=txt;
 document.getElementById('reportResult').style.display='block';
-toast('✅ 보고서 저장됨!','ok')}
+toast('✅ 시공보고서 제출 완료!','ok')}
 
 function copyReport(){
 const txt=document.getElementById('reportText').textContent;
-navigator.clipboard.writeText(txt).then(()=>toast('📋 복사됨! 카톡방에 붙여넣기','ok'))}
+navigator.clipboard.writeText(txt).then(()=>{
+toast('📋 복사 완료! 카톡방에 붙여넣기','ok');
+event.target.textContent='✅ 복사됨!';
+setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 
 // ===== AS 보고서 =====
 let asReportJobId='';
@@ -566,17 +569,20 @@ const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
-fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,sheetName:'AS보고'})}).catch(()=>{})}
+fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportData)}).catch(()=>{})}
 
 document.getElementById('asReportForm').style.display='none';
-document.getElementById('asReportSubmitBtn').style.display='none';
+document.getElementById('asReportSubmitBtn').innerHTML='<div style="text-align:center;padding:12px;color:var(--red);font-weight:900;font-size:14px">🔧 AS 보고서 제출 완료!</div>';
 document.getElementById('asReportText').textContent=txt;
 document.getElementById('asReportResult').style.display='block';
-toast('🔧 AS 보고서 저장됨!','ok')}
+toast('🔧 AS 보고서 제출 완료!','ok')}
 
 function copyAsReport(){
 const txt=document.getElementById('asReportText').textContent;
-navigator.clipboard.writeText(txt).then(()=>toast('📋 복사됨!','ok'))}
+navigator.clipboard.writeText(txt).then(()=>{
+toast('📋 복사 완료!','ok');
+event.target.textContent='✅ 복사됨!';
+setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 
 // ===== 네이버 네비 열기 =====
 function openNavi(addr){
