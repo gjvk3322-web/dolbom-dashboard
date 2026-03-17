@@ -208,10 +208,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.48';
+const VER='2026.03.17.50';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
-const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbylkiN-jiBYxWedjv086I-CmvRonCDJ0pSEWdAcE7wfBqaHnNWdI_3l2MWCmBxVaFOREA/exec';
+const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbw-tq5WSshV5l2nLHmyfHBFllefwPpUtSAZEGLod6h1-UCKQUuEbW3sXG95SwxRcecG_w/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
@@ -483,15 +483,14 @@ const txt=`📋 시공보고서
 const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),scope:g('rScope'),isNew:g('rNew'),pay:g('rPay'),color:g('rColor'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toISOString()};
 fbSave('reports/'+reportJobId,reportData);
 
-// 구글시트에 저장
+// 구글시트에 저장 (jobId로 중복 방지)
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
-fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportData)}).catch(()=>{})}
+fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:reportJobId})}).catch(()=>{})}
 
-// 폼 숨기고 결과만 표시
-document.getElementById('reportForm').style.display='none';
-document.getElementById('reportSubmitBtn').innerHTML='<div style="text-align:center;padding:12px;color:var(--green);font-weight:900;font-size:14px">✅ 시공보고서 제출 완료!</div>';
+// 팝업 + 폼 유지 (수정 재제출 가능)
 document.getElementById('reportText').textContent=txt;
 document.getElementById('reportResult').style.display='block';
+alert('✅ 시공보고서 제출 완료!\n\n수정이 필요하면 위에서 수정 후 다시 제출하세요.');
 toast('✅ 시공보고서 제출 완료!','ok')}
 
 function copyReport(){
@@ -569,12 +568,11 @@ const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
-fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportData)}).catch(()=>{})}
+fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:asReportJobId})}).catch(()=>{})}
 
-document.getElementById('asReportForm').style.display='none';
-document.getElementById('asReportSubmitBtn').innerHTML='<div style="text-align:center;padding:12px;color:var(--red);font-weight:900;font-size:14px">🔧 AS 보고서 제출 완료!</div>';
 document.getElementById('asReportText').textContent=txt;
 document.getElementById('asReportResult').style.display='block';
+alert('🔧 AS 보고서 제출 완료!\n\n수정이 필요하면 위에서 수정 후 다시 제출하세요.');
 toast('🔧 AS 보고서 제출 완료!','ok')}
 
 function copyAsReport(){
