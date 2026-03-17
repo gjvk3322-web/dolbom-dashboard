@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.37';
+const VER='2026.03.17.38';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -226,13 +226,13 @@ const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
 r.push(cur.trim().replace(/^"|"$/g,''));
 if(!r[1])continue;
-const doff=[];for(let j=9;j<=18;j++){if(r[j]&&r[j].trim())doff.push(r[j].trim())}
-const mat=[];if(r[7]&&r[8]&&parseInt(r[8])>0){mat.push({t:r[7].trim(),q:parseInt(r[8])})}
+const doff=[];for(let j=10;j<=19;j++){if(r[j]&&r[j].trim())doff.push(r[j].trim())}
+const mat=[];if(r[8]&&r[9]&&parseInt(r[9])>0){mat.push({t:r[8].trim(),q:parseInt(r[9])})}
 let ds=r[1];if(ds.length===8)ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
 // 시간 없으면 휴무 전용 행 (시공 건 아님)
-if(!r[0]||!r[0].trim()){if(doff.length){const id=ds+'_off_'+i;J.push({id,time:'',addr:'',date:ds,py:'',scope:'',phone:'',doff,mat:[],dist:0,isNew:false,offOnly:true})}continue}
+if(!r[0]||!r[0].trim()){if(doff.length){const id=ds+'_off_'+i;J.push({id,time:'',addr:'',date:ds,py:'',scope:'',phone:'',chatUrl:'',doff,mat:[],dist:0,isNew:false,offOnly:true})}continue}
 const id=ds+'_'+r[0]+'_'+i;
-J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false})}}
+J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[4]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false})}}
 
 // ===== Auto Assign =====
 async function autoAssign(){
@@ -496,6 +496,7 @@ const isAs=j.time==='as';
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t} ${m.q}</span>`).join('');
 const safeAddr=j.addr.replace(/'/g,"\\'");
+const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
 const curTeam=A[j.id]||[];
 const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const editBtns=E.map((e,ei)=>{
@@ -512,7 +513,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 <div style="display:flex;align-items:center;gap:3px;margin-left:38px">
 <span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();window.open('https://business.kakao.com/_UMyBK/chats','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
+<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </span>
@@ -535,6 +536,7 @@ const isAm=j.time==='오전'||j.time.includes('2:');
 const isAs=j.time==='as';
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
+const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
 const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t} ${m.q}</span>`).join('');
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
@@ -551,7 +553,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 <div style="display:flex;align-items:center;gap:3px;margin-left:38px;margin-bottom:3px">
 <span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();window.open('https://business.kakao.com/_UMyBK/chats','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
+<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
 </span>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
