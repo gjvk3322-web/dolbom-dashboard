@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.50';
+const VER='2026.03.17.51';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbw-tq5WSshV5l2nLHmyfHBFllefwPpUtSAZEGLod6h1-UCKQUuEbW3sXG95SwxRcecG_w/exec';
@@ -415,8 +415,7 @@ const j=J.find(x=>x.id===jobId);if(!j)return;
 const team=(A[jobId]||[]).join('');
 const addr=j.addr||'';
 const region=addr.slice(0,2);
-const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채|알프스)/);
-const apt=aptMatch?aptMatch[0]:addr.replace(/[0-9\-번길동호층로 ]/g,'');
+const apt=addr;
 // 동호수 자동 추출
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
@@ -508,8 +507,7 @@ const j=J.find(x=>x.id===jobId);if(!j)return;
 const team=(A[jobId]||[]).join('');
 const addr=j.addr||'';
 const region=addr.slice(0,2);
-const aptMatch=addr.match(/[가-힣]+(?:아파트|파크|시티|빌|타운|자이|힐|뷰|하임|리안|편한|래미안|푸르지오|클래스|센트럴|트리마제|더베|일광|명륜|에코|피오레|코델타|하늘채|알프스)/);
-const apt=aptMatch?aptMatch[0]:addr.replace(/[0-9\-번길동호층로 ]/g,'');
+const apt=addr;
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
