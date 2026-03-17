@@ -170,7 +170,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.21';
+const VER='2026.03.17.22';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
 const OFF_B={lat:35.1253,lng:128.9736};
@@ -405,10 +405,16 @@ const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--pur
 html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>`<span class="emp-badge" style="background:${ecl[i%6]};color:${i===2||i===5?'#000':'#fff'}" ontouchstart="empDown('${e}')" ontouchend="empUp(event)" ontouchcancel="empUp(event)" onmousedown="empDown('${e}')" onmouseup="empUp(event)">${e}</span>`).join('')}</div>`;
 html+=`<div style="text-align:center;margin:-8px 0 12px;font-size:10px;color:var(--dim)">길게 누르면 캘린더 📅</div>`;
 
-// 최신화 버튼
-html+=`<div id="refreshBtn" onclick="doRefresh()" style="background:linear-gradient(135deg,var(--blue),var(--green));border-radius:12px;padding:14px;text-align:center;margin-bottom:14px;cursor:pointer;-webkit-tap-highlight-color:transparent">
-<div style="font-size:15px;font-weight:900;color:#fff">🔄 최신화</div>
-<div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">엑셀 변경사항 즉시 반영</div>
+// 최신화 + 재배정 버튼
+html+=`<div style="display:flex;gap:8px;margin-bottom:14px">
+<div id="refreshBtn" onclick="doRefresh()" style="flex:2;background:linear-gradient(135deg,var(--blue),var(--green));border-radius:12px;padding:12px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent">
+<div style="font-size:14px;font-weight:900;color:#fff">🔄 최신화</div>
+<div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:2px">엑셀 즉시 반영</div>
+</div>
+<div onclick="reAssign()" style="flex:1;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:12px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent">
+<div style="font-size:14px;font-weight:900;color:var(--yellow)">🤖 재배정</div>
+<div style="font-size:10px;color:var(--dim);margin-top:2px">전체 초기화</div>
+</div>
 </div>`;
 
 if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
@@ -767,8 +773,21 @@ if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
 if(changed){fbSave('assignments',A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
 
-// 미배정 건이 있으면 자동 배정 실행
+// 1인 배정 자동 수정 (팀 있는데 혼자 배정된 경우 초기화)
 const realJ=J.filter(j=>!j.offOnly);
+let badAssign=false;
+if(teams.length){
+realJ.forEach(j=>{
+if(A[j.id]&&A[j.id].length===1){
+// 이 직원이 팀에 속하지 않은 미소속이면 OK, 팀 소속인데 혼자면 문제
+const emp=A[j.id][0];
+const inAnyTeam=teams.some(t=>t.includes(emp));
+if(!inAnyTeam){
+// 미소속 직원 혼자 배정 → 초기화 (팀 멤버가 먼저 배정되어야 함)
+delete A[j.id];badAssign=true}}})}
+if(badAssign){fbSave('assignments',A)}
+
+// 미배정 건이 있으면 자동 배정 실행
 const unassignedCnt=realJ.filter(j=>!A[j.id]).length;
 if(unassignedCnt>0){await autoAssign()}
 
@@ -823,6 +842,15 @@ else if(showToast)toast('✅ 최신 상태예요','ok');
 }catch(e){if(showToast)toast('⚠️ 연결 실패','ok')}}
 
 function manualRefresh(){refreshSheet(true)}
+
+async function reAssign(){
+if(!confirm('모든 배정을 초기화하고 다시 배정할까요?'))return;
+A={};
+fbSave('assignments',{});
+toast('⏳ 재배정 중...','ok');
+await autoAssign();
+toast('✅ 재배정 완료!','ok');
+}
 
 async function doRefresh(){
 const btn=document.getElementById('refreshBtn');
