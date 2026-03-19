@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 예약 접수</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;
+  --border:#e5e8eb;
+  --busan:#e8736c;--busan-light:#fdf0ef;--busan-dark:#d45a53;
+  --gyeonggi:#5b9bd5;--gyeonggi-light:#edf4fb;--gyeonggi-dark:#4a87bf;
+  --green:#20c997;--green-light:#e3faf1;
+  --red:#f04452;--red-light:#fff0f1;
+  --orange:#f59f00;--orange-light:#fff8e6;
+  --accent:var(--busan);--accent-light:var(--busan-light);--accent-dark:var(--busan-dark);
+  --radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px;max-width:480px;margin:0 auto;}
+
+.header{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;position:sticky;top:0;z-index:100;transition:background .3s;}
+.header.busan{background:var(--busan);}
+.header.gyeonggi{background:var(--gyeonggi);}
+.header h1{font-size:17px;font-weight:700;flex:1;color:#fff;}
+.team-toggle{display:flex;background:rgba(255,255,255,0.22);border-radius:10px;padding:3px;}
+.team-btn{padding:6px 16px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,0.75);border-radius:8px;transition:all .2s;font-family:inherit;}
+.team-btn.active{background:rgba(255,255,255,0.95);color:var(--text);}
+
+.search-bar{margin:12px 16px 0;position:relative;}
+.search-bar input{width:100%;padding:12px 14px 12px 38px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);box-shadow:var(--shadow);}
+.search-bar input:focus{outline:none;border-color:var(--accent);}
+.search-bar .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);}
+.search-results{background:var(--card);margin:8px 16px;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);display:none;}
+.search-results.show{display:block;animation:fadeUp .3s ease;}
+.search-results h4{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;}
+.sri{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .1s;margin-bottom:4px;}
+.sri:hover{background:#f2f4f6;}
+.sr-date{font-size:13px;font-weight:600;}
+.sr-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;}
+.sr-am{background:var(--orange-light);color:#92400e;}
+.sr-pm{background:var(--accent-light);color:var(--accent);}
+
+.card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+.team-bar{height:3px;margin:-20px -20px 16px;border-radius:var(--radius) var(--radius) 0 0;transition:background .3s;}
+.team-bar.busan{background:linear-gradient(90deg,var(--busan),#f0a8a3);}
+.team-bar.gyeonggi{background:linear-gradient(90deg,var(--gyeonggi),#9ec5e8);}
+
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cal-header h2{font-size:17px;font-weight:700;}
+.cal-nav{display:flex;gap:6px;}
+.cal-nav button{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;}
+.cal-nav button:active{background:#f2f4f6;transform:scale(0.95);}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:6px;}
+.cal-weekdays span{font-size:12px;color:var(--text3);font-weight:600;padding:6px 0;}
+.cal-weekdays span:first-child{color:var(--red);}
+.cal-weekdays span:last-child{color:var(--gyeonggi);}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;gap:1px;user-select:none;}
+.cal-day:active{transform:scale(0.93);}
+.cal-day.today{outline:2px solid var(--accent);outline-offset:-2px;}
+.cal-day.selected{background:var(--accent);color:#fff;}
+.cal-day.selected .slot-dot{background:rgba(255,255,255,0.6);}
+.cal-day.other-month{color:#d5d8dc;pointer-events:none;}
+.cal-day.past{color:#ccc;}
+.cal-day.highlight{background:#fff3cd;outline:2px solid var(--orange);outline-offset:-2px;}
+.slot-dots{display:flex;gap:2px;margin-top:1px;}
+.slot-dot{width:5px;height:5px;border-radius:50%;}
+.dot-green{background:var(--green);}.dot-orange{background:var(--orange);}.dot-red{background:var(--red);}.dot-gray{background:#ddd;}
+.cal-legend{display:flex;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-weight:500;}
+.legend-dot{width:7px;height:7px;border-radius:50%;}
+
+.day-detail{display:none;}
+.day-detail.show{display:block;animation:fadeUp .3s ease;}
+.detail-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:6px;}
+.detail-header h3{font-size:16px;font-weight:700;}
+.detail-badges{display:flex;gap:6px;flex-wrap:wrap;}
+.badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;}
+.badge-accent{background:var(--accent-light);color:var(--accent);}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-red{background:var(--red-light);color:var(--red);}
+
+.schedule-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sched-col-title{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;letter-spacing:0.5px;}
+.sched-item{background:#f8f9fb;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:3px solid var(--accent);}
+.sched-item .area{font-weight:600;font-size:13px;}
+.sched-item .info{font-size:11px;color:var(--text3);margin-top:3px;}
+.sched-empty{border:1.5px dashed var(--green);border-radius:10px;padding:14px;text-align:center;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.sched-empty:hover{background:var(--green-light);}
+.sched-empty:active{transform:scale(0.97);}
+
+.form-section{display:none;}
+.form-section.show{display:block;animation:fadeUp .4s ease;}
+.form-title{font-size:16px;font-weight:700;margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg.full{grid-column:1/-1;}
+.fg label{font-size:12px;font-weight:600;color:var(--text2);}
+.fg label .req{color:var(--red);}
+.fg input,.fg select{padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);transition:border .2s;-webkit-appearance:none;appearance:none;}
+.fg select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.fg select.error{border-color:var(--red);background-color:var(--red-light);}
+.product-match{font-size:11px;margin-top:2px;font-weight:600;}
+.product-match.ok{color:var(--green);}
+.product-match.err{color:var(--red);}
+
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1.5px solid var(--border);border-radius:10px;max-height:200px;overflow-y:auto;z-index:50;display:none;margin-top:4px;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+.autocomplete-list.show{display:block;}
+.ac-item{padding:10px 14px;cursor:pointer;font-size:14px;transition:background .1s;display:flex;align-items:center;gap:8px;}
+.ac-item:hover,.ac-item.hl{background:#f2f4f6;}
+.ac-item .ac-label{font-weight:500;}
+
+.submit-area{margin-top:20px;}
+.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;}
+.submit-btn.busan{background:var(--busan);}.submit-btn.busan:active{background:var(--busan-dark);}
+.submit-btn.gyeonggi{background:var(--gyeonggi);}.submit-btn.gyeonggi:active{background:var(--gyeonggi-dark);}
+.submit-btn:active{transform:scale(0.98);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:200;transition:transform .3s ease;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:400px){.card{margin:8px 10px;padding:16px;}.form-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="header busan" id="header">
+  <h1 id="headerTitle">예약 접수 · 부산</h1>
+  <div class="team-toggle">
+    <button class="team-btn active" onclick="switchTeam('부산')">부산</button>
+    <button class="team-btn" onclick="switchTeam('경기')">경기</button>
+  </div>
+</div>
+
+<div class="search-bar">
+  <span class="si">🔍</span>
+  <input type="text" id="regionSearch" placeholder="지역 검색" oninput="searchByRegion(this.value)" />
+</div>
+<div class="search-results" id="searchResults">
+  <h4 id="searchTitle"></h4>
+  <div id="searchList"></div>
+</div>
+
+<div class="card">
+  <div class="team-bar busan" id="teamBar"></div>
+  <div class="cal-header">
+    <h2 id="calTitle"></h2>
+    <div class="cal-nav"><button onclick="changeMonth(-1)">‹</button><button onclick="changeMonth(1)">›</button></div>
+  </div>
+  <div class="cal-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+  <div class="cal-days" id="calDays"></div>
+  <div class="cal-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>여유</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>보통</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>마감</div>
+  </div>
+</div>
+
+<div class="card day-detail" id="dayDetail">
+  <div class="detail-header">
+    <h3 id="detailDate"></h3>
+    <div class="detail-badges" id="detailBadges"></div>
+  </div>
+  <div class="schedule-cols">
+    <div><div class="sched-col-title">☀️ 오전</div><div id="amSlots"></div></div>
+    <div><div class="sched-col-title">🌙 오후</div><div id="pmSlots"></div></div>
+  </div>
+</div>
+
+<div class="card form-section" id="formSection">
+  <div class="form-title">📝 새 예약 접수</div>
+  <div class="form-grid">
+    <div class="fg">
+      <label>시간 <span class="req">*</span></label>
+      <select id="fTime"><option value="">선택</option><option value="오전">오전</option><option value="오후">오후</option></select>
+    </div>
+    <div class="fg">
+      <label>시공일 <span class="req">*</span></label>
+      <input type="date" id="fDate" />
+    </div>
+    <div class="fg full">
+      <label>주소 (동호수 포함) <span class="req">*</span></label>
+      <input type="text" id="fAddress" />
+    </div>
+    <div class="fg full">
+      <label>연락처</label>
+      <input type="tel" id="fPhone" />
+    </div>
+    <div class="fg">
+      <label>신축여부</label>
+      <select id="fIsNew"><option value="">선택</option><option value="신축">신축</option><option value="구축">구축</option></select>
+    </div>
+    <div class="fg">
+      <label>평수 <span class="req">*</span></label>
+      <input type="number" id="fSize" />
+    </div>
+    <div class="fg full">
+      <label>시공범위 <span class="req">*</span></label>
+      <input type="text" id="fScope" />
+    </div>
+    <div class="fg">
+      <label>제품 선택 <span class="req">*</span></label>
+      <select id="fProduct1" onchange="checkProductMatch()">
+        <option value="">선택</option>
+        <option value="마블50">마블50</option>
+        <option value="코튼50">코튼50</option>
+        <option value="모던50">모던50</option>
+        <option value="모던1m17">모던1m17</option>
+        <option value="모던1m22">모던1m22</option>
+        <option value="베이지1m17">베이지1m17</option>
+        <option value="베이지1m22">베이지1m22</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>제품 확인 <span class="req">*</span></label>
+      <select id="fProduct2" onchange="checkProductMatch()">
+        <option value="">다시 선택</option>
+        <option value="마블50">마블50</option>
+        <option value="코튼50">코튼50</option>
+        <option value="모던50">모던50</option>
+        <option value="모던1m17">모던1m17</option>
+        <option value="모던1m22">모던1m22</option>
+        <option value="베이지1m17">베이지1m17</option>
+        <option value="베이지1m22">베이지1m22</option>
+      </select>
+      <div class="product-match" id="productMatch"></div>
+    </div>
+    <div class="fg full">
+      <label>수량</label>
+      <input type="number" id="fQty" />
+    </div>
+    <div class="submit-area full">
+      <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()">예약 접수하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TEAMS={
+  '부산':{members:['이준형','윤철','세욱','승재'],leader:'이준형',
+    regions:['부산','김해','양산','울산','창원','대구','진주','경주','구미','포항'],
+    near:{'부산':['김해','양산','창원'],'김해':['부산','양산','창원'],'양산':['부산','김해','울산'],'울산':['양산','경주'],'창원':['부산','김해','진주'],'대구':['경주','구미','포항'],'진주':['창원'],'경주':['울산','대구','포항'],'구미':['대구'],'포항':['대구','경주']}
+  },
+  '경기':{members:['이민우','현진','재문','직원4','직원5','직원6'],leader:'이민우',
+    regions:['서울','인천','수원','화성','용인','성남','고양','평택','천안','대전','청주','시흥','하남','양주','안산','광명','의정부','남양주','김포','광주','오산','파주','이천','당진'],
+    near:{'서울':['고양','성남','인천','광명','하남'],'인천':['서울','김포','시흥'],'수원':['화성','용인','오산','평택','안산'],'화성':['수원','오산','평택','안산'],'용인':['수원','성남','이천','광주'],'성남':['서울','용인','하남','광주'],'천안':['당진','청주','대전'],'고양':['서울','파주','김포','양주'],'평택':['수원','화성','오산','천안'],'대전':['청주','천안'],'청주':['대전','천안'],'시흥':['인천','안산','광명'],'하남':['서울','성남','남양주'],'양주':['고양','의정부'],'안산':['수원','시흥','화성'],'광명':['서울','시흥','인천'],'의정부':['양주','남양주','서울'],'남양주':['하남','의정부','서울'],'김포':['인천','고양','서울'],'광주':['용인','성남','이천'],'오산':['수원','화성','평택'],'파주':['고양','김포'],'이천':['용인','광주'],'당진':['천안']}
+  }
+};
+let currentTeam='부산',currentYear=2026,currentMonth=3,selectedDate=null,scheduleData={},highlightDates=[];
+
+function setAccentColors(team){
+  const r=document.documentElement;
+  if(team==='부산'){r.style.setProperty('--accent','var(--busan)');r.style.setProperty('--accent-light','var(--busan-light)');r.style.setProperty('--accent-dark','var(--busan-dark)');}
+  else{r.style.setProperty('--accent','var(--gyeonggi)');r.style.setProperty('--accent-light','var(--gyeonggi-light)');r.style.setProperty('--accent-dark','var(--gyeonggi-dark)');}
+}
+
+function initDemoData(){
+  scheduleData={};const team=TEAMS[currentTeam];
+  for(let d=1;d<=31;d++){
+    const dow=new Date(2026,2,d).getDay();if(dow===0)continue;
+    const key=`2026-03-${String(d).padStart(2,'0')}`;
+    const leave=dow===6?[team.members[Math.floor(Math.random()*team.members.length)]]:[];
+    const avail=team.members.length-leave.length;const maxPS=Math.floor(avail/2);
+    const am=[],pm=[];
+    if(d<=18&&d>=2){
+      const ac=Math.min(Math.floor(Math.random()*(maxPS+1)),maxPS);
+      for(let i=0;i<ac;i++){const r=team.regions[Math.floor(Math.random()*Math.min(6,team.regions.length))];am.push({region:r,address:`${r} 시공현장`,product:'모던50'});}
+      const pc=Math.min(Math.floor(Math.random()*(maxPS+1)),maxPS);
+      for(let i=0;i<pc;i++){const r=am.length>0&&Math.random()>0.3?am[Math.floor(Math.random()*am.length)].region:team.regions[Math.floor(Math.random()*Math.min(6,team.regions.length))];pm.push({region:r,address:`${r} 시공현장`,product:'마블50'});}
+    }
+    scheduleData[key]={am,pm,leave};
+  }
+}
+
+function searchByRegion(val){
+  const c=document.getElementById('searchResults');const t=document.getElementById('searchTitle');const l=document.getElementById('searchList');highlightDates=[];
+  if(!val.trim()){c.classList.remove('show');renderCalendar();return;}
+  const results=[];
+  Object.keys(scheduleData).forEach(ds=>{const sc=scheduleData[ds];const amM=sc.am.filter(s=>s.region.includes(val.trim())||s.address.includes(val.trim()));const pmM=sc.pm.filter(s=>s.region.includes(val.trim())||s.address.includes(val.trim()));if(amM.length>0||pmM.length>0){results.push({date:ds,am:amM,pm:pmM});highlightDates.push(ds);}});
+  renderCalendar();
+  if(results.length===0){t.textContent=`"${val}" 작업 없음`;l.innerHTML='<div style="font-size:13px;color:var(--text3)">해당 지역에 예약된 작업이 없어요</div>';}
+  else{t.textContent=`"${val}" 작업 ${results.length}일`;const dn=['일','월','화','수','목','금','토'];l.innerHTML=results.sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{const[y,m,d]=r.date.split('-').map(Number);const dow=dn[new Date(y,m-1,d).getDay()];const slots=[];if(r.am.length)slots.push(`<span class="sr-badge sr-am">오전 ${r.am.length}</span>`);if(r.pm.length)slots.push(`<span class="sr-badge sr-pm">오후 ${r.pm.length}</span>`);return`<div class="sri" onclick="selectDate('${r.date}')"><div class="sr-date">${m}/${d}(${dow})</div><div>${slots.join(' ')}</div></div>`;}).join('');}
+  c.classList.add('show');
+}
+
+function renderCalendar(){
+  const cal=document.getElementById('calDays');document.getElementById('calTitle').textContent=`${currentYear}년 ${currentMonth}월`;
+  const fd=new Date(currentYear,currentMonth-1,1).getDay();const dim=new Date(currentYear,currentMonth,0).getDate();const pd=new Date(currentYear,currentMonth-1,0).getDate();
+  const today=new Date();const tStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const team=TEAMS[currentTeam];let h='';
+  for(let i=0;i<fd;i++)h+=`<div class="cal-day other-month">${pd-fd+i+1}</div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=`${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(currentYear,currentMonth-1,d).getDay();
+    const isPast=new Date(currentYear,currentMonth-1,d)<new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    let cls='cal-day';if(ds===tStr)cls+=' today';if(ds===selectedDate)cls+=' selected';if(isPast)cls+=' past';if(highlightDates.includes(ds)&&ds!==selectedDate)cls+=' highlight';
+    const sc=scheduleData[ds]||{am:[],pm:[],leave:[]};const avail=team.members.length-sc.leave.length;const maxS=Math.floor(avail/2)*2;const used=sc.am.length+sc.pm.length;const ratio=maxS>0?used/maxS:1;
+    let dc='dot-gray';if(dow!==0&&!isPast){if(ratio>=0.8)dc='dot-red';else if(ratio>=0.4)dc='dot-orange';else dc='dot-green';}
+    const dots=(dow===0||isPast)?'':`<div class="slot-dots"><div class="slot-dot ${dc}"></div></div>`;
+    h+=`<div class="${cls}" onclick="selectDate('${ds}')">${d}${dots}</div>`;
+  }
+  const rem=7-((fd+dim)%7);if(rem<7)for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month">${i}</div>`;
+  cal.innerHTML=h;
+}
+
+function changeMonth(d){currentMonth+=d;if(currentMonth>12){currentMonth=1;currentYear++;}if(currentMonth<1){currentMonth=12;currentYear--;}selectedDate=null;document.getElementById('dayDetail').classList.remove('show');document.getElementById('formSection').classList.remove('show');renderCalendar();}
+
+function selectDate(ds){selectedDate=ds;renderCalendar();renderDayDetail(ds);}
+
+function renderDayDetail(ds){
+  const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
+  document.getElementById('detailDate').textContent=`${m}월 ${d}일 (${dn[dow]})`;
+  const sc=scheduleData[ds]||{am:[],pm:[],leave:[]};const team=TEAMS[currentTeam];const avail=team.members.length-sc.leave.length;const maxPS=Math.floor(avail/2);const totalR=Math.max(0,maxPS*2-sc.am.length-sc.pm.length);
+  document.getElementById('detailBadges').innerHTML=`<span class="badge badge-accent">${avail}명 출근</span><span class="badge ${totalR===0?'badge-red':'badge-green'}">잔여 ${totalR}건</span>${sc.leave.length>0?`<span class="badge badge-red">휴무: ${sc.leave.join(',')}</span>`:''}`;
+  let amH='';sc.am.forEach(s=>{amH+=`<div class="sched-item"><div class="area">${s.region}</div><div class="info">${s.address} · ${s.product}</div></div>`;});
+  if(sc.am.length<maxPS)amH+=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
+  if(!amH)amH=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
+  document.getElementById('amSlots').innerHTML=amH;
+  let pmH='';sc.pm.forEach(s=>{pmH+=`<div class="sched-item"><div class="area">${s.region}</div><div class="info">${s.address} · ${s.product}</div></div>`;});
+  if(sc.pm.length<maxPS)pmH+=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
+  if(!pmH)pmH=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
+  document.getElementById('pmSlots').innerHTML=pmH;
+  document.getElementById('dayDetail').classList.add('show');
+}
+
+function openForm(time,ds){
+  const form=document.getElementById('formSection');form.classList.add('show');
+  if(time)document.getElementById('fTime').value=time;
+  if(ds)document.getElementById('fDate').value=ds;
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Product double-check
+function checkProductMatch(){
+  const p1=document.getElementById('fProduct1').value;
+  const p2=document.getElementById('fProduct2').value;
+  const msg=document.getElementById('productMatch');
+  const sel2=document.getElementById('fProduct2');
+  if(!p1||!p2){msg.textContent='';msg.className='product-match';sel2.classList.remove('error');return;}
+  if(p1===p2){msg.textContent='✓ 제품 일치';msg.className='product-match ok';sel2.classList.remove('error');}
+  else{msg.textContent='✗ 제품이 다릅니다! 확인해주세요';msg.className='product-match err';sel2.classList.add('error');}
+}
+
+function switchTeam(team){
+  currentTeam=team;
+  document.querySelectorAll('.team-btn').forEach(b=>b.classList.toggle('active',b.textContent===team));
+  document.getElementById('header').className='header '+(team==='부산'?'busan':'gyeonggi');
+  document.getElementById('teamBar').className='team-bar '+(team==='부산'?'busan':'gyeonggi');
+  document.getElementById('submitBtn').className='submit-btn '+(team==='부산'?'busan':'gyeonggi');
+  document.getElementById('headerTitle').textContent='예약 접수 · '+team;
+  setAccentColors(team);selectedDate=null;highlightDates=[];
+  document.getElementById('regionSearch').value='';
+  document.getElementById('searchResults').classList.remove('show');
+  document.getElementById('dayDetail').classList.remove('show');
+  document.getElementById('formSection').classList.remove('show');
+  initDemoData();renderCalendar();
+}
+
+function submitReservation(){
+  const time=document.getElementById('fTime').value;
+  const date=document.getElementById('fDate').value;
+  const address=document.getElementById('fAddress').value;
+  const size=document.getElementById('fSize').value;
+  const scope=document.getElementById('fScope').value;
+  const p1=document.getElementById('fProduct1').value;
+  const p2=document.getElementById('fProduct2').value;
+
+  if(!time||!date||!address||!size||!scope||!p1||!p2){showToast('⚠️ 필수 항목을 모두 입력해주세요');return;}
+  if(p1!==p2){showToast('⚠️ 제품을 한 번 더 확인해주세요!');document.getElementById('fProduct2').classList.add('error');return;}
+
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
+
+  const payload={
+    type:'reservation',
+    team:currentTeam,
+    time,date,address,
+    phone:document.getElementById('fPhone').value,
+    isNew:document.getElementById('fIsNew').value,
+    size,scope,product:p1,
+    qty:document.getElementById('fQty').value
+  };
+
+  fetch('https://script.google.com/macros/s/AKfycbz9i9S2mWNJhLcA6eWmBcgbcwqUBPvFULLHasYsgdlIEHzssdn_5pgBNOBVdWqXibbymg/exec',{
+    method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+  }).then(()=>{
+    const sc=scheduleData[date]||{am:[],pm:[],leave:[]};
+    sc[time==='오전'?'am':'pm'].push({region:'',address,product:p1});
+    scheduleData[date]=sc;
+    ['fPhone','fAddress','fSize','fScope','fQty'].forEach(id=>{document.getElementById(id).value='';});
+    ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
+    document.getElementById('productMatch').textContent='';
+    document.getElementById('fProduct2').classList.remove('error');
+    renderCalendar();renderDayDetail(date);
+    document.getElementById('formSection').classList.remove('show');
+    showToast(`✅ ${time} 예약 접수 완료!`);
+  }).catch(()=>{showToast('⚠️ 전송 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 접수하기';});
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+setAccentColors('부산');initDemoData();renderCalendar();
+</script>
+</body>
+</html>
