@@ -208,10 +208,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.17.51';
+const VER='2026.03.20.01';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
-const CSV_URL='https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/gviz/tq?tqx=out:csv';
-const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbw-tq5WSshV5l2nLHmyfHBFllefwPpUtSAZEGLod6h1-UCKQUuEbW3sXG95SwxRcecG_w/exec';
+const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
+const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217';
+let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
+const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbz9i9S2mWNJhLcA6eWmBcgbcwqUBPvFULLHasYsgdlIEHzssdn_5pgBNOBVdWqXibbymg/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
@@ -257,7 +261,10 @@ function getOffice(addr){return SOUTH.some(r=>addr.includes(r))?OFF_B:OFF_A}
 
 async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng))}
 
-// ===== CSV Parse =====
+// ===== CSV Parse (새 시트 구조) =====
+// A:시간 B:시공일 C:주소 D:연락처 E:신축여부 F:평수 G:시공범위 H:제품 I:수량 J:사수 K:부사수 L:차량번호 M:결제방법 N:판매금액 O:결제상태 P:추천인 Q:유입경로 R:카톡URL S:채널명
+let OFFS={}; // {date: Set(이름)} 휴무 데이터
+
 function parseCSV(text){
 const lines=text.split('\n');J=[];
 for(let i=1;i<lines.length;i++){
@@ -265,13 +272,39 @@ const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
 r.push(cur.trim().replace(/^"|"$/g,''));
 if(!r[1])continue;
-const doff=[];for(let j=10;j<=19;j++){if(r[j]&&r[j].trim())doff.push(r[j].trim())}
-const mat=[];if(r[8]&&r[9]&&parseInt(r[9])>0){mat.push({t:r[8].trim(),q:parseInt(r[9])})}
-let ds=r[1];if(ds.length===8)ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
-// 시간 없으면 휴무 전용 행 (시공 건 아님)
-if(!r[0]||!r[0].trim()){if(doff.length){const id=ds+'_off_'+i;J.push({id,time:'',addr:'',date:ds,py:'',scope:'',phone:'',chatUrl:'',doff,mat:[],dist:0,isNew:false,offOnly:true})}continue}
+if(!r[0]||!r[0].trim())continue; // 시간 없으면 스킵
+const mat=[];if(r[7]&&r[8]&&parseInt(r[8])>0){mat.push({t:r[7].trim(),q:parseInt(r[8])})}
+else if(r[7]){mat.push({t:r[7].trim(),q:1})}
+let ds=r[1];
+if(ds.length===8)ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+if(ds.includes('T'))ds=ds.substring(0,10);
+// 날짜 형식 보정 (구글시트 Date → YYYY-MM-DD)
+if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
+  const parts=ds.split('-');
+  ds=parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
+}
 const id=ds+'_'+r[0]+'_'+i;
-J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[4]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false})}}
+const doff=[]; // 휴무는 OFFS에서 가져옴
+if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
+J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[17]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false})}}
+
+// 휴무 CSV 파싱
+function parseOffCSV(text){
+const lines=text.split('\n');
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[0]||!r[2])continue; // 날짜, 이름 필수
+let ds=r[0];
+if(ds.includes('T'))ds=ds.substring(0,10);
+if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
+  const parts=ds.split('-');
+  ds=parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
+}
+if(!OFFS[ds])OFFS[ds]=new Set();
+OFFS[ds].add(r[2].trim()); // B열=요일(자동), C열=이름
+}}
 
 // ===== Auto Assign =====
 async function autoAssign(){
@@ -288,8 +321,10 @@ J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[
 
 for(const date of Object.keys(bd).sort()){
 const dj=bd[date];
-// 휴무자는 offOnly 포함 전체에서 수집
-const ao=new Set();J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao.add(n)));
+// 휴무자는 OFFS + doff 합산
+const ao=new Set();
+if(OFFS[date])OFFS[date].forEach(n=>ao.add(n));
+J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao.add(n)));
 const avail=E.filter(e=>!ao.has(e));
 if(!avail.length)continue;
 
@@ -629,6 +664,9 @@ const today=new Date();const todayStr=today.getFullYear()+'-'+String(today.getMo
 
 // 휴무자 사전 정리 (렌더링 전에 항상 실행)
 const dateOffs={};
+// OFFS 데이터에서 휴무자 수집
+Object.keys(OFFS).forEach(d=>{if(!dateOffs[d])dateOffs[d]=new Set();OFFS[d].forEach(n=>dateOffs[d].add(n))});
+// 기존 doff에서도 수집 (호환성)
 J.forEach(j=>{if(j.doff.length){if(!dateOffs[j.date])dateOffs[j.date]=new Set();j.doff.forEach(n=>dateOffs[j.date].add(n))}});
 let needClean=false;
 J.forEach(j=>{
@@ -677,8 +715,10 @@ const dateBorderColor=isSun?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue
 const dateBorderWidth=isSun||isSat||isToday?'2px':'1px';
 const dateColor=isSun?'var(--red)':isSat?'var(--blue)':'var(--text)';
 
-// 휴무 표시 (offOnly 포함 전체에서)
-const offs=new Set();jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
+// 휴무 표시 (OFFS + doff 합산)
+const offs=new Set();
+if(OFFS[date])OFFS[date].forEach(n=>offs.add(n));
+jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
 const offHtml=offs.size?'<div class="daycard-off">'+[...offs].map(n=>n+' 휴무').join(' · ')+'</div>':'';
 
 if(!realJobs.length){
@@ -1018,6 +1058,10 @@ function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer)
 async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
 try{
+// 휴무 데이터 먼저 로딩
+OFFS={};
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
+
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
@@ -1091,6 +1135,11 @@ async function refreshSheet(showToast){
 try{
 const sub=document.getElementById('sub');
 if(showToast)sub.textContent='🔄 갱신 중...';
+
+// 휴무 데이터 먼저 갱신
+OFFS={};
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
+
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
 
@@ -1145,6 +1194,8 @@ document.getElementById('confirmOkBtn').style.display='none';
 document.getElementById('confirmOverlay').classList.add('show');
 
 try{
+OFFS={};
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
 parseCSV(text);
