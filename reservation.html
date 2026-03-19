@@ -328,6 +328,7 @@ function parseScheduleData(rows){
       phone: r['연락처']||'',
       size: r['평수']||'',
       scope: r['시공범위']||'',
+      qty: r['수량']||'',
       sasu: r['사수']||'',
       busasu: r['부사수']||'',
       car: r['차량번호']||'',
@@ -400,22 +401,22 @@ function selectDate(ds){selectedDate=ds;renderCalendar();renderDayDetail(ds);}
 
 function renderDayDetail(ds){
   const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
-  document.getElementById('detailDate').textContent=`${m}월 ${d}일 (${dn[dow]})`;
   const sc=scheduleData[ds]||{am:[],pm:[]};
   const teamCount=employees.length||4;
   const maxPS=Math.floor(teamCount/2);
   const totalUsed=sc.am.length+sc.pm.length;
   const totalR=Math.max(0,maxPS*2-totalUsed);
 
-  document.getElementById('detailBadges').innerHTML=`<span class="badge badge-accent">${teamCount}명</span><span class="badge ${totalR===0&&totalUsed>0?'badge-red':'badge-green'}">잔여 ${totalR}건</span><button class="badge badge-close" onclick="toggleClose('${ds}')" id="closeBtn">${isClosed(ds)?'마감 해제':'마감'}</button>`;
+  document.getElementById('detailDate').innerHTML=`${m}월 ${d}일 (${dn[dow]}) <button class="badge badge-close${isClosed(ds)?' closed':''}" onclick="toggleClose('${ds}')">${isClosed(ds)?'마감 해제':'마감'}</button>`;
+  document.getElementById('detailBadges').innerHTML=`<span class="badge badge-accent">${teamCount}명</span><span class="badge ${totalR===0&&totalUsed>0?'badge-red':'badge-green'}">잔여 ${totalR}건</span>`;
 
   const amRemain = maxPS - sc.am.length;
   const pmRemain = maxPS - sc.pm.length;
 
   let amH='';
-  sc.am.forEach(s=>{
+  sc.am.forEach((s,i)=>{
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
-    amH+=`<div class="sched-item"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
+    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
   });
   if(amRemain>0 && !isClosed(ds)) amH+=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
   if(!sc.am.length && !isClosed(ds)) amH=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
@@ -423,9 +424,9 @@ function renderDayDetail(ds){
   document.getElementById('amSlots').innerHTML=amH;
 
   let pmH='';
-  sc.pm.forEach(s=>{
+  sc.pm.forEach((s,i)=>{
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
-    pmH+=`<div class="sched-item"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
+    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
   });
   if(pmRemain>0 && !isClosed(ds)) pmH+=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
   if(!sc.pm.length && !isClosed(ds)) pmH=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
@@ -440,10 +441,37 @@ function renderDayDetail(ds){
 }
 
 // ── 폼 ──
+let editMode=null; // null=새 예약, {time,date,index,row}=수정모드
+
 function openForm(time,ds){
+  editMode=null;
+  document.getElementById('formTitle').textContent='📝 새 예약 접수';
+  document.getElementById('submitBtn').textContent='예약 접수하기';
   const form=document.getElementById('formSection');form.classList.add('show');
   if(time)document.getElementById('fTime').value=time;
   if(ds)document.getElementById('fDate').value=ds;
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function editItem(time,ds,index){
+  const sc=scheduleData[ds]||{am:[],pm:[]};
+  const items=time==='오전'?sc.am:sc.pm;
+  const item=items[index];
+  if(!item)return;
+  editMode={time,date:ds,index,row:item.row};
+  document.getElementById('formTitle').textContent='✏️ 예약 수정';
+  document.getElementById('submitBtn').textContent='수정 완료';
+  const form=document.getElementById('formSection');form.classList.add('show');
+  document.getElementById('fTime').value=time;
+  document.getElementById('fDate').value=ds;
+  document.getElementById('fAddress').value=item.address||'';
+  document.getElementById('fPhone').value=item.phone||'';
+  document.getElementById('fSize').value=item.size||'';
+  document.getElementById('fScope').value=item.scope||'';
+  document.getElementById('fProduct1').value=item.product||'';
+  document.getElementById('fProduct2').value=item.product||'';
+  document.getElementById('fQty').value=item.qty||'';
+  checkProductMatch();
   form.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -487,7 +515,7 @@ function submitReservation(){
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
 
   const payload={
-    type:'reservation',
+    type: editMode ? 'update' : 'reservation',
     team:currentTeam,
     time,date,address,
     phone:document.getElementById('fPhone').value,
@@ -495,6 +523,7 @@ function submitReservation(){
     size,scope,product:p1,
     qty:document.getElementById('fQty').value
   };
+  if(editMode) payload.row = editMode.row;
 
   fetch(API_URL,{
     method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
@@ -504,7 +533,8 @@ function submitReservation(){
     document.getElementById('productMatch').textContent='';
     document.getElementById('fProduct2').classList.remove('error');
     document.getElementById('formSection').classList.remove('show');
-    showToast(`✅ ${time} 예약 접수 완료!`);
+    showToast(editMode ? `✅ 예약 수정 완료!` : `✅ ${time} 예약 접수 완료!`);
+    editMode=null;
     // 2초 후 데이터 새로고침
     setTimeout(()=>loadData(),2000);
   }).catch(()=>{showToast('⚠️ 전송 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 접수하기';});
