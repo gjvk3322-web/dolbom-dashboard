@@ -296,19 +296,15 @@ function parseScheduleData(rows){
   scheduleData={};
   rows.forEach(r=>{
     const time = (r['시간']||'').trim();
-    const rawDate = r['시공일']||'';
     let dateStr = '';
-    if(typeof rawDate === 'string' && rawDate.includes('-')){
-      dateStr = rawDate.substring(0,10);
-    } else if(rawDate instanceof Date || (typeof rawDate==='string' && rawDate.includes('/'))){
+    const rawDate = r['시공일']||'';
+    if(rawDate){
       const d = new Date(rawDate);
-      dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    } else if(typeof rawDate==='number'){
-      // Excel serial date
-      const d = new Date((rawDate - 25569) * 86400000);
-      dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    } else {
-      dateStr = String(rawDate).substring(0,10);
+      if(!isNaN(d.getTime())){
+        dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      } else {
+        dateStr = String(rawDate).substring(0,10);
+      }
     }
     if(!dateStr || !time) return;
     if(!scheduleData[dateStr]) scheduleData[dateStr]={am:[],pm:[]};
