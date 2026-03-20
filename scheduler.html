@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.09';
+const VER='2026.03.20.10';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -246,13 +246,6 @@ db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Se
 
 function fbSave(key,val){db.ref(key).set(val)}
 
-// 직원 역할 (사수/부사수) — Firebase에서 관리
-let ROLES={};
-db.ref('roles').on('value',snap=>{const v=snap.val();if(v)ROLES=v});
-// 초기값 (Firebase에 없으면 사용)
-const DEFAULT_ROLES={'준형':'사수','윤철':'부사수','세욱':'부사수','승재':'사수','민석':'부사수'};
-function getRole(name){return ROLES[name]||DEFAULT_ROLES[name]||'부사수'}
-
 // 배정 결과를 구글시트에 역기록
 let sheetSyncTimer=null;
 function syncToSheet(){
@@ -263,20 +256,26 @@ sheetSyncTimer=setTimeout(()=>{
     if(!j.addr||!j.addr.trim())return;
     const crew=A[j.id];
     if(!crew||!crew.length)return;
-    // 사수/부사수 분리
+    // 사수/부사수 분리: 팀설정에서 첫번째=사수, 나머지=부사수
     let sasu='',busasu='';
     if(crew.length===1){
       sasu=crew[0];
     }else{
-      // 역할 기반 분리
-      const sasuList=crew.filter(e=>getRole(e)==='사수');
-      const busasuList=crew.filter(e=>getRole(e)==='부사수');
-      sasu=sasuList[0]||crew[0];
-      busasu=busasuList[0]||(crew.find(e=>e!==sasu))||'';
+      // 팀에서 순서 확인
+      let teamOrder=null;
+      if(teams.length){teamOrder=teams.find(t=>crew.some(c=>t.includes(c)))}
+      if(teamOrder){
+        // 팀 순서대로: 첫번째=사수
+        const ordered=teamOrder.filter(m=>crew.includes(m));
+        sasu=ordered[0]||crew[0];
+        busasu=ordered[1]||(crew.find(e=>e!==sasu))||'';
+      }else{
+        sasu=crew[0];
+        busasu=crew[1]||'';
+      }
     }
-    // CSV row index → 시트 row (id에서 추출)
     const parts=j.id.split('_');
-    const rowIdx=parseInt(parts[parts.length-1])+1; // CSV 1-indexed → 시트 row (+1 for header)
+    const rowIdx=parseInt(parts[parts.length-1])+1;
     data.push({row:rowIdx,sasu,busasu});
   });
   if(!data.length)return;
