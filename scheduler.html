@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.01';
+const VER='2026.03.20.02';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -412,34 +412,64 @@ E.forEach(e=>{if(empDateJobs[e]){Object.values(empDateJobs[e]).forEach(cnt=>{if(
 const amReal=am.filter(j=>j.addr&&j.addr.trim());
 const pmReal=pm.filter(j=>j.addr&&j.addr.trim());
 
-// 오전 먼저 배정 — 팀 순서 유지 (정렬 안 함)
-const amGroups=makeGroups(avail,amReal.length);
+// === 1단계: 1인 배정(사수만)에 부사수 채우기 ===
+const alreadyUsed=new Set();
+// 이미 배정된 사람 파악
+[...amReal,...pmReal].forEach(j=>{if(A[j.id])A[j.id].forEach(e=>alreadyUsed.add(e))});
+
+// 오전 1인 배정 건에 부사수 추가
+const amSolo=amReal.filter(j=>A[j.id]&&A[j.id].length===1);
+const amEmpty=amReal.filter(j=>!A[j.id]);
+if(amSolo.length){
+const freeForAm=avail.filter(e=>!alreadyUsed.has(e));
+let fi=0;
+amSolo.forEach(j=>{
+if(fi<freeForAm.length){
+A[j.id]=[...A[j.id],freeForAm[fi]].sort();
+alreadyUsed.add(freeForAm[fi]);
+fi++}})}
+
+// === 2단계: 미배정 오전 건 자동 배정 ===
+const amFree=avail.filter(e=>!alreadyUsed.has(e));
+const amGroups=makeGroups(amFree,amEmpty.length);
 let gi=0;
-amReal.forEach(j=>{if(!A[j.id]&&amGroups.length){
+amEmpty.forEach(j=>{if(amGroups.length){
 A[j.id]=[...amGroups[gi%amGroups.length]].sort();
-amGroups[gi%amGroups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
+amGroups[gi%amGroups.length].forEach(e=>{alreadyUsed.add(e);if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}});
 
 // 오전에 배정된 사람 + 지역 파악
 const amAssigned=new Set();
-const teamAmAddr={};// 팀키 → 오전 주소
+const teamAmAddr={};
 amReal.forEach(j=>{if(A[j.id]){
 const key=A[j.id].sort().join('+');
 A[j.id].forEach(e=>amAssigned.add(e));
 if(!teamAmAddr[key])teamAmAddr[key]={team:A[j.id],addr:j.addr||''}}});
 
-// 오후는 오전에 안 한 사람 우선
-const pmFresh=avail.filter(e=>!amAssigned.has(e));
-const pmTwoTang=avail.filter(e=>amAssigned.has(e)).sort((a,b)=>(empTwoTang[a]||0)-(empTwoTang[b]||0));
-const pmPool=pmFresh.length>=2?pmFresh:(pmFresh.length>0?[...pmFresh,...pmTwoTang]:(pmTwoTang.length?pmTwoTang:avail));
-const pmGroups=makeGroups(pmPool,pmReal.length);
+// === 3단계: 오후 1인 배정 건에 부사수 추가 ===
+const pmSolo=pmReal.filter(j=>A[j.id]&&A[j.id].length===1);
+const pmEmpty=pmReal.filter(j=>!A[j.id]);
 
-// 오후 건을 지역 기반으로 매칭 (두탕일 때)
-if(pmGroups.length&&pmReal.length){
+if(pmSolo.length){
+const freeForPm=avail.filter(e=>!amAssigned.has(e)&&!pmSolo.some(pj=>A[pj.id]&&A[pj.id].includes(e)));
+let pi=0;
+pmSolo.forEach(j=>{
+if(pi<freeForPm.length){
+A[j.id]=[...A[j.id],freeForPm[pi]].sort();
+pi++}})}
+
+// === 4단계: 미배정 오후 건 자동 배정 ===
+const pmAssignedNow=new Set();
+pmReal.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmAssignedNow.add(e))});
+const pmFresh=avail.filter(e=>!amAssigned.has(e)&&!pmAssignedNow.has(e));
+const pmTwoTang=avail.filter(e=>amAssigned.has(e)&&!pmAssignedNow.has(e)).sort((a,b)=>(empTwoTang[a]||0)-(empTwoTang[b]||0));
+const pmPool=pmFresh.length>=2?pmFresh:(pmFresh.length>0?[...pmFresh,...pmTwoTang]:(pmTwoTang.length?pmTwoTang:avail.filter(e=>!pmAssignedNow.has(e))));
+const pmGroups=makeGroups(pmPool,pmEmpty.length);
+
+if(pmGroups.length&&pmEmpty.length){
 const hasFresh=pmFresh.length>=2;
 if(!hasFresh&&Object.keys(teamAmAddr).length>0){
-// 두탕 상황: 오전 지역과 가까운 팀에게 오후 배정
-pmReal.forEach(j=>{if(!A[j.id]){
+pmEmpty.forEach(j=>{if(!A[j.id]){
 const pmCity=(j.addr||'').slice(0,2);
 let bestGroup=pmGroups[0];let bestScore=-1;
 pmGroups.forEach(g=>{
@@ -452,7 +482,7 @@ A[j.id]=[...bestGroup].sort();
 bestGroup.forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}})
 }else{
 gi=0;
-pmReal.forEach(j=>{if(!A[j.id]&&pmGroups.length){
+pmEmpty.forEach(j=>{if(!A[j.id]&&pmGroups.length){
 A[j.id]=[...pmGroups[gi%pmGroups.length]].sort();
 pmGroups[gi%pmGroups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}})}}}
@@ -1131,10 +1161,10 @@ if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){delete A[j.id];badAssign=tru
 });
 if(badAssign){fbSave('assignments',A)}
 
-// 미배정 건이 있으면 자동 배정 실행 (주소 있는 건만)
+// 미배정 건 또는 1인 배정(사수만, 부사수 필요)이 있으면 자동 배정 실행
 const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
-const unassignedCnt=assignableJ.filter(j=>!A[j.id]).length;
-if(unassignedCnt>0){await autoAssign()}
+const needAssignCnt=assignableJ.filter(j=>!A[j.id]||(A[j.id]&&A[j.id].length===1)).length;
+if(needAssignCnt>0){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM=new Date().getMonth()+1;
@@ -1189,10 +1219,10 @@ lastCSVHash=newHash;
 parseCSV(text);
 syncSheetAssignments();
 
-// 변경 있으면 미배정 건 자동 배정
+// 변경 있으면 미배정 또는 1인 배정 건 자동 배정
 if(changed){
 const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
-const unCnt=realJ.filter(j=>!A[j.id]).length;
+const unCnt=realJ.filter(j=>!A[j.id]||(A[j.id]&&A[j.id].length===1)).length;
 if(unCnt>0)await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
