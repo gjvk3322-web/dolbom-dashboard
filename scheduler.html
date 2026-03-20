@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.07';
+const VER='2026.03.20.08';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -394,29 +394,31 @@ const pm=dj.filter(j=>(j.time==='오후'||j.time==='as')&&j.addr&&j.addr.trim())
 if(!am.length&&!pm.length)continue;
 
 function makeGroups(pool,jobCnt){
+console.log('[makeGroups] pool:', pool, 'teams:', JSON.stringify(teams), 'teams.length:', teams.length);
 if(teams.length){
 const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
 const grouped=avTeams.map(t=>t.members);
+console.log('[makeGroups] grouped:', JSON.stringify(grouped));
 const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
 const orphans=pool.filter(m=>!inTeam.has(m));
 
 const fullTeams=grouped.filter(g=>g.length>=2);
 const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
 
-// 1인 팀원 + 미소속 합쳐서 2인조, 홀수 1명은 대기
 const allSingles=[...soloTeam,...orphans];
 const paired=[];
 for(let i=0;i<allSingles.length;i+=2){
 if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]])}
-// 홀수 1명은 그냥 버림 → 대기로 감
 
-return [...fullTeams,...paired]}
+const result=[...fullTeams,...paired];
+console.log('[makeGroups] result:', JSON.stringify(result));
+return result}
 
-// 팀 없으면 자동 2인 1조, 홀수는 대기
 const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
 const groups=[];
 for(let i=0;i<sorted.length;i+=2){
 if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]])}
+console.log('[makeGroups] no teams, result:', JSON.stringify(groups));
 return groups}
 
 // 이번 달 두탕 횟수 집계 (기존 배정 기준)
@@ -439,6 +441,7 @@ const pmReal=pm.filter(j=>j.addr&&j.addr.trim());
 // === 1단계: 1인 배정(사수만)에 팀설정 기반 부사수 채우기 ===
 const alreadyUsed=new Set();
 [...amReal,...pmReal].forEach(j=>{if(A[j.id])A[j.id].forEach(e=>alreadyUsed.add(e))});
+console.log(`[autoAssign] ${date} | avail:`, avail, '| amReal:', amReal.length, '| pmReal:', pmReal.length, '| alreadyUsed:', [...alreadyUsed]);
 
 // 팀설정에서 짝 찾기
 function findTeamPartner(emp,used){
@@ -452,6 +455,7 @@ return partner||null;
 // 오전 1인 배정 건에 부사수 추가 (팀설정 우선)
 const amSolo=amReal.filter(j=>A[j.id]&&A[j.id].length===1);
 const amEmpty=amReal.filter(j=>!A[j.id]);
+console.log(`[autoAssign] ${date} AM | solo:`, amSolo.length, '| empty:', amEmpty.length);
 if(amSolo.length){
 amSolo.forEach(j=>{
 const sasu=A[j.id][0];
@@ -468,10 +472,13 @@ if(partner){
 
 // === 2단계: 미배정 오전 건 자동 배정 ===
 const amFree=avail.filter(e=>!alreadyUsed.has(e));
+console.log(`[autoAssign] ${date} AM-2 | amFree:`, amFree);
 const amGroups=makeGroups(amFree,amEmpty.length);
+console.log(`[autoAssign] ${date} AM-2 | amGroups:`, JSON.stringify(amGroups));
 let gi=0;
 amEmpty.forEach(j=>{if(amGroups.length){
 A[j.id]=[...amGroups[gi%amGroups.length]].sort();
+console.log(`[autoAssign] ${date} AM → ${j.id} = [${A[j.id].join(',')}]`);
 amGroups[gi%amGroups.length].forEach(e=>{alreadyUsed.add(e);if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}});
 
@@ -533,6 +540,7 @@ gi++}})}}}
 
 fbSave('assignments',A);syncToSheet();
 fbSave('prevJobIds',J.map(j=>j.id));
+console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
 toast('✅ 자동 배정 완료!','ok');renderAll()}
 
 function resetAssign(){if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});toast('초기화됨','ok');renderAll()}
