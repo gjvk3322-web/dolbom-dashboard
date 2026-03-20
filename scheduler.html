@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.08';
+const VER='2026.03.20.09';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -236,11 +236,12 @@ let prevJobIds=new Set();
 let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 
 // Firebase 실시간 리스너
-db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;renderAll()});
-db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];renderAll()});
-db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};renderAll()});
-db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};renderAll()});
-db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};renderAll()});
+let isAssigning=false; // autoAssign 중 리스너 간섭 방지
+db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;if(!isAssigning)renderAll()});
+db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];if(!isAssigning)renderAll()});
+db.ref('assignments').on('value',snap=>{if(isAssigning)return;const v=snap.val();if(v)A=v;else A={};renderAll()});
+db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};if(!isAssigning)renderAll()});
+db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};if(!isAssigning)renderAll()});
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 
 function fbSave(key,val){db.ref(key).set(val)}
@@ -369,6 +370,7 @@ return null;
 
 // ===== Auto Assign =====
 async function autoAssign(){
+isAssigning=true;
 toast('⏳ 자동 배정 중...','ok');
 
 // 거리 계산
@@ -541,7 +543,11 @@ gi++}})}}}
 fbSave('assignments',A);syncToSheet();
 fbSave('prevJobIds',J.map(j=>j.id));
 console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
-toast('✅ 자동 배정 완료!','ok');renderAll()}
+toast('✅ 자동 배정 완료!','ok');
+renderAll();
+// Firebase 저장 완료 후 리스너 잠금 해제
+setTimeout(()=>{isAssigning=false},1500);
+}
 
 function resetAssign(){if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});toast('초기화됨','ok');renderAll()}
 
