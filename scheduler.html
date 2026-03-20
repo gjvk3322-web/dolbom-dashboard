@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.06';
+const VER='2026.03.20.07';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -788,7 +788,7 @@ if(filtered.length!==A[j.id].length){
 A[j.id]=filtered.length?filtered:undefined;
 if(!filtered.length)delete A[j.id];
 needClean=true}}});
-if(needClean)fbSave('assignments',A);
+// fbSave는 init()에서만 (renderSched에서 하면 무한루프)
 
 // 첫날~마지막날 사이 모든 날짜 생성
 function getAllDates(start,end){
