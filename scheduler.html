@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.21';
+const VER='2026.03.20.22';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -299,10 +299,11 @@ sheetSyncTimer=setTimeout(()=>{
   // Apps Script로 전송
   fetch(SHEET_REPORT_URL,{
     method:'POST',
+    mode:'no-cors',
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'updateAssignments',data,gid:'144225567'})
-  }).then(r=>r.text()).then(t=>{
-    console.log('[sheet-sync]',t);
+  }).then(()=>{
+    console.log('[sheet-sync] OK:',data.length+'건');
   }).catch(e=>console.log('[sheet-sync] error:',e));
 },2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
 }
@@ -640,14 +641,19 @@ A[jobId]=[emp];
 }
 // 수동 배정하면 SKIP 해제
 if(SKIP.has(jobId)){SKIP.delete(jobId);fbSave('skipJobs',[...SKIP])}
-fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();toast('✅ 배정 업데이트','ok');renderAll()}
+fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();
+isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
+toast('✅ 배정 업데이트','ok');renderAll()}
 
 // 배정 취소 (자동배정 제외 처리)
 function unassign(jobId){
 delete A[jobId];
 SKIP.add(jobId);
 fbSave('skipJobs',[...SKIP]);
-fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
+fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();
+// 재배정 방지: 2초간 자동배정 차단
+isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
+toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
 
 // ===== 시공보고서 =====
 let reportJobId='';
