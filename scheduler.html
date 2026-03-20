@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.11';
+const VER='2026.03.20.13';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -391,6 +391,11 @@ const empDist={};E.forEach(e=>empDist[e]=0);
 J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}});
 
 for(const date of Object.keys(bd).sort()){
+// 3일 뒤부터만 자동배정 (오늘~모레는 확정된 배정 보호)
+const cutoff=new Date();cutoff.setDate(cutoff.getDate()+3);
+const cutoffStr=cutoff.toISOString().slice(0,10);
+if(date<cutoffStr)continue;
+
 const dj=bd[date];
 // 휴무자는 OFFS + doff 합산
 const ao=new Set();
@@ -404,11 +409,11 @@ const pm=dj.filter(j=>(j.time==='오후'||j.time==='as')&&j.addr&&j.addr.trim())
 if(!am.length&&!pm.length)continue;
 
 function makeGroups(pool,jobCnt){
-console.log('[makeGroups] pool:', pool, 'teams:', JSON.stringify(teams), 'teams.length:', teams.length);
+//console.log('[makeGroups] pool:', pool, 'teams:', JSON.stringify(teams), 'teams.length:', teams.length);
 if(teams.length){
 const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
 const grouped=avTeams.map(t=>t.members);
-console.log('[makeGroups] grouped:', JSON.stringify(grouped));
+//console.log('[makeGroups] grouped:', JSON.stringify(grouped));
 const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
 const orphans=pool.filter(m=>!inTeam.has(m));
 
@@ -421,14 +426,14 @@ for(let i=0;i<allSingles.length;i+=2){
 if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]])}
 
 const result=[...fullTeams,...paired];
-console.log('[makeGroups] result:', JSON.stringify(result));
+//console.log('[makeGroups] result:', JSON.stringify(result));
 return result}
 
 const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
 const groups=[];
 for(let i=0;i<sorted.length;i+=2){
 if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]])}
-console.log('[makeGroups] no teams, result:', JSON.stringify(groups));
+//console.log('[makeGroups] no teams, result:', JSON.stringify(groups));
 return groups}
 
 // 이번 달 두탕 횟수 집계 (기존 배정 기준)
@@ -451,7 +456,7 @@ const pmReal=pm.filter(j=>j.addr&&j.addr.trim());
 // === 1단계: 1인 배정(사수만)에 팀설정 기반 부사수 채우기 ===
 const alreadyUsed=new Set();
 [...amReal,...pmReal].forEach(j=>{if(A[j.id])A[j.id].forEach(e=>alreadyUsed.add(e))});
-console.log(`[autoAssign] ${date} | avail:`, avail, '| amReal:', amReal.length, '| pmReal:', pmReal.length, '| alreadyUsed:', [...alreadyUsed]);
+//console.log(`[autoAssign] ${date} | avail:`, avail, '| amReal:', amReal.length, '| pmReal:', pmReal.length, '| alreadyUsed:', [...alreadyUsed]);
 
 // 팀설정에서 짝 찾기
 function findTeamPartner(emp,used){
@@ -465,7 +470,7 @@ return partner||null;
 // 오전 1인 배정 건에 부사수 추가 (팀설정 우선)
 const amSolo=amReal.filter(j=>A[j.id]&&A[j.id].length===1);
 const amEmpty=amReal.filter(j=>!A[j.id]);
-console.log(`[autoAssign] ${date} AM | solo:`, amSolo.length, '| empty:', amEmpty.length);
+//console.log(`[autoAssign] ${date} AM | solo:`, amSolo.length, '| empty:', amEmpty.length);
 if(amSolo.length){
 amSolo.forEach(j=>{
 const sasu=A[j.id][0];
@@ -482,13 +487,13 @@ if(partner){
 
 // === 2단계: 미배정 오전 건 자동 배정 ===
 const amFree=avail.filter(e=>!alreadyUsed.has(e));
-console.log(`[autoAssign] ${date} AM-2 | amFree:`, amFree);
+//console.log(`[autoAssign] ${date} AM-2 | amFree:`, amFree);
 const amGroups=makeGroups(amFree,amEmpty.length);
-console.log(`[autoAssign] ${date} AM-2 | amGroups:`, JSON.stringify(amGroups));
+//console.log(`[autoAssign] ${date} AM-2 | amGroups:`, JSON.stringify(amGroups));
 let gi=0;
 amEmpty.forEach(j=>{if(amGroups.length){
 A[j.id]=[...amGroups[gi%amGroups.length]].sort();
-console.log(`[autoAssign] ${date} AM → ${j.id} = [${A[j.id].join(',')}]`);
+//console.log(`[autoAssign] ${date} AM → ${j.id} = [${A[j.id].join(',')}]`);
 amGroups[gi%amGroups.length].forEach(e=>{alreadyUsed.add(e);if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}});
 
@@ -550,7 +555,7 @@ gi++}})}}}
 
 fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();
 fbSave('prevJobIds',J.map(j=>j.id));
-console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
+//console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
 toast('✅ 자동 배정 완료!','ok');
 renderAll();
 setTimeout(()=>{isAssigning=false},3000);
@@ -1108,7 +1113,11 @@ const tabs=['sched','team','fair'];
 document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
 renderAll()}
 
-function renderAll(){renderSched();renderTeam();renderFair()}
+let renderTimer=null;
+function renderAll(){
+if(renderTimer)clearTimeout(renderTimer);
+renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair()},50);
+}
 
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
 
