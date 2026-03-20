@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.20';
+const VER='2026.03.20.21';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -397,6 +397,30 @@ const empDist={};E.forEach(e=>empDist[e]=0);
 
 // 기존 배정 거리 반영
 J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}});
+
+// 팀 그룹 생성 함수
+function makeGroups(pool,jobCnt){
+  if(teams.length){
+    const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
+    const grouped=avTeams.map(t=>t.members);
+    const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
+    const orphans=pool.filter(m=>!inTeam.has(m));
+    const fullTeams=grouped.filter(g=>g.length>=2);
+    const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
+    const allSingles=[...soloTeam,...orphans];
+    const paired=[];
+    for(let i=0;i<allSingles.length;i+=2){
+      if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]]);
+    }
+    return [...fullTeams,...paired];
+  }
+  const sorted=[...pool];
+  const groups=[];
+  for(let i=0;i<sorted.length;i+=2){
+    if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]]);
+  }
+  return groups;
+}
 
 for(const date of Object.keys(bd).sort()){
 // 3일 뒤부터만 전체 자동배정 (오늘~모레는 확정된 배정 보호)
@@ -1320,6 +1344,7 @@ Notification.requestPermission()}
 
 // 구글시트 갱신 함수 (자동 + 수동 공용)
 let lastCSVHash='';
+let lastCSVRowCount=0;
 async function refreshSheet(showToast){
 try{
 const sub=document.getElementById('sub');
@@ -1332,15 +1357,18 @@ if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const o
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
 
-// 변경 감지 (내용이 바뀌었을 때만 알림)
+// 변경 감지 (행 수 변화 = 새 예약 추가일 때만 자동배정)
 const newHash=text.length+'-'+text.slice(0,200);
-const changed=lastCSVHash&&lastCSVHash!==newHash;
+const newRowCount=text.split('\n').length;
+const oldRowCount=lastCSVRowCount||0;
+const isNewReservation=newRowCount>oldRowCount&&oldRowCount>0;
 lastCSVHash=newHash;
+lastCSVRowCount=newRowCount;
 
 parseCSV(text);
 
-// 변경 있으면 미배정 또는 1인 배정 건 자동 배정
-if(changed){
+// 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
+if(isNewReservation){
 const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
 const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
 if(unCnt>0)await autoAssign()}
@@ -1351,7 +1379,7 @@ const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.add
 const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.time==='as');
 sub.textContent=curM2+'월 '+mJobs.length+'건 · AS '+mAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 renderAll();
-if(changed)toast('📋 엑셀 변경 감지! 자동 배정 완료','ok');
+if(isNewReservation)toast('📋 새 예약 감지! 자동 배정 완료','ok');
 else if(showToast)toast('✅ 최신 상태예요','ok');
 }catch(e){if(showToast)toast('⚠️ 연결 실패','ok')}}
 
