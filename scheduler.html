@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.18';
+const VER='2026.03.20.19';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -515,161 +515,160 @@ if(date<cutoffStr){
 }
 
 const dj=bd[date];
-// 휴무자는 OFFS + doff 합산
 const ao=new Set();
 if(OFFS[date])OFFS[date].forEach(n=>ao.add(n));
 J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao.add(n)));
 const avail=E.filter(e=>!ao.has(e));
 if(!avail.length)continue;
 
-const am=dj.filter(j=>(j.time==='오전'||j.time.includes('2:'))&&j.addr&&j.addr.trim()).sort((a,b)=>(b.dist||0)-(a.dist||0));
-const pm=dj.filter(j=>(j.time==='오후'||j.time==='as')&&j.addr&&j.addr.trim()).sort((a,b)=>(b.dist||0)-(a.dist||0));
-if(!am.length&&!pm.length)continue;
+const amAll=dj.filter(j=>(j.time==='오전'||j.time.includes('2:'))&&j.addr&&j.addr.trim());
+const pmAll=dj.filter(j=>(j.time==='오후'||j.time==='as')&&j.addr&&j.addr.trim());
+if(!amAll.length&&!pmAll.length)continue;
 
-function makeGroups(pool,jobCnt){
-//console.log('[makeGroups] pool:', pool, 'teams:', JSON.stringify(teams), 'teams.length:', teams.length);
-if(teams.length){
-const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
-const grouped=avTeams.map(t=>t.members);
-//console.log('[makeGroups] grouped:', JSON.stringify(grouped));
-const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
-const orphans=pool.filter(m=>!inTeam.has(m));
+// 팀 그룹 생성
+const teamGroups=makeGroups(avail,Math.max(amAll.length,pmAll.length));
+if(!teamGroups.length)continue;
 
-const fullTeams=grouped.filter(g=>g.length>=2);
-const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
+// 팀별 건수 추적
+const teamJobCount={};
+teamGroups.forEach(g=>{teamJobCount[g.sort().join('+')]=0});
 
-const allSingles=[...soloTeam,...orphans];
-const paired=[];
-for(let i=0;i<allSingles.length;i+=2){
-if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]])}
+// ── 오전 처리 ──
+const amUsed=new Set();
+// 기존 배정 유지
+amAll.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>amUsed.add(e));
+  const k=[...A[j.id]].sort().join('+');if(teamJobCount[k]!==undefined)teamJobCount[k]++}});
 
-const result=[...fullTeams,...paired];
-//console.log('[makeGroups] result:', JSON.stringify(result));
-return result}
+// 1인→2인 보완
+amAll.filter(j=>!SKIP.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
+  const sasu=A[j.id][0];
+  if(teams.length){
+    const myTeam=teams.find(t=>t.includes(sasu));
+    if(myTeam){
+      const partner=myTeam.find(m=>m!==sasu&&avail.includes(m)&&!amUsed.has(m));
+      if(partner){A[j.id]=[sasu,partner].sort();amUsed.add(partner);return}
+    }
+  }
+  const free=avail.filter(e=>!amUsed.has(e)&&e!==sasu);
+  if(free.length){A[j.id]=[sasu,free[0]].sort();amUsed.add(free[0])}
+});
 
-const sorted=[...pool].sort((a,b)=>(empDist[a]||0)-(empDist[b]||0));
-const groups=[];
-for(let i=0;i<sorted.length;i+=2){
-if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]])}
-//console.log('[makeGroups] no teams, result:', JSON.stringify(groups));
-return groups}
-
-// 이번 달 두탕 횟수 집계 (기존 배정 기준)
-const curYear=new Date().getFullYear();const curMonth=new Date().getMonth();
-const empTwoTang={};E.forEach(e=>empTwoTang[e]=0);
-const empDateJobs={};
-J.filter(j=>!j.offOnly).forEach(j=>{
-const jd=new Date(j.date);
-if(jd.getFullYear()===curYear&&jd.getMonth()===curMonth&&A[j.id]){
-A[j.id].forEach(e=>{
-if(!empDateJobs[e])empDateJobs[e]={};
-if(!empDateJobs[e][j.date])empDateJobs[e][j.date]=0;
-empDateJobs[e][j.date]++})}});
-E.forEach(e=>{if(empDateJobs[e]){Object.values(empDateJobs[e]).forEach(cnt=>{if(cnt>=2)empTwoTang[e]++})}});
-
-// 주소 없는 건은 배정 안 함
-const amReal=am.filter(j=>j.addr&&j.addr.trim());
-const pmReal=pm.filter(j=>j.addr&&j.addr.trim());
-
-// === 1단계: 1인 배정(사수만)에 팀설정 기반 부사수 채우기 ===
-const alreadyUsed=new Set();
-[...amReal,...pmReal].forEach(j=>{if(A[j.id])A[j.id].forEach(e=>alreadyUsed.add(e))});
-//console.log(`[autoAssign] ${date} | avail:`, avail, '| amReal:', amReal.length, '| pmReal:', pmReal.length, '| alreadyUsed:', [...alreadyUsed]);
-
-// 팀설정에서 짝 찾기
-function findTeamPartner(emp,used){
-if(!teams.length)return null;
-const myTeam=teams.find(t=>t.includes(emp));
-if(!myTeam)return null;
-const partner=myTeam.find(m=>m!==emp&&avail.includes(m)&&!used.has(m));
-return partner||null;
+// 미배정 오전 건 → 지역별로 다른 팀 배정 (건수 적은 팀 우선)
+const amEmpty=amAll.filter(j=>!A[j.id]&&!SKIP.has(j.id));
+if(amEmpty.length){
+  // 사용 가능한 팀 (아직 오전 미배정)
+  const amAvailTeams=teamGroups.filter(g=>g.every(m=>!amUsed.has(m)))
+    .map(g=>({team:[...g],key:g.sort().join('+'),jobs:0,cities:[]}));
+  
+  // 지역별 그룹화
+  const cityJobs={};
+  amEmpty.forEach(j=>{const c=(j.addr||'').slice(0,2);if(!cityJobs[c])cityJobs[c]=[];cityJobs[c].push(j)});
+  
+  // 각 지역에 팀 배정 (건수 적은 팀 우선)
+  Object.entries(cityJobs).forEach(([city,jobs])=>{
+    jobs.forEach(j=>{
+      // 같은 지역에 이미 배정된 팀 찾기
+      const sameCityTeam=amAvailTeams.find(t=>t.cities.includes(city)&&t.team.every(m=>!amUsed.has(m)));
+      if(sameCityTeam){
+        A[j.id]=[...sameCityTeam.team].sort();
+        sameCityTeam.team.forEach(e=>amUsed.add(e));
+        sameCityTeam.jobs++;
+        return;
+      }
+      // 건수 가장 적은 팀
+      const bestTeam=amAvailTeams.filter(t=>t.team.every(m=>!amUsed.has(m)))
+        .sort((a,b)=>a.jobs-b.jobs)[0];
+      if(bestTeam){
+        A[j.id]=[...bestTeam.team].sort();
+        bestTeam.team.forEach(e=>amUsed.add(e));
+        bestTeam.jobs++;
+        bestTeam.cities.push(city);
+      }
+    });
+    // 팀 재사용 허용 (건수 > 팀 수일 때)
+    amAvailTeams.forEach(t=>{
+      const allUsed=t.team.every(m=>amUsed.has(m));
+      if(allUsed){t.team.forEach(m=>amUsed.delete(m))}  // 다음 건에서 재사용 가능
+    });
+  });
+  // amUsed 재구축 (실제 배정 기준)
+  amAll.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amUsed.add(e))});
 }
 
-// 오전 1인 배정 건에 부사수 추가 (팀설정 우선)
-const amSolo=amReal.filter(j=>A[j.id]&&A[j.id].length===1&&!SKIP.has(j.id));
-const amEmpty=amReal.filter(j=>!A[j.id]&&!SKIP.has(j.id));
-//console.log(`[autoAssign] ${date} AM | solo:`, amSolo.length, '| empty:', amEmpty.length);
-if(amSolo.length){
-amSolo.forEach(j=>{
-const sasu=A[j.id][0];
-// 1순위: 팀설정 짝
-const partner=findTeamPartner(sasu,alreadyUsed);
-if(partner){
-  A[j.id]=[sasu,partner].sort();
-  alreadyUsed.add(partner);
-}else{
-  // 2순위: 남는 사람 중 아무나
-  const free=avail.filter(e=>!alreadyUsed.has(e)&&e!==sasu);
-  if(free.length){A[j.id]=[sasu,free[0]].sort();alreadyUsed.add(free[0])}
-}})}
-
-// === 2단계: 미배정 오전 건 자동 배정 ===
-const amFree=avail.filter(e=>!alreadyUsed.has(e));
-//console.log(`[autoAssign] ${date} AM-2 | amFree:`, amFree);
-const amGroups=makeGroups(amFree,amEmpty.length);
-//console.log(`[autoAssign] ${date} AM-2 | amGroups:`, JSON.stringify(amGroups));
-let gi=0;
-amEmpty.forEach(j=>{if(amGroups.length){
-A[j.id]=[...amGroups[gi%amGroups.length]].sort();
-//console.log(`[autoAssign] ${date} AM → ${j.id} = [${A[j.id].join(',')}]`);
-amGroups[gi%amGroups.length].forEach(e=>{alreadyUsed.add(e);if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
-gi++}});
-
-// 오전에 배정된 사람 + 지역 파악
-const amAssigned=new Set();
-const teamAmAddr={};
-amReal.forEach(j=>{if(A[j.id]){
-const key=A[j.id].sort().join('+');
-A[j.id].forEach(e=>amAssigned.add(e));
-if(!teamAmAddr[key])teamAmAddr[key]={team:A[j.id],addr:j.addr||''}}});
-
-// === 3단계: 오후 1인 배정 건에 팀설정 기반 부사수 추가 ===
-const pmSolo=pmReal.filter(j=>A[j.id]&&A[j.id].length===1&&!SKIP.has(j.id));
-const pmEmpty=pmReal.filter(j=>!A[j.id]&&!SKIP.has(j.id));
-
-if(pmSolo.length){
+// ── 오후 처리 (지역 매칭 + 공평 분배) ──
 const pmUsed=new Set();
-pmReal.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmUsed.add(e))});
-pmSolo.forEach(j=>{
-const sasu=A[j.id][0];
-// 1순위: 팀설정 짝 (오전에 안 한 사람 우선)
-const partner=findTeamPartner(sasu,pmUsed);
-if(partner){
-  A[j.id]=[sasu,partner].sort();
-  pmUsed.add(partner);
-}else{
-  const free=avail.filter(e=>!amAssigned.has(e)&&!pmUsed.has(e)&&e!==sasu);
+pmAll.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmUsed.add(e))});
+
+// 1인→2인 보완
+pmAll.filter(j=>!SKIP.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
+  const sasu=A[j.id][0];
+  if(teams.length){
+    const myTeam=teams.find(t=>t.includes(sasu));
+    if(myTeam){
+      const partner=myTeam.find(m=>m!==sasu&&avail.includes(m)&&!pmUsed.has(m));
+      if(partner){A[j.id]=[sasu,partner].sort();pmUsed.add(partner);return}
+    }
+  }
+  const free=avail.filter(e=>!pmUsed.has(e)&&e!==sasu);
   if(free.length){A[j.id]=[sasu,free[0]].sort();pmUsed.add(free[0])}
-}})}
+});
 
-// === 4단계: 미배정 오후 건 자동 배정 ===
-const pmAssignedNow=new Set();
-pmReal.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmAssignedNow.add(e))});
-const pmFresh=avail.filter(e=>!amAssigned.has(e)&&!pmAssignedNow.has(e));
-const pmTwoTang=avail.filter(e=>amAssigned.has(e)&&!pmAssignedNow.has(e)).sort((a,b)=>(empTwoTang[a]||0)-(empTwoTang[b]||0));
-const pmPool=pmFresh.length>=2?pmFresh:(pmFresh.length>0?[...pmFresh,...pmTwoTang]:(pmTwoTang.length?pmTwoTang:avail.filter(e=>!pmAssignedNow.has(e))));
-const pmGroups=makeGroups(pmPool,pmEmpty.length);
+// 미배정 오후 건 → 오전팀 기반 지역 매칭 + 건수 공평
+const pmEmpty=pmAll.filter(j=>!A[j.id]&&!SKIP.has(j.id));
+if(pmEmpty.length){
+  // 오전 팀 정보 수집
+  const amTeamInfo=[];
+  amAll.forEach(j=>{if(A[j.id]&&A[j.id].length>=2){
+    const key=[...A[j.id]].sort().join('+');
+    const existing=amTeamInfo.find(t=>t.key===key);
+    if(!existing){amTeamInfo.push({key,team:[...A[j.id]],cities:[(j.addr||'').slice(0,2)],pmCount:0})}
+    else if(!existing.cities.includes((j.addr||'').slice(0,2))){existing.cities.push((j.addr||'').slice(0,2))}
+  }});
+  // 기존 오후 배정 반영
+  pmAll.forEach(j=>{if(A[j.id]){
+    const key=[...A[j.id]].sort().join('+');
+    const t=amTeamInfo.find(ti=>ti.key===key);
+    if(t)t.pmCount++;
+  }});
 
-if(pmGroups.length&&pmEmpty.length){
-const hasFresh=pmFresh.length>=2;
-if(!hasFresh&&Object.keys(teamAmAddr).length>0){
-pmEmpty.forEach(j=>{if(!A[j.id]){
-const pmCity=(j.addr||'').slice(0,2);
-let bestGroup=pmGroups[0];let bestScore=-1;
-pmGroups.forEach(g=>{
-const key=g.sort().join('+');
-const amAddr=teamAmAddr[key]?teamAmAddr[key].addr:'';
-const amCity=amAddr.slice(0,2);
-const score=(pmCity&&amCity&&pmCity===amCity)?10:0;
-if(score>bestScore){bestScore=score;bestGroup=g}});
-A[j.id]=[...bestGroup].sort();
-bestGroup.forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}})
-}else{
-gi=0;
-pmEmpty.forEach(j=>{if(!A[j.id]&&pmGroups.length){
-A[j.id]=[...pmGroups[gi%pmGroups.length]].sort();
-pmGroups[gi%pmGroups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
-gi++}})}}}
+  pmEmpty.forEach(j=>{
+    if(A[j.id])return;
+    const pmCity=(j.addr||'').slice(0,2);
+    
+    // 1순위: 같은 지역 오전팀 중 오후 건수 가장 적은 팀
+    const sameCityTeams=amTeamInfo
+      .filter(t=>t.cities.includes(pmCity)&&t.team.every(m=>!pmUsed.has(m)))
+      .sort((a,b)=>a.pmCount-b.pmCount);
+    if(sameCityTeams.length){
+      const best=sameCityTeams[0];
+      A[j.id]=[...best.team].sort();
+      best.team.forEach(e=>pmUsed.add(e));
+      best.pmCount++;
+      // 재사용 허용
+      best.team.forEach(e=>pmUsed.delete(e));
+      return;
+    }
+    // 2순위: 오후 건수 가장 적은 아무 오전팀
+    const anyTeams=amTeamInfo
+      .filter(t=>t.team.every(m=>!pmUsed.has(m)))
+      .sort((a,b)=>a.pmCount-b.pmCount);
+    if(anyTeams.length){
+      const best=anyTeams[0];
+      A[j.id]=[...best.team].sort();
+      best.team.forEach(e=>pmUsed.add(e));
+      best.pmCount++;
+      best.team.forEach(e=>pmUsed.delete(e));
+      return;
+    }
+    // 3순위: 남는 사람
+    const freeP=avail.filter(e=>!pmUsed.has(e));
+    const gP=makeGroups(freeP,1);
+    if(gP.length){
+      A[j.id]=[...gP[0]].sort();
+      gP[0].forEach(e=>pmUsed.add(e));
+    }
+  });
+}}
 
 fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();
 fbSave('prevJobIds',J.map(j=>j.id));
