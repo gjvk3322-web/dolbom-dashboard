@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.15';
+const VER='2026.03.20.16';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -402,18 +402,19 @@ const cutoff=new Date();cutoff.setDate(cutoff.getDate()+3);
 const cutoffStr=cutoff.toISOString().slice(0,10);
 
 if(date<cutoffStr){
-  // 보호 기간이지만, 1인 배정 건은 팀설정 짝을 자동 보완
+  // 보호 기간: 기존 2인 배정은 유지, 1인→2인 보완 + 미배정→2인 신규배정
   const dj2=bd[date];
   const ao2=new Set();
   if(OFFS[date])OFFS[date].forEach(n=>ao2.add(n));
   J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao2.add(n)));
   const avail2=E.filter(e=>!ao2.has(e));
+  if(!avail2.length){continue}
   const used2=new Set();
   dj2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>used2.add(e))});
   
+  // 1단계: 1인 배정 → 2인 보완
   dj2.filter(j=>j.addr&&j.addr.trim()&&A[j.id]&&A[j.id].length===1).forEach(j=>{
     const sasu=A[j.id][0];
-    // 1순위: 팀설정 짝
     if(teams.length){
       const myTeam=teams.find(t=>t.includes(sasu));
       if(myTeam){
@@ -421,10 +422,24 @@ if(date<cutoffStr){
         if(partner){A[j.id]=[sasu,partner].sort();used2.add(partner);return}
       }
     }
-    // 2순위: 남는 사람 중 아무나
     const free=avail2.filter(e=>!used2.has(e)&&e!==sasu);
     if(free.length){A[j.id]=[sasu,free[0]].sort();used2.add(free[0])}
   });
+  
+  // 2단계: 미배정(0인) 건 → 2인 신규배정
+  const unassigned2=dj2.filter(j=>j.addr&&j.addr.trim()&&!A[j.id]);
+  if(unassigned2.length){
+    const freePool=avail2.filter(e=>!used2.has(e));
+    const groups2=makeGroups(freePool,unassigned2.length);
+    let gi2=0;
+    unassigned2.forEach(j=>{
+      if(groups2.length){
+        A[j.id]=[...groups2[gi2%groups2.length]].sort();
+        groups2[gi2%groups2.length].forEach(e=>used2.add(e));
+        gi2++;
+      }
+    });
+  }
   continue;
 }
 
