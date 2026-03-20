@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.03';
+const VER='2026.03.20.05';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -238,12 +238,57 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 // Firebase 실시간 리스너
 db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;renderAll()});
 db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];renderAll()});
-db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};if(J.length)syncSheetAssignments();renderAll()});
+db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};renderAll()});
 db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};renderAll()});
 db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};renderAll()});
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 
 function fbSave(key,val){db.ref(key).set(val)}
+
+// 직원 역할 (사수/부사수) — Firebase에서 관리
+let ROLES={};
+db.ref('roles').on('value',snap=>{const v=snap.val();if(v)ROLES=v});
+// 초기값 (Firebase에 없으면 사용)
+const DEFAULT_ROLES={'준형':'사수','윤철':'부사수','세욱':'부사수','승재':'사수','민석':'부사수'};
+function getRole(name){return ROLES[name]||DEFAULT_ROLES[name]||'부사수'}
+
+// 배정 결과를 구글시트에 역기록
+let sheetSyncTimer=null;
+function syncToSheet(){
+if(sheetSyncTimer)clearTimeout(sheetSyncTimer);
+sheetSyncTimer=setTimeout(()=>{
+  const data=[];
+  J.forEach(j=>{
+    if(!j.addr||!j.addr.trim())return;
+    const crew=A[j.id];
+    if(!crew||!crew.length)return;
+    // 사수/부사수 분리
+    let sasu='',busasu='';
+    if(crew.length===1){
+      sasu=crew[0];
+    }else{
+      // 역할 기반 분리
+      const sasuList=crew.filter(e=>getRole(e)==='사수');
+      const busasuList=crew.filter(e=>getRole(e)==='부사수');
+      sasu=sasuList[0]||crew[0];
+      busasu=busasuList[0]||(crew.find(e=>e!==sasu))||'';
+    }
+    // CSV row index → 시트 row (id에서 추출)
+    const parts=j.id.split('_');
+    const rowIdx=parseInt(parts[parts.length-1])+1; // CSV 1-indexed → 시트 row (+1 for header)
+    data.push({row:rowIdx,sasu,busasu});
+  });
+  if(!data.length)return;
+  // Apps Script로 전송
+  fetch(SHEET_REPORT_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'updateAssignments',data,gid:'144225567'})
+  }).then(r=>r.text()).then(t=>{
+    console.log('[sheet-sync]',t);
+  }).catch(e=>console.log('[sheet-sync] error:',e));
+},2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
+}
 
 // 제품명 → CSS 클래스 매핑
 function matCls(t){if(t.includes('마블'))return'marble';if(t.includes('코튼'))return'cotton';if(t.includes('베이지'))return'beige';return'modern'}
@@ -320,28 +365,7 @@ if(found)return found;
 return null;
 }
 
-// 시트 사수/부사수 → 배정 데이터 반영 (시트 데이터 우선)
-function syncSheetAssignments(){
-let synced=0;
-J.forEach(j=>{
-if(!j.addr||!j.addr.trim())return;
-if(!j.sasu&&!j.busasu)return;
-const s=matchEmpName(j.sasu);
-const b=matchEmpName(j.busasu);
-const crew=[];
-if(s)crew.push(s);
-if(b&&b!==s)crew.push(b);
-if(crew.length>0){
-  const sorted=crew.sort();
-  const existing=A[j.id];
-  // 이미 같은 배정이면 스킵 (무한 루프 방지)
-  if(existing&&existing.length===sorted.length&&existing.every((e,i)=>e===sorted[i]))return;
-  A[j.id]=sorted;
-  synced++;
-}
-});
-if(synced>0){console.log(`[sync] ${synced}건 변경`);fbSave('assignments',A)}
-}
+// 배정은 Firebase가 유일한 소스 (시트 J/K열은 Apps Script로 역방향 기록)
 
 // ===== Auto Assign =====
 async function autoAssign(){
@@ -412,22 +436,35 @@ E.forEach(e=>{if(empDateJobs[e]){Object.values(empDateJobs[e]).forEach(cnt=>{if(
 const amReal=am.filter(j=>j.addr&&j.addr.trim());
 const pmReal=pm.filter(j=>j.addr&&j.addr.trim());
 
-// === 1단계: 1인 배정(사수만)에 부사수 채우기 ===
+// === 1단계: 1인 배정(사수만)에 팀설정 기반 부사수 채우기 ===
 const alreadyUsed=new Set();
-// 이미 배정된 사람 파악
 [...amReal,...pmReal].forEach(j=>{if(A[j.id])A[j.id].forEach(e=>alreadyUsed.add(e))});
 
-// 오전 1인 배정 건에 부사수 추가
+// 팀설정에서 짝 찾기
+function findTeamPartner(emp,used){
+if(!teams.length)return null;
+const myTeam=teams.find(t=>t.includes(emp));
+if(!myTeam)return null;
+const partner=myTeam.find(m=>m!==emp&&avail.includes(m)&&!used.has(m));
+return partner||null;
+}
+
+// 오전 1인 배정 건에 부사수 추가 (팀설정 우선)
 const amSolo=amReal.filter(j=>A[j.id]&&A[j.id].length===1);
 const amEmpty=amReal.filter(j=>!A[j.id]);
 if(amSolo.length){
-const freeForAm=avail.filter(e=>!alreadyUsed.has(e));
-let fi=0;
 amSolo.forEach(j=>{
-if(fi<freeForAm.length){
-A[j.id]=[...A[j.id],freeForAm[fi]].sort();
-alreadyUsed.add(freeForAm[fi]);
-fi++}})}
+const sasu=A[j.id][0];
+// 1순위: 팀설정 짝
+const partner=findTeamPartner(sasu,alreadyUsed);
+if(partner){
+  A[j.id]=[sasu,partner].sort();
+  alreadyUsed.add(partner);
+}else{
+  // 2순위: 남는 사람 중 아무나
+  const free=avail.filter(e=>!alreadyUsed.has(e)&&e!==sasu);
+  if(free.length){A[j.id]=[sasu,free[0]].sort();alreadyUsed.add(free[0])}
+}})}
 
 // === 2단계: 미배정 오전 건 자동 배정 ===
 const amFree=avail.filter(e=>!alreadyUsed.has(e));
@@ -446,17 +483,24 @@ const key=A[j.id].sort().join('+');
 A[j.id].forEach(e=>amAssigned.add(e));
 if(!teamAmAddr[key])teamAmAddr[key]={team:A[j.id],addr:j.addr||''}}});
 
-// === 3단계: 오후 1인 배정 건에 부사수 추가 ===
+// === 3단계: 오후 1인 배정 건에 팀설정 기반 부사수 추가 ===
 const pmSolo=pmReal.filter(j=>A[j.id]&&A[j.id].length===1);
 const pmEmpty=pmReal.filter(j=>!A[j.id]);
 
 if(pmSolo.length){
-const freeForPm=avail.filter(e=>!amAssigned.has(e)&&!pmSolo.some(pj=>A[pj.id]&&A[pj.id].includes(e)));
-let pi=0;
+const pmUsed=new Set();
+pmReal.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmUsed.add(e))});
 pmSolo.forEach(j=>{
-if(pi<freeForPm.length){
-A[j.id]=[...A[j.id],freeForPm[pi]].sort();
-pi++}})}
+const sasu=A[j.id][0];
+// 1순위: 팀설정 짝 (오전에 안 한 사람 우선)
+const partner=findTeamPartner(sasu,pmUsed);
+if(partner){
+  A[j.id]=[sasu,partner].sort();
+  pmUsed.add(partner);
+}else{
+  const free=avail.filter(e=>!amAssigned.has(e)&&!pmUsed.has(e)&&e!==sasu);
+  if(free.length){A[j.id]=[sasu,free[0]].sort();pmUsed.add(free[0])}
+}})}
 
 // === 4단계: 미배정 오후 건 자동 배정 ===
 const pmAssignedNow=new Set();
@@ -487,7 +531,7 @@ A[j.id]=[...pmGroups[gi%pmGroups.length]].sort();
 pmGroups[gi%pmGroups.length].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0});
 gi++}})}}}
 
-fbSave('assignments',A);
+fbSave('assignments',A);syncToSheet();
 fbSave('prevJobIds',J.map(j=>j.id));
 toast('✅ 자동 배정 완료!','ok');renderAll()}
 
@@ -504,10 +548,10 @@ A[jobId]=[...cur,emp].sort();
 }else{
 A[jobId]=[emp];
 }
-fbSave('assignments',A);toast('✅ 배정 업데이트','ok');renderAll()}
+fbSave('assignments',A);syncToSheet();toast('✅ 배정 업데이트','ok');renderAll()}
 
 // 배정 취소
-function unassign(jobId){delete A[jobId];fbSave('assignments',A);toast('배정 취소됨','ok');renderAll()}
+function unassign(jobId){delete A[jobId];fbSave('assignments',A);syncToSheet();toast('배정 취소됨','ok');renderAll()}
 
 // ===== 시공보고서 =====
 let reportJobId='';
@@ -1130,7 +1174,6 @@ OFFS={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
-syncSheetAssignments();
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
 // 새 일정 감지
@@ -1217,7 +1260,6 @@ const changed=lastCSVHash&&lastCSVHash!==newHash;
 lastCSVHash=newHash;
 
 parseCSV(text);
-syncSheetAssignments();
 
 // 변경 있으면 미배정 또는 1인 배정 건 자동 배정
 if(changed){
@@ -1240,7 +1282,6 @@ function manualRefresh(){refreshSheet(true)}
 async function reAssign(){
 if(!confirm('모든 배정을 초기화하고 다시 배정할까요?'))return;
 A={};
-syncSheetAssignments();
 toast('⏳ 재배정 중...','ok');
 await autoAssign();
 toast('✅ 재배정 완료!','ok');
