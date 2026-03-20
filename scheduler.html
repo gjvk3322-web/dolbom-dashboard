@@ -320,18 +320,28 @@ if(found)return found;
 return null;
 }
 
-// 시트 사수/부사수 → 배정 데이터 반영
+// 시트 사수/부사수 → 배정 데이터 반영 (시트 데이터 우선)
 function syncSheetAssignments(){
+console.log('[sync] 시트 배정 동기화 시작, 직원:', E);
+let synced=0;
 J.forEach(j=>{
 if(!j.addr||!j.addr.trim())return;
-if(A[j.id])return; // 이미 Firebase 배정 있으면 스킵
-const crew=[];
+if(!j.sasu&&!j.busasu)return; // 시트에 사수/부사수 없으면 스킵
 const s=matchEmpName(j.sasu);
 const b=matchEmpName(j.busasu);
+console.log(`[sync] ${j.id} | 시트: 사수="${j.sasu}"→${s}, 부사수="${j.busasu}"→${b} | 기존배정:`, A[j.id]);
+const crew=[];
 if(s)crew.push(s);
 if(b&&b!==s)crew.push(b);
-if(crew.length>=2)A[j.id]=crew.sort();
-});}
+if(crew.length>0){
+  A[j.id]=crew.sort();
+  synced++;
+  console.log(`[sync] → 배정 적용: [${crew.sort().join(', ')}]`);
+}
+});
+console.log(`[sync] 동기화 완료: ${synced}건 반영`);
+if(synced>0)fbSave('assignments',A);
+}
 
 // ===== Auto Assign =====
 async function autoAssign(){
@@ -1116,8 +1126,8 @@ let badAssign=false;
 realJ.forEach(j=>{
 // 주소 없는 건은 배정 제거
 if(A[j.id]&&(!j.addr||!j.addr.trim())){delete A[j.id];badAssign=true}
-// 1인 배정은 모두 제거 → 대기로
-if(A[j.id]&&A[j.id].length===1){delete A[j.id];badAssign=true}
+// 1인 배정은 제거 → 대기로 (단, 시트에서 사수/부사수가 지정된 건은 유지)
+if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){delete A[j.id];badAssign=true}
 });
 if(badAssign){fbSave('assignments',A)}
 
@@ -1201,7 +1211,6 @@ async function reAssign(){
 if(!confirm('모든 배정을 초기화하고 다시 배정할까요?'))return;
 A={};
 syncSheetAssignments();
-fbSave('assignments',{});
 toast('⏳ 재배정 중...','ok');
 await autoAssign();
 toast('✅ 재배정 완료!','ok');
