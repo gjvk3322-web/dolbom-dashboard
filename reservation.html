@@ -326,6 +326,7 @@ function parseScheduleData(rows){
       address: r['주소']||'',
       product: r['제품']||'',
       phone: r['연락처']||'',
+      isNew: r['신축여부']||'',
       size: r['평수']||'',
       scope: r['시공범위']||'',
       qty: r['수량']||'',
@@ -462,10 +463,14 @@ function editItem(time,ds,index){
   document.getElementById('formTitle').textContent='✏️ 예약 수정';
   document.getElementById('submitBtn').textContent='수정 완료';
   const form=document.getElementById('formSection');form.classList.add('show');
+  // 폼 초기화 후 기존 데이터 채우기
+  ['fPhone','fAddress','fSize','fScope','fQty'].forEach(id=>{document.getElementById(id).value='';});
+  ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
   document.getElementById('fTime').value=time;
   document.getElementById('fDate').value=ds;
   document.getElementById('fAddress').value=item.address||'';
   document.getElementById('fPhone').value=item.phone||'';
+  document.getElementById('fIsNew').value=item.isNew||'';
   document.getElementById('fSize').value=item.size||'';
   document.getElementById('fScope').value=item.scope||'';
   document.getElementById('fProduct1').value=item.product||'';
