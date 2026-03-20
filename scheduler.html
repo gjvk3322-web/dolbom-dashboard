@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.02';
+const VER='2026.03.20.03';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -238,7 +238,7 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 // Firebase 실시간 리스너
 db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;renderAll()});
 db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];renderAll()});
-db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};renderAll()});
+db.ref('assignments').on('value',snap=>{const v=snap.val();if(v)A=v;else A={};if(J.length)syncSheetAssignments();renderAll()});
 db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};renderAll()});
 db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};renderAll()});
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
@@ -322,25 +322,25 @@ return null;
 
 // 시트 사수/부사수 → 배정 데이터 반영 (시트 데이터 우선)
 function syncSheetAssignments(){
-console.log('[sync] 시트 배정 동기화 시작, 직원:', E);
 let synced=0;
 J.forEach(j=>{
 if(!j.addr||!j.addr.trim())return;
-if(!j.sasu&&!j.busasu)return; // 시트에 사수/부사수 없으면 스킵
+if(!j.sasu&&!j.busasu)return;
 const s=matchEmpName(j.sasu);
 const b=matchEmpName(j.busasu);
-console.log(`[sync] ${j.id} | 시트: 사수="${j.sasu}"→${s}, 부사수="${j.busasu}"→${b} | 기존배정:`, A[j.id]);
 const crew=[];
 if(s)crew.push(s);
 if(b&&b!==s)crew.push(b);
 if(crew.length>0){
-  A[j.id]=crew.sort();
+  const sorted=crew.sort();
+  const existing=A[j.id];
+  // 이미 같은 배정이면 스킵 (무한 루프 방지)
+  if(existing&&existing.length===sorted.length&&existing.every((e,i)=>e===sorted[i]))return;
+  A[j.id]=sorted;
   synced++;
-  console.log(`[sync] → 배정 적용: [${crew.sort().join(', ')}]`);
 }
 });
-console.log(`[sync] 동기화 완료: ${synced}건 반영`);
-if(synced>0)fbSave('assignments',A);
+if(synced>0){console.log(`[sync] ${synced}건 변경`);fbSave('assignments',A)}
 }
 
 // ===== Auto Assign =====
