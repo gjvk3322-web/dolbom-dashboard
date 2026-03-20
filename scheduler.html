@@ -286,7 +286,7 @@ if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
 const id=ds+'_'+r[0]+'_'+i;
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
-J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[17]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false})}}
+J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[17]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false,sasu:(r[9]||'').trim(),busasu:(r[10]||'').trim()})}}
 
 // 휴무 CSV 파싱
 function parseOffCSV(text){
@@ -305,6 +305,33 @@ if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
 if(!OFFS[ds])OFFS[ds]=new Set();
 OFFS[ds].add(r[2].trim()); // B열=요일(자동), C열=이름
 }}
+
+// 시트 이름 → 직원 짧은 이름 매칭 (이준형→준형, 윤철→윤철)
+function matchEmpName(sheetName){
+if(!sheetName)return null;
+const n=sheetName.trim();
+// 정확히 일치
+if(E.includes(n))return n;
+// 3글자 이상이면 성 제거 후 매칭
+if(n.length>=3){const short=n.slice(1);if(E.includes(short))return short;}
+// 직원 이름이 시트 이름에 포함
+const found=E.find(e=>n.includes(e));
+if(found)return found;
+return null;
+}
+
+// 시트 사수/부사수 → 배정 데이터 반영
+function syncSheetAssignments(){
+J.forEach(j=>{
+if(!j.addr||!j.addr.trim())return;
+if(A[j.id])return; // 이미 Firebase 배정 있으면 스킵
+const crew=[];
+const s=matchEmpName(j.sasu);
+const b=matchEmpName(j.busasu);
+if(s)crew.push(s);
+if(b&&b!==s)crew.push(b);
+if(crew.length>=2)A[j.id]=crew.sort();
+});}
 
 // ===== Auto Assign =====
 async function autoAssign(){
@@ -1063,6 +1090,7 @@ OFFS={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
+syncSheetAssignments();
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
 // 새 일정 감지
@@ -1149,6 +1177,7 @@ const changed=lastCSVHash&&lastCSVHash!==newHash;
 lastCSVHash=newHash;
 
 parseCSV(text);
+syncSheetAssignments();
 
 // 변경 있으면 미배정 건 자동 배정
 if(changed){
@@ -1171,6 +1200,7 @@ function manualRefresh(){refreshSheet(true)}
 async function reAssign(){
 if(!confirm('모든 배정을 초기화하고 다시 배정할까요?'))return;
 A={};
+syncSheetAssignments();
 fbSave('assignments',{});
 toast('⏳ 재배정 중...','ok');
 await autoAssign();
