@@ -214,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.25';
+const VER='2026.03.21.26';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -291,10 +291,12 @@ sheetSyncTimer=setTimeout(()=>{
         // 팀 순서대로: 첫번째=사수
         const ordered=teamOrder.filter(m=>crew.includes(m));
         sasu=ordered[0]||crew[0];
-        busasu=ordered[1]||(crew.find(e=>e!==sasu))||'';
+        // 나머지 전부 부사수 (3명 이상 대응)
+        const rest=crew.filter(e=>e!==sasu);
+        busasu=rest.join(',');
       }else{
         sasu=crew[0];
-        busasu=crew[1]||'';
+        busasu=crew.slice(1).join(',');
       }
     }
     const parts=j.id.split('_');
@@ -357,22 +359,33 @@ const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
 J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[17]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false,sasu:(r[9]||'').trim(),busasu:(r[10]||'').trim()})}}
 
-// 휴무 CSV 파싱
+// 휴무 CSV 파싱 (A:날짜 B:요일 C~L:이름1~이름10)
 function parseOffCSV(text){
 const lines=text.split('\n');
 for(let i=1;i<lines.length;i++){
 const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
 r.push(cur.trim().replace(/^"|"$/g,''));
-if(!r[0]||!r[2])continue; // 날짜, 이름 필수
-let ds=r[0];
+if(!r[0])continue;
+let ds=r[0].trim();
 if(ds.includes('T'))ds=ds.substring(0,10);
+// YYYYMMDD → YYYY-MM-DD
+if(ds.match(/^\d{8}$/))ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+// YYYY-M-D → YYYY-MM-DD
 if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
   const parts=ds.split('-');
   ds=parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
 }
-if(!OFFS[ds])OFFS[ds]=new Set();
-OFFS[ds].add(r[2].trim()); // B열=요일(자동), C열=이름
+if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue; // 유효한 날짜만
+// C~L열 (r[2]~r[11]) 모든 이름 읽기
+for(let ci=2;ci<=11;ci++){
+  if(!r[ci]||!r[ci].trim())continue;
+  const name=matchEmpName(r[ci]); // 풀네임 → 짧은 이름 매칭
+  if(name){
+    if(!OFFS[ds])OFFS[ds]=new Set();
+    OFFS[ds].add(name);
+  }
+}
 }}
 
 // 시트 이름 → 직원 짧은 이름 매칭 (이준형→준형, 윤철→윤철)
