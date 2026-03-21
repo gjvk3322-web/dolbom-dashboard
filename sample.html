@@ -235,7 +235,7 @@ function submitForm(){
   const consent=document.getElementById('fConsent').checked;
 
   if(!name){showToast('⚠️ 이름을 입력해주세요','error');return}
-  if(!phone||phone.length<10){showToast('⚠️ 연락처를 정확히 입력해주세요','error');return}
+  if(!phone||phone.replace(/[^0-9]/g,'').length<10){showToast('⚠️ 연락처를 정확히 입력해주세요','error');return}
   if(!address){showToast('⚠️ 주소를 검색해주세요','error');return}
   if(!timing){showToast('⚠️ 시공 예정 시기를 선택해주세요','error');return}
   if(!purpose){showToast('⚠️ 시공 목적을 선택해주세요','error');return}
@@ -243,37 +243,69 @@ function submitForm(){
   if(!consent){showToast('⚠️ 개인정보 수집에 동의해주세요','error');return}
 
   const fullAddr=addrDetail?address+' '+addrDetail:address;
-
   const btn=document.getElementById('submitBtn');
-  btn.disabled=true;btn.textContent='신청 중...';
+  btn.disabled=true;btn.textContent='확인 중...';
 
-  const payload={
-    type:'sample',
-    name,phone,
-    address:fullAddr,
-    timing,purpose,route,
-    consent:'Y',
-    date:new Date().toISOString()
-  };
-
+  // 1단계: 중복 체크
   fetch(API_URL,{
-    method:'POST',mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  }).then(()=>{
-    showToast('✅ 샘플 신청이 완료되었습니다! 2~3일 내 배송됩니다','success');
-    document.getElementById('fName').value='';
-    document.getElementById('fPhone').value='';
-    document.getElementById('fAddress').value='';
-    document.getElementById('fAddrDetail').value='';
-    document.getElementById('fRoute').value='';
-    document.getElementById('fConsent').checked=false;
-    document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
-    btn.textContent='✅ 신청 완료!';
-    setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'sampleCheck',phone:phone})
+  }).then(r=>r.text()).then(t=>{
+    try{
+      const res=JSON.parse(t);
+      if(res.duplicate){
+        showToast('⚠️ 이미 신청하셨습니다! 2~3일 내 배송됩니다 😊','error');
+        btn.disabled=false;btn.textContent='무료 샘플 신청하기';
+        return;
+      }
+    }catch(e){}
+
+    // 2단계: 신청 접수
+    btn.textContent='신청 중...';
+    const payload={
+      type:'sample',
+      name,phone,
+      address:fullAddr,
+      timing,purpose,route,
+      consent:'Y',
+      date:new Date().toISOString()
+    };
+
+    fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify(payload)
+    }).then(()=>{
+      showToast('✅ 샘플 신청이 완료되었습니다! 2~3일 내 배송됩니다','success');
+      document.getElementById('fName').value='';
+      document.getElementById('fPhone').value='';
+      document.getElementById('fAddress').value='';
+      document.getElementById('fAddrDetail').value='';
+      document.getElementById('fRoute').value='';
+      document.getElementById('fConsent').checked=false;
+      document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
+      btn.textContent='✅ 신청 완료!';
+      setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    }).catch(()=>{
+      showToast('⚠️ 전송에 실패했습니다. 다시 시도해주세요','error');
+      btn.disabled=false;btn.textContent='무료 샘플 신청하기';
+    });
   }).catch(()=>{
-    showToast('⚠️ 전송에 실패했습니다. 다시 시도해주세요','error');
-    btn.disabled=false;btn.textContent='무료 샘플 신청하기';
+    // 중복체크 실패해도 그냥 접수 진행
+    btn.textContent='신청 중...';
+    fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,consent:'Y',date:new Date().toISOString()})
+    }).then(()=>{
+      showToast('✅ 샘플 신청이 완료되었습니다!','success');
+      btn.textContent='✅ 신청 완료!';
+      setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    }).catch(()=>{
+      showToast('⚠️ 전송 실패','error');
+      btn.disabled=false;btn.textContent='무료 샘플 신청하기';
+    });
   });
 }
 </script>
