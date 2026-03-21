@@ -256,16 +256,21 @@ function submitForm(){
   const btn=document.getElementById('submitBtn');
   btn.disabled=true;btn.textContent='확인 중...';
 
-  // 1단계: 중복 체크
+  // 1단계: 중복 + 지역 체크
   fetch(API_URL,{
     method:'POST',
     headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({type:'sampleCheck',phone:phone})
+    body:JSON.stringify({type:'sampleCheck',phone:phone,address:fullAddr})
   }).then(r=>r.text()).then(t=>{
     try{
       const res=JSON.parse(t);
       if(res.duplicate){
         showToast('⚠️ 이미 신청하셨습니다! 2~3일 내 배송됩니다 😊','error');
+        btn.disabled=false;btn.textContent='무료 샘플 신청하기';
+        return;
+      }
+      if(res.regionBlocked){
+        showToast('😢 죄송합니다. 해당 지역은 서비스 불가입니다','error');
         btn.disabled=false;btn.textContent='무료 샘플 신청하기';
         return;
       }
