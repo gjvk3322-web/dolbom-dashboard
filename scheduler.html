@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.23';
+const VER='2026.03.21.24';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -521,11 +521,12 @@ if(date<cutoffStr){
         availTeams.forEach(t=>{
           t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
         });
-        // 정렬: 거리차 10km 초과 → 가까운 팀 우선, 10km 이내 → 공정성(건수 적은 팀) 우선
+        // 점수제: 거리(km) + 건수 × 15km 페널티
+        // 건수 1건 더 많으면 15km 더 가까워야 이김 → 공정성 보장
         availTeams.sort((a,b)=>{
-          const dd=a._dist-b._dist;
-          if(Math.abs(dd)>10)return dd;
-          return a.pmCount-b.pmCount;
+          const scoreA=a._dist+(a.pmCount*15);
+          const scoreB=b._dist+(b.pmCount*15);
+          return scoreA-scoreB;
         });
         const best=availTeams[0];
         A[j.id]=[...best.team].sort();
@@ -612,7 +613,7 @@ if(unassigned.length){
     }
   });
 
-  // 오후 배정: 오전 마지막 위치에서 가장 가까운 팀
+  // 오후 배정: 오전 마지막 위치에서 가장 가까운 팀 (건수 페널티 적용)
   pmUn.forEach(j=>{
     if(A[j.id])return;
     const pmGeo=j._geo;
@@ -622,14 +623,18 @@ if(unassigned.length){
       allTeamsSorted.forEach(t=>{
         t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
       });
+      // 점수제: 거리(km) + 건수 × 15km 페널티
+      // 건수 1건 더 많으면 15km 더 가까워야 이김 → 공정성 보장
       allTeamsSorted.sort((a,b)=>{
-        const dd=a._dist-b._dist;
-        if(Math.abs(dd)>10)return dd;
-        return a.count-b.count;
+        const scoreA=a._dist+(a.count*15);
+        const scoreB=b._dist+(b.count*15);
+        return scoreA-scoreB;
       });
       const best=allTeamsSorted[0];
       A[j.id]=[...best.team].sort();
       best.count++;
+      // 이 팀의 마지막 위치를 오후 건으로 갱신 (다음 오후 건 거리 계산에 반영)
+      if(pmGeo)best.lastGeo=pmGeo;
     }else{
       // GPS 없으면 건수 가장 적은 팀
       const fairTeam=Object.values(teamLoad).sort((a,b)=>a.count-b.count)[0];
