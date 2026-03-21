@@ -54,6 +54,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .pool-mem{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:transform .1s}
 .pool-mem:active{transform:scale(.95)}
 
+/* Drag & Drop */
+.drag-ghost{position:fixed;z-index:500;pointer-events:none;opacity:.9;transform:scale(1.08);filter:brightness(1.2)}
+.drag-over{outline:2px dashed var(--blue);outline-offset:-2px;background:rgba(90,200,250,.08)!important}
+.drag-src{opacity:.3;transform:scale(.9)}
+.tslot.drag-over,.pool.drag-over{outline:2px dashed var(--blue);outline-offset:-2px;background:rgba(90,200,250,.08)!important}
+
 /* Buttons */
 .btn{display:block;width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin:8px 0;transition:transform .1s}
 .btn:active{transform:scale(.98)}
@@ -208,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.24';
+const VER='2026.03.21.25';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -1082,17 +1088,21 @@ document.getElementById('schedView').innerHTML=html}
 function renderTeam(){
 const colors=['tc0','tc1','tc2','tc3','tc4','tc5','tc6','tc7','tc8','tc9'];
 let html='<div class="sec">👥 이번 달 팀 구성</div>';
-html+='<p style="font-size:12px;color:var(--dim);margin-bottom:14px">팀을 구성하면 한 달간 같은 팀으로 운영됩니다</p>';
+html+='<p style="font-size:12px;color:var(--dim);margin-bottom:14px">직원을 길게 눌러 드래그하면 팀을 이동할 수 있어요</p>';
 
 if(teams.length){
 html+=teams.map((t,i)=>{
-const members=t.map(m=>`<span class="tmem ${colors[i%10]}">${m}<span class="x" onclick="rmMem(${i},'${m}')">×</span></span>`).join('');
-return `<div class="tcard"><h3 style="display:flex;justify-content:space-between">${i+1}팀<span style="font-size:12px;font-weight:400;color:var(--red);cursor:pointer" onclick="delTeam(${i})">삭제</span></h3><div class="tslot">${members||'<span style="color:var(--dim);font-size:13px">비어있음</span>'}</div></div>`}).join('')}
+const members=t.map(m=>{
+const ci=E.indexOf(m);
+return `<span class="tmem ${colors[ci%10]}" data-name="${m}" data-from="team" data-ti="${i}">${m}<span class="x" onclick="event.stopPropagation();rmMem(${i},'${m}')">×</span></span>`
+}).join('');
+return `<div class="tcard"><h3 style="display:flex;justify-content:space-between">${i+1}팀<span style="font-size:12px;font-weight:400;color:var(--red);cursor:pointer" onclick="delTeam(${i})">삭제</span></h3><div class="tslot" data-drop="team" data-ti="${i}">${members||'<span style="color:var(--dim);font-size:13px">여기로 드래그</span>'}</div></div>`}).join('')}
 
 const assigned=new Set();teams.forEach(t=>t.forEach(m=>assigned.add(m)));
 const unassigned=E.filter(e=>!assigned.has(e));
-if(unassigned.length){
-html+=`<div class="tcard"><h3>미배정 직원</h3><div class="pool">${unassigned.map(e=>`<div class="pool-mem tl${teams.length%10}" onclick="addMem('${e}')">${e}</div>`).join('')}</div></div>`}
+html+=`<div class="tcard"><h3>미배정 직원</h3><div class="pool" data-drop="pool">${unassigned.length?unassigned.map(e=>{
+const ci=E.indexOf(e);
+return `<span class="pool-mem tl${ci%10}" data-name="${e}" data-from="pool" style="border-color:${['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'][ci%10]}">${e}</span>`}).join(''):'<span style="color:var(--dim);font-size:13px">모든 직원이 팀에 배정됨</span>'}</div></div>`;
 
 html+=`<button class="btn btn-blue" onclick="addTeam()">+ 새 팀 추가</button>`;
 
@@ -1101,14 +1111,132 @@ html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${E.map(e=>`<span style="padding:8px 14px;background:var(--card2);border-radius:8px;font-size:13px;display:inline-flex;align-items:center;gap:6px">${e}<span style="color:var(--red);cursor:pointer" onclick="delEmp('${e}')">×</span></span>`).join('')}</div>
 <div class="add-row"><input id="ne" placeholder="새 직원 이름"><button class="btn btn-blue" style="width:auto;padding:12px 24px;margin:0" onclick="addEmp()">추가</button></div></div>`;
 
-document.getElementById('teamView').innerHTML=html}
+document.getElementById('teamView').innerHTML=html;
+initDnD();}
 
 function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam()}
 function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam()}
-function addMem(name){if(!teams.length)teams.push([]);let mi=0,ml=teams[0].length;teams.forEach((t,i)=>{if(t.length<ml){ml=t.length;mi=i}});teams[mi].push(name);fbSave('teams',teams);renderTeam()}
 function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam()}
 function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
 function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam()}
+
+// 드래그앤드롭으로 팀 이동 처리
+function moveMember(name,fromType,fromTi,toType,toTi){
+// 원래 위치에서 제거
+if(fromType==='team'&&fromTi!==undefined){
+  teams[fromTi]=teams[fromTi].filter(m=>m!==name);
+}
+// 새 위치에 추가
+if(toType==='team'&&toTi!==undefined){
+  if(!teams[toTi].includes(name))teams[toTi].push(name);
+}
+// pool로 이동 = 어디에도 추가 안 함 (제거만)
+fbSave('teams',teams);renderTeam();
+toast('✅ '+name+' 이동 완료','ok');
+}
+
+// ===== 터치 드래그앤드롭 시스템 =====
+let dndState=null;
+function initDnD(){
+const members=document.querySelectorAll('.tmem[data-name],.pool-mem[data-name]');
+members.forEach(el=>{
+  el.addEventListener('touchstart',dndTouchStart,{passive:false});
+  el.addEventListener('mousedown',dndMouseDown);
+});
+}
+
+function dndTouchStart(e){
+const el=e.currentTarget;
+const name=el.dataset.name;
+if(!name)return;
+// 길게 누르기 감지 (200ms)
+const timer=setTimeout(()=>{
+  e.preventDefault();
+  startDrag(el,e.touches[0].clientX,e.touches[0].clientY);
+},200);
+el._dndTimer=timer;
+el._dndMoved=false;
+el.addEventListener('touchmove',function onM(ev){
+  if(!dndState){
+    // 아직 드래그 시작 안 됐으면 타이머 취소 (스크롤 허용)
+    const dx=Math.abs(ev.touches[0].clientX-(e.touches[0]?.clientX||0));
+    const dy=Math.abs(ev.touches[0].clientY-(e.touches[0]?.clientY||0));
+    if(dx>5||dy>5){clearTimeout(timer);el.removeEventListener('touchmove',onM)}
+    return;
+  }
+  ev.preventDefault();
+  moveDrag(ev.touches[0].clientX,ev.touches[0].clientY);
+},{passive:false});
+el.addEventListener('touchend',function onE(ev){
+  clearTimeout(timer);
+  if(dndState)endDrag(ev.changedTouches[0].clientX,ev.changedTouches[0].clientY);
+  el.removeEventListener('touchend',onE);
+},{once:true});
+el.addEventListener('touchcancel',function(){clearTimeout(timer);cancelDrag()},{once:true});
+}
+
+function dndMouseDown(e){
+const el=e.currentTarget;
+if(e.target.classList.contains('x'))return; // X 버튼은 무시
+const name=el.dataset.name;
+if(!name)return;
+e.preventDefault();
+startDrag(el,e.clientX,e.clientY);
+function onM(ev){ev.preventDefault();moveDrag(ev.clientX,ev.clientY)}
+function onU(ev){endDrag(ev.clientX,ev.clientY);document.removeEventListener('mousemove',onM);document.removeEventListener('mouseup',onU)}
+document.addEventListener('mousemove',onM);
+document.addEventListener('mouseup',onU);
+}
+
+function startDrag(el,x,y){
+const rect=el.getBoundingClientRect();
+const ghost=el.cloneNode(true);
+ghost.className=el.className+' drag-ghost';
+ghost.style.width=rect.width+'px';
+ghost.style.left=(x-rect.width/2)+'px';
+ghost.style.top=(y-rect.height/2)+'px';
+document.body.appendChild(ghost);
+el.classList.add('drag-src');
+dndState={name:el.dataset.name,fromType:el.dataset.from,fromTi:el.dataset.ti!==undefined?parseInt(el.dataset.ti):undefined,ghost,srcEl:el};
+}
+
+function moveDrag(x,y){
+if(!dndState)return;
+dndState.ghost.style.left=(x-dndState.ghost.offsetWidth/2)+'px';
+dndState.ghost.style.top=(y-dndState.ghost.offsetHeight/2)+'px';
+// 드롭 대상 하이라이트
+document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+const target=document.elementFromPoint(x,y);
+if(target){
+  const drop=target.closest('[data-drop]');
+  if(drop)drop.classList.add('drag-over');
+}
+}
+
+function endDrag(x,y){
+if(!dndState)return;
+document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+const target=document.elementFromPoint(x,y);
+if(target){
+  const drop=target.closest('[data-drop]');
+  if(drop){
+    const toType=drop.dataset.drop;
+    const toTi=drop.dataset.ti!==undefined?parseInt(drop.dataset.ti):undefined;
+    // 같은 자리가 아니면 이동
+    if(toType!==dndState.fromType||toTi!==dndState.fromTi){
+      moveMember(dndState.name,dndState.fromType,dndState.fromTi,toType,toTi);
+    }
+  }
+}
+cancelDrag();
+}
+
+function cancelDrag(){
+if(!dndState)return;
+if(dndState.ghost&&dndState.ghost.parentNode)dndState.ghost.remove();
+if(dndState.srcEl)dndState.srcEl.classList.remove('drag-src');
+dndState=null;
+}
 
 // ===== Render Fair =====
 function renderFair(){
