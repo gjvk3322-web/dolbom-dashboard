@@ -1119,13 +1119,13 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
 ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-left:38px;margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
-<div style="display:flex;align-items:center;gap:3px;margin-left:38px">
-<span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
+<div style="display:flex;align-items:center;gap:3px;margin-left:38px;margin-top:2px">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
+<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">카톡</span>
 ${j.time==='as'?
-`<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">🔧</span>`:
-`<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">📝</span>`}
+`<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
+`<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
+<span style="margin-left:auto;display:flex;gap:3px">
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </span>
@@ -1163,10 +1163,8 @@ ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shr
 </div>
 ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-left:38px;margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
 <div style="display:flex;align-items:center;gap:3px;margin-left:38px;margin-bottom:3px">
-<span style="margin-left:auto;display:flex;gap:3px;flex-shrink:0">
-<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">🧭</span>
-<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">💬</span>
-</span>
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
+<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">카톡</span>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('');
