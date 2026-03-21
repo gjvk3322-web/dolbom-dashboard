@@ -125,7 +125,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#0a0a0a;color:#f5f5f5;min-
       </div>
     </div>
     <div class="fg">
-      <label>상세주소 (동/호수)</label>
+      <label>상세주소 (동/호수) <span class="req">*</span></label>
       <input type="text" id="fAddrDetail" placeholder="예: 101동 1502호" />
     </div>
   </div>
@@ -145,12 +145,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#0a0a0a;color:#f5f5f5;min-
     <div class="fg">
       <label>시공 목적 <span class="req">*</span></label>
       <div class="chip-group" id="chipPurpose">
-        <div class="chip" onclick="selectChip('chipPurpose',this)">입주</div>
-        <div class="chip" onclick="selectChip('chipPurpose',this)">신축입주</div>
-        <div class="chip" onclick="selectChip('chipPurpose',this)">반려견</div>
-        <div class="chip" onclick="selectChip('chipPurpose',this)">아이안전</div>
-        <div class="chip" onclick="selectChip('chipPurpose',this)">층간소음</div>
-        <div class="chip" onclick="selectChip('chipPurpose',this)">기타</div>
+        <div class="chip" onclick="toggleChip(this)">입주</div>
+        <div class="chip" onclick="toggleChip(this)">신축입주</div>
+        <div class="chip" onclick="toggleChip(this)">반려견</div>
+        <div class="chip" onclick="toggleChip(this)">아이안전</div>
+        <div class="chip" onclick="toggleChip(this)">층간소음</div>
+        <div class="chip" onclick="toggleChip(this)">기타</div>
       </div>
     </div>
     <div class="fg">
@@ -212,9 +212,18 @@ function selectChip(groupId,el){
   el.classList.toggle('selected');
 }
 
+function toggleChip(el){
+  el.classList.toggle('selected');
+}
+
 function getChipValue(groupId){
   const sel=document.querySelector('#'+groupId+' .chip.selected');
   return sel?sel.textContent:'';
+}
+
+function getChipValues(groupId){
+  const sels=document.querySelectorAll('#'+groupId+' .chip.selected');
+  return Array.from(sels).map(c=>c.textContent).join(', ');
 }
 
 function showToast(msg,type){
@@ -230,13 +239,14 @@ function submitForm(){
   const address=document.getElementById('fAddress').value.trim();
   const addrDetail=document.getElementById('fAddrDetail').value.trim();
   const timing=getChipValue('chipTime');
-  const purpose=getChipValue('chipPurpose');
+  const purpose=getChipValues('chipPurpose');
   const route=document.getElementById('fRoute').value.trim();
   const consent=document.getElementById('fConsent').checked;
 
   if(!name){showToast('⚠️ 이름을 입력해주세요','error');return}
   if(!phone||phone.replace(/[^0-9]/g,'').length<10){showToast('⚠️ 연락처를 정확히 입력해주세요','error');return}
   if(!address){showToast('⚠️ 주소를 검색해주세요','error');return}
+  if(!addrDetail){showToast('⚠️ 상세주소(동/호수)를 입력해주세요','error');return}
   if(!timing){showToast('⚠️ 시공 예정 시기를 선택해주세요','error');return}
   if(!purpose){showToast('⚠️ 시공 목적을 선택해주세요','error');return}
   if(!route){showToast('⚠️ 알게 된 경로를 입력해주세요','error');return}
