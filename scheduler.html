@@ -214,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.31';
+const VER='2026.03.21.32';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -571,15 +571,33 @@ if(date<cutoffStr){
     pmEmpty2.forEach(j=>{
       if(A[j.id])return;
       const pmGeo=j._geo;
-      const availTeams=amTeamInfo.filter(t=>t.team.every(m=>!pmUsed.has(m)));
 
+      // 1순위: 당일 0건인 대기팀 (출근했는데 놀고 있는 팀)
+      const allAssigned=new Set();
+      [...am2,...pm2].forEach(jj=>{if(A[jj.id])A[jj.id].forEach(e=>allAssigned.add(e))});
+      const idlePeople=avail2.filter(e=>!allAssigned.has(e)&&!pmUsed.has(e));
+      const idleTeams=makeGroups(idlePeople,1);
+      if(idleTeams.length){
+        // 대기팀 중 GPS 가장 가까운 팀 (사무실에서 출발)
+        let bestIdle=idleTeams[0];
+        if(pmGeo&&idleTeams.length>1){
+          let minD=9999;
+          for(const it of idleTeams){
+            const d=hav(OFF_B.lat,OFF_B.lng,pmGeo.lat,pmGeo.lng);
+            if(d<minD){minD=d;bestIdle=it}
+          }
+        }
+        A[j.id]=[...bestIdle].sort();
+        bestIdle.forEach(e=>{pmUsed.add(e);crossDateKm[e]+=(j.dist||0)});
+        return;
+      }
+
+      // 2순위: 오전팀 중 GPS 가장 가까운 팀
+      const availTeams=amTeamInfo.filter(t=>t.team.every(m=>!pmUsed.has(m)));
       if(availTeams.length){
-        // 각 오전팀의 마지막 위치 → 오후 건 위치 거리 계산
         availTeams.forEach(t=>{
           t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
         });
-        // 오후는 GPS 거리 절대 우선 (이동 효율 > 공평성)
-        // 공평성은 오전 배정에서 이미 반영됨
         availTeams.sort((a,b)=>{
           const scoreA=a._dist+(a.pmCount*15);
           const scoreB=b._dist+(b.pmCount*15);
@@ -591,7 +609,7 @@ if(date<cutoffStr){
         best.pmCount++;
         return;
       }
-      // 폴백: 남는 사람으로 팀 구성
+      // 3순위: 남는 사람
       const freeP=avail2.filter(e=>!pmUsed.has(e));
       const gP=makeGroups(freeP,1);
       if(gP.length){
@@ -669,7 +687,7 @@ if(unassigned.length){
     }
   });
 
-  // 오후 배정: 오전 마지막 위치에서 가장 가까운 팀 (건수 페널티 적용)
+  // 오후 배정: 0건 팀 우선 + GPS 거리
   pmUn.forEach(j=>{
     if(A[j.id])return;
     const pmGeo=j._geo;
@@ -677,9 +695,11 @@ if(unassigned.length){
 
     if(allTeamsSorted.length&&pmGeo){
       allTeamsSorted.forEach(t=>{
-        t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
+        // 0건 팀은 사무실에서 출발
+        const fromGeo=t.lastGeo||OFF_B;
+        t._dist=hav(fromGeo.lat,fromGeo.lng,pmGeo.lat,pmGeo.lng);
       });
-      // 오후는 GPS 거리 절대 우선 (이동 효율 > 공평성)
+      // 0건 팀 우선 (count*15) + GPS 거리
       allTeamsSorted.sort((a,b)=>{
         const scoreA=a._dist+(a.count*15);
         const scoreB=b._dist+(b.count*15);
