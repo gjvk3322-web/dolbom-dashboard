@@ -214,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.32';
+const VER='2026.03.21.33';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -238,6 +238,7 @@ let A={};
 let CF={};  // 출발확인
 let DIST={};  // 거리 캐시 {주소: km}
 let SKIP=new Set(); // 수동 취소된 건 (자동배정 제외)
+let LOCK=new Set(); // 배정 확정(잠금)된 건 (자동배정 변경 불가)
 let J=[];
 let prevJobIds=new Set();
 let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
@@ -266,6 +267,7 @@ db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbR
 db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
+db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
 
 function fbSave(key,val){db.ref(key).set(val)}
 
@@ -500,7 +502,7 @@ if(date<cutoffStr){
   am2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amUsed.add(e))});
   
   // ── 오전 처리 ──
-  am2.filter(j=>!SKIP.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
+  am2.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
     const sasu=A[j.id][0];
     if(teams.length){
       const myTeam=teams.find(t=>t.includes(sasu));
@@ -512,7 +514,7 @@ if(date<cutoffStr){
     const free=avail2.filter(e=>!amUsed.has(e)&&e!==sasu);
     if(free.length){A[j.id]=[sasu,free[0]].sort();amUsed.add(free[0])}
   });
-  const amEmpty2=am2.filter(j=>!A[j.id]&&!SKIP.has(j.id));
+  const amEmpty2=am2.filter(j=>!A[j.id]&&!SKIP.has(j.id)&&!LOCK.has(j.id));
   if(amEmpty2.length){
     const amFree2=avail2.filter(e=>!amUsed.has(e));
     const amG2=makeGroups(amFree2,amEmpty2.length);
@@ -530,7 +532,7 @@ if(date<cutoffStr){
   const pmUsed=new Set();
   pm2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmUsed.add(e))});
   
-  pm2.filter(j=>!SKIP.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
+  pm2.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
     const sasu=A[j.id][0];
     if(teams.length){
       const myTeam=teams.find(t=>t.includes(sasu));
@@ -543,7 +545,7 @@ if(date<cutoffStr){
     if(free.length){A[j.id]=[sasu,free[0]].sort();pmUsed.add(free[0])}
   });
   
-  const pmEmpty2=pm2.filter(j=>!A[j.id]&&!SKIP.has(j.id));
+  const pmEmpty2=pm2.filter(j=>!A[j.id]&&!SKIP.has(j.id)&&!LOCK.has(j.id));
   if(pmEmpty2.length){
     // 오전 팀 목록 (마지막 시공 주소 + GPS 좌표 + 건수 추적)
     const amTeamInfo=[];
@@ -630,7 +632,7 @@ if(!avail.length)continue;
 
 // 배정 대상 건 (주소 있고, SKIP 아니고, 미배정 또는 1인)
 const allJobs=dj.filter(j=>j.addr&&j.addr.trim());
-const needWork=allJobs.filter(j=>!SKIP.has(j.id)&&(!A[j.id]||A[j.id].length===1));
+const needWork=allJobs.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||A[j.id].length===1));
 if(!needWork.length)continue;
 
 // 팀 생성
@@ -760,6 +762,19 @@ fbSave('assignments',A);lastAHash=aHash(A);syncToSheet();
 // 재배정 방지: 2초간 자동배정 차단
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
+
+// 배정 확정(잠금) — 자동배정이 건드리지 않음
+function lockJob(jobId){
+if(!A[jobId]||A[jobId].length<2){toast('2인 배정 후 확정 가능','ok');return}
+LOCK.add(jobId);
+fbSave('lockedJobs',[...LOCK]);
+isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
+toast('🔒 배정 확정!','ok');renderAll()}
+
+function unlockJob(jobId){
+LOCK.delete(jobId);
+fbSave('lockedJobs',[...LOCK]);
+toast('🔓 확정 해제','ok');renderAll()}
 
 // ===== 시공보고서 =====
 let reportJobId='';
@@ -1054,7 +1069,14 @@ ${offHtml}<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-s
 const tm={};const un=[];
 realJobs.forEach(j=>{const t=RA[j.id];if(t&&t.length){const k=[...t].sort().join('+');if(!tm[k])tm[k]={team:[...t].sort(),jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
 
-let body=Object.values(tm).map(tg=>{
+// 팀설정 순번으로 정렬 (일관된 표시 순서)
+const tmArr=Object.values(tm).sort((a,b)=>{
+const ai=teams.findIndex(t=>a.team.some(m=>t.includes(m)));
+const bi=teams.findIndex(t=>b.team.some(m=>t.includes(m)));
+return (ai===-1?99:ai)-(bi===-1?99:bi);
+});
+
+let body=tmArr.map(tg=>{
 const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
 const hasNew=tg.jobs.some(j=>j.isNew);
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
@@ -1091,6 +1113,7 @@ ${j.time==='as'?
 `<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">🔧</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">📝</span>`}
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
+${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3);background:rgba(52,211,153,.1)">🔒</span>`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">🔓</span>`}
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 </span>
 </div>
@@ -1571,7 +1594,7 @@ if(badAssign){fbSave('assignments',A);lastAHash=aHash(A)}
 
 // 미배정 건 또는 1인 배정(사수만, 부사수 필요)이 있으면 자동 배정 실행
 const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
-const needAssignCnt=assignableJ.filter(j=>!SKIP.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
+const needAssignCnt=assignableJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
 if(needAssignCnt>0){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
@@ -1633,7 +1656,7 @@ parseCSV(text);
 // 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
 if(isNewReservation){
 const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
-const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
+const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
 if(unCnt>0)await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
@@ -1649,8 +1672,14 @@ else if(showToast)toast('✅ 최신 상태예요','ok');
 function manualRefresh(){refreshSheet(true)}
 
 async function reAssign(){
-if(!confirm('모든 배정을 초기화하고 다시 배정할까요?'))return;
-A={};SKIP=new Set();fbSave('skipJobs',[]);
+const hasLock=LOCK.size>0;
+const msg=hasLock?'모든 배정을 초기화하고 다시 배정할까요?\n\n🔒 확정된 '+LOCK.size+'건은 유지됩니다.\n(전부 초기화하려면 확정을 먼저 해제하세요)':'모든 배정을 초기화하고 다시 배정할까요?';
+if(!confirm(msg))return;
+// 확정된 건은 유지, 나머지만 초기화
+const lockedA={};
+LOCK.forEach(id=>{if(A[id])lockedA[id]=A[id]});
+A=lockedA;
+SKIP=new Set();fbSave('skipJobs',[]);
 toast('⏳ 재배정 중...','ok');
 await autoAssign();
 toast('✅ 재배정 완료!','ok');
