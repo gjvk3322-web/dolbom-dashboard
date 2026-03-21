@@ -208,7 +208,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.20.22';
+const VER='2026.03.21.23';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -488,13 +488,13 @@ if(date<cutoffStr){
   
   const pmEmpty2=pm2.filter(j=>!A[j.id]&&!SKIP.has(j.id));
   if(pmEmpty2.length){
-    // 오전 팀 목록 (지역 + 건수 추적)
+    // 오전 팀 목록 (마지막 시공 주소 + GPS 좌표 + 건수 추적)
     const amTeamInfo=[];
     am2.forEach(j=>{if(A[j.id]&&A[j.id].length>=2){
       const key=[...A[j.id]].sort().join('+');
       const existing=amTeamInfo.find(t=>t.key===key);
-      if(!existing){amTeamInfo.push({key,team:[...A[j.id]],cities:[(j.addr||'').slice(0,2)],pmCount:0})}
-      else{existing.cities.push((j.addr||'').slice(0,2))}
+      if(!existing){amTeamInfo.push({key,team:[...A[j.id]],lastAddr:j.addr||'',lastGeo:null,pmCount:0})}
+      else{existing.lastAddr=j.addr||''} // 마지막 오전 주소 갱신
     }});
     // 기존 오후 배정 건수 반영
     pm2.forEach(j=>{if(A[j.id]){
@@ -502,32 +502,38 @@ if(date<cutoffStr){
       const t=amTeamInfo.find(ti=>ti.key===key);
       if(t)t.pmCount++;
     }});
-    
+
+    // GPS 좌표 미리 계산 (오전 팀 마지막 위치 + 오후 건 위치)
+    for(const ti of amTeamInfo){
+      if(ti.lastAddr)ti.lastGeo=await geo(ti.lastAddr);
+    }
+    for(const j of pmEmpty2){
+      if(j.addr&&!j._geo)j._geo=await geo(j.addr);
+    }
+
     pmEmpty2.forEach(j=>{
       if(A[j.id])return;
-      const pmCity=(j.addr||'').slice(0,2);
-      
-      // 1순위: 같은 지역 오전팀 중 오후 건수 가장 적은 팀
-      const sameCityTeams=amTeamInfo.filter(t=>t.cities.includes(pmCity)&&t.team.every(m=>!pmUsed.has(m)))
-        .sort((a,b)=>a.pmCount-b.pmCount);
-      if(sameCityTeams.length){
-        const best=sameCityTeams[0];
+      const pmGeo=j._geo;
+      const availTeams=amTeamInfo.filter(t=>t.team.every(m=>!pmUsed.has(m)));
+
+      if(availTeams.length){
+        // 각 오전팀의 마지막 위치 → 오후 건 위치 거리 계산
+        availTeams.forEach(t=>{
+          t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
+        });
+        // 정렬: 거리차 10km 초과 → 가까운 팀 우선, 10km 이내 → 공정성(건수 적은 팀) 우선
+        availTeams.sort((a,b)=>{
+          const dd=a._dist-b._dist;
+          if(Math.abs(dd)>10)return dd;
+          return a.pmCount-b.pmCount;
+        });
+        const best=availTeams[0];
         A[j.id]=[...best.team].sort();
         best.team.forEach(e=>pmUsed.add(e));
         best.pmCount++;
         return;
       }
-      // 2순위: 오후 건수 가장 적은 아무 오전팀
-      const anyTeams=amTeamInfo.filter(t=>t.team.every(m=>!pmUsed.has(m)))
-        .sort((a,b)=>a.pmCount-b.pmCount);
-      if(anyTeams.length){
-        const best=anyTeams[0];
-        A[j.id]=[...best.team].sort();
-        best.team.forEach(e=>pmUsed.add(e));
-        best.pmCount++;
-        return;
-      }
-      // 3순위: 남는 사람
+      // 폴백: 남는 사람으로 팀 구성
       const freeP=avail2.filter(e=>!pmUsed.has(e));
       const gP=makeGroups(freeP,1);
       if(gP.length){
@@ -577,43 +583,61 @@ needWork.filter(j=>A[j.id]&&A[j.id].length===1).forEach(j=>{
   if(myGroup){const partner=myGroup.find(m=>m!==sasu);if(partner)A[j.id]=[sasu,partner].sort()}
 });
 
-// 미배정 건 지역별 그룹화
+// 미배정 건 GPS 거리 기반 배정
 const unassigned=needWork.filter(j=>!A[j.id]);
 if(unassigned.length){
-  const cityGroups={};
-  unassigned.forEach(j=>{const c=(j.addr||'').slice(0,2);if(!cityGroups[c])cityGroups[c]=[];cityGroups[c].push(j)});
-  const sortedCities=Object.entries(cityGroups).sort((a,b)=>b[1].length-a[1].length);
+  // 각 팀의 마지막 배정 주소 GPS 좌표 계산
+  for(const k of Object.keys(teamLoad)){
+    const tl=teamLoad[k];
+    const lastJob=allJobs.filter(j=>A[j.id]&&[...A[j.id]].sort().join('+')===k).pop();
+    tl.lastGeo=lastJob?await geo(lastJob.addr):null;
+  }
+  // 미배정 건 GPS 좌표 미리 계산
+  for(const j of unassigned){if(j.addr&&!j._geo)j._geo=await geo(j.addr)}
 
-  sortedCities.forEach(([city,jobs])=>{
-    jobs.forEach(j=>{
-      if(A[j.id])return;
-      // 같은 지역 팀 중 건수 가장 적은 팀 (지역 우선 + 공평)
-      const sameCityTeams=Object.values(teamLoad).filter(t=>t.cities.includes(city));
-      const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>a.count-b.count);
-      
-      if(sameCityTeams.length){
-        // 같은 지역 팀들 중 건수 적은 팀
-        const best=sameCityTeams.sort((a,b)=>a.count-b.count)[0];
-        // 다른 팀이 훨씬 적으면 다른 팀에 배정 (공평성)
-        if(allTeamsSorted[0].count < best.count - 1){
-          const fairTeam=allTeamsSorted[0];
-          A[j.id]=[...fairTeam.team].sort();
-          fairTeam.count++;
-          if(!fairTeam.cities.includes(city))fairTeam.cities.push(city);
-        }else{
-          A[j.id]=[...best.team].sort();
-          best.count++;
-        }
-      }else{
-        // 새 지역 → 건수 가장 적은 팀
-        const bestTeam=allTeamsSorted[0];
-        if(bestTeam){
-          A[j.id]=[...bestTeam.team].sort();
-          bestTeam.count++;
-          if(!bestTeam.cities.includes(city))bestTeam.cities.push(city);
-        }
+  // 오전/오후 분리: 오전 먼저 → 오후는 오전 위치 기반
+  const amUn=unassigned.filter(j=>j.time==='오전'||j.time.includes('2:'));
+  const pmUn=unassigned.filter(j=>j.time==='오후'||j.time==='as');
+
+  // 오전 배정: 건수 균등 분배
+  amUn.forEach(j=>{
+    if(A[j.id])return;
+    const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>a.count-b.count);
+    if(allTeamsSorted.length){
+      const best=allTeamsSorted[0];
+      A[j.id]=[...best.team].sort();
+      best.count++;
+      // 이 팀의 마지막 위치 갱신
+      if(j._geo)best.lastGeo=j._geo;
+    }
+  });
+
+  // 오후 배정: 오전 마지막 위치에서 가장 가까운 팀
+  pmUn.forEach(j=>{
+    if(A[j.id])return;
+    const pmGeo=j._geo;
+    const allTeamsSorted=Object.values(teamLoad);
+
+    if(allTeamsSorted.length&&pmGeo){
+      allTeamsSorted.forEach(t=>{
+        t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
+      });
+      allTeamsSorted.sort((a,b)=>{
+        const dd=a._dist-b._dist;
+        if(Math.abs(dd)>10)return dd;
+        return a.count-b.count;
+      });
+      const best=allTeamsSorted[0];
+      A[j.id]=[...best.team].sort();
+      best.count++;
+    }else{
+      // GPS 없으면 건수 가장 적은 팀
+      const fairTeam=Object.values(teamLoad).sort((a,b)=>a.count-b.count)[0];
+      if(fairTeam){
+        A[j.id]=[...fairTeam.team].sort();
+        fairTeam.count++;
       }
-    });
+    }
   });
 }}
 
