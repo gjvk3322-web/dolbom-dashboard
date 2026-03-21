@@ -214,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.26';
+const VER='2026.03.21.27';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -418,6 +418,33 @@ const empDist={};E.forEach(e=>empDist[e]=0);
 // 기존 배정 거리 반영
 J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}});
 
+// ===== 공정성 점수 계산 (이번 달 누적) =====
+const fairScore={};
+const now2=new Date();const curY=now2.getFullYear(),curM=now2.getMonth();
+const monthJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===curY&&new Date(j.date).getMonth()===curM);
+E.forEach(e=>{fairScore[e]={workDays:new Set(),double:0,km:0,days:{}}});
+monthJobs.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(!fairScore[e])return;
+  fairScore[e].workDays.add(j.date);
+  if(j.time!=='as'){if(!fairScore[e].days[j.date])fairScore[e].days[j.date]=0;fairScore[e].days[j.date]++}
+  const dKey=j.addr?j.addr.replace(/[.#$/\[\]]/g,'_'):'';
+  fairScore[e].km+=DIST[dKey]||0;
+})});
+E.forEach(e=>{fairScore[e].double=Object.values(fairScore[e].days).filter(c=>c>=2).length;fairScore[e].wd=fairScore[e].workDays.size});
+// 평균 계산 (편차 기반 점수: 평균보다 많으면 +, 적으면 -)
+const avgWd=E.reduce((s,e)=>s+fairScore[e].wd,0)/Math.max(E.length,1);
+const avgDb=E.reduce((s,e)=>s+fairScore[e].double,0)/Math.max(E.length,1);
+const avgKm=E.reduce((s,e)=>s+fairScore[e].km,0)/Math.max(E.length,1);
+// 팀 공정성 점수: 평균 대비 초과분 × 가중치 (높을수록 배정 후순위)
+function teamFairPenalty(members){
+  let total=0;
+  members.forEach(m=>{if(!fairScore[m])return;
+    total+=(fairScore[m].wd-avgWd)*3;     // 근무일 1일 초과 = 3점
+    total+=(fairScore[m].double-avgDb)*8;  // 두탕 1회 초과 = 8점 (인센티브 기회 균등 배분)
+    total+=((fairScore[m].km-avgKm)/20);   // 이동거리 20km 초과 = 1점
+  });
+  return total/Math.max(members.length,1);
+}
+
 // 팀 그룹 생성 함수
 function makeGroups(pool,jobCnt){
   if(teams.length){
@@ -540,11 +567,10 @@ if(date<cutoffStr){
         availTeams.forEach(t=>{
           t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
         });
-        // 점수제: 거리(km) + 건수 × 15km 페널티
-        // 건수 1건 더 많으면 15km 더 가까워야 이김 → 공정성 보장
+        // 점수제: 거리 + 건수 페널티 + 월간 공정성 페널티
         availTeams.sort((a,b)=>{
-          const scoreA=a._dist+(a.pmCount*15);
-          const scoreB=b._dist+(b.pmCount*15);
+          const scoreA=a._dist+(a.pmCount*15)+teamFairPenalty(a.team);
+          const scoreB=b._dist+(b.pmCount*15)+teamFairPenalty(b.team);
           return scoreA-scoreB;
         });
         const best=availTeams[0];
@@ -619,10 +645,14 @@ if(unassigned.length){
   const amUn=unassigned.filter(j=>j.time==='오전'||j.time.includes('2:'));
   const pmUn=unassigned.filter(j=>j.time==='오후'||j.time==='as');
 
-  // 오전 배정: 건수 균등 분배
+  // 오전 배정: 건수 균등 + 공정성 반영
   amUn.forEach(j=>{
     if(A[j.id])return;
-    const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>a.count-b.count);
+    const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>{
+      const sa=a.count+teamFairPenalty(a.team)*0.5;
+      const sb=b.count+teamFairPenalty(b.team)*0.5;
+      return sa-sb;
+    });
     if(allTeamsSorted.length){
       const best=allTeamsSorted[0];
       A[j.id]=[...best.team].sort();
@@ -642,11 +672,10 @@ if(unassigned.length){
       allTeamsSorted.forEach(t=>{
         t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
       });
-      // 점수제: 거리(km) + 건수 × 15km 페널티
-      // 건수 1건 더 많으면 15km 더 가까워야 이김 → 공정성 보장
+      // 점수제: 거리 + 건수 페널티 + 월간 공정성 페널티
       allTeamsSorted.sort((a,b)=>{
-        const scoreA=a._dist+(a.count*15);
-        const scoreB=b._dist+(b.count*15);
+        const scoreA=a._dist+(a.count*15)+teamFairPenalty(a.team);
+        const scoreB=b._dist+(b.count*15)+teamFairPenalty(b.team);
         return scoreA-scoreB;
       });
       const best=allTeamsSorted[0];
@@ -1290,7 +1319,7 @@ const maxAs=Math.max(...E.map(e=>es[e].as),1);
 let html=`<div style="text-align:center;padding:12px;margin-bottom:12px;font-size:15px;font-weight:900">📊 ${monthStr} 실적</div>`;
 
 // 두탕 횟수
-html+=`<div class="fcard"><div class="sec">🔥 두탕 (오전+오후 시공, AS 제외)</div>`;
+html+=`<div class="fcard"><div class="sec">🔥 두탕 (오전+오후 시공, 인센티브 💰)</div>`;
 html+=E.map((e,i)=>{
 const v=es[e].double;const w=Math.round(v/maxDouble*100);
 return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[i%10]}">${v}</div></div><span class="fval">${v}일</span></div>`}).join('');
@@ -1349,6 +1378,35 @@ return `<tr style="border-bottom:1px solid var(--border)">
 <td style="text-align:right;padding:10px 4px;font-weight:700">${s.avgKm}km</td>
 </tr>`}).join('');
 html+=`</table></div></div>`;
+
+// 배정 우선순위 (공정성 점수 시각화)
+const fScores={};
+const aWd=E.reduce((s,e)=>s+es[e].workDays,0)/Math.max(E.length,1);
+const aDb=E.reduce((s,e)=>s+es[e].double,0)/Math.max(E.length,1);
+const aKm2=E.reduce((s,e)=>s+es[e].km,0)/Math.max(E.length,1);
+E.forEach(e=>{
+  fScores[e]=Math.round(((es[e].workDays-aWd)*3+(es[e].double-aDb)*8+((es[e].km-aKm2)/20))*10)/10;
+});
+const sortedByPriority=[...E].sort((a,b)=>fScores[a]-fScores[b]);
+const minFS=Math.min(...E.map(e=>fScores[e]));
+const maxFS=Math.max(...E.map(e=>fScores[e]),1);
+const fsRange=Math.max(maxFS-minFS,1);
+
+html+=`<div class="fcard"><div class="sec">🎯 다음 배정 우선순위</div>`;
+html+=`<p style="font-size:11px;color:var(--dim);margin-bottom:12px">점수가 낮을수록 다음 배정에서 우선 (근무일·두탕·거리 기준)</p>`;
+html+=sortedByPriority.map((e,rank)=>{
+  const ci=E.indexOf(e);
+  const score=fScores[e];
+  const w=Math.round(((score-minFS)/fsRange)*100);
+  const isFirst=rank===0;
+  const badge=isFirst?'<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(48,209,88,.15);color:var(--green);font-weight:700;margin-left:6px">우선</span>':'';
+  return `<div class="frow">
+  <span class="fname" style="color:${cl[ci%10]}">${rank+1}. ${e}${badge}</span>
+  <div class="fbar"><div class="ffill" style="width:${Math.max(w,5)}%;background:${score<=0?'var(--green)':'var(--yellow)'}">${score>0?'+':''}${score}</div></div>
+  <span class="fval">${score>0?'+':''}${score}점</span>
+  </div>`}).join('');
+html+=`<div style="font-size:10px;color:var(--dim);margin-top:10px;text-align:center">자동배정 시 이 순위가 거리·건수와 함께 반영돼요</div>`;
+html+=`</div>`;
 
 document.getElementById('fairView').innerHTML=html}
 
