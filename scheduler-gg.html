@@ -126,9 +126,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 </style>
 </head>
 <body>
+<script>
+// 저장된 지역 확인 → 부산이면 자동 이동
+if(localStorage.getItem('dolbom_region')==='bs')location.href='./scheduler.html';
+// 경기 열면 경기로 기억
+localStorage.setItem('dolbom_region','gg');
+</script>
 
 <div class="hd">
-    <h1>돌봄매트 경기 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+        <h1>돌봄매트 경기 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
+        <div style="display:flex;background:var(--card2);border-radius:10px;padding:2px;gap:2px">
+            <span onclick="localStorage.setItem('dolbom_region','bs');location.href='./scheduler.html'" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer">부산</span>
+            <span style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--green);color:#000;cursor:default">경기</span>
+        </div>
+    </div>
     <div class="hd-sub" id="sub">로딩 중...</div>
 </div>
 
