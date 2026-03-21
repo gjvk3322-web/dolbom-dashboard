@@ -214,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.29';
+const VER='2026.03.21.30';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -583,10 +583,11 @@ if(date<cutoffStr){
         availTeams.forEach(t=>{
           t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
         });
-        // 점수제: 거리 + 건수 페널티 + 월간 누적km + 공정성
+        // 오후는 GPS 거리 절대 우선 (이동 효율 > 공평성)
+        // 공평성은 오전 배정에서 이미 반영됨
         availTeams.sort((a,b)=>{
-          const scoreA=a._dist+(a.pmCount*15)+teamCrossKm(a.team)*0.1+teamFairPenalty(a.team);
-          const scoreB=b._dist+(b.pmCount*15)+teamCrossKm(b.team)*0.1+teamFairPenalty(b.team);
+          const scoreA=a._dist+(a.pmCount*15);
+          const scoreB=b._dist+(b.pmCount*15);
           return scoreA-scoreB;
         });
         const best=availTeams[0];
@@ -691,10 +692,10 @@ if(unassigned.length){
       allTeamsSorted.forEach(t=>{
         t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
       });
-      // 점수제: 거리 + 건수 페널티 + 월간 누적km + 공정성
+      // 오후는 GPS 거리 절대 우선 (이동 효율 > 공평성)
       allTeamsSorted.sort((a,b)=>{
-        const scoreA=a._dist+(a.count*15)+teamCrossKm(a.team)*0.1+teamFairPenalty(a.team);
-        const scoreB=b._dist+(b.count*15)+teamCrossKm(b.team)*0.1+teamFairPenalty(b.team);
+        const scoreA=a._dist+(a.count*15);
+        const scoreB=b._dist+(b.count*15);
         return scoreA-scoreB;
       });
       const best=allTeamsSorted[0];
