@@ -214,7 +214,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.30';
+const VER='2026.03.21.31';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -516,19 +516,14 @@ if(date<cutoffStr){
   if(amEmpty2.length){
     const amFree2=avail2.filter(e=>!amUsed.has(e));
     const amG2=makeGroups(amFree2,amEmpty2.length);
-    if(amG2.length){
-      // 거리 밸런싱: 먼 건부터 → 월간 누적거리 적은 팀에 배정
-      const sortedJobs=[...amEmpty2].sort((a,b)=>(b.dist||0)-(a.dist||0));
-      sortedJobs.forEach(j=>{
-        // 월간 누적거리 + 공정성 점수 기준으로 가장 적은 팀
-        const bestTeam=[...amG2].sort((a,b)=>(teamCrossKm(a)+teamFairPenalty(a)*5)-(teamCrossKm(b)+teamFairPenalty(b)*5))[0];
-        if(bestTeam){
-          A[j.id]=[...bestTeam].sort();
-          // 월간 누적 갱신
-          bestTeam.forEach(e=>{crossDateKm[e]+=(j.dist||0);amUsed.add(e)});
-        }
-      });
-    }
+    let gi2=0;
+    amEmpty2.forEach(j=>{
+      if(amG2.length){
+        A[j.id]=[...amG2[gi2%amG2.length]].sort();
+        amG2[gi2%amG2.length].forEach(e=>amUsed.add(e));
+        gi2++;
+      }
+    });
   }
   
   // ── 오후 처리 (지역 매칭 + 공평 분배) ──
@@ -662,22 +657,14 @@ if(unassigned.length){
   const amUn=unassigned.filter(j=>j.time==='오전'||j.time.includes('2:'));
   const pmUn=unassigned.filter(j=>j.time==='오후'||j.time==='as');
 
-  // 오전 배정: 먼 건부터 → 월간 누적거리 적은 팀에 (거리 밸런싱)
-  const sortedAm=[...amUn].sort((a,b)=>(b.dist||0)-(a.dist||0));
-  sortedAm.forEach(j=>{
+  // 오전 배정: 건수 균등 라운드로빈
+  amUn.forEach(j=>{
     if(A[j.id])return;
-    const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>{
-      const sa=teamCrossKm(a.team)+(a.count*10)+teamFairPenalty(a.team)*5;
-      const sb=teamCrossKm(b.team)+(b.count*10)+teamFairPenalty(b.team)*5;
-      return sa-sb;
-    });
+    const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>a.count-b.count);
     if(allTeamsSorted.length){
       const best=allTeamsSorted[0];
       A[j.id]=[...best.team].sort();
       best.count++;
-      // 월간 누적 갱신
-      best.team.forEach(e=>{crossDateKm[e]+=(j.dist||0)});
-      // 이 팀의 마지막 위치 갱신
       if(j._geo)best.lastGeo=j._geo;
     }
   });
