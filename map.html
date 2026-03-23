@@ -8,22 +8,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
-.bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #eee}
-.bar-left{display:flex;align-items:center;gap:8px}
-.bar-logo{font-size:11px;letter-spacing:2px;color:#999}
-.bar-num{font-size:16px;font-weight:900;color:#1a1a1a}
-.bar-label{font-size:11px;color:#888}
-.map-frame{width:100%;height:calc(100vh - 50px);border:none;display:block}
+.top{text-align:center;padding:20px 16px 12px}
+.top-num{font-size:42px;font-weight:900;color:#1a1a1a;line-height:1.1}
+.top-label{font-size:13px;color:#888;margin-top:2px}
+.top-badge{display:inline-block;margin-top:8px;background:#2E7D32;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
+.stats{display:flex;gap:6px;padding:0 16px 12px;max-width:460px;margin:0 auto}
+.stat{flex:1;background:#fff;border-radius:10px;padding:10px 6px;text-align:center}
+.stat-num{font-size:13px;font-weight:700;color:#2E7D32}
+.stat-label{font-size:10px;color:#999;margin-top:1px}
+.map-wrap{margin:0 8px;border-radius:12px;overflow:hidden;position:relative}
+.map-wrap iframe{width:100%;height:calc(100vh - 230px);border:none;display:block}
+.map-hint{text-align:center;padding:8px;font-size:11px;color:#888;background:#fff}
+.cta{padding:10px 16px 30px;max-width:460px;margin:0 auto}
+.cta-btn{display:block;width:100%;padding:14px;background:#FAE100;color:#3C1E1E;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;text-decoration:none}
 </style>
 </head>
 <body>
-<div class="bar">
-  <div class="bar-left">
-    <span class="bar-logo">DOLBOM MAT</span>
-    <span class="bar-num">6,700+</span>
-    <span class="bar-label">시공 현장</span>
+<div class="top">
+  <div class="top-num">6,700+</div>
+  <div class="top-label">시공 완료 현장</div>
+  <div class="top-badge">대리점이 아닌 본사 직접 시공</div>
+</div>
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">5성급 호텔</div>
+    <div class="stat-label">키즈룸 시공</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">80개+</div>
+    <div class="stat-label">어린이집 시공</div>
   </div>
 </div>
-<iframe class="map-frame" src="https://www.google.com/maps/d/u/0/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+<div class="map-wrap">
+  <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+  <div class="map-hint">🏠 마커를 눌러 시공 정보를 확인하세요</div>
+</div>
+<div class="cta">
+  <a href="http://pf.kakao.com/_UMyBK/chat" class="cta-btn">💬 카카오톡 상담하기</a>
+</div>
 </body>
 </html>
