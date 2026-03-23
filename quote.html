@@ -7,92 +7,93 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;color:#1a1a1a}
+html{overflow-x:hidden}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;color:#1a1a1a;overflow-x:hidden;width:100%}
 
-/* 헤더 - 왼쪽 정렬, 컴팩트 */
 .header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
 .header-left{display:flex;align-items:center;gap:8px}
 .header-logo{font-size:11px;letter-spacing:3px;color:#999;font-weight:500}
 .header-dot{width:4px;height:4px;border-radius:50%;background:#2E7D32}
 .header-sub{font-size:11px;color:#bbb}
 
-.container{max-width:460px;margin:0 auto;padding:0 16px 16px}
+.container{max-width:460px;margin:0 auto;padding:0 16px 16px;overflow-x:hidden}
 
-/* ===== 사이즈 비교 섹션 ===== */
-.compare-section{background:#fff;border-radius:20px;padding:28px 20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}
+.compare-section{background:#fff;border-radius:20px;padding:24px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}
 .compare-title{font-size:22px;font-weight:900;color:#1a1a1a;line-height:1.4;margin-bottom:4px}
-.compare-sub{font-size:13px;color:#999;margin-bottom:20px}
+.compare-sub{font-size:13px;color:#999;margin-bottom:16px}
 
-/* 사이즈 선택 버튼 */
-.size-btns{display:flex;gap:6px;margin-bottom:20px;justify-content:center}
-.size-btn{padding:8px 16px;border:1.5px solid #e0ddd6;border-radius:20px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;color:#999;transition:all .2s}
+.size-btns{display:flex;gap:6px;margin-bottom:16px;justify-content:center;flex-wrap:wrap}
+.size-btn{padding:8px 14px;border:1.5px solid #e0ddd6;border-radius:20px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;color:#999;transition:all .2s}
 .size-btn.active{background:#666;color:#fff;border-color:#666}
 
-/* 비교 슬라이더 */
 .compare-box{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;touch-action:none;cursor:col-resize;background:#f0ede6}
-
 .compare-layer{position:absolute;top:0;left:0;width:100%;height:100%;display:grid;gap:2px;padding:4px}
-.compare-left{background:#e8e5de;z-index:1}
+.compare-left{background:#e8e5de;z-index:1;clip-path:inset(0 50% 0 0)}
 .compare-right{background:#d4eef5;z-index:0}
-.compare-left{clip-path:inset(0 50% 0 0)}
-
-.mat-cell{border-radius:4px;background:rgba(255,255,255,.4)}
+.mat-cell{border-radius:3px;background:rgba(255,255,255,.4)}
 .compare-right .mat-cell{background:rgba(255,255,255,.35)}
-
-.compare-label{position:absolute;top:12px;padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;z-index:5;pointer-events:none}
-.label-left{left:12px;background:rgba(80,80,80,.85);color:#fff}
-.label-right{right:12px;background:rgba(100,170,200,.85);color:#fff}
-
-/* 슬라이더 핸들 */
+.compare-label{position:absolute;top:10px;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;z-index:5;pointer-events:none}
+.label-left{left:8px;background:rgba(80,80,80,.85);color:#fff}
+.label-right{right:8px;background:rgba(100,170,200,.85);color:#fff}
 .slider-line{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:4;left:50%;transform:translateX(-50%);pointer-events:none}
-.slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:5;display:flex;align-items:center;justify-content:center;cursor:col-resize}
-.slider-handle svg{width:18px;height:18px;fill:#666}
-
-/* 사이즈 라벨 */
-.size-info{display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:#999}
+.slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:5;display:flex;align-items:center;justify-content:center;cursor:col-resize}
+.slider-handle svg{width:16px;height:16px;fill:#666}
+.size-info{display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#999}
 .size-info strong{color:#1a1a1a;font-weight:600}
 
-/* ===== 공기순환 섹션 ===== */
-.feature-section{background:#fff;border-radius:20px;padding:24px 20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.feature-grid{display:flex;gap:12px}
-.feature-item{flex:1;text-align:center;padding:16px 8px;background:#f9f7f2;border-radius:14px}
-.feature-icon{font-size:28px;margin-bottom:8px}
-.feature-name{font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
-.feature-desc{font-size:11px;color:#999;line-height:1.5}
-
-/* ===== 견적 카드 ===== */
-.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .card-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 
 .btn-group{display:flex;gap:6px;flex-wrap:wrap}
-.btn-opt{flex:1;min-width:80px;padding:10px 8px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:13px;font-family:inherit;cursor:pointer;text-align:center;transition:all .2s;color:#666}
+.btn-opt{flex:1;min-width:70px;padding:10px 6px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;text-align:center;transition:all .2s;color:#666}
 .btn-opt:hover{border-color:#2E7D32;color:#2E7D32}
 .btn-opt.active{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32;font-weight:600}
 
-.qty-row{display:flex;align-items:center;gap:12px;margin-top:12px}
-.qty-label{font-size:13px;color:#666;min-width:80px}
-.qty-input{width:80px;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:16px;font-family:inherit;text-align:center}
+.qty-row{display:flex;align-items:center;gap:10px}
+.qty-label{font-size:13px;color:#666;min-width:65px}
+.qty-input{width:70px;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:16px;font-family:inherit;text-align:center}
 .qty-input:focus{outline:none;border-color:#2E7D32}
 .qty-unit{font-size:13px;color:#999}
-.qty-chip{padding:6px 12px;border:1px solid #e0ddd6;border-radius:8px;font-size:11px;cursor:pointer;background:#fafaf7;color:#888;transition:all .15s;display:block;text-align:center;margin-bottom:6px;width:100%}
+.qty-chip{padding:6px 10px;border:1px solid #e0ddd6;border-radius:8px;font-size:11px;cursor:pointer;background:#fafaf7;color:#888;transition:all .15s;display:block;text-align:center;margin-bottom:6px;width:100%}
 .qty-chip:hover{border-color:#2E7D32;color:#2E7D32}
 
 .toggle-wrap{display:flex;gap:0;border-radius:10px;overflow:hidden;border:1.5px solid #e0ddd6}
 .toggle-btn{flex:1;padding:8px;border:none;font-size:13px;font-family:inherit;cursor:pointer;transition:all .2s}
 
-.result{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);border-radius:16px;padding:24px 20px;margin-bottom:12px;color:#fff}
-.result-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+/* 치수 계산기 */
+.dim-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 0;margin-top:12px;border-top:1px solid #eee;font-size:12px;font-weight:600;color:#666;-webkit-tap-highlight-color:transparent}
+.dim-toggle .arrow{transition:transform .2s;font-size:14px}
+.dim-toggle.open .arrow{transform:rotate(180deg)}
+.dim-area{display:none;margin-top:10px}
+.dim-area.show{display:block}
+.dim-room{margin-bottom:12px;padding:10px;background:#fafaf7;border-radius:10px}
+.dim-room-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.dim-room-name{font-size:12px;font-weight:600;color:#333}
+.dim-room-remove{font-size:11px;color:#d32f2f;cursor:pointer;padding:2px 8px;border:1px solid #f0c0c0;border-radius:6px;background:#fff}
+.dim-inputs{display:flex;gap:6px;align-items:center}
+.dim-input{flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;font-size:12px;font-family:inherit;text-align:center}
+.dim-input:focus{outline:none;border-color:#2E7D32}
+.dim-room-result{font-size:11px;color:#2E7D32;margin-top:6px;font-weight:500}
+.dim-add{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border:1.5px dashed #d0cdc6;border-radius:10px;font-size:12px;color:#999;cursor:pointer;margin-bottom:10px}
+.dim-add:hover{border-color:#2E7D32;color:#2E7D32}
+.dim-total{padding:10px;background:#E8F5E9;border-radius:10px;text-align:center}
+.dim-total-num{font-size:18px;font-weight:700;color:#2E7D32}
+.dim-total-label{font-size:11px;color:#666;margin-top:2px}
+.dim-apply{display:inline-block;margin-top:6px;padding:6px 16px;background:#2E7D32;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
+
+.result{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);border-radius:16px;padding:20px 16px;margin-bottom:12px;color:#fff}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px}
 .result-row.dim{color:#888}
 .result-row .val{font-weight:500}
-.result-divider{height:1px;background:rgba(255,255,255,.1);margin:10px 0}
-.result-total{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.result-divider{height:1px;background:rgba(255,255,255,.1);margin:8px 0}
+.result-total{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
 .result-total-label{font-size:14px;color:#ccc}
-.result-total-val{font-size:24px;font-weight:700;color:#81C784}
-.result-save{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)}
+.result-total-val{font-size:22px;font-weight:700;color:#81C784}
+.result-save{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.1)}
 .result-save-label{font-size:12px;color:#FF8A80}
-.result-save-val{font-size:16px;font-weight:700;color:#FF8A80}
+.result-save-val{font-size:15px;font-weight:700;color:#FF8A80}
 
-.benefit{display:flex;align-items:flex-start;gap:10px;padding:10px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.benefit{display:flex;align-items:flex-start;gap:10px;padding:8px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .benefit input{display:none}
 .benefit-check{width:22px;height:22px;border:1.5px solid #d0cdc6;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-top:1px}
 .benefit input:checked + .benefit-check{background:#2E7D32;border-color:#2E7D32}
@@ -102,7 +103,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .benefit-desc{font-size:11px;color:#999;margin-top:2px}
 .benefit-discount{font-size:13px;font-weight:600;color:#d32f2f;margin-top:2px}
 
-.notice{font-size:11px;color:#999;line-height:1.8;margin-top:8px}
+.notice{font-size:11px;color:#999;line-height:1.8;margin-top:6px}
 .notice li{list-style:none;padding-left:12px;position:relative}
 .notice li::before{content:'*';position:absolute;left:0;color:#bbb}
 
@@ -114,6 +115,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:999;transition:transform .3s;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0)}
+
+/* 복사 오버레이 */
+.copy-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.copy-overlay.show{display:flex}
+.copy-modal{background:#fff;border-radius:20px;padding:32px 24px;max-width:360px;width:100%;text-align:center;animation:modalIn .4s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.copy-check{width:56px;height:56px;border-radius:50%;background:#E8F5E9;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
+.copy-title{font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:6px}
+.copy-sub{font-size:13px;color:#888;line-height:1.6;margin-bottom:20px}
+.copy-feature{background:#f9f7f2;border-radius:14px;padding:16px;margin-bottom:20px}
+.copy-feature-title{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px}
+.copy-close{padding:12px 32px;background:#2E7D32;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -124,9 +137,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 // ╚══════════════════════════════════════════════════════════════╝
 
 var PRODUCTS = [
-  { key: 'mat1000_22', name: '1000매트', thickness: '22T', price: 74500, sizeLabel: '1000×1000mm' },
-  { key: 'mat1000_17', name: '1000매트', thickness: '17T', price: 62900, sizeLabel: '1000×1000mm' },
-  { key: 'mat500', name: '500매트', thickness: '22T', price: 16000, sizeLabel: '500×500mm' },
+  { key: 'mat1000_22', name: '1000매트', thickness: '22T', price: 74500 },
+  { key: 'mat1000_17', name: '1000매트', thickness: '17T', price: 62900 },
+  { key: 'mat500', name: '500매트', thickness: '22T', price: 16000 },
 ];
 
 var PRESETS_EXPAND = {
@@ -140,7 +153,6 @@ var PRESETS_EXPAND = {
     { label: '풀시공 (최대)', qty500: 180 },
   ],
 };
-
 var PRESETS_NOEXPAND = {
   '24평': [
     { label: '거실+복도', qty500: 90 },
@@ -158,9 +170,10 @@ var INSTALL_THRESHOLD_500 = 100;
 var INSTALL_THRESHOLD_1000 = 25;
 
 var BENEFITS = [
-  { key: 'review', name: '시공 후기 작성 혜택', desc: '네이버 or 맘카페에 후기 작성 시', type: 'fixed', discount: 50000, label: '-50,000원' },
-  { key: 'referral', name: '지인 추천 할인', desc: '기존 고객 추천으로 접수 시', type: 'fixed', discount: 50000, label: '-50,000원' },
-  { key: 'bundle', name: '풀시공 할인 (거실+복도+주방)', desc: '3개 공간 이상 풀시공 시', type: 'fixed', discount: 100000, label: '-100,000원' },
+  { key: 'review_contract', name: '📝 계약 후기 작성 (샘플박스 쿠폰)', desc: '계약 후기 작성 시 샘플박스 3만원 쿠폰 지급', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1 },
+  { key: 'group_buy', name: '👨‍👩‍👧‍👦 5인 공동구매 할인', desc: '5인 이상 공동구매 시', type: 'percent', discount: 3, label: '-3%', phase: 1 },
+  { key: 'onnuri', name: '🎫 온누리상품권 결제', desc: '온누리상품권으로 결제 시', type: 'percent', discount: 7, label: '-7%', phase: 1 },
+  { key: 'review_event', name: '⭐ 후기 이벤트 (5곳 후기 작성 시)', desc: '인스타·단톡방·첫날후기·한달후기 등 5곳 작성 시', type: 'fixed', discount: 100000, label: '-100,000원', phase: 2 },
 ];
 
 var NOTICES = [
@@ -170,11 +183,16 @@ var NOTICES = [
   '업체 비교 시 장당 비용으로 계산하면 현명한 소비가 가능합니다!',
 ];
 
-// 비교할 타사 사이즈 (돌봄매트 1,000mm 기준)
 var COMPARE_SIZES = [500, 600, 700, 800];
+
+// 치수 계산기 기본 공간
+var DEFAULT_ROOMS = [
+  { name: '거실', removable: false },
+  { name: '복도', removable: false },
+  { name: '주방', removable: false },
+];
 </script>
 
-<!-- 헤더 -->
 <div class="header">
   <div class="header-left">
     <span class="header-logo">DOLBOM MAT</span>
@@ -185,24 +203,21 @@ var COMPARE_SIZES = [500, 600, 700, 800];
 
 <div class="container">
 
-  <!-- 사이즈 비교 섹션 -->
+  <!-- 사이즈 비교 -->
   <div class="compare-section">
     <div class="compare-title">이음새가 줄면,<br>바닥이 달라집니다.</div>
     <div class="compare-sub">타사 사이즈를 선택하고 슬라이더를 움직여 보세요</div>
-
     <div class="size-btns" id="sizeBtns"></div>
-
     <div class="compare-box" id="compareBox">
       <div class="compare-layer compare-right" id="rightLayer"></div>
       <div class="compare-layer compare-left" id="leftLayer"></div>
       <span class="compare-label label-left" id="labelLeft">타사 매트 700mm</span>
-      <span class="compare-label label-right" id="labelRight">돌봄매트 1,000mm</span>
+      <span class="compare-label label-right">돌봄매트 1,000mm</span>
       <div class="slider-line" id="sliderLine"></div>
       <div class="slider-handle" id="sliderHandle">
         <svg viewBox="0 0 24 24"><path d="M8.5 8.5L6 11l2.5 2.5M15.5 8.5L18 11l-2.5 2.5" stroke="#666" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>
-
     <div class="size-info">
       <span>타사 <strong id="sizeLeftLabel">700mm</strong></span>
       <span>돌봄매트 <strong>1,000mm</strong></span>
@@ -223,25 +238,29 @@ var COMPARE_SIZES = [500, 600, 700, 800];
       <input type="number" class="qty-input" id="qtyInput" value="" placeholder="0" oninput="calculate()">
       <span class="qty-unit">장</span>
     </div>
-    <div style="margin-top:14px">
+    <div style="margin-top:12px">
       <div style="font-size:12px;color:#999;margin-bottom:6px">아파트 타입</div>
       <div class="toggle-wrap">
         <button class="toggle-btn" id="toggleExpand" onclick="setExpand(true)" style="background:#2E7D32;color:#fff;font-weight:600">확장형</button>
         <button class="toggle-btn" id="toggleNoExpand" onclick="setExpand(false)" style="background:#fff;color:#666;font-weight:400">비확장형</button>
       </div>
     </div>
-    <div style="margin-top:14px" id="presetBtns"></div>
+    <div style="margin-top:12px" id="presetBtns"></div>
 
-    <!-- 치수로 계산 -->
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee">
-      <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:8px">📐 치수를 알고 있다면</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="number" id="dimW" placeholder="가로(mm)" style="flex:1;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:13px;font-family:inherit;text-align:center" oninput="calcFromDim()">
-        <span style="font-size:14px;color:#ccc">×</span>
-        <input type="number" id="dimH" placeholder="세로(mm)" style="flex:1;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:13px;font-family:inherit;text-align:center" oninput="calcFromDim()">
+    <!-- 치수 계산기 (접기/펼치기) -->
+    <div class="dim-toggle" id="dimToggle" onclick="toggleDim()">
+      <span>📐 도면 치수로 계산하기</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="dim-area" id="dimArea">
+      <div id="dimRooms"></div>
+      <div class="dim-add" onclick="addRoom()">+ 방 추가</div>
+      <div class="dim-total" id="dimTotal" style="display:none">
+        <div class="dim-total-num" id="dimTotalNum">0장</div>
+        <div class="dim-total-label">전체 예상 수량</div>
+        <button class="dim-apply" onclick="applyDimTotal()">이 수량으로 견적 보기</button>
       </div>
-      <div id="dimResult" style="font-size:12px;color:#2E7D32;margin-top:6px;display:none"></div>
-      <div style="font-size:10px;color:#bbb;margin-top:4px">도면에 적힌 mm 단위 치수를 입력하세요</div>
+      <div style="font-size:10px;color:#bbb;margin-top:6px">도면에 적힌 mm 단위 치수를 입력하세요</div>
     </div>
   </div>
 
@@ -274,8 +293,30 @@ var COMPARE_SIZES = [500, 600, 700, 800];
       <span class="result-total-label">예상 견적</span>
       <span class="result-total-val" id="rTotal">0원</span>
     </div>
+    <div class="result-row dim">
+      <span id="rPerSheetLabel">1m 22T 장당</span>
+      <span class="val" id="rPerSheet" style="color:#81C784">0원</span>
+    </div>
+
+    <!-- 후기 이벤트 참여 시 -->
+    <div id="rReviewSection" style="display:none">
+      <div class="result-divider"></div>
+      <div class="result-row" style="color:#FFD54F">
+        <span>⭐ 후기 이벤트 참여 시</span>
+        <span class="val" id="rReviewDiscount">-100,000원</span>
+      </div>
+      <div class="result-total">
+        <span class="result-total-label" style="color:#FFD54F">최종 견적</span>
+        <span class="result-total-val" id="rFinalTotal" style="color:#FFD54F">0원</span>
+      </div>
+      <div class="result-row dim">
+        <span id="rFinalPerSheetLabel">1m 22T 장당</span>
+        <span class="val" id="rFinalPerSheet" style="color:#FFD54F">0원</span>
+      </div>
+    </div>
+
     <div class="result-save" id="rSaveRow" style="display:none">
-      <span class="result-save-label">💰 혜택 적용 시 절약</span>
+      <span class="result-save-label">💰 총 절약 금액</span>
       <span class="result-save-val" id="rSave">0원</span>
     </div>
   </div>
@@ -283,7 +324,7 @@ var COMPARE_SIZES = [500, 600, 700, 800];
   <!-- 안내 -->
   <div class="card">
     <ul class="notice" id="noticeList"></ul>
-    <div style="text-align:center;margin-top:12px;font-size:12px;color:#999">궁금한 점은 언제든 문의해주세요! 💕</div>
+    <div style="text-align:center;margin-top:10px;font-size:12px;color:#999">궁금한 점은 언제든 문의해주세요! 💕</div>
   </div>
 
   <div class="bottom-actions">
@@ -294,14 +335,31 @@ var COMPARE_SIZES = [500, 600, 700, 800];
 
 <div class="toast" id="toast"></div>
 
+<!-- 복사 완료 오버레이 -->
+<div class="copy-overlay" id="copyOverlay" onclick="closeCopyOverlay(event)">
+  <div class="copy-modal">
+    <div class="copy-check">✅</div>
+    <div class="copy-title">견적서가 복사되었습니다!</div>
+    <div class="copy-sub">카카오톡 상담원에게<br><strong>붙여넣기</strong> 해주시면 바로 안내드리겠습니다</div>
+    <div class="copy-feature">
+      <div class="copy-feature-title">🌬️ 돌봄매트만의 공기순환통로</div>
+      <video id="airVideo" src="air_channel.mov" autoplay muted loop playsinline style="width:100%;border-radius:10px;margin:10px 0"></video>
+      <div style="font-size:12px;color:#666;line-height:1.6;text-align:left">
+        매트 하단 <strong style="color:#2E7D32">공기순환통로</strong>로 습기 배출 →<br>
+        <strong style="color:#2E7D32">곰팡이 걱정 제로!</strong> 6,700가정이 검증했습니다
+      </div>
+    </div>
+    <button class="copy-close" onclick="closeCopyOverlay()">확인</button>
+  </div>
+</div>
+
 <script>
 // ===== 사이즈 비교 슬라이더 =====
 var currentCompareSize = 700;
 var sliderPos = 50;
 var isDragging = false;
 
-// 사이즈 버튼 생성
-(function buildSizeBtns() {
+(function() {
   var container = document.getElementById('sizeBtns');
   COMPARE_SIZES.forEach(function(size) {
     var btn = document.createElement('button');
@@ -320,65 +378,41 @@ var isDragging = false;
 })();
 
 function buildGrids() {
-  var leftLayer = document.getElementById('leftLayer');
-  var rightLayer = document.getElementById('rightLayer');
+  var left = document.getElementById('leftLayer');
+  var right = document.getElementById('rightLayer');
   var ratio = currentCompareSize / 1000;
-
-  // 돌봄매트 1000mm = 4x3 기준
-  var leftCols = Math.round(4 / ratio);
-  var leftRows = Math.round(3 / ratio);
-
-  leftLayer.style.gridTemplateColumns = 'repeat(' + leftCols + ', 1fr)';
-  leftLayer.style.gridTemplateRows = 'repeat(' + leftRows + ', 1fr)';
-  rightLayer.style.gridTemplateColumns = 'repeat(4, 1fr)';
-  rightLayer.style.gridTemplateRows = 'repeat(3, 1fr)';
-
-  leftLayer.innerHTML = '';
-  rightLayer.innerHTML = '';
-  for (var i = 0; i < leftCols * leftRows; i++) {
-    var cell = document.createElement('div');
-    cell.className = 'mat-cell';
-    leftLayer.appendChild(cell);
-  }
-  for (var j = 0; j < 12; j++) {
-    var cell2 = document.createElement('div');
-    cell2.className = 'mat-cell';
-    rightLayer.appendChild(cell2);
-  }
+  var lc = Math.round(4 / ratio), lr = Math.round(3 / ratio);
+  left.style.gridTemplateColumns = 'repeat(' + lc + ',1fr)';
+  left.style.gridTemplateRows = 'repeat(' + lr + ',1fr)';
+  right.style.gridTemplateColumns = 'repeat(4,1fr)';
+  right.style.gridTemplateRows = 'repeat(3,1fr)';
+  left.innerHTML = ''; right.innerHTML = '';
+  for (var i = 0; i < lc * lr; i++) { var c = document.createElement('div'); c.className = 'mat-cell'; left.appendChild(c); }
+  for (var j = 0; j < 12; j++) { var c2 = document.createElement('div'); c2.className = 'mat-cell'; right.appendChild(c2); }
 }
 buildGrids();
 
-// 슬라이더 드래그
 var box = document.getElementById('compareBox');
-var handle = document.getElementById('sliderHandle');
-var line = document.getElementById('sliderLine');
-var leftLayer = document.getElementById('leftLayer');
-
 function updateSlider(x) {
   var rect = box.getBoundingClientRect();
-  var pct = ((x - rect.left) / rect.width) * 100;
-  pct = Math.max(5, Math.min(95, pct));
-  sliderPos = pct;
-  handle.style.left = pct + '%';
-  line.style.left = pct + '%';
-  leftLayer.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+  var pct = Math.max(5, Math.min(95, ((x - rect.left) / rect.width) * 100));
+  document.getElementById('sliderHandle').style.left = pct + '%';
+  document.getElementById('sliderLine').style.left = pct + '%';
+  document.getElementById('leftLayer').style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
 }
-
 box.addEventListener('mousedown', function(e) { isDragging = true; updateSlider(e.clientX); });
 document.addEventListener('mousemove', function(e) { if (isDragging) updateSlider(e.clientX); });
 document.addEventListener('mouseup', function() { isDragging = false; });
-
 box.addEventListener('touchstart', function(e) { isDragging = true; updateSlider(e.touches[0].clientX); }, {passive:true});
 document.addEventListener('touchmove', function(e) { if (isDragging) updateSlider(e.touches[0].clientX); }, {passive:true});
 document.addEventListener('touchend', function() { isDragging = false; });
-
 
 // ===== 견적 계산기 =====
 var selectedProduct = null;
 var selectedBenefits = {};
 var isExpand = true;
 
-(function buildProducts() {
+(function() {
   var container = document.getElementById('productBtns');
   PRODUCTS.forEach(function(p) {
     var btn = document.createElement('button');
@@ -388,8 +422,11 @@ var isExpand = true;
       selectedProduct = p;
       container.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
+      // ★ 제품 변경 시 장수 초기화
+      document.getElementById('qtyInput').value = '';
+      document.getElementById('resultArea').style.display = 'none';
       buildPresets();
-      calculate();
+      calcAllDim(); // 치수 계산기도 재계산
     };
     container.appendChild(btn);
   });
@@ -410,34 +447,28 @@ function buildPresets() {
   var container = document.getElementById('presetBtns');
   container.innerHTML = '';
   if (!selectedProduct) {
-    container.innerHTML = '<div style="font-size:12px;color:#bbb;padding:8px 0">제품을 먼저 선택해주세요</div>';
+    container.innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
     return;
   }
   var is1000 = selectedProduct.key.startsWith('mat1000');
   var presets = isExpand ? PRESETS_EXPAND : PRESETS_NOEXPAND;
   var typeLabel = isExpand ? '확장형' : '비확장형';
-  var pyeongs = Object.keys(presets);
 
   var grid = document.createElement('div');
-  grid.style.cssText = 'display:flex;gap:12px';
-
-  pyeongs.forEach(function(pyeong) {
+  grid.style.cssText = 'display:flex;gap:10px';
+  Object.keys(presets).forEach(function(pyeong) {
     var col = document.createElement('div');
-    col.style.cssText = 'flex:1';
+    col.style.cssText = 'flex:1;min-width:0';
     var title = document.createElement('div');
-    title.style.cssText = 'font-size:12px;font-weight:600;color:#666;margin-bottom:8px;text-align:center;padding-bottom:6px;border-bottom:1px solid #eee';
+    title.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
     title.textContent = pyeong + ' ' + typeLabel;
     col.appendChild(title);
-
     presets[pyeong].forEach(function(p) {
       var qty = is1000 ? Math.ceil(p.qty500 / 4) : p.qty500;
       var chip = document.createElement('div');
       chip.className = 'qty-chip';
       chip.textContent = p.label + ' (' + qty + '장)';
-      chip.onclick = function() {
-        document.getElementById('qtyInput').value = qty;
-        calculate();
-      };
+      chip.onclick = function() { document.getElementById('qtyInput').value = qty; calculate(); };
       col.appendChild(chip);
     });
     grid.appendChild(col);
@@ -445,7 +476,105 @@ function buildPresets() {
   container.appendChild(grid);
 }
 
-(function buildBenefits() {
+// ===== 치수 계산기 =====
+var rooms = [];
+var roomIdCounter = 0;
+
+function toggleDim() {
+  var area = document.getElementById('dimArea');
+  var toggle = document.getElementById('dimToggle');
+  var isOpen = area.classList.contains('show');
+  area.classList.toggle('show');
+  toggle.classList.toggle('open');
+}
+
+function initRooms() {
+  rooms = [];
+  DEFAULT_ROOMS.forEach(function(r) {
+    rooms.push({ id: roomIdCounter++, name: r.name, removable: r.removable, w: '', h: '' });
+  });
+  renderRooms();
+}
+
+function addRoom() {
+  var num = rooms.length - DEFAULT_ROOMS.length + 1;
+  rooms.push({ id: roomIdCounter++, name: '방 ' + num, removable: true, w: '', h: '' });
+  renderRooms();
+}
+
+function removeRoom(id) {
+  rooms = rooms.filter(function(r) { return r.id !== id; });
+  renderRooms();
+  calcAllDim();
+}
+
+function renderRooms() {
+  var container = document.getElementById('dimRooms');
+  container.innerHTML = '';
+  rooms.forEach(function(room) {
+    var div = document.createElement('div');
+    div.className = 'dim-room';
+    var removeBtn = room.removable ? '<span class="dim-room-remove" onclick="removeRoom(' + room.id + ')">삭제</span>' : '';
+    div.innerHTML =
+      '<div class="dim-room-head"><span class="dim-room-name">' + room.name + '</span>' + removeBtn + '</div>' +
+      '<div class="dim-inputs">' +
+        '<input class="dim-input" type="number" placeholder="가로(mm)" value="' + (room.w || '') + '" oninput="updateRoomDim(' + room.id + ',\'w\',this.value)">' +
+        '<span style="color:#ccc;font-size:12px">×</span>' +
+        '<input class="dim-input" type="number" placeholder="세로(mm)" value="' + (room.h || '') + '" oninput="updateRoomDim(' + room.id + ',\'h\',this.value)">' +
+      '</div>' +
+      '<div class="dim-room-result" id="dimRes' + room.id + '"></div>';
+    container.appendChild(div);
+  });
+}
+
+function updateRoomDim(id, axis, val) {
+  var room = rooms.find(function(r) { return r.id === id; });
+  if (room) room[axis] = val;
+  calcAllDim();
+}
+
+function calcAllDim() {
+  if (!selectedProduct) return;
+  var matSize = selectedProduct.key.startsWith('mat1000') ? 1000 : 500;
+  var grandTotal = 0;
+
+  rooms.forEach(function(room) {
+    var w = parseInt(room.w) || 0;
+    var h = parseInt(room.h) || 0;
+    var el = document.getElementById('dimRes' + room.id);
+    if (w > 0 && h > 0) {
+      var cols = Math.ceil(w / matSize);
+      var rows = Math.ceil(h / matSize);
+      var sheets = cols * rows;
+      grandTotal += sheets;
+      if (el) el.textContent = '→ ' + sheets + '장 (' + cols + '×' + rows + ')';
+    } else {
+      if (el) el.textContent = '';
+    }
+  });
+
+  var totalEl = document.getElementById('dimTotal');
+  if (grandTotal > 0) {
+    totalEl.style.display = 'block';
+    document.getElementById('dimTotalNum').textContent = grandTotal + '장';
+  } else {
+    totalEl.style.display = 'none';
+  }
+}
+
+function applyDimTotal() {
+  var num = parseInt(document.getElementById('dimTotalNum').textContent) || 0;
+  if (num > 0) {
+    document.getElementById('qtyInput').value = num;
+    calculate();
+    showToast(num + '장이 적용되었습니다');
+  }
+}
+
+initRooms();
+
+// ===== 혜택 =====
+(function() {
   var container = document.getElementById('benefitList');
   BENEFITS.forEach(function(b) {
     var label = document.createElement('label');
@@ -461,70 +590,74 @@ function buildPresets() {
   });
 })();
 
-(function buildNotices() {
+(function() {
   var ul = document.getElementById('noticeList');
-  NOTICES.forEach(function(n) {
-    var li = document.createElement('li');
-    li.textContent = n;
-    ul.appendChild(li);
-  });
+  NOTICES.forEach(function(n) { var li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
 })();
 
 function toggleBenefit(key, checked) { selectedBenefits[key] = checked; calculate(); }
-
-// 치수로 장수 자동 계산
-function calcFromDim() {
-  var w = parseInt(document.getElementById('dimW').value) || 0;
-  var h = parseInt(document.getElementById('dimH').value) || 0;
-  var result = document.getElementById('dimResult');
-  if (w <= 0 || h <= 0) { result.style.display = 'none'; return; }
-
-  if (!selectedProduct) {
-    result.style.display = 'block';
-    result.style.color = '#999';
-    result.textContent = '제품을 먼저 선택해주세요';
-    return;
-  }
-
-  var matSize = selectedProduct.key.startsWith('mat1000') ? 1000 : 500;
-  var colsNeeded = Math.ceil(w / matSize);
-  var rowsNeeded = Math.ceil(h / matSize);
-  var sheets = colsNeeded * rowsNeeded;
-
-  result.style.display = 'block';
-  result.style.color = '#2E7D32';
-  result.innerHTML = '→ 약 <strong>' + sheets + '장</strong> 필요 (' + colsNeeded + '×' + rowsNeeded + ')';
-  result.innerHTML += ' <span onclick="document.getElementById(\'qtyInput\').value=' + sheets + ';calculate();" style="color:#2E7D32;text-decoration:underline;cursor:pointer;font-weight:600;margin-left:6px">적용하기</span>';
-}
 
 function calculate() {
   if (!selectedProduct) return;
   var qty = parseInt(document.getElementById('qtyInput').value) || 0;
   if (qty <= 0) { document.getElementById('resultArea').style.display = 'none'; return; }
   document.getElementById('resultArea').style.display = 'block';
-  var price = selectedProduct.price;
-  var matCost = price * qty;
+  var price = selectedProduct.price, matCost = price * qty;
   var is1000 = selectedProduct.key.startsWith('mat1000');
   var threshold = is1000 ? INSTALL_THRESHOLD_1000 : INSTALL_THRESHOLD_500;
   var installFee = qty <= threshold ? INSTALL_FEE : 0;
-  var totalDiscount = 0;
+
+  // 제품 사이즈 라벨
+  var sizeLabel = is1000 ? '1m ' + selectedProduct.thickness : '500 ' + selectedProduct.thickness;
+
+  // 1단계: 계약후기, 공동구매%, 온누리% (phase 1)
+  var phase1Discount = 0;
   BENEFITS.forEach(function(b) {
-    if (selectedBenefits[b.key]) {
-      if (b.type === 'fixed') totalDiscount += b.discount;
-      else if (b.type === 'percent') totalDiscount += Math.round(matCost * b.discount / 100);
-      else if (b.type === 'perSheet') totalDiscount += b.discount * qty;
+    if (selectedBenefits[b.key] && b.phase === 1) {
+      if (b.type === 'fixed') phase1Discount += b.discount;
+      else if (b.type === 'percent') phase1Discount += Math.round(matCost * b.discount / 100);
     }
   });
-  var total = matCost + installFee - totalDiscount;
-  if (total < 0) total = 0;
+  var total = Math.max(0, matCost + installFee - phase1Discount);
+  var perSheet = Math.round(total / qty);
+
+  // 2단계: 후기이벤트 (phase 2)
+  var phase2Discount = 0;
+  var hasPhase2 = false;
+  BENEFITS.forEach(function(b) {
+    if (selectedBenefits[b.key] && b.phase === 2) {
+      phase2Discount += b.discount;
+      hasPhase2 = true;
+    }
+  });
+  var finalTotal = Math.max(0, total - phase2Discount);
+  var finalPerSheet = Math.round(finalTotal / qty);
+  var totalDiscount = phase1Discount + phase2Discount;
+
+  // UI 업데이트
   document.getElementById('rProduct').textContent = selectedProduct.name + ' ' + selectedProduct.thickness;
   document.getElementById('rPrice').textContent = price.toLocaleString() + '원/장';
   document.getElementById('rMatCost').textContent = matCost.toLocaleString() + '원';
   document.getElementById('rInstallRow').style.display = installFee > 0 ? 'flex' : 'none';
   document.getElementById('rInstall').textContent = installFee.toLocaleString() + '원';
-  document.getElementById('rBenefitRow').style.display = totalDiscount > 0 ? 'flex' : 'none';
-  document.getElementById('rBenefit').textContent = '-' + totalDiscount.toLocaleString() + '원';
+  document.getElementById('rBenefitRow').style.display = phase1Discount > 0 ? 'flex' : 'none';
+  document.getElementById('rBenefit').textContent = '-' + phase1Discount.toLocaleString() + '원';
   document.getElementById('rTotal').textContent = total.toLocaleString() + '원';
+  document.getElementById('rPerSheetLabel').textContent = sizeLabel + ' 장당';
+  document.getElementById('rPerSheet').textContent = perSheet.toLocaleString() + '원';
+
+  // 후기이벤트 섹션
+  var reviewSection = document.getElementById('rReviewSection');
+  if (hasPhase2) {
+    reviewSection.style.display = 'block';
+    document.getElementById('rReviewDiscount').textContent = '-' + phase2Discount.toLocaleString() + '원';
+    document.getElementById('rFinalTotal').textContent = finalTotal.toLocaleString() + '원';
+    document.getElementById('rFinalPerSheetLabel').textContent = sizeLabel + ' 장당';
+    document.getElementById('rFinalPerSheet').textContent = finalPerSheet.toLocaleString() + '원';
+  } else {
+    reviewSection.style.display = 'none';
+  }
+
   document.getElementById('rSaveRow').style.display = totalDiscount > 0 ? 'flex' : 'none';
   document.getElementById('rSave').textContent = '-' + totalDiscount.toLocaleString() + '원';
 }
@@ -533,67 +666,75 @@ function copyQuote() {
   if (!selectedProduct) { showToast('제품을 선택해주세요'); return; }
   var qty = parseInt(document.getElementById('qtyInput').value) || 0;
   if (qty <= 0) { showToast('장수를 입력해주세요'); return; }
-  var price = selectedProduct.price;
-  var matCost = price * qty;
+  var price = selectedProduct.price, matCost = price * qty;
   var is1000 = selectedProduct.key.startsWith('mat1000');
+  var sizeLabel = is1000 ? '1m ' + selectedProduct.thickness : '500 ' + selectedProduct.thickness;
   var threshold = is1000 ? INSTALL_THRESHOLD_1000 : INSTALL_THRESHOLD_500;
   var installFee = qty <= threshold ? INSTALL_FEE : 0;
-  var totalDiscount = 0;
-  var benefitLines = [];
+  var phase1Discount = 0, phase1Lines = [];
   BENEFITS.forEach(function(b) {
-    if (selectedBenefits[b.key]) {
-      var d = 0;
-      if (b.type === 'fixed') d = b.discount;
-      totalDiscount += d;
-      benefitLines.push('  ✅ ' + b.name + ' ' + b.label);
+    if (selectedBenefits[b.key] && b.phase === 1) {
+      var d = b.type === 'fixed' ? b.discount : Math.round(matCost * b.discount / 100);
+      phase1Discount += d;
+      phase1Lines.push('  ✅ ' + b.name + ' ' + b.label);
     }
   });
-  var total = matCost + installFee - totalDiscount;
-  if (total < 0) total = 0;
-
-  var text = '🏠 돌봄매트 견적서\n';
-  text += '━━━━━━━━━━━━━━\n\n';
-  text += '📦 ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
-  text += '   장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
-  text += '   = ' + matCost.toLocaleString() + '원\n';
-  if (installFee > 0) text += '\n🔧 시공비: ' + installFee.toLocaleString() + '원\n';
-  if (benefitLines.length > 0) text += '\n🎁 적용 혜택:\n' + benefitLines.join('\n') + '\n';
-  text += '\n━━━━━━━━━━━━━━\n';
-  text += '💰 예상 견적: ' + total.toLocaleString() + '원\n';
-  if (totalDiscount > 0) text += '🔥 ' + totalDiscount.toLocaleString() + '원 절약!\n';
-  text += '━━━━━━━━━━━━━━\n\n';
-  text += '* 아파트 구조에 따라 수량 차이가 있을 수 있습니다.\n';
-  text += '* 실제 시공 후 수량에 맞춰 결제됩니다.\n\n';
-  text += '궁금한 점은 언제든 문의해주세요! 💕';
-
-  navigator.clipboard.writeText(text).then(function() {
-    showToast('견적서가 복사되었습니다! 카톡에 붙여넣기 하세요');
-  }).catch(function() {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('견적서가 복사되었습니다!');
+  var total = Math.max(0, matCost + installFee - phase1Discount);
+  var perSheet = Math.round(total / qty);
+  var phase2Discount = 0, hasPhase2 = false;
+  BENEFITS.forEach(function(b) {
+    if (selectedBenefits[b.key] && b.phase === 2) { phase2Discount += b.discount; hasPhase2 = true; }
+  });
+  var finalTotal = Math.max(0, total - phase2Discount);
+  var finalPerSheet = Math.round(finalTotal / qty);
+  var t = '🏠 돌봄매트 견적서\n━━━━━━━━━━━━━━\n\n';
+  t += '📦 ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
+  t += '   장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
+  t += '   = ' + matCost.toLocaleString() + '원\n';
+  if (installFee > 0) t += '\n🔧 시공비: ' + installFee.toLocaleString() + '원\n';
+  if (phase1Lines.length > 0) t += '\n🎁 적용 혜택:\n' + phase1Lines.join('\n') + '\n';
+  t += '\n━━━━━━━━━━━━━━\n';
+  t += '💰 예상 견적: ' + total.toLocaleString() + '원\n';
+  t += '📊 ' + sizeLabel + ' 장당 ' + perSheet.toLocaleString() + '원\n';
+  if (hasPhase2) {
+    t += '\n⭐ 후기 이벤트 참여 시\n';
+    t += '💰 최종 견적: ' + finalTotal.toLocaleString() + '원\n';
+    t += '📊 ' + sizeLabel + ' 장당 ' + finalPerSheet.toLocaleString() + '원\n';
+  }
+  var totalDiscount = phase1Discount + phase2Discount;
+  if (totalDiscount > 0) t += '\n🔥 최대 ' + totalDiscount.toLocaleString() + '원 절약!\n';
+  t += '━━━━━━━━━━━━━━\n\n';
+  t += '* 아파트 구조에 따라 수량 차이가 있을 수 있습니다.\n';
+  t += '* 실제 시공 후 수량에 맞춰 결제됩니다.\n\n';
+  t += '궁금한 점은 언제든 문의해주세요! 💕';
+  navigator.clipboard.writeText(t).then(function() { showCopyOverlay(); }).catch(function() {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showCopyOverlay();
   });
 }
 
+function showCopyOverlay() {
+  document.getElementById('copyOverlay').classList.add('show');
+}
+
+function closeCopyOverlay(e) {
+  if (e && e.target !== document.getElementById('copyOverlay') && !e.target.classList.contains('copy-close')) return;
+  document.getElementById('copyOverlay').classList.remove('show');
+}
+
 function resetForm() {
-  selectedProduct = null;
-  selectedBenefits = {};
+  selectedProduct = null; selectedBenefits = {};
   document.getElementById('qtyInput').value = '';
   document.getElementById('resultArea').style.display = 'none';
   document.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('.benefit input').forEach(function(c) { c.checked = false; });
-  document.getElementById('presetBtns').innerHTML = '';
+  document.getElementById('presetBtns').innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
+  initRooms();
+  document.getElementById('dimTotal').style.display = 'none';
   showToast('초기화 완료');
 }
 
 function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 3000);
 }
 </script>
