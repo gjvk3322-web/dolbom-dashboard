@@ -183,7 +183,6 @@ var NOTICES = [
   '실제 시공 후 수량에 맞춰 결제가 이루어집니다.',
   '들어가는 장수에 따라 금액 차이가 있습니다.',
   '시공비는 소량 시공 시 추가됩니다.',
-  '업체 비교 시 장당 비용으로 계산하면 현명한 소비가 가능합니다!',
 ];
 
 var COMPARE_SIZES = [500, 600, 700, 800];
@@ -543,26 +542,25 @@ function updateRoomDim(id, axis, val) {
 function calcAllDim() {
   if (!selectedProduct) return;
   var matSize = selectedProduct.key.startsWith('mat1000') ? 1000 : 500;
-  var grandTotal = 0;
+  var matArea = matSize * matSize;
+  var rawTotal = 0;
 
   rooms.forEach(function(room) {
     var w = parseInt(room.w) || 0;
     var h = parseInt(room.h) || 0;
     var el = document.getElementById('dimRes' + room.id);
     if (w > 0 && h > 0) {
-      var cols = Math.ceil(w / matSize);
-      var rows = Math.ceil(h / matSize);
-      var sheets = cols * rows;
-      grandTotal += sheets;
-      if (el) el.textContent = '→ ' + sheets + '장 (' + cols + '×' + rows + ')';
+      var sheets = (w * h) / matArea;
+      rawTotal += sheets;
+      if (el) el.textContent = '→ ' + sheets.toFixed(1) + '장';
     } else {
       if (el) el.textContent = '';
     }
   });
 
   var totalEl = document.getElementById('dimTotal');
-  if (grandTotal > 0) {
-    var withExtra = Math.ceil(grandTotal * 1.1); // +10% 재단 여유분
+  if (rawTotal > 0) {
+    var withExtra = Math.ceil(Math.ceil(rawTotal) * 1.1);
     totalEl.style.display = 'block';
     document.getElementById('dimTotalNum').textContent = withExtra + '장';
     document.getElementById('dimTotalLabel').innerHTML = '전체 예상 수량 <span style="font-size:10px;color:#888">(재단 여유분 +10% 포함)</span>';
