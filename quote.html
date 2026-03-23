@@ -103,6 +103,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .benefit-desc{font-size:11px;color:#999;margin-top:2px}
 .benefit-discount{font-size:13px;font-weight:600;color:#d32f2f;margin-top:2px}
 
+.review-detail{display:none;background:#fafaf7;border-radius:10px;padding:10px 12px;margin:6px 0 4px 32px}
+.review-detail.show{display:block}
+.review-detail-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.review-detail-left{display:flex;align-items:center;gap:6px;font-size:12px;color:#666}
+.review-detail-left span:first-child{font-size:14px}
+.review-detail-amount{font-size:12px;font-weight:500;color:#d32f2f}
+.review-detail-total{margin-top:6px;padding-top:6px;border-top:1px solid #e8e5de;display:flex;justify-content:space-between;align-items:center}
+.review-detail-total span:first-child{font-size:12px;font-weight:500;color:#666}
+.review-detail-total span:last-child{font-size:14px;font-weight:600;color:#d32f2f}
+
 .notice{font-size:11px;color:#999;line-height:1.8;margin-top:6px}
 .notice li{list-style:none;padding-left:12px;position:relative}
 .notice li::before{content:'*';position:absolute;left:0;color:#bbb}
@@ -175,7 +185,17 @@ var BENEFITS = [
   { key: 'review_contract', name: '📝 계약 후기 작성 (샘플박스 쿠폰)', desc: '계약 후기 작성 시 샘플박스 3만원 쿠폰 지급', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1 },
   { key: 'group_buy', name: '👨‍👩‍👧‍👦 5인 공동구매 할인', desc: '5인 이상 공동구매 시', type: 'percent', discount: 3, label: '-3%', phase: 1 },
   { key: 'onnuri', name: '🎫 온누리상품권 결제', desc: '온누리상품권으로 결제 시', type: 'percent', discount: 7, label: '-7%', phase: 1 },
-  { key: 'review_event', name: '⭐ 후기 이벤트 (5곳 후기 작성 시)', desc: '인스타·단톡방·첫날후기·한달후기 등 5곳 작성 시', type: 'fixed', discount: 100000, label: '-100,000원', phase: 2 },
+  { key: 'review_event', name: '⭐ 후기 이벤트 (5곳 후기 작성 시)', desc: '최대 100,000원 캐시백', type: 'fixed', discount: 100000, label: '-100,000원', phase: 2 },
+];
+
+// 후기 이벤트 상세 항목
+var REVIEW_DETAILS = [
+  { icon: '📝', name: '계약 후기 작성', amount: 20000 },
+  { icon: '📸', name: '인스타그램 후기', amount: 10000 },
+  { icon: '💬', name: '단지 단톡방 업로드', amount: 10000 },
+  { icon: '⭐', name: '첫날 후기 1곳', amount: 20000 },
+  { icon: '🌟', name: '첫날 후기 2곳', amount: 20000 },
+  { icon: '📅', name: '한 달 후 후기', amount: 20000 },
 ];
 
 var NOTICES = [
@@ -331,7 +351,10 @@ var DEFAULT_ROOMS = [
 
   <div class="bottom-actions">
     <button class="action-btn action-copy" onclick="copyQuote()">견적서 복사</button>
-    <button class="action-btn action-new" onclick="resetForm()">새 견적</button>
+    <a href="https://gjvk3322-web.github.io/dolbom-dashboard/index.html" target="_blank" class="action-btn" style="background:#1a1a1a;color:#fff;text-align:center;text-decoration:none;font-size:13px">우리집 근처 시공 사례</a>
+  </div>
+  <div style="text-align:center;margin-bottom:40px">
+    <span onclick="resetForm()" style="font-size:13px;color:#999;cursor:pointer;text-decoration:underline">새 견적 만들기</span>
   </div>
 </div>
 
@@ -594,6 +617,24 @@ initRooms();
         '<div class="benefit-discount">' + b.label + '</div>' +
       '</div>';
     container.appendChild(label);
+
+    // 후기 이벤트 상세 목록
+    if (b.key === 'review_event') {
+      var detail = document.createElement('div');
+      detail.className = 'review-detail';
+      detail.id = 'reviewDetail';
+      var html = '';
+      REVIEW_DETAILS.forEach(function(r) {
+        html += '<div class="review-detail-row">';
+        html += '<div class="review-detail-left"><span>' + r.icon + '</span><span>' + r.name + '</span></div>';
+        html += '<span class="review-detail-amount">+' + r.amount.toLocaleString() + '원</span>';
+        html += '</div>';
+      });
+      var total = REVIEW_DETAILS.reduce(function(s, r) { return s + r.amount; }, 0);
+      html += '<div class="review-detail-total"><span>합계</span><span>' + total.toLocaleString() + '원</span></div>';
+      detail.innerHTML = html;
+      container.appendChild(detail);
+    }
   });
 })();
 
@@ -602,7 +643,14 @@ initRooms();
   NOTICES.forEach(function(n) { var li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
 })();
 
-function toggleBenefit(key, checked) { selectedBenefits[key] = checked; calculate(); }
+function toggleBenefit(key, checked) {
+  selectedBenefits[key] = checked;
+  if (key === 'review_event') {
+    var detail = document.getElementById('reviewDetail');
+    if (detail) detail.classList.toggle('show', checked);
+  }
+  calculate();
+}
 
 function calculate() {
   if (!selectedProduct) return;
@@ -683,7 +731,9 @@ function copyQuote() {
     if (selectedBenefits[b.key] && b.phase === 1) {
       var d = b.type === 'fixed' ? b.discount : Math.round(matCost * b.discount / 100);
       phase1Discount += d;
-      phase1Lines.push('  ✅ ' + b.name + ' ' + b.label);
+      // 이모지 제거하고 깔끔하게
+      var cleanName = b.name.replace(/^[^\w가-힣]+/, '');
+      phase1Lines.push('  · ' + cleanName + ' ' + b.label);
     }
   });
   var total = Math.max(0, matCost + installFee - phase1Discount);
@@ -694,26 +744,33 @@ function copyQuote() {
   });
   var finalTotal = Math.max(0, total - phase2Discount);
   var finalPerSheet = Math.round(finalTotal / qty);
-  var t = '🏠 돌봄매트 견적서\n━━━━━━━━━━━━━━\n\n';
-  t += '📦 ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
-  t += '   장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
-  t += '   = ' + matCost.toLocaleString() + '원\n';
-  if (installFee > 0) t += '\n🔧 시공비: ' + installFee.toLocaleString() + '원\n';
-  if (phase1Lines.length > 0) t += '\n🎁 적용 혜택:\n' + phase1Lines.join('\n') + '\n';
-  t += '\n━━━━━━━━━━━━━━\n';
-  t += '💰 예상 견적: ' + total.toLocaleString() + '원\n';
-  t += '📊 ' + sizeLabel + ' 장당 ' + perSheet.toLocaleString() + '원\n';
+
+  var t = '';
+  t += '돌봄매트 견적서\n';
+  t += '────────────────\n\n';
+  t += '■ ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
+  t += '  장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
+  t += '  = ' + matCost.toLocaleString() + '원\n';
+  if (installFee > 0) t += '\n  시공비: +' + installFee.toLocaleString() + '원\n';
+  if (phase1Lines.length > 0) {
+    t += '\n■ 적용 혜택\n';
+    t += phase1Lines.join('\n') + '\n';
+  }
+  t += '\n────────────────\n';
+  t += '예상 견적  ' + total.toLocaleString() + '원\n';
+  t += sizeLabel + ' 장당  ' + perSheet.toLocaleString() + '원\n';
   if (hasPhase2) {
-    t += '\n⭐ 후기 이벤트 참여 시\n';
-    t += '💰 최종 견적: ' + finalTotal.toLocaleString() + '원\n';
-    t += '📊 ' + sizeLabel + ' 장당 ' + finalPerSheet.toLocaleString() + '원\n';
+    t += '\n────────────────\n';
+    t += '★ 후기 이벤트 참여 시\n';
+    t += '최종 견적  ' + finalTotal.toLocaleString() + '원\n';
+    t += sizeLabel + ' 장당  ' + finalPerSheet.toLocaleString() + '원\n';
   }
   var totalDiscount = phase1Discount + phase2Discount;
-  if (totalDiscount > 0) t += '\n🔥 최대 ' + totalDiscount.toLocaleString() + '원 절약!\n';
-  t += '━━━━━━━━━━━━━━\n\n';
-  t += '* 아파트 구조에 따라 수량 차이가 있을 수 있습니다.\n';
-  t += '* 실제 시공 후 수량에 맞춰 결제됩니다.\n\n';
-  t += '궁금한 점은 언제든 문의해주세요! 💕';
+  if (totalDiscount > 0) t += '\n→ 최대 ' + totalDiscount.toLocaleString() + '원 절약\n';
+  t += '\n────────────────\n';
+  t += '* 구조에 따라 수량 차이가 있을 수 있습니다\n';
+  t += '* 실제 시공 후 수량에 맞춰 결제됩니다\n';
+  t += '\n궁금한 점은 언제든 문의해주세요!';
   navigator.clipboard.writeText(t).then(function() { showCopyOverlay(); }).catch(function() {
     var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showCopyOverlay();
   });
@@ -734,6 +791,7 @@ function resetForm() {
   document.getElementById('resultArea').style.display = 'none';
   document.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('.benefit input').forEach(function(c) { c.checked = false; });
+  var rd = document.getElementById('reviewDetail'); if (rd) rd.classList.remove('show');
   document.getElementById('presetBtns').innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
   initRooms();
   document.getElementById('dimTotal').style.display = 'none';
