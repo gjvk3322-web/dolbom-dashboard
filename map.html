@@ -38,13 +38,38 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
     <div class="stat-num">80개+</div>
     <div class="stat-label">어린이집 시공</div>
   </div>
+  <div class="stat" onclick="findMyLocation()" style="cursor:pointer;background:#E8F5E9">
+    <div class="stat-num" style="font-size:16px">📍</div>
+    <div class="stat-label" style="color:#2E7D32;font-weight:500" id="locBtn">내 위치로 이동</div>
+  </div>
 </div>
 <div class="map-wrap">
-  <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+  <iframe id="mapFrame" src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
   <div class="map-hint">🏠 마커를 눌러 시공 정보를 확인하세요</div>
 </div>
 <div class="cta">
   <a href="http://pf.kakao.com/_UMyBK/chat" class="cta-btn">💬 카카오톡 상담하기</a>
 </div>
+<script>
+function findMyLocation() {
+  var btn = document.getElementById('locBtn');
+  btn.textContent = '찾는 중...';
+  if (!navigator.geolocation) {
+    btn.textContent = '위치 지원 안됨';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+    var frame = document.getElementById('mapFrame');
+    frame.src = 'https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1&ll=' + lat + ',' + lng + '&z=14';
+    btn.textContent = '내 위치 완료!';
+    setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
+  }, function() {
+    btn.textContent = '위치 허용해주세요';
+    setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
+  });
+}
+</script>
 </body>
 </html>
