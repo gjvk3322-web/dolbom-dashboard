@@ -3,642 +3,421 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>돌봄매트 시공 체크리스트</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>돌봄매트 주간 점검</title>
 <style>
-:root {
-  --bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;
-  --border:#e5e8eb;
-  --primary:#e8736c;--primary-light:#fdf0ef;--primary-dark:#d45a53;
-  --green:#20c997;--green-light:#e3faf1;
-  --red:#f04452;--red-light:#fff0f1;
-  --orange:#f59f00;--orange-light:#fff8e6;
-  --blue:#5b9bd5;--blue-light:#edf4fb;
-  --gold:#f59f00;
-  --radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:40px;}
-
-/* 헤더 */
-.header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));padding:20px;text-align:center;position:sticky;top:0;z-index:100;}
-.header h1{color:#fff;font-size:18px;font-weight:700;}
-.header .sub{color:rgba(255,255,255,0.8);font-size:12px;margin-top:4px;}
-
-/* 탭 */
-.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:56px;z-index:99;}
-.tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;user-select:none;}
-.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
-
-/* 탭 콘텐츠 */
-.tab-content{display:none;animation:fadeUp .3s ease;}
-.tab-content.active{display:block;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
-/* 카드 */
-.card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
-
-/* ── 시공 전 ── */
-.step-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:flex-start;}
-.step-num{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
-.step-body h3{font-size:14px;font-weight:700;margin-bottom:3px;}
-.step-body p{font-size:12px;color:var(--text3);line-height:1.5;}
-.step-time{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:6px;}
-.total-time{text-align:center;margin:16px;padding:14px;background:var(--primary-light);border-radius:var(--radius);font-size:14px;font-weight:700;color:var(--primary-dark);}
-
-/* ── 시공 후 ── */
-.check-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;-webkit-user-select:none;}
-.check-item:last-child{border-bottom:none;}
-.check-box{width:26px;height:26px;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .2s;}
-.check-box.checked{background:var(--green);border-color:var(--green);color:#fff;}
-.check-label{font-size:14px;font-weight:500;flex:1;}
-.check-desc{font-size:11px;color:var(--text3);margin-top:2px;}
-
-.star-row{display:flex;align-items:center;gap:12px;padding:14px 0;}
-.star-label{font-size:14px;font-weight:500;flex:1;}
-.stars{display:flex;gap:4px;}
-.star{font-size:28px;cursor:pointer;color:#ddd;transition:color .15s;user-select:none;-webkit-user-select:none;}
-.star.on{color:var(--gold);}
-
-.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:14px;}
-.submit-btn.green{background:var(--green);}
-.submit-btn.green:active{background:#1baa80;}
-.submit-btn.primary{background:var(--primary);}
-.submit-btn.primary:active{background:var(--primary-dark);}
-.submit-btn:disabled{opacity:0.4;cursor:not-allowed;}
-.submit-btn:active{transform:scale(0.98);}
-
-/* ── 후기이벤트 ── */
-.reward-header{text-align:center;padding:20px 16px 8px;}
-.reward-amount{font-size:32px;font-weight:800;color:var(--primary);}
-.reward-max{font-size:13px;color:var(--text3);margin-top:2px;}
-.progress-wrap{margin:12px 16px 4px;background:#e9ecef;border-radius:10px;height:10px;overflow:hidden;}
-.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--orange));border-radius:10px;transition:width .5s ease;}
-.progress-label{text-align:right;margin:4px 20px 12px;font-size:11px;color:var(--text3);font-weight:600;}
-
-.mission-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:all .2s;}
-.mission-header{display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;}
-.mission-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.mission-icon.done{background:var(--green-light);}
-.mission-icon.pending{background:#f2f4f6;}
-.mission-info{flex:1;}
-.mission-info h4{font-size:14px;font-weight:700;}
-.mission-info .reward{font-size:12px;font-weight:700;color:var(--primary);margin-top:2px;}
-.mission-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;}
-.mission-badge.done{background:var(--green-light);color:var(--green);}
-.mission-badge.pending{background:#f2f4f6;color:var(--text3);}
-
-.mission-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);margin-top:0;}
-.mission-body.open{display:block;animation:fadeUp .2s ease;}
-
-.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-top:10px;position:relative;overflow:hidden;}
-.upload-zone:active{border-color:var(--primary);background:var(--primary-light);}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.upload-zone .icon{font-size:28px;margin-bottom:4px;}
-.upload-zone .txt{font-size:12px;color:var(--text3);}
-.upload-preview{margin-top:10px;border-radius:10px;overflow:hidden;display:none;}
-.upload-preview img{width:100%;display:block;border-radius:10px;}
-
-.fg{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
-.fg label{font-size:12px;font-weight:600;color:var(--text2);}
-.fg input,.fg select{padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);transition:border .2s;-webkit-appearance:none;appearance:none;}
-.fg select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px;}
-.fg input:focus,.fg select:focus{outline:none;border-color:var(--primary);}
-
-.account-section{margin:16px;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
-.account-section h3{font-size:15px;font-weight:700;margin-bottom:12px;}
-.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.account-grid .full{grid-column:1/-1;}
-
-.cashback-btn{width:calc(100% - 32px);margin:16px;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--orange));color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 12px rgba(232,115,108,0.3);}
-.cashback-btn:active{transform:scale(0.98);}
-.cashback-btn:disabled{opacity:0.4;cursor:not-allowed;}
-
-/* 토스트 */
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap;max-width:90%;}
-.toast.show{transform:translateX(-50%) translateY(0);}
-
-/* 로딩 */
-.loading-bar{height:3px;background:var(--primary);position:fixed;top:0;left:0;z-index:200;transition:width .3s;border-radius:0 2px 2px 0;}
-
-/* confetti overlay */
-.confetti-overlay{position:fixed;inset:0;pointer-events:none;z-index:400;}
-
-/* 완료 상태 */
-.inspection-done{text-align:center;padding:30px 16px;}
-.inspection-done .big-check{font-size:60px;margin-bottom:10px;}
-.inspection-done h3{font-size:18px;font-weight:700;color:var(--green);}
-.inspection-done p{font-size:13px;color:var(--text3);margin-top:6px;}
-
-@media(max-width:400px){.card,.step-card,.mission-card,.account-section{margin-left:10px;margin-right:10px;}.cashback-btn{width:calc(100% - 20px);margin-left:10px;margin-right:10px;}}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;color:#1a1a1a}
+.header{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);color:#fff;padding:28px 20px 24px;text-align:center}
+.header-emoji{font-size:32px;margin-bottom:8px}
+.header h1{font-size:20px;font-weight:700;margin-bottom:4px}
+.header p{font-size:12px;color:#aaa;font-weight:300}
+.week-badge{display:inline-block;margin-top:10px;background:rgba(255,255,255,.12);padding:5px 14px;border-radius:20px;font-size:12px;color:#ddd}
+.container{max-width:460px;margin:0 auto;padding:16px}
+.name-card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.name-label{font-size:12px;color:#999;margin-bottom:6px}
+.name-select{width:100%;padding:12px 14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center;cursor:pointer}
+.name-select:focus{outline:none;border-color:#2E7D32}
+.section{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section-title{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.section-desc{font-size:12px;color:#999;margin-bottom:14px;line-height:1.5}
+.rating-row{display:flex;align-items:center;gap:4px}
+.star{width:36px;height:36px;cursor:pointer;transition:transform .15s;display:flex;align-items:center;justify-content:center}
+.star:hover{transform:scale(1.2)}
+.star:active{transform:scale(.95)}
+.star svg{width:28px;height:28px}
+.star svg path{fill:#ddd;transition:fill .15s}
+.star.active svg path{fill:#FFB800}
+.star.hover-preview svg path{fill:#FFD54F}
+.rating-label{margin-left:8px;font-size:13px;color:#999;min-width:50px;transition:color .2s}
+.rating-label.has-value{color:#1a1a1a;font-weight:500}
+.divider{height:1px;background:#f0ede6;margin:16px 0}
+.senior-section{display:none}
+.senior-section.show{display:block}
+.senior-badge{display:inline-block;background:#E6F1FB;color:#0C447C;font-size:10px;padding:3px 8px;border-radius:8px;font-weight:600;margin-bottom:12px}
+.comment-area{width:100%;min-height:80px;border:1.5px solid #e0ddd6;border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:vertical}
+.comment-area:focus{outline:none;border-color:#2E7D32}
+.submit-btn{width:100%;padding:16px;background:#2E7D32;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:8px;margin-bottom:40px}
+.submit-btn:hover{background:#1B5E20;transform:translateY(-1px)}
+.submit-btn:active{transform:scale(.98)}
+.submit-btn:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.done-screen{display:none;text-align:center;padding:60px 20px}
+.done-screen.show{display:block}
+.done-emoji{font-size:64px;margin-bottom:16px}
+.done-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.done-sub{font-size:14px;color:#888;line-height:1.6}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:999;transition:transform .3s;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<div class="loading-bar" id="loadingBar" style="width:0%"></div>
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║                                                              ║
+// ║   ★★★ 여기서 설정을 수정하세요! ★★★                      ║
+// ║                                                              ║
+// ║   수정 방법: 메모장(텍스트 편집기)으로 이 파일을 열고        ║
+// ║   아래 내용만 수정하면 됩니다.                               ║
+// ║                                                              ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─────────────────────────────────────────
+// 1. 구글시트 Apps Script URL
+//    (접수 데이터가 저장되는 구글시트 주소)
+// ─────────────────────────────────────────
+var API_URL = 'https://script.google.com/macros/s/AKfycbyW5SV34bN3wGcoal7NyNsRPNa9xIW04Vz52WJu8pZVJC12_-_R0jMXRFNVRMUyI69mxA/exec';
+
+
+// ─────────────────────────────────────────
+// 2. 직원 목록
+//    새 직원 추가: { name: '이름', team: '팀명' } 를 추가
+//    직원 삭제: 해당 줄을 지우면 됨
+//    고참 설정: senior: true 추가
+// ─────────────────────────────────────────
+var EMPLOYEES = [
+  // === 부산팀 ===
+  { name: '민석', team: '부산팀' },
+  { name: '준형', team: '부산팀', senior: true },   // ← 고참
+  { name: '승재', team: '부산팀' },
+  { name: '윤철', team: '부산팀' },
+  { name: '세욱', team: '부산팀' },
+
+  // === 경기팀 ===
+  { name: '민우', team: '경기팀', senior: true },   // ← 고참
+  { name: '현진', team: '경기팀' },
+  { name: '찬진', team: '경기팀' },
+  { name: '형석', team: '경기팀' },
+  { name: '경준', team: '경기팀' },
+  { name: '재문', team: '경기팀' },
+
+  // ↓↓↓ 새 직원 추가는 여기에! ↓↓↓
+  // { name: '홍길동', team: '부산팀' },
+  // { name: '김철수', team: '경기팀', senior: true },
+];
+
+
+// ─────────────────────────────────────────
+// 3. 전체 직원 점검 항목
+//    새 항목 추가: { key: '영문키', emoji: '이모지', title: '제목', desc: '설명' }
+//    항목 삭제: 해당 블록을 지우면 됨
+//    항목 순서: 위에서 아래 순서대로 표시됨
+// ─────────────────────────────────────────
+var COMMON_ITEMS = [
+  {
+    key: 'quality',
+    emoji: '1️⃣',
+    title: '시공 품질',
+    desc: '이번 주 내 시공 품질은 어땠나요?\n마감 처리, 단차, 꼼꼼함을 돌아봐주세요.'
+  },
+  {
+    key: 'service',
+    emoji: '2️⃣',
+    title: '고객 응대',
+    desc: '고객님께 친절하게 대했나요?\n인사, 설명, 정리정돈까지 잘 했는지 체크!'
+  },
+  {
+    key: 'safety',
+    emoji: '3️⃣',
+    title: '안전장비',
+    desc: '안전화, 장갑 등 안전장비를 잘 착용했나요?\n나와 동료의 안전이 최우선입니다.'
+  },
+  {
+    key: 'punctual',
+    emoji: '4️⃣',
+    title: '시간 엄수',
+    desc: '출근, 시공 약속 시간을 잘 지켰나요?\n고객님의 소중한 시간을 존중해주세요.'
+  },
+  {
+    key: 'teamwork',
+    emoji: '5️⃣',
+    title: '팀워크',
+    desc: '팀원들과 소통은 잘 했나요?\n함께 일하는 동료에게 감사 한마디 어떨까요?'
+  },
+
+  // ↓↓↓ 전체 직원 항목 추가는 여기에! ↓↓↓
+  // {
+  //   key: 'cleanup',
+  //   emoji: '6️⃣',
+  //   title: '현장 정리',
+  //   desc: '시공 후 현장을 깨끗하게 정리했나요?'
+  // },
+];
+
+
+// ─────────────────────────────────────────
+// 4. 고참 전용 추가 항목
+//    (준형, 민우 같은 고참에게만 보이는 항목)
+//    수정 방법은 위와 동일
+// ─────────────────────────────────────────
+var SENIOR_ITEMS = [
+  {
+    key: 'mentoring',
+    emoji: '6️⃣',
+    title: '후배 교육/멘토링',
+    desc: '후배 직원들에게 충분히 가르쳐주고 피드백을 줬나요?\n신입 직원이 어려워하는 부분은 없었는지 체크해주세요.'
+  },
+  {
+    key: 'morale',
+    emoji: '7️⃣',
+    title: '팀 분위기/사기',
+    desc: '팀원들의 컨디션과 사기는 괜찮은가요?\n힘들어하는 직원이 있다면 대화를 나눠주세요.'
+  },
+  {
+    key: 'claim',
+    emoji: '8️⃣',
+    title: '고객 클레임',
+    desc: '이번 주 클레임이 있었다면 1점, 없었다면 5점\n있었다면 원인 파악과 재발 방지 대책을 세워주세요.'
+  },
+  {
+    key: 'teamquality',
+    emoji: '9️⃣',
+    title: '시공 품질 전체 점검',
+    desc: '팀원들의 전체적인 시공 품질은 어땠나요?\n반복되는 실수나 개선이 필요한 점이 있는지 체크!'
+  },
+  {
+    key: 'management',
+    emoji: '🔟',
+    title: '팀원 전체 관리',
+    desc: '각 팀원을 전체적으로 잘 신경 썼나요?\n다음 주에 한 명씩 칭찬 한마디 해주면 팀 분위기가 확 좋아집니다!'
+  },
+
+  // ↓↓↓ 고참 전용 항목 추가는 여기에! ↓↓↓
+  // {
+  //   key: 'inventory',
+  //   emoji: '📦',
+  //   title: '자재 관리',
+  //   desc: '이번 주 자재 관리는 잘 되었나요?'
+  // },
+];
+
+
+// ─────────────────────────────────────────
+// 5. 별점 라벨 (1~5점에 표시되는 텍스트)
+// ─────────────────────────────────────────
+var STAR_LABELS = ['', '많이 부족', '부족', '보통', '잘함', '매우 잘함'];
+
+
+// ─────────────────────────────────────────
+// 6. 완료 화면 메시지
+// ─────────────────────────────────────────
+var DONE_EMOJI = '🎉';
+var DONE_TITLE = '제출 완료!';
+var DONE_MESSAGE = '이번 주도 수고하셨습니다.\n부족했던 부분은 다음 주에 개선하고,\n잘한 부분은 스스로 칭찬해주세요!\n\n다음 주도 파이팅! 🔥';
+
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║   ★★★ 설정 끝! 아래는 수정하지 않아도 됩니다 ★★★       ║
+// ╚══════════════════════════════════════════════════════════════╝
+</script>
 
 <div class="header">
-  <h1>돌봄매트 시공 안내</h1>
-  <div class="sub" id="phoneDisplay"></div>
+  <div class="header-emoji">📋</div>
+  <h1>주간 자기 점검</h1>
+  <p>이번 주 나의 근무를 돌아봅니다</p>
+  <div class="week-badge" id="weekBadge"></div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="switchTab(0)">시공 전</div>
-  <div class="tab" onclick="switchTab(1)">시공 후</div>
-  <div class="tab" onclick="switchTab(2)">후기이벤트</div>
+<div class="container" id="formArea">
+  <div class="name-card">
+    <div class="name-label">이름을 선택해주세요</div>
+    <select class="name-select" id="nameSelect" onchange="onNameChange()">
+      <option value="">선택</option>
+    </select>
+  </div>
+  <div id="commonItems"></div>
+  <div class="senior-section" id="seniorSection">
+    <div class="section" style="border:1.5px solid #85B7EB" id="seniorItems">
+      <span class="senior-badge">팀 관리 체크 (고참 전용)</span>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">💬 한마디 (선택)</div>
+    <div class="section-desc">이번 주 느낀 점, 건의사항, 칭찬하고 싶은 동료 등</div>
+    <textarea class="comment-area" id="comment" placeholder="자유롭게 작성해주세요 (선택사항)"></textarea>
+  </div>
+  <button class="submit-btn" id="submitBtn" onclick="submitChecklist()">제출하기</button>
 </div>
 
-<!-- ═══ 시공 전 ═══ -->
-<div class="tab-content active" id="tab0">
-  <div class="total-time">전체 예상 소요시간 : 약 2~3시간</div>
-
-  <div class="step-card">
-    <div class="step-num">1</div>
-    <div class="step-body">
-      <h3>가구 이동</h3>
-      <p>시공 구역의 가구를 안전하게 이동합니다.<br>무거운 가구는 저희가 옮기니 걱정 마세요!</p>
-      <span class="step-time">약 20~30분</span>
-    </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">2</div>
-    <div class="step-body">
-      <h3>바닥 청소</h3>
-      <p>먼지와 이물질을 깨끗하게 제거합니다.<br>매트 부착력을 높이는 중요한 단계예요.</p>
-      <span class="step-time">약 15~20분</span>
-    </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">3</div>
-    <div class="step-body">
-      <h3>TPU 매트 시공</h3>
-      <p>고품질 TPU 매트를 정밀하게 시공합니다.<br>이음새를 최소화하여 깔끔하게 마감합니다.</p>
-      <span class="step-time">약 60~90분</span>
-    </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">4</div>
-    <div class="step-body">
-      <h3>가구 복원</h3>
-      <p>이동했던 가구를 원래 위치로 복원합니다.<br>가구 다리 보호 패드도 부착해 드려요.</p>
-      <span class="step-time">약 15~20분</span>
-    </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">5</div>
-    <div class="step-body">
-      <h3>마무리 청소</h3>
-      <p>시공 후 주변을 깔끔하게 정리합니다.<br>쓰레기 수거까지 완벽하게!</p>
-      <span class="step-time">약 10~15분</span>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ 시공 후 ═══ -->
-<div class="tab-content" id="tab1">
-  <div id="inspectionForm">
-    <div class="card">
-      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">검수 체크리스트</h3>
-      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">하나씩 확인 후 체크해 주세요</p>
-
-      <div class="check-item" onclick="toggleCheck(0)">
-        <div class="check-box" id="chk0"></div>
-        <div>
-          <div class="check-label">시공 범위 확인</div>
-          <div class="check-desc">계약한 범위대로 시공되었는지 확인해 주세요</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(1)">
-        <div class="check-box" id="chk1"></div>
-        <div>
-          <div class="check-label">이음새 상태 확인</div>
-          <div class="check-desc">매트 이음새가 깔끔하게 처리되었는지 확인해 주세요</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(2)">
-        <div class="check-box" id="chk2"></div>
-        <div>
-          <div class="check-label">가구 복원 상태 확인</div>
-          <div class="check-desc">가구가 원래 위치에 잘 놓여 있는지 확인해 주세요</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(3)">
-        <div class="check-box" id="chk3"></div>
-        <div>
-          <div class="check-label">바닥 청소 상태 확인</div>
-          <div class="check-desc">시공 후 주변이 깨끗하게 정리되었는지 확인해 주세요</div>
-        </div>
-      </div>
-
-      <div class="star-row">
-        <div class="star-label">전체 만족도</div>
-        <div class="stars" id="starGroup">
-          <span class="star" onclick="setRating(1)">&#9733;</span>
-          <span class="star" onclick="setRating(2)">&#9733;</span>
-          <span class="star" onclick="setRating(3)">&#9733;</span>
-          <span class="star" onclick="setRating(4)">&#9733;</span>
-          <span class="star" onclick="setRating(5)">&#9733;</span>
-        </div>
-      </div>
-
-      <button class="submit-btn green" id="inspectBtn" disabled onclick="submitInspection()">검수 완료</button>
-    </div>
-  </div>
-  <div id="inspectionDone" class="inspection-done" style="display:none;">
-    <div class="big-check">&#10003;</div>
-    <h3>검수가 완료되었습니다!</h3>
-    <p>소중한 확인 감사합니다.<br>쾌적한 생활 되세요!</p>
-  </div>
-</div>
-
-<!-- ═══ 후기이벤트 ═══ -->
-<div class="tab-content" id="tab2">
-  <div class="reward-header">
-    <div class="reward-amount" id="rewardTotal">0원</div>
-    <div class="reward-max">최대 10만원 캐시백</div>
-  </div>
-  <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-  <div class="progress-label" id="progressLabel">0 / 100,000원</div>
-
-  <div id="missionList"></div>
-
-  <div class="account-section">
-    <h3>캐시백 계좌 정보</h3>
-    <div class="account-grid">
-      <div class="fg">
-        <label>은행명</label>
-        <select id="accBank">
-          <option value="">선택</option>
-          <option>카카오뱅크</option><option>토스뱅크</option>
-          <option>국민은행</option><option>신한은행</option><option>하나은행</option>
-          <option>우리은행</option><option>농협은행</option><option>기업은행</option>
-          <option>SC제일은행</option><option>대구은행</option><option>부산은행</option>
-          <option>경남은행</option><option>광주은행</option><option>수협은행</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>예금주</label>
-        <input type="text" id="accName" placeholder="예금주명">
-      </div>
-      <div class="fg full">
-        <label>계좌번호</label>
-        <input type="text" id="accNum" placeholder="- 없이 입력" inputmode="numeric">
-      </div>
-    </div>
-  </div>
-
-  <button class="cashback-btn" id="cashbackBtn" onclick="requestCashback()">캐시백 받기</button>
+<div class="done-screen" id="doneScreen">
+  <div class="done-emoji" id="doneEmoji"></div>
+  <div class="done-title" id="doneTitle"></div>
+  <div class="done-sub" id="doneSub"></div>
 </div>
 
 <div class="toast" id="toast"></div>
-<canvas class="confetti-overlay" id="confetti"></canvas>
 
 <script>
-// ── 설정 ──
-const API_URL = 'https://script.google.com/macros/s/AKfycbz9i9S2mWNJhLcA6eWmBcgbcwqUBPvFULLHasYsgdlIEHzssdn_5pgBNOBVdWqXibbymg/exec';
-const PHONE = new URLSearchParams(location.search).get('phone')||'';
-if(PHONE){
-  const masked = PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3');
-  document.getElementById('phoneDisplay').textContent = masked;
-}
+var ratings = {};
+var now = new Date();
+var weekNum = Math.ceil(((now - new Date(now.getFullYear(),0,1)) / 86400000 + new Date(now.getFullYear(),0,1).getDay() + 1) / 7);
+document.getElementById('weekBadge').textContent = (now.getMonth()+1) + '월 ' + weekNum + '주차';
 
-// ── 탭 ──
-function switchTab(idx){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
-  document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===idx));
-}
+// 완료 화면 설정 반영
+document.getElementById('doneEmoji').textContent = DONE_EMOJI;
+document.getElementById('doneTitle').textContent = DONE_TITLE;
+document.getElementById('doneSub').textContent = DONE_MESSAGE;
 
-// ── 로딩 ──
-function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
-
-// ── 토스트 ──
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// ═══════════════════════════════════
-// 시공 후 - 검수
-// ═══════════════════════════════════
-const checks=[false,false,false,false];
-let rating=0;
-let inspectionSubmitted=false;
-
-function toggleCheck(i){
-  if(inspectionSubmitted)return;
-  checks[i]=!checks[i];
-  const el=document.getElementById('chk'+i);
-  el.classList.toggle('checked',checks[i]);
-  el.textContent=checks[i]?'✓':'';
-  updateInspectBtn();
-}
-
-function setRating(n){
-  if(inspectionSubmitted)return;
-  rating=n;
-  document.querySelectorAll('#starGroup .star').forEach((s,i)=>s.classList.toggle('on',i<n));
-  updateInspectBtn();
-}
-
-function updateInspectBtn(){
-  const allChecked=checks.every(Boolean);
-  document.getElementById('inspectBtn').disabled=!(allChecked && rating>0);
-}
-
-async function submitInspection(){
-  if(inspectionSubmitted)return;
-  const btn=document.getElementById('inspectBtn');
-  btn.disabled=true; btn.textContent='전송 중...';
-  try{
-    await fetch(API_URL,{
-      method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        type:'inspection',
-        phone:PHONE,
-        checks:checks,
-        rating:rating,
-        submittedAt:new Date().toISOString()
-      })
+// 직원 목록 생성
+(function buildSelect() {
+  var sel = document.getElementById('nameSelect');
+  var teams = {};
+  EMPLOYEES.forEach(function(e) {
+    if (!teams[e.team]) teams[e.team] = [];
+    teams[e.team].push(e);
+  });
+  Object.keys(teams).forEach(function(team) {
+    var grp = document.createElement('optgroup');
+    grp.label = team;
+    teams[team].forEach(function(e) {
+      var opt = document.createElement('option');
+      opt.value = e.name;
+      opt.textContent = e.name + (e.senior ? ' ★' : '');
+      grp.appendChild(opt);
     });
-    inspectionSubmitted=true;
-    document.getElementById('inspectionForm').style.display='none';
-    document.getElementById('inspectionDone').style.display='block';
-    showToast('검수 완료! 감사합니다');
-  }catch(e){
-    btn.disabled=false; btn.textContent='검수 완료';
-    showToast('전송 실패 - 다시 시도해주세요');
+    sel.appendChild(grp);
+  });
+})();
+
+// URL 파라미터로 이름 자동 선택
+var urlName = new URLSearchParams(window.location.search).get('name');
+if (urlName) {
+  var sel = document.getElementById('nameSelect');
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === urlName) { sel.selectedIndex = i; onNameChange(); break; }
   }
 }
 
-// ═══════════════════════════════════
-// 후기이벤트 - 미션
-// ═══════════════════════════════════
-const MISSIONS=[
-  {id:'contract', title:'계약 후기 작성', reward:20000, icon:'📝'},
-  {id:'instagram', title:'인스타그램 후기', reward:10000, icon:'📸'},
-  {id:'chatroom', title:'단지 단톡방 시공 중 업로드', reward:10000, icon:'💬'},
-  {id:'review1', title:'첫날 후기 1곳', reward:20000, icon:'⭐'},
-  {id:'review2', title:'첫날 후기 2곳', reward:20000, icon:'🌟'},
-  {id:'review_month', title:'한 달 후 후기', reward:20000, icon:'📅'}
-];
-const MAX_REWARD=100000;
-let missionState={};  // {missionId: {done:bool, imageData:null, url:'', submittedAt:''}}
-
-function initMissions(){
-  MISSIONS.forEach(m=>{
-    if(!missionState[m.id]) missionState[m.id]={done:false,imageData:null,url:'',submittedAt:''};
-  });
-  renderMissions();
+// 별점 HTML 생성
+function starSVG() {
+  return '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
 }
 
-function renderMissions(){
-  let earned=0;
-  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done) earned+=m.reward;});
-  document.getElementById('rewardTotal').textContent=earned.toLocaleString()+'원';
-  const pct=Math.round(earned/MAX_REWARD*100);
-  document.getElementById('progressBar').style.width=pct+'%';
-  document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+MAX_REWARD.toLocaleString()+'원';
-
-  const list=document.getElementById('missionList');
-  list.innerHTML='';
-  MISSIONS.forEach((m,idx)=>{
-    const s=missionState[m.id]||{};
-    const done=s.done;
-    const card=document.createElement('div');
-    card.className='mission-card';
-    card.innerHTML=`
-      <div class="mission-header" onclick="toggleMission(${idx})">
-        <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
-        <div class="mission-info">
-          <h4>${m.title}</h4>
-          <div class="reward">+${m.reward.toLocaleString()}원</div>
-        </div>
-        <span class="mission-badge ${done?'done':'pending'}">${done?'달성':'미달성'}</span>
-      </div>
-      <div class="mission-body" id="mbody${idx}">
-        ${done?`<p style="font-size:13px;color:var(--green);font-weight:600;padding-top:12px;">달성 완료! (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>`:`
-        <div class="upload-zone" id="uzone${idx}">
-          <input type="file" accept="image/*" onchange="handleUpload(${idx},this)">
-          <div class="icon">📷</div>
-          <div class="txt">스크린샷을 업로드해 주세요</div>
-        </div>
-        <div class="upload-preview" id="uprev${idx}"><img id="uimg${idx}"></div>
-        <div class="fg">
-          <label>후기 URL (선택)</label>
-          <input type="url" id="murl${idx}" placeholder="https://" value="${s.url||''}">
-        </div>
-        <button class="submit-btn primary" style="margin-top:12px;" onclick="submitMission(${idx})" id="msubmit${idx}" disabled>미션 달성하기</button>
-        `}
-      </div>
-    `;
-    list.appendChild(card);
-  });
+function buildRatingRow(key) {
+  var html = '<div class="rating-row" data-key="' + key + '">';
+  for (var i = 1; i <= 5; i++) {
+    html += '<div class="star" onclick="rate(\'' + key + '\',' + i + ')" ';
+    html += 'onmouseenter="preview(\'' + key + '\',' + i + ')" ';
+    html += 'onmouseleave="unpreview(\'' + key + '\')">' + starSVG() + '</div>';
+  }
+  html += '<span class="rating-label" id="label-' + key + '">선택</span></div>';
+  return html;
 }
 
-let openMissionIdx=-1;
-function toggleMission(idx){
-  const body=document.getElementById('mbody'+idx);
-  if(!body)return;
-  if(openMissionIdx===idx){
-    body.classList.remove('open');
-    openMissionIdx=-1;
-  }else{
-    if(openMissionIdx>=0){
-      const prev=document.getElementById('mbody'+openMissionIdx);
-      if(prev)prev.classList.remove('open');
+function buildItemHTML(item) {
+  var desc = item.desc.replace(/\n/g, '<br>');
+  var html = '<div class="section-title">' + item.emoji + ' ' + item.title + '</div>';
+  html += '<div class="section-desc">' + desc + '</div>';
+  html += buildRatingRow(item.key);
+  return html;
+}
+
+// 공통 항목 렌더링
+(function buildCommonItems() {
+  var container = document.getElementById('commonItems');
+  COMMON_ITEMS.forEach(function(item) {
+    var div = document.createElement('div');
+    div.className = 'section';
+    div.innerHTML = buildItemHTML(item);
+    container.appendChild(div);
+  });
+})();
+
+// 고참 항목 렌더링
+(function buildSeniorItems() {
+  var container = document.getElementById('seniorItems');
+  SENIOR_ITEMS.forEach(function(item, idx) {
+    if (idx > 0) {
+      var divider = document.createElement('div');
+      divider.className = 'divider';
+      container.appendChild(divider);
     }
-    body.classList.add('open');
-    openMissionIdx=idx;
-  }
-}
-
-const uploadData={};  // idx -> base64
-
-function handleUpload(idx,input){
-  const file=input.files[0];
-  if(!file)return;
-  if(file.size>10*1024*1024){showToast('10MB 이하 파일만 업로드 가능합니다');return;}
-  const reader=new FileReader();
-  reader.onload=function(e){
-    uploadData[idx]=e.target.result;
-    const prev=document.getElementById('uprev'+idx);
-    const img=document.getElementById('uimg'+idx);
-    img.src=e.target.result;
-    prev.style.display='block';
-    document.getElementById('uzone'+idx).querySelector('.txt').textContent='업로드 완료! 다시 선택하려면 탭하세요';
-    const btn=document.getElementById('msubmit'+idx);
-    if(btn)btn.disabled=false;
-  };
-  reader.readAsDataURL(file);
-}
-
-async function submitMission(idx){
-  const m=MISSIONS[idx];
-  const base64=uploadData[idx];
-  if(!base64){showToast('스크린샷을 업로드해 주세요');return;}
-  const btn=document.getElementById('msubmit'+idx);
-  btn.disabled=true;btn.textContent='전송 중...';
-  const url=document.getElementById('murl'+idx);
-  try{
-    await fetch(API_URL,{
-      method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        type:'mission',
-        phone:PHONE,
-        missionId:m.id,
-        missionTitle:m.title,
-        reward:m.reward,
-        imageData:base64,
-        url:url?url.value:'',
-        submittedAt:new Date().toISOString()
-      })
-    });
-    missionState[m.id]={done:true,url:url?url.value:'',submittedAt:new Date().toISOString()};
-    renderMissions();
-    fireConfetti();
-    showToast('🎉 '+m.title+' 달성! +'+m.reward.toLocaleString()+'원');
-  }catch(e){
-    btn.disabled=false;btn.textContent='미션 달성하기';
-    showToast('전송 실패 - 다시 시도해주세요');
-  }
-}
-
-// ── 캐시백 ──
-function requestCashback(){
-  const bank=document.getElementById('accBank').value;
-  const name=document.getElementById('accName').value.trim();
-  const num=document.getElementById('accNum').value.trim();
-  if(!bank||!name||!num){showToast('계좌 정보를 모두 입력해 주세요');return;}
-
-  const earned=MISSIONS.filter(m=>missionState[m.id]&&missionState[m.id].done);
-  if(earned.length===0){showToast('달성한 미션이 없습니다');return;}
-
-  let text=`[돌봄매트 캐시백 신청]\n`;
-  text+=`연락처: ${PHONE}\n\n`;
-  text+=`▶ 달성 미션\n`;
-  let total=0;
-  earned.forEach(m=>{
-    text+=`- ${m.title}: ${m.reward.toLocaleString()}원\n`;
-    total+=m.reward;
+    var div = document.createElement('div');
+    div.innerHTML = buildItemHTML(item);
+    container.appendChild(div);
   });
-  text+=`\n총 캐시백: ${total.toLocaleString()}원\n\n`;
-  text+=`▶ 입금 계좌\n`;
-  text+=`${bank} ${num} ${name}\n`;
+})();
 
-  navigator.clipboard.writeText(text).then(()=>{
-    showToast('복사 완료! 카카오톡 채널에 붙여넣기 해주세요');
-  }).catch(()=>{
-    // 클립보드 실패시 폴백
-    const ta=document.createElement('textarea');
-    ta.value=text;document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);
-    showToast('복사 완료! 카카오톡 채널에 붙여넣기 해주세요');
+function onNameChange() {
+  var name = document.getElementById('nameSelect').value;
+  var isSenior = EMPLOYEES.some(function(e) { return e.name === name && e.senior; });
+  document.getElementById('seniorSection').classList.toggle('show', isSenior);
+}
+
+function rate(key, val) {
+  ratings[key] = val;
+  var row = document.querySelector('[data-key="'+key+'"]');
+  row.querySelectorAll('.star').forEach(function(s, i) {
+    s.classList.toggle('active', i < val);
+    s.classList.remove('hover-preview');
   });
+  var label = document.getElementById('label-'+key);
+  label.textContent = STAR_LABELS[val];
+  label.classList.add('has-value');
+}
 
-  // 서버에도 저장
-  fetch(API_URL,{
-    method:'POST',mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      type:'cashback',
-      phone:PHONE,
-      bank,accountName:name,accountNum:num,
-      missions:earned.map(m=>({id:m.id,title:m.title,reward:m.reward})),
-      totalReward:total,
-      submittedAt:new Date().toISOString()
-    })
+function preview(key, val) {
+  var row = document.querySelector('[data-key="'+key+'"]');
+  row.querySelectorAll('.star').forEach(function(s, i) {
+    if (!s.classList.contains('active')) s.classList.toggle('hover-preview', i < val);
   });
 }
 
-// ── Confetti ──
-function fireConfetti(){
-  const canvas=document.getElementById('confetti');
-  const ctx=canvas.getContext('2d');
-  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
-  const particles=[];
-  const colors=['#e8736c','#f59f00','#20c997','#5b9bd5','#ff6b9d','#c084fc'];
-  for(let i=0;i<80;i++){
-    particles.push({
-      x:canvas.width/2+(Math.random()-0.5)*100,
-      y:canvas.height/2,
-      vx:(Math.random()-0.5)*12,
-      vy:Math.random()*-14-4,
-      size:Math.random()*8+4,
-      color:colors[Math.floor(Math.random()*colors.length)],
-      rot:Math.random()*360,
-      rotV:(Math.random()-0.5)*10,
-      life:1
-    });
-  }
-  let frame=0;
-  function animate(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    let alive=false;
-    particles.forEach(p=>{
-      if(p.life<=0)return;
-      alive=true;
-      p.x+=p.vx;p.y+=p.vy;p.vy+=0.35;
-      p.rot+=p.rotV;p.life-=0.012;
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
-      ctx.globalAlpha=Math.max(0,p.life);
-      ctx.fillStyle=p.color;
-      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
-      ctx.restore();
-    });
-    frame++;
-    if(alive&&frame<150)requestAnimationFrame(animate);
-    else ctx.clearRect(0,0,canvas.width,canvas.height);
-  }
-  animate();
+function unpreview(key) {
+  var row = document.querySelector('[data-key="'+key+'"]');
+  row.querySelectorAll('.star').forEach(function(s) { s.classList.remove('hover-preview'); });
 }
 
-// ── 데이터 로드 ──
-async function loadData(){
-  if(!PHONE)return;
-  showLoading(30);
-  try{
-    const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
-    showLoading(70);
-    const data=await res.json();
-    showLoading(100);
-    setTimeout(()=>showLoading(0),500);
-
-    // 검수 데이터 복원
-    if(data.inspection&&data.inspection.submitted){
-      inspectionSubmitted=true;
-      document.getElementById('inspectionForm').style.display='none';
-      document.getElementById('inspectionDone').style.display='block';
-    }
-
-    // 미션 데이터 복원
-    if(data.missions){
-      Object.keys(data.missions).forEach(id=>{
-        missionState[id]=data.missions[id];
-      });
-    }
-
-    // 계좌 정보 복원
-    if(data.account){
-      if(data.account.bank)document.getElementById('accBank').value=data.account.bank;
-      if(data.account.name)document.getElementById('accName').value=data.account.name;
-      if(data.account.num)document.getElementById('accNum').value=data.account.num;
-    }
-  }catch(e){
-    console.error(e);
-    showLoading(0);
-  }
-  renderMissions();
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
 }
 
-// ── 초기화 ──
-initMissions();
-loadData();
+function submitChecklist() {
+  var name = document.getElementById('nameSelect').value;
+  if (!name) { showToast('이름을 선택해주세요'); return; }
+
+  for (var i = 0; i < COMMON_ITEMS.length; i++) {
+    if (!ratings[COMMON_ITEMS[i].key]) { showToast('모든 항목에 별점을 선택해주세요'); return; }
+  }
+
+  var isSenior = EMPLOYEES.some(function(e) { return e.name === name && e.senior; });
+  if (isSenior) {
+    for (var j = 0; j < SENIOR_ITEMS.length; j++) {
+      if (!ratings[SENIOR_ITEMS[j].key]) { showToast('고참 항목도 모두 선택해주세요'); return; }
+    }
+  }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '제출 중...';
+
+  var sel = document.getElementById('nameSelect');
+  var opt = sel.options[sel.selectedIndex];
+  var team = opt.parentElement.label || '';
+
+  var payload = { type: 'checklist', name: name, team: team, isSenior: isSenior, comment: document.getElementById('comment').value.trim(), date: new Date().toISOString(), week: weekNum };
+
+  COMMON_ITEMS.forEach(function(item) { payload[item.key] = ratings[item.key] || 0; });
+  SENIOR_ITEMS.forEach(function(item) { payload[item.key] = ratings[item.key] || 0; });
+
+  fetch(API_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function() {
+    document.getElementById('formArea').style.display = 'none';
+    var done = document.getElementById('doneScreen');
+    done.classList.add('show');
+    done.style.display = 'block';
+  }).catch(function() {
+    showToast('전송 실패. 다시 시도해주세요.');
+    btn.disabled = false;
+    btn.textContent = '제출하기';
+  });
+}
 </script>
 </body>
 </html>
