@@ -41,7 +41,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .size-info{display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#999}
 .size-info strong{color:#1a1a1a;font-weight:600}
 
-.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
 .card-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 
 .btn-group{display:flex;gap:6px;flex-wrap:wrap}
@@ -64,14 +64,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .dim-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 0;margin-top:12px;border-top:1px solid #eee;font-size:12px;font-weight:600;color:#666;-webkit-tap-highlight-color:transparent}
 .dim-toggle .arrow{transition:transform .2s;font-size:14px}
 .dim-toggle.open .arrow{transform:rotate(180deg)}
-.dim-area{display:none;margin-top:10px}
+.dim-area{display:none;margin-top:10px;overflow:hidden}
 .dim-area.show{display:block}
-.dim-room{margin-bottom:12px;padding:10px;background:#fafaf7;border-radius:10px}
+.dim-room{margin-bottom:10px;padding:10px 8px;background:#fafaf7;border-radius:10px;overflow:hidden}
 .dim-room-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .dim-room-name{font-size:12px;font-weight:600;color:#333}
 .dim-room-remove{font-size:11px;color:#d32f2f;cursor:pointer;padding:2px 8px;border:1px solid #f0c0c0;border-radius:6px;background:#fff}
-.dim-inputs{display:flex;gap:6px;align-items:center}
-.dim-input{flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;font-size:12px;font-family:inherit;text-align:center}
+.dim-inputs{display:flex;gap:4px;align-items:center}
+.dim-input{flex:1;min-width:0;padding:8px 4px;border:1.5px solid #e0ddd6;border-radius:8px;font-size:12px;font-family:inherit;text-align:center}
 .dim-input:focus{outline:none;border-color:#2E7D32}
 .dim-room-result{font-size:11px;color:#2E7D32;margin-top:6px;font-weight:500}
 .dim-add{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border:1.5px dashed #d0cdc6;border-radius:10px;font-size:12px;color:#999;cursor:pointer;margin-bottom:10px}
@@ -144,24 +144,26 @@ var PRODUCTS = [
 
 var PRESETS_EXPAND = {
   '24평': [
-    { label: '거실+복도', qty500: 110 },
+    { label: '거실+복도', qty500: 105 },
+    { label: '거실+복도+아일랜드', qty500: 115 },
     { label: '거실+복도+주방', qty500: 125 },
   ],
   '34평': [
-    { label: '거실+복도', qty500: 140 },
-    { label: '풀시공 (최소)', qty500: 160 },
-    { label: '풀시공 (최대)', qty500: 180 },
+    { label: '거실+복도', qty500: 125 },
+    { label: '거실+복도+아일랜드', qty500: 145 },
+    { label: '거실+복도+주방', qty500: 160 },
   ],
 };
 var PRESETS_NOEXPAND = {
   '24평': [
-    { label: '거실+복도', qty500: 90 },
+    { label: '거실+복도', qty500: 85 },
+    { label: '거실+복도+아일랜드', qty500: 95 },
     { label: '거실+복도+주방', qty500: 105 },
   ],
   '34평': [
-    { label: '거실+복도', qty500: 110 },
-    { label: '풀시공 (최소)', qty500: 125 },
-    { label: '풀시공 (최대)', qty500: 140 },
+    { label: '거실+복도', qty500: 105 },
+    { label: '거실+복도+아일랜드', qty500: 120 },
+    { label: '거실+복도+주방', qty500: 135 },
   ],
 };
 
@@ -179,6 +181,7 @@ var BENEFITS = [
 var NOTICES = [
   '아파트 구조에 따라 수량 차이가 있을 수 있습니다.',
   '실제 시공 후 수량에 맞춰 결제가 이루어집니다.',
+  '들어가는 장수에 따라 금액 차이가 있습니다.',
   '시공비는 소량 시공 시 추가됩니다.',
   '업체 비교 시 장당 비용으로 계산하면 현명한 소비가 가능합니다!',
 ];
@@ -257,7 +260,7 @@ var DEFAULT_ROOMS = [
       <div class="dim-add" onclick="addRoom()">+ 방 추가</div>
       <div class="dim-total" id="dimTotal" style="display:none">
         <div class="dim-total-num" id="dimTotalNum">0장</div>
-        <div class="dim-total-label">전체 예상 수량</div>
+        <div class="dim-total-label" id="dimTotalLabel">전체 예상 수량</div>
         <button class="dim-apply" onclick="applyDimTotal()">이 수량으로 견적 보기</button>
       </div>
       <div style="font-size:10px;color:#bbb;margin-top:6px">도면에 적힌 mm 단위 치수를 입력하세요</div>
@@ -343,7 +346,10 @@ var DEFAULT_ROOMS = [
     <div class="copy-sub">카카오톡 상담원에게<br><strong>붙여넣기</strong> 해주시면 바로 안내드리겠습니다</div>
     <div class="copy-feature">
       <div class="copy-feature-title">🌬️ 돌봄매트만의 공기순환통로</div>
-      <video id="airVideo" src="air_channel.mov" autoplay muted loop playsinline style="width:100%;border-radius:10px;margin:10px 0"></video>
+      <video id="airVideo" autoplay muted loop playsinline style="width:100%;border-radius:10px;margin:10px 0">
+        <source src="air_channel.mp4" type="video/mp4">
+        <source src="air_channel.mov" type="video/quicktime">
+      </video>
       <div style="font-size:12px;color:#666;line-height:1.6;text-align:left">
         매트 하단 <strong style="color:#2E7D32">공기순환통로</strong>로 습기 배출 →<br>
         <strong style="color:#2E7D32">곰팡이 걱정 제로!</strong> 6,700가정이 검증했습니다
@@ -518,9 +524,10 @@ function renderRooms() {
     div.innerHTML =
       '<div class="dim-room-head"><span class="dim-room-name">' + room.name + '</span>' + removeBtn + '</div>' +
       '<div class="dim-inputs">' +
-        '<input class="dim-input" type="number" placeholder="가로(mm)" value="' + (room.w || '') + '" oninput="updateRoomDim(' + room.id + ',\'w\',this.value)">' +
-        '<span style="color:#ccc;font-size:12px">×</span>' +
-        '<input class="dim-input" type="number" placeholder="세로(mm)" value="' + (room.h || '') + '" oninput="updateRoomDim(' + room.id + ',\'h\',this.value)">' +
+        '<input class="dim-input" type="number" placeholder="가로" value="' + (room.w || '') + '" oninput="updateRoomDim(' + room.id + ',\'w\',this.value)">' +
+        '<span style="color:#ccc;font-size:11px">×</span>' +
+        '<input class="dim-input" type="number" placeholder="세로" value="' + (room.h || '') + '" oninput="updateRoomDim(' + room.id + ',\'h\',this.value)">' +
+        '<span style="color:#bbb;font-size:10px;flex-shrink:0">mm</span>' +
       '</div>' +
       '<div class="dim-room-result" id="dimRes' + room.id + '"></div>';
     container.appendChild(div);
@@ -555,8 +562,10 @@ function calcAllDim() {
 
   var totalEl = document.getElementById('dimTotal');
   if (grandTotal > 0) {
+    var withExtra = Math.ceil(grandTotal * 1.1); // +10% 재단 여유분
     totalEl.style.display = 'block';
-    document.getElementById('dimTotalNum').textContent = grandTotal + '장';
+    document.getElementById('dimTotalNum').textContent = withExtra + '장';
+    document.getElementById('dimTotalLabel').innerHTML = '전체 예상 수량 <span style="font-size:10px;color:#888">(재단 여유분 +10% 포함)</span>';
   } else {
     totalEl.style.display = 'none';
   }
