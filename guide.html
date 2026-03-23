@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 시공 체크리스트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;
+  --border:#e5e8eb;
+  --primary:#e8736c;--primary-light:#fdf0ef;--primary-dark:#d45a53;
+  --green:#20c997;--green-light:#e3faf1;
+  --red:#f04452;--red-light:#fff0f1;
+  --orange:#f59f00;--orange-light:#fff8e6;
+  --blue:#5b9bd5;--blue-light:#edf4fb;
+  --gold:#f59f00;
+  --radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:40px;}
+
+/* 헤더 */
+.header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));padding:20px;text-align:center;position:sticky;top:0;z-index:100;}
+.header h1{color:#fff;font-size:18px;font-weight:700;}
+.header .sub{color:rgba(255,255,255,0.8);font-size:12px;margin-top:4px;}
+
+/* 탭 */
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:56px;z-index:99;}
+.tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;user-select:none;}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+
+/* 탭 콘텐츠 */
+.tab-content{display:none;animation:fadeUp .3s ease;}
+.tab-content.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* 카드 */
+.card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+
+/* ── 시공 전 ── */
+.step-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:flex-start;}
+.step-num{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
+.step-body h3{font-size:14px;font-weight:700;margin-bottom:3px;}
+.step-body p{font-size:12px;color:var(--text3);line-height:1.5;}
+.step-time{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:6px;}
+.total-time{text-align:center;margin:16px;padding:14px;background:var(--primary-light);border-radius:var(--radius);font-size:14px;font-weight:700;color:var(--primary-dark);}
+
+/* ── 시공 후 ── */
+.check-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;-webkit-user-select:none;}
+.check-item:last-child{border-bottom:none;}
+.check-box{width:26px;height:26px;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .2s;}
+.check-box.checked{background:var(--green);border-color:var(--green);color:#fff;}
+.check-label{font-size:14px;font-weight:500;flex:1;}
+.check-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+
+.star-row{display:flex;align-items:center;gap:12px;padding:14px 0;}
+.star-label{font-size:14px;font-weight:500;flex:1;}
+.stars{display:flex;gap:4px;}
+.star{font-size:28px;cursor:pointer;color:#ddd;transition:color .15s;user-select:none;-webkit-user-select:none;}
+.star.on{color:var(--gold);}
+
+.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:14px;}
+.submit-btn.green{background:var(--green);}
+.submit-btn.green:active{background:#1baa80;}
+.submit-btn.primary{background:var(--primary);}
+.submit-btn.primary:active{background:var(--primary-dark);}
+.submit-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.submit-btn:active{transform:scale(0.98);}
+
+/* ── 후기이벤트 ── */
+.reward-header{text-align:center;padding:20px 16px 8px;}
+.reward-amount{font-size:32px;font-weight:800;color:var(--primary);}
+.reward-max{font-size:13px;color:var(--text3);margin-top:2px;}
+.progress-wrap{margin:12px 16px 4px;background:#e9ecef;border-radius:10px;height:10px;overflow:hidden;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--orange));border-radius:10px;transition:width .5s ease;}
+.progress-label{text-align:right;margin:4px 20px 12px;font-size:11px;color:var(--text3);font-weight:600;}
+
+.mission-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:all .2s;}
+.mission-header{display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;}
+.mission-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.mission-icon.done{background:var(--green-light);}
+.mission-icon.pending{background:#f2f4f6;}
+.mission-info{flex:1;}
+.mission-info h4{font-size:14px;font-weight:700;}
+.mission-info .reward{font-size:12px;font-weight:700;color:var(--primary);margin-top:2px;}
+.mission-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;}
+.mission-badge.done{background:var(--green-light);color:var(--green);}
+.mission-badge.pending{background:#f2f4f6;color:var(--text3);}
+
+.mission-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);margin-top:0;}
+.mission-body.open{display:block;animation:fadeUp .2s ease;}
+
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-top:10px;position:relative;overflow:hidden;}
+.upload-zone:active{border-color:var(--primary);background:var(--primary-light);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-zone .icon{font-size:28px;margin-bottom:4px;}
+.upload-zone .txt{font-size:12px;color:var(--text3);}
+.upload-preview{margin-top:10px;border-radius:10px;overflow:hidden;display:none;}
+.upload-preview img{width:100%;display:block;border-radius:10px;}
+
+.fg{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
+.fg label{font-size:12px;font-weight:600;color:var(--text2);}
+.fg input,.fg select{padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);transition:border .2s;-webkit-appearance:none;appearance:none;}
+.fg select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--primary);}
+
+.account-section{margin:16px;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+.account-section h3{font-size:15px;font-weight:700;margin-bottom:12px;}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.account-grid .full{grid-column:1/-1;}
+
+.cashback-btn{width:calc(100% - 32px);margin:16px;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--orange));color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 12px rgba(232,115,108,0.3);}
+.cashback-btn:active{transform:scale(0.98);}
+.cashback-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* 토스트 */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap;max-width:90%;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* 로딩 */
+.loading-bar{height:3px;background:var(--primary);position:fixed;top:0;left:0;z-index:200;transition:width .3s;border-radius:0 2px 2px 0;}
+
+/* confetti overlay */
+.confetti-overlay{position:fixed;inset:0;pointer-events:none;z-index:400;}
+
+/* 완료 상태 */
+.inspection-done{text-align:center;padding:30px 16px;}
+.inspection-done .big-check{font-size:60px;margin-bottom:10px;}
+.inspection-done h3{font-size:18px;font-weight:700;color:var(--green);}
+.inspection-done p{font-size:13px;color:var(--text3);margin-top:6px;}
+
+@media(max-width:400px){.card,.step-card,.mission-card,.account-section{margin-left:10px;margin-right:10px;}.cashback-btn{width:calc(100% - 20px);margin-left:10px;margin-right:10px;}}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar" style="width:0%"></div>
+
+<div class="header">
+  <h1>돌봄매트 시공 안내</h1>
+  <div class="sub" id="phoneDisplay"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(0)">시공 전</div>
+  <div class="tab" onclick="switchTab(1)">시공 후</div>
+  <div class="tab" onclick="switchTab(2)">후기이벤트</div>
+</div>
+
+<!-- ═══ 시공 전 ═══ -->
+<div class="tab-content active" id="tab0">
+  <div class="total-time">전체 예상 소요시간 : 약 2~3시간</div>
+
+  <div class="step-card">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>가구 이동</h3>
+      <p>시공 구역의 가구를 안전하게 이동합니다.<br>무거운 가구는 저희가 옮기니 걱정 마세요!</p>
+      <span class="step-time">약 20~30분</span>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>바닥 청소</h3>
+      <p>먼지와 이물질을 깨끗하게 제거합니다.<br>매트 부착력을 높이는 중요한 단계예요.</p>
+      <span class="step-time">약 15~20분</span>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>TPU 매트 시공</h3>
+      <p>고품질 TPU 매트를 정밀하게 시공합니다.<br>이음새를 최소화하여 깔끔하게 마감합니다.</p>
+      <span class="step-time">약 60~90분</span>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h3>가구 복원</h3>
+      <p>이동했던 가구를 원래 위치로 복원합니다.<br>가구 다리 보호 패드도 부착해 드려요.</p>
+      <span class="step-time">약 15~20분</span>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h3>마무리 청소</h3>
+      <p>시공 후 주변을 깔끔하게 정리합니다.<br>쓰레기 수거까지 완벽하게!</p>
+      <span class="step-time">약 10~15분</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 시공 후 ═══ -->
+<div class="tab-content" id="tab1">
+  <div id="inspectionForm">
+    <div class="card">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">검수 체크리스트</h3>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">하나씩 확인 후 체크해 주세요</p>
+
+      <div class="check-item" onclick="toggleCheck(0)">
+        <div class="check-box" id="chk0"></div>
+        <div>
+          <div class="check-label">시공 범위 확인</div>
+          <div class="check-desc">계약한 범위대로 시공되었는지 확인해 주세요</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(1)">
+        <div class="check-box" id="chk1"></div>
+        <div>
+          <div class="check-label">이음새 상태 확인</div>
+          <div class="check-desc">매트 이음새가 깔끔하게 처리되었는지 확인해 주세요</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(2)">
+        <div class="check-box" id="chk2"></div>
+        <div>
+          <div class="check-label">가구 복원 상태 확인</div>
+          <div class="check-desc">가구가 원래 위치에 잘 놓여 있는지 확인해 주세요</div>
+        </div>
+      </div>
+      <div class="check-item" onclick="toggleCheck(3)">
+        <div class="check-box" id="chk3"></div>
+        <div>
+          <div class="check-label">바닥 청소 상태 확인</div>
+          <div class="check-desc">시공 후 주변이 깨끗하게 정리되었는지 확인해 주세요</div>
+        </div>
+      </div>
+
+      <div class="star-row">
+        <div class="star-label">전체 만족도</div>
+        <div class="stars" id="starGroup">
+          <span class="star" onclick="setRating(1)">&#9733;</span>
+          <span class="star" onclick="setRating(2)">&#9733;</span>
+          <span class="star" onclick="setRating(3)">&#9733;</span>
+          <span class="star" onclick="setRating(4)">&#9733;</span>
+          <span class="star" onclick="setRating(5)">&#9733;</span>
+        </div>
+      </div>
+
+      <button class="submit-btn green" id="inspectBtn" disabled onclick="submitInspection()">검수 완료</button>
+    </div>
+  </div>
+  <div id="inspectionDone" class="inspection-done" style="display:none;">
+    <div class="big-check">&#10003;</div>
+    <h3>검수가 완료되었습니다!</h3>
+    <p>소중한 확인 감사합니다.<br>쾌적한 생활 되세요!</p>
+  </div>
+</div>
+
+<!-- ═══ 후기이벤트 ═══ -->
+<div class="tab-content" id="tab2">
+  <div class="reward-header">
+    <div class="reward-amount" id="rewardTotal">0원</div>
+    <div class="reward-max">최대 10만원 캐시백</div>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-label" id="progressLabel">0 / 100,000원</div>
+
+  <div id="missionList"></div>
+
+  <div class="account-section">
+    <h3>캐시백 계좌 정보</h3>
+    <div class="account-grid">
+      <div class="fg">
+        <label>은행명</label>
+        <select id="accBank">
+          <option value="">선택</option>
+          <option>카카오뱅크</option><option>토스뱅크</option>
+          <option>국민은행</option><option>신한은행</option><option>하나은행</option>
+          <option>우리은행</option><option>농협은행</option><option>기업은행</option>
+          <option>SC제일은행</option><option>대구은행</option><option>부산은행</option>
+          <option>경남은행</option><option>광주은행</option><option>수협은행</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>예금주</label>
+        <input type="text" id="accName" placeholder="예금주명">
+      </div>
+      <div class="fg full">
+        <label>계좌번호</label>
+        <input type="text" id="accNum" placeholder="- 없이 입력" inputmode="numeric">
+      </div>
+    </div>
+  </div>
+
+  <button class="cashback-btn" id="cashbackBtn" onclick="requestCashback()">캐시백 받기</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas class="confetti-overlay" id="confetti"></canvas>
+
+<script>
+// ── 설정 ──
+const API_URL = 'https://script.google.com/macros/s/AKfycbz9i9S2mWNJhLcA6eWmBcgbcwqUBPvFULLHasYsgdlIEHzssdn_5pgBNOBVdWqXibbymg/exec';
+const PHONE = new URLSearchParams(location.search).get('phone')||'';
+if(PHONE){
+  const masked = PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3');
+  document.getElementById('phoneDisplay').textContent = masked;
+}
+
+// ── 탭 ──
+function switchTab(idx){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===idx));
+}
+
+// ── 로딩 ──
+function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
+
+// ── 토스트 ──
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ═══════════════════════════════════
+// 시공 후 - 검수
+// ═══════════════════════════════════
+const checks=[false,false,false,false];
+let rating=0;
+let inspectionSubmitted=false;
+
+function toggleCheck(i){
+  if(inspectionSubmitted)return;
+  checks[i]=!checks[i];
+  const el=document.getElementById('chk'+i);
+  el.classList.toggle('checked',checks[i]);
+  el.textContent=checks[i]?'✓':'';
+  updateInspectBtn();
+}
+
+function setRating(n){
+  if(inspectionSubmitted)return;
+  rating=n;
+  document.querySelectorAll('#starGroup .star').forEach((s,i)=>s.classList.toggle('on',i<n));
+  updateInspectBtn();
+}
+
+function updateInspectBtn(){
+  const allChecked=checks.every(Boolean);
+  document.getElementById('inspectBtn').disabled=!(allChecked && rating>0);
+}
+
+async function submitInspection(){
+  if(inspectionSubmitted)return;
+  const btn=document.getElementById('inspectBtn');
+  btn.disabled=true; btn.textContent='전송 중...';
+  try{
+    await fetch(API_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        type:'inspection',
+        phone:PHONE,
+        checks:checks,
+        rating:rating,
+        submittedAt:new Date().toISOString()
+      })
+    });
+    inspectionSubmitted=true;
+    document.getElementById('inspectionForm').style.display='none';
+    document.getElementById('inspectionDone').style.display='block';
+    showToast('검수 완료! 감사합니다');
+  }catch(e){
+    btn.disabled=false; btn.textContent='검수 완료';
+    showToast('전송 실패 - 다시 시도해주세요');
+  }
+}
+
+// ═══════════════════════════════════
+// 후기이벤트 - 미션
+// ═══════════════════════════════════
+const MISSIONS=[
+  {id:'contract', title:'계약 후기 작성', reward:20000, icon:'📝'},
+  {id:'instagram', title:'인스타그램 후기', reward:10000, icon:'📸'},
+  {id:'chatroom', title:'단지 단톡방 시공 중 업로드', reward:10000, icon:'💬'},
+  {id:'review1', title:'첫날 후기 1곳', reward:20000, icon:'⭐'},
+  {id:'review2', title:'첫날 후기 2곳', reward:20000, icon:'🌟'},
+  {id:'review_month', title:'한 달 후 후기', reward:20000, icon:'📅'}
+];
+const MAX_REWARD=100000;
+let missionState={};  // {missionId: {done:bool, imageData:null, url:'', submittedAt:''}}
+
+function initMissions(){
+  MISSIONS.forEach(m=>{
+    if(!missionState[m.id]) missionState[m.id]={done:false,imageData:null,url:'',submittedAt:''};
+  });
+  renderMissions();
+}
+
+function renderMissions(){
+  let earned=0;
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done) earned+=m.reward;});
+  document.getElementById('rewardTotal').textContent=earned.toLocaleString()+'원';
+  const pct=Math.round(earned/MAX_REWARD*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+MAX_REWARD.toLocaleString()+'원';
+
+  const list=document.getElementById('missionList');
+  list.innerHTML='';
+  MISSIONS.forEach((m,idx)=>{
+    const s=missionState[m.id]||{};
+    const done=s.done;
+    const card=document.createElement('div');
+    card.className='mission-card';
+    card.innerHTML=`
+      <div class="mission-header" onclick="toggleMission(${idx})">
+        <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
+        <div class="mission-info">
+          <h4>${m.title}</h4>
+          <div class="reward">+${m.reward.toLocaleString()}원</div>
+        </div>
+        <span class="mission-badge ${done?'done':'pending'}">${done?'달성':'미달성'}</span>
+      </div>
+      <div class="mission-body" id="mbody${idx}">
+        ${done?`<p style="font-size:13px;color:var(--green);font-weight:600;padding-top:12px;">달성 완료! (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>`:`
+        <div class="upload-zone" id="uzone${idx}">
+          <input type="file" accept="image/*" onchange="handleUpload(${idx},this)">
+          <div class="icon">📷</div>
+          <div class="txt">스크린샷을 업로드해 주세요</div>
+        </div>
+        <div class="upload-preview" id="uprev${idx}"><img id="uimg${idx}"></div>
+        <div class="fg">
+          <label>후기 URL (선택)</label>
+          <input type="url" id="murl${idx}" placeholder="https://" value="${s.url||''}">
+        </div>
+        <button class="submit-btn primary" style="margin-top:12px;" onclick="submitMission(${idx})" id="msubmit${idx}" disabled>미션 달성하기</button>
+        `}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+let openMissionIdx=-1;
+function toggleMission(idx){
+  const body=document.getElementById('mbody'+idx);
+  if(!body)return;
+  if(openMissionIdx===idx){
+    body.classList.remove('open');
+    openMissionIdx=-1;
+  }else{
+    if(openMissionIdx>=0){
+      const prev=document.getElementById('mbody'+openMissionIdx);
+      if(prev)prev.classList.remove('open');
+    }
+    body.classList.add('open');
+    openMissionIdx=idx;
+  }
+}
+
+const uploadData={};  // idx -> base64
+
+function handleUpload(idx,input){
+  const file=input.files[0];
+  if(!file)return;
+  if(file.size>10*1024*1024){showToast('10MB 이하 파일만 업로드 가능합니다');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    uploadData[idx]=e.target.result;
+    const prev=document.getElementById('uprev'+idx);
+    const img=document.getElementById('uimg'+idx);
+    img.src=e.target.result;
+    prev.style.display='block';
+    document.getElementById('uzone'+idx).querySelector('.txt').textContent='업로드 완료! 다시 선택하려면 탭하세요';
+    const btn=document.getElementById('msubmit'+idx);
+    if(btn)btn.disabled=false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitMission(idx){
+  const m=MISSIONS[idx];
+  const base64=uploadData[idx];
+  if(!base64){showToast('스크린샷을 업로드해 주세요');return;}
+  const btn=document.getElementById('msubmit'+idx);
+  btn.disabled=true;btn.textContent='전송 중...';
+  const url=document.getElementById('murl'+idx);
+  try{
+    await fetch(API_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        type:'mission',
+        phone:PHONE,
+        missionId:m.id,
+        missionTitle:m.title,
+        reward:m.reward,
+        imageData:base64,
+        url:url?url.value:'',
+        submittedAt:new Date().toISOString()
+      })
+    });
+    missionState[m.id]={done:true,url:url?url.value:'',submittedAt:new Date().toISOString()};
+    renderMissions();
+    fireConfetti();
+    showToast('🎉 '+m.title+' 달성! +'+m.reward.toLocaleString()+'원');
+  }catch(e){
+    btn.disabled=false;btn.textContent='미션 달성하기';
+    showToast('전송 실패 - 다시 시도해주세요');
+  }
+}
+
+// ── 캐시백 ──
+function requestCashback(){
+  const bank=document.getElementById('accBank').value;
+  const name=document.getElementById('accName').value.trim();
+  const num=document.getElementById('accNum').value.trim();
+  if(!bank||!name||!num){showToast('계좌 정보를 모두 입력해 주세요');return;}
+
+  const earned=MISSIONS.filter(m=>missionState[m.id]&&missionState[m.id].done);
+  if(earned.length===0){showToast('달성한 미션이 없습니다');return;}
+
+  let text=`[돌봄매트 캐시백 신청]\n`;
+  text+=`연락처: ${PHONE}\n\n`;
+  text+=`▶ 달성 미션\n`;
+  let total=0;
+  earned.forEach(m=>{
+    text+=`- ${m.title}: ${m.reward.toLocaleString()}원\n`;
+    total+=m.reward;
+  });
+  text+=`\n총 캐시백: ${total.toLocaleString()}원\n\n`;
+  text+=`▶ 입금 계좌\n`;
+  text+=`${bank} ${num} ${name}\n`;
+
+  navigator.clipboard.writeText(text).then(()=>{
+    showToast('복사 완료! 카카오톡 채널에 붙여넣기 해주세요');
+  }).catch(()=>{
+    // 클립보드 실패시 폴백
+    const ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    showToast('복사 완료! 카카오톡 채널에 붙여넣기 해주세요');
+  });
+
+  // 서버에도 저장
+  fetch(API_URL,{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      type:'cashback',
+      phone:PHONE,
+      bank,accountName:name,accountNum:num,
+      missions:earned.map(m=>({id:m.id,title:m.title,reward:m.reward})),
+      totalReward:total,
+      submittedAt:new Date().toISOString()
+    })
+  });
+}
+
+// ── Confetti ──
+function fireConfetti(){
+  const canvas=document.getElementById('confetti');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const particles=[];
+  const colors=['#e8736c','#f59f00','#20c997','#5b9bd5','#ff6b9d','#c084fc'];
+  for(let i=0;i<80;i++){
+    particles.push({
+      x:canvas.width/2+(Math.random()-0.5)*100,
+      y:canvas.height/2,
+      vx:(Math.random()-0.5)*12,
+      vy:Math.random()*-14-4,
+      size:Math.random()*8+4,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*360,
+      rotV:(Math.random()-0.5)*10,
+      life:1
+    });
+  }
+  let frame=0;
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive=false;
+    particles.forEach(p=>{
+      if(p.life<=0)return;
+      alive=true;
+      p.x+=p.vx;p.y+=p.vy;p.vy+=0.35;
+      p.rot+=p.rotV;p.life-=0.012;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+      ctx.restore();
+    });
+    frame++;
+    if(alive&&frame<150)requestAnimationFrame(animate);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  animate();
+}
+
+// ── 데이터 로드 ──
+async function loadData(){
+  if(!PHONE)return;
+  showLoading(30);
+  try{
+    const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
+    showLoading(70);
+    const data=await res.json();
+    showLoading(100);
+    setTimeout(()=>showLoading(0),500);
+
+    // 검수 데이터 복원
+    if(data.inspection&&data.inspection.submitted){
+      inspectionSubmitted=true;
+      document.getElementById('inspectionForm').style.display='none';
+      document.getElementById('inspectionDone').style.display='block';
+    }
+
+    // 미션 데이터 복원
+    if(data.missions){
+      Object.keys(data.missions).forEach(id=>{
+        missionState[id]=data.missions[id];
+      });
+    }
+
+    // 계좌 정보 복원
+    if(data.account){
+      if(data.account.bank)document.getElementById('accBank').value=data.account.bank;
+      if(data.account.name)document.getElementById('accName').value=data.account.name;
+      if(data.account.num)document.getElementById('accNum').value=data.account.num;
+    }
+  }catch(e){
+    console.error(e);
+    showLoading(0);
+  }
+  renderMissions();
+}
+
+// ── 초기화 ──
+initMissions();
+loadData();
+</script>
+</body>
+</html>
