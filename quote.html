@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 견적서</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Rounded');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;color:#1a1a1a}
+
+.mi{font-family:'Material Icons Rounded';font-size:20px;vertical-align:-4px;font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased}
+.mi-sm{font-size:18px;vertical-align:-3px}
+.mi-green{color:#2E7D32}
+.mi-gray{color:#999}
+
+.header{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);color:#fff;padding:28px 20px 24px;text-align:center}
+.header-logo{font-size:14px;letter-spacing:4px;color:#aaa;margin-bottom:4px}
+.header h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.header p{font-size:12px;color:#888}
+.header-badge{display:inline-block;margin-top:10px;background:rgba(46,125,50,.25);padding:5px 14px;border-radius:20px;font-size:12px;color:#81C784}
+
+.container{max-width:460px;margin:0 auto;padding:16px}
+
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-label{font-size:12px;color:#999;margin-bottom:6px}
+
+/* 선택 버튼 그룹 */
+.btn-group{display:flex;gap:6px;flex-wrap:wrap}
+.btn-opt{flex:1;min-width:80px;padding:10px 8px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:13px;font-family:inherit;cursor:pointer;text-align:center;transition:all .2s;color:#666}
+.btn-opt:hover{border-color:#2E7D32;color:#2E7D32}
+.btn-opt.active{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32;font-weight:600}
+
+/* 장수 입력 */
+.qty-row{display:flex;align-items:center;gap:12px;margin-top:12px}
+.qty-label{font-size:13px;color:#666;min-width:80px}
+.qty-input{width:80px;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:16px;font-family:inherit;text-align:center}
+.qty-input:focus{outline:none;border-color:#2E7D32}
+.qty-unit{font-size:13px;color:#999}
+.qty-preset{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.qty-chip{padding:6px 12px;border:1px solid #e0ddd6;border-radius:8px;font-size:11px;cursor:pointer;background:#fafaf7;color:#888;transition:all .15s}
+.qty-chip:hover{border-color:#2E7D32;color:#2E7D32}
+
+/* 견적 결과 */
+.result{background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%);border-radius:16px;padding:24px 20px;margin-bottom:12px;color:#fff}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.result-row.dim{color:#888}
+.result-row .val{font-weight:500}
+.result-divider{height:1px;background:rgba(255,255,255,.1);margin:10px 0}
+.result-total{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.result-total-label{font-size:14px;color:#ccc}
+.result-total-val{font-size:24px;font-weight:700;color:#81C784}
+.result-range{font-size:11px;color:#888;text-align:right;margin-top:2px}
+.result-save{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.1)}
+.result-save-label{font-size:12px;color:#FF8A80}
+.result-save-val{font-size:16px;font-weight:700;color:#FF8A80}
+
+/* 혜택 체크박스 */
+.benefit{display:flex;align-items:flex-start;gap:10px;padding:10px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.benefit input{display:none}
+.benefit-check{width:22px;height:22px;border:1.5px solid #d0cdc6;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;margin-top:1px}
+.benefit input:checked + .benefit-check{background:#2E7D32;border-color:#2E7D32}
+.benefit input:checked + .benefit-check::after{content:'✓';color:#fff;font-size:14px;font-weight:700}
+.benefit-info{flex:1}
+.benefit-name{font-size:13px;font-weight:500;color:#1a1a1a}
+.benefit-desc{font-size:11px;color:#999;margin-top:2px}
+.benefit-discount{font-size:13px;font-weight:600;color:#d32f2f;margin-top:2px}
+
+/* 안내문 */
+.notice{font-size:11px;color:#999;line-height:1.8;margin-top:8px}
+.notice li{list-style:none;padding-left:12px;position:relative}
+.notice li::before{content:'*';position:absolute;left:0;color:#bbb}
+
+/* 하단 버튼 */
+.bottom-actions{display:flex;gap:8px;margin-bottom:40px}
+.action-btn{flex:1;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .2s}
+.action-copy{background:#2E7D32;color:#fff}
+.action-copy:hover{background:#1B5E20}
+.action-new{background:#fff;color:#666;border:1.5px solid #e0ddd6}
+.action-new:hover{border-color:#999}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:999;transition:transform .3s;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* 관리자 모드 표시 */
+.admin-bar{background:#FFF3E0;padding:8px 16px;text-align:center;font-size:11px;color:#E65100;display:none}
+.admin-bar.show{display:block}
+</style>
+</head>
+<body>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║   ★★★ 견적 설정 — 수정 가능 ★★★                         ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─────────────────────────────────────────
+// 1. 제품 종류 및 가격
+// ─────────────────────────────────────────
+var PRODUCTS = [
+  {
+    key: 'mat500',
+    name: '500매트',
+    thickness: '22T',
+    price: 16000,
+    sizeLabel: '500×500mm',
+  },
+  {
+    key: 'mat1000_17',
+    name: '1000매트',
+    thickness: '17T',
+    price: 62900,
+    sizeLabel: '1000×1000mm',
+  },
+  {
+    key: 'mat1000_22',
+    name: '1000매트',
+    thickness: '22T',
+    price: 74500,
+    sizeLabel: '1000×1000mm',
+  },
+  // ↓↓↓ 새 제품 추가는 여기에! ↓↓↓
+];
+
+
+// ─────────────────────────────────────────
+// 2. 평수별 예상 장수 (500매트 기준)
+//    1000매트는 자동으로 ÷4 계산
+// ─────────────────────────────────────────
+var PRESETS = [
+  { label: '24평 거실+복도', qty500: 110 },
+  { label: '24평 거실+복도+주방', qty500: 125 },
+  { label: '34평 거실+복도', qty500: 130 },
+  { label: '34평 확장형 (최소)', qty500: 160 },
+  { label: '34평 확장형 (최대)', qty500: 180 },
+  // ↓↓↓ 새 프리셋 추가는 여기에! ↓↓↓
+];
+
+
+// ─────────────────────────────────────────
+// 3. 시공비 규칙
+//    500매트: 100장 이하 시공비 10만원
+//    1000매트: 25장 이하 시공비 10만원 (500매트 100장 ÷ 4)
+// ─────────────────────────────────────────
+var INSTALL_FEE = 100000;
+var INSTALL_THRESHOLD_500 = 100;
+var INSTALL_THRESHOLD_1000 = 25;
+
+
+// ─────────────────────────────────────────
+// 4. 혜택 목록
+//    type: 'fixed' = 고정 금액 할인
+//    type: 'percent' = % 할인
+//    type: 'perSheet' = 장당 할인
+// ─────────────────────────────────────────
+var BENEFITS = [
+  {
+    key: 'review',
+    name: '시공 후기 작성 혜택',
+    desc: '네이버 or 맘카페에 후기 작성 시',
+    type: 'fixed',
+    discount: 50000,
+    label: '-50,000원'
+  },
+  {
+    key: 'referral',
+    name: '지인 추천 할인',
+    desc: '기존 고객 추천으로 접수 시',
+    type: 'fixed',
+    discount: 50000,
+    label: '-50,000원'
+  },
+  {
+    key: 'bundle',
+    name: '풀시공 할인 (거실+복도+주방)',
+    desc: '3개 공간 이상 풀시공 시',
+    type: 'fixed',
+    discount: 100000,
+    label: '-100,000원'
+  },
+  // ↓↓↓ 새 혜택 추가는 여기에! ↓↓↓
+  // {
+  //   key: 'early',
+  //   name: '얼리버드 할인',
+  //   desc: '이번 달 시공 예약 시',
+  //   type: 'fixed',
+  //   discount: 30000,
+  //   label: '-30,000원'
+  // },
+];
+
+
+// ─────────────────────────────────────────
+// 5. 안내 문구
+// ─────────────────────────────────────────
+var NOTICES = [
+  '아파트 구조에 따라 수량 차이가 있을 수 있습니다.',
+  '실제 시공 후 수량에 맞춰 결제가 이루어집니다.',
+  '시공비는 소량 시공 시 추가됩니다.',
+  '업체 비교 시 장당 비용으로 계산하면 현명한 소비가 가능합니다!',
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║   ★★★ 설정 끝 ★★★                                       ║
+// ╚══════════════════════════════════════════════════════════════╝
+</script>
+
+<div class="admin-bar" id="adminBar"><span class="mi mi-sm" style="color:#E65100;vertical-align:-3px">admin_panel_settings</span> 관리자 모드 — 고객에게 보내기 전에 내용을 확인하세요</div>
+
+<div class="header">
+  <div class="header-logo">DOLBOM MAT</div>
+  <h1>맞춤 견적서</h1>
+  <p>6,700가정이 선택한 프리미엄 시공매트</p>
+  <div class="header-badge" id="headerBadge"></div>
+</div>
+
+<div class="container">
+
+  <!-- 고객명 (관리자가 입력) -->
+  <div class="card" id="nameCard">
+    <div class="card-title"><span class="mi mi-green">person</span> 고객명</div>
+    <input type="text" id="custName" placeholder="고객님 이름 입력" style="width:100%;padding:10px 14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit">
+  </div>
+
+  <!-- 제품 선택 -->
+  <div class="card">
+    <div class="card-title"><span class="mi mi-green">inventory_2</span> 제품 선택</div>
+    <div class="btn-group" id="productBtns"></div>
+  </div>
+
+  <!-- 장수 입력 -->
+  <div class="card">
+    <div class="card-title"><span class="mi mi-green">straighten</span> 수량 입력</div>
+    <div class="qty-row">
+      <span class="qty-label">예상 장수</span>
+      <input type="number" class="qty-input" id="qtyInput" value="" placeholder="0" oninput="calculate()">
+      <span class="qty-unit">장</span>
+    </div>
+    <div class="card-label" style="margin-top:12px">평수별 빠른 선택</div>
+    <div class="qty-preset" id="presetBtns"></div>
+  </div>
+
+  <!-- 혜택 적용 -->
+  <div class="card">
+    <div class="card-title"><span class="mi mi-green">redeem</span> 혜택 적용</div>
+    <div id="benefitList"></div>
+  </div>
+
+  <!-- 견적 결과 -->
+  <div class="result" id="resultArea" style="display:none">
+    <div class="result-row dim">
+      <span id="rProduct">500매트 22T</span>
+      <span id="rPrice">16,000원/장</span>
+    </div>
+    <div class="result-row">
+      <span>매트 비용</span>
+      <span class="val" id="rMatCost">0원</span>
+    </div>
+    <div class="result-row" id="rInstallRow" style="display:none">
+      <span>시공비 (소량 추가)</span>
+      <span class="val" id="rInstall">100,000원</span>
+    </div>
+    <div class="result-row dim" id="rBenefitRow" style="display:none">
+      <span>혜택 할인</span>
+      <span class="val" id="rBenefit">0원</span>
+    </div>
+    <div class="result-divider"></div>
+    <div class="result-total">
+      <span class="result-total-label">예상 견적</span>
+      <span class="result-total-val" id="rTotal">0원</span>
+    </div>
+    <div class="result-save" id="rSaveRow" style="display:none">
+      <span class="result-save-label"><span class="mi mi-sm" style="color:#FF8A80">savings</span> 혜택 적용 시 절약</span>
+      <span class="result-save-val" id="rSave">0원</span>
+    </div>
+  </div>
+
+  <!-- 안내문 -->
+  <div class="card">
+    <ul class="notice" id="noticeList"></ul>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:#999">궁금한 점은 언제든 문의해주세요!</div>
+  </div>
+
+  <!-- 하단 버튼 -->
+  <div class="bottom-actions">
+    <button class="action-btn action-copy" onclick="copyQuote()"><span class="mi mi-sm" style="color:#fff;vertical-align:-3px">content_copy</span> 견적서 복사</button>
+    <button class="action-btn action-new" onclick="resetForm()"><span class="mi mi-sm mi-gray" style="vertical-align:-3px">refresh</span> 새 견적</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var selectedProduct = null;
+var selectedBenefits = {};
+
+// URL 파라미터 (고객용 보기 모드)
+var params = new URLSearchParams(window.location.search);
+var viewMode = params.get('view') === '1';
+
+if (!viewMode) {
+  document.getElementById('adminBar').classList.add('show');
+}
+if (viewMode) {
+  document.getElementById('nameCard').style.display = 'none';
+}
+
+// 고객명
+var urlCust = params.get('cust');
+if (urlCust) {
+  document.getElementById('custName').value = decodeURIComponent(urlCust);
+  document.getElementById('headerBadge').textContent = decodeURIComponent(urlCust) + '님 맞춤 견적';
+}
+
+// 제품 버튼 생성
+(function buildProducts() {
+  var container = document.getElementById('productBtns');
+  PRODUCTS.forEach(function(p, idx) {
+    var btn = document.createElement('button');
+    btn.className = 'btn-opt';
+    btn.innerHTML = p.name + '<br><span style="font-size:11px;color:#999">' + p.thickness + ' · ' + p.price.toLocaleString() + '원</span>';
+    btn.onclick = function() {
+      selectedProduct = p;
+      container.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      buildPresets();
+      calculate();
+    };
+    container.appendChild(btn);
+  });
+})();
+
+// 프리셋 버튼 생성
+function buildPresets() {
+  var container = document.getElementById('presetBtns');
+  container.innerHTML = '';
+  if (!selectedProduct) return;
+
+  var is1000 = selectedProduct.key.startsWith('mat1000');
+
+  PRESETS.forEach(function(p) {
+    var qty = is1000 ? Math.ceil(p.qty500 / 4) : p.qty500;
+    var chip = document.createElement('span');
+    chip.className = 'qty-chip';
+    chip.textContent = p.label + ' (' + qty + '장)';
+    chip.onclick = function() {
+      document.getElementById('qtyInput').value = qty;
+      calculate();
+    };
+    container.appendChild(chip);
+  });
+}
+
+// 혜택 체크박스 생성
+(function buildBenefits() {
+  var container = document.getElementById('benefitList');
+  BENEFITS.forEach(function(b) {
+    var label = document.createElement('label');
+    label.className = 'benefit';
+    label.innerHTML = '<input type="checkbox" onchange="toggleBenefit(\'' + b.key + '\',this.checked)">' +
+      '<span class="benefit-check"></span>' +
+      '<div class="benefit-info">' +
+        '<div class="benefit-name">' + b.name + '</div>' +
+        '<div class="benefit-desc">' + b.desc + '</div>' +
+        '<div class="benefit-discount">' + b.label + '</div>' +
+      '</div>';
+    container.appendChild(label);
+  });
+})();
+
+// 안내문 생성
+(function buildNotices() {
+  var ul = document.getElementById('noticeList');
+  NOTICES.forEach(function(n) {
+    var li = document.createElement('li');
+    li.textContent = n;
+    ul.appendChild(li);
+  });
+})();
+
+function toggleBenefit(key, checked) {
+  selectedBenefits[key] = checked;
+  calculate();
+}
+
+function calculate() {
+  if (!selectedProduct) return;
+  var qty = parseInt(document.getElementById('qtyInput').value) || 0;
+  if (qty <= 0) {
+    document.getElementById('resultArea').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('resultArea').style.display = 'block';
+
+  var price = selectedProduct.price;
+  var matCost = price * qty;
+  var is1000 = selectedProduct.key.startsWith('mat1000');
+
+  // 시공비
+  var threshold = is1000 ? INSTALL_THRESHOLD_1000 : INSTALL_THRESHOLD_500;
+  var installFee = qty <= threshold ? INSTALL_FEE : 0;
+
+  // 혜택 할인
+  var totalDiscount = 0;
+  BENEFITS.forEach(function(b) {
+    if (selectedBenefits[b.key]) {
+      if (b.type === 'fixed') totalDiscount += b.discount;
+      else if (b.type === 'percent') totalDiscount += Math.round(matCost * b.discount / 100);
+      else if (b.type === 'perSheet') totalDiscount += b.discount * qty;
+    }
+  });
+
+  var total = matCost + installFee - totalDiscount;
+  if (total < 0) total = 0;
+
+  // UI 업데이트
+  document.getElementById('rProduct').textContent = selectedProduct.name + ' ' + selectedProduct.thickness;
+  document.getElementById('rPrice').textContent = price.toLocaleString() + '원/장';
+  document.getElementById('rMatCost').textContent = matCost.toLocaleString() + '원';
+
+  var installRow = document.getElementById('rInstallRow');
+  if (installFee > 0) {
+    installRow.style.display = 'flex';
+    document.getElementById('rInstall').textContent = installFee.toLocaleString() + '원';
+  } else {
+    installRow.style.display = 'none';
+  }
+
+  var benefitRow = document.getElementById('rBenefitRow');
+  if (totalDiscount > 0) {
+    benefitRow.style.display = 'flex';
+    document.getElementById('rBenefit').textContent = '-' + totalDiscount.toLocaleString() + '원';
+  } else {
+    benefitRow.style.display = 'none';
+  }
+
+  document.getElementById('rTotal').textContent = total.toLocaleString() + '원';
+
+  var saveRow = document.getElementById('rSaveRow');
+  if (totalDiscount > 0) {
+    saveRow.style.display = 'flex';
+    document.getElementById('rSave').textContent = '-' + totalDiscount.toLocaleString() + '원';
+  } else {
+    saveRow.style.display = 'none';
+  }
+
+  // 헤더 뱃지
+  var custName = document.getElementById('custName').value.trim();
+  if (custName) {
+    document.getElementById('headerBadge').textContent = custName + '님 맞춤 견적';
+  }
+}
+
+function copyQuote() {
+  if (!selectedProduct) { showToast('제품을 선택해주세요'); return; }
+  var qty = parseInt(document.getElementById('qtyInput').value) || 0;
+  if (qty <= 0) { showToast('장수를 입력해주세요'); return; }
+
+  var custName = document.getElementById('custName').value.trim() || '고객';
+  var price = selectedProduct.price;
+  var matCost = price * qty;
+  var is1000 = selectedProduct.key.startsWith('mat1000');
+  var threshold = is1000 ? INSTALL_THRESHOLD_1000 : INSTALL_THRESHOLD_500;
+  var installFee = qty <= threshold ? INSTALL_FEE : 0;
+
+  var totalDiscount = 0;
+  var benefitLines = [];
+  BENEFITS.forEach(function(b) {
+    if (selectedBenefits[b.key]) {
+      var d = 0;
+      if (b.type === 'fixed') d = b.discount;
+      else if (b.type === 'percent') d = Math.round(matCost * b.discount / 100);
+      else if (b.type === 'perSheet') d = b.discount * qty;
+      totalDiscount += d;
+      benefitLines.push('  ✅ ' + b.name + ' ' + b.label);
+    }
+  });
+
+  var total = matCost + installFee - totalDiscount;
+  if (total < 0) total = 0;
+
+  var text = '🏠 돌봄매트 견적서\n';
+  text += '━━━━━━━━━━━━━━\n\n';
+  text += '👤 ' + custName + '님\n\n';
+  text += '📦 ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
+  text += '   장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
+  text += '   = ' + matCost.toLocaleString() + '원\n';
+  if (installFee > 0) {
+    text += '\n🔧 시공비: ' + installFee.toLocaleString() + '원\n';
+  }
+  if (benefitLines.length > 0) {
+    text += '\n🎁 적용 혜택:\n' + benefitLines.join('\n') + '\n';
+  }
+  text += '\n━━━━━━━━━━━━━━\n';
+  text += '💰 예상 견적: ' + total.toLocaleString() + '원\n';
+  if (totalDiscount > 0) {
+    text += '🔥 ' + totalDiscount.toLocaleString() + '원 절약!\n';
+  }
+  text += '━━━━━━━━━━━━━━\n\n';
+  text += '* 아파트 구조에 따라 수량 차이가 있을 수 있습니다.\n';
+  text += '* 실제 시공 후 수량에 맞춰 결제됩니다.\n\n';
+  text += '궁금한 점은 언제든 문의해주세요! 💕';
+
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('견적서가 복사되었습니다! 카톡에 붙여넣기 하세요');
+  }).catch(function() {
+    // 폴백
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('견적서가 복사되었습니다!');
+  });
+}
+
+function resetForm() {
+  selectedProduct = null;
+  selectedBenefits = {};
+  document.getElementById('qtyInput').value = '';
+  document.getElementById('custName').value = '';
+  document.getElementById('headerBadge').textContent = '';
+  document.getElementById('resultArea').style.display = 'none';
+  document.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.benefit input').forEach(function(c) { c.checked = false; });
+  document.getElementById('presetBtns').innerHTML = '';
+  showToast('초기화 완료');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+</script>
+</body>
+</html>
