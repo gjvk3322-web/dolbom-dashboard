@@ -191,10 +191,11 @@ var BENEFITS = [
 // 추천인 파라미터 읽기
 var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
 if (REFERRAL_CODE) {
-  // 공동구매 자동 적용 표시
+  // 공동구매 자동 적용 + 추천인 이름 표시
   for (var i = 0; i < BENEFITS.length; i++) {
     if (BENEFITS[i].key === 'group_buy') {
-      BENEFITS[i].autoCheck = true;  // 자동 체크용 플래그
+      BENEFITS[i].autoCheck = true;
+      BENEFITS[i].desc = REFERRAL_CODE + ' 추천으로 공동구매 할인 적용';
       break;
     }
   }
@@ -668,13 +669,11 @@ initRooms();
     if (b.autoCheck && REFERRAL_CODE) {
       var cb = label.querySelector('input[type=checkbox]');
       cb.checked = true;
+      cb.disabled = true;
       selectedBenefits[b.key] = true;
-      if (b.isReferral) {
-        cb.disabled = true;
-        label.style.background = '#E8F5E9';
-        label.style.borderRadius = '10px';
-        label.style.border = '1.5px solid #81C784';
-      }
+      label.style.background = '#E8F5E9';
+      label.style.borderRadius = '10px';
+      label.style.border = '1.5px solid #81C784';
     }
   });
 })();
