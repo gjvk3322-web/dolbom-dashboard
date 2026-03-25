@@ -188,6 +188,24 @@ var BENEFITS = [
   { key: 'review_event', name: '⭐ 후기 이벤트 (6곳 후기 작성 시)', desc: '최대 110,000원 캐시백', type: 'fixed', discount: 110000, label: '-110,000원', phase: 2 },
 ];
 
+// 추천인 파라미터 읽기
+var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
+if (REFERRAL_CODE) {
+  // 공동구매 항목을 추천인 할인으로 변경
+  for (var i = 0; i < BENEFITS.length; i++) {
+    if (BENEFITS[i].key === 'group_buy') {
+      BENEFITS[i].originalName = BENEFITS[i].name;
+      BENEFITS[i].name = '🤝 <span style="text-decoration:line-through;color:#999">' + '5인 공동구매 할인' + '</span>';
+      BENEFITS[i].desc = REFERRAL_CODE + ' 추천 할인 적용';
+      BENEFITS[i].type = 'fixed';
+      BENEFITS[i].discount = 30000;
+      BENEFITS[i].label = '-30,000원';
+      BENEFITS[i].isReferral = true;
+      break;
+    }
+  }
+}
+
 // 후기 이벤트 상세 항목
 var REVIEW_DETAILS = [
   { icon: '📝', name: '계약 후기 작성', amount: 30000 },
@@ -224,6 +242,18 @@ var DEFAULT_ROOMS = [
 </div>
 
 <div class="container">
+
+  <!-- 추천인 배지 -->
+  <div id="referralBadge" style="display:none;margin:0 0 -4px;padding:12px 16px;background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border-radius:12px;text-align:center;">
+    <div style="font-size:14px;font-weight:700;color:#2E7D32" id="referralBadgeText"></div>
+    <div style="font-size:12px;color:#4CAF50;margin-top:2px">신규 고객 특별 할인이 자동 적용됩니다</div>
+  </div>
+  <script>
+  if(REFERRAL_CODE){
+    document.getElementById('referralBadge').style.display='block';
+    document.getElementById('referralBadgeText').textContent='🎉 '+REFERRAL_CODE+' 추천 할인 적용중';
+  }
+  </script>
 
   <!-- 사이즈 비교 -->
   <div class="compare-section">
@@ -635,6 +665,17 @@ initRooms();
       detail.innerHTML = html;
       container.appendChild(detail);
     }
+
+    // 추천인 할인 자동 체크
+    if (b.isReferral && REFERRAL_CODE) {
+      var cb = label.querySelector('input[type=checkbox]');
+      cb.checked = true;
+      cb.disabled = true;
+      selectedBenefits[b.key] = true;
+      label.style.background = '#E8F5E9';
+      label.style.borderRadius = '10px';
+      label.style.border = '1.5px solid #81C784';
+    }
   });
 })();
 
@@ -731,8 +772,9 @@ function copyQuote() {
     if (selectedBenefits[b.key] && b.phase === 1) {
       var d = b.type === 'fixed' ? b.discount : Math.round(matCost * b.discount / 100);
       phase1Discount += d;
-      // 이모지 제거하고 깔끔하게
-      var cleanName = b.name.replace(/^[^\w가-힣]+/, '');
+      // HTML 태그 + 이모지 제거하고 깔끔하게
+      var cleanName = b.name.replace(/<[^>]*>/g, '').replace(/^[^\w가-힣]+/, '');
+      if (b.isReferral) cleanName = REFERRAL_CODE + ' 추천 할인';
       phase1Lines.push('  · ' + cleanName + ' ' + b.label);
     }
   });
@@ -747,7 +789,9 @@ function copyQuote() {
 
   var t = '';
   t += '돌봄매트 견적서\n';
-  t += '────────────────\n\n';
+  t += '────────────────\n';
+  if (REFERRAL_CODE) t += '추천인: ' + REFERRAL_CODE + '\n';
+  t += '\n';
   t += '■ ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
   t += '  장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
   t += '  = ' + matCost.toLocaleString() + '원\n';
@@ -790,7 +834,11 @@ function resetForm() {
   document.getElementById('qtyInput').value = '';
   document.getElementById('resultArea').style.display = 'none';
   document.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.benefit input').forEach(function(c) { c.checked = false; });
+  document.querySelectorAll('.benefit input').forEach(function(c) {
+    if (!c.disabled) c.checked = false; // 추천인 할인은 유지
+  });
+  // 추천인 할인 다시 활성화
+  if (REFERRAL_CODE) { selectedBenefits['group_buy'] = true; }
   var rd = document.getElementById('reviewDetail'); if (rd) rd.classList.remove('show');
   document.getElementById('presetBtns').innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
   initRooms();
