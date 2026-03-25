@@ -191,19 +191,17 @@ var BENEFITS = [
 // 추천인 파라미터 읽기
 var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
 if (REFERRAL_CODE) {
-  // 공동구매 항목을 추천인 할인으로 변경
+  // 공동구매 자동 적용 표시
   for (var i = 0; i < BENEFITS.length; i++) {
     if (BENEFITS[i].key === 'group_buy') {
-      BENEFITS[i].originalName = BENEFITS[i].name;
-      BENEFITS[i].name = '🤝 <span style="text-decoration:line-through;color:#999">' + '5인 공동구매 할인' + '</span>';
-      BENEFITS[i].desc = REFERRAL_CODE + ' 추천 할인 적용';
-      BENEFITS[i].type = 'fixed';
-      BENEFITS[i].discount = 30000;
-      BENEFITS[i].label = '-30,000원';
-      BENEFITS[i].isReferral = true;
+      BENEFITS[i].autoCheck = true;  // 자동 체크용 플래그
       break;
     }
   }
+  // 추천인 할인 항목 추가 (신규 고객 할인 3만원 - 전 등급 동일)
+  BENEFITS.splice(2, 0, {
+    key: 'referral', name: '🤝 ' + REFERRAL_CODE + ' 추천 할인', desc: REFERRAL_CODE + ' 추천으로 특별 할인 적용', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1, isReferral: true, autoCheck: true
+  });
 }
 
 // 후기 이벤트 상세 항목
@@ -666,15 +664,17 @@ initRooms();
       container.appendChild(detail);
     }
 
-    // 추천인 할인 자동 체크
-    if (b.isReferral && REFERRAL_CODE) {
+    // 자동 체크 (추천인 링크로 들어온 경우: 공동구매 + 추천인 할인)
+    if (b.autoCheck && REFERRAL_CODE) {
       var cb = label.querySelector('input[type=checkbox]');
       cb.checked = true;
-      cb.disabled = true;
       selectedBenefits[b.key] = true;
-      label.style.background = '#E8F5E9';
-      label.style.borderRadius = '10px';
-      label.style.border = '1.5px solid #81C784';
+      if (b.isReferral) {
+        cb.disabled = true;
+        label.style.background = '#E8F5E9';
+        label.style.borderRadius = '10px';
+        label.style.border = '1.5px solid #81C784';
+      }
     }
   });
 })();
@@ -837,8 +837,12 @@ function resetForm() {
   document.querySelectorAll('.benefit input').forEach(function(c) {
     if (!c.disabled) c.checked = false; // 추천인 할인은 유지
   });
-  // 추천인 할인 다시 활성화
-  if (REFERRAL_CODE) { selectedBenefits['group_buy'] = true; }
+  // 추천인 관련 자동체크 다시 활성화
+  if (REFERRAL_CODE) {
+    BENEFITS.forEach(function(b) {
+      if (b.autoCheck) selectedBenefits[b.key] = true;
+    });
+  }
   var rd = document.getElementById('reviewDetail'); if (rd) rd.classList.remove('show');
   document.getElementById('presetBtns').innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
   initRooms();
