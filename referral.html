@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 파트너</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f7f3;--card:#ffffff;--text:#1a1a1a;--text2:#555;--text3:#999;
+  --border:#e8e8e8;
+  --green:#2E7D32;--green-light:#E8F5E9;--green-dark:#1B5E20;
+  --gold:#F59F00;--gold-light:#FFF8E1;
+  --purple:#534AB7;--purple-light:#EEEDFE;
+  --coral:#D85A30;--coral-light:#FBE9E7;
+  --gray:#888;--gray-light:#f0f0f0;
+  --radius:14px;--shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:500px;margin:0 auto;padding-bottom:40px}
+
+.header{background:linear-gradient(135deg,#2E7D32,#1B5E20);padding:24px 20px;text-align:center}
+.header h1{color:#fff;font-size:18px;font-weight:700}
+.header .sub{color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px}
+
+.login-wrap{padding:20px 16px}
+.login-card{background:var(--card);border-radius:var(--radius);padding:24px 20px;box-shadow:var(--shadow);text-align:center}
+.login-card h2{font-size:16px;font-weight:700;margin-bottom:4px}
+.login-card p{font-size:12px;color:var(--text3);margin-bottom:16px}
+.login-input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;text-align:center;transition:border .2s;outline:none}
+.login-input:focus{border-color:var(--green)}
+.login-btn{width:100%;padding:14px;border:none;border-radius:10px;background:var(--green);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:all .2s}
+.login-btn:active{transform:scale(0.98);background:var(--green-dark)}
+.login-error{color:#e53935;font-size:12px;margin-top:8px;display:none}
+
+.dashboard{display:none}
+.section{padding:0 16px;margin-bottom:16px}
+.card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+
+/* 등급 카드 */
+.tier-card{text-align:center;padding:24px 18px;position:relative;overflow:hidden}
+.tier-emoji{font-size:48px;margin-bottom:8px}
+.tier-name{font-size:22px;font-weight:800}
+.tier-code{font-size:12px;color:var(--text3);margin-top:4px}
+.tier-bronze{background:linear-gradient(135deg,#FBE9E7,#FFCCBC)}.tier-bronze .tier-name{color:#BF360C}
+.tier-silver{background:linear-gradient(135deg,#ECEFF1,#CFD8DC)}.tier-silver .tier-name{color:#37474F}
+.tier-gold{background:linear-gradient(135deg,#FFF8E1,#FFE082)}.tier-gold .tier-name{color:#E65100}
+.tier-diamond{background:linear-gradient(135deg,#E8EAF6,#C5CAE9)}.tier-diamond .tier-name{color:#283593}
+
+/* 스탯 그리드 */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.stat{background:var(--card);border-radius:10px;padding:14px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat-val{font-size:20px;font-weight:700;color:var(--green)}
+.stat-label{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* 진행바 */
+.progress-section{margin-top:12px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px}
+.progress-bar{height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),#66BB6A);border-radius:4px;transition:width .6s ease}
+.progress-next{font-size:12px;color:var(--green);font-weight:600;margin-top:6px;text-align:center}
+
+/* 링크 카드 */
+.link-card{padding:18px}
+.link-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.link-box{display:flex;gap:8px;align-items:center}
+.link-url{flex:1;background:#f5f5f5;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text2);word-break:break-all;line-height:1.4}
+.link-copy{padding:10px 16px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
+.link-copy:active{background:var(--green-dark)}
+
+/* 계급 안내 */
+.tier-info{margin-top:14px}
+.tier-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;font-size:13px}
+.tier-row.current{border:2px solid var(--green);background:var(--green-light)}
+.tier-row .emoji{font-size:20px;flex-shrink:0}
+.tier-row .info{flex:1}
+.tier-row .info .name{font-weight:600}
+.tier-row .info .range{font-size:11px;color:var(--text3)}
+.tier-row .reward{font-weight:700;color:var(--green);font-size:14px;white-space:nowrap}
+
+/* 기록 리스트 */
+.record-title{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.record-count{font-size:12px;color:var(--text3);font-weight:400}
+.record-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.record-item:last-child{border-bottom:none}
+.record-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.record-status.done{background:#4CAF50}
+.record-status.progress{background:#FF9800}
+.record-status.waiting{background:#BDBDBD}
+.record-info{flex:1}
+.record-name{font-size:13px;font-weight:500}
+.record-date{font-size:11px;color:var(--text3)}
+.record-reward{font-size:13px;font-weight:600;color:var(--green)}
+.record-empty{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+
+/* 프로그램 안내 */
+.guide-section{}
+.guide-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.guide-step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.guide-num{width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.guide-text{font-size:13px;color:var(--text2);line-height:1.5}
+
+.benefit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.benefit-box{background:var(--green-light);border-radius:10px;padding:12px;text-align:center}
+.benefit-box .val{font-size:16px;font-weight:700;color:var(--green)}
+.benefit-box .label{font-size:10px;color:var(--text3);margin-top:2px}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.logout-btn{display:block;text-align:center;font-size:13px;color:var(--text3);cursor:pointer;padding:10px;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>돌봄매트 파트너</h1>
+  <div class="sub">추천인 프로그램</div>
+</div>
+
+<!-- 로그인 -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h2>파트너 로그인</h2>
+    <p>등록된 파트너 코드를 입력해주세요</p>
+    <input type="text" class="login-input" id="codeInput" placeholder="파트너 코드 입력" autocapitalize="off" autocorrect="off">
+    <button class="login-btn" onclick="login()">확인</button>
+    <div class="login-error" id="loginError">등록되지 않은 코드입니다</div>
+  </div>
+  
+  <div style="margin-top:20px">
+    <div class="card guide-section">
+      <div class="guide-title">파트너 프로그램 안내</div>
+      <div class="guide-step">
+        <div class="guide-num">1</div>
+        <div class="guide-text"><strong>추천 링크 공유</strong><br>본인의 전용 링크를 지인, SNS, 단톡방에 공유하세요</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">2</div>
+        <div class="guide-text"><strong>고객이 링크로 견적 확인</strong><br>추천 할인이 자동 적용된 견적서를 고객이 확인합니다</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">3</div>
+        <div class="guide-text"><strong>시공 완료 시 보상 지급</strong><br>고객의 시공이 완료되면 등급별 보상이 지급됩니다</div>
+      </div>
+
+      <div class="guide-title" style="margin-top:18px">등급별 보상</div>
+      <div class="tier-info" id="tierGuide">
+        <div class="tier-row" style="background:#FBE9E740">
+          <span class="emoji">🥉</span>
+          <div class="info"><div class="name">브론즈</div><div class="range">1~10건</div></div>
+          <span class="reward">건당 3만원</span>
+        </div>
+        <div class="tier-row" style="background:#ECEFF140">
+          <span class="emoji">🥈</span>
+          <div class="info"><div class="name">실버</div><div class="range">11~20건</div></div>
+          <span class="reward">건당 4만원</span>
+        </div>
+        <div class="tier-row" style="background:#FFF8E140">
+          <span class="emoji">🥇</span>
+          <div class="info"><div class="name">골드</div><div class="range">21~49건</div></div>
+          <span class="reward">건당 5만원</span>
+        </div>
+        <div class="tier-row" style="background:#E8EAF640">
+          <span class="emoji">💎</span>
+          <div class="info"><div class="name">다이아</div><div class="range">50건+ (영구 유지)</div></div>
+          <span class="reward">건당 7만원</span>
+        </div>
+      </div>
+
+      <div class="benefit-grid">
+        <div class="benefit-box"><div class="val">3만원</div><div class="label">신규 고객 추가 할인</div></div>
+        <div class="benefit-box"><div class="val">3%</div><div class="label">공동구매 바로 적용</div></div>
+      </div>
+
+      <!-- 혜택 비교 -->
+      <div class="guide-title" style="margin-top:20px">일반 고객 vs 추천인 고객 혜택 비교</div>
+      <div style="margin-top:8px;border-radius:12px;overflow:hidden;border:1.5px solid var(--border)">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#f5f5f5">
+              <th style="padding:10px 8px;text-align:left;font-weight:600;color:var(--text2);width:40%">혜택 항목</th>
+              <th style="padding:10px 8px;text-align:center;font-weight:600;color:var(--text3);width:30%">일반 고객</th>
+              <th style="padding:10px 8px;text-align:center;font-weight:600;color:var(--green);width:30%">추천인 고객</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid var(--border)">
+              <td style="padding:10px 8px;font-weight:500">추천 할인</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--text3)">-</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--green);font-weight:700">-30,000원</td>
+            </tr>
+            <tr style="border-top:1px solid var(--border);background:#fafafa">
+              <td style="padding:10px 8px;font-weight:500">공동구매 3%</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--text3)">5인 이상 시</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--green);font-weight:700">바로 적용 -75,000원</td>
+            </tr>
+            <tr style="border-top:1px solid var(--border)">
+              <td style="padding:10px 8px;font-weight:500">계약 후기 쿠폰</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--text2)">-30,000원</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--text2)">-30,000원</td>
+            </tr>
+            <tr style="border-top:1px solid var(--border);background:#fafafa">
+              <td style="padding:10px 8px;font-weight:500">후기 이벤트</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--text2)">-110,000원</td>
+              <td style="padding:10px 8px;text-align:center;color:var(--text2)">-110,000원</td>
+            </tr>
+            <tr style="border-top:2px solid var(--green);background:var(--green-light)">
+              <td style="padding:12px 8px;font-weight:700">총 혜택</td>
+              <td style="padding:12px 8px;text-align:center;font-weight:700;color:var(--text2);font-size:14px">-140,000원</td>
+              <td style="padding:12px 8px;text-align:center;font-weight:800;color:var(--green);font-size:14px">-245,000원</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center">* 250만원 견적 기준 · 추천 고객은 10만원 이상 추가 혜택</div>
+    </div>
+  </div>
+
+  <!-- 파트너 신청 폼 -->
+  <div style="margin-top:16px">
+    <div class="card" id="applySection">
+      <div class="guide-title">파트너 신청하기</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">신청 후 승인되면 전용 코드와 링크가 발급됩니다</div>
+      
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">이름 *</label>
+          <input type="text" id="applyName" placeholder="이름 입력" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">연락처 *</label>
+          <input type="tel" id="applyPhone" placeholder="01012345678" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">유형 *</label>
+          <div style="display:flex;gap:6px" id="applyTypeWrap">
+            <button class="type-btn" onclick="selectType(this,'인플루언서')" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;cursor:pointer;transition:all .2s">인플루언서</button>
+            <button class="type-btn" onclick="selectType(this,'공구장')" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;cursor:pointer;transition:all .2s">공구장</button>
+            <button class="type-btn" onclick="selectType(this,'기타')" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;cursor:pointer;transition:all .2s">기타</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">SNS / 블로그 링크 (선택)</label>
+          <input type="url" id="applySns" placeholder="https://instagram.com/..." style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">신청 사유 (선택)</label>
+          <textarea id="applyMemo" placeholder="어떤 채널에서 활동하시는지 간단히 알려주세요" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;resize:none;height:70px;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'"></textarea>
+        </div>
+      </div>
+      <button onclick="submitApply()" style="width:100%;padding:14px;border:none;border-radius:10px;background:var(--green);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;transition:all .2s" id="applyBtn">파트너 신청하기</button>
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">승인까지 1~2영업일 소요됩니다</div>
+    </div>
+
+    <!-- 신청 완료 -->
+    <div class="card" id="applyDone" style="display:none;text-align:center;padding:30px 20px">
+      <div style="font-size:48px;margin-bottom:10px">✅</div>
+      <div style="font-size:18px;font-weight:700;color:var(--green)">신청이 완료되었습니다!</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:8px;line-height:1.6">
+        승인 후 알림톡으로 전용 코드가 발송됩니다<br>
+        (1~2영업일 소요)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 대시보드 -->
+<div class="dashboard" id="dashboard">
+
+  <!-- 등급 카드 -->
+  <div class="section" style="margin-top:16px">
+    <div class="card tier-card" id="tierCard">
+      <div class="tier-emoji" id="tierEmoji">🥉</div>
+      <div class="tier-name" id="tierName">브론즈</div>
+      <div class="tier-code" id="tierCodeDisplay">code</div>
+    </div>
+  </div>
+
+  <!-- 스탯 -->
+  <div class="section">
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="statCount">0</div><div class="stat-label">누적 추천</div></div>
+      <div class="stat"><div class="stat-val" id="statReward">0</div><div class="stat-label">건당 보상</div></div>
+      <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-label">총 보상</div></div>
+    </div>
+  </div>
+
+  <!-- 다음 등급 진행바 -->
+  <div class="section" id="progressSection">
+    <div class="card">
+      <div class="progress-label">
+        <span id="progressFrom">브론즈</span>
+        <span id="progressTo">실버 (11건)</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-next" id="progressNext">다음 등급까지 10건 남음</div>
+    </div>
+  </div>
+
+  <!-- 내 추천 링크 -->
+  <div class="section">
+    <div class="card link-card">
+      <div class="link-title">내 추천 링크</div>
+      <div class="link-box">
+        <div class="link-url" id="myLink">https://gjvk3322-web.github.io/dolbom-dashboard/quote.html?ch=code</div>
+        <button class="link-copy" onclick="copyLink()">복사</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 등급 안내 -->
+  <div class="section">
+    <div class="card">
+      <div class="guide-title">등급별 보상</div>
+      <div class="tier-info" id="tierInfoDash"></div>
+    </div>
+  </div>
+
+  <!-- 추천 기록 -->
+  <div class="section">
+    <div class="card">
+      <div class="record-title">
+        <span>추천 기록</span>
+        <span class="record-count" id="recordCount">0건</span>
+      </div>
+      <div id="recordList">
+        <div class="record-empty">아직 추천 기록이 없습니다</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="logout-btn" onclick="logout()">로그아웃</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SHEET_ID = '1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+var PARTNER_GID = '343846760';
+var RECORD_GID = '2084049994';
+var BASE_URL = 'https://gjvk3322-web.github.io/dolbom-dashboard/quote.html';
+
+var TIERS = [
+  {name:'브론즈', emoji:'🥉', min:1, max:10, reward:30000, css:'tier-bronze'},
+  {name:'실버', emoji:'🥈', min:11, max:20, reward:40000, css:'tier-silver'},
+  {name:'골드', emoji:'🥇', min:21, max:49, reward:50000, css:'tier-gold'},
+  {name:'다이아', emoji:'💎', min:50, max:99999, reward:70000, css:'tier-diamond'},
+];
+
+var currentPartner = null;
+
+function getTier(count) {
+  for (var i = 0; i < TIERS.length; i++) {
+    if (count >= TIERS[i].min && count <= TIERS[i].max) return TIERS[i];
+  }
+  return TIERS[TIERS.length - 1];
+}
+
+function getNextTier(count) {
+  var cur = getTier(count);
+  var idx = TIERS.indexOf(cur);
+  return idx < TIERS.length - 1 ? TIERS[idx + 1] : null;
+}
+
+function getTotalReward(count) {
+  var total = 0;
+  for (var n = 1; n <= count; n++) total += getTier(n).reward;
+  return total;
+}
+
+function readCSV(gid, callback) {
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + gid;
+  fetch(url).then(function(r) { return r.text(); }).then(function(text) {
+    var rows = [];
+    var lines = text.split('\n');
+    lines.forEach(function(line, idx) {
+      if (!line.trim()) return;
+      var cols = [];
+      var inQuote = false, val = '';
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (ch === '"') { inQuote = !inQuote; }
+        else if (ch === ',' && !inQuote) { cols.push(val.trim()); val = ''; }
+        else { val += ch; }
+      }
+      cols.push(val.trim());
+      rows.push(cols);
+    });
+    callback(rows);
+  }).catch(function(e) { callback([]); });
+}
+
+// URL 파라미터로 자동 로그인
+var urlCode = new URLSearchParams(location.search).get('code') || '';
+
+function login() {
+  var code = (document.getElementById('codeInput').value || urlCode).trim().toLowerCase();
+  if (!code) return;
+  
+  document.getElementById('loginError').style.display = 'none';
+  
+  readCSV(PARTNER_GID, function(rows) {
+    if (rows.length < 2) {
+      document.getElementById('loginError').textContent = '데이터를 불러올 수 없습니다';
+      document.getElementById('loginError').style.display = 'block';
+      return;
+    }
+
+    var partner = null;
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][0] && rows[i][0].toLowerCase() === code) {
+        partner = {
+          code: rows[i][0],
+          type: rows[i][1],
+          name: rows[i][2],
+          phone: rows[i][3],
+          tier: rows[i][4],
+          count: parseInt(rows[i][5]) || 0,
+          rewardPerCase: parseInt(rows[i][6]) || 30000,
+          totalPaid: parseInt(rows[i][7]) || 0,
+          regDate: rows[i][8],
+        };
+        break;
+      }
+    }
+
+    if (!partner) {
+      document.getElementById('loginError').textContent = '등록되지 않은 코드입니다: ' + code;
+      document.getElementById('loginError').style.display = 'block';
+      return;
+    }
+
+    currentPartner = partner;
+    localStorage.setItem('dolbom_partner_code', code);
+    renderDashboard(partner);
+    loadRecords(partner.code);
+  });
+}
+
+function renderDashboard(p) {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  var count = p.count;
+  var tier = count > 0 ? getTier(count) : TIERS[0];
+  var nextTier = count > 0 ? getNextTier(count) : TIERS[0];
+  var totalReward = count > 0 ? getTotalReward(count) : 0;
+
+  // 등급 카드
+  var tierCard = document.getElementById('tierCard');
+  tierCard.className = 'card tier-card ' + tier.css;
+  document.getElementById('tierEmoji').textContent = tier.emoji;
+  document.getElementById('tierName').textContent = tier.name;
+  document.getElementById('tierCodeDisplay').textContent = p.code + ' · ' + p.type + ' · ' + p.name;
+
+  // 스탯
+  document.getElementById('statCount').textContent = count + '건';
+  document.getElementById('statReward').textContent = (tier.reward / 10000) + '만';
+  document.getElementById('statTotal').textContent = totalReward > 0 ? (totalReward / 10000).toFixed(0) + '만' : '0';
+
+  // 진행바
+  if (nextTier) {
+    document.getElementById('progressSection').style.display = 'block';
+    document.getElementById('progressFrom').textContent = tier.emoji + ' ' + tier.name;
+    document.getElementById('progressTo').textContent = nextTier.emoji + ' ' + nextTier.name + ' (' + nextTier.min + '건)';
+    var progress = ((count - tier.min + 1) / (tier.max - tier.min + 1)) * 100;
+    document.getElementById('progressFill').style.width = Math.min(100, Math.max(5, progress)) + '%';
+    var remaining = nextTier.min - count;
+    document.getElementById('progressNext').textContent = nextTier.name + '까지 ' + remaining + '건 남음!';
+  } else {
+    document.getElementById('progressSection').style.display = 'none';
+  }
+
+  // 추천 링크
+  var link = BASE_URL + '?ch=' + p.code;
+  document.getElementById('myLink').textContent = link;
+
+  // 등급 안내
+  var tierHtml = '';
+  TIERS.forEach(function(t) {
+    var isCurrent = tier.name === t.name;
+    tierHtml += '<div class="tier-row' + (isCurrent ? ' current' : '') + '">';
+    tierHtml += '<span class="emoji">' + t.emoji + '</span>';
+    tierHtml += '<div class="info"><div class="name">' + t.name + (isCurrent ? ' (현재)' : '') + '</div>';
+    tierHtml += '<div class="range">' + t.min + (t.max < 99999 ? '~' + t.max : '+') + '건</div></div>';
+    tierHtml += '<span class="reward">건당 ' + (t.reward/10000) + '만원</span>';
+    tierHtml += '</div>';
+  });
+  document.getElementById('tierInfoDash').innerHTML = tierHtml;
+}
+
+function loadRecords(code) {
+  readCSV(RECORD_GID, function(rows) {
+    var records = [];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][1] && rows[i][1].toLowerCase() === code.toLowerCase()) {
+        records.push({
+          date: rows[i][0],
+          customer: rows[i][3],
+          type: rows[i][5],
+          status: rows[i][6],
+          reward: parseInt(rows[i][7]) || 0,
+          paid: rows[i][8],
+        });
+      }
+    }
+
+    document.getElementById('recordCount').textContent = records.length + '건';
+
+    if (records.length === 0) {
+      document.getElementById('recordList').innerHTML = '<div class="record-empty">아직 추천 기록이 없습니다<br><span style="font-size:11px;margin-top:4px;display:block">추천 링크를 공유하면 여기에 기록됩니다</span></div>';
+      return;
+    }
+
+    var html = '';
+    records.reverse().forEach(function(r) {
+      var statusClass = r.status === '시공완료' ? 'done' : (r.status === '상담중' || r.status === '계약확정' ? 'progress' : 'waiting');
+      var rewardText = r.status === '시공완료' && r.reward > 0 ? '+' + r.reward.toLocaleString() + '원' : r.status;
+      html += '<div class="record-item">';
+      html += '<div class="record-status ' + statusClass + '"></div>';
+      html += '<div class="record-info"><div class="record-name">' + (r.customer || '고객') + '</div>';
+      html += '<div class="record-date">' + (r.date || '') + ' · ' + (r.type || '') + '</div></div>';
+      html += '<div class="record-reward">' + rewardText + '</div>';
+      html += '</div>';
+    });
+    document.getElementById('recordList').innerHTML = html;
+  });
+}
+
+function copyLink() {
+  var link = document.getElementById('myLink').textContent;
+  navigator.clipboard.writeText(link).then(function() {
+    showToast('추천 링크가 복사되었습니다!');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = link; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('추천 링크가 복사되었습니다!');
+  });
+}
+
+function logout() {
+  localStorage.removeItem('dolbom_partner_code');
+  currentPartner = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'block';
+  document.getElementById('codeInput').value = '';
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ===== 파트너 신청 =====
+var applyType = '';
+function selectType(btn, type) {
+  applyType = type;
+  document.querySelectorAll('#applyTypeWrap button').forEach(function(b) {
+    b.style.background = '#fff';
+    b.style.borderColor = '#e8e8e8';
+    b.style.color = '#555';
+    b.style.fontWeight = '400';
+  });
+  btn.style.background = '#E8F5E9';
+  btn.style.borderColor = '#2E7D32';
+  btn.style.color = '#2E7D32';
+  btn.style.fontWeight = '700';
+}
+
+var API_URL = 'https://script.google.com/macros/s/AKfycbz9i9S2mWNJhLcA6eWmBcgbcwqUBPvFULLHasYsgdlIEHzssdn_5pgBNOBVdWqXibbymg/exec';
+
+function submitApply() {
+  var name = document.getElementById('applyName').value.trim();
+  var phone = document.getElementById('applyPhone').value.trim();
+  var sns = document.getElementById('applySns').value.trim();
+  var memo = document.getElementById('applyMemo').value.trim();
+
+  if (!name) { showToast('이름을 입력해주세요'); return; }
+  if (!phone) { showToast('연락처를 입력해주세요'); return; }
+  if (!applyType) { showToast('유형을 선택해주세요'); return; }
+
+  var btn = document.getElementById('applyBtn');
+  btn.disabled = true;
+  btn.textContent = '신청 중...';
+  btn.style.background = '#999';
+
+  var data = {
+    type: 'partnerApply',
+    name: name,
+    phone: phone,
+    partnerType: applyType,
+    sns: sns,
+    memo: memo,
+    appliedAt: new Date().toISOString()
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(function() {
+    document.getElementById('applySection').style.display = 'none';
+    document.getElementById('applyDone').style.display = 'block';
+    showToast('파트너 신청이 완료되었습니다!');
+  }).catch(function() {
+    btn.disabled = false;
+    btn.textContent = '파트너 신청하기';
+    btn.style.background = '#2E7D32';
+    showToast('신청 실패 - 다시 시도해주세요');
+  });
+}
+
+// 자동 로그인 (URL 파라미터 또는 저장된 코드)
+(function() {
+  var saved = localStorage.getItem('dolbom_partner_code');
+  if (urlCode) {
+    document.getElementById('codeInput').value = urlCode;
+    login();
+  } else if (saved) {
+    document.getElementById('codeInput').value = saved;
+    login();
+  }
+})();
+</script>
+</body>
+</html>
