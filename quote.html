@@ -395,6 +395,13 @@ var DEFAULT_ROOMS = [
     <div class="copy-check">✅</div>
     <div class="copy-title">견적서가 복사되었습니다!</div>
     <div class="copy-sub">카카오톡 상담원에게<br><strong>붙여넣기</strong> 해주시면 바로 안내드리겠습니다</div>
+    
+    <!-- 카카오톡 상담 바로가기 -->
+    <a id="kakaoBtn" href="#" onclick="openKakaoChat()" style="display:block;margin:12px 0;padding:14px;background:#FEE500;border-radius:12px;text-align:center;text-decoration:none;font-size:15px;font-weight:700;color:#3C1E1E;cursor:pointer">
+      💬 카카오톡으로 바로 상담하기
+    </a>
+    <div id="kakaoRefNote" style="display:none;font-size:11px;color:#999;text-align:center;margin-top:-6px;margin-bottom:8px">추천인 정보가 자동으로 포함됩니다</div>
+
     <div class="copy-feature">
       <div class="copy-feature-title">🌬️ 돌봄매트만의 공기순환통로</div>
       <video id="airVideo" autoplay muted loop playsinline style="width:100%;border-radius:10px;margin:10px 0">
@@ -406,7 +413,10 @@ var DEFAULT_ROOMS = [
         <strong style="color:#2E7D32">곰팡이 걱정 제로!</strong> 6,700가정이 검증했습니다
       </div>
     </div>
-    <button class="copy-close" onclick="closeCopyOverlay()">확인</button>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="copy-close" onclick="closeCopyOverlay()" style="flex:1">확인</button>
+      <a onclick="openKakaoChat()" style="flex:1;display:flex;align-items:center;justify-content:center;padding:14px;background:#FEE500;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer">💬 카톡 상담</a>
+    </div>
   </div>
 </div>
 
@@ -840,6 +850,24 @@ function trackReferral(qty, total) {
 
 function showCopyOverlay() {
   document.getElementById('copyOverlay').classList.add('show');
+  // 추천인 있으면 노트 표시
+  if (REFERRAL_CODE) {
+    document.getElementById('kakaoRefNote').style.display = 'block';
+  }
+}
+
+// 카카오톡 채널 상담 열기 (추천인 자동 포함)
+function openKakaoChat() {
+  // 카카오톡 채널 채팅 URL (dolbomconnect)
+  var kakaoUrl = 'https://pf.kakao.com/_dolbomconnect/chat';
+  
+  // 추천인 있으면 클립보드에 추천인 포함 메시지 복사
+  if (REFERRAL_CODE) {
+    var msg = '견적 문의드립니다. (추천인: ' + REFERRAL_CODE + ')';
+    navigator.clipboard.writeText(msg).catch(function(){});
+  }
+  
+  window.open(kakaoUrl, '_blank');
 }
 
 function closeCopyOverlay(e) {
