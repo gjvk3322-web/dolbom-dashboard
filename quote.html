@@ -814,8 +814,27 @@ function copyQuote() {
   t += '* 구조에 따라 수량 차이가 있을 수 있습니다\n';
   t += '* 실제 시공 후 수량에 맞춰 결제됩니다\n';
   t += '\n궁금한 점은 언제든 문의해주세요!';
-  navigator.clipboard.writeText(t).then(function() { showCopyOverlay(); }).catch(function() {
-    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showCopyOverlay();
+  navigator.clipboard.writeText(t).then(function() { showCopyOverlay(); trackReferral(qty, total); }).catch(function() {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showCopyOverlay(); trackReferral(qty, total);
+  });
+}
+
+// 추천인 링크로 견적 복사 시 구글시트에 자동 기록
+function trackReferral(qty, total) {
+  if (!REFERRAL_CODE) return;
+  var TRACK_URL = 'https://script.google.com/macros/s/AKfycbxvXvd-TAy_cKwQ2hdT97tVwrF9EXNjNovnE0fkPLCrIuUDigN-pilSya24qIph1AEMwg/exec';
+  fetch(TRACK_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'referralTrack',
+      ch: REFERRAL_CODE,
+      product: selectedProduct ? selectedProduct.name + ' ' + selectedProduct.thickness : '',
+      qty: qty,
+      total: total,
+      trackedAt: new Date().toISOString()
+    })
   });
 }
 
