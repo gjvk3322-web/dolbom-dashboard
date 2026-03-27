@@ -146,11 +146,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <!-- 2. 희망 시공일 -->
   <div class="card">
     <div class="card-title">📅 희망 시공일</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px">최대 3개까지 선택 가능 (10일 이후부터 예약 가능)</div>
     <div style="margin-bottom:10px">
-      <div class="opt-btn active" id="dateAnyBtn" onclick="toggleDateAny()" style="display:inline-block">상관없음 (빠른 날짜 배정)</div>
+      <div class="opt-btn" id="dateAnyBtn" onclick="toggleDateAny()" style="display:inline-block">상관없음 (빠른 날짜 배정)</div>
     </div>
     <div id="calWrap">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">최대 3개까지 선택 가능</div>
       <div class="cal-header">
         <button onclick="changeMonth(-1)">◀</button>
         <span class="month" id="calMonth"></span>
@@ -226,11 +226,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 
   <!-- 6. 안내사항 + 동의 -->
-  <div class="card" style="padding:14px 16px">
-    <a href="https://gjvk3322-web.github.io/dolbom-dashboard/notice.html" target="_blank" style="display:block;padding:12px;background:#FFF8E1;border-radius:8px;text-decoration:none;text-align:center;margin-bottom:12px">
-      <span style="font-size:13px;font-weight:600;color:#E65100">📌 예약 안내사항 확인하기</span>
-      <span style="display:block;font-size:11px;color:#999;margin-top:2px">터치하면 안내사항 페이지로 이동합니다</span>
-    </a>
+  <div class="notice-box">
+    <div class="title">예약 안내사항</div>
+    <div class="notice-item">예약금 20만원 입금 시 예약이 확정됩니다.<br>잔금 완납 시 예약금은 전액 환급됩니다.</div>
+    <div class="notice-item">시공 72시간 전 이후에는 취소가 불가하며,<br>취소 시 예약금 20만원은 환불되지 않습니다.</div>
+    <div class="notice-item">온누리상품권 이벤트 종료 시 정상가로 결제됩니다.<br><span style="color:#795548;font-size:10px">1000매트 22T: 74,500원 / 17T: 62,900원 / 500매트: 16,000원</span></div>
+    <div class="notice-item">소량 시공 시 시공비 10만원이 발생합니다.<br><span style="color:#795548;font-size:10px">1000매트 25장 이하 / 500매트 100장 이하</span></div>
+    <div class="notice-item">다른 작업과 같은 날 시공은 불가합니다.<br><span style="color:#795548;font-size:10px">입주청소, 이사 등과 겹칠 경우 추가금 5만원 발생</span></div>
+    <div class="notice-item">작업 시작과 끝에는 현장에 계셔야 합니다.<br>부재 시 설치 변경 불가, 추가 비용 고객님 부담</div>
+    <div class="notice-item">시공 당일 가벼운 물건은 미리 치워주시면 작업 시간이 단축됩니다.</div>
+    <div class="notice-item">작업 사진은 돌봄매트 마케팅에 활용될 수 있습니다.</div>
+  </div>
+
+  <div class="card" style="padding:12px 16px">
     <div class="agree-row" onclick="toggleAgree()">
       <div class="agree-check" id="agreeCheck"></div>
       <div class="agree-text">위 예약 안내사항을 모두 확인하였으며, 동의합니다.</div>
@@ -285,7 +293,7 @@ var PRODUCTS = [
 var selectedProduct = -1;
 var selectedColor = '';
 var selectedDates = [];
-var dateAny = true;
+var dateAny = false;
 var selectedTime = '상관없음';
 var selectedScope = '';
 var agreed = false;
@@ -319,15 +327,13 @@ function searchAddr(){
 function toggleDateAny(){
   dateAny = !dateAny;
   var btn = document.getElementById('dateAnyBtn');
-  var wrap = document.getElementById('calWrap');
   if(dateAny){
     btn.classList.add('active');
-    wrap.style.display = 'none';
     selectedDates = [];
+    renderCal();
     updateDateDisplay();
   } else {
     btn.classList.remove('active');
-    wrap.style.display = 'block';
   }
   checkSubmit();
 }
@@ -338,7 +344,6 @@ var calYear, calMonth;
   var now = new Date();
   calYear = now.getFullYear();
   calMonth = now.getMonth();
-  document.getElementById('calWrap').style.display = 'none';
   renderCal();
 })();
 
@@ -365,7 +370,7 @@ function renderCal(){
   var today = new Date();
   today.setHours(0,0,0,0);
   var minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 3);
+  minDate.setDate(minDate.getDate() + 10);
   for(var i=0;i<first.getDay();i++){
     var el = document.createElement('div');
     el.className = 'cal-day';
@@ -405,6 +410,11 @@ function selectDate(el){
     }
     selectedDates.push(dateStr);
     el.classList.add('selected');
+    // 날짜 선택하면 상관없음 해제
+    if(dateAny){
+      dateAny = false;
+      document.getElementById('dateAnyBtn').classList.remove('active');
+    }
   }
   updateDateDisplay();
   checkSubmit();
