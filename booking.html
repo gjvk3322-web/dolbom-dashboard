@@ -99,6 +99,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.copy-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;justify-content:center;align-items:center}
+.copy-overlay.show{display:flex}
 </style>
 </head>
 <body>
@@ -144,12 +146,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <!-- 2. 희망 시공일 -->
   <div class="card">
     <div class="card-title">📅 희망 시공일</div>
-    <div class="cal-header">
-      <button onclick="changeMonth(-1)">◀</button>
-      <span class="month" id="calMonth"></span>
-      <button onclick="changeMonth(1)">▶</button>
+    <div style="margin-bottom:10px">
+      <div class="opt-btn active" id="dateAnyBtn" onclick="toggleDateAny()" style="display:inline-block">상관없음 (빠른 날짜 배정)</div>
     </div>
-    <div class="cal-grid" id="calGrid"></div>
+    <div id="calWrap">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">최대 3개까지 선택 가능</div>
+      <div class="cal-header">
+        <button onclick="changeMonth(-1)">◀</button>
+        <span class="month" id="calMonth"></span>
+        <button onclick="changeMonth(1)">▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div style="font-size:11px;color:#e53935;margin-top:6px">* 일요일은 돌봄매트 휴무입니다</div>
+      <div id="selectedDatesDisplay" style="margin-top:8px"></div>
+    </div>
     <div class="fg" style="margin-top:12px">
       <label>희망 시간</label>
       <div class="opt-group" id="timeGroup">
@@ -160,7 +170,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="time-note">
       ⏱️ 작업 시간은 약 3~4시간 소요되며, 작업 환경에 따라 달라질 수 있습니다.<br>
-      📌 이사 완료 후 1~2일 뒤 시공을 권장합니다. 다른 작업과 같은 날은 불가하며, 겹칠 경우 추가금 5만원이 발생합니다.
+      🕐 오후 작업은 오전 작업 완료 후 방문드리며, 정확한 시간은 작업 당일 오전 중으로 안내드립니다.<br>
+      📌 이사 완료 후 1~2일 뒤 시공을 권장합니다.
     </div>
   </div>
 
@@ -173,7 +184,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <div class="spec">22T</div>
         <div class="price">74,500원</div>
       </div>
-      <div class="prod-card" id="prod1" onclick="selectProduct(1)">
+      <div class="prod-card" id="prod1" onclick="selectProduct(1)" style="position:relative">
+        <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#FF8F00;color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600;white-space:nowrap">애견 추천</div>
         <div class="name">1000매트</div>
         <div class="spec">17T</div>
         <div class="price">62,900원</div>
@@ -214,47 +226,43 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 
   <!-- 6. 안내사항 + 동의 -->
-  <div class="notice-box">
-    <div class="title">예약 안내사항</div>
-    <div class="notice-item">예약금 20만원 현금 이체 후 잔금 완납 시 전액 환급됩니다.</div>
-    <div class="notice-item">온누리 상품권 이벤트 종료 시 장당 16,000원 결제해주셔야 합니다.</div>
-    <div class="notice-item">작업 시작과 끝 현장 부재 시, 설치 부분에 대한 추후 변경은 불가하며 이로 인해 발생되는 비용은 고객님 부담입니다.</div>
-    <div class="notice-item">작업 사진은 돌봄매트 마케팅에 활용될 수 있습니다.</div>
-    <div class="notice-item">작업 3일 전 취소 시, 예약금 50% 환불됩니다.</div>
-    <div class="notice-item">100장 이하 시공 시 시공비 10만원이 발생합니다.</div>
-  </div>
-
-  <div class="card" style="padding:12px 16px">
+  <div class="card" style="padding:14px 16px">
+    <a href="https://gjvk3322-web.github.io/dolbom-dashboard/notice.html" target="_blank" style="display:block;padding:12px;background:#FFF8E1;border-radius:8px;text-decoration:none;text-align:center;margin-bottom:12px">
+      <span style="font-size:13px;font-weight:600;color:#E65100">📌 예약 안내사항 확인하기</span>
+      <span style="display:block;font-size:11px;color:#999;margin-top:2px">터치하면 안내사항 페이지로 이동합니다</span>
+    </a>
     <div class="agree-row" onclick="toggleAgree()">
       <div class="agree-check" id="agreeCheck"></div>
-      <div class="agree-text">위 안내사항을 모두 확인하였으며, 동의합니다.</div>
+      <div class="agree-text">위 예약 안내사항을 모두 확인하였으며, 동의합니다.</div>
     </div>
   </div>
 
   <!-- 7. 제출 -->
   <div class="submit-btns">
-    <button class="submit-btn main" id="submitBtn" disabled onclick="submitBooking()">예약 신청하기</button>
-    <button class="submit-btn kakao" onclick="openKakao()">💬 카톡 상담</button>
+    <button class="submit-btn main" id="submitBtn" disabled onclick="copyBooking()" style="flex:1">예약 내용 복사하기</button>
   </div>
   <div class="submit-note">
-    예약 신청 후 상담원이 확인 연락드립니다<br>
-    실제 시공 후 수량에 맞춰 결제됩니다
+    복사 후 카카오톡 채널에 붙여넣기 해주시면<br>
+    상담원이 확인 후 예약을 도와드립니다
   </div>
 </div>
 
-<!-- 완료 화면 -->
-<div class="done-wrap" id="doneWrap">
-  <div class="icon">🎉</div>
-  <h2>예약 신청이 완료되었습니다!</h2>
-  <p>상담원이 확인 후 연락드리겠습니다.<br>예약금 입금 시 예약이 확정됩니다.</p>
-  <div class="account">
-    <div style="font-size:12px;color:var(--text3);margin-bottom:4px">예약금 입금 계좌</div>
-    <div class="bank">기업은행 030-505520-04-011</div>
-    <div style="font-size:13px;color:var(--green);margin-top:2px">허민석(돌봄) / 20만원</div>
-    <button class="copy-btn" onclick="copyAccount()">계좌번호 복사</button>
-  </div>
-  <div style="display:flex;gap:8px;padding:0 20px">
-    <button class="submit-btn kakao" onclick="openKakao()" style="flex:1">💬 카카오톡 채널</button>
+<!-- 복사 완료 오버레이 -->
+<div class="copy-overlay" id="copyOverlay" onclick="closeCopyOverlay(event)">
+  <div class="copy-modal" style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:90%;text-align:center">
+    <div style="font-size:48px;margin-bottom:10px">✅</div>
+    <div style="font-size:18px;font-weight:700;color:var(--text)">예약 내용이 복사되었습니다!</div>
+    <div style="font-size:13px;color:var(--text3);margin-top:6px;line-height:1.5">카카오톡 채널에서<br><strong>붙여넣기</strong> 해주시면 바로 예약 도와드리겠습니다</div>
+    <div class="account" style="margin:16px 0">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px">예약금 입금 계좌</div>
+      <div class="bank" style="font-size:14px;font-weight:700;color:var(--green)">기업은행 030-505520-04-011</div>
+      <div style="font-size:13px;color:var(--green);margin-top:2px">허민석(돌봄) / 20만원</div>
+      <button class="copy-btn" onclick="copyAccount()" style="margin-top:8px;padding:8px 20px;border:none;border-radius:8px;background:var(--green);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">계좌번호 복사</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeCopyOverlay()" style="flex:1;padding:14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2)">확인</button>
+      <button onclick="openKakao()" style="flex:1;padding:14px;border:none;border-radius:10px;background:#FEE500;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#3C1E1E">💬 카톡 상담</button>
+    </div>
   </div>
 </div>
 
@@ -264,6 +272,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 // ===== 설정 =====
 var API_URL = 'https://script.google.com/macros/s/AKfycbxvXvd-TAy_cKwQ2hdT97tVwrF9EXNjNovnE0fkPLCrIuUDigN-pilSya24qIph1AEMwg/exec';
 var KAKAO_URL = 'https://pf.kakao.com/_dolbomconnect/chat';
+var NOTICE_URL = 'https://gjvk3322-web.github.io/dolbom-dashboard/notice.html';
+var NOTICE_SHORT = 'dolbom.kr/notice'; // 나중에 도메인 연결 시 사용
 var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
 
 var PRODUCTS = [
@@ -274,7 +284,8 @@ var PRODUCTS = [
 
 var selectedProduct = -1;
 var selectedColor = '';
-var selectedDate = '';
+var selectedDates = [];
+var dateAny = true;
 var selectedTime = '상관없음';
 var selectedScope = '';
 var agreed = false;
@@ -304,12 +315,30 @@ function searchAddr(){
   }).catch(function(){showToast('검색 실패 - 다시 시도해주세요');});
 }
 
+// ===== 날짜 상관없음 토글 =====
+function toggleDateAny(){
+  dateAny = !dateAny;
+  var btn = document.getElementById('dateAnyBtn');
+  var wrap = document.getElementById('calWrap');
+  if(dateAny){
+    btn.classList.add('active');
+    wrap.style.display = 'none';
+    selectedDates = [];
+    updateDateDisplay();
+  } else {
+    btn.classList.remove('active');
+    wrap.style.display = 'block';
+  }
+  checkSubmit();
+}
+
 // ===== 캘린더 =====
 var calYear, calMonth;
 (function(){
   var now = new Date();
   calYear = now.getFullYear();
   calMonth = now.getMonth();
+  document.getElementById('calWrap').style.display = 'none';
   renderCal();
 })();
 
@@ -357,16 +386,50 @@ function renderCal(){
       el.onclick = function(){selectDate(this);};
     }
     if(dt.getTime() === today.getTime()) el.className += ' today';
-    if(dateStr === selectedDate) el.className += ' selected';
+    if(selectedDates.indexOf(dateStr) >= 0) el.className += ' selected';
     el.textContent = d;
     grid.appendChild(el);
   }
 }
 
 function selectDate(el){
-  document.querySelectorAll('.cal-day.selected').forEach(function(d){d.classList.remove('selected');});
-  el.classList.add('selected');
-  selectedDate = el.getAttribute('data-date');
+  var dateStr = el.getAttribute('data-date');
+  var idx = selectedDates.indexOf(dateStr);
+  if(idx >= 0){
+    selectedDates.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    if(selectedDates.length >= 3){
+      showToast('최대 3개까지 선택 가능합니다');
+      return;
+    }
+    selectedDates.push(dateStr);
+    el.classList.add('selected');
+  }
+  updateDateDisplay();
+  checkSubmit();
+}
+
+function updateDateDisplay(){
+  var display = document.getElementById('selectedDatesDisplay');
+  if(selectedDates.length === 0){
+    display.innerHTML = '';
+    return;
+  }
+  var sorted = selectedDates.slice().sort();
+  var tags = sorted.map(function(d,i){
+    var parts = d.split('-');
+    var label = parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#E8F5E9;border-radius:6px;font-size:12px;color:#2E7D32;font-weight:500">'+(i+1)+'순위 '+label+'<span onclick="removeDate(\''+d+'\')" style="cursor:pointer;font-size:14px;color:#999;margin-left:2px">&times;</span></span>';
+  });
+  display.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap">'+tags.join('')+'</div>';
+}
+
+function removeDate(dateStr){
+  var idx = selectedDates.indexOf(dateStr);
+  if(idx >= 0) selectedDates.splice(idx, 1);
+  updateDateDisplay();
+  renderCal();
   checkSubmit();
 }
 
@@ -431,7 +494,7 @@ function checkSubmit(){
   var hosu = document.getElementById('hosu').value.trim();
   var pyung = document.getElementById('pyung').value.trim();
   var scope = selectedScope || document.getElementById('scopeInput').value.trim();
-  var ok = name && phone && addrData && hosu && pyung && selectedDate && selectedProduct >= 0 && selectedColor && scope && agreed;
+  var ok = name && phone && addrData && hosu && pyung && (dateAny || selectedDates.length > 0) && selectedProduct >= 0 && selectedColor && scope && agreed;
   document.getElementById('submitBtn').disabled = !ok;
 }
 
@@ -440,8 +503,8 @@ function checkSubmit(){
   document.getElementById(id).addEventListener('input', checkSubmit);
 });
 
-// ===== 제출 =====
-function submitBooking(){
+// ===== 예약 내용 복사 =====
+function copyBooking(){
   var name = document.getElementById('name').value.trim();
   var phone = document.getElementById('phone').value.trim();
   var dong = document.getElementById('dong').value.trim();
@@ -450,45 +513,43 @@ function submitBooking(){
   var scope = selectedScope || document.getElementById('scopeInput').value.trim();
   var memo = document.getElementById('memo').value.trim();
   var product = PRODUCTS[selectedProduct];
+  var dateText = dateAny ? '상관없음 (빠른 날짜 배정)' : selectedDates.sort().join(', ');
+  var addr = addrData ? addrData.name + '\n  ' + addrData.address + ' ' + (dong ? dong + ' ' : '') + hosu : '';
 
-  var btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = '전송 중...';
+  var t = '';
+  t += '돌봄매트 시공 예약\n';
+  t += '────────────────\n\n';
+  if (REFERRAL_CODE) t += '추천인: ' + REFERRAL_CODE + '\n\n';
+  t += '■ 고객 정보\n';
+  t += '  이름: ' + name + '\n';
+  t += '  연락처: ' + phone + '\n';
+  t += '  주소: ' + addr + '\n';
+  t += '  평수: ' + pyung + '평\n';
+  t += '\n■ 시공 정보\n';
+  t += '  희망일: ' + dateText + '\n';
+  t += '  희망시간: ' + selectedTime + '\n';
+  t += '  제품: ' + product.name + '\n';
+  t += '  색상: ' + selectedColor + '\n';
+  t += '  시공범위: ' + scope + '\n';
+  if (memo) t += '  요청사항: ' + memo + '\n';
+  t += '\n────────────────\n';
+  t += '예약 안내사항: ' + NOTICE_URL + '\n';
+  t += '위 예약 안내사항을 확인하였습니다.\n\n';
+  t += '예약 신청합니다 ☺️';
 
-  var data = {
-    type: 'booking',
-    name: name,
-    phone: phone,
-    address: addrData ? addrData.address : '',
-    aptName: addrData ? addrData.name : '',
-    dong: dong,
-    hosu: hosu,
-    pyung: pyung,
-    lat: addrData ? addrData.y : '',
-    lng: addrData ? addrData.x : '',
-    date: selectedDate,
-    time: selectedTime,
-    product: product.name,
-    color: selectedColor,
-    scope: scope,
-    memo: memo,
-    referral: REFERRAL_CODE,
-    bookedAt: new Date().toISOString()
-  };
-
-  fetch(API_URL, {
-    method:'POST', mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(data)
-  }).then(function(){
-    document.querySelector('.container').style.display = 'none';
-    document.getElementById('doneWrap').style.display = 'block';
-    window.scrollTo(0,0);
+  navigator.clipboard.writeText(t).then(function(){
+    document.getElementById('copyOverlay').classList.add('show');
   }).catch(function(){
-    btn.disabled = false;
-    btn.textContent = '예약 신청하기';
-    showToast('전송 실패 - 다시 시도해주세요');
+    var ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    document.getElementById('copyOverlay').classList.add('show');
   });
+}
+
+function closeCopyOverlay(e){
+  if(e && e.target !== document.getElementById('copyOverlay') && !e.target.closest('[onclick*="closeCopyOverlay"]')) return;
+  document.getElementById('copyOverlay').classList.remove('show');
 }
 
 // ===== 계좌 복사 =====
