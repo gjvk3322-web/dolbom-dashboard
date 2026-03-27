@@ -68,6 +68,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .cal-day.today{border:2px solid var(--green)}
 .cal-day.sun{color:#e53935}
 .cal-day.sat{color:#1565C0}
+.cal-day.closed{color:#ccc;position:relative;padding:4px 0 2px}
+.closed-label{display:block;font-size:8px;color:#e53935;font-weight:600;line-height:1;margin-top:-1px}
 
 .notice-box{background:#FFF8E1;border-radius:10px;padding:14px;margin:10px 0}
 .notice-box .title{font-size:13px;font-weight:700;color:#E65100;margin-bottom:8px}
@@ -232,7 +234,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="notice-item">시공 72시간 전 이후에는 취소가 불가하며,<br>취소 시 예약금 20만원은 환불되지 않습니다.</div>
     <div class="notice-item">온누리상품권 이벤트 종료 시 정상가로 결제됩니다.<br><span style="color:#795548;font-size:10px">1000매트 22T: 74,500원 / 17T: 62,900원 / 500매트: 16,000원</span></div>
     <div class="notice-item">소량 시공 시 시공비 10만원이 발생합니다.<br><span style="color:#795548;font-size:10px">1000매트 25장 이하 / 500매트 100장 이하</span></div>
-    <div class="notice-item">다른 작업과 같은 날 시공은 불가합니다.<br><span style="color:#795548;font-size:10px">입주청소, 이사 등과 겹칠 경우 추가금 5만원 발생</span></div>
+    <div class="notice-item">입주청소, 이사와 같은 날 시공은 <strong style="color:#e53935">불가</strong>합니다.<br><span style="color:#795548;font-size:10px">에어컨 설치, TV 설치 등 기타 작업과 겹칠 경우 추가금 10만원 발생</span></div>
     <div class="notice-item">작업 시작과 끝에는 현장에 계셔야 합니다.<br>부재 시 설치 변경 불가, 추가 비용 고객님 부담</div>
     <div class="notice-item">시공 당일 가벼운 물건은 미리 치워주시면 작업 시간이 단축됩니다.</div>
     <div class="notice-item">작업 사진은 돌봄매트 마케팅에 활용될 수 있습니다.</div>
@@ -381,6 +383,8 @@ function renderCal(){
     var dt = new Date(calYear, calMonth, d);
     var dayOfWeek = dt.getDay();
     var isAvail = dt >= minDate && dayOfWeek !== 0;
+    var isPast = dt < today;
+    var isClosed = !isPast && dt >= today && dt < minDate && dayOfWeek !== 0;
     var dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     el.className = 'cal-day';
     if(dayOfWeek === 0) el.className += ' sun';
@@ -390,9 +394,14 @@ function renderCal(){
       el.setAttribute('data-date', dateStr);
       el.onclick = function(){selectDate(this);};
     }
+    if(isClosed) el.className += ' closed';
     if(dt.getTime() === today.getTime()) el.className += ' today';
     if(selectedDates.indexOf(dateStr) >= 0) el.className += ' selected';
-    el.textContent = d;
+    if(isClosed){
+      el.innerHTML = '<span style="text-decoration:line-through">'+d+'</span><span class="closed-label">마감</span>';
+    } else {
+      el.textContent = d;
+    }
     grid.appendChild(el);
   }
 }
