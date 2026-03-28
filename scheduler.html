@@ -967,6 +967,43 @@ toast('📋 복사 완료!','ok');
 event.target.textContent='✅ 복사됨!';
 setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 
+// ===== 후기이벤트 메시지 복사 =====
+function copyReviewMsg(phone){
+  const cleanPhone=phone.replace(/-/g,'').replace(/ /g,'').trim();
+  const reviewUrl='https://gjvk3322-web.github.io/dolbom-dashboard/review-event.html?phone='+cleanPhone;
+  const referralUrl='https://gjvk3322-web.github.io/dolbom-dashboard/referral.html';
+  const txt=`안녕하세요, 고객님.
+시공이 무사히 완료되었습니다.
+고객님의 소중한 공간을 더 안전하고 조용하게 만들어드릴 수 있어 매우 기쁩니다.
+
+아래 내용 확인 부탁드립니다!
+
+1. 당일 들어간 갯수와 금액 할인 내용(계산기)
+2. 영수증입니다!(예약금 및 카드결제)
+3. 금일 작업 전 / 후 사진입니다!
+
+4. 🎁 돌봄매트 리뷰 이벤트 (최대 11만원 캐시백!)
+${reviewUrl}
+
+5. 🎟️ 지인쿠폰 사용방법입니다!
+${referralUrl}
+
+💌 문의사항은 언제든지 돌봄매트에 연락주세요.
+고객님의 조용하고 평온한 일상을 위한
+최고의 선택이 될 수 있도록 항상 최선을 다하겠습니다.
+
+감사합니다.
+돌봄매트 드림`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    toast('📋 후기 메시지 복사 완료! 카톡방에 붙여넣기','ok');
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=txt;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('📋 후기 메시지 복사 완료! 카톡방에 붙여넣기','ok');
+  });
+}
+
 // ===== 네이버 네비 열기 =====
 function openNavi(addr){
 // 동/호수 추출
@@ -1129,6 +1166,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 ${j.time==='as'?
 `<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
+<span onclick="event.stopPropagation();copyReviewMsg('${j.phone}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(232,115,108,.15);color:var(--primary);cursor:pointer;border:1px solid rgba(232,115,108,.3)">후기</span>
 <span style="margin-left:auto;display:flex;gap:3px">
 ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
