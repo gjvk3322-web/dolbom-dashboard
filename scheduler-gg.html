@@ -152,10 +152,12 @@ localStorage.setItem('dolbom_region','gg');
 <div class="pane on" id="p-sched"><div id="schedView"></div></div>
 <div class="pane" id="p-team"><div id="teamView"></div></div>
 <div class="pane" id="p-fair"><div id="fairView"></div></div>
+<div class="pane" id="p-car"><div id="carView"></div></div>
 
 <nav class="nav">
     <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
     <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
+    <a onclick="sw('car')" href="#"><span>🚗</span>차량</a>
     <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
 </nav>
 
@@ -281,6 +283,9 @@ db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIS
 db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
 db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
+
+let VEHICLES={}; // {차량번호: 직원}
+db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
 
@@ -1197,9 +1202,10 @@ html+='<p style="font-size:12px;color:var(--dim);margin-bottom:14px">직원을 �
 
 if(teams.length){
 html+=teams.map((t,i)=>{
-const members=t.map(m=>{
+const members=t.map((m,mi)=>{
 const ci=E.indexOf(m);
-return `<span class="tmem ${colors[ci%10]}" data-name="${m}" data-from="team" data-ti="${i}">${m}<span class="x" onclick="event.stopPropagation();rmMem(${i},'${m}')">×</span></span>`
+const role=mi===0?'<span style="font-size:9px;color:var(--dim);margin-left:2px">사수</span>':'<span style="font-size:9px;color:var(--dim);margin-left:2px">부사수</span>';
+return `<span class="tmem ${colors[ci%10]}" data-name="${m}" data-from="team" data-ti="${i}">${m}${role}<span class="x" onclick="event.stopPropagation();rmMem(${i},'${m}')">×</span></span>`
 }).join('');
 return `<div class="tcard"><h3 style="display:flex;justify-content:space-between">${i+1}팀<span style="font-size:12px;font-weight:400;color:var(--red);cursor:pointer" onclick="delTeam(${i})">삭제</span></h3><div class="tslot" data-drop="team" data-ti="${i}">${members||'<span style="color:var(--dim);font-size:13px">여기로 드래그</span>'}</div></div>`}).join('')}
 
@@ -1473,19 +1479,89 @@ html+=`</div>`;
 
 document.getElementById('fairView').innerHTML=html}
 
+// ===== 차량배정 =====
+function renderCars(){
+const el=document.getElementById('carView');
+if(!el)return;
+const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const plates=Object.keys(VEHICLES);
+
+let html=`<div style="padding:8px 0">
+<div style="font-size:16px;font-weight:800;margin-bottom:4px">🚗 차량 배정</div>
+<div style="font-size:12px;color:var(--dim);margin-bottom:16px">차량별 탑승 직원을 배정하면 알림톡에 차량번호가 자동 포함돼요</div>`;
+
+plates.forEach((plate,i)=>{
+  const driver=VEHICLES[plate]||'';
+  const di=E.indexOf(driver);
+  const ec=di>=0?empColors[di%10]:'var(--dim)';
+  const opts=E.map(n=>`<option value="${n}"${n===driver?' selected':''}>${n}</option>`).join('');
+  html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;background:var(--card2);border-radius:10px;border-left:3px solid ${ec}">
+    <span style="font-weight:700;font-size:14px;min-width:90px;color:var(--text)">${plate}</span>
+    <select id="drv_${i}" onchange="updateDriver(${i})" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+      <option value="">미배정</option>${opts}
+    </select>
+    <button onclick="deleteCar(${i})" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--red);font-size:12px;cursor:pointer;font-family:var(--font)">삭제</button>
+  </div>`;
+});
+
+html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-top:12px;background:var(--card2);border-radius:10px;border:1.5px dashed var(--border)">
+  <input id="newPlate" placeholder="차량번호 입력" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+  <button onclick="addCar()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">+ 추가</button>
+</div>`;
+
+const assigned=plates.filter(p=>VEHICLES[p]);
+const noCarDrivers=E.filter(n=>!plates.some(p=>VEHICLES[p]===n));
+html+=`<div style="margin-top:16px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border)">
+<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 현황</div>`;
+if(assigned.length) html+=assigned.map(p=>`<div style="font-size:12px;padding:3px 0">✅ ${p} → <span style="font-weight:600">${VEHICLES[p]}</span></div>`).join('');
+if(noCarDrivers.length) html+=`<div style="margin-top:6px">`+noCarDrivers.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--red)">❌ ${n}: 차량 미배정</div>`).join('')+`</div>`;
+html+=`</div></div>`;
+
+el.innerHTML=html;
+}
+
+function addCar(){
+  const plate=document.getElementById('newPlate').value.trim();
+  if(!plate){toast('차량번호를 입력하세요','ok');return;}
+  if(VEHICLES[plate]!==undefined){toast('이미 등록된 차량이에요','ok');return;}
+  const next={...VEHICLES};
+  next[plate]='';
+  fbSave('gg_vehicles',next);
+  toast(plate+' 추가!','ok');
+}
+
+function updateDriver(idx){
+  const plates=Object.keys(VEHICLES);
+  const plate=plates[idx];
+  const driver=document.getElementById('drv_'+idx).value;
+  const next={...VEHICLES};
+  next[plate]=driver;
+  fbSave('gg_vehicles',next);
+  toast(plate+' → '+(driver||'미배정'),'ok');
+}
+
+function deleteCar(idx){
+  const plates=Object.keys(VEHICLES);
+  const plate=plates[idx];
+  const next={...VEHICLES};
+  delete next[plate];
+  fbSave('gg_vehicles',Object.keys(next).length?next:null);
+  toast(plate+' 삭제됨','ok');
+}
+
 // ===== Nav =====
 function sw(n){
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
-const tabs=['sched','team','fair'];
+const tabs=['sched','team','car','fair'];
 document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
 renderAll()}
 
 let renderTimer=null;
 function renderAll(){
 if(renderTimer)clearTimeout(renderTimer);
-renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair()},150);
+renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair();renderCars()},150);
 }
 
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}

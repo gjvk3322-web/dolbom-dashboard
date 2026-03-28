@@ -157,8 +157,8 @@ localStorage.setItem('dolbom_region','bs');
 <nav class="nav">
     <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
     <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
-    <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
     <a onclick="sw('car')" href="#"><span>🚗</span>차량</a>
+    <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -1558,7 +1558,7 @@ function sw(n){
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
-const tabs=['sched','team','fair','car'];
+const tabs=['sched','team','car','fair'];
 document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
 renderAll()}
 
