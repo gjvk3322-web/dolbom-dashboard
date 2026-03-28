@@ -168,15 +168,17 @@ function renderMissions(){
 
   const list=document.getElementById('missionList');list.innerHTML='';
   MISSIONS.forEach((m,idx)=>{
-    const s=missionState[m.id]||{};const done=s.done;
+    const s=missionState[m.id]||{};const done=s.done;const paid=s.paid;
     const card=document.createElement('div');card.className='mission-card';
+    const badgeText=paid?'지급완료':done?'달성':'미달성';
+    const badgeCls=paid?'done':done?'done':'pending';
     card.innerHTML=`<div class="mission-header" onclick="toggleMission(${idx})">
       <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
       <div class="mission-info"><h4>${m.title}</h4><div class="reward">+${m.reward.toLocaleString()}원</div></div>
-      <span class="mission-badge ${done?'done':'pending'}">${done?'달성':'미달성'}</span>
+      <span class="mission-badge ${badgeCls}" ${paid?'style="background:#e3faf1;color:#20c997"':''}>${badgeText}</span>
     </div>
     <div class="mission-body" id="mbody${idx}">
-      ${done?`<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">✅ 달성 완료! (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>${s.url?`<a href="${s.url}" target="_blank" style="font-size:12px;color:var(--blue);word-break:break-all;display:block;margin-top:6px">📎 ${s.url}</a>`:''}</div>`:`
+      ${done?`<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">${paid?'💰 지급완료!':'✅ 달성 완료!'} (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>${s.url?`<a href="${s.url}" target="_blank" style="font-size:12px;color:var(--blue);word-break:break-all;display:block;margin-top:6px">📎 ${s.url}</a>`:''}</div>`:`
       <div class="upload-zone" id="uzone${idx}"><input type="file" accept="image/*" onchange="handleUpload(${idx},this)"><div class="icon">📷</div><div class="txt">스크린샷을 업로드해 주세요</div></div>
       <div class="upload-preview" id="uprev${idx}"><img id="uimg${idx}"></div>
       <div class="fg"><label>후기 URL (선택)</label><input type="url" id="murl${idx}" placeholder="https://" value="${s.url||''}"></div>
@@ -227,8 +229,10 @@ async function loadData(){
     const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
     const data=await res.json();
     if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
-    if(data.paidAmount)paidTotal=parseInt(data.paidAmount)||0;
     if(data.status)payStatus=data.status;
+    // 지급완료 미션 기반으로 paidTotal 계산
+    paidTotal=0;
+    MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
     if(data.account){
       if(data.account.bank)document.getElementById('accBank').value=data.account.bank;
       if(data.account.name)document.getElementById('accName').value=data.account.name;
