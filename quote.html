@@ -190,18 +190,19 @@ var BENEFITS = [
 
 // 추천인 파라미터 읽기
 var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
+var REFERRAL_NAME = REFERRAL_CODE.replace(/_\d+$/, '') + '님';
 if (REFERRAL_CODE) {
   // 공동구매 자동 적용 + 추천인 이름 표시
   for (var i = 0; i < BENEFITS.length; i++) {
     if (BENEFITS[i].key === 'group_buy') {
       BENEFITS[i].autoCheck = true;
-      BENEFITS[i].desc = REFERRAL_CODE + ' 추천으로 공동구매 할인 적용';
+      BENEFITS[i].desc = REFERRAL_NAME + ' 추천으로 공동구매 할인 적용';
       break;
     }
   }
   // 추천인 할인 항목 추가 (신규 고객 할인 3만원 - 전 등급 동일)
   BENEFITS.splice(2, 0, {
-    key: 'referral', name: '🤝 ' + REFERRAL_CODE + ' 추천 할인', desc: REFERRAL_CODE + ' 추천으로 특별 할인 적용', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1, isReferral: true, autoCheck: true
+    key: 'referral', name: '🤝 ' + REFERRAL_NAME + ' 추천 할인', desc: REFERRAL_NAME + ' 추천으로 특별 할인 적용', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1, isReferral: true, autoCheck: true
   });
 }
 
@@ -249,7 +250,7 @@ var DEFAULT_ROOMS = [
   <script>
   if(REFERRAL_CODE){
     document.getElementById('referralBadge').style.display='block';
-    document.getElementById('referralBadgeText').textContent='🎉 '+REFERRAL_CODE+' 추천 할인 적용중';
+    document.getElementById('referralBadgeText').textContent='🎉 '+REFERRAL_NAME+' 추천 할인 적용중';
   }
   </script>
 
@@ -804,7 +805,7 @@ function copyQuote() {
       phase1Discount += d;
       // HTML 태그 + 이모지 제거하고 깔끔하게
       var cleanName = b.name.replace(/<[^>]*>/g, '').replace(/^[^\w가-힣]+/, '');
-      if (b.isReferral) cleanName = REFERRAL_CODE + ' 추천 할인';
+      if (b.isReferral) cleanName = REFERRAL_NAME + ' 추천 할인';
       phase1Lines.push('  · ' + cleanName + ' ' + b.label);
     }
   });
