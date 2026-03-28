@@ -271,6 +271,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== 설정 =====
 var API_URL = 'https://script.google.com/macros/s/AKfycbxvXvd-TAy_cKwQ2hdT97tVwrF9EXNjNovnE0fkPLCrIuUDigN-pilSya24qIph1AEMwg/exec';
@@ -278,6 +280,22 @@ var KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
 var NOTICE_URL = 'https://gjvk3322-web.github.io/dolbom-dashboard/notice.html';
 var NOTICE_SHORT = 'dolbom.kr/notice'; // 나중에 도메인 연결 시 사용
 var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
+
+// ===== Firebase 마감 연동 =====
+var FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
+firebase.initializeApp({databaseURL:FB_URL});
+var fbDb=firebase.database();
+var CLOSED={};
+fbDb.ref('closedDates').on('value',function(snap){
+  var v=snap.val();
+  CLOSED=v||{};
+  // 이미 선택된 날짜가 마감되면 자동 제거
+  selectedDates=selectedDates.filter(function(d){return !isDateClosed(d);});
+  updateDateDisplay();
+  renderCal();
+  checkSubmit();
+});
+function isDateClosed(dateStr){return !!CLOSED['부산_'+dateStr];}
 
 var PRODUCTS = [
   {name:'1000매트 22T', price:74500, colors:['모던','베이지']},
@@ -375,9 +393,9 @@ function renderCal(){
     var el = document.createElement('div');
     var dt = new Date(calYear, calMonth, d);
     var dayOfWeek = dt.getDay();
-    var isAvail = dt >= minDate && dayOfWeek !== 0;
+    var isAvail = dt >= minDate && dayOfWeek !== 0 && !isDateClosed(dateStr);
     var isPast = dt < today;
-    var isClosed = !isPast && dt >= today && dt < minDate && dayOfWeek !== 0;
+    var isClosed = (!isPast && dt >= today && dt < minDate && dayOfWeek !== 0) || isDateClosed(dateStr);
     var dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     el.className = 'cal-day';
     if(dayOfWeek === 0) el.className += ' sun';
