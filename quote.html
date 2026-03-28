@@ -182,9 +182,8 @@ var INSTALL_THRESHOLD_500 = 100;
 var INSTALL_THRESHOLD_1000 = 25;
 
 var BENEFITS = [
-  { key: 'review_contract', name: '📝 계약 후기 작성 (샘플박스 쿠폰)', desc: '계약 후기 작성 시 샘플박스 3만원 쿠폰 지급', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1 },
   { key: 'group_buy', name: '👨‍👩‍👧‍👦 5인 공동구매 할인', desc: '5인 이상 공동구매 시', type: 'percent', discount: 3, label: '-3%', phase: 1 },
-  { key: 'onnuri', name: '🎫 온누리상품권 결제', desc: '온누리상품권으로 결제 시', type: 'percent', discount: 7, label: '-7%', phase: 1 },
+  { key: 'onnuri', name: '🎫 온누리상품권 결제', desc: '앱에서 할인', type: 'percent', discount: 7, label: '-7%', phase: 1 },
   { key: 'review_event', name: '⭐ 후기 이벤트 (6곳 후기 작성 시)', desc: '최대 110,000원 캐시백', type: 'fixed', discount: 110000, label: '-110,000원', phase: 2 },
 ];
 
@@ -859,7 +858,7 @@ function showCopyOverlay() {
 // 카카오톡 채널 상담 열기 (추천인 자동 포함)
 function openKakaoChat() {
   // 카카오톡 채널 채팅 URL (dolbomconnect)
-  var kakaoUrl = 'https://pf.kakao.com/_dolbomconnect/chat';
+  var kakaoUrl = 'http://pf.kakao.com/_UMyBK/chat';
   
   // 추천인 있으면 클립보드에 추천인 포함 메시지 복사
   if (REFERRAL_CODE) {
