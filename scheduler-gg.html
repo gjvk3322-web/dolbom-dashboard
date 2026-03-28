@@ -1122,7 +1122,7 @@ ${offHtml}<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-s
 
 // 팀별 그룹
 const tm={};const un=[];
-realJobs.forEach(j=>{const t=RA[j.id];if(t&&t.length){const k=[...t].sort().join('+');if(!tm[k])tm[k]={team:[...t].sort(),jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
+realJobs.forEach(j=>{const t=RA[j.id];if(t&&t.length){const k=[...t].sort().join('+');if(!tm[k])tm[k]={team:t.slice().sort((a,b)=>{const ti=teams.findIndex(tt=>tt.includes(a)&&tt.includes(b));if(ti>=0)return teams[ti].indexOf(a)-teams[ti].indexOf(b);return 0}),jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
 
 // 팀설정 순번으로 정렬 (일관된 표시 순서)
 const tmArr=Object.values(tm).sort((a,b)=>{
