@@ -548,7 +548,8 @@ function copyBooking(){
   var memo = document.getElementById('memo').value.trim();
   var product = PRODUCTS[selectedProduct];
   var dateText = dateAny ? '상관없음 (빠른 날짜 배정)' : selectedDates.sort().join(', ');
-  var addr = addrData ? addrData.name + '\n  ' + addrData.address + ' ' + (dong ? dong + ' ' : '') + hosu : '';
+  var dongHo = (dong ? dong + ' ' : '') + (hosu ? hosu : '');
+  var addr = addrData ? addrData.name + '\n  ' + addrData.address + '\n  ' + dongHo : '';
 
   var t = '';
   t += '돌봄매트 시공 예약\n';
