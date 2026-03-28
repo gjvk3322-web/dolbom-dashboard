@@ -152,11 +152,13 @@ localStorage.setItem('dolbom_region','bs');
 <div class="pane on" id="p-sched"><div id="schedView"></div></div>
 <div class="pane" id="p-team"><div id="teamView"></div></div>
 <div class="pane" id="p-fair"><div id="fairView"></div></div>
+<div class="pane" id="p-car"><div id="carView"></div></div>
 
 <nav class="nav">
     <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
     <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
     <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
+    <a onclick="sw('car')" href="#"><span>🚗</span>차량</a>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -281,6 +283,9 @@ db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
 db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
+
+let VEHICLES={}; // {준형: "804서 6771", ...}
+db.ref('vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
 
@@ -1473,19 +1478,71 @@ html+=`</div>`;
 
 document.getElementById('fairView').innerHTML=html}
 
+// ===== 차량배정 =====
+function renderCars(){
+const el=document.getElementById('carView');
+if(!el)return;
+const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+let html=`<div style="padding:8px 0">
+<div style="font-size:16px;font-weight:800;margin-bottom:12px">🚗 차량 배정</div>
+<div style="font-size:12px;color:var(--dim);margin-bottom:16px">직원별 차량번호를 등록하면 알림톡에 자동 포함돼요</div>`;
+
+E.forEach((name,i)=>{
+  const plate=VEHICLES[name]||'';
+  const ec=empColors[i%10];
+  html+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--card2);border-radius:10px;border-left:3px solid ${ec}">
+    <span style="font-weight:700;font-size:14px;color:${ec};min-width:40px">${name}</span>
+    <input id="car_${name}" value="${plate}" placeholder="차량번호 입력" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+    <button onclick="saveCar('${name}')" style="padding:8px 14px;border-radius:8px;border:none;background:${ec}22;color:${ec};font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">저장</button>
+  </div>`;
+});
+
+html+=`<div style="margin-top:16px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border)">
+<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 현재 등록 현황</div>`;
+const registered=E.filter(n=>VEHICLES[n]);
+const unregistered=E.filter(n=>!VEHICLES[n]);
+if(registered.length){
+  html+=registered.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--text)">✅ ${n}: <span style="font-weight:600">${VEHICLES[n]}</span></div>`).join('');
+}
+if(unregistered.length){
+  html+=`<div style="margin-top:6px">`;
+  html+=unregistered.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--red)">❌ ${n}: 미등록</div>`).join('');
+  html+=`</div>`;
+}
+html+=`</div></div>`;
+
+el.innerHTML=html;
+}
+
+function saveCar(name){
+  const input=document.getElementById('car_'+name);
+  const plate=input.value.trim();
+  if(!plate){
+    const next={...VEHICLES};
+    delete next[name];
+    fbSave('vehicles',Object.keys(next).length?next:null);
+    toast(name+' 차량 삭제됨','ok');
+  } else {
+    const next={...VEHICLES};
+    next[name]=plate;
+    fbSave('vehicles',next);
+    toast(name+' → '+plate+' 저장!','ok');
+  }
+}
+
 // ===== Nav =====
 function sw(n){
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
-const tabs=['sched','team','fair'];
+const tabs=['sched','team','fair','car'];
 document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
 renderAll()}
 
 let renderTimer=null;
 function renderAll(){
 if(renderTimer)clearTimeout(renderTimer);
-renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair()},150);
+renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair();renderCars()},150);
 }
 
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
