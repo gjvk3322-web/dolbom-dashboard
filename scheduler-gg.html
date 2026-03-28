@@ -970,9 +970,12 @@ setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 // ===== 후기이벤트 메시지 복사 =====
 function copyReviewMsg(phone){
   const cleanPhone=phone.replace(/-/g,'').replace(/ /g,'').trim();
+  const unpaid=prompt('미결제 금액을 입력하세요 (없으면 0)','0');
+  if(unpaid===null)return;
+  const unpaidNum=parseInt(unpaid)||0;
   const reviewUrl='https://gjvk3322-web.github.io/dolbom-dashboard/review-event.html?phone='+cleanPhone;
-  const referralUrl='https://gjvk3322-web.github.io/dolbom-dashboard/referral.html';
-  const txt=`안녕하세요, 고객님.
+  const referralUrl='http://dolbommat.notion.site';
+  let txt=`안녕하세요, 고객님.
 시공이 무사히 완료되었습니다.
 고객님의 소중한 공간을 더 안전하고 조용하게 만들어드릴 수 있어 매우 기쁩니다.
 
@@ -987,7 +990,13 @@ ${reviewUrl}
 
 5. 🎟️ 지인쿠폰 사용방법입니다!
 ${referralUrl}
-
+`;
+  if(unpaidNum>0){
+    txt+=`
+6. 잔금은 ( ${unpaidNum.toLocaleString()} )원 결제 해주시고 내역 보내주시면 되세요! 잔금 결제 후 예약금 받으실 계좌번호 주시면 저녁에 입금드리겠습니다!
+`;
+  }
+  txt+=`
 💌 문의사항은 언제든지 돌봄매트에 연락주세요.
 고객님의 조용하고 평온한 일상을 위한
 최고의 선택이 될 수 있도록 항상 최선을 다하겠습니다.
