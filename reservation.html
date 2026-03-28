@@ -243,7 +243,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="fg full" style="margin-top:4px">
       <label>📋 카톡 채널명 생성</label>
       <div style="display:flex;gap:6px;align-items:center">
-        <input type="text" id="fRegion" placeholder="지역명" style="flex:1;max-width:140px">
+        <input type="text" id="fRegion" placeholder="지역명" maxlength="2" style="flex:1;max-width:140px">
         <button type="button" onclick="generateChannelName()" style="padding:11px 14px;border:1.5px solid var(--accent);border-radius:10px;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">생성</button>
       </div>
       <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:13px;font-weight:600;color:#1a1a1a;display:none;align-items:center;justify-content:space-between;cursor:pointer" onclick="copyChannel()">
@@ -573,6 +573,7 @@ function generateChannelName(){
   const region=document.getElementById('fRegion').value.trim();
   const product=document.getElementById('fProduct1').value;
   if(!time||!date||!region||!product){showToast('⚠️ 시간, 시공일, 지역, 제품을 먼저 입력하세요');return;}
+  if(region.length>2){showToast('⚠️ 지역명은 2글자까지만 가능해요');return;}
   const timeCode=time==='오전'?'5':'9';
   const ds=date.replace(/-/g,'');
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
