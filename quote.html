@@ -622,12 +622,35 @@ function buildPresets() {
   etcTitle.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
   etcTitle.textContent = '기타 평수';
   etcCol.appendChild(etcTitle);
-  var etcBtn = document.createElement('div');
-  etcBtn.className = 'qty-chip';
-  etcBtn.style.cssText = 'background:#FEE500;color:#3C1E1E;font-weight:600;text-align:center;cursor:pointer;padding:8px 4px;font-size:11px;line-height:1.4';
-  etcBtn.innerHTML = '💬 카톡 상담으로<br>문의해주세요';
-  etcBtn.onclick = function(){ window.open('http://pf.kakao.com/_UMyBK/chat','_blank'); };
-  etcCol.appendChild(etcBtn);
+  var etcInput = document.createElement('div');
+  etcInput.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:6px';
+  etcInput.innerHTML = '<input type="number" id="etcPyeong" placeholder="평수" style="width:50px;padding:6px;border:1.5px solid #e0ddd6;border-radius:6px;font-size:13px;text-align:center;font-family:inherit;outline:none" onfocus="this.style.borderColor=\'#2E7D32\'" onblur="this.style.borderColor=\'#e0ddd6\'"><span style="font-size:12px;color:#999">평</span>';
+  etcCol.appendChild(etcInput);
+  var scopes = ['거실+복도','거실+복도+아일랜드','거실+복도+주방'];
+  var ratios = {
+    '거실+복도': isExpand ? 4.38 : 3.75,
+    '거실+복도+아일랜드': isExpand ? 4.79 : 4.38,
+    '거실+복도+주방': isExpand ? 5.21 : 4.79
+  };
+  scopes.forEach(function(scope) {
+    var chip = document.createElement('div');
+    chip.className = 'qty-chip';
+    chip.style.cssText = 'font-size:10px;padding:5px 4px';
+    chip.textContent = scope.replace('거실+복도+','복도+').replace('거실+복도','거실+복도');
+    chip.onclick = function() {
+      var py = parseInt(document.getElementById('etcPyeong').value) || 0;
+      if (py <= 0) { showToast('평수를 입력해주세요'); return; }
+      var base500 = Math.ceil(py * ratios[scope]);
+      var baseQty = isWideRoom ? Math.ceil(base500 * 1.13) : base500;
+      var qty = is1000 ? Math.ceil(baseQty / 4) : baseQty;
+      selectedPresetInfo = py + '평 ' + typeLabel + (isWideRoom ? '(넓은편)' : '') + ' ' + scope;
+      document.getElementById('qtyInput').value = qty;
+      container.querySelectorAll('.qty-chip').forEach(function(c){c.style.background='';c.style.color='';c.style.border='';});
+      chip.style.background='#2E7D32';chip.style.color='#fff';chip.style.border='1.5px solid #2E7D32';
+      calculate();
+    };
+    etcCol.appendChild(chip);
+  });
   grid1.appendChild(etcCol);
   container.appendChild(grid1);
 
