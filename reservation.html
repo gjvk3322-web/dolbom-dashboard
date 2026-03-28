@@ -254,7 +254,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
+firebase.initializeApp({databaseURL:FB_URL});
+const fbDb=firebase.database();
+
 const API_URL = 'https://script.google.com/macros/s/AKfycbz9i9S2mWNJhLcA6eWmBcgbcwqUBPvFULLHasYsgdlIEHzssdn_5pgBNOBVdWqXibbymg/exec';
 
 let currentTeam='부산',currentYear=2026,currentMonth=3,selectedDate=null;
@@ -262,13 +268,22 @@ let scheduleData={};  // {date: {am:[], pm:[]}}
 let employees=[];
 let highlightDates=[];
 let lastSync='';
-let closedDates=new Set();
+let CLOSED={};
 
-function isClosed(ds){return closedDates.has(currentTeam+'_'+ds);}
+// Firebase 실시간 마감 리스너
+fbDb.ref('closedDates').on('value',snap=>{
+  const v=snap.val();
+  if(v)CLOSED=v;else CLOSED={};
+  renderCalendar();
+  if(selectedDate) renderDayDetail(selectedDate);
+});
+
+function isClosed(ds){return !!CLOSED[currentTeam+'_'+ds];}
 function toggleClose(ds){
   const key=currentTeam+'_'+ds;
-  if(closedDates.has(key))closedDates.delete(key);
-  else closedDates.add(key);
+  const next={...CLOSED};
+  if(next[key]){delete next[key]}else{next[key]=true}
+  fbDb.ref('closedDates').set(next);
   renderCalendar();
   renderDayDetail(ds);
 }
@@ -382,7 +397,7 @@ function renderCalendar(){
     const ratio=maxPerDay>0?used/maxPerDay:0;
     let dc='dot-gray';
     if(dow!==0&&!isPast){
-      if(isClosed(ds))dc='dot-gray';
+      if(isClosed(ds))dc='dot-red';
       else if(used===0)dc='dot-gray';
       else if(ratio>=0.8)dc='dot-red';
       else if(ratio>=0.4)dc='dot-orange';
@@ -515,6 +530,7 @@ function submitReservation(){
   const p2=document.getElementById('fProduct2').value;
 
   if(!time||!date||!address||!size||!scope||!p1||!p2){showToast('⚠️ 필수 항목을 모두 입력해주세요');return;}
+  if(isClosed(date)){showToast('⚠️ 해당 날짜는 예약이 마감되었습니다');return;}
   if(p1!==p2){showToast('⚠️ 제품을 한 번 더 확인해주세요!');document.getElementById('fProduct2').classList.add('error');return;}
 
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';

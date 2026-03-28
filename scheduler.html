@@ -27,6 +27,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .daycard-date{font-size:18px;font-weight:900;letter-spacing:-.5px}.daycard-dow{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px}
 .dow-mon{background:rgba(90,200,250,.12);color:var(--blue)}.dow-tue{background:rgba(48,209,88,.12);color:var(--green)}.dow-wed{background:rgba(255,214,10,.12);color:var(--yellow)}.dow-thu{background:rgba(191,90,242,.12);color:var(--purple)}.dow-fri{background:rgba(255,100,130,.12);color:var(--pink)}.dow-sat{background:rgba(90,200,250,.12);color:var(--blue)}.dow-sun{background:rgba(255,69,58,.12);color:var(--red)}
 .daycard-off{padding:6px 18px;font-size:11px;color:var(--red);font-weight:500}
+.close-btn{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--card2);color:var(--dim);cursor:pointer;font-family:var(--font);transition:all .15s}
+.close-btn:active{transform:scale(.95)}
+.close-btn.is-closed{background:var(--red);border-color:var(--red);color:#fff}
+.daycard.day-closed{opacity:.6;border:2px dashed var(--red) !important}
 .daycard-body{padding:4px 14px 14px}
 
 /* Team Job Block - 토스 카드 */
@@ -252,6 +256,7 @@ let CF={};  // 출발확인
 let DIST={};  // 거리 캐시 {주소: km}
 let SKIP=new Set(); // 수동 취소된 건 (자동배정 제외)
 let LOCK=new Set(); // 배정 확정(잠금)된 건 (자동배정 변경 불가)
+let CLOSED={}; // 날짜별 마감 {부산_2026-03-30: true}
 let J=[];
 let prevJobIds=new Set();
 let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
@@ -281,8 +286,18 @@ db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
 db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
+db.ref('closedDates').on('value',snap=>{const v=snap.val();if(v)CLOSED=v;else CLOSED={};fbRender()});
 
 function fbSave(key,val){db.ref(key).set(val)}
+
+// ===== 날짜별 마감 =====
+function isClosed(date){return !!CLOSED['부산_'+date]}
+function toggleClosed(date){
+  const key='부산_'+date;
+  const next={...CLOSED};
+  if(next[key]){delete next[key]}else{next[key]=true}
+  fbSave('closedDates',next);
+}
 
 // 배정 결과를 구글시트에 역기록
 let sheetSyncTimer=null;
@@ -1074,9 +1089,11 @@ if(!realJobs.length){
 const onDuty=E.filter(e=>!offs.has(e));
 const ecl2=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const dutyHtml=onDuty.length&&!isSun?'<div style="padding:4px 8px;font-size:11px;color:var(--dim)">👷 출근: '+onDuty.map(e=>{const ei=E.indexOf(e);return '<span style="font-weight:700;color:'+ecl2[ei%10]+'">'+e+'</span>'}).join(' · ')+'</div>':'';
-return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
-${offHtml}<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-size:13px;padding:8px">🔴 일요일</div>':'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'+dutyHtml}</div></div>`}
+const closed=isClosed(date);
+const closeBtn=isSun?'':`<button class="close-btn${closed?' is-closed':''}" onclick="event.stopPropagation();toggleClosed('${date}')">${closed?'🔴 마감됨':'마감'}</button>`;
+return `<div class="daycard${closed?' day-closed':''}" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><div style="display:flex;align-items:center;gap:6px">${closeBtn}<span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div></div>
+${offHtml}<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-size:13px;padding:8px">🔴 일요일</div>':closed?'<div style="color:var(--red);font-size:13px;padding:8px;text-align:center;font-weight:600">예약 마감</div>':'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'+dutyHtml}</div></div>`}
 
 // 팀별 그룹
 const tm={};const un=[];
@@ -1170,8 +1187,10 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 </div>`}).join('');
 body+=`</div>`}
 
-return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
+const closed2=isClosed(date);
+const closeBtn2=`<button class="close-btn${closed2?' is-closed':''}" onclick="event.stopPropagation();toggleClosed('${date}')">${closed2?'🔴 마감됨':'마감'}</button>`;
+return `<div class="daycard${closed2?' day-closed':''}" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><div style="display:flex;align-items:center;gap:6px">${closeBtn2}<span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div></div>
 ${offHtml}${(()=>{
 // 출근했는데 배정 못 받은 직원 표시
 const assigned=new Set();
