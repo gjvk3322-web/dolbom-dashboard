@@ -2,7 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>돌봄매트 맞춤 견적</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
@@ -448,7 +454,7 @@ var DEFAULT_ROOMS = [
     </div>
     <div class="result-divider"></div>
     <div class="result-total">
-      <span class="result-total-label">예상 견적</span>
+      <span class="result-total-label">예상 체감가</span>
       <span class="result-total-val" id="rTotal">0원</span>
     </div>
     <div class="result-row dim">
@@ -464,7 +470,7 @@ var DEFAULT_ROOMS = [
         <span class="val" id="rReviewDiscount">-100,000원</span>
       </div>
       <div class="result-total">
-        <span class="result-total-label" style="color:#FFD54F">최종 견적</span>
+        <span class="result-total-label" style="color:#FFD54F">최종 체감가</span>
         <span class="result-total-val" id="rFinalTotal" style="color:#FFD54F">0원</span>
       </div>
       <div class="result-row dim">
@@ -486,7 +492,7 @@ var DEFAULT_ROOMS = [
   </div>
 
   <div class="bottom-actions">
-    <button class="action-btn action-copy" onclick="copyQuote()">견적서 복사</button>
+    <button class="action-btn action-copy" onclick="copyQuote()">체감가 복사</button>
     <a href="https://gjvk3322-web.github.io/dolbom-dashboard/map.html" target="_blank" class="action-btn" style="background:#d4eef5;color:#2a6d82;text-align:center;text-decoration:none;font-size:13px">📍 우리집 근처 시공 사례</a>
   </div>
   <div style="text-align:center;margin-bottom:40px">
@@ -500,7 +506,7 @@ var DEFAULT_ROOMS = [
 <div class="copy-overlay" id="copyOverlay" onclick="closeCopyOverlay(event)">
   <div class="copy-modal">
     <div class="copy-check">✅</div>
-    <div class="copy-title">견적서가 복사되었습니다!</div>
+    <div class="copy-title">체감가가 복사되었습니다!</div>
     <div class="copy-sub">카카오톡 상담원에게<br><strong>붙여넣기</strong> 해주시면 바로 안내드리겠습니다</div>
 
     <div class="copy-feature">
@@ -514,7 +520,7 @@ var DEFAULT_ROOMS = [
         <strong style="color:#2E7D32">곰팡이 걱정 제로!</strong> 6,700가정이 검증했습니다
       </div>
     </div>
-    <div id="kakaoRefNote" style="display:none;font-size:11px;color:#999;text-align:center;margin-top:8px">* 추천인 정보가 견적서에 포함되어 있습니다</div>
+    <div id="kakaoRefNote" style="display:none;font-size:11px;color:#999;text-align:center;margin-top:8px">* 추천인 정보가 체감가에 포함되어 있습니다</div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="copy-close" onclick="closeCopyOverlay()" style="flex:1">확인</button>
       <a onclick="openKakaoChat()" style="flex:1;display:flex;align-items:center;justify-content:center;padding:14px;background:#FEE500;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer">💬 카톡 상담</a>
@@ -858,12 +864,12 @@ function calculate() {
   // UI 업데이트
   var presetRow = document.getElementById('rPresetRow');
   if (selectedPresetInfo) {
-    document.getElementById('rPresetInfo').textContent = '🏠 ' + selectedPresetInfo;
+    document.getElementById('rPresetInfo').textContent = '🏠 ' + selectedPresetInfo + ' · ' + qty + '장';
     presetRow.style.display = 'block';
   } else {
     var typeInfo = isExpand ? '확장형' : '비확장형';
     var sInfo = isWideRoom ? ' (넓은편)' : '';
-    document.getElementById('rPresetInfo').textContent = '🏠 ' + typeInfo + sInfo + ' · 직접 입력';
+    document.getElementById('rPresetInfo').textContent = '🏠 ' + typeInfo + sInfo + ' · ' + qty + '장';
     presetRow.style.display = 'block';
   }
   document.getElementById('rProduct').textContent = selectedProduct.name + ' ' + selectedProduct.thickness;
@@ -923,14 +929,14 @@ function copyQuote() {
   var finalPerSheet = Math.round(finalTotal / qty);
 
   var t = '';
-  t += '돌봄매트 견적서\n';
+  t += '돌봄매트 체감가\n';
   t += '────────────────\n';
   if (REFERRAL_CODE) t += '추천인: ' + REFERRAL_NAME + '\n';
-  if (selectedPresetInfo) t += '🏠 ' + selectedPresetInfo + '\n';
+  if (selectedPresetInfo) t += '🏠 ' + selectedPresetInfo + ' · ' + qty + '장\n';
   else {
     var typeInfo = isExpand ? '확장형' : '비확장형';
     var sizeInfo = isWideRoom ? ' (넓은편)' : '';
-    t += '🏠 ' + typeInfo + sizeInfo + ' · 직접 입력\n';
+    t += '🏠 ' + typeInfo + sizeInfo + ' · ' + qty + '장\n';
   }
   t += '\n';
   t += '■ ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
@@ -942,12 +948,12 @@ function copyQuote() {
     t += phase1Lines.join('\n') + '\n';
   }
   t += '\n────────────────\n';
-  t += '예상 견적  ' + total.toLocaleString() + '원\n';
+  t += '예상 체감가  ' + total.toLocaleString() + '원\n';
   t += sizeLabel + ' 장당  ' + perSheet.toLocaleString() + '원\n';
   if (hasPhase2) {
     t += '\n────────────────\n';
     t += '★ 후기 이벤트 참여 시\n';
-    t += '최종 견적  ' + finalTotal.toLocaleString() + '원\n';
+    t += '최종 체감가  ' + finalTotal.toLocaleString() + '원\n';
     t += sizeLabel + ' 장당  ' + finalPerSheet.toLocaleString() + '원\n';
   }
   var totalDiscount = phase1Discount + phase2Discount;
