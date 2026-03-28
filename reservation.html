@@ -180,6 +180,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div><div class="sched-col-title" id="amTitle">☀️ 오전</div><div id="amSlots"></div></div>
     <div><div class="sched-col-title" id="pmTitle">🌙 오후</div><div id="pmSlots"></div></div>
   </div>
+  <div class="schedule-cols" style="margin-top:6px">
+    <div><div class="sched-col-title">🔧 AS</div><div id="asSlots"></div></div>
+    <div><div class="sched-col-title">📏 실측</div><div id="msSlots"></div></div>
+  </div>
 </div>
 
 <div class="card form-section" id="formSection">
@@ -187,7 +191,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="form-grid">
     <div class="fg">
       <label>시간 <span class="req">*</span></label>
-      <select id="fTime"><option value="">선택</option><option value="오전">오전</option><option value="오후">오후</option></select>
+      <select id="fTime"><option value="">선택</option><option value="오전">오전</option><option value="오후">오후</option><option value="AS">AS</option><option value="실측">실측</option></select>
     </div>
     <div class="fg">
       <label>시공일 <span class="req">*</span></label>
@@ -343,7 +347,7 @@ function parseScheduleData(rows){
       }
     }
     if(!dateStr || !time) return;
-    if(!scheduleData[dateStr]) scheduleData[dateStr]={am:[],pm:[]};
+    if(!scheduleData[dateStr]) scheduleData[dateStr]={am:[],pm:[],as:[],ms:[]};
     const entry = {
       address: r['주소']||'',
       product: r['제품']||'',
@@ -357,8 +361,10 @@ function parseScheduleData(rows){
       car: r['차량번호']||'',
       row: r.row
     };
-    if(time==='오전'||time==='AS') scheduleData[dateStr].am.push(entry);
+    if(time==='오전') scheduleData[dateStr].am.push(entry);
     else if(time==='오후') scheduleData[dateStr].pm.push(entry);
+    else if(time==='AS') scheduleData[dateStr].as.push(entry);
+    else if(time==='실측') scheduleData[dateStr].ms.push(entry);
   });
 }
 
@@ -460,6 +466,22 @@ function renderDayDetail(ds){
   document.getElementById('amTitle').innerHTML=`☀️ 오전 <span style="font-size:11px;color:${amRemain>0?'var(--green)':'var(--red)'};">(${amRemain>0?amRemain+'건 가능':'마감'})</span>`;
   document.getElementById('pmTitle').innerHTML=`🌙 오후 <span style="font-size:11px;color:${pmRemain>0?'var(--green)':'var(--red)'};">(${pmRemain>0?pmRemain+'건 가능':'마감'})</span>`;
 
+  // AS 슬롯 (마감 무관, 항상 접수 가능)
+  let asH='';
+  (sc.as||[]).forEach((s,i)=>{
+    asH+=`<div class="sched-item" onclick="editItem('AS','${ds}',${i})" style="cursor:pointer;border-left-color:var(--orange)"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
+  });
+  asH+=`<div class="sched-empty" onclick="openForm('AS','${ds}')">+ AS 접수</div>`;
+  document.getElementById('asSlots').innerHTML=asH;
+
+  // 실측 슬롯 (마감 무관, 항상 접수 가능)
+  let msH='';
+  (sc.ms||[]).forEach((s,i)=>{
+    msH+=`<div class="sched-item" onclick="editItem('실측','${ds}',${i})" style="cursor:pointer;border-left-color:var(--gyeonggi)"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
+  });
+  msH+=`<div class="sched-empty" onclick="openForm('실측','${ds}')">+ 실측 접수</div>`;
+  document.getElementById('msSlots').innerHTML=msH;
+
   document.getElementById('dayDetail').classList.add('show');
 }
 
@@ -477,8 +499,8 @@ function openForm(time,ds){
 }
 
 function editItem(time,ds,index){
-  const sc=scheduleData[ds]||{am:[],pm:[]};
-  const items=time==='오전'?sc.am:sc.pm;
+  const sc=scheduleData[ds]||{am:[],pm:[],as:[],ms:[]};
+  const items=time==='오전'?sc.am:time==='오후'?sc.pm:time==='AS'?(sc.as||[]):(sc.ms||[]);
   const item=items[index];
   if(!item)return;
   editMode={time,date:ds,index,row:item.row};
