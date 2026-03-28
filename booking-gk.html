@@ -397,10 +397,10 @@ function renderCal(){
     var el = document.createElement('div');
     var dt = new Date(calYear, calMonth, d);
     var dayOfWeek = dt.getDay();
+    var dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var isAvail = dt >= minDate && dayOfWeek !== 0 && !isDateClosed(dateStr);
     var isPast = dt < today;
     var isClosed = (!isPast && dt >= today && dt < minDate && dayOfWeek !== 0) || isDateClosed(dateStr);
-    var dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     el.className = 'cal-day';
     if(dayOfWeek === 0) el.className += ' sun';
     if(dayOfWeek === 6) el.className += ' sat';
