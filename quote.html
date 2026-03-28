@@ -821,7 +821,7 @@ function copyQuote() {
   var t = '';
   t += '돌봄매트 견적서\n';
   t += '────────────────\n';
-  if (REFERRAL_CODE) t += '추천인: ' + REFERRAL_CODE + '\n';
+  if (REFERRAL_CODE) t += '추천인: ' + REFERRAL_NAME + '\n';
   t += '\n';
   t += '■ ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
   t += '  장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
@@ -885,7 +885,7 @@ function openKakaoChat() {
   
   // 추천인 있으면 클립보드에 추천인 포함 메시지 복사
   if (REFERRAL_CODE) {
-    var msg = '견적 문의드립니다. (추천인: ' + REFERRAL_CODE + ')';
+    var msg = '견적 문의드립니다. (' + REFERRAL_NAME + ' 추천)';
     navigator.clipboard.writeText(msg).catch(function(){});
   }
   
