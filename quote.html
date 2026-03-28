@@ -182,9 +182,10 @@ var INSTALL_THRESHOLD_500 = 100;
 var INSTALL_THRESHOLD_1000 = 25;
 
 var BENEFITS = [
+  { key: 'review_contract', name: '📝 계약 후기 작성 (샘플박스 쿠폰)', desc: '계약 후기 작성 시 샘플박스 3만원 쿠폰 지급', type: 'fixed', discount: 30000, label: '-30,000원', phase: 1 },
   { key: 'group_buy', name: '👨‍👩‍👧‍👦 5인 공동구매 할인', desc: '5인 이상 공동구매 시', type: 'percent', discount: 3, label: '-3%', phase: 1 },
-  { key: 'onnuri', name: '🎫 온누리상품권 결제', desc: '앱에서 할인', type: 'percent', discount: 7, label: '-7%', phase: 1 },
-  { key: 'review_event', name: '⭐ 후기 이벤트 (6곳 후기 작성 시)', desc: '최대 110,000원 캐시백', type: 'fixed', discount: 110000, label: '-110,000원', phase: 2 },
+  { key: 'onnuri', name: '🎫 온누리상품권 결제', desc: '디지털온누리 앱에서 할인', type: 'percent', discount: 7, label: '-7%', phase: 1 },
+  { key: 'review_event', name: '⭐ 후기 이벤트 (5곳 후기 작성 시)', desc: '최대 80,000원 캐시백', type: 'fixed', discount: 80000, label: '-80,000원', phase: 2 },
 ];
 
 // 추천인 파라미터 읽기
@@ -206,7 +207,6 @@ if (REFERRAL_CODE) {
 
 // 후기 이벤트 상세 항목
 var REVIEW_DETAILS = [
-  { icon: '📝', name: '계약 후기 작성', amount: 30000 },
   { icon: '📸', name: '인스타그램 후기', amount: 10000 },
   { icon: '💬', name: '단지 단톡방 업로드', amount: 10000 },
   { icon: '⭐', name: '첫날 후기 1곳', amount: 20000 },
