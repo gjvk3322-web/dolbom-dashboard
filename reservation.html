@@ -594,12 +594,19 @@ function generateChannelName(){
   const date=document.getElementById('fDate').value;
   const region=document.getElementById('fRegion').value.trim();
   const product=document.getElementById('fProduct1').value;
-  if(!time||!date||!region||!product){showToast('⚠️ 시간, 시공일, 지역, 제품을 먼저 입력하세요');return;}
+  const isExtra=time==='AS'||time==='실측';
+  if(!time||!date||!region){showToast('⚠️ 시간, 시공일, 지역을 먼저 입력하세요');return;}
+  if(!isExtra&&!product){showToast('⚠️ 제품을 먼저 선택하세요');return;}
   if(region.length>2){showToast('⚠️ 지역명은 2글자까지만 가능해요');return;}
-  const timeCode=time==='오전'?'5':'9';
   const ds=date.replace(/-/g,'');
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
-  const name=`${timeCode}/${region}/${product})${prefix}`;
+  let name;
+  if(isExtra){
+    name=`${time.toLowerCase()}/${region})${prefix}`;
+  } else {
+    const timeCode=time==='오전'?'5':'9';
+    name=`${timeCode}/${region}/${product})${prefix}`;
+  }
   document.getElementById('channelText').textContent=name;
   document.getElementById('channelResult').style.display='flex';
   copyChannel();
