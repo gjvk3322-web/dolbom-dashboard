@@ -55,6 +55,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .prod-card .prod-name{font-size:14px;font-weight:600}
 .prod-card .prod-spec{font-size:11px;color:#999;margin-top:2px}
 .prod-card .prod-price{font-size:12px;font-weight:600;color:#2E7D32;margin-top:3px}
+.opt-pill{padding:6px 12px;border:1.5px solid #e0ddd6;border-radius:20px;background:#fff;font-size:11px;font-family:inherit;cursor:pointer;transition:all .2s;color:#666}
+.opt-pill:hover{border-color:#2E7D32}
+.toggle-box{flex:1;border:1.5px solid #e0ddd6;border-radius:8px;padding:6px 8px;background:#fff}
+.toggle-box-label{font-size:10px;color:#999;display:block;text-align:center;margin-bottom:4px}
+.toggle-box-btns{display:flex;gap:0;border-radius:6px;overflow:hidden;border:1px solid #e0ddd6}
+.tb-btn{flex:1;padding:7px 4px;border:none;background:#fff;font-size:11px;font-family:inherit;cursor:pointer;color:#666;transition:all .2s}
+.tb-btn.active{background:#2E7D32;color:#fff;font-weight:600}
+.pyeong-quick{padding:4px 10px;border:1px solid #e0ddd6;border-radius:14px;background:#fff;font-size:11px;font-family:inherit;cursor:pointer;color:#666;transition:all .2s}
+.pyeong-quick:hover{border-color:#2E7D32;color:#2E7D32}
+.pyeong-quick.active{background:#2E7D32;color:#fff;border-color:#2E7D32}
+.scope-btn{flex:1;padding:10px 6px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;transition:all .2s;color:#666;text-align:center}
+.scope-btn.active{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32;font-weight:600}
 
 .qty-row{display:flex;align-items:center;gap:10px}
 .qty-label{font-size:13px;color:#666;min-width:65px}
@@ -299,7 +311,7 @@ var DEFAULT_ROOMS = [
     <div class="compare-box" id="compareBox">
       <div class="compare-layer compare-right" id="rightLayer"></div>
       <div class="compare-layer compare-left" id="leftLayer"></div>
-      <span class="compare-label label-left" id="labelLeft">타사 매트 700mm</span>
+      <span class="compare-label label-left" id="labelLeft">타사 매트 600mm</span>
       <span class="compare-label label-right">돌봄매트 1,000mm</span>
       <div class="slider-line" id="sliderLine"></div>
       <div class="slider-handle" id="sliderHandle">
@@ -307,7 +319,7 @@ var DEFAULT_ROOMS = [
       </div>
     </div>
     <div class="size-info">
-      <span>타사 <strong id="sizeLeftLabel">700mm</strong></span>
+      <span>타사 <strong id="sizeLeftLabel">600mm</strong></span>
       <span>돌봄매트 <strong>1,000mm</strong></span>
     </div>
   </div>
@@ -335,29 +347,59 @@ var DEFAULT_ROOMS = [
     </div>
   </div>
 
-  <!-- 수량 입력 -->
+  <!-- 수량 계산 -->
   <div class="card">
-    <div class="card-title">📏 수량 입력</div>
-    <div class="qty-row">
-      <span class="qty-label">예상 장수</span>
-      <input type="number" class="qty-input" id="qtyInput" value="" placeholder="0" oninput="selectedPresetInfo='';calculate()">
-      <span class="qty-unit">장</span>
+    <div class="card-title">📏 수량 계산</div>
+    
+    <!-- 평수 입력 + 빠른 선택 -->
+    <div style="font-size:12px;color:#666;margin-bottom:6px">우리집 평수를 입력하거나 선택해주세요</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:4px;border:1.5px solid #2E7D32;border-radius:8px;padding:6px 12px;background:#fff;height:36px;flex:1;max-width:140px">
+        <input type="number" id="pyeongInput" placeholder="직접 입력" style="width:100%;border:none;font-size:15px;font-weight:600;text-align:center;font-family:inherit;outline:none;color:#2E7D32" oninput="calcFromPyeong()">
+        <span style="font-size:13px;color:#2E7D32;font-weight:600">평</span>
+      </div>
+      <button class="pyeong-quick" onclick="setPyeong(34)" style="height:36px;padding:0 14px">34평</button>
+      <button class="pyeong-quick" onclick="setPyeong(30)" style="height:36px;padding:0 14px">30평</button>
+      <button class="pyeong-quick" onclick="setPyeong(24)" style="height:36px;padding:0 14px">24평</button>
     </div>
+
+    <!-- 옵션 토글 -->
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <div class="toggle-box">
+        <span class="toggle-box-label">확장여부</span>
+        <div class="toggle-box-btns">
+          <button class="tb-btn active" id="toggleExpand" onclick="setExpand(true)">확장형</button>
+          <button class="tb-btn" id="toggleNoExpand" onclick="setExpand(false)">비확장형</button>
+        </div>
+      </div>
+      <div class="toggle-box">
+        <span class="toggle-box-label">거실사이즈</span>
+        <div class="toggle-box-btns">
+          <button class="tb-btn active" id="toggleSizeNormal" onclick="setRoomSize(false)">평균</button>
+          <button class="tb-btn" id="toggleSizeWide" onclick="setRoomSize(true)">넓은편</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- hidden qty -->
+    <input type="hidden" id="qtyInput" value="">
+
+    <!-- 시공범위 선택 -->
+    <div id="scopeArea" style="margin-top:10px">
+      <div style="font-size:11px;color:#999;margin-bottom:6px">시공 범위</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button class="scope-btn" onclick="selectScope('거실+복도',0)">거실+복도</button>
+        <button class="scope-btn" onclick="selectScope('거실+복도+아일랜드',1)">거실+복도+아일랜드</button>
+        <button class="scope-btn" onclick="selectScope('거실+복도+주방',2)">거실+복도+주방</button>
+      </div>
+      <div id="autoQtyResult" style="display:none;margin-top:8px;padding:8px 12px;background:#E8F5E9;border-radius:8px;font-size:13px;color:#2E7D32;font-weight:600;text-align:center"></div>
+    </div>
+
+    <!-- 기타 문의 -->
     <div style="margin-top:12px">
-      <div style="font-size:12px;color:#999;margin-bottom:6px">아파트 타입</div>
-      <div class="toggle-wrap">
-        <button class="toggle-btn" id="toggleExpand" onclick="setExpand(true)" style="background:#2E7D32;color:#fff;font-weight:600">확장형</button>
-        <button class="toggle-btn" id="toggleNoExpand" onclick="setExpand(false)" style="background:#fff;color:#666;font-weight:400">비확장형</button>
-      </div>
+      <div style="font-size:11px;color:#999;margin-bottom:4px">기타 궁금하신 내용</div>
+      <textarea id="etcMemo" placeholder="예) 방 추가 시공, 현관, 드레스룸 등" style="width:100%;padding:10px 12px;border:1.5px solid #e0ddd6;border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:none;height:50px;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e0ddd6'"></textarea>
     </div>
-    <div style="margin-top:8px">
-      <div style="font-size:12px;color:#999;margin-bottom:6px">우리집 거실 크기</div>
-      <div class="toggle-wrap">
-        <button class="toggle-btn" id="toggleSizeNormal" onclick="setRoomSize(false)" style="background:#2E7D32;color:#fff;font-weight:600">평균이에요</button>
-        <button class="toggle-btn" id="toggleSizeWide" onclick="setRoomSize(true)" style="background:#fff;color:#666;font-weight:400">넓은 편이에요</button>
-      </div>
-    </div>
-    <div style="margin-top:12px" id="presetBtns"></div>
 
     <!-- 치수 계산기 (접기/펼치기) -->
     <div class="dim-toggle" id="dimToggle" onclick="toggleDim()">
@@ -482,7 +524,7 @@ var DEFAULT_ROOMS = [
 
 <script>
 // ===== 사이즈 비교 슬라이더 =====
-var currentCompareSize = 700;
+var currentCompareSize = 600;
 var sliderPos = 50;
 var isDragging = false;
 
@@ -490,7 +532,7 @@ var isDragging = false;
   var container = document.getElementById('sizeBtns');
   COMPARE_SIZES.forEach(function(size) {
     var btn = document.createElement('button');
-    btn.className = 'size-btn' + (size === 700 ? ' active' : '');
+    btn.className = 'size-btn' + (size === 600 ? ' active' : '');
     btn.textContent = size + 'mm';
     btn.onclick = function() {
       currentCompareSize = size;
@@ -547,126 +589,72 @@ function selectProductCard(idx) {
   document.getElementById('prod'+idx).classList.add('active');
   document.getElementById('qtyInput').value = '';
   document.getElementById('resultArea').style.display = 'none';
-  buildPresets();
+  calcFromPyeong();
   calcAllDim();
 }
 
 function setExpand(expand) {
   isExpand = expand;
-  document.getElementById('toggleExpand').style.background = expand ? '#2E7D32' : '#fff';
-  document.getElementById('toggleExpand').style.color = expand ? '#fff' : '#666';
-  document.getElementById('toggleExpand').style.fontWeight = expand ? '600' : '400';
-  document.getElementById('toggleNoExpand').style.background = expand ? '#fff' : '#2E7D32';
-  document.getElementById('toggleNoExpand').style.color = expand ? '#666' : '#fff';
-  document.getElementById('toggleNoExpand').style.fontWeight = expand ? '400' : '600';
-  buildPresets();
+  document.getElementById('toggleExpand').className = expand ? 'tb-btn active' : 'tb-btn';
+  document.getElementById('toggleNoExpand').className = expand ? 'tb-btn' : 'tb-btn active';
+  calcFromPyeong();
 }
 
 function setRoomSize(wide) {
   isWideRoom = wide;
-  document.getElementById('toggleSizeNormal').style.background = wide ? '#fff' : '#2E7D32';
-  document.getElementById('toggleSizeNormal').style.color = wide ? '#666' : '#fff';
-  document.getElementById('toggleSizeNormal').style.fontWeight = wide ? '400' : '600';
-  document.getElementById('toggleSizeWide').style.background = wide ? '#2E7D32' : '#fff';
-  document.getElementById('toggleSizeWide').style.color = wide ? '#fff' : '#666';
-  document.getElementById('toggleSizeWide').style.fontWeight = wide ? '600' : '400';
-  buildPresets();
+  document.getElementById('toggleSizeNormal').className = wide ? 'tb-btn' : 'tb-btn active';
+  document.getElementById('toggleSizeWide').className = wide ? 'tb-btn active' : 'tb-btn';
+  calcFromPyeong();
 }
 
-function buildPresets() {
-  var container = document.getElementById('presetBtns');
-  container.innerHTML = '';
-  if (!selectedProduct) {
-    container.innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
-    return;
+var SCOPE_RATIOS_EXPAND = [4.38, 4.79, 5.21];
+var SCOPE_RATIOS_NOEXPAND = [3.75, 4.38, 4.79];
+var SCOPE_NAMES = ['거실+복도','거실+복도+아일랜드','거실+복도+주방'];
+var currentScopeIdx = -1;
+
+function calcQtyFromPyeong(py, scopeIdx) {
+  if (isExpand) {
+    var bases = [105, 115, 125];
+    var rates = [2, 3, 3.5];
+  } else {
+    var bases = [90, 105, 115];
+    var rates = [2.5, 2.5, 3];
   }
+  var qty = Math.ceil(bases[scopeIdx] + (py - 24) * rates[scopeIdx]);
+  if (py >= 45) qty = Math.ceil(qty * 1.21);
+  else if (py >= 42) qty = Math.ceil(qty * 1.12);
+  return qty;
+}
+
+function setPyeong(py) {
+  document.getElementById('pyeongInput').value = py;
+  document.querySelectorAll('.pyeong-quick').forEach(function(b){ b.classList.remove('active'); });
+  event.currentTarget.classList.add('active');
+  calcFromPyeong();
+}
+
+function calcFromPyeong() {
+  var py = parseInt(document.getElementById('pyeongInput').value) || 0;
+  if (py > 0 && currentScopeIdx >= 0) selectScope(SCOPE_NAMES[currentScopeIdx], currentScopeIdx);
+}
+
+function selectScope(scope, idx) {
+  currentScopeIdx = idx;
+  var py = parseInt(document.getElementById('pyeongInput').value) || 0;
+  if (py <= 0) { showToast('평수를 먼저 입력해주세요'); return; }
+  if (!selectedProduct) { showToast('제품을 먼저 선택해주세요'); return; }
+  document.querySelectorAll('.scope-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.scope-btn')[idx].classList.add('active');
+  var base500 = calcQtyFromPyeong(py, idx);
+  var baseQty = isWideRoom ? Math.ceil(base500 * 1.13) : base500;
   var is1000 = selectedProduct.key.startsWith('mat1000');
-  var presets = isExpand ? PRESETS_EXPAND : PRESETS_NOEXPAND;
+  var qty = is1000 ? Math.ceil(baseQty / 4) : baseQty;
   var typeLabel = isExpand ? '확장형' : '비확장형';
-  var sizeLabel = isWideRoom ? ' · 넓은편' : '';
-
-  var row1Keys = ['20평','24평'];
-  var row2Keys = ['30평','34평','44평'];
-
-  function makeCol(pyeong) {
-    var col = document.createElement('div');
-    col.style.cssText = 'min-width:0';
-    var title = document.createElement('div');
-    title.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
-    title.textContent = pyeong + ' ' + typeLabel + sizeLabel;
-    col.appendChild(title);
-    presets[pyeong].forEach(function(p) {
-      var baseQty = isWideRoom ? Math.ceil(p.qty500 * 1.13) : p.qty500;
-      var qty = is1000 ? Math.ceil(baseQty / 4) : baseQty;
-      var chip = document.createElement('div');
-      chip.className = 'qty-chip';
-      if (p.label.indexOf('주방') >= 0) {
-        chip.innerHTML = p.label + '<br>(' + qty + '장)';
-      } else {
-        chip.textContent = p.label + ' (' + qty + '장)';
-      }
-      chip.onclick = function() {
-        selectedPresetInfo = pyeong + ' ' + typeLabel + (isWideRoom ? '(넓은편)' : '') + ' ' + p.label;
-        document.getElementById('qtyInput').value = qty;
-        container.querySelectorAll('.qty-chip').forEach(function(c){c.style.background='';c.style.color='';c.style.border='';});
-        chip.style.background='#2E7D32';chip.style.color='#fff';chip.style.border='1.5px solid #2E7D32';
-        calculate();
-      };
-      col.appendChild(chip);
-    });
-    return col;
-  }
-
-  var grid1 = document.createElement('div');
-  grid1.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px';
-  row1Keys.forEach(function(k){ grid1.appendChild(makeCol(k)); });
-  var etcCol = document.createElement('div');
-  etcCol.style.cssText = 'min-width:0';
-  var etcTitle = document.createElement('div');
-  etcTitle.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
-  etcTitle.textContent = '기타 평수';
-  etcCol.appendChild(etcTitle);
-  var etcInput = document.createElement('div');
-  etcInput.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:6px';
-  etcInput.innerHTML = '<input type="number" id="etcPyeong" placeholder="평수" style="width:50px;padding:6px;border:1.5px solid #e0ddd6;border-radius:6px;font-size:13px;text-align:center;font-family:inherit;outline:none" onfocus="this.style.borderColor=\'#2E7D32\'" onblur="this.style.borderColor=\'#e0ddd6\'"><span style="font-size:12px;color:#999">평</span>';
-  etcCol.appendChild(etcInput);
-  var scopes = ['거실+복도','거실+복도+아일랜드','거실+복도+주방'];
-  var ratios = {
-    '거실+복도': isExpand ? 4.38 : 3.75,
-    '거실+복도+아일랜드': isExpand ? 4.79 : 4.38,
-    '거실+복도+주방': isExpand ? 5.21 : 4.79
-  };
-  scopes.forEach(function(scope) {
-    var chip = document.createElement('div');
-    chip.className = 'qty-chip';
-    chip.style.cssText = 'font-size:10px;padding:5px 4px';
-    chip.textContent = scope;
-    chip.onclick = function() {
-      var py = parseInt(document.getElementById('etcPyeong').value) || 0;
-      if (py <= 0) { showToast('평수를 입력해주세요'); return; }
-      var base500 = Math.ceil(py * ratios[scope]);
-      var baseQty = isWideRoom ? Math.ceil(base500 * 1.13) : base500;
-      var qty = is1000 ? Math.ceil(baseQty / 4) : baseQty;
-      selectedPresetInfo = py + '평 ' + typeLabel + (isWideRoom ? '(넓은편)' : '') + ' ' + scope;
-      document.getElementById('qtyInput').value = qty;
-      container.querySelectorAll('.qty-chip').forEach(function(c){c.style.background='';c.style.color='';c.style.border='';});
-      chip.style.background='#2E7D32';chip.style.color='#fff';chip.style.border='1.5px solid #2E7D32';
-      calculate();
-    };
-    etcCol.appendChild(chip);
-  });
-  grid1.appendChild(etcCol);
-  container.appendChild(grid1);
-
-  var grid2 = document.createElement('div');
-  grid2.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px';
-  row2Keys.forEach(function(k){ grid2.appendChild(makeCol(k)); });
-  container.appendChild(grid2);
-
-  var note = document.createElement('div');
-  note.style.cssText = 'font-size:11px;color:#999;text-align:center;margin-top:8px';
-  note.textContent = '* 도면 치수로 계산하면 가장 정확합니다';
-  container.appendChild(note);
+  selectedPresetInfo = py + '평 ' + typeLabel + (isWideRoom ? '(넓은편)' : '') + ' ' + scope;
+  document.getElementById('qtyInput').value = qty;
+  document.getElementById('autoQtyResult').style.display = 'block';
+  document.getElementById('autoQtyResult').textContent = '예상 ' + qty + '장 (' + (is1000?'1000매트':'500매트') + ' 기준)';
+  calculate();
 }
 
 // ===== 치수 계산기 =====
@@ -967,6 +955,8 @@ function copyQuote() {
   t += '\n────────────────\n';
   t += '* 구조에 따라 수량 차이가 있을 수 있습니다\n';
   t += '* 실제 시공 후 수량에 맞춰 결제됩니다\n';
+  var etcMemo = (document.getElementById('etcMemo').value || '').trim();
+  if (etcMemo) t += '\n📝 기타 문의: ' + etcMemo + '\n';
   t += '\n궁금한 점은 언제든 문의해주세요!';
   navigator.clipboard.writeText(t).then(function() { showCopyOverlay(); trackReferral(qty, total); }).catch(function() {
     var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showCopyOverlay(); trackReferral(qty, total);
@@ -1029,7 +1019,12 @@ function resetForm() {
     });
   }
   var rd = document.getElementById('reviewDetail'); if (rd) rd.classList.remove('show');
-  document.getElementById('presetBtns').innerHTML = '<div style="font-size:12px;color:#bbb;padding:6px 0">제품을 먼저 선택해주세요</div>';
+  document.getElementById('pyeongInput').value = '';
+  document.getElementById('autoQtyResult').style.display = 'none';
+  document.getElementById('etcMemo').value = '';
+  currentScopeIdx = -1;
+  document.querySelectorAll('.pyeong-quick').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.scope-btn').forEach(function(b){b.classList.remove('active');});
   initRooms();
   document.getElementById('dimTotal').style.display = 'none';
   showToast('초기화 완료');
