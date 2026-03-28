@@ -1483,51 +1483,73 @@ function renderCars(){
 const el=document.getElementById('carView');
 if(!el)return;
 const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
-let html=`<div style="padding:8px 0">
-<div style="font-size:16px;font-weight:800;margin-bottom:12px">🚗 차량 배정</div>
-<div style="font-size:12px;color:var(--dim);margin-bottom:16px">직원별 차량번호를 등록하면 알림톡에 자동 포함돼요</div>`;
+const plates=Object.keys(VEHICLES);
 
-E.forEach((name,i)=>{
-  const plate=VEHICLES[name]||'';
-  const ec=empColors[i%10];
-  html+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--card2);border-radius:10px;border-left:3px solid ${ec}">
-    <span style="font-weight:700;font-size:14px;color:${ec};min-width:40px">${name}</span>
-    <input id="car_${name}" value="${plate}" placeholder="차량번호 입력" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
-    <button onclick="saveCar('${name}')" style="padding:8px 14px;border-radius:8px;border:none;background:${ec}22;color:${ec};font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font)">저장</button>
+let html=`<div style="padding:8px 0">
+<div style="font-size:16px;font-weight:800;margin-bottom:4px">🚗 차량 배정</div>
+<div style="font-size:12px;color:var(--dim);margin-bottom:16px">차량별 탑승 직원을 배정하면 알림톡에 차량번호가 자동 포함돼요</div>`;
+
+// 등록된 차량 목록
+plates.forEach((plate,i)=>{
+  const driver=VEHICLES[plate]||'';
+  const di=E.indexOf(driver);
+  const ec=di>=0?empColors[di%10]:'var(--dim)';
+  const opts=E.map(n=>`<option value="${n}"${n===driver?' selected':''}>${n}</option>`).join('');
+  html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;background:var(--card2);border-radius:10px;border-left:3px solid ${ec}">
+    <span style="font-weight:700;font-size:14px;min-width:90px;color:var(--text)">${plate}</span>
+    <select id="drv_${i}" onchange="updateDriver(${i})" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+      <option value="">미배정</option>${opts}
+    </select>
+    <button onclick="deleteCar(${i})" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--red);font-size:12px;cursor:pointer;font-family:var(--font)">삭제</button>
   </div>`;
 });
 
+// 새 차량 추가
+html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-top:12px;background:var(--card2);border-radius:10px;border:1.5px dashed var(--border)">
+  <input id="newPlate" placeholder="차량번호 입력" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+  <button onclick="addCar()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">+ 추가</button>
+</div>`;
+
+// 현황 요약
+const assigned=plates.filter(p=>VEHICLES[p]);
+const noDriver=plates.filter(p=>!VEHICLES[p]);
+const noCarDrivers=E.filter(n=>!plates.some(p=>VEHICLES[p]===n));
 html+=`<div style="margin-top:16px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border)">
-<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 현재 등록 현황</div>`;
-const registered=E.filter(n=>VEHICLES[n]);
-const unregistered=E.filter(n=>!VEHICLES[n]);
-if(registered.length){
-  html+=registered.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--text)">✅ ${n}: <span style="font-weight:600">${VEHICLES[n]}</span></div>`).join('');
-}
-if(unregistered.length){
-  html+=`<div style="margin-top:6px">`;
-  html+=unregistered.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--red)">❌ ${n}: 미등록</div>`).join('');
-  html+=`</div>`;
-}
+<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 현황</div>`;
+if(assigned.length) html+=assigned.map(p=>`<div style="font-size:12px;padding:3px 0">✅ ${p} → <span style="font-weight:600">${VEHICLES[p]}</span></div>`).join('');
+if(noCarDrivers.length) html+=`<div style="margin-top:6px">`+noCarDrivers.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--red)">❌ ${n}: 차량 미배정</div>`).join('')+`</div>`;
 html+=`</div></div>`;
 
 el.innerHTML=html;
 }
 
-function saveCar(name){
-  const input=document.getElementById('car_'+name);
-  const plate=input.value.trim();
-  if(!plate){
-    const next={...VEHICLES};
-    delete next[name];
-    fbSave('vehicles',Object.keys(next).length?next:null);
-    toast(name+' 차량 삭제됨','ok');
-  } else {
-    const next={...VEHICLES};
-    next[name]=plate;
-    fbSave('vehicles',next);
-    toast(name+' → '+plate+' 저장!','ok');
-  }
+function addCar(){
+  const plate=document.getElementById('newPlate').value.trim();
+  if(!plate){toast('차량번호를 입력하세요','ok');return;}
+  if(VEHICLES[plate]!==undefined){toast('이미 등록된 차량이에요','ok');return;}
+  const next={...VEHICLES};
+  next[plate]='';
+  fbSave('vehicles',next);
+  toast(plate+' 추가!','ok');
+}
+
+function updateDriver(idx){
+  const plates=Object.keys(VEHICLES);
+  const plate=plates[idx];
+  const driver=document.getElementById('drv_'+idx).value;
+  const next={...VEHICLES};
+  next[plate]=driver;
+  fbSave('vehicles',next);
+  toast(plate+' → '+(driver||'미배정'),'ok');
+}
+
+function deleteCar(idx){
+  const plates=Object.keys(VEHICLES);
+  const plate=plates[idx];
+  const next={...VEHICLES};
+  delete next[plate];
+  fbSave('vehicles',Object.keys(next).length?next:null);
+  toast(plate+' 삭제됨','ok');
 }
 
 // ===== Nav =====
