@@ -240,9 +240,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       </select>
       <div class="product-match" id="productMatch"></div>
     </div>
-    <div class="fg full">
-      <label>수량</label>
-      <input type="number" id="fQty" />
+    <div class="fg full" style="margin-top:4px">
+      <label>📋 카톡 채널명 생성</label>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input type="text" id="fRegion" placeholder="지역 (예: 창원, 시흥)" style="flex:1;max-width:140px">
+        <button type="button" onclick="generateChannelName()" style="padding:11px 14px;border:1.5px solid var(--accent);border-radius:10px;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">생성</button>
+      </div>
+      <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:13px;font-weight:600;color:#1a1a1a;display:none;align-items:center;justify-content:space-between;cursor:pointer" onclick="copyChannel()">
+        <span id="channelText"></span>
+        <span style="font-size:11px;color:var(--accent);font-weight:500">복사</span>
+      </div>
     </div>
     <div class="submit-area full">
       <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()">예약 접수하기</button>
@@ -479,7 +486,7 @@ function editItem(time,ds,index){
   document.getElementById('submitBtn').textContent='수정 완료';
   const form=document.getElementById('formSection');form.classList.add('show');
   // 폼 초기화 후 기존 데이터 채우기
-  ['fPhone','fAddress','fSize','fScope','fQty'].forEach(id=>{document.getElementById(id).value='';});
+  ['fPhone','fAddress','fSize','fScope'].forEach(id=>{document.getElementById(id).value='';});
   ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
   document.getElementById('fTime').value=time;
   document.getElementById('fDate').value=ds;
@@ -490,7 +497,6 @@ function editItem(time,ds,index){
   document.getElementById('fScope').value=item.scope||'';
   document.getElementById('fProduct1').value=item.product||'';
   document.getElementById('fProduct2').value=item.product||'';
-  document.getElementById('fQty').value=item.qty||'';
   checkProductMatch();
   form.scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -541,15 +547,14 @@ function submitReservation(){
     time,date,address,
     phone:document.getElementById('fPhone').value,
     isNew:document.getElementById('fIsNew').value,
-    size,scope,product:p1,
-    qty:document.getElementById('fQty').value
+    size,scope,product:p1
   };
   if(editMode) payload.row = editMode.row;
 
   fetch(API_URL,{
     method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
   }).then(()=>{
-    ['fPhone','fAddress','fSize','fScope','fQty'].forEach(id=>{document.getElementById(id).value='';});
+    ['fPhone','fAddress','fSize','fScope'].forEach(id=>{document.getElementById(id).value='';});
     ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
     document.getElementById('productMatch').textContent='';
     document.getElementById('fProduct2').classList.remove('error');
@@ -559,6 +564,26 @@ function submitReservation(){
     // 2초 후 데이터 새로고침
     setTimeout(()=>loadData(),2000);
   }).catch(()=>{showToast('⚠️ 전송 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 접수하기';});
+}
+
+// ── 카톡 채널명 생성 ──
+function generateChannelName(){
+  const time=document.getElementById('fTime').value;
+  const date=document.getElementById('fDate').value;
+  const region=document.getElementById('fRegion').value.trim();
+  const product=document.getElementById('fProduct1').value;
+  if(!time||!date||!region||!product){showToast('⚠️ 시간, 시공일, 지역, 제품을 먼저 입력하세요');return;}
+  const timeCode=time==='오전'?'5':'9';
+  const ds=date.replace(/-/g,'');
+  const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
+  const name=`${timeCode}/${region}/${product})${prefix}`;
+  document.getElementById('channelText').textContent=name;
+  document.getElementById('channelResult').style.display='flex';
+  copyChannel();
+}
+function copyChannel(){
+  const text=document.getElementById('channelText').textContent;
+  navigator.clipboard.writeText(text).then(()=>showToast('📋 채널명 복사됨: '+text)).catch(()=>showToast('복사 실패'));
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
