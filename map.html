@@ -32,11 +32,11 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
 </div>
 <div class="stats">
   <div class="stat" onclick="moveToHotel()" style="cursor:pointer">
-    <div class="stat-num">5성급 호텔</div>
+    <div class="stat-num" style="color:#2E7D32">5성급 호텔</div>
     <div class="stat-label" id="hotelBtn">키즈룸 시공</div>
   </div>
   <div class="stat" onclick="moveToKinder()" style="cursor:pointer">
-    <div class="stat-num">80개+</div>
+    <div class="stat-num" style="color:#E5A100">80개+</div>
     <div class="stat-label" id="kinderBtn">어린이집 시공</div>
   </div>
   <div class="stat" onclick="findMyLocation()" style="cursor:pointer;background:#E8F5E9">
@@ -53,6 +53,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
 </div>
 <script>
 var BASE_MAP = 'https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
+var KINDER_MAP = 'https://www.google.com/maps/d/embed?mid=1tESvkcaYjerdKkkaJJnn6mPtqJtKkjw&ehbc=2E312F&noprof=1';
 
 function moveMap(lat, lng, zoom) {
   document.getElementById('mapFrame').src = BASE_MAP + '&ll=' + lat + ',' + lng + '&z=' + zoom;
@@ -67,7 +68,7 @@ function moveToHotel() {
   event.currentTarget.classList.add('active');
   var btn = document.getElementById('hotelBtn');
   btn.textContent = '이동 중...';
-  moveMap(35.1576, 129.1602, 16);
+  document.getElementById('mapFrame').src = BASE_MAP + '&ll=35.1576,129.1602&z=16';
   setTimeout(function() { btn.textContent = '키즈룸 시공'; }, 2000);
 }
 
@@ -75,8 +76,8 @@ function moveToKinder() {
   clearActive();
   event.currentTarget.classList.add('active');
   var btn = document.getElementById('kinderBtn');
-  btn.textContent = '이동 중...';
-  moveMap(35.85, 128.6, 8);
+  btn.textContent = '전환 중...';
+  document.getElementById('mapFrame').src = KINDER_MAP + '&z=7';
   setTimeout(function() { btn.textContent = '어린이집 시공'; }, 2000);
 }
 
