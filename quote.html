@@ -48,6 +48,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .btn-opt{flex:1;min-width:70px;padding:10px 6px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;text-align:center;transition:all .2s;color:#666}
 .btn-opt:hover{border-color:#2E7D32;color:#2E7D32}
 .btn-opt.active{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32;font-weight:600}
+.prod-card{border:1.5px solid #e0ddd6;border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;flex:1}
+.prod-card.active{border-color:#2E7D32;background:#E8F5E9}
+.prod-card.recommend{position:relative}
+.prod-card.recommend::before{content:'주력';position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#2E7D32;color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600}
+.prod-card .prod-name{font-size:14px;font-weight:600}
+.prod-card .prod-spec{font-size:11px;color:#999;margin-top:2px}
+.prod-card .prod-price{font-size:12px;font-weight:600;color:#2E7D32;margin-top:3px}
 
 .qty-row{display:flex;align-items:center;gap:10px}
 .qty-label{font-size:13px;color:#666;min-width:65px}
@@ -153,27 +160,57 @@ var PRODUCTS = [
 ];
 
 var PRESETS_EXPAND = {
+  '20평': [
+    { label: '거실+복도', qty500: 85 },
+    { label: '거실+복도+아일랜드', qty500: 95 },
+    { label: '거실+복도+주방', qty500: 105 },
+  ],
   '24평': [
     { label: '거실+복도', qty500: 105 },
     { label: '거실+복도+아일랜드', qty500: 115 },
     { label: '거실+복도+주방', qty500: 125 },
+  ],
+  '30평': [
+    { label: '거실+복도', qty500: 115 },
+    { label: '거실+복도+아일랜드', qty500: 130 },
+    { label: '거실+복도+주방', qty500: 145 },
   ],
   '34평': [
     { label: '거실+복도', qty500: 125 },
     { label: '거실+복도+아일랜드', qty500: 145 },
     { label: '거실+복도+주방', qty500: 160 },
   ],
+  '44평': [
+    { label: '거실+복도', qty500: 175 },
+    { label: '거실+복도+아일랜드', qty500: 200 },
+    { label: '거실+복도+주방', qty500: 225 },
+  ],
 };
 var PRESETS_NOEXPAND = {
+  '20평': [
+    { label: '거실+복도', qty500: 70 },
+    { label: '거실+복도+아일랜드', qty500: 85 },
+    { label: '거실+복도+주방', qty500: 95 },
+  ],
   '24평': [
     { label: '거실+복도', qty500: 90 },
     { label: '거실+복도+아일랜드', qty500: 105 },
     { label: '거실+복도+주방', qty500: 115 },
   ],
+  '30평': [
+    { label: '거실+복도', qty500: 105 },
+    { label: '거실+복도+아일랜드', qty500: 120 },
+    { label: '거실+복도+주방', qty500: 135 },
+  ],
   '34평': [
     { label: '거실+복도', qty500: 115 },
     { label: '거실+복도+아일랜드', qty500: 130 },
     { label: '거실+복도+주방', qty500: 145 },
+  ],
+  '44평': [
+    { label: '거실+복도', qty500: 155 },
+    { label: '거실+복도+아일랜드', qty500: 180 },
+    { label: '거실+복도+주방', qty500: 200 },
   ],
 };
 
@@ -278,7 +315,24 @@ var DEFAULT_ROOMS = [
   <!-- 제품 선택 -->
   <div class="card">
     <div class="card-title">📦 제품 선택</div>
-    <div class="btn-group" id="productBtns"></div>
+    <div style="display:flex;gap:8px" id="productBtns">
+      <div class="prod-card recommend" id="prod0" onclick="selectProductCard(0)">
+        <div class="prod-name">1000매트</div>
+        <div class="prod-spec">22T</div>
+        <div class="prod-price">74,500원</div>
+      </div>
+      <div class="prod-card" id="prod1" onclick="selectProductCard(1)" style="position:relative">
+        <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#FF8F00;color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600;white-space:nowrap">애견 추천</div>
+        <div class="prod-name">1000매트</div>
+        <div class="prod-spec">17T</div>
+        <div class="prod-price">62,900원</div>
+      </div>
+      <div class="prod-card" id="prod2" onclick="selectProductCard(2)">
+        <div class="prod-name">500매트</div>
+        <div class="prod-spec">22T</div>
+        <div class="prod-price">16,000원</div>
+      </div>
+    </div>
   </div>
 
   <!-- 수량 입력 -->
@@ -286,7 +340,7 @@ var DEFAULT_ROOMS = [
     <div class="card-title">📏 수량 입력</div>
     <div class="qty-row">
       <span class="qty-label">예상 장수</span>
-      <input type="number" class="qty-input" id="qtyInput" value="" placeholder="0" oninput="calculate()">
+      <input type="number" class="qty-input" id="qtyInput" value="" placeholder="0" oninput="selectedPresetInfo='';calculate()">
       <span class="qty-unit">장</span>
     </div>
     <div style="margin-top:12px">
@@ -331,6 +385,9 @@ var DEFAULT_ROOMS = [
 
   <!-- 견적 결과 -->
   <div class="result" id="resultArea" style="display:none">
+    <div id="rPresetRow" style="display:none;text-align:center;padding:6px 0 8px;font-size:12px;color:#9E9E9E;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:6px">
+      <span id="rPresetInfo"></span>
+    </div>
     <div class="result-row dim">
       <span id="rProduct">1000매트 22T</span>
       <span id="rPrice">74,500원/장</span>
@@ -482,26 +539,17 @@ var selectedProduct = null;
 var selectedBenefits = {};
 var isExpand = true;
 var isWideRoom = false;
+var selectedPresetInfo = '';
 
-(function() {
-  var container = document.getElementById('productBtns');
-  PRODUCTS.forEach(function(p) {
-    var btn = document.createElement('button');
-    btn.className = 'btn-opt';
-    btn.innerHTML = p.name + '<br><span style="font-size:11px;color:#999">' + p.thickness + ' · ' + p.price.toLocaleString() + '원</span>';
-    btn.onclick = function() {
-      selectedProduct = p;
-      container.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      // ★ 제품 변경 시 장수 초기화
-      document.getElementById('qtyInput').value = '';
-      document.getElementById('resultArea').style.display = 'none';
-      buildPresets();
-      calcAllDim(); // 치수 계산기도 재계산
-    };
-    container.appendChild(btn);
-  });
-})();
+function selectProductCard(idx) {
+  selectedProduct = PRODUCTS[idx];
+  document.querySelectorAll('.prod-card').forEach(function(c){ c.classList.remove('active'); });
+  document.getElementById('prod'+idx).classList.add('active');
+  document.getElementById('qtyInput').value = '';
+  document.getElementById('resultArea').style.display = 'none';
+  buildPresets();
+  calcAllDim();
+}
 
 function setExpand(expand) {
   isExpand = expand;
@@ -537,11 +585,12 @@ function buildPresets() {
   var typeLabel = isExpand ? '확장형' : '비확장형';
   var sizeLabel = isWideRoom ? ' · 넓은편' : '';
 
-  var grid = document.createElement('div');
-  grid.style.cssText = 'display:flex;gap:10px';
-  Object.keys(presets).forEach(function(pyeong) {
+  var row1Keys = ['20평','24평'];
+  var row2Keys = ['30평','34평','44평'];
+
+  function makeCol(pyeong) {
     var col = document.createElement('div');
-    col.style.cssText = 'flex:1;min-width:0';
+    col.style.cssText = 'min-width:0';
     var title = document.createElement('div');
     title.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
     title.textContent = pyeong + ' ' + typeLabel + sizeLabel;
@@ -552,12 +601,45 @@ function buildPresets() {
       var chip = document.createElement('div');
       chip.className = 'qty-chip';
       chip.textContent = p.label + ' (' + qty + '장)';
-      chip.onclick = function() { document.getElementById('qtyInput').value = qty; calculate(); };
+      chip.onclick = function() {
+        selectedPresetInfo = pyeong + ' ' + typeLabel + (isWideRoom ? '(넓은편)' : '') + ' ' + p.label;
+        document.getElementById('qtyInput').value = qty;
+        container.querySelectorAll('.qty-chip').forEach(function(c){c.style.background='';c.style.color='';c.style.border='';});
+        chip.style.background='#2E7D32';chip.style.color='#fff';chip.style.border='1.5px solid #2E7D32';
+        calculate();
+      };
       col.appendChild(chip);
     });
-    grid.appendChild(col);
-  });
-  container.appendChild(grid);
+    return col;
+  }
+
+  var grid1 = document.createElement('div');
+  grid1.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px';
+  row1Keys.forEach(function(k){ grid1.appendChild(makeCol(k)); });
+  var etcCol = document.createElement('div');
+  etcCol.style.cssText = 'min-width:0';
+  var etcTitle = document.createElement('div');
+  etcTitle.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
+  etcTitle.textContent = '기타 평수';
+  etcCol.appendChild(etcTitle);
+  var etcBtn = document.createElement('div');
+  etcBtn.className = 'qty-chip';
+  etcBtn.style.cssText = 'background:#FEE500;color:#3C1E1E;font-weight:600;text-align:center;cursor:pointer;padding:8px 4px;font-size:11px;line-height:1.4';
+  etcBtn.innerHTML = '💬 카톡 상담으로<br>문의해주세요';
+  etcBtn.onclick = function(){ window.open('http://pf.kakao.com/_UMyBK/chat','_blank'); };
+  etcCol.appendChild(etcBtn);
+  grid1.appendChild(etcCol);
+  container.appendChild(grid1);
+
+  var grid2 = document.createElement('div');
+  grid2.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px';
+  row2Keys.forEach(function(k){ grid2.appendChild(makeCol(k)); });
+  container.appendChild(grid2);
+
+  var note = document.createElement('div');
+  note.style.cssText = 'font-size:11px;color:#999;text-align:center;margin-top:8px';
+  note.textContent = '* 도면 치수로 계산하면 가장 정확합니다';
+  container.appendChild(note);
 }
 
 // ===== 치수 계산기 =====
@@ -651,6 +733,8 @@ function calcAllDim() {
 function applyDimTotal() {
   var num = parseInt(document.getElementById('dimTotalNum').textContent) || 0;
   if (num > 0) {
+    var typeInfo = isExpand ? '확장형' : '비확장형';
+    selectedPresetInfo = typeInfo + ' · 도면 치수 계산';
     document.getElementById('qtyInput').value = num;
     calculate();
     showToast(num + '장이 적용되었습니다');
@@ -757,6 +841,16 @@ function calculate() {
   var totalDiscount = phase1Discount + phase2Discount;
 
   // UI 업데이트
+  var presetRow = document.getElementById('rPresetRow');
+  if (selectedPresetInfo) {
+    document.getElementById('rPresetInfo').textContent = '🏠 ' + selectedPresetInfo;
+    presetRow.style.display = 'block';
+  } else {
+    var typeInfo = isExpand ? '확장형' : '비확장형';
+    var sInfo = isWideRoom ? ' (넓은편)' : '';
+    document.getElementById('rPresetInfo').textContent = '🏠 ' + typeInfo + sInfo + ' · 직접 입력';
+    presetRow.style.display = 'block';
+  }
   document.getElementById('rProduct').textContent = selectedProduct.name + ' ' + selectedProduct.thickness;
   document.getElementById('rPrice').textContent = price.toLocaleString() + '원/장';
   document.getElementById('rMatCost').textContent = matCost.toLocaleString() + '원';
@@ -817,6 +911,12 @@ function copyQuote() {
   t += '돌봄매트 견적서\n';
   t += '────────────────\n';
   if (REFERRAL_CODE) t += '추천인: ' + REFERRAL_NAME + '\n';
+  if (selectedPresetInfo) t += '🏠 ' + selectedPresetInfo + '\n';
+  else {
+    var typeInfo = isExpand ? '확장형' : '비확장형';
+    var sizeInfo = isWideRoom ? ' (넓은편)' : '';
+    t += '🏠 ' + typeInfo + sizeInfo + ' · 직접 입력\n';
+  }
   t += '\n';
   t += '■ ' + selectedProduct.name + ' ' + selectedProduct.thickness + '\n';
   t += '  장당 ' + price.toLocaleString() + '원 × ' + qty + '장\n';
@@ -887,10 +987,11 @@ function closeCopyOverlay(e) {
 function resetForm() {
   selectedProduct = null; selectedBenefits = {};
   isWideRoom = false;
+  selectedPresetInfo = '';
   setRoomSize(false);
   document.getElementById('qtyInput').value = '';
   document.getElementById('resultArea').style.display = 'none';
-  document.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.prod-card').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('.benefit input').forEach(function(c) {
     if (!c.disabled) c.checked = false; // 추천인 할인은 유지
   });
