@@ -1107,7 +1107,7 @@ const jobRows=sorted.map(j=>{
 const isAm=j.time==='오전'||j.time.includes('2:');
 const isAs=j.time==='as';
 const timeCls=isAs?'pm':isAm?'am':'pm';
-const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t} ${m.q}</span>`).join('');
+const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
 const curTeam=RA[j.id]||[];
@@ -1154,7 +1154,7 @@ const isAs=j.time==='as';
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
-const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t} ${m.q}</span>`).join('');
+const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
 const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
@@ -1804,7 +1804,7 @@ if(!job){closeConfirm();toast('시공 건을 찾을 수 없어요','ok');return}
 const team=A[jobId]||[];
 const matsHtml=job.mat.length?job.mat.map(m=>{
 const cls=matCls(m.t);
-return `<span class="mat mat-${cls}" style="font-size:14px;padding:4px 12px">${m.t} ${m.q}장</span>`}).join(' '):'<span style="color:var(--dim)">자재 정보 없음</span>';
+return `<span class="mat mat-${cls}" style="font-size:14px;padding:4px 12px">${m.t}</span>`}).join(' '):'<span style="color:var(--dim)">자재 정보 없음</span>';
 
 document.getElementById('confirmBody').innerHTML=`
 <div class="confirm-item">
@@ -1816,7 +1816,7 @@ document.getElementById('confirmBody').innerHTML=`
 <div class="confirm-value">${job.scope||'-'}</div>
 </div>
 <div class="confirm-item">
-<div class="confirm-label">🎨 자재 · 색상 · 수량</div>
+<div class="confirm-label">🎨 자재 · 색상</div>
 <div class="confirm-value" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${matsHtml}</div>
 </div>
 <div class="confirm-item">
