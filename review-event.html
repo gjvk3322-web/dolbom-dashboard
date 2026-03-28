@@ -86,6 +86,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <div class="paid-info" id="paidInfo">
   <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
   <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
+  <div class="row" id="statusRow" style="display:none;margin-top:4px;padding-top:6px;border-top:1px solid var(--border)"><span class="label">상태</span><span class="value" id="statusText" style="color:var(--orange)">-</span></div>
 </div>
 <div id="missionList"></div>
 <div class="account-section">
@@ -124,6 +125,7 @@ const MISSIONS=[
 const MAX_REWARD=110000;
 let missionState={};
 let paidTotal=0;
+let payStatus='';
 
 function initMissions(){MISSIONS.forEach(m=>{if(!missionState[m.id])missionState[m.id]={done:false,url:'',submittedAt:''};});renderMissions();}
 
@@ -134,14 +136,34 @@ function renderMissions(){
   document.getElementById('progressBar').style.width=Math.round(earned/MAX_REWARD*100)+'%';
   document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+MAX_REWARD.toLocaleString()+'원';
   const remain=earned-paidTotal;
-  if(paidTotal>0||earned>0){
+  const isPending=payStatus.indexOf('신청완료')>=0;
+  const isPaid=payStatus.indexOf('지급완료')>=0;
+  if(paidTotal>0||earned>0||isPending){
     document.getElementById('paidInfo').style.display='block';
-    document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원';
+    if(isPaid){
+      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 ✅';
+      document.getElementById('paidAmount').style.color='var(--green)';
+    }else if(isPending){
+      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 (입금 대기 중)';
+      document.getElementById('paidAmount').style.color='var(--orange)';
+    }else{
+      document.getElementById('paidAmount').textContent='0원';
+    }
     document.getElementById('remainAmount').textContent=(remain>0?remain:0).toLocaleString()+'원';
+    // 상태 표시
+    const sr=document.getElementById('statusRow'),st=document.getElementById('statusText');
+    if(payStatus){
+      sr.style.display='flex';
+      if(isPaid){st.textContent='✅ 지급완료';st.style.color='var(--green)';}
+      else if(isPending){st.textContent='💰 신청완료 (입금 대기 중)';st.style.color='var(--orange)';}
+      else{st.textContent=payStatus;st.style.color='var(--text2)';}
+    }
   }
   const btn=document.getElementById('cashbackBtn');
-  if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
-  else if(earned>0){btn.disabled=true;btn.textContent='지급 완료 ('+paidTotal.toLocaleString()+'원)';}
+  if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
+  else if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
+  else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';}
+  else if(earned>0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
   else{btn.disabled=true;btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';}
 
   const list=document.getElementById('missionList');list.innerHTML='';
@@ -193,7 +215,7 @@ async function requestCashback(){
       body:JSON.stringify({type:'cashback',phone:PHONE,bank,accountName:name,accountNum:num,totalEarned:earned,paidAmount:paidTotal,requestAmount:reqAmt,submittedAt:new Date().toISOString()})});
     document.getElementById('successAmt').textContent=reqAmt.toLocaleString()+'원';
     document.getElementById('successOverlay').classList.add('show');
-    fireConfetti();paidTotal=earned;renderMissions();
+    fireConfetti();payStatus='신청완료';renderMissions();
   }catch(e){btn.disabled=false;btn.textContent='캐시백 받기';showToast('신청 실패');}
 }
 
@@ -206,6 +228,7 @@ async function loadData(){
     const data=await res.json();
     if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
     if(data.paidAmount)paidTotal=parseInt(data.paidAmount)||0;
+    if(data.status)payStatus=data.status;
     if(data.account){
       if(data.account.bank)document.getElementById('accBank').value=data.account.bank;
       if(data.account.name)document.getElementById('accName').value=data.account.name;
