@@ -16,6 +16,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
 .stat{flex:1;background:#fff;border-radius:10px;padding:10px 6px;text-align:center}
 .stat-num{font-size:13px;font-weight:700;color:#2E7D32}
 .stat-label{font-size:10px;color:#999;margin-top:1px}
+.stat.active{background:#E8F5E9;border:1.5px solid #81C784}
 .map-wrap{margin:0 8px;border-radius:12px;overflow:hidden;position:relative}
 .map-wrap iframe{width:100%;height:calc(100vh - 230px);border:none;display:block}
 .map-hint{text-align:center;padding:8px;font-size:11px;color:#888;background:#fff}
@@ -30,13 +31,13 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
   <div class="top-badge">대리점이 아닌 본사 직접 시공</div>
 </div>
 <div class="stats">
-  <div class="stat">
+  <div class="stat" onclick="moveToHotel()" style="cursor:pointer">
     <div class="stat-num">5성급 호텔</div>
-    <div class="stat-label">키즈룸 시공</div>
+    <div class="stat-label" id="hotelBtn">키즈룸 시공</div>
   </div>
-  <div class="stat">
+  <div class="stat" onclick="moveToKinder()" style="cursor:pointer">
     <div class="stat-num">80개+</div>
-    <div class="stat-label">어린이집 시공</div>
+    <div class="stat-label" id="kinderBtn">어린이집 시공</div>
   </div>
   <div class="stat" onclick="findMyLocation()" style="cursor:pointer;background:#E8F5E9">
     <div class="stat-num" style="font-size:16px">📍</div>
@@ -51,7 +52,37 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
   <a href="http://pf.kakao.com/_UMyBK/chat" class="cta-btn">💬 카카오톡 상담하기</a>
 </div>
 <script>
+var BASE_MAP = 'https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
+
+function moveMap(lat, lng, zoom) {
+  document.getElementById('mapFrame').src = BASE_MAP + '&ll=' + lat + ',' + lng + '&z=' + zoom;
+}
+
+function clearActive() {
+  document.querySelectorAll('.stat').forEach(function(s) { s.classList.remove('active'); });
+}
+
+function moveToHotel() {
+  clearActive();
+  event.currentTarget.classList.add('active');
+  var btn = document.getElementById('hotelBtn');
+  btn.textContent = '이동 중...';
+  moveMap(35.1576, 129.1602, 16);
+  setTimeout(function() { btn.textContent = '키즈룸 시공'; }, 2000);
+}
+
+function moveToKinder() {
+  clearActive();
+  event.currentTarget.classList.add('active');
+  var btn = document.getElementById('kinderBtn');
+  btn.textContent = '이동 중...';
+  moveMap(35.85, 128.6, 8);
+  setTimeout(function() { btn.textContent = '어린이집 시공'; }, 2000);
+}
+
 function findMyLocation() {
+  clearActive();
+  event.currentTarget.classList.add('active');
   var btn = document.getElementById('locBtn');
   btn.textContent = '찾는 중...';
   if (!navigator.geolocation) {
@@ -59,10 +90,7 @@ function findMyLocation() {
     return;
   }
   navigator.geolocation.getCurrentPosition(function(pos) {
-    var lat = pos.coords.latitude;
-    var lng = pos.coords.longitude;
-    var frame = document.getElementById('mapFrame');
-    frame.src = 'https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1&ll=' + lat + ',' + lng + '&z=14';
+    moveMap(pos.coords.latitude, pos.coords.longitude, 14);
     btn.textContent = '내 위치 완료!';
     setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
   }, function() {
