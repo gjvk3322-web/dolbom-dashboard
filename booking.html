@@ -136,8 +136,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="addr-result" id="addrResult"></div>
     </div>
     <div class="row2">
-      <div class="fg"><label>동 <span style="font-weight:400;color:#bbb">(없으면 비워두세요)</span></label><input type="text" id="dong" placeholder="101동"></div>
-      <div class="fg"><label>호수 <span class="req">*</span></label><input type="text" id="hosu" placeholder="1502호"></div>
+      <div class="fg"><label>동 <span style="font-weight:400;color:#bbb">(없으면 비워두세요)</span></label><input type="text" id="dong" placeholder="101"></div>
+      <div class="fg"><label>호수 <span class="req">*</span></label><input type="text" id="hosu" placeholder="1502"></div>
     </div>
     <div class="fg">
       <label>평수 <span class="req">*</span></label>
@@ -548,7 +548,9 @@ function copyBooking(){
   var memo = document.getElementById('memo').value.trim();
   var product = PRODUCTS[selectedProduct];
   var dateText = dateAny ? '상관없음 (빠른 날짜 배정)' : selectedDates.sort().join(', ');
-  var dongHo = (dong ? dong + ' ' : '') + (hosu ? hosu : '');
+  var dongStr = dong ? (dong.includes('동') ? dong : dong+'동') : '';
+  var hosuStr = hosu ? (hosu.includes('호') ? hosu : hosu+'호') : '';
+  var dongHo = (dongStr ? dongStr + ' ' : '') + hosuStr;
   var addr = addrData ? addrData.name + '\n  ' + addrData.address + '\n  ' + dongHo : '';
 
   var t = '';
