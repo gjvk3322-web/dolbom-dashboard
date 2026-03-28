@@ -217,6 +217,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="fg" id="scopeCustom" style="display:none;margin-top:8px">
       <input type="text" id="scopeInput" placeholder="시공 범위를 직접 입력해주세요">
     </div>
+    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8f9fb;border-radius:8px">
+      <span style="font-size:13px;font-weight:600;color:var(--text2)">🚪 방 추가</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button type="button" onclick="changeRoom(-1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-family:inherit">−</button>
+        <span id="roomCount" style="font-size:15px;font-weight:700;min-width:20px;text-align:center">0</span>
+        <button type="button" onclick="changeRoom(1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid var(--green);background:var(--green-light);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--green);font-family:inherit">+</button>
+      </div>
+    </div>
   </div>
 
   <!-- 5. 추가 요청사항 -->
@@ -312,6 +320,7 @@ var selectedDates = [];
 var dateAny = false;
 var selectedTime = '상관없음';
 var selectedScope = '';
+var roomCount = 0;
 var agreed = false;
 var addrData = null;
 
@@ -512,6 +521,11 @@ function selectScope(btn, scope){
   checkSubmit();
 }
 
+function changeRoom(d){
+  roomCount = Math.max(0, roomCount + d);
+  document.getElementById('roomCount').textContent = roomCount;
+}
+
 // ===== 동의 =====
 function toggleAgree(){
   agreed = !agreed;
@@ -568,7 +582,7 @@ function copyBooking(){
   t += '  희망시간: ' + selectedTime + '\n';
   t += '  제품: ' + product.name + '\n';
   t += '  색상: ' + selectedColor + '\n';
-  t += '  시공범위: ' + scope + '\n';
+  t += '  시공범위: ' + scope + (roomCount > 0 ? ' + 방 '+roomCount+'개' : '') + '\n';
   if (memo) t += '  요청사항: ' + memo + '\n';
   t += '\n────────────────\n';
   t += '예약 안내사항: ' + NOTICE_URL + '\n';
