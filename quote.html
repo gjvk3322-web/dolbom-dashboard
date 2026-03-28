@@ -636,7 +636,7 @@ function buildPresets() {
     var chip = document.createElement('div');
     chip.className = 'qty-chip';
     chip.style.cssText = 'font-size:10px;padding:5px 4px';
-    chip.textContent = scope.replace('거실+복도+','복도+').replace('거실+복도','거실+복도');
+    chip.textContent = scope;
     chip.onclick = function() {
       var py = parseInt(document.getElementById('etcPyeong').value) || 0;
       if (py <= 0) { showToast('평수를 입력해주세요'); return; }
