@@ -166,14 +166,14 @@ var PRESETS_EXPAND = {
 };
 var PRESETS_NOEXPAND = {
   '24평': [
-    { label: '거실+복도', qty500: 85 },
-    { label: '거실+복도+아일랜드', qty500: 95 },
-    { label: '거실+복도+주방', qty500: 105 },
+    { label: '거실+복도', qty500: 90 },
+    { label: '거실+복도+아일랜드', qty500: 105 },
+    { label: '거실+복도+주방', qty500: 115 },
   ],
   '34평': [
-    { label: '거실+복도', qty500: 105 },
-    { label: '거실+복도+아일랜드', qty500: 120 },
-    { label: '거실+복도+주방', qty500: 135 },
+    { label: '거실+복도', qty500: 115 },
+    { label: '거실+복도+아일랜드', qty500: 130 },
+    { label: '거실+복도+주방', qty500: 145 },
   ],
 };
 
@@ -295,6 +295,13 @@ var DEFAULT_ROOMS = [
         <button class="toggle-btn" id="toggleNoExpand" onclick="setExpand(false)" style="background:#fff;color:#666;font-weight:400">비확장형</button>
       </div>
     </div>
+    <div style="margin-top:8px">
+      <div style="font-size:12px;color:#999;margin-bottom:6px">우리집 거실 크기</div>
+      <div class="toggle-wrap">
+        <button class="toggle-btn" id="toggleSizeNormal" onclick="setRoomSize(false)" style="background:#2E7D32;color:#fff;font-weight:600">평균이에요</button>
+        <button class="toggle-btn" id="toggleSizeWide" onclick="setRoomSize(true)" style="background:#fff;color:#666;font-weight:400">넓은 편이에요</button>
+      </div>
+    </div>
     <div style="margin-top:12px" id="presetBtns"></div>
 
     <!-- 치수 계산기 (접기/펼치기) -->
@@ -302,6 +309,7 @@ var DEFAULT_ROOMS = [
       <span>📐 도면 치수로 계산하기</span>
       <span class="arrow">▼</span>
     </div>
+    <div style="text-align:center;font-size:11px;color:#2E7D32;font-weight:600;margin-top:-2px;margin-bottom:4px">*가장 정확합니다!</div>
     <div class="dim-area" id="dimArea">
       <div id="dimRooms"></div>
       <div class="dim-add" onclick="addRoom()">+ 방 추가</div>
@@ -477,6 +485,7 @@ document.addEventListener('touchend', function() { isDragging = false; });
 var selectedProduct = null;
 var selectedBenefits = {};
 var isExpand = true;
+var isWideRoom = false;
 
 (function() {
   var container = document.getElementById('productBtns');
@@ -509,6 +518,17 @@ function setExpand(expand) {
   buildPresets();
 }
 
+function setRoomSize(wide) {
+  isWideRoom = wide;
+  document.getElementById('toggleSizeNormal').style.background = wide ? '#fff' : '#2E7D32';
+  document.getElementById('toggleSizeNormal').style.color = wide ? '#666' : '#fff';
+  document.getElementById('toggleSizeNormal').style.fontWeight = wide ? '400' : '600';
+  document.getElementById('toggleSizeWide').style.background = wide ? '#2E7D32' : '#fff';
+  document.getElementById('toggleSizeWide').style.color = wide ? '#fff' : '#666';
+  document.getElementById('toggleSizeWide').style.fontWeight = wide ? '600' : '400';
+  buildPresets();
+}
+
 function buildPresets() {
   var container = document.getElementById('presetBtns');
   container.innerHTML = '';
@@ -519,6 +539,7 @@ function buildPresets() {
   var is1000 = selectedProduct.key.startsWith('mat1000');
   var presets = isExpand ? PRESETS_EXPAND : PRESETS_NOEXPAND;
   var typeLabel = isExpand ? '확장형' : '비확장형';
+  var sizeLabel = isWideRoom ? ' · 넓은편' : '';
 
   var grid = document.createElement('div');
   grid.style.cssText = 'display:flex;gap:10px';
@@ -527,10 +548,11 @@ function buildPresets() {
     col.style.cssText = 'flex:1;min-width:0';
     var title = document.createElement('div');
     title.style.cssText = 'font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-align:center;padding-bottom:5px;border-bottom:1px solid #eee';
-    title.textContent = pyeong + ' ' + typeLabel;
+    title.textContent = pyeong + ' ' + typeLabel + sizeLabel;
     col.appendChild(title);
     presets[pyeong].forEach(function(p) {
-      var qty = is1000 ? Math.ceil(p.qty500 / 4) : p.qty500;
+      var baseQty = isWideRoom ? Math.ceil(p.qty500 * 1.13) : p.qty500;
+      var qty = is1000 ? Math.ceil(baseQty / 4) : baseQty;
       var chip = document.createElement('div');
       chip.className = 'qty-chip';
       chip.textContent = p.label + ' (' + qty + '장)';
@@ -876,6 +898,8 @@ function closeCopyOverlay(e) {
 
 function resetForm() {
   selectedProduct = null; selectedBenefits = {};
+  isWideRoom = false;
+  setRoomSize(false);
   document.getElementById('qtyInput').value = '';
   document.getElementById('resultArea').style.display = 'none';
   document.querySelectorAll('.btn-opt').forEach(function(b) { b.classList.remove('active'); });
