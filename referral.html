@@ -241,8 +241,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           </div>
         </div>
         <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">SNS / 블로그 링크 (선택)</label>
-          <input type="url" id="applySns" placeholder="https://instagram.com/..." style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">SNS / 블로그 링크 (선택, 여러 개 가능)</label>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;min-width:60px;color:var(--text3)">인스타그램</span>
+            <input type="url" id="snsInsta" placeholder="https://instagram.com/..." style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;min-width:60px;color:var(--text3)">유튜브</span>
+            <input type="url" id="snsYoutube" placeholder="https://youtube.com/@..." style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:12px;min-width:60px;color:var(--text3)">블로그</span>
+            <input type="url" id="snsBlog" placeholder="https://blog.naver.com/..." style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+          </div>
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">신청 사유 (선택)</label>
@@ -574,7 +585,14 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbxvXvd-TAy_cKwQ2hdT97tVwr
 function submitApply() {
   var name = document.getElementById('applyName').value.trim();
   var phone = document.getElementById('applyPhone').value.trim();
-  var sns = document.getElementById('applySns').value.trim();
+  var snsLinks = [];
+  var insta = document.getElementById('snsInsta').value.trim();
+  var youtube = document.getElementById('snsYoutube').value.trim();
+  var blog = document.getElementById('snsBlog').value.trim();
+  if (insta) snsLinks.push('인스타:' + insta);
+  if (youtube) snsLinks.push('유튜브:' + youtube);
+  if (blog) snsLinks.push('블로그:' + blog);
+  var sns = snsLinks.join(' | ');
   var memo = document.getElementById('applyMemo').value.trim();
 
   if (!name) { showToast('이름을 입력해주세요'); return; }
