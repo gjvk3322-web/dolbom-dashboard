@@ -600,7 +600,11 @@ function buildPresets() {
       var qty = is1000 ? Math.ceil(baseQty / 4) : baseQty;
       var chip = document.createElement('div');
       chip.className = 'qty-chip';
-      chip.textContent = p.label + ' (' + qty + '장)';
+      if (p.label.indexOf('주방') >= 0) {
+        chip.innerHTML = p.label + '<br>(' + qty + '장)';
+      } else {
+        chip.textContent = p.label + ' (' + qty + '장)';
+      }
       chip.onclick = function() {
         selectedPresetInfo = pyeong + ' ' + typeLabel + (isWideRoom ? '(넓은편)' : '') + ' ' + p.label;
         document.getElementById('qtyInput').value = qty;
