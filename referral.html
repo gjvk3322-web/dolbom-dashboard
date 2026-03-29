@@ -229,6 +229,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <input type="text" id="applyName" placeholder="이름 입력" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
         </div>
         <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">닉네임 * <span style="font-size:10px;font-weight:400;color:var(--text3)">(추천 링크에 공개됩니다)</span></label>
+          <input type="text" id="applyNickname" placeholder="추천 링크에 표시될 닉네임" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
+        </div>
+        <div>
           <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">연락처 *</label>
           <input type="tel" id="applyPhone" placeholder="01012345678" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e8e8e8'">
         </div>
@@ -580,7 +584,7 @@ function selectType(btn, type) {
   btn.style.fontWeight = '700';
 }
 
-var API_URL = 'https://script.google.com/macros/s/AKfycbwwJGrM87eKuKaLxR8EE93UgravRavsMOCKwIQu5rWu6j_W48j8QfQm7VdfvInGUKaQJA/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwOlZdULdUHKNp6YHfBRd_jTZwGH_QSYAESS9-JntRSamfvPXTmpMDpPUWW-EICTwNA4A/exec';
 
 function submitApply() {
   var name = document.getElementById('applyName').value.trim();
@@ -595,7 +599,9 @@ function submitApply() {
   var sns = snsLinks.join(' | ');
   var memo = document.getElementById('applyMemo').value.trim();
 
+  var nickname = document.getElementById("applyNickname").value.trim();
   if (!name) { showToast('이름을 입력해주세요'); return; }
+  if (!nickname) { showToast("닉네임을 입력해주세요"); return; }
   if (!phone) { showToast('연락처를 입력해주세요'); return; }
   if (!applyType) { showToast('유형을 선택해주세요'); return; }
 
@@ -607,6 +613,7 @@ function submitApply() {
   var data = {
     type: 'partnerApply',
     name: name,
+    nickname: nickname,
     phone: phone,
     partnerType: applyType,
     sns: sns,
