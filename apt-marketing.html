@@ -41,6 +41,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .apt-link{font-size:11px;padding:4px 10px;border-radius:6px;text-decoration:none;font-weight:500;transition:all .2s}
 .link-blog{background:#E3F2FD;color:#1565C0}
 .link-cafe{background:#FFF8E1;color:#E65100}
+.link-daangn{background:#FFF3E0;color:#FF6F00}
+.link-meta{background:#E8EAF6;color:#3949AB}
 .link-group{background:var(--green-light);color:var(--green)}
 .link-none{background:#f5f5f5;color:#ccc}
 .apt-link:hover{opacity:0.8}
@@ -77,7 +79,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div class="header">
   <h1>입주아파트 마케팅 관리</h1>
-  <p>공구장 모집 트래커</p>
+  <p>블로그/맘카페/당근/메타 작성 관리</p>
 </div>
 
 <div class="container">
@@ -120,6 +122,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="fg"><label>블로그 URL</label><input type="url" id="fBlog" placeholder="https://blog.naver.com/..."></div>
     <div class="fg"><label>맘카페 URL</label><input type="url" id="fCafe" placeholder="https://cafe.naver.com/..."></div>
+    <div class="fg"><label>당근마켓 URL</label><input type="url" id="fDaangn" placeholder="https://daangn.com/..."></div>
+    <div class="fg"><label>메타광고 URL</label><input type="url" id="fMeta" placeholder="광고 링크 또는 메모"></div>
     <div class="fg"><label>메모</label><input type="text" id="fMemo" placeholder="참고사항"></div>
     <div class="form-btns">
       <button class="btn-cancel" onclick="closeForm()">취소</button>
@@ -134,7 +138,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 var SHEET_ID = '1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 var GID = '1951541918';
 var API_URL = 'https://script.google.com/macros/s/AKfycbwOlZdULdUHKNp6YHfBRd_jTZwGH_QSYAESS9-JntRSamfvPXTmpMDpPUWW-EICTwNA4A/exec';
-var GROUP_BUY_BASE = 'https://my.dolbommat.com/group-buy.html';
 
 var aptData = [];
 var currentFilter = '전체';
@@ -171,7 +174,7 @@ function loadData() {
       var apt = rows[i][0];
       var units = parseInt(rows[i][2])||0;
       var month = rows[i][3]||'';
-      var groupLink = GROUP_BUY_BASE+'?apt='+encodeURIComponent(apt)+'&units='+units+(month?'&month='+month:'');
+      
       aptData.push({
         row: i+1,
         name: apt,
@@ -180,9 +183,10 @@ function loadData() {
         month: month,
         blog: rows[i][4]||'',
         cafe: rows[i][5]||'',
-        groupLink: groupLink,
-        status: rows[i][7]||'미착수',
-        memo: rows[i][8]||''
+        daangn: rows[i][6]||'',
+        meta: rows[i][7]||'',
+        status: rows[i][8]||'미착수',
+        memo: rows[i][9]||''
       });
     }
     updateStats();
@@ -234,12 +238,14 @@ function renderList(){
     var monthLabel = a.month ? a.month.replace('-','년 ')+'월' : '미정';
     var blogLink = a.blog ? '<a href="'+a.blog+'" target="_blank" class="apt-link link-blog">블로그 ✓</a>' : '<span class="apt-link link-none">블로그 ✗</span>';
     var cafeLink = a.cafe ? '<a href="'+a.cafe+'" target="_blank" class="apt-link link-cafe">맘카페 ✓</a>' : '<span class="apt-link link-none">맘카페 ✗</span>';
-    var groupLink = '<a href="'+a.groupLink+'" target="_blank" class="apt-link link-group">공구장 모집링크</a>';
+    var daangnLink = a.daangn ? '<a href="'+a.daangn+'" target="_blank" class="apt-link link-daangn">당근 ✓</a>' : '<span class="apt-link link-none">당근 ✗</span>';
+    var metaLink = a.meta ? '<span class="apt-link link-meta">메타 ✓</span>' : '<span class="apt-link link-none">메타 ✗</span>';
+    
 
     html+='<div class="apt-card status-'+a.status+'" onclick="openEdit('+aptData.indexOf(a)+')">';
     html+='<div class="apt-header"><div class="apt-name">'+a.name+'</div><span class="apt-badge badge-'+a.status+'">'+a.status+'</span></div>';
     html+='<div class="apt-info"><span>📍 '+a.region+'</span><span>🏢 '+a.units+'세대</span><span>📅 '+monthLabel+'</span></div>';
-    html+='<div class="apt-links">'+blogLink+cafeLink+groupLink+'</div>';
+    html+='<div class="apt-links">'+blogLink+cafeLink+daangnLink+metaLink+'</div>';
     if(a.memo) html+='<div style="font-size:11px;color:var(--text3);margin-top:6px">💬 '+a.memo+'</div>';
     html+='</div>';
   });
@@ -249,7 +255,7 @@ function renderList(){
 function openForm(){
   editRow=null;
   document.getElementById('formTitle').textContent='새 아파트 추가';
-  ['fApt','fRegion','fUnits','fMonth','fBlog','fCafe','fMemo'].forEach(function(id){document.getElementById(id).value='';});
+  ['fApt','fRegion','fUnits','fMonth','fBlog','fCafe','fDaangn','fMeta','fMemo'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('fStatus').value='미착수';
   document.getElementById('formOverlay').classList.add('show');
 }
@@ -264,6 +270,8 @@ function openEdit(idx){
   document.getElementById('fMonth').value=a.month||'';
   document.getElementById('fBlog').value=a.blog||'';
   document.getElementById('fCafe').value=a.cafe||'';
+  document.getElementById('fDaangn').value=a.daangn||'';
+  document.getElementById('fMeta').value=a.meta||'';
   document.getElementById('fStatus').value=a.status||'미착수';
   document.getElementById('fMemo').value=a.memo||'';
   document.getElementById('formOverlay').classList.add('show');
@@ -285,7 +293,7 @@ function saveApt(){
   btn.disabled=true;btn.textContent='저장 중...';
 
   var month=document.getElementById('fMonth').value||'';
-  var groupLink=GROUP_BUY_BASE+'?apt='+encodeURIComponent(apt)+'&units='+units+(month?'&month='+month:'');
+  
 
   var payload={
     type:'aptMarketing',
@@ -298,7 +306,8 @@ function saveApt(){
       month:month,
       blog:document.getElementById('fBlog').value.trim(),
       cafe:document.getElementById('fCafe').value.trim(),
-      groupLink:groupLink,
+      daangn:document.getElementById('fDaangn').value.trim(),
+      meta:document.getElementById('fMeta').value.trim(),
       status:document.getElementById('fStatus').value,
       memo:document.getElementById('fMemo').value.trim()
     }
