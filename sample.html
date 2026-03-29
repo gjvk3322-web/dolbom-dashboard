@@ -15,9 +15,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 .hero h1{font-size:26px;font-weight:800;line-height:1.3;margin-bottom:8px;color:#fff}
 .hero p{font-size:14px;color:rgba(255,255,255,.75);line-height:1.6}
 .hero-stats{display:flex;gap:12px;justify-content:center;margin-top:18px}
-.stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:8px 12px;text-align:center}
-.stat-num{font-size:15px;font-weight:800;color:#FDD835}
-.stat-label{font-size:9px;color:rgba(255,255,255,.6);margin-top:2px}
+.stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 18px;text-align:center}
+.stat-num{font-size:18px;font-weight:800;color:#FDD835}
+.stat-label{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
 
 .links{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
 .links a{font-size:11px;color:rgba(255,255,255,.7);text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.2);border-radius:16px;transition:all .2s}
@@ -123,10 +123,23 @@ if(hv){hv.play().catch(function(){document.addEventListener('touchstart',functio
 <div class="map-section">
   <div class="map-card">
     <div class="map-title">📍 우리집 근처 시공 사례</div>
-    <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+    <div style="display:flex;gap:6px;padding:8px 16px;background:#fff">
+      <button onclick="mapShowHotel()" style="flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#555;transition:all .2s" id="btnHotel">5성급 호텔<br><span style="font-size:10px;font-weight:400;color:#999">키즈룸 시공</span></button>
+      <button onclick="mapShowKinder()" style="flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#555;transition:all .2s" id="btnKinder">80개+<br><span style="font-size:10px;font-weight:400;color:#999">어린이집 시공</span></button>
+      <button onclick="mapMyLocation()" style="flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#2E7D32;transition:all .2s" id="btnLoc">📍<br><span style="font-size:10px;font-weight:400;color:#999">내 위치로 이동</span></button>
+    </div>
+    <iframe id="mapFrame" src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
     <div class="map-hint">지도를 확대해서 우리 동네 시공 내역을 확인해보세요</div>
   </div>
 </div>
+<script>
+var BASE_MAP='https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
+var KINDER_MAP='https://www.google.com/maps/d/embed?mid=1tESvkcaYjerdKkkaJJnn6mPtqJtKkjw&ehbc=2E312F&noprof=1';
+function mapResetBtns(){document.getElementById('btnHotel').style.background='#fff';document.getElementById('btnHotel').style.borderColor='#e0ddd6';document.getElementById('btnKinder').style.background='#fff';document.getElementById('btnKinder').style.borderColor='#e0ddd6';}
+function mapShowHotel(){mapResetBtns();document.getElementById('btnHotel').style.background='#E8F5E9';document.getElementById('btnHotel').style.borderColor='#2E7D32';document.getElementById('mapFrame').src=BASE_MAP+'&ll=35.1576,129.1602&z=16';}
+function mapShowKinder(){mapResetBtns();document.getElementById('btnKinder').style.background='#E8F5E9';document.getElementById('btnKinder').style.borderColor='#2E7D32';document.getElementById('mapFrame').src=KINDER_MAP+'&z=7';}
+function mapMyLocation(){if(!navigator.geolocation){return;}navigator.geolocation.getCurrentPosition(function(p){document.getElementById('mapFrame').src=BASE_MAP+'&ll='+p.coords.latitude+','+p.coords.longitude+'&z=14';document.getElementById('btnLoc').innerHTML='✅<br><span style="font-size:10px;font-weight:400;color:#999">이동 완료</span>';setTimeout(function(){document.getElementById('btnLoc').innerHTML='📍<br><span style="font-size:10px;font-weight:400;color:#999">내 위치로 이동</span>';},3000);});}
+</script>
 
 <div class="container">
 
