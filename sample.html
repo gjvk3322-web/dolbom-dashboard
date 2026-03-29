@@ -7,70 +7,79 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:'Noto Sans KR',sans-serif;background:#0a0a0a;color:#f5f5f5;min-height:100vh}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-height:100vh}
 
-.hero{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:40px 20px 32px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 40%,rgba(232,115,108,.12) 0%,transparent 50%);pointer-events:none}
-.hero-badge{display:inline-block;background:rgba(232,115,108,.15);color:#e8736c;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:14px;letter-spacing:.5px}
-.hero h1{font-size:26px;font-weight:800;line-height:1.3;margin-bottom:8px;background:linear-gradient(135deg,#fff 0%,#e0e0e0 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:14px;color:rgba(255,255,255,.6);line-height:1.6}
+.hero{background:linear-gradient(135deg,#2E7D32 0%,#388E3C 40%,#43A047 100%);padding:40px 20px 32px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:rgba(255,255,255,0.06);border-radius:50%}
+.hero-badge{display:inline-block;background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:14px;letter-spacing:.5px;border:1px solid rgba(255,255,255,.2)}
+.hero h1{font-size:26px;font-weight:800;line-height:1.3;margin-bottom:8px;color:#fff}
+.hero p{font-size:14px;color:rgba(255,255,255,.75);line-height:1.6}
 .hero-stats{display:flex;gap:12px;justify-content:center;margin-top:18px}
-.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 18px;text-align:center}
-.stat-num{font-size:18px;font-weight:800;color:#e8736c}
-.stat-label{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 18px;text-align:center}
+.stat-num{font-size:18px;font-weight:800;color:#FDD835}
+.stat-label{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
 
 .links{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
-.links a{font-size:11px;color:rgba(255,255,255,.5);text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.1);border-radius:16px;transition:all .2s}
-.links a:hover{background:rgba(255,255,255,.08);color:#fff}
+.links a{font-size:11px;color:rgba(255,255,255,.7);text-decoration:none;padding:4px 10px;border:1px solid rgba(255,255,255,.2);border-radius:16px;transition:all .2s}
+.links a:hover{background:rgba(255,255,255,.15);color:#fff}
 
 .container{max-width:480px;margin:0 auto;padding:0 16px 100px}
 
-.card{background:#161616;border:1px solid #222;border-radius:16px;padding:24px 20px;margin-top:16px}
-.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.video-wrap{max-width:480px;margin:0 auto;padding:0 16px;margin-top:16px}
+.video-wrap video{width:100%;border-radius:14px;display:block;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+
+.map-section{max-width:480px;margin:0 auto;padding:0 16px;margin-top:16px}
+.map-section .map-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.map-section .map-title{padding:12px 16px 0;font-size:14px;font-weight:700;color:#1a1a1a;display:flex;align-items:center;gap:6px}
+.map-section iframe{width:100%;height:280px;border:none;display:block}
+.map-section .map-hint{padding:8px 16px 10px;font-size:11px;color:#999;text-align:center;background:#fff}
+
+.card{background:#fff;border:1px solid #e8e8e3;border-radius:14px;padding:24px 20px;margin-top:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:#1a1a1a}
 .card-title span{font-size:18px}
 
 .fg{margin-bottom:14px}
-.fg label{display:block;font-size:12px;font-weight:600;color:#999;margin-bottom:6px}
-.fg label .req{color:#e8736c}
-.fg input,.fg select,.fg textarea{width:100%;padding:12px 14px;border:1.5px solid #2a2a2a;border-radius:10px;font-size:14px;font-family:inherit;background:#1a1a1a;color:#f5f5f5;transition:border .2s;-webkit-appearance:none;appearance:none}
-.fg select{background:#1a1a1a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px}
-.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#e8736c}
-.fg input::placeholder{color:#555}
+.fg label{display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px}
+.fg label .req{color:#e53935}
+.fg input,.fg select,.fg textarea{width:100%;padding:12px 14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a1a;transition:border .2s;-webkit-appearance:none;appearance:none}
+.fg select{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#2E7D32}
+.fg input::placeholder{color:#bbb}
 .fg textarea{resize:none;height:48px}
-.fg .hint{font-size:11px;color:#555;margin-top:4px}
+.fg .hint{font-size:11px;color:#bbb;margin-top:4px}
 
 .addr-row{display:flex;gap:8px}
 .addr-row input{flex:1}
-.addr-btn{padding:12px 16px;border:1.5px solid #e8736c;border-radius:10px;background:rgba(232,115,108,.1);color:#e8736c;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s}
-.addr-btn:active{transform:scale(.97);background:rgba(232,115,108,.2)}
+.addr-btn{padding:12px 16px;border:1.5px solid #2E7D32;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s}
+.addr-btn:active{transform:scale(.97);background:#C8E6C9}
 
 .chip-group{display:flex;flex-wrap:wrap;gap:8px}
-.chip{padding:10px 16px;border:1.5px solid #2a2a2a;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;background:#1a1a1a;color:#999;user-select:none}
+.chip{padding:10px 16px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;background:#fff;color:#888;user-select:none}
 .chip:active{transform:scale(.96)}
-.chip.selected{border-color:#e8736c;background:rgba(232,115,108,.1);color:#e8736c;font-weight:600}
+.chip.selected{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32;font-weight:600}
 
-.consent{background:#111;border:1px solid #222;border-radius:12px;padding:16px;margin-top:4px}
-.consent h4{font-size:13px;font-weight:700;margin-bottom:10px}
-.consent-body{font-size:11px;color:#777;line-height:1.7;margin-bottom:12px}
-.consent-body strong{color:#bbb}
+.consent{background:#f9f9f6;border:1px solid #e8e8e3;border-radius:12px;padding:16px;margin-top:4px}
+.consent h4{font-size:13px;font-weight:700;margin-bottom:10px;color:#1a1a1a}
+.consent-body{font-size:11px;color:#888;line-height:1.7;margin-bottom:12px}
+.consent-body strong{color:#555}
 .consent-check{display:flex;align-items:center;gap:10px;cursor:pointer}
 .consent-check input{display:none}
-.consent-check .cbox{width:22px;height:22px;border:2px solid #333;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
-.consent-check input:checked+.cbox{background:#e8736c;border-color:#e8736c}
+.consent-check .cbox{width:22px;height:22px;border:2px solid #d0d0d0;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.consent-check input:checked+.cbox{background:#2E7D32;border-color:#2E7D32}
 .consent-check .cbox::after{content:'✓';color:#fff;font-size:13px;font-weight:700;display:none}
 .consent-check input:checked+.cbox::after{display:block}
-.consent-check .clabel{font-size:13px;font-weight:600;color:#ccc}
+.consent-check .clabel{font-size:13px;font-weight:600;color:#555}
 
-.submit-btn{width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,#e8736c,#d45a53);color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:20px;letter-spacing:.5px}
+.submit-btn{width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:20px;letter-spacing:.5px}
 .submit-btn:active{transform:scale(.98);opacity:.9}
 .submit-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:14px 28px;border-radius:14px;font-size:14px;font-weight:600;z-index:200;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:14px 28px;border-radius:14px;font-size:14px;font-weight:600;z-index:200;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.success{background:#20c997}
-.toast.error{background:#f04452}
+.toast.success{background:#2E7D32}
+.toast.error{background:#e53935}
 
-.pet-tip{background:linear-gradient(135deg,rgba(32,201,151,.08),rgba(32,201,151,.03));border:1px solid rgba(32,201,151,.15);border-radius:12px;padding:14px 16px;margin-top:12px;font-size:12px;color:rgba(32,201,151,.8);line-height:1.6}
+.pet-tip{background:linear-gradient(135deg,rgba(46,125,50,.06),rgba(46,125,50,.02));border:1px solid rgba(46,125,50,.12);border-radius:12px;padding:14px 16px;margin-top:12px;font-size:12px;color:#2E7D32;line-height:1.6}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .card{animation:fadeUp .5s ease both}
@@ -83,7 +92,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#0a0a0a;color:#f5f5f5;min-
 
 <div class="hero">
   <div class="hero-badge">🎁 무료 샘플 신청</div>
-  <div id="chBadge" style="display:none;margin:8px auto 0;padding:8px 18px;background:linear-gradient(135deg,rgba(78,205,196,.15),rgba(78,205,196,.05));border:1px solid rgba(78,205,196,.3);border-radius:20px;font-size:13px;font-weight:700;color:#4ecdc4;text-align:center;width:fit-content">🎉 <span id="chName"></span> 추천 혜택 적용중</div>
+  <div id="chBadge" style="display:none;margin:8px auto 0;padding:8px 18px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;font-size:13px;font-weight:700;color:#FDD835;text-align:center;width:fit-content">🎉 <span id="chName"></span> 추천 혜택 적용중</div>
   <h1>돌봄매트의 품질을<br>직접 확인해보세요!</h1>
   <p>6,700건 시공 완료! 제품, 가격, 시공에 자신 있는<br>돌봄매트는 샘플 비용을 받지 않습니다!</p>
   <div class="hero-stats">
@@ -99,23 +108,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:#0a0a0a;color:#f5f5f5;min-
   </div>
 </div>
 
-<div style="max-width:480px;margin:0 auto;position:relative;overflow:hidden">
-  <video autoplay muted loop playsinline webkit-playsinline preload="auto" style="width:100%;display:block" id="heroVideo">
+<!-- 영상 (카드 폭과 동일) -->
+<div class="video-wrap">
+  <video autoplay muted loop playsinline webkit-playsinline preload="auto" id="heroVideo">
     <source src="./dolbom_spec.mp4" type="video/mp4">
   </video>
 </div>
 <script>
-// 모바일 자동재생 보장
 var hv = document.getElementById('heroVideo');
-if(hv) {
-  hv.play().catch(function(){
-    document.addEventListener('touchstart', function once(){
-      hv.play();
-      document.removeEventListener('touchstart', once);
-    });
-  });
-}
+if(hv){hv.play().catch(function(){document.addEventListener('touchstart',function once(){hv.play();document.removeEventListener('touchstart',once);});});}
 </script>
+
+<!-- 시공 사례 지도 -->
+<div class="map-section">
+  <div class="map-card">
+    <div class="map-title">📍 우리집 근처 시공 사례</div>
+    <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+    <div class="map-hint">지도를 확대해서 우리 동네 시공 내역을 확인해보세요</div>
+  </div>
+</div>
 
 <div class="container">
 
@@ -147,12 +158,12 @@ if(hv) {
     </div>
     <div id="detailRow" style="display:none;gap:10px;margin-bottom:14px">
       <div id="dongBox" style="flex:1">
-        <label style="display:block;font-size:12px;font-weight:600;color:#999;margin-bottom:6px">동</label>
-        <input type="text" id="fDong" placeholder="예: 101" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #2a2a2a;border-radius:10px;font-size:15px;font-family:inherit;background:#1a1a1a;color:#f5f5f5;box-sizing:border-box" />
+        <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">동</label>
+        <input type="text" id="fDong" placeholder="예: 101" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
       </div>
       <div id="hoBox" style="flex:1">
-        <label style="display:block;font-size:12px;font-weight:600;color:#999;margin-bottom:6px">호수 <span style="color:#e8736c">*</span></label>
-        <input type="text" id="fHo" placeholder="예: 1502" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #2a2a2a;border-radius:10px;font-size:15px;font-family:inherit;background:#1a1a1a;color:#f5f5f5;box-sizing:border-box" />
+        <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">호수 <span style="color:#e53935">*</span></label>
+        <input type="text" id="fHo" placeholder="예: 1502" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
       </div>
     </div>
   </div>
@@ -185,7 +196,7 @@ if(hv) {
       <input type="text" id="fRoute" placeholder="간단히 적어주세요" />
     </div>
 
-    <div class="pet-tip" style="background:linear-gradient(135deg,rgba(232,115,108,.08),rgba(232,115,108,.03));border-color:rgba(232,115,108,.15);color:rgba(232,115,108,.85)">
+    <div class="pet-tip">
       🏆 <strong>왜 돌봄매트일까요?</strong><br><br>
       ✅ 창업 6년, 6,700건 시공 완료<br>
       ✅ 전국 어린이집 80곳 시공 완료<br>
@@ -218,13 +229,13 @@ if(hv) {
 </div>
 
 <!-- 확인 팝업 -->
-<div id="confirmOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;justify-content:center;align-items:center;padding:20px">
-  <div style="background:#1a1a1a;border:1px solid #333;border-radius:18px;max-width:400px;width:100%;padding:24px;max-height:85vh;overflow-y:auto">
-    <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:16px;text-align:center">📋 입력 내용을 확인해주세요</div>
+<div id="confirmOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:300;justify-content:center;align-items:center;padding:20px">
+  <div style="background:#fff;border:1px solid #e8e8e3;border-radius:18px;max-width:400px;width:100%;padding:24px;max-height:85vh;overflow-y:auto">
+    <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:16px;text-align:center">📋 입력 내용을 확인해주세요</div>
     <div id="confirmBody" style="display:flex;flex-direction:column;gap:10px"></div>
     <div style="display:flex;gap:10px;margin-top:20px">
-      <button onclick="closeConfirm()" style="flex:1;padding:14px;border:1.5px solid #333;border-radius:12px;background:#222;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">수정하기</button>
-      <button onclick="submitForm()" id="confirmBtn" style="flex:1;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#e8736c,#d45a53);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">접수하기</button>
+      <button onclick="closeConfirm()" style="flex:1;padding:14px;border:1.5px solid #e0ddd6;border-radius:12px;background:#fff;color:#555;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">수정하기</button>
+      <button onclick="submitForm()" id="confirmBtn" style="flex:1;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">접수하기</button>
     </div>
   </div>
 </div>
@@ -235,7 +246,6 @@ if(hv) {
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbyW5SV34bN3wGcoal7NyNsRPNa9xIW04Vz52WJu8pZVJC12_-_R0jMXRFNVRMUyI69mxA/exec';
 
-// 추천 채널 파라미터 읽기
 const urlParams=new URLSearchParams(window.location.search);
 const chParam=urlParams.get('ch')||'';
 if(chParam){
@@ -274,9 +284,7 @@ function selectChip(groupId,el){
   el.classList.toggle('selected');
 }
 
-function toggleChip(el){
-  el.classList.toggle('selected');
-}
+function toggleChip(el){el.classList.toggle('selected');}
 
 function getChipValue(groupId){
   const sel=document.querySelector('#'+groupId+' .chip.selected');
@@ -284,14 +292,11 @@ function getChipValue(groupId){
 }
 
 function getChipValues(groupId){
-  const sels=document.querySelectorAll('#'+groupId+' .chip.selected');
-  return Array.from(sels).map(c=>c.textContent).join(', ');
+  return Array.from(document.querySelectorAll('#'+groupId+' .chip.selected')).map(c=>c.textContent).join(', ');
 }
 
 function showToast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
-  t.className='toast show '+(type||'');
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
@@ -301,12 +306,8 @@ function getAddrDetail(){
   const ho=document.getElementById('fHo').value.trim();
   if(building==='주택') return '주택';
   let detail='';
-  if(dong){
-    detail+=dong.replace(/[^0-9]/g,'')+'동 ';
-  }
-  if(ho){
-    detail+=ho.replace(/[^0-9]/g,'')+'호';
-  }
+  if(dong) detail+=dong.replace(/[^0-9]/g,'')+'동 ';
+  if(ho) detail+=ho.replace(/[^0-9]/g,'')+'호';
   return detail.trim();
 }
 
@@ -331,26 +332,13 @@ function showConfirm(){
   if(!route){showToast('⚠️ 알게 된 경로를 입력해주세요','error');return}
   if(!consent){showToast('⚠️ 개인정보 수집에 동의해주세요','error');return}
 
-  const items=[
-    ['이름',name],
-    ['연락처',phone],
-    ['주소',address],
-    ['상세주소',addrDetail||building],
-    ['시공 예정 시기',timing],
-    ['시공 목적',purpose],
-    ['알게 된 경로',route]
-  ];
+  const items=[['이름',name],['연락처',phone],['주소',address],['상세주소',addrDetail||building],['시공 예정 시기',timing],['시공 목적',purpose],['알게 된 경로',route]];
   if(chParam) items.push(['추천 채널','🎉 '+chParam]);
-  const body=document.getElementById('confirmBody');
-  body.innerHTML=items.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#111;border-radius:10px;border:1px solid #222"><span style="color:#999;font-size:13px;flex-shrink:0">${k}</span><span style="color:#fff;font-size:13px;font-weight:600;text-align:right;margin-left:12px">${v}</span></div>`).join('');
-  
-  const overlay=document.getElementById('confirmOverlay');
-  overlay.style.display='flex';
+  document.getElementById('confirmBody').innerHTML=items.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8f8f5;border-radius:10px;border:1px solid #e8e8e3"><span style="color:#999;font-size:13px;flex-shrink:0">${k}</span><span style="color:#1a1a1a;font-size:13px;font-weight:600;text-align:right;margin-left:12px">${v}</span></div>`).join('');
+  document.getElementById('confirmOverlay').style.display='flex';
 }
 
-function closeConfirm(){
-  document.getElementById('confirmOverlay').style.display='none';
-}
+function closeConfirm(){document.getElementById('confirmOverlay').style.display='none';}
 
 function submitForm(){
   closeConfirm();
@@ -361,78 +349,36 @@ function submitForm(){
   const timing=getChipValue('chipTime');
   const purpose=getChipValues('chipPurpose');
   const route=document.getElementById('fRoute').value.trim();
-
   const fullAddr=addrDetail?address+' '+addrDetail:address;
   const btn=document.getElementById('submitBtn');
   btn.disabled=true;btn.textContent='확인 중...';
 
-  // 1단계: 중복 + 지역 체크
   fetch(API_URL,{
-    method:'POST',
-    headers:{'Content-Type':'text/plain'},
+    method:'POST',headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({type:'sampleCheck',phone:phone,address:fullAddr})
   }).then(r=>r.text()).then(t=>{
     try{
       const res=JSON.parse(t);
-      if(res.duplicate){
-        showToast('⚠️ 이미 신청하셨습니다! 2~3일 내 배송됩니다 😊','error');
-        btn.disabled=false;btn.textContent='무료 샘플 신청하기';
-        return;
-      }
-      if(res.regionBlocked){
-        showToast('😢 죄송합니다. 해당 지역은 서비스 불가입니다','error');
-        btn.disabled=false;btn.textContent='무료 샘플 신청하기';
-        return;
-      }
+      if(res.duplicate){showToast('⚠️ 이미 신청하셨습니다! 2~3일 내 배송됩니다 😊','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';return;}
+      if(res.regionBlocked){showToast('😢 죄송합니다. 해당 지역은 서비스 불가입니다','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';return;}
     }catch(e){}
-
-    // 2단계: 신청 접수
     btn.textContent='신청 중...';
-    const payload={
-      type:'sample',
-      name,phone,
-      address:fullAddr,
-      timing,purpose,route,
-      channel:chParam,
-      consent:'Y',
-      date:new Date().toISOString()
-    };
-
     fetch(API_URL,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify(payload)
+      method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
       showToast('✅ 샘플 신청이 완료되었습니다! 2~3일 내 배송됩니다','success');
-      document.getElementById('fName').value='';
-      document.getElementById('fPhone').value='';
-      document.getElementById('fAddress').value='';
-      document.getElementById('fDong').value='';
-      document.getElementById('fHo').value='';
-      document.getElementById('fRoute').value='';
-      document.getElementById('fConsent').checked=false;
+      document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fConsent').checked=false;
       document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       document.getElementById('detailRow').style.display='none';
       btn.textContent='✅ 신청 완료!';
       setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
-    }).catch(()=>{
-      showToast('⚠️ 전송에 실패했습니다. 다시 시도해주세요','error');
-      btn.disabled=false;btn.textContent='무료 샘플 신청하기';
-    });
+    }).catch(()=>{showToast('⚠️ 전송에 실패했습니다','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';});
   }).catch(()=>{
     btn.textContent='신청 중...';
-    fetch(API_URL,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
-    }).then(()=>{
-      showToast('✅ 샘플 신청이 완료되었습니다!','success');
-      btn.textContent='✅ 신청 완료!';
-      setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
-    }).catch(()=>{
-      showToast('⚠️ 전송 실패','error');
-      btn.disabled=false;btn.textContent='무료 샘플 신청하기';
-    });
+    fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
+    }).then(()=>{showToast('✅ 샘플 신청이 완료되었습니다!','success');btn.textContent='✅ 신청 완료!';setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    }).catch(()=>{showToast('⚠️ 전송 실패','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';});
   });
 }
 </script>
