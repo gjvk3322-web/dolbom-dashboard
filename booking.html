@@ -283,11 +283,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== 설정 =====
-var API_URL = 'https://script.google.com/macros/s/AKfycbxvXvd-TAy_cKwQ2hdT97tVwrF9EXNjNovnE0fkPLCrIuUDigN-pilSya24qIph1AEMwg/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwOlZdULdUHKNp6YHfBRd_jTZwGH_QSYAESS9-JntRSamfvPXTmpMDpPUWW-EICTwNA4A/exec';
 var KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
 var NOTICE_URL = 'https://my.dolbommat.com/notice.html';
 var NOTICE_SHORT = 'dolbom.kr/notice'; // 나중에 도메인 연결 시 사용
 var REFERRAL_CODE = new URLSearchParams(location.search).get('ch') || '';
+var REF_PHONE = new URLSearchParams(location.search).get('phone') || '';
+if(REF_PHONE) document.getElementById('phone').value = REF_PHONE;
 
 // ===== Firebase 마감 연동 =====
 var FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
