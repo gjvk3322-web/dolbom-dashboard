@@ -316,7 +316,7 @@ async function loadData(){
   showLoading(30);
   document.getElementById('syncInfo').textContent='데이터 로딩 중...';
   try{
-    const res = await fetch(API_URL+'?team='+encodeURIComponent(currentTeam));
+    const res = await fetch(API_URL+'?type=schedule&team='+encodeURIComponent(currentTeam));
     showLoading(70);
     const json = await res.json();
     showLoading(90);
