@@ -217,9 +217,24 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <label>시공범위 <span class="req">*</span></label>
       <input type="text" id="fScope" />
     </div>
-    <div class="fg full">
-      <label>추천인</label>
-      <input type="text" id="fReferrer" placeholder="추천인 코드 (예: 달콤맘_1234)" />
+    <div class="fg full" style="margin-top:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block">📋 카톡 채널명 생성</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="fRegion" placeholder="지역명" maxlength="2" style="flex:1;max-width:100px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text)">
+            <button type="button" onclick="generateChannelName()" style="padding:11px 14px;border:1.5px solid var(--accent);border-radius:10px;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">생성</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block">추천인</label>
+          <input type="text" id="fReferrer" placeholder="추천인 코드" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text)" />
+        </div>
+      </div>
+      <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:13px;font-weight:600;color:#1a1a1a;align-items:center;justify-content:space-between;cursor:pointer" onclick="copyChannel()">
+        <span id="channelText"></span>
+        <span style="font-size:11px;color:var(--accent);font-weight:500">복사</span>
+      </div>
     </div>
     <div class="fg">
       <label>제품 선택 <span class="req">*</span></label>
@@ -247,17 +262,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <option value="베이지1m22">베이지1m22</option>
       </select>
       <div class="product-match" id="productMatch"></div>
-    </div>
-    <div class="fg full" style="margin-top:4px">
-      <label>📋 카톡 채널명 생성</label>
-      <div style="display:flex;gap:6px;align-items:center">
-        <input type="text" id="fRegion" placeholder="지역명" maxlength="2" style="flex:1;max-width:140px">
-        <button type="button" onclick="generateChannelName()" style="padding:11px 14px;border:1.5px solid var(--accent);border-radius:10px;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">생성</button>
-      </div>
-      <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:13px;font-weight:600;color:#1a1a1a;display:none;align-items:center;justify-content:space-between;cursor:pointer" onclick="copyChannel()">
-        <span id="channelText"></span>
-        <span style="font-size:11px;color:var(--accent);font-weight:500">복사</span>
-      </div>
     </div>
     <div class="submit-area full">
       <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()">예약 접수하기</button>
