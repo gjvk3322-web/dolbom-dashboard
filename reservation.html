@@ -320,11 +320,11 @@ async function loadData(){
   showLoading(30);
   document.getElementById('syncInfo').textContent='데이터 로딩 중...';
   try{
-    const res = await fetch(API_URL+'?team='+encodeURIComponent(currentTeam));
+    const res = await fetch(API_URL+'?type=schedule&team='+encodeURIComponent(currentTeam));
     showLoading(70);
     const json = await res.json();
     showLoading(90);
-    parseScheduleData(json.schedules || []);
+    parseScheduleData(json.schedules || json.rows || []);
     employees = (json.employees || []).filter(e=>e.team===currentTeam || e.team==='');
     lastSync = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${Object.values(scheduleData).reduce((a,d)=>a+d.am.length+d.pm.length,0)}건`;
@@ -333,10 +333,10 @@ async function loadData(){
     renderCalendar();
     if(selectedDate) renderDayDetail(selectedDate);
   }catch(err){
-    console.error(err);
-    document.getElementById('syncInfo').textContent='데이터 로딩 실패 — 새로고침 해주세요';
+    console.error('loadData error:',err);
+    document.getElementById('syncInfo').textContent='데이터 로딩 실패: '+err.message;
     showLoading(0);
-    showToast('⚠️ 데이터 로딩 실패');
+    showToast('⚠️ 로딩 실패: '+err.message);
   }
 }
 
