@@ -377,7 +377,7 @@ if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
 const id=ds+'_'+r[0]+'_'+i;
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
-J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[17]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false,sasu:(r[9]||'').trim(),busasu:(r[10]||'').trim()})}}
+J.push({id,time:r[0],addr:r[2]||'',date:ds,phone:r[3]||'',chatUrl:r[17]||'',channelName:r[18]||'',py:r[5]||'',scope:r[6]||'',doff,mat,dist:0,isNew:false,sasu:(r[9]||'').trim(),busasu:(r[10]||'').trim()})}}
 
 // 휴무 CSV 파싱 (A:날짜 B:요일 C~L:이름1~이름10)
 function parseOffCSV(text){
@@ -514,8 +514,8 @@ if(date<cutoffStr){
   const avail2=E.filter(e=>!ao2.has(e));
   if(!avail2.length){continue}
   
-  const am2=dj2.filter(j=>(j.time==='오전'||j.time.includes('2:'))&&j.addr&&j.addr.trim());
-  const pm2=dj2.filter(j=>(j.time==='오후'||j.time==='as')&&j.addr&&j.addr.trim());
+  const am2=dj2.filter(j=>(j.time.startsWith('오전')||j.time.includes('2:'))&&j.addr&&j.addr.trim());
+  const pm2=dj2.filter(j=>(j.time.startsWith('오후')||j.time==='as')&&j.addr&&j.addr.trim());
   const amUsed=new Set();
   am2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amUsed.add(e))});
   
@@ -692,8 +692,8 @@ if(unassigned.length){
   for(const j of unassigned){if(j.addr&&!j._geo)j._geo=await geo(j.addr)}
 
   // 오전/오후 분리: 오전 먼저 → 오후는 오전 위치 기반
-  const amUn=unassigned.filter(j=>j.time==='오전'||j.time.includes('2:'));
-  const pmUn=unassigned.filter(j=>j.time==='오후'||j.time==='as');
+  const amUn=unassigned.filter(j=>j.time.startsWith('오전')||j.time.includes('2:'));
+  const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as');
 
   // 오전 배정: 건수 균등 라운드로빈
   amUn.forEach(j=>{
@@ -973,7 +973,7 @@ function copyReviewMsg(phone){
   const unpaid=prompt('미결제 금액을 입력하세요 (없으면 0)','0');
   if(unpaid===null)return;
   const unpaidNum=parseInt(unpaid)||0;
-  const reviewUrl='https://my.dolbommat.com/review-event.html?phone='+cleanPhone;
+  const reviewUrl='https://gjvk3322-web.github.io/dolbom-dashboard/review-event.html?phone='+cleanPhone;
   const referralUrl='http://dolbommat.notion.site';
   const naverReview='https://m.site.naver.com/1zAHw';
   let txt=`안녕하세요, 고객님 😊
@@ -1010,6 +1010,16 @@ ${reviewUrl}
 }
 
 // ===== 네이버 네비 열기 =====
+function openKatalk(chatUrl,channelName){
+if(channelName){
+navigator.clipboard.writeText(channelName).then(()=>toast('📋 채팅방명 복사됨: '+channelName,'ok')).catch(()=>toast('복사 실패'));
+} else if(chatUrl){
+window.open(chatUrl,'_blank');
+} else {
+window.open('https://business.kakao.com/_UMyBK/chats','_blank');
+}
+}
+
 function openNavi(addr){
 // 동/호수 추출
 const dongHo=addr.match(/\d+동\s*\d*호?|\d+호/g);
@@ -1142,16 +1152,18 @@ const hasNew=tg.jobs.some(j=>j.isNew);
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 
 // 오전 → 오후 → as 순서로 정렬
-const timeOrder={'오전':0,'오후':1,'as':2};
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2};
 const sorted=[...tg.jobs].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
 const jobRows=sorted.map(j=>{
-const isAm=j.time==='오전'||j.time.includes('2:');
+const isAm=j.time.startsWith('오전')||j.time.includes('2:');
 const isAs=j.time==='as';
+const isMove=j.time.includes('이전설치');
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
+const safeChName=j.channelName?(j.channelName+'').replace(/'/g,"\\'"):'';
 const curTeam=RA[j.id]||[];
 const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const editBtns=E.map((e,ei)=>{
@@ -1160,14 +1172,14 @@ return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="pa
 
 return `<div style="padding:6px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
-<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${j.time}</span>
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAm?'오전':'오후'}${isAs?'AS':''}</span>${isMove?'<span style="font-size:9px;background:rgba(245,159,0,.15);color:var(--yellow);padding:1px 5px;border-radius:4px;font-weight:700;flex-shrink:0">이전</span>':''}
 <span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
 ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
 <div style="display:flex;align-items:center;gap:3px;margin-top:2px">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
-<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">카톡</span>
+<span onclick="event.stopPropagation();openKatalk('${safeChatUrl}','${safeChName}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">${safeChName?'📋카톡':'카톡'}</span>
 ${j.time==='as'?
 `<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
@@ -1187,16 +1199,18 @@ ${jobRows}</div>`}).join('');
 
 if(un.length){
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
-const timeOrder={'오전':0,'오후':1,'as':2};
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2};
 const sortedUn=[...un].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
 body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${sortedUn.length}건</div>`;
 body+=sortedUn.map((j,idx)=>{
-const isAm=j.time==='오전'||j.time.includes('2:');
+const isAm=j.time.startsWith('오전')||j.time.includes('2:');
 const isAs=j.time==='as';
+const isMove=j.time.includes('이전설치');
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
+const safeChName2=j.channelName?(j.channelName+'').replace(/'/g,"\\'"):'';
 const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
 const empBtns=E.map((e,ei)=>{
 const isOff=dayOffSet.has(e);
@@ -1205,14 +1219,14 @@ const ec=ecols[ei%10];
 return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div style="padding:6px 0;${idx>0?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
-<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${j.time}</span>
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAm?'오전':'오후'}${isAs?'AS':''}</span>${isMove?'<span style="font-size:9px;background:rgba(245,159,0,.15);color:var(--yellow);padding:1px 5px;border-radius:4px;font-weight:700;flex-shrink:0">이전</span>':''}
 <span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
 ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-left:38px;margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}</div>`:''}
 <div style="display:flex;align-items:center;gap:3px;margin-left:38px;margin-bottom:3px">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
-<span onclick="event.stopPropagation();window.open('${safeChatUrl}','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">카톡</span>
+<span onclick="event.stopPropagation();openKatalk('${safeChatUrl}','${safeChName2}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">${safeChName2?'📋카톡':'카톡'}</span>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
 </div>`}).join('');
