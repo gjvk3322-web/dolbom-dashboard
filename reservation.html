@@ -221,10 +221,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <label>추천인</label>
       <input type="text" id="fReferrer" placeholder="추천인 코드 (예: 달콤맘_1234)" />
     </div>
-    <div class="fg full">
-      <label>카톡 채팅방명</label>
-      <input type="text" id="fChannelName" placeholder="카카오톡 채팅방 이름" />
-    </div>
     <div class="fg">
       <label>제품 선택 <span class="req">*</span></label>
       <select id="fProduct1" onchange="checkProductMatch()">
@@ -521,7 +517,7 @@ function editItem(time,ds,index){
   document.getElementById('submitBtn').textContent='수정 완료';
   const form=document.getElementById('formSection');form.classList.add('show');
   // 폼 초기화 후 기존 데이터 채우기
-  ['fPhone','fAddress','fSize','fScope','fReferrer','fChannelName'].forEach(id=>{document.getElementById(id).value='';});
+  ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
   ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
   document.getElementById('fTime').value=item.time||time;
   document.getElementById('fDate').value=ds;
@@ -531,7 +527,7 @@ function editItem(time,ds,index){
   document.getElementById('fSize').value=item.size||'';
   document.getElementById('fScope').value=item.scope||'';
   document.getElementById('fReferrer').value=item.referrer||'';
-  document.getElementById('fChannelName').value=item.channelName||'';
+  if(item.channelName){document.getElementById('channelText').textContent=item.channelName;document.getElementById('channelResult').style.display='flex';}else{document.getElementById('channelText').textContent='';document.getElementById('channelResult').style.display='none';}
   document.getElementById('fProduct1').value=item.product||'';
   document.getElementById('fProduct2').value=item.product||'';
   checkProductMatch();
@@ -586,17 +582,19 @@ function submitReservation(){
     isNew:document.getElementById('fIsNew').value,
     size,scope,product:p1,
     referrer:document.getElementById('fReferrer').value.trim(),
-    channelName:document.getElementById('fChannelName').value.trim()
+    channelName:(document.getElementById('channelText').textContent||'').trim()
   };
   if(editMode) payload.row = editMode.row;
 
   fetch(API_URL,{
     method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
   }).then(()=>{
-    ['fPhone','fAddress','fSize','fScope','fReferrer','fChannelName'].forEach(id=>{document.getElementById(id).value='';});
+    ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
     ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
     document.getElementById('productMatch').textContent='';
     document.getElementById('fProduct2').classList.remove('error');
+    document.getElementById('channelText').textContent='';
+    document.getElementById('channelResult').style.display='none';
     document.getElementById('formSection').classList.remove('show');
     showToast(editMode ? `✅ 예약 수정 완료!` : `✅ ${time} 예약 접수 완료!`);
     editMode=null;
