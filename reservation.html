@@ -320,8 +320,8 @@ async function loadData(){
     showLoading(70);
     const json = await res.json();
     showLoading(90);
-    parseScheduleData(json.schedules || []);
-    employees = (json.employees || []).filter(e=>e.team===currentTeam || e.team==='');
+    parseScheduleData(json.schedules || json.rows || []);
+    employees = (json.employees || json.staff || []).filter(e=>e.team===currentTeam || e.team==='');
     lastSync = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${Object.values(scheduleData).reduce((a,d)=>a+d.am.length+d.pm.length,0)}건`;
     showLoading(100);
