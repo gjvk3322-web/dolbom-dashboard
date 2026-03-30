@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 회의 보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f7f3;--card:#fff;--text:#1a1a1a;--text2:#555;--text3:#999;--border:#e5e5e0;--green:#2E7D32;--green-light:#E8F5E9;--green-dark:#1B5E20;--radius:14px;--shadow:0 2px 8px rgba(0,0,0,0.06)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.topic-bar{background:linear-gradient(135deg,#1B5E20,#2E7D32);padding:24px 20px;text-align:center;position:sticky;top:0;z-index:100}
+.topic-bar .label{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px}
+.topic-bar .topic{font-size:20px;font-weight:800;color:#fff;line-height:1.4}
+.topic-bar .sub{font-size:12px;color:rgba(255,255,255,0.5);margin-top:6px}
+.topic-count{display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:3px 12px;font-size:11px;color:#FDD835;font-weight:700;margin-top:8px}
+
+.container{max-width:500px;margin:0 auto;padding:12px 16px 120px}
+
+.opinion-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:8px;box-shadow:var(--shadow);animation:fadeIn .3s ease}
+.opinion-text{font-size:14px;line-height:1.6;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.opinion-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.opinion-time{font-size:11px;color:var(--text3)}
+.opinion-tag{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600}
+.tag-agree{background:#E8F5E9;color:#2E7D32}
+.tag-disagree{background:#FFEBEE;color:#C62828}
+.tag-idea{background:#E3F2FD;color:#1565C0}
+.tag-question{background:#FFF8E1;color:#E65100}
+.tag-none{background:#f5f5f5;color:#999}
+
+.empty{text-align:center;padding:40px;color:var(--text3)}
+.empty .icon{font-size:48px;margin-bottom:8px}
+.empty p{font-size:13px}
+
+.input-area{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 16px;z-index:100}
+.input-wrap{max-width:500px;margin:0 auto}
+.tag-row{display:flex;gap:6px;margin-bottom:8px}
+.tag-btn{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text3);transition:all .15s;-webkit-tap-highlight-color:transparent}
+.tag-btn.active{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.input-row{display:flex;gap:8px}
+.input-row textarea{flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;resize:none;height:44px;max-height:100px;outline:none;transition:border .2s;line-height:1.4}
+.input-row textarea:focus{border-color:var(--green)}
+.send-btn{padding:0 20px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;flex-shrink:0}
+.send-btn:active{background:var(--green-dark);transform:scale(0.97)}
+.send-btn:disabled{background:#ccc;cursor:not-allowed}
+
+/* 관리자 토픽 변경 */
+.admin-toggle{position:absolute;top:10px;right:16px;font-size:11px;color:rgba(255,255,255,0.4);cursor:pointer;padding:4px 8px;border:1px solid rgba(255,255,255,0.15);border-radius:8px}
+.admin-panel{display:none;max-width:500px;margin:0 auto;padding:12px 16px}
+.admin-panel.show{display:block}
+.admin-panel input{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px}
+.admin-panel button{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="topic-bar">
+  <div class="label">오늘의 회의 주제</div>
+  <div class="topic" id="topicText">로딩 중...</div>
+  <div class="sub" id="topicSub"></div>
+  <div class="topic-count" id="topicCount">의견 0개</div>
+  <div class="admin-toggle" onclick="toggleAdmin()">⚙️</div>
+</div>
+
+<div class="admin-panel" id="adminPanel">
+  <input type="text" id="adminTopic" placeholder="새 회의 주제를 입력하세요">
+  <input type="text" id="adminSub" placeholder="부제 (선택)">
+  <button onclick="changeTopic()">주제 변경</button>
+</div>
+
+<div class="container">
+  <div id="opinionsArea">
+    <div class="empty"><div class="icon">💬</div><p>아직 의견이 없습니다<br>첫 번째 의견을 남겨보세요!</p></div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-wrap">
+    <div class="tag-row">
+      <button class="tag-btn active" data-tag="none" onclick="selectTag(this)">💬 의견</button>
+      <button class="tag-btn" data-tag="agree" onclick="selectTag(this)">👍 찬성</button>
+      <button class="tag-btn" data-tag="disagree" onclick="selectTag(this)">👎 반대</button>
+      <button class="tag-btn" data-tag="idea" onclick="selectTag(this)">💡 아이디어</button>
+      <button class="tag-btn" data-tag="question" onclick="selectTag(this)">❓ 질문</button>
+    </div>
+    <div class="input-row">
+      <textarea id="opinionInput" placeholder="의견을 입력하세요 (익명)" rows="1" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendOpinion()">전송</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, doc, setDoc, getDoc, onSnapshot, query, orderBy }
+from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAjVerxCunFEIvkNfCOTDnedbO5YRVOma4",
+  authDomain: "dolbomnote-be438.firebaseapp.com",
+  projectId: "dolbomnote-be438",
+  storageBucket: "dolbomnote-be438.firebasestorage.app",
+  messagingSenderId: "772276336020",
+  appId: "1:772276336020:web:b4f2d5659406d813350b81",
+  measurementId: "G-232HEJ5RKM"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 주제 실시간 로드
+var topicRef = doc(db, "meeting", "currentTopic");
+onSnapshot(topicRef, function(snap){
+  if(snap.exists()){
+    var d = snap.data();
+    document.getElementById('topicText').textContent = d.topic || '주제를 설정해주세요';
+    document.getElementById('topicSub').textContent = d.sub || '';
+  } else {
+    document.getElementById('topicText').textContent = '주제를 설정해주세요';
+  }
+});
+
+// 의견 실시간 로드
+var opinionsRef = collection(db, "meeting_opinions");
+var q = query(opinionsRef, orderBy("timestamp", "desc"));
+onSnapshot(q, function(snapshot){
+  var area = document.getElementById('opinionsArea');
+  var count = snapshot.size;
+  document.getElementById('topicCount').textContent = '의견 ' + count + '개';
+
+  if(count === 0){
+    area.innerHTML = '<div class="empty"><div class="icon">💬</div><p>아직 의견이 없습니다<br>첫 번째 의견을 남겨보세요!</p></div>';
+    return;
+  }
+
+  var html = '';
+  snapshot.forEach(function(docSnap){
+    var d = docSnap.data();
+    var safeText = (d.content||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var tagClass = 'tag-' + (d.tag||'none');
+    var tagLabel = {none:'의견',agree:'찬성',disagree:'반대',idea:'아이디어',question:'질문'}[d.tag||'none'];
+    var time = d.time || '';
+    html += '<div class="opinion-card">';
+    html += '<div class="opinion-text">' + safeText + '</div>';
+    html += '<div class="opinion-meta"><span class="opinion-time">' + time + '</span><span class="opinion-tag ' + tagClass + '">' + tagLabel + '</span></div>';
+    html += '</div>';
+  });
+  area.innerHTML = html;
+});
+
+// 의견 전송
+window.sendOpinion = async function(){
+  var input = document.getElementById('opinionInput');
+  var text = input.value.trim();
+  if(!text) return;
+
+  var btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  var activeTag = document.querySelector('.tag-btn.active');
+  var tag = activeTag ? activeTag.getAttribute('data-tag') : 'none';
+  var now = new Date();
+  var timeStr = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+
+  try {
+    await addDoc(opinionsRef, {
+      content: text,
+      tag: tag,
+      time: timeStr,
+      timestamp: Date.now()
+    });
+    input.value = '';
+    input.style.height = '44px';
+  } catch(e){
+    alert('전송 실패. 다시 시도해주세요.');
+  }
+  btn.disabled = false;
+  btn.textContent = '전송';
+};
+
+// 주제 변경
+window.changeTopic = async function(){
+  var topic = document.getElementById('adminTopic').value.trim();
+  if(!topic){alert('주제를 입력하세요');return;}
+  var sub = document.getElementById('adminSub').value.trim();
+  try {
+    await setDoc(topicRef, {topic: topic, sub: sub, updatedAt: Date.now()});
+    document.getElementById('adminTopic').value = '';
+    document.getElementById('adminSub').value = '';
+    document.getElementById('adminPanel').classList.remove('show');
+    alert('주제가 변경되었습니다!');
+  } catch(e){
+    alert('변경 실패');
+  }
+};
+</script>
+
+<script>
+var selectedTag = 'none';
+function selectTag(el){
+  document.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+  selectedTag = el.getAttribute('data-tag');
+}
+
+function autoResize(el){
+  el.style.height = '44px';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function toggleAdmin(){
+  document.getElementById('adminPanel').classList.toggle('show');
+}
+
+// 엔터로 전송
+document.getElementById('opinionInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    window.sendOpinion();
+  }
+});
+</script>
+</body>
+</html>
