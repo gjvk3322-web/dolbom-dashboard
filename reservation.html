@@ -191,7 +191,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="form-grid">
     <div class="fg">
       <label>시간 <span class="req">*</span></label>
-      <select id="fTime"><option value="">선택</option><option value="오전">오전</option><option value="오후">오후</option><option value="AS">AS</option><option value="실측">실측</option></select>
+      <select id="fTime"><option value="">선택</option><option value="오전">오전</option><option value="오전(이전설치)">오전(이전설치)</option><option value="오후">오후</option><option value="오후(이전설치)">오후(이전설치)</option><option value="AS">AS</option><option value="실측">실측</option></select>
     </div>
     <div class="fg">
       <label>시공일 <span class="req">*</span></label>
@@ -220,6 +220,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="fg full">
       <label>추천인</label>
       <input type="text" id="fReferrer" placeholder="추천인 코드 (예: 달콤맘_1234)" />
+    </div>
+    <div class="fg full">
+      <label>카톡 채팅방명</label>
+      <input type="text" id="fChannelName" placeholder="카카오톡 채팅방 이름" />
     </div>
     <div class="fg">
       <label>제품 선택 <span class="req">*</span></label>
@@ -316,12 +320,12 @@ async function loadData(){
   showLoading(30);
   document.getElementById('syncInfo').textContent='데이터 로딩 중...';
   try{
-    const res = await fetch(API_URL+'?type=schedule&team='+encodeURIComponent(currentTeam));
+    const res = await fetch(API_URL+'?team='+encodeURIComponent(currentTeam));
     showLoading(70);
     const json = await res.json();
     showLoading(90);
-    parseScheduleData(json.schedules || json.rows || []);
-    employees = (json.employees || json.staff || []).filter(e=>e.team===currentTeam || e.team==='');
+    parseScheduleData(json.schedules || []);
+    employees = (json.employees || []).filter(e=>e.team===currentTeam || e.team==='');
     lastSync = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${Object.values(scheduleData).reduce((a,d)=>a+d.am.length+d.pm.length,0)}건`;
     showLoading(100);
@@ -353,6 +357,7 @@ function parseScheduleData(rows){
     if(!dateStr || !time) return;
     if(!scheduleData[dateStr]) scheduleData[dateStr]={am:[],pm:[],as:[],ms:[]};
     const entry = {
+      time: time,
       address: r['주소']||'',
       product: r['제품']||'',
       phone: r['연락처']||'',
@@ -364,10 +369,11 @@ function parseScheduleData(rows){
       busasu: r['부사수']||'',
       car: r['차량번호']||'',
       referrer: r['추천인']||'',
+      channelName: r['채널명']||'',
       row: r.row
     };
-    if(time==='오전') scheduleData[dateStr].am.push(entry);
-    else if(time==='오후') scheduleData[dateStr].pm.push(entry);
+    if(time==='오전'||time==='오전(이전설치)') scheduleData[dateStr].am.push(entry);
+    else if(time==='오후'||time==='오후(이전설치)') scheduleData[dateStr].pm.push(entry);
     else if(time==='AS') scheduleData[dateStr].as.push(entry);
     else if(time==='실측') scheduleData[dateStr].ms.push(entry);
   });
@@ -450,7 +456,8 @@ function renderDayDetail(ds){
   let amH='';
   sc.am.forEach((s,i)=>{
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
-    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
+    const moveTag = s.time==='오전(이전설치)'?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전</span>':'';
+    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}${moveTag}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
   });
   if(amRemain>0 && !isClosed(ds)) amH+=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
   if(!sc.am.length && !isClosed(ds)) amH=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
@@ -460,7 +467,8 @@ function renderDayDetail(ds){
   let pmH='';
   sc.pm.forEach((s,i)=>{
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
-    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
+    const moveTag = s.time==='오후(이전설치)'?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전</span>':'';
+    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}${moveTag}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
   });
   if(pmRemain>0 && !isClosed(ds)) pmH+=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
   if(!sc.pm.length && !isClosed(ds)) pmH=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
@@ -513,9 +521,9 @@ function editItem(time,ds,index){
   document.getElementById('submitBtn').textContent='수정 완료';
   const form=document.getElementById('formSection');form.classList.add('show');
   // 폼 초기화 후 기존 데이터 채우기
-  ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
+  ['fPhone','fAddress','fSize','fScope','fReferrer','fChannelName'].forEach(id=>{document.getElementById(id).value='';});
   ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
-  document.getElementById('fTime').value=time;
+  document.getElementById('fTime').value=item.time||time;
   document.getElementById('fDate').value=ds;
   document.getElementById('fAddress').value=item.address||'';
   document.getElementById('fPhone').value=item.phone||'';
@@ -523,6 +531,7 @@ function editItem(time,ds,index){
   document.getElementById('fSize').value=item.size||'';
   document.getElementById('fScope').value=item.scope||'';
   document.getElementById('fReferrer').value=item.referrer||'';
+  document.getElementById('fChannelName').value=item.channelName||'';
   document.getElementById('fProduct1').value=item.product||'';
   document.getElementById('fProduct2').value=item.product||'';
   checkProductMatch();
@@ -576,14 +585,15 @@ function submitReservation(){
     phone:document.getElementById('fPhone').value,
     isNew:document.getElementById('fIsNew').value,
     size,scope,product:p1,
-    referrer:document.getElementById('fReferrer').value.trim()
+    referrer:document.getElementById('fReferrer').value.trim(),
+    channelName:document.getElementById('fChannelName').value.trim()
   };
   if(editMode) payload.row = editMode.row;
 
   fetch(API_URL,{
     method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
   }).then(()=>{
-    ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
+    ['fPhone','fAddress','fSize','fScope','fReferrer','fChannelName'].forEach(id=>{document.getElementById(id).value='';});
     ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
     document.getElementById('productMatch').textContent='';
     document.getElementById('fProduct2').classList.remove('error');
@@ -602,6 +612,7 @@ function generateChannelName(){
   const region=document.getElementById('fRegion').value.trim();
   const product=document.getElementById('fProduct1').value;
   const isExtra=time==='AS'||time==='실측';
+  const isMove=time.includes('이전설치');
   if(!time||!date||!region){showToast('⚠️ 시간, 시공일, 지역을 먼저 입력하세요');return;}
   if(!isExtra&&!product){showToast('⚠️ 제품을 먼저 선택하세요');return;}
   if(region.length>2){showToast('⚠️ 지역명은 2글자까지만 가능해요');return;}
@@ -611,8 +622,10 @@ function generateChannelName(){
   if(isExtra){
     name=`${time.toLowerCase()}/${region})${prefix}`;
   } else {
-    const timeCode=time==='오전'?'5':'9';
-    name=`${timeCode}/${region}/${product})${prefix}`;
+    const baseTime=time.startsWith('오전')?'오전':'오후';
+    const timeCode=baseTime==='오전'?'5':'9';
+    const moveSuffix=isMove?'이전':'';
+    name=`${timeCode}${moveSuffix}/${region}/${product})${prefix}`;
   }
   document.getElementById('channelText').textContent=name;
   document.getElementById('channelResult').style.display='flex';
