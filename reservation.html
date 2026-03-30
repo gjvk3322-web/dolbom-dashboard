@@ -358,6 +358,7 @@ function parseScheduleData(rows){
     if(!scheduleData[dateStr]) scheduleData[dateStr]={am:[],pm:[],as:[],ms:[]};
     const entry = {
       time: time,
+      category: r['구분']||'',
       address: r['주소']||'',
       product: r['제품']||'',
       phone: r['연락처']||'',
@@ -456,8 +457,8 @@ function renderDayDetail(ds){
   let amH='';
   sc.am.forEach((s,i)=>{
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
-    const moveTag = s.time==='오전(이전설치)'?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전</span>':'';
-    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}${moveTag}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
+    const moveTag = (s.category||'').includes('이전설치')?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전설치</span>':'';
+    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
   });
   if(amRemain>0 && !isClosed(ds)) amH+=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
   if(!sc.am.length && !isClosed(ds)) amH=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
@@ -467,8 +468,8 @@ function renderDayDetail(ds){
   let pmH='';
   sc.pm.forEach((s,i)=>{
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
-    const moveTag = s.time==='오후(이전설치)'?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전</span>':'';
-    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}${moveTag}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}</div></div>`;
+    const moveTag = (s.category||'').includes('이전설치')?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전설치</span>':'';
+    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
   });
   if(pmRemain>0 && !isClosed(ds)) pmH+=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
   if(!sc.pm.length && !isClosed(ds)) pmH=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
@@ -578,10 +579,14 @@ function submitReservation(){
 
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
 
+  const isMove=time.includes('이전설치');
+  const cleanTime=isMove?(time.startsWith('오전')?'오전':'오후'):time;
+  const category=isMove?'이전설치':'';
+
   const payload={
     type: editMode ? 'update' : 'reservation',
     team:currentTeam,
-    time,date,address,
+    time:cleanTime,category,date,address,
     phone:document.getElementById('fPhone').value,
     isNew:document.getElementById('fIsNew').value,
     size,scope,product:p1,
@@ -626,8 +631,11 @@ function generateChannelName(){
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
-    const moveSuffix=isMove?'이전':'';
-    name=`${timeCode}${moveSuffix}/${region}/${product})${prefix}`;
+    if(isMove){
+      name=`${timeCode}2${region}/${product})${prefix}`;
+    } else {
+      name=`${timeCode}/${region}/${product})${prefix}`;
+    }
   }
   document.getElementById('channelText').textContent=name;
   document.getElementById('channelResult').style.display='flex';
