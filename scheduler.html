@@ -233,7 +233,7 @@ const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=o
 const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
 let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217';
 let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
-const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbyW5SV34bN3wGcoal7NyNsRPNa9xIW04Vz52WJu8pZVJC12_-_R0jMXRFNVRMUyI69mxA/exec';
+const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
@@ -990,7 +990,7 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 const jobParts=reportJobId.split('_');
 const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
-fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:currentTeam,row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{})}
+fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{})}
 
 showSubmitToast('✅ 보고서 제출 및 복사 완료!');
 }
