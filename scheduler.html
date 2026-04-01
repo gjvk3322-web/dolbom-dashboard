@@ -799,6 +799,13 @@ toast('🔓 확정 해제','ok');renderAll()}
 let reportJobId='';
 const PRICE_MAP={'마블50':16900,'코튼50':16900,'모던50':16900,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
 
+function formatFee(el){
+const v=el.value;
+if(v.toUpperCase()==='X'||v==='')return;
+const num=parseInt(v.replace(/[^0-9]/g,''))||0;
+if(num>0)el.value=num.toLocaleString();
+}
+
 function calcReport(){
 const color=document.getElementById('rColor').value;
 const qty=parseInt(document.getElementById('rQty').value)||0;
@@ -852,13 +859,13 @@ const html=`
 </div>
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
-<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="calcReport()">
+<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatFee(this);calcReport()">
 <span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (3%할인)</option></select>
 <span style="${lE}">14. 웰컴쿠폰</span><select id="rCoupon" style="${eS}" onchange="calcReport()"><option value="0">없음</option><option value="30000">웰컴 3만원</option><option value="50000">웰컴3만+지인2만</option></select>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
 <span style="${lE}">16. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}" oninput="calcReport()">
 <span style="${lG}">17. 판매비용</span><input id="rPrice" value="0원" style="${autoS}" readonly>
-<span style="${lE}">18. 결제금액</span><input id="rPaid" inputmode="numeric" style="${eS}" oninput="calcReport()" placeholder="실제 받은 금액">
+<span style="${lE}">18. 결제금액</span><input id="rPaid" inputmode="numeric" style="${eS}" oninput="formatFee(this);calcReport()" placeholder="실제 받은 금액">
 <span style="${lG}">19. 미결제금액</span><input id="rUnpaid" value="0원" style="${autoS}" readonly>
 <span style="${lE}">20. 현금영수증</span><select id="rReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
 <span style="${lE}">21. 특이사항</span><textarea id="rNote" rows="2" style="${eS};resize:vertical"></textarea>
