@@ -24,6 +24,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .paid-info .value{font-weight:700;}
 .paid-info .value.green{color:var(--green);}
 .paid-info .value.primary{color:var(--primary);}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
+.loading-spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:16px;font-size:14px;color:var(--text2);font-weight:600;}
 .mission-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
 .mission-header{display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;}
 .mission-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
@@ -73,6 +77,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 </style>
 </head>
 <body>
+<div id="loadingOverlay" class="loading-overlay">
+<div class="loading-spinner"></div>
+<div class="loading-text">후기 이벤트 정보를 불러오는 중...</div>
+</div>
 <div class="header">
   <h1>돌봄매트 후기이벤트</h1>
   <div class="sub" id="phoneDisplay">최대 11만원 캐시백</div>
@@ -224,7 +232,7 @@ async function requestCashback(){
 function fireConfetti(){const c=document.getElementById('confetti'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;const p=[];const cl=['#e8736c','#f59f00','#20c997','#5b9bd5','#ff6b9d','#c084fc'];for(let i=0;i<80;i++)p.push({x:c.width/2+(Math.random()-.5)*100,y:c.height/2,vx:(Math.random()-.5)*12,vy:Math.random()*-14-4,s:Math.random()*8+4,c:cl[Math.floor(Math.random()*cl.length)],r:Math.random()*360,rv:(Math.random()-.5)*10,l:1});let f=0;(function a(){x.clearRect(0,0,c.width,c.height);let alive=false;p.forEach(q=>{if(q.l<=0)return;alive=true;q.x+=q.vx;q.y+=q.vy;q.vy+=.35;q.r+=q.rv;q.l-=.012;x.save();x.translate(q.x,q.y);x.rotate(q.r*Math.PI/180);x.globalAlpha=Math.max(0,q.l);x.fillStyle=q.c;x.fillRect(-q.s/2,-q.s/2,q.s,q.s*.6);x.restore();});f++;if(alive&&f<150)requestAnimationFrame(a);else x.clearRect(0,0,c.width,c.height);})();}
 
 async function loadData(){
-  if(!PHONE)return;
+  if(!PHONE){document.getElementById('loadingOverlay').style.display='none';return;}
   try{
     const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
     const data=await res.json();
@@ -239,6 +247,7 @@ async function loadData(){
       if(data.account.num)document.getElementById('accNum').value=data.account.num;
     }
   }catch(e){console.error(e);}
+  document.getElementById('loadingOverlay').style.display='none';
   renderMissions();
 }
 initMissions();loadData();
