@@ -872,17 +872,47 @@ function closeReport(){document.getElementById('reportOverlay').style.display='n
 function copyCustomerMsg(){
 const g=id=>(document.getElementById(id)||{}).value||'';
 const phone=g('rPhone');
+const color=g('rColor');
+const qty=parseInt(g('rQty'))||0;
+const couponVal=parseInt(g('rCoupon'))||0;
+const isGonggu=g('rGonggu')==='O';
+const unitPrice=PRICE_MAP[color]||0;
 const unpaid=g('rUnpaid');
 const hasUnpaid=unpaid&&unpaid!=='0원'&&unpaid!=='0';
+
+// 계산 내역 만들기
+let calcLines=[];
+const baseTotal=qty*unitPrice;
+calcLines.push(`${color} ${unitPrice.toLocaleString()}원 × ${qty}장 = ${baseTotal.toLocaleString()}원`);
+if(couponVal>0){
+const couponName=couponVal===30000?'웰컴쿠폰 3만원':'웰컴쿠폰3만+지인쿠폰2만';
+calcLines.push(`${couponName} -${couponVal.toLocaleString()}원`);
+}
+let afterCoupon=baseTotal-couponVal;
+if(isGonggu){
+const discount=Math.round(afterCoupon*0.03);
+calcLines.push(`공동구매 3% 할인 -${discount.toLocaleString()}원`);
+afterCoupon=Math.round(afterCoupon*0.97);
+}
+const installFee=g('rInstallFee');
+if(installFee&&installFee!=='X'&&installFee!=='x'&&installFee!=='0'){
+const fee=parseInt(installFee.replace(/[^0-9]/g,''))||0;
+if(fee>0){calcLines.push(`시공비 +${fee.toLocaleString()}원`);afterCoupon+=fee;}
+}
+calcLines.push(`──────────`);
+calcLines.push(`최종 금액: ${afterCoupon.toLocaleString()}원`);
+calcLines.push(`* 디지털온누리상품권 사용시 앱에서 추가 할인됩니다.`);
 
 let msg=`안녕하세요, 고객님 😊
 돌봄매트 시공이 완료되었습니다!
 
+📋 시공 수량 및 금액
+${calcLines.join('\n')}
+
 📋 확인사항
-1. 시공 수량 및 금액 (계산기)
-2. 영수증 (현금영수증/카드결제)
+1. 영수증 (현금영수증/카드결제)
 * 온누리 사용시 자동으로 현금영수증 처리됩니다.
-3. 작업 전·후 사진
+2. 작업 전·후 사진
 
 🎁 리뷰 이벤트 (최대 11만원 캐시백!)
 https://m.site.naver.com/1zAHw
@@ -912,7 +942,7 @@ msg+=`
 
 감사합니다. 돌봄매트 드림 💌`;
 
-navigator.clipboard.writeText(msg).then(()=>toast('📋 고객 전달 메시지 복사 완료!','ok')).catch(()=>toast('복사 실패'));
+navigator.clipboard.writeText(msg).then(()=>toast('📋 복사 완료!','ok')).catch(()=>toast('복사 실패'));
 }
 
 function submitReport(){
