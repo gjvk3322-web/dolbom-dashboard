@@ -193,12 +193,13 @@ localStorage.setItem('dolbom_region','gg');
 <button onclick="closeReport()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:14px;cursor:pointer;font-family:var(--font)">✕ 닫기</button>
 </div>
 <div id="reportForm"></div>
+<div id="customerToast" style="display:none;margin-top:8px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow)"></div>
+<div id="submitToast" style="display:none;margin-top:4px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)"></div>
 <div id="reportSubmitBtn" style="margin-top:10px;display:flex;gap:8px">
 <button onclick="copyCustomerMsg()" style="flex:1;padding:12px;border-radius:10px;background:var(--yellow);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">📋 고객전달</button>
 <button onclick="submitReport()" style="flex:1;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
 <button onclick="closeReport()" style="padding:12px 16px;border-radius:10px;background:var(--card2);color:var(--dim);font-weight:900;font-size:13px;border:1px solid var(--border);cursor:pointer;font-family:var(--font)">✕ 닫기</button>
 </div>
-<div id="reportToast" style="display:none;margin-top:8px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700"></div>
 </div>
 </div>
 
@@ -868,6 +869,8 @@ const html=`
 document.getElementById('reportForm').innerHTML=html;
 document.getElementById('reportForm').style.display='block';
 document.getElementById('reportSubmitBtn').style.display='block';
+document.getElementById('customerToast').style.display='none';
+document.getElementById('submitToast').style.display='none';
 document.getElementById('reportOverlay').style.display='block';
 calcReport()}
 
@@ -947,11 +950,11 @@ msg+=`
 감사합니다. 돌봄매트 드림 💌`;
 
 try{
-navigator.clipboard.writeText(msg).then(()=>showReportToast('📋 복사 완료! 카톡에 붙여넣기','yellow')).catch(()=>{
+navigator.clipboard.writeText(msg).then(()=>showCustomerToast('📋 고객전달 복사완료!')).catch(()=>{
 const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-showReportToast('📋 복사 완료! 카톡에 붙여넣기','yellow');
+showCustomerToast('📋 고객전달 복사완료!');
 });
-}catch(e){showReportToast('📋 복사 완료!','yellow');}
+}catch(e){showCustomerToast('📋 고객전달 복사완료!');}
 }
 
 function submitReport(){
@@ -987,16 +990,18 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:reportJobId})}).catch(()=>{})}
 
-function showReportToast(msg,color){
-const el=document.getElementById('reportToast');
+function showCustomerToast(msg){
+const el=document.getElementById('customerToast');
 el.textContent=msg;
 el.style.display='block';
-el.style.background=color==='green'?'rgba(52,211,153,.15)':'rgba(251,191,36,.15)';
-el.style.color=color==='green'?'var(--green)':'var(--yellow)';
-setTimeout(()=>{el.style.display='none'},3000);
+}
+function showSubmitToast(msg){
+const el=document.getElementById('submitToast');
+el.textContent=msg;
+el.style.display='block';
 }
 
-showReportToast('✅ 보고서 제출 완료!','green');
+showSubmitToast('✅ 보고서 제출 및 복사 완료!');
 }
 
 function copyReport(){
