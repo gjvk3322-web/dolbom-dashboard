@@ -1,4 +1,4 @@
-const CACHE='dolbom-v22';
+const CACHE='dolbom-v23';
 const URLS=['./app.html','./manifest.json','./scheduler.html','./scheduler-gg.html'];
 
 self.addEventListener('install',e=>{
