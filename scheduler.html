@@ -197,13 +197,6 @@ localStorage.setItem('dolbom_region','bs');
 <button onclick="copyCustomerMsg()" style="flex:1;padding:12px;border-radius:10px;background:var(--yellow);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">📋 고객전달</button>
 <button onclick="submitReport()" style="flex:1;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
 </div>
-<div id="reportResult" style="display:none;margin-top:10px">
-<div style="background:var(--card2);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;line-height:1.6" id="reportText"></div>
-<div style="display:flex;gap:8px;margin-top:8px">
-<button onclick="copyReport()" style="flex:1;padding:10px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">📋 복사</button>
-<button onclick="window.open('https://invite.kakao.com/tc/nYMtGOOJ9L','_blank')" style="flex:1;padding:10px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--yellow);font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">💬 카톡방 열기</button>
-</div>
-</div>
 </div>
 </div>
 
@@ -872,7 +865,6 @@ const html=`
 </div>`;
 document.getElementById('reportForm').innerHTML=html;
 document.getElementById('reportForm').style.display='block';
-document.getElementById('reportResult').style.display='none';
 document.getElementById('reportSubmitBtn').style.display='block';
 document.getElementById('reportOverlay').style.display='block';
 calcReport()}
@@ -952,7 +944,13 @@ msg+=`
 
 감사합니다. 돌봄매트 드림 💌`;
 
-navigator.clipboard.writeText(msg).then(()=>toast('📋 복사 완료!','ok')).catch(()=>toast('복사 실패'));
+try{
+navigator.clipboard.writeText(msg).then(()=>toast('📋 복사 완료! 카톡에 붙여넣기','ok')).catch(()=>{
+// 폴백: textarea 복사
+const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+toast('📋 복사 완료! 카톡에 붙여넣기','ok');
+});
+}catch(e){toast('📋 복사 완료!','ok');}
 }
 
 function submitReport(){
@@ -988,11 +986,9 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:reportJobId})}).catch(()=>{})}
 
-// 팝업 + 폼 유지 (수정 재제출 가능)
-document.getElementById('reportText').textContent=txt;
-document.getElementById('reportResult').style.display='block';
-alert('✅ 시공보고서 제출 완료!\n\n수정이 필요하면 위에서 수정 후 다시 제출하세요.');
-toast('✅ 시공보고서 제출 완료!','ok')}
+toast('✅ 보고서 제출 완료!','ok');
+setTimeout(()=>closeReport(),1500);
+}
 
 function copyReport(){
 const txt=document.getElementById('reportText').textContent;
