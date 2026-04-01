@@ -846,10 +846,10 @@ const html=`
 <span style="${lE}">9. 색상</span><select id="rColor" style="${eS}" onchange="calcReport()">${colorSelect}</select>
 <span style="${lE}">10. 시공범위</span><input id="rScope" value="${j.scope}" style="${eS}">
 <span style="${lE}">11. 신축여부</span><select id="rNew" style="${eS}"><option>신축</option><option>구축</option></select>
-<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력">
 </div>
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
+<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력">
 <span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (3%할인)</option></select>
 <span style="${lE}">14. 웰컴쿠폰</span><select id="rCoupon" style="${eS}" onchange="calcReport()"><option value="0">없음</option><option value="30000">웰컴 3만원</option><option value="50000">웰컴3만+지인2만</option></select>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
@@ -959,8 +959,8 @@ const txt=`📋 시공보고서
 9. 색상 : ${g('rColor')}
 10. 시공범위 : ${g('rScope')}
 11. 신축여부 : ${g('rNew')}
-12. 시공비 : ${g('rInstallFee')}
 ── 결제 정보 ──
+12. 시공비 : ${g('rInstallFee')}
 13. 공동구매 : ${g('rGonggu')}
 14. 웰컴쿠폰 : ${g('rCoupon')==='0'?'없음':g('rCoupon')==='30000'?'웰컴3만원':'웰컴3만+지인2만'}
 15. 결제방법 : ${g('rPay')}
