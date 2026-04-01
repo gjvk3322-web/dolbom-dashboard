@@ -105,6 +105,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="fg full"><label>계좌번호</label><input type="text" id="accNum" placeholder="- 없이 입력" inputmode="numeric"></div>
   </div>
 </div>
+<div style="margin:12px 16px 0;padding:14px 16px;background:#f9f9f6;border:1px solid var(--border);border-radius:12px">
+  <div style="font-size:11px;color:#888;line-height:1.7;margin-bottom:10px">
+    <strong style="color:#555">수집 항목:</strong> 은행명, 계좌번호, 예금주<br>
+    <strong style="color:#555">수집 목적:</strong> 캐시백 지급<br>
+    <strong style="color:#555">보유 기간:</strong> 지급 완료 후 6개월<br><br>
+    동의를 거부하실 수 있으나, 거부 시 캐시백 신청이 불가합니다.
+  </div>
+  <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+    <input type="checkbox" id="cashbackConsent" onchange="checkCashbackReady()" style="width:18px;height:18px;accent-color:var(--primary)">
+    <span style="font-size:13px;font-weight:600;color:#555">개인정보 수집 및 이용에 동의합니다.</span>
+  </label>
+</div>
 <button class="cashback-btn" id="cashbackBtn" onclick="requestCashback()" disabled>미션을 달성하면 캐시백을 받을 수 있어요</button>
 <div class="success-overlay" id="successOverlay">
   <div class="success-box">
@@ -169,7 +181,7 @@ function renderMissions(){
   }
   const btn=document.getElementById('cashbackBtn');
   if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
-  else if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
+  else if(remain>0){const consented=document.getElementById('cashbackConsent')&&document.getElementById('cashbackConsent').checked;btn.disabled=!consented;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
   else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';}
   else if(earned>0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
   else{btn.disabled=true;btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';}
@@ -214,7 +226,10 @@ async function submitMission(idx){
   }catch(e){btn.disabled=false;btn.textContent='미션 달성하기';showToast('전송 실패');}
 }
 
+function checkCashbackReady(){renderMissions();}
+
 async function requestCashback(){
+  if(!document.getElementById('cashbackConsent').checked){showToast('개인정보 수집에 동의해 주세요');return;}
   const bank=document.getElementById('accBank').value,name=document.getElementById('accName').value.trim(),num=document.getElementById('accNum').value.trim();
   if(!bank||!name||!num){showToast('계좌 정보를 모두 입력해 주세요');return;}
   let earned=0;MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
