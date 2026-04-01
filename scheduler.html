@@ -990,6 +990,9 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:reportJobId})}).catch(()=>{})}
 
+showSubmitToast('✅ 보고서 제출 및 복사 완료!');
+}
+
 function showCustomerToast(msg){
 const el=document.getElementById('customerToast');
 el.textContent=msg;
@@ -999,9 +1002,6 @@ function showSubmitToast(msg){
 const el=document.getElementById('submitToast');
 el.textContent=msg;
 el.style.display='block';
-}
-
-showSubmitToast('✅ 보고서 제출 및 복사 완료!');
 }
 
 function copyReport(){
