@@ -102,9 +102,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
     <div class="stat"><div class="stat-num">2~3일</div><div class="stat-label">배송 기간</div></div>
   </div>
   <div class="links">
-    <a href="#" onclick="location.href='https://m.site.naver.com/1AWJU';return false;">🍀 실시간 리뷰</a>
-    <a href="#" onclick="location.href='https://m.site.naver.com/1Ac41';return false;">🏅 인증서·테스트</a>
-    <a href="#" onclick="location.href='https://m.site.naver.com/1AbXC';return false;">⭐ 6주년 할인</a>
+    <a href="#" onclick="window.open('https://m.site.naver.com/1AWJU');return false;">🍀 실시간 리뷰</a>
+    <a href="#" onclick="window.open('https://m.site.naver.com/1Ac41');return false;">🏅 인증서·테스트</a>
+    <a href="#" onclick="window.open('https://m.site.naver.com/1AbXC');return false;">⭐ 6주년 할인</a>
   </div>
 </div>
 
@@ -123,23 +123,10 @@ if(hv){hv.play().catch(function(){document.addEventListener('touchstart',functio
 <div class="map-section">
   <div class="map-card">
     <div class="map-title">📍 우리집 근처 시공 사례</div>
-    <div style="display:flex;gap:6px;padding:8px 16px;background:#fff">
-      <button onclick="mapShowHotel()" style="flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#555;transition:all .2s" id="btnHotel">5성급 호텔<br><span style="font-size:10px;font-weight:400;color:#999">키즈룸 시공</span></button>
-      <button onclick="mapShowKinder()" style="flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#555;transition:all .2s" id="btnKinder">80개+<br><span style="font-size:10px;font-weight:400;color:#999">어린이집 시공</span></button>
-      <button onclick="mapMyLocation()" style="flex:1;padding:8px;border:1.5px solid #e0ddd6;border-radius:8px;background:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#2E7D32;transition:all .2s" id="btnLoc">📍<br><span style="font-size:10px;font-weight:400;color:#999">내 위치로 이동</span></button>
-    </div>
-    <iframe id="mapFrame" src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+    <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
     <div class="map-hint">지도를 확대해서 우리 동네 시공 내역을 확인해보세요</div>
   </div>
 </div>
-<script>
-var BASE_MAP='https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
-var KINDER_MAP='https://www.google.com/maps/d/embed?mid=1tESvkcaYjerdKkkaJJnn6mPtqJtKkjw&ehbc=2E312F&noprof=1';
-function mapResetBtns(){document.getElementById('btnHotel').style.background='#fff';document.getElementById('btnHotel').style.borderColor='#e0ddd6';document.getElementById('btnKinder').style.background='#fff';document.getElementById('btnKinder').style.borderColor='#e0ddd6';}
-function mapShowHotel(){mapResetBtns();document.getElementById('btnHotel').style.background='#E8F5E9';document.getElementById('btnHotel').style.borderColor='#2E7D32';document.getElementById('mapFrame').src=BASE_MAP+'&ll=35.1576,129.1602&z=16';}
-function mapShowKinder(){mapResetBtns();document.getElementById('btnKinder').style.background='#E8F5E9';document.getElementById('btnKinder').style.borderColor='#2E7D32';document.getElementById('mapFrame').src=KINDER_MAP+'&z=7';}
-function mapMyLocation(){if(!navigator.geolocation){return;}navigator.geolocation.getCurrentPosition(function(p){document.getElementById('mapFrame').src=BASE_MAP+'&ll='+p.coords.latitude+','+p.coords.longitude+'&z=14';document.getElementById('btnLoc').innerHTML='✅<br><span style="font-size:10px;font-weight:400;color:#999">이동 완료</span>';setTimeout(function(){document.getElementById('btnLoc').innerHTML='📍<br><span style="font-size:10px;font-weight:400;color:#999">내 위치로 이동</span>';},3000);});}
-</script>
 
 <div class="container">
 
@@ -165,13 +152,13 @@ function mapMyLocation(){if(!navigator.geolocation){return;}navigator.geolocatio
       <label>건물 유형 <span class="req">*</span></label>
       <div class="chip-group" id="chipBuilding">
         <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(true)">아파트</div>
-        <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(false)">빌라</div>
+        <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(true)">빌라</div>
         <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(false)">주택</div>
       </div>
     </div>
     <div id="detailRow" style="display:none;gap:10px;margin-bottom:14px">
       <div id="dongBox" style="flex:1">
-        <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">동</label>
+        <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">동 <span style="font-size:10px;color:#bbb">(선택)</span></label>
         <input type="text" id="fDong" placeholder="예: 101" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
       </div>
       <div id="hoBox" style="flex:1">
@@ -212,10 +199,11 @@ function mapMyLocation(){if(!navigator.geolocation){return;}navigator.geolocatio
     <div class="pet-tip">
       🏆 <strong>왜 돌봄매트일까요?</strong><br><br>
       ✅ 창업 6년, 6,700건 시공 완료<br>
+      ✅ 본사 직원 14명, 전문 시공팀 직접 시공<br>
       ✅ 전국 어린이집 80곳 시공 완료<br>
-      ✅ 경찰서 어린이보호구역 5곳 시공<br>
+      ✅ 경찰서 어린이집 5곳 시공<br>
       ✅ 5성급 호텔 키즈룸 시공<br><br>
-      아이와 반려동물의 안전을 책임지는<br>돌봄매트를 직접 확인해보세요!
+      하청 없이 본사에서 직접 시공합니다.<br>아이와 반려동물의 안전을 책임지는<br>돌봄매트를 직접 확인해보세요!
     </div>
   </div>
 
@@ -257,7 +245,7 @@ function mapMyLocation(){if(!navigator.geolocation){return;}navigator.geolocatio
 
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbyW5SV34bN3wGcoal7NyNsRPNa9xIW04Vz52WJu8pZVJC12_-_R0jMXRFNVRMUyI69mxA/exec';
 
 const urlParams=new URLSearchParams(window.location.search);
 const chParam=urlParams.get('ch')||'';
