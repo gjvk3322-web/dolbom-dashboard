@@ -807,6 +807,9 @@ const isGonggu=document.getElementById('rGonggu').value==='O';
 const unitPrice=PRICE_MAP[color]||0;
 let total=qty*unitPrice-coupon;
 if(isGonggu) total=Math.round(total*0.97);
+const installFee=document.getElementById('rInstallFee').value;
+const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
+total+=fee;
 document.getElementById('rPrice').value=total>0?total.toLocaleString()+'원':'0원';
 const paid=parseInt((document.getElementById('rPaid').value||'0').replace(/[^0-9]/g,''))||0;
 document.getElementById('rUnpaid').value=(total-paid>0?(total-paid).toLocaleString()+'원':'0원');
@@ -849,7 +852,7 @@ const html=`
 </div>
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
-<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력">
+<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="calcReport()">
 <span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (3%할인)</option></select>
 <span style="${lE}">14. 웰컴쿠폰</span><select id="rCoupon" style="${eS}" onchange="calcReport()"><option value="0">없음</option><option value="30000">웰컴 3만원</option><option value="50000">웰컴3만+지인2만</option></select>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
@@ -1286,7 +1289,6 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 ${j.time==='as'?
 `<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
-<span onclick="event.stopPropagation();copyReviewMsg('${j.phone}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(232,115,108,.15);color:var(--primary);cursor:pointer;border:1px solid rgba(232,115,108,.3)">후기</span>
 <span style="margin-left:auto;display:flex;gap:3px">
 ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
