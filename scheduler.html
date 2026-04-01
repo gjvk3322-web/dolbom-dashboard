@@ -872,7 +872,24 @@ document.getElementById('reportSubmitBtn').style.display='block';
 document.getElementById('customerToast').style.display='none';
 document.getElementById('submitToast').style.display='none';
 document.getElementById('reportOverlay').style.display='block';
-calcReport()}
+calcReport();
+// 이전 저장 데이터 불러오기
+db.ref('reports/'+jobId).once('value').then(snap=>{
+const d=snap.val();if(!d)return;
+if(d.ref)document.getElementById('rRef').value=d.ref;
+if(d.color){const sel=document.getElementById('rColor');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.color)sel.selectedIndex=i;}}
+if(d.scope)document.getElementById('rScope').value=d.scope;
+if(d.isNew){const sel=document.getElementById('rNew');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.isNew)sel.selectedIndex=i;}}
+if(d.installFee)document.getElementById('rInstallFee').value=d.installFee;
+if(d.gonggu){const sel=document.getElementById('rGonggu');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.gonggu)sel.selectedIndex=i;}}
+if(d.coupon){const sel=document.getElementById('rCoupon');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.coupon)sel.selectedIndex=i;}}
+if(d.pay){const sel=document.getElementById('rPay');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.pay)sel.selectedIndex=i;}}
+if(d.qty)document.getElementById('rQty').value=d.qty;
+if(d.paid)document.getElementById('rPaid').value=d.paid;
+if(d.receipt){const sel=document.getElementById('rReceipt');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.receipt)sel.selectedIndex=i;}}
+if(d.note)document.getElementById('rNote').value=d.note;
+calcReport();
+}).catch(()=>{})}
 
 function closeReport(){document.getElementById('reportOverlay').style.display='none'}
 
