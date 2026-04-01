@@ -990,7 +990,7 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 const jobParts=reportJobId.split('_');
 const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
-fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{})}
+fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'경기',row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{})}
 
 // 시공보고서 텍스트 복사
 try{navigator.clipboard.writeText(txt).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);})}catch(e){}
