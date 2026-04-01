@@ -983,7 +983,7 @@ const txt=`📋 시공보고서
 20. 현금영수증 : ${g('rReceipt')}
 21. 특이사항 : ${g('rNote')}`;
 
-const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:g('rCoupon'),pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toISOString()};
+const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:g('rCoupon'),pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
 fbSave('reports/'+reportJobId,reportData);
 
 // 시공스케줄 시트의 해당 행에 직접 업데이트
