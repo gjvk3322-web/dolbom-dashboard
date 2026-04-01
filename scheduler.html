@@ -986,9 +986,11 @@ const txt=`📋 시공보고서
 const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:g('rCoupon'),pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toISOString()};
 fbSave('reports/'+reportJobId,reportData);
 
-// 구글시트에 저장 (jobId로 중복 방지)
+// 시공스케줄 시트의 해당 행에 직접 업데이트
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
-fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:reportJobId})}).catch(()=>{})}
+const jobParts=reportJobId.split('_');
+const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
+fetch(SHEET_REPORT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:currentTeam,row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{})}
 
 showSubmitToast('✅ 보고서 제출 및 복사 완료!');
 }
