@@ -147,6 +147,7 @@ if(hv){hv.play().catch(function(){document.addEventListener('touchstart',functio
         <input type="text" id="fAddress" placeholder="버튼을 눌러 검색" readonly style="cursor:pointer" onclick="searchAddress()" />
         <button type="button" class="addr-btn" onclick="searchAddress()">주소검색</button>
       </div>
+      <div id="regionBadge" style="display:none;margin-top:6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center"></div>
     </div>
     <div class="fg">
       <label>건물 유형 <span class="req">*</span></label>
@@ -258,12 +259,24 @@ if(chParam){
   });
 }
 
+const BLOCKED_REGIONS=['전라','전남','전북','광주','목포','여수','순천','익산','전주','군산','남원','정읍','강원','춘천','원주','강릉','속초','동해','삼척','태백','제주','안동','영천','공주','보령','홍성','태안','부여','서천','청양','금산','예산','제천','옥천','영동','단양','괴산','진천','음성','증평','보은'];
+
 function searchAddress(){
   new daum.Postcode({
     oncomplete:function(data){
       let addr=data.roadAddress||data.jibunAddress;
       if(data.buildingName)addr+=' '+data.buildingName;
-      document.getElementById('fAddress').value='('+data.zonecode+') '+addr;
+      const fullAddr='('+data.zonecode+') '+addr;
+      document.getElementById('fAddress').value=fullAddr;
+      const badge=document.getElementById('regionBadge');
+      const blocked=BLOCKED_REGIONS.some(r=>addr.includes(r));
+      if(blocked){
+        badge.textContent='😢 죄송합니다. 해당 지역은 현재 서비스 불가 지역입니다';
+        badge.style.display='block';badge.style.background='#fde8e8';badge.style.color='#e53935';badge.style.border='1px solid #e53935';
+      } else {
+        badge.textContent='✅ 서비스 가능 지역입니다!';
+        badge.style.display='block';badge.style.background='#E8F5E9';badge.style.color='#2E7D32';badge.style.border='1px solid #2E7D32';
+      }
     }
   }).open();
 }
