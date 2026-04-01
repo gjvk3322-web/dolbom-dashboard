@@ -353,7 +353,7 @@ function hav(a1,n1,a2,n2){const R=6371,x=(a2-a1)*Math.PI/180,y=(n2-n1)*Math.PI/1
 
 function getOffice(addr){return SOUTH.some(r=>addr.includes(r))?OFF_B:OFF_A}
 
-async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng))}
+async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng)*2)}
 
 // ===== CSV Parse (새 시트 구조) =====
 // A:시간 B:시공일 C:주소 D:연락처 E:신축여부 F:평수 G:시공범위 H:제품 I:수량 J:사수 K:부사수 L:차량번호 M:결제방법 N:판매금액 O:결제상태 P:추천인 Q:유입경로 R:카톡URL S:채널명
