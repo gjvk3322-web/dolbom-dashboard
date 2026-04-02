@@ -274,7 +274,7 @@ function saveQuoteImage(){
   h+='<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:13px;color:#888"><span>'+sizeLabel+' 장당</span><span style="color:#81C784">'+perSheet.toLocaleString()+'원</span></div>';
   if(hp2){h+='<div style="height:1px;background:rgba(255,255,255,0.1);margin:8px 0"></div>';h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#FFD54F"><span>⭐ 후기 이벤트 참여 시</span><span style="font-weight:500">-'+p2d.toLocaleString()+'원</span></div>';h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><span style="font-size:14px;color:#FFD54F">최종 체감가</span><span style="font-size:22px;font-weight:700;color:#FFD54F">'+ft.toLocaleString()+'원</span></div>';}
   h+='</div>';
-  h+='<div style="margin-top:8px;padding:8px 10px;background:#FFF8E1;border-left:3px solid #FF8F00;border-radius:6px;font-size:11px;font-weight:600;color:#1a1a1a;line-height:1.5">📌 실제 시공 후 수량에 맞춰 결제가 이루어집니다.</div>';
+  h+='<div style="margin-top:8px;padding:10px 12px;background:#FFF8E1;border-left:3px solid #FF8F00;border-radius:6px;font-size:12px;font-weight:700;color:#1a1a1a;line-height:1.6">📌 실제 시공 후 수량에 맞춰 결제가 이루어집니다.<br><span style="font-weight:500;font-size:11px;color:#666">견적서 금액은 예상 금액이며, 실제 들어간 수량 기준으로 정산됩니다.</span></div>';
   h+='</div>';
   var cap=document.getElementById('captureArea');cap.innerHTML=h;
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
@@ -341,7 +341,7 @@ function closeImgOverlay(e){
     <div class="img-modal-bottom">
       <div style="font-size:11px;color:#4CAF50;font-weight:600;margin-bottom:6px">💬 카카오톡 채널로 견적서를 보내주시면 빠른상담 가능합니다</div>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button class="img-download-btn" onclick="resaveQuoteImage()" style="flex:1;margin:0">📥 견적서 저장</button>
+        <button class="img-download-btn" onclick="resaveQuoteImage()" style="flex:1;margin:0;justify-content:center">📥 견적서 저장</button>
         <a onclick="copyAndOpenKakao()" style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px;background:#FEE500;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer;white-space:nowrap">💬 카톡 상담하기</a>
       </div>
       <button onclick="closeImgOverlay()" style="width:100%;padding:11px;background:#f0f0f0;color:#666;border:none;border-radius:10px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer">닫기</button>
