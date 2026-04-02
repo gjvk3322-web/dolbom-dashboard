@@ -499,6 +499,7 @@ async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if
 // ===== CSV Parse (새 시트 구조) =====
 // A:시간 B:시공일 C:주소 D:연락처 E:신축여부 F:평수 G:시공범위 H:제품 I:수량 J:사수 K:부사수 L:차량번호 M:결제방법 N:판매금액 O:결제상태 P:추천인 Q:유입경로 R:카톡URL S:채널명
 let OFFS={}; // {date: Set(이름)} 휴무 데이터
+let DUTY={}; // {date: {이름: 사유}} 예비군/교육 등 (배정제외 but 근무 카운트)
 
 function parseCSV(text){
 const lines=text.split('\n');J=[];
@@ -544,10 +545,24 @@ if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue; // 유효한 날짜만
 // C~L열 (r[2]~r[11]) 모든 이름 읽기
 for(let ci=2;ci<=11;ci++){
   if(!r[ci]||!r[ci].trim())continue;
-  const name=matchEmpName(r[ci]); // 풀네임 → 짧은 이름 매칭
-  if(name){
-    if(!OFFS[ds])OFFS[ds]=new Set();
-    OFFS[ds].add(name);
+  const raw=r[ci].trim();
+  // 예비군:이름, 교육:이름, 출장:이름 등 접두어 처리
+  const prefixMatch=raw.match(/^(예비군|교육|출장|훈련):(.+)$/);
+  if(prefixMatch){
+    const reason=prefixMatch[1];
+    const name=matchEmpName(prefixMatch[2]);
+    if(name){
+      if(!OFFS[ds])OFFS[ds]=new Set();
+      OFFS[ds].add(name); // 배정에서는 제외
+      if(!DUTY[ds])DUTY[ds]={};
+      DUTY[ds][name]=reason; // 근무로 카운트
+    }
+  }else{
+    const name=matchEmpName(raw);
+    if(name){
+      if(!OFFS[ds])OFFS[ds]=new Set();
+      OFFS[ds].add(name);
+    }
   }
 }
 }}
@@ -2022,8 +2037,9 @@ const ym=mYear+'-'+String(mMonth+1).padStart(2,'0');
 const dayData={};
 for(let d=1;d<=lastDay;d++){
 const ds=ym+'-'+String(d).padStart(2,'0');
-dayData[d]={am:0,pm:0,as:0,move:0,offs:new Set(),jobs:[]};
+dayData[d]={am:0,pm:0,as:0,move:0,offs:new Set(),duty:{},jobs:[]};
 if(OFFS[ds])OFFS[ds].forEach(n=>dayData[d].offs.add(n));
+if(DUTY[ds])Object.assign(dayData[d].duty,DUTY[ds]);
 }
 J.forEach(j=>{
 const jd=new Date(j.date);
@@ -2039,10 +2055,13 @@ if(j.doff)j.doff.forEach(n=>dayData[d].offs.add(n));
 
 // 직원별 통계 (공통)
 const empStats={};
-E.forEach(e=>{empStats[e]={work:0,off:0,am:0,pm:0,dutang:0}});
+E.forEach(e=>{empStats[e]={work:0,off:0,duty:0,am:0,pm:0,dutang:0}});
 for(let d=1;d<=lastDay;d++){
 const dd=dayData[d];
-dd.offs.forEach(n=>{if(empStats[n])empStats[n].off++});
+dd.offs.forEach(n=>{if(empStats[n]){
+  if(dd.duty[n])empStats[n].duty++; // 예비군/교육 = 근무 카운트
+  else empStats[n].off++; // 일반 휴무
+}});
 const dayEmps=new Set();const dayEmpSlots={};
 dd.jobs.forEach(j=>{
 const crew=A[j.id];if(!crew)return;
@@ -2084,7 +2103,13 @@ if(dd.am)inner+=`<div class="mc-badge am">AM ${dd.am}</div> `;
 if(dd.pm)inner+=`<div class="mc-badge pm">PM ${dd.pm}</div> `;
 if(dd.as)inner+=`<div class="mc-badge as-b">AS ${dd.as}</div>`;
 if(dd.move)inner+=`<div style="font-size:8px;color:var(--yellow);font-weight:700;margin-top:1px">이전 ${dd.move}</div>`;
-if(dd.offs.size)inner+=`<div class="mc-off">${[...dd.offs].map(n=>`<span style="color:${ecl[E.indexOf(n)%10]}">${n}</span>`).join(' ')}</div>`;
+if(dd.offs.size){
+const names=[...dd.offs].map(n=>{
+const isDuty=dd.duty[n];
+return `<span style="color:${ecl[E.indexOf(n)%10]}">${isDuty?'🪖':''}\u200B${n}</span>`;
+}).join(' ');
+inner+=`<div class="mc-off">${names}</div>`;
+}
 grid+=`<div class="${cls}">${inner}</div>`;
 }
 
@@ -2108,39 +2133,60 @@ ${sumHtml}`;
 const ei=E.indexOf(monthEmp);
 const ec=ecl[ei%10];
 const s=empStats[monthEmp];
-const offDays=new Set();const workDays=new Set();const dutangDays=new Set();
+const offDays=new Set();const workDays=new Set();const dutangDays=new Set();const dutyDays=new Set();
 
 for(let d=1;d<=lastDay;d++){
-if(dayData[d].offs.has(monthEmp))offDays.add(d);
+if(dayData[d].offs.has(monthEmp)){
+  if(dayData[d].duty[monthEmp])dutyDays.add(d);
+  else offDays.add(d);
+}
 const daySlots=new Set();
 dayData[d].jobs.forEach(j=>{const crew=A[j.id];if(crew&&crew.includes(monthEmp))daySlots.add(j.time.startsWith('오전')?'am':'pm');});
 if(daySlots.size)workDays.add(d);
 if(daySlots.has('am')&&daySlots.has('pm'))dutangDays.add(d);
 }
 
+// 이번 달 전체 휴무일 수 (주말 포함하여 OFFS에 등록된 날)
+let totalMonthOffs=0;
+const counted=new Set();
+for(let d=1;d<=lastDay;d++){
+dayData[d].offs.forEach(n=>{if(E.includes(n)&&!dayData[d].duty[n]){const k=d+'_'+n;if(!counted.has(k)){counted.add(k);totalMonthOffs++}}});
+}
+const avgOff=Math.round(totalMonthOffs/E.length);
+
 calTitle=`${monthEmp}의 ${mMonth+1}월`;
-calSub=`시공 ${s.work}일 · 두탕 ${s.dutang}회 · 휴무 ${s.off}일`;
+calSub=`시공 ${s.work}일 · 두탕 ${s.dutang}회${s.duty?' · 🪖 '+s.duty+'일':''}`;
 
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
 for(let d=1;d<=lastDay;d++){
-const dow=(startDow+d-1)%7;const isOff=offDays.has(d);const isWork=workDays.has(d);const isDutang=dutangDays.has(d);const isToday=d===todayD;
+const dow=(startDow+d-1)%7;const isOff=offDays.has(d);const isDuty=dutyDays.has(d);const isWork=workDays.has(d);const isDutang=dutangDays.has(d);const isToday=d===todayD;
 let cls='mc-cell';
 if(isOff)cls+=' mc-cell-off';
+if(isDuty)cls+=' has-job';
 if(isWork)cls+=' has-job';
 if(isToday)cls+=' today';
 let inner=`<div class="mc-date ${dow===0?'sun':dow===6?'sat':''}">${d}</div>`;
 if(isDutang)inner+=`<div class="mc-badge am" style="background:rgba(48,209,88,.15);color:var(--green)">두탕</div>`;
 else if(isWork)inner+=`<div class="mc-badge am">시공</div>`;
-if(isOff)inner+=`<div style="font-size:9px;color:var(--red);font-weight:700;margin-top:2px">휴무</div>`;
+if(isDuty){const reason=dayData[d].duty[monthEmp];inner+=`<div style="font-size:9px;color:var(--yellow);font-weight:700;margin-top:2px">🪖 ${reason}</div>`}
+else if(isOff)inner+=`<div style="font-size:9px;color:var(--red);font-weight:700;margin-top:2px">휴무</div>`;
 grid+=`<div class="${cls}">${inner}</div>`;
 }
+
+// 휴무 요약
+const offSummary=`<div style="background:var(--card);border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:space-around;text-align:center">
+<div><div style="font-size:20px;font-weight:900;color:var(--dim)">${avgOff}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">평균 휴무</div></div>
+<div><div style="font-size:20px;font-weight:900;color:${s.off>avgOff?'var(--red)':s.off<avgOff?'var(--green)':'var(--text)'}">${s.off}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">나의 휴무</div></div>
+<div><div style="font-size:20px;font-weight:900;color:var(--text)">${s.work+s.duty}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">근무일</div></div>
+</div>`;
 
 v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2 style="color:${ec}">${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
 ${badges}
 <div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
 <div class="mc-grid">${grid}</div>
-<div class="mc-legend"><span class="lg-job">시공</span><span class="lg-am">두탕</span><span class="lg-off2">휴무</span></div>`;
+<div class="mc-legend"><span class="lg-job">시공</span><span class="lg-am">두탕</span><span class="lg-off2">휴무</span></div>
+${offSummary}`;
 }
 }
 
@@ -2149,7 +2195,7 @@ async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
 try{
 // 휴무 데이터 먼저 로딩
-OFFS={};
+OFFS={};DUTY={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
@@ -2228,7 +2274,7 @@ const sub=document.getElementById('sub');
 if(showToast)sub.textContent='🔄 갱신 중...';
 
 // 휴무 데이터 먼저 갱신
-OFFS={};
+OFFS={};DUTY={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL+'&_='+Date.now());
@@ -2294,7 +2340,7 @@ document.getElementById('confirmOkBtn').style.display='none';
 document.getElementById('confirmOverlay').classList.add('show');
 
 try{
-OFFS={};
+OFFS={};DUTY={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
