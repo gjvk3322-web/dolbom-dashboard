@@ -143,7 +143,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .mc-badge.am{background:rgba(90,200,250,.15);color:var(--blue)}
 .mc-badge.pm{background:rgba(191,90,242,.15);color:var(--purple)}
 .mc-badge.as-b{background:rgba(255,69,58,.1);color:var(--red)}
-.mc-off{font-size:8px;color:var(--red);font-weight:600;line-height:1.3;margin-top:1px}
+.mc-off{font-size:8px;font-weight:600;line-height:1.3;margin-top:1px}
 .mc-legend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:11px;color:var(--dim);flex-wrap:wrap}
 .mc-legend span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:4px;vertical-align:middle}
 .mc-legend .lg-job::before{background:rgba(48,209,88,.3)}
@@ -1959,7 +1959,7 @@ if(dd.am)inner+=`<div class="mc-badge am">AM ${dd.am}</div> `;
 if(dd.pm)inner+=`<div class="mc-badge pm">PM ${dd.pm}</div> `;
 if(dd.as)inner+=`<div class="mc-badge as-b">AS ${dd.as}</div>`;
 if(dd.move)inner+=`<div style="font-size:8px;color:var(--yellow);font-weight:700;margin-top:1px">이전 ${dd.move}</div>`;
-if(dd.offs.size)inner+=`<div class="mc-off">${[...dd.offs].join(' ')}</div>`;
+if(dd.offs.size)inner+=`<div class="mc-off">${[...dd.offs].map(n=>`<span style="color:${ecl[E.indexOf(n)%10]}">${n}</span>`).join(' ')}</div>`;
 grid+=`<div class="${cls}">${inner}</div>`;
 }
 
