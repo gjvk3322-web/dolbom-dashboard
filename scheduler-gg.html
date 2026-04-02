@@ -2129,6 +2129,14 @@ if(isOff)inner+=`<div style="font-size:9px;color:var(--red);font-weight:700;marg
 grid+=`<div class="${cls}">${inner}</div>`;
 }
 
+v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2 style="color:${ec}">${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
+${badges}
+<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
+<div class="mc-grid">${grid}</div>
+<div class="mc-legend"><span class="lg-job">시공</span><span class="lg-am">두탕</span><span class="lg-off2">휴무</span></div>`;
+}
+}
+
 // ===== Init =====
 async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
