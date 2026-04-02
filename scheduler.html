@@ -123,6 +123,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .confirmed-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)}
 .depart-btn{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(251,191,36,.2);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3);animation:pulseBtn 2s infinite}
 @keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.3)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+
+/* 월간 캘린더 */
+.mc-hd{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:14px}
+.mc-hd h2{font-size:17px;font-weight:900;min-width:120px;text-align:center}
+.mc-arrow{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mc-arrow:active{background:var(--card2);transform:scale(.95)}
+.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mc-dow{text-align:center;font-size:10px;font-weight:700;color:var(--dim);padding:6px 0}
+.mc-dow.sun{color:var(--red)}.mc-dow.sat{color:var(--blue)}
+.mc-cell{background:var(--card);border-radius:10px;min-height:80px;padding:4px;overflow:hidden;cursor:pointer;transition:background .15s;border:1px solid transparent}
+.mc-cell:active{background:var(--card2)}
+.mc-cell.today{border:1.5px solid var(--blue)}
+.mc-cell.has-job{background:rgba(48,209,88,.06)}
+.mc-cell.empty{background:transparent;min-height:0;cursor:default}
+.mc-date{font-size:12px;font-weight:700;padding:2px 4px;margin-bottom:2px}
+.mc-date.sun{color:var(--red)}.mc-date.sat{color:var(--blue)}
+.mc-badge{display:inline-block;padding:1px 4px;border-radius:4px;font-size:8px;font-weight:700;margin:1px 0}
+.mc-badge.am{background:rgba(90,200,250,.15);color:var(--blue)}
+.mc-badge.pm{background:rgba(191,90,242,.15);color:var(--purple)}
+.mc-badge.as-b{background:rgba(255,69,58,.1);color:var(--red)}
+.mc-off{font-size:8px;color:var(--red);font-weight:600;line-height:1.3;margin-top:1px}
+.mc-legend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:11px;color:var(--dim);flex-wrap:wrap}
+.mc-legend span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.mc-legend .lg-job::before{background:rgba(48,209,88,.3)}
+.mc-legend .lg-am::before{background:rgba(90,200,250,.4)}
+.mc-legend .lg-pm::before{background:rgba(191,90,242,.4)}
+.mc-legend .lg-off2::before{background:rgba(255,69,58,.4)}
+.mc-summary{background:var(--card);border-radius:14px;padding:14px;margin-top:12px}
+.mc-summary-title{font-size:13px;font-weight:800;margin-bottom:10px}
+.mc-emp-row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.mc-emp-name{font-size:11px;font-weight:700;min-width:32px}
+.mc-emp-bar{flex:1;height:16px;background:var(--card2);border-radius:6px;overflow:hidden;display:flex}
+.mc-emp-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.mc-emp-num{font-size:10px;color:var(--dim);min-width:60px;text-align:right;font-family:monospace}
 </style>
 </head>
 <body>
@@ -150,12 +184,14 @@ localStorage.setItem('dolbom_region','bs');
 <div id="donghoBar" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,191,36,.1));border-bottom:1px solid rgba(251,191,36,.3);padding:12px 16px;font-size:14px;color:var(--yellow);text-align:center;position:sticky;top:48px;z-index:99"></div>
 
 <div class="pane on" id="p-sched"><div id="schedView"></div></div>
+<div class="pane" id="p-month"><div id="monthView"></div></div>
 <div class="pane" id="p-team"><div id="teamView"></div></div>
 <div class="pane" id="p-fair"><div id="fairView"></div></div>
 <div class="pane" id="p-car"><div id="carView"></div></div>
 
 <nav class="nav">
     <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
+    <a onclick="sw('month')" href="#"><span>📅</span>월간</a>
     <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
     <a onclick="sw('car')" href="#"><span>🚗</span>차량</a>
     <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
@@ -1770,8 +1806,9 @@ function sw(n){
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
-const tabs=['sched','team','car','fair'];
+const tabs=['sched','month','team','car','fair'];
 document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
+if(n==='month')renderMonth();
 renderAll()}
 
 let renderTimer=null;
@@ -1810,6 +1847,12 @@ J.forEach(j=>{if(j.doff.length){if(!dateOffsMap[j.date])dateOffsMap[j.date]=new 
 
 // 이번 달 날짜 순회
 Object.entries(dateOffsMap).forEach(([date,offs])=>{
+const jd=new Date(date);
+if(jd.getFullYear()===calYear&&jd.getMonth()===calMonth){
+if(offs.has(calEmp))offDays.add(jd.getDate())}});
+
+// OFFS에서 직접 휴무 데이터 확인 (예약 없는 날도 포함)
+Object.entries(OFFS).forEach(([date,offs])=>{
 const jd=new Date(date);
 if(jd.getFullYear()===calYear&&jd.getMonth()===calMonth){
 if(offs.has(calEmp))offDays.add(jd.getDate())}});
@@ -1855,6 +1898,139 @@ document.getElementById('calSummary').textContent=
 let lpTimer=null;
 function empDown(emp){lpTimer=setTimeout(()=>{openCal(emp);lpTimer='fired'},300)}
 function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer);lpTimer=null}
+
+// ===== 월간 캘린더 =====
+let mYear,mMonth;
+(function(){const n=new Date();mYear=n.getFullYear();mMonth=n.getMonth()})();
+function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth()}
+
+function renderMonth(){
+const v=document.getElementById('monthView');if(!v)return;
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const lastDay=new Date(mYear,mMonth+1,0).getDate();
+const startDow=new Date(mYear,mMonth,1).getDay();
+const today=new Date();
+const todayD=(today.getFullYear()===mYear&&today.getMonth()===mMonth)?today.getDate():-1;
+const ym=mYear+'-'+String(mMonth+1).padStart(2,'0');
+
+// 날짜별 데이터 수집
+const dayData={};
+for(let d=1;d<=lastDay;d++){
+const ds=ym+'-'+String(d).padStart(2,'0');
+dayData[d]={am:0,pm:0,as:0,move:0,offs:new Set(),jobs:[]};
+// OFFS에서 휴무
+if(OFFS[ds])OFFS[ds].forEach(n=>dayData[d].offs.add(n));
+}
+// 예약 건 수집
+J.forEach(j=>{
+const jd=new Date(j.date);
+if(jd.getFullYear()!==mYear||jd.getMonth()!==mMonth)return;
+const d=jd.getDate();
+if(!dayData[d])return;
+const isAm=j.time.startsWith('오전');
+const isPm=j.time.startsWith('오후');
+const isAs=j.time==='AS';
+if(isAm)dayData[d].am++;
+if(isPm)dayData[d].pm++;
+if(isAs)dayData[d].as++;
+if((j.category||'').includes('이전설치'))dayData[d].move++;
+dayData[d].jobs.push(j);
+// doff 반영
+if(j.doff)j.doff.forEach(n=>dayData[d].offs.add(n));
+});
+
+// 캘린더 그리드
+let grid='';
+const dowNames=['일','월','화','수','목','금','토'];
+dowNames.forEach((d,i)=>{
+grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;
+});
+for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+for(let d=1;d<=lastDay;d++){
+const dd=dayData[d];
+const dow=(startDow+d-1)%7;
+const hasJob=dd.am+dd.pm+dd.as>0;
+const isToday=d===todayD;
+let cls='mc-cell';
+if(hasJob)cls+=' has-job';
+if(isToday)cls+=' today';
+let inner=`<div class="mc-date ${dow===0?'sun':dow===6?'sat':''}">${d}</div>`;
+if(dd.am)inner+=`<div class="mc-badge am">AM ${dd.am}</div> `;
+if(dd.pm)inner+=`<div class="mc-badge pm">PM ${dd.pm}</div> `;
+if(dd.as)inner+=`<div class="mc-badge as-b">AS ${dd.as}</div>`;
+if(dd.move)inner+=`<div style="font-size:8px;color:var(--yellow);font-weight:700;margin-top:1px">이전 ${dd.move}</div>`;
+if(dd.offs.size)inner+=`<div class="mc-off">${[...dd.offs].join(' ')}</div>`;
+grid+=`<div class="${cls}">${inner}</div>`;
+}
+
+// 직원별 요약
+const empStats={};
+E.forEach(e=>{empStats[e]={work:0,off:0,am:0,pm:0,dutang:0}});
+for(let d=1;d<=lastDay;d++){
+const dd=dayData[d];
+const ds=ym+'-'+String(d).padStart(2,'0');
+// 휴무 카운트
+dd.offs.forEach(n=>{if(empStats[n])empStats[n].off++});
+// 시공 카운트 (배정 기반)
+const dayEmps=new Set();
+const dayEmpSlots={};
+dd.jobs.forEach(j=>{
+const crew=A[j.id];
+if(!crew)return;
+crew.forEach(e=>{
+dayEmps.add(e);
+if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();
+const isAm=j.time.startsWith('오전');
+dayEmpSlots[e].add(isAm?'am':'pm');
+});
+});
+dayEmps.forEach(e=>{
+if(!empStats[e])return;
+empStats[e].work++;
+const slots=dayEmpSlots[e];
+if(slots){
+if(slots.has('am'))empStats[e].am++;
+if(slots.has('pm'))empStats[e].pm++;
+if(slots.has('am')&&slots.has('pm'))empStats[e].dutang++;
+}
+});
+}
+
+// 월 요약 통계
+let totalAm=0,totalPm=0,totalAs=0;
+for(let d=1;d<=lastDay;d++){totalAm+=dayData[d].am;totalPm+=dayData[d].pm;totalAs+=dayData[d].as}
+
+let sumHtml=`<div class="mc-summary">
+<div class="mc-summary-title">📊 ${mMonth+1}월 직원별 현황</div>`;
+E.forEach((e,ei)=>{
+const s=empStats[e];
+const total=s.am+s.pm;
+const maxSlots=lastDay;
+const workPct=Math.round(s.work/lastDay*100);
+const offPct=Math.round(s.off/lastDay*100);
+const c=ecl[ei%10];
+sumHtml+=`<div class="mc-emp-row">
+<div class="mc-emp-name" style="color:${c}">${e}</div>
+<div class="mc-emp-bar">
+<div class="mc-emp-seg" style="width:${workPct}%;background:rgba(48,209,88,.25);color:var(--green)">${s.work>0?s.work+'일':''}</div>
+<div class="mc-emp-seg" style="width:${offPct}%;background:rgba(255,69,58,.2);color:var(--red)">${s.off>0?s.off:''}</div>
+</div>
+<div class="mc-emp-num">${s.dutang}두탕 ${s.off}휴</div>
+</div>`;
+});
+sumHtml+=`</div>`;
+
+v.innerHTML=`
+<div class="mc-hd">
+<button class="mc-arrow" onclick="mMove(-1)">‹</button>
+<h2>${mYear}년 ${mMonth+1}월</h2>
+<button class="mc-arrow" onclick="mMove(1)">›</button>
+</div>
+<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">예약 ${totalAm+totalPm}건 (오전${totalAm} 오후${totalPm}) · AS ${totalAs}건</div>
+<div class="mc-grid">${grid}</div>
+<div class="mc-legend"><span class="lg-job">예약</span><span class="lg-am">오전</span><span class="lg-pm">오후</span><span class="lg-off2">휴무</span></div>
+${sumHtml}`;
+}
 
 // ===== Init =====
 async function init(){
