@@ -413,7 +413,8 @@ let fbPending=false;
 function fbRender(){
   if(fbPending||isAssigning)return;
   fbPending=true;
-  setTimeout(()=>{fbPending=false;renderAll()},300);
+  setTimeout(()=>{fbPending=false;if(n==='month')renderMonth();
+renderAll()},300);
 }
 db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
 db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
@@ -2237,7 +2238,7 @@ async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
 try{
 // 휴무 데이터 먼저 로딩
-OFFS={};DUTY={};
+OFFS={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
@@ -2297,7 +2298,7 @@ if(DIST[key]!==undefined)continue;
 const d=await calcDist(j.addr);
 if(d>0){DIST[key]=d;updated=true}
 }
-if(updated)fbSave('distances',DIST);
+if(updated)fbSave('gg_distances',DIST);
 },3000);
 
 // 버전 표시
@@ -2316,7 +2317,7 @@ const sub=document.getElementById('sub');
 if(showToast)sub.textContent='🔄 갱신 중...';
 
 // 휴무 데이터 먼저 갱신
-OFFS={};DUTY={};
+OFFS={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL+'&_='+Date.now());
@@ -2351,7 +2352,6 @@ else if(showToast)toast('✅ 최신 상태예요','ok');
 function manualRefresh(){refreshSheet(true)}
 
 async function reAssign(){
-if(!requireAdmin())return;
 const hasLock=LOCK.size>0;
 const msg=hasLock?'모든 배정을 초기화하고 다시 배정할까요?\n\n🔒 확정된 '+LOCK.size+'건은 유지됩니다.\n(전부 초기화하려면 확정을 먼저 해제하세요)':'모든 배정을 초기화하고 다시 배정할까요?';
 if(!confirm(msg))return;
@@ -2382,7 +2382,7 @@ document.getElementById('confirmOkBtn').style.display='none';
 document.getElementById('confirmOverlay').classList.add('show');
 
 try{
-OFFS={};DUTY={};
+OFFS={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
