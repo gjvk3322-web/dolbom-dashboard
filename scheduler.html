@@ -1931,10 +1931,8 @@ function toast(msg,type){const t=document.getElementById('toast');t.textContent=
 let calEmp='',calYear=0,calMonth=0;
 
 function openCal(emp){
-calEmp=emp;
-const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
-renderCal();
-document.getElementById('calOverlay').classList.add('show');
+monthEmp=emp;
+sw('month');
 }
 function closeCal(){document.getElementById('calOverlay').classList.remove('show')}
 function calMove(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCal()}
@@ -2060,7 +2058,7 @@ const slots=dayEmpSlots[e];if(slots){if(slots.has('am'))empStats[e].am++;if(slot
 
 // ── 직원 뱃지 바 ──
 let badges=`<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">`;
-badges+=`<span onclick="mSelectEmp(null)" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;${!monthEmp?'background:var(--text);color:var(--bg)':'background:var(--card2);color:var(--dim)'}"}>전체</span>`;
+badges+=`<span onclick="mSelectEmp(null)" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;${!monthEmp?'background:var(--text);color:var(--bg)':'background:var(--card2);color:var(--dim)'}">전체</span>`;
 E.forEach((e,ei)=>{
 const sel=monthEmp===e;
 const c=ecl[ei%10];
