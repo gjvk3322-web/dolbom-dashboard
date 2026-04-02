@@ -244,14 +244,10 @@ function searchAddr(){
     result.textContent='📍 '+addrData.name+' ('+addrData.address+')';
     var detected=detectTeam(addrData.address);
     var badge=document.getElementById('teamBadge');
-    if(detected==='blocked'){
-      badge.style.display='block';badge.style.background='#fde8e8';badge.style.color='#e53935';badge.style.border='1px solid #e53935';
-      badge.textContent='😢 죄송합니다. 해당 지역은 현재 서비스 불가 지역입니다';
-      TEAM='';checkSubmit();return;
-    }else if(detected==='unknown'){
-      badge.style.display='block';badge.style.background='#fff8e6';badge.style.color='#f59f00';badge.style.border='1px solid #f59f00';
-      badge.textContent='⚠️ 지역 확인이 필요합니다. 카톡으로 문의해주세요';
-      TEAM='';checkSubmit();return;
+    if(detected==='blocked'||detected==='unknown'){
+      badge.style.display='block';badge.style.background='#fff8e6';badge.style.color='#E65100';badge.style.border='1px solid #f59f00';
+      badge.textContent='⚠️ 원거리 지역입니다. 예약 후 상담원이 확인드립니다';
+      switchTeam('부산');
     }else{
       badge.style.display='block';badge.style.background='#E8F5E9';badge.style.color='#2E7D32';badge.style.border='1px solid #2E7D32';
       badge.textContent=(detected==='부산'?'🏢 부산팀':'🏢 경기팀')+' 배정';
