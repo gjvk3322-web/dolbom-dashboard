@@ -261,23 +261,20 @@ function saveQuoteImage(){
   var presetText=selectedPresetInfo||(isExpand?'확장형':'비확장형')+(isWideRoom?' (넓은편)':'');
   var presetFull=presetText+' · '+qty+'장';
   if(smallRoomCount>0)presetFull+=' + 작은방 '+smallRoomCount+'개';
-  var h='<div style="padding:28px 24px;background:#fff;font-family:Noto Sans KR,sans-serif">';
-  h+='<div style="text-align:center;margin-bottom:20px"><div style="font-size:10px;letter-spacing:4px;color:#999;margin-bottom:4px">DOLBOM MAT</div><div style="font-size:20px;font-weight:900;color:#1a1a1a">맞춤 견적서</div></div>';
-  h+='<div style="background:linear-gradient(135deg,#1a1a1a,#2d2d2d);border-radius:14px;padding:20px 16px;color:#fff">';
-  h+='<div style="text-align:center;padding:4px 0 10px;font-size:12px;color:#9E9E9E;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:8px">🏠 '+presetFull+'</div>';
+  var h='<div style="padding:16px;background:#fff;font-family:Noto Sans KR,sans-serif">';
+  h+='<div style="background:linear-gradient(135deg,#1a1a1a,#2d2d2d);border-radius:14px;padding:18px 16px;color:#fff">';
+  h+='<div style="text-align:center;padding:2px 0 8px;font-size:12px;color:#9E9E9E;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:8px">🏠 '+presetFull+'</div>';
   h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#888"><span>'+selectedProduct.name+' '+selectedProduct.thickness+'</span><span>'+price.toLocaleString()+'원/장</span></div>';
   h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>매트 비용</span><span style="font-weight:500">'+matCost.toLocaleString()+'원</span></div>';
   if(srCost>0)h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>작은방 '+smallRoomCount+'개 ('+sr.prodName+' '+srQty+'장)</span><span style="font-weight:500">'+srCost.toLocaleString()+'원</span></div>';
   if(installFee>0)h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>시공비 (소량 추가)</span><span style="font-weight:500">'+installFee.toLocaleString()+'원</span></div>';
   if(p1d>0)h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#888"><span>혜택 할인</span><span style="font-weight:500">-'+p1d.toLocaleString()+'원</span></div>';
   h+='<div style="height:1px;background:rgba(255,255,255,0.1);margin:8px 0"></div>';
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span style="font-size:14px;color:#ccc">예상 체감가</span><span style="font-size:22px;font-weight:700;color:#81C784">'+total.toLocaleString()+'원</span></div>';
-  h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#888"><span>'+sizeLabel+' 장당</span><span style="color:#81C784">'+perSheet.toLocaleString()+'원</span></div>';
-  if(hp2){h+='<div style="height:1px;background:rgba(255,255,255,0.1);margin:8px 0"></div>';h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#FFD54F"><span>⭐ 후기 이벤트 참여 시</span><span style="font-weight:500">-'+p2d.toLocaleString()+'원</span></div>';h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span style="font-size:14px;color:#FFD54F">최종 체감가</span><span style="font-size:22px;font-weight:700;color:#FFD54F">'+ft.toLocaleString()+'원</span></div>';}
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><span style="font-size:14px;color:#ccc">예상 체감가</span><span style="font-size:22px;font-weight:700;color:#81C784">'+total.toLocaleString()+'원</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:13px;color:#888"><span>'+sizeLabel+' 장당</span><span style="color:#81C784">'+perSheet.toLocaleString()+'원</span></div>';
+  if(hp2){h+='<div style="height:1px;background:rgba(255,255,255,0.1);margin:8px 0"></div>';h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:#FFD54F"><span>⭐ 후기 이벤트 참여 시</span><span style="font-weight:500">-'+p2d.toLocaleString()+'원</span></div>';h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><span style="font-size:14px;color:#FFD54F">최종 체감가</span><span style="font-size:22px;font-weight:700;color:#FFD54F">'+ft.toLocaleString()+'원</span></div>';}
   h+='</div>';
-  h+='<div style="margin-top:12px;font-size:11px;color:#999;line-height:1.7;padding:0 4px">* 아파트 구조에 따라 수량 차이가 있을 수 있습니다.</div>';
-  h+='<div style="margin-top:6px;padding:10px 12px;background:#FFF8E1;border-left:3px solid #FF8F00;border-radius:6px;font-size:12px;font-weight:700;color:#1a1a1a;line-height:1.6">📌 실제 시공 후 수량에 맞춰 결제가 이루어집니다.<br><span style="font-weight:500;font-size:11px;color:#666">견적서 금액은 예상 금액이며, 실제 들어간 수량 기준으로 정산됩니다.</span></div>';
-  h+='<div style="text-align:center;margin-top:12px;font-size:10px;color:#ccc">돌봄매트 · dolbommat.com</div>';
+  h+='<div style="margin-top:8px;padding:8px 10px;background:#FFF8E1;border-left:3px solid #FF8F00;border-radius:6px;font-size:11px;font-weight:600;color:#1a1a1a;line-height:1.5">📌 실제 시공 후 수량에 맞춰 결제가 이루어집니다.</div>';
   h+='</div>';
   var cap=document.getElementById('captureArea');cap.innerHTML=h;
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
