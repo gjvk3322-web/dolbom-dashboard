@@ -2185,6 +2185,7 @@ if(daySlots.has('am')&&daySlots.has('pm'))dutangDays.add(d);
 }
 
 // 이번 달 토·일·공휴일 수 계산
+const mHolidays2=getMonthHolidays(mYear,mMonth);
 let calendarOffs=0;
 const offDates=new Set();
 for(let d=1;d<=lastDay;d++){
@@ -2199,7 +2200,6 @@ calSub=`시공 ${s.work}일 · 두탕 ${s.dutang}회${s.duty?' · 🪖 '+s.duty+
 
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
-const mHolidays2=getMonthHolidays(mYear,mMonth);
 for(let d=1;d<=lastDay;d++){
 const dow=(startDow+d-1)%7;const isOff=offDays.has(d);const isDuty=dutyDays.has(d);const isWork=workDays.has(d);const isDutang=dutangDays.has(d);const isToday=d===todayD;
 const hol=mHolidays2.find(h=>h.date===d);
