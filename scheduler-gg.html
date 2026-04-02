@@ -416,7 +416,7 @@ function fbRender(){
   setTimeout(()=>{fbPending=false;if(n==='month')renderMonth();
 renderAll()},300);
 }
-db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
+db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
 db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
 db.ref('gg_assignments').on('value',snap=>{
   if(isAssigning)return;
@@ -427,7 +427,7 @@ db.ref('gg_assignments').on('value',snap=>{
   A=v;fbRender()
 });
 db.ref('gg_confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
-db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
+db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
 db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
 db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
@@ -1600,8 +1600,8 @@ initDnD();}
 function addTeam(){teams.push([]);fbSave('gg_teams',teams);renderTeam()}
 function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('gg_teams',teams);renderTeam()}
 function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('gg_teams',teams);renderTeam()}
-function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
-function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('gg_teams',teams);renderTeam()}
+function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('gg_employees',E);renderTeam();toast(v+' 추가!','ok')}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('gg_employees',E);fbSave('gg_teams',teams);renderTeam()}
 
 // 드래그앤드롭으로 팀 이동 처리
 function moveMember(name,fromType,fromTi,toType,toTi){
