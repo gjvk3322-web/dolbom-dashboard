@@ -290,6 +290,7 @@ function fallbackDownload(){
   var a=document.createElement('a');
   a.href=savedCanvasDataUrl;
   a.download='돌봄매트_견적서.png';
+  a.style.cssText='position:fixed;left:-9999px;top:-9999px';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -313,7 +314,7 @@ function copyAndOpenKakao(){
     showToast('✅ 견적서 복사 완료! 카톡에 붙여넣기 해주세요');
     setTimeout(function(){openKakaoChat()},800);
   }).catch(function(){
-    var ta=document.createElement('textarea');ta.value=quoteText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var ta=document.createElement('textarea');ta.value=quoteText;ta.style.cssText='position:fixed;left:-9999px;top:-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
     showToast('✅ 견적서 복사 완료! 카톡에 붙여넣기 해주세요');
     setTimeout(function(){openKakaoChat()},800);
   });
@@ -326,7 +327,7 @@ function closeImgOverlay(e){
 </script>
 <div id="captureArea"></div>
 <div class="img-overlay" id="imgOverlay" onclick="closeImgOverlay(event)">
-  <div class="img-modal">
+  <div class="img-modal" onclick="event.stopPropagation()">
     <div class="img-modal-content">
       <div class="copy-feature" style="margin-top:0">
         <div class="copy-feature-title">🌬️ 돌봄매트만의 공기순환통로</div>
