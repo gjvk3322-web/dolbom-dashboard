@@ -123,6 +123,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .confirmed-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)}
 .depart-btn{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(251,191,36,.2);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3);animation:pulseBtn 2s infinite}
 @keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.3)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+
+/* 월간 캘린더 */
 .mc-hd{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:14px}
 .mc-hd h2{font-size:17px;font-weight:900;min-width:120px;text-align:center}
 .mc-arrow{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -159,6 +161,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .mc-emp-bar{flex:1;height:16px;background:var(--card2);border-radius:6px;overflow:hidden;display:flex}
 .mc-emp-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
 .mc-emp-num{font-size:10px;color:var(--dim);min-width:60px;text-align:right;font-family:monospace}
+
+/* 당번 모드 */
 .admin-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
 .admin-btn.off{background:var(--card2);color:var(--dim)}
 .admin-btn.on{background:rgba(48,209,88,.2);color:var(--green);border:1px solid rgba(48,209,88,.3)}
@@ -190,8 +194,8 @@ localStorage.setItem('dolbom_region','gg');
         <div style="display:flex;align-items:center;gap:6px">
             <button class="admin-btn off" id="adminToggle" onclick="toggleAdmin()">🔑</button>
             <div style="display:flex;background:var(--card2);border-radius:10px;padding:2px;gap:2px">
-                <span onclick="localStorage.setItem('dolbom_region','bs');location.href='./scheduler.html'" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer">부산</span>
-                <span style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--blue);color:#000;cursor:default">경기</span>
+                <span style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--red);color:#fff;cursor:default">부산</span>
+                <span onclick="localStorage.setItem('dolbom_region','gg');location.href='./scheduler-gg.html'" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer">경기</span>
             </div>
         </div>
     </div>
@@ -312,7 +316,7 @@ const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tq
 let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
 let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
 const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
-const OFF_B={lat:37.3159,lng:126.8233};
+const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
 const SOUTH=['서울','강남','강서','강북','강동','송파','마포','영등포','용산','종로','성동','광진','동작','관악','서초','은평','노원','도봉','성북','중랑','구로','금천','양천','동대문','중구','경기','안산','수원','성남','용인','화성','평택','안양','시흥','김포','파주','고양','부천','광명','군포','의왕','과천','하남','광주','이천','여주','양평','가평','인천','부평','남동','연수','미추홀','계양'];
 const DOW=['일','월','화','수','목','금','토'];
@@ -380,6 +384,7 @@ function requireAdmin(msg){
   toast('🔒 당번 모드에서만 가능합니다','error');
   return false;
 }
+// PIN 입력 자동 포커스
 document.addEventListener('DOMContentLoaded',function(){
   const inputs=document.querySelectorAll('#pinInputs input');
   inputs.forEach((inp,i)=>{
@@ -395,6 +400,7 @@ document.addEventListener('DOMContentLoaded',function(){
       if(e.key==='Backspace'&&!this.value&&i>0)inputs[i-1].focus();
     });
   });
+  // 초기 상태 반영
   if(isAdmin){
     document.getElementById('adminToggle').className='admin-btn on';
     document.getElementById('adminToggle').textContent='🔓';
@@ -409,7 +415,7 @@ function fbRender(){
   fbPending=true;
   setTimeout(()=>{fbPending=false;renderAll()},300);
 }
-db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
+db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
 db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
 db.ref('gg_assignments').on('value',snap=>{
   if(isAssigning)return;
@@ -420,12 +426,12 @@ db.ref('gg_assignments').on('value',snap=>{
   A=v;fbRender()
 });
 db.ref('gg_confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
-db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
+db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
 db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
 db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
 
-let VEHICLES={}; // {차량번호: 직원}
+let VEHICLES={}; // {준형: "804서 6771", ...}
 db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
@@ -1593,8 +1599,8 @@ initDnD();}
 function addTeam(){teams.push([]);fbSave('gg_teams',teams);renderTeam()}
 function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('gg_teams',teams);renderTeam()}
 function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('gg_teams',teams);renderTeam()}
-function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('gg_employees',E);renderTeam();toast(v+' 추가!','ok')}
-function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('gg_employees',E);fbSave('gg_teams',teams);renderTeam()}
+function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('gg_teams',teams);renderTeam()}
 
 // 드래그앤드롭으로 팀 이동 처리
 function moveMember(name,fromType,fromTi,toType,toTi){
@@ -1856,6 +1862,7 @@ let html=`<div style="padding:8px 0">
 <div style="font-size:16px;font-weight:800;margin-bottom:4px">🚗 차량 배정</div>
 <div style="font-size:12px;color:var(--dim);margin-bottom:16px">차량별 탑승 직원을 배정하면 알림톡에 차량번호가 자동 포함돼요</div>`;
 
+// 등록된 차량 목록
 plates.forEach((plate,i)=>{
   const driver=VEHICLES[plate]||'';
   const di=E.indexOf(driver);
@@ -1870,12 +1877,15 @@ plates.forEach((plate,i)=>{
   </div>`;
 });
 
+// 새 차량 추가
 html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-top:12px;background:var(--card2);border-radius:10px;border:1.5px dashed var(--border)">
   <input id="newPlate" placeholder="차량번호 입력" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
   <button onclick="addCar()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">+ 추가</button>
 </div>`;
 
+// 현황 요약
 const assigned=plates.filter(p=>VEHICLES[p]);
+const noDriver=plates.filter(p=>!VEHICLES[p]);
 const noCarDrivers=E.filter(n=>!plates.some(p=>VEHICLES[p]===n));
 html+=`<div style="margin-top:16px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border)">
 <div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 현황</div>`;
@@ -2010,7 +2020,6 @@ document.getElementById('calSummary').textContent=
 let lpTimer=null;
 function empDown(emp){lpTimer=setTimeout(()=>{openCal(emp);lpTimer='fired'},300)}
 function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer);lpTimer=null}
-
 
 // ===== 월간 캘린더 =====
 // 대한민국 공휴일 (2025-2027)
@@ -2288,7 +2297,7 @@ if(DIST[key]!==undefined)continue;
 const d=await calcDist(j.addr);
 if(d>0){DIST[key]=d;updated=true}
 }
-if(updated)fbSave('gg_distances',DIST);
+if(updated)fbSave('distances',DIST);
 },3000);
 
 // 버전 표시
