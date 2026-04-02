@@ -282,38 +282,12 @@ function saveQuoteImage(){
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
     trackReferral(qty,total);
     savedCanvasDataUrl=canvas.toDataURL('image/png');
-    // 바로 저장 실행
-    if(/Android|iPhone|iPad/i.test(navigator.userAgent)){
-      canvas.toBlob(function(blob){
-        var file=new File([blob],'돌봄매트_견적서.png',{type:'image/png'});
-        if(navigator.canShare&&navigator.canShare({files:[file]})){
-          navigator.share({files:[file],title:'돌봄매트 견적서'}).then(function(){
-            showAfterSaveModal();
-          }).catch(function(){
-            fallbackDownload();
-            showAfterSaveModal();
-          });
-        }else{fallbackDownload();showAfterSaveModal()}
-      },'image/png');
-    }else{
-      fallbackDownload();
-      showAfterSaveModal();
-    }
+    // 팝업만 열기 (자동 저장 안 함)
+    document.getElementById('imgPreview').src=savedCanvasDataUrl;
+    document.getElementById('imgOverlay').classList.add('show');
   }).catch(function(){showToast('⚠️ 생성 실패 - 스크린샷을 이용해주세요')});
 }
 var savedCanvasDataUrl=null;
-function showAfterSaveModal(){
-  document.getElementById('imgPreview').src=savedCanvasDataUrl;
-  document.getElementById('imgOverlay').classList.add('show');
-  var modal=document.querySelector('.img-modal');
-  var indicator=document.getElementById('scrollIndicator');
-  if(modal&&indicator){
-    modal.addEventListener('scroll',function(){
-      if(modal.scrollTop>40)indicator.style.display='none';
-      else indicator.style.display='block';
-    });
-  }
-}
 function fallbackDownload(){
   var a=document.createElement('a');
   a.href=savedCanvasDataUrl;
@@ -354,9 +328,9 @@ function closeImgOverlay(e){
 <div id="captureArea"></div>
 <div class="img-overlay" id="imgOverlay" onclick="closeImgOverlay(event)">
   <div class="img-modal">
-    <div style="font-size:17px;font-weight:800;margin-bottom:10px">✅ 견적서가 저장되었습니다!</div>
+    <div style="font-size:17px;font-weight:800;margin-bottom:10px">📋 맞춤 견적서</div>
     <div class="img-kakao-guide">
-      <div class="img-kakao-guide-title">💬 저장한 견적서를 카카오톡으로 보내주세요</div>
+      <div class="img-kakao-guide-title">💬 견적서를 저장하고 카카오톡으로 보내주세요</div>
       <div class="img-kakao-guide-sub">빠르고 정확한 맞춤 상담을 도와드립니다</div>
     </div>
     <div class="copy-feature" style="margin-top:12px">
