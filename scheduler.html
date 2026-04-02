@@ -138,6 +138,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .mc-cell.has-job{background:rgba(48,209,88,.06)}
 .mc-cell.mc-cell-off{background:rgba(255,69,58,.06)}
 .mc-cell.empty{background:transparent;min-height:0;cursor:default}
+.mc-cell.mc-sat{background:rgba(90,200,250,.06)}
+.mc-cell.mc-sun{background:rgba(255,69,58,.06)}
+.mc-cell.mc-holiday{background:rgba(255,69,58,.06)}
 .mc-date{font-size:12px;font-weight:700;padding:2px 4px;margin-bottom:2px}
 .mc-date.sun{color:var(--red)}.mc-date.sat{color:var(--blue)}
 .mc-badge{display:inline-block;padding:1px 4px;border-radius:4px;font-size:8px;font-weight:700;margin:1px 0}
@@ -2019,6 +2022,33 @@ function empDown(emp){lpTimer=setTimeout(()=>{openCal(emp);lpTimer='fired'},300)
 function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer);lpTimer=null}
 
 // ===== 월간 캘린더 =====
+// 대한민국 공휴일 (2025-2027)
+const KR_HOLIDAYS={
+'2025-01-01':'신정','2025-01-28':'설날','2025-01-29':'설날','2025-01-30':'설날',
+'2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'대체공휴일',
+'2025-06-06':'현충일','2025-08-15':'광복절',
+'2025-10-05':'추석','2025-10-06':'추석','2025-10-07':'추석','2025-10-08':'대체공휴일',
+'2025-10-03':'개천절','2025-10-09':'한글날','2025-12-25':'성탄절',
+'2026-01-01':'신정','2026-02-16':'설날','2026-02-17':'설날','2026-02-18':'설날',
+'2026-03-01':'삼일절','2026-03-02':'대체공휴일',
+'2026-05-05':'어린이날','2026-05-24':'석가탄신일',
+'2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일',
+'2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석',
+'2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
+'2027-01-01':'신정','2027-02-06':'설날','2027-02-07':'설날','2027-02-08':'설날',
+'2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'석가탄신일',
+'2027-06-06':'현충일','2027-08-15':'광복절','2027-08-16':'대체공휴일',
+'2027-10-03':'개천절','2027-10-09':'한글날',
+'2027-10-14':'추석','2027-10-15':'추석','2027-10-16':'추석','2027-12-25':'성탄절'
+};
+function isHoliday(ds){return KR_HOLIDAYS[ds]||null}
+function getMonthHolidays(y,m){
+const ym=y+'-'+String(m+1).padStart(2,'0');
+const result=[];
+Object.keys(KR_HOLIDAYS).forEach(d=>{if(d.startsWith(ym))result.push({date:parseInt(d.split('-')[2]),name:KR_HOLIDAYS[d]})});
+return result;
+}
+
 let mYear,mMonth,monthEmp=null;
 (function(){const n=new Date();mYear=n.getFullYear();mMonth=n.getMonth()})();
 function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth()}
@@ -2095,10 +2125,17 @@ calSub=`예약 ${totalAm+totalPm}건 (오전${totalAm} 오후${totalPm}) · AS $
 
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+const mHolidays=getMonthHolidays(mYear,mMonth);
 for(let d=1;d<=lastDay;d++){
 const dd=dayData[d];const dow=(startDow+d-1)%7;const hasJob=dd.am+dd.pm+dd.as>0;const isToday=d===todayD;
-let cls='mc-cell';if(hasJob)cls+=' has-job';if(isToday)cls+=' today';
-let inner=`<div class="mc-date ${dow===0?'sun':dow===6?'sat':''}">${d}</div>`;
+const hol=mHolidays.find(h=>h.date===d);
+let cls='mc-cell';
+if(hasJob)cls+=' has-job';
+if(dow===0||hol)cls+=' mc-sun';
+else if(dow===6)cls+=' mc-sat';
+if(isToday)cls+=' today';
+let inner=`<div class="mc-date ${dow===0||hol?'sun':dow===6?'sat':''}">${d}</div>`;
+if(hol)inner+=`<div style="font-size:7px;color:var(--red);font-weight:600">${hol.name}</div>`;
 if(dd.am)inner+=`<div class="mc-badge am">AM ${dd.am}</div> `;
 if(dd.pm)inner+=`<div class="mc-badge pm">PM ${dd.pm}</div> `;
 if(dd.as)inner+=`<div class="mc-badge as-b">AS ${dd.as}</div>`;
@@ -2159,14 +2196,18 @@ calSub=`시공 ${s.work}일 · 두탕 ${s.dutang}회${s.duty?' · 🪖 '+s.duty+
 
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+const mHolidays2=getMonthHolidays(mYear,mMonth);
 for(let d=1;d<=lastDay;d++){
 const dow=(startDow+d-1)%7;const isOff=offDays.has(d);const isDuty=dutyDays.has(d);const isWork=workDays.has(d);const isDutang=dutangDays.has(d);const isToday=d===todayD;
+const hol=mHolidays2.find(h=>h.date===d);
 let cls='mc-cell';
 if(isOff)cls+=' mc-cell-off';
-if(isDuty)cls+=' has-job';
-if(isWork)cls+=' has-job';
+else if(dow===0||hol)cls+=' mc-sun';
+else if(dow===6)cls+=' mc-sat';
+if(isDuty||isWork)cls+=' has-job';
 if(isToday)cls+=' today';
-let inner=`<div class="mc-date ${dow===0?'sun':dow===6?'sat':''}">${d}</div>`;
+let inner=`<div class="mc-date ${dow===0||hol?'sun':dow===6?'sat':''}">${d}</div>`;
+if(hol&&!isWork&&!isDuty&&!isOff)inner+=`<div style="font-size:7px;color:var(--red);font-weight:600">${hol.name}</div>`;
 if(isDutang)inner+=`<div class="mc-badge am" style="background:rgba(48,209,88,.15);color:var(--green)">두탕</div>`;
 else if(isWork)inner+=`<div class="mc-badge am">시공</div>`;
 if(isDuty){const reason=dayData[d].duty[monthEmp];inner+=`<div style="font-size:9px;color:var(--yellow);font-weight:700;margin-top:2px">🪖 ${reason}</div>`}
@@ -2175,10 +2216,9 @@ grid+=`<div class="${cls}">${inner}</div>`;
 }
 
 // 휴무 요약
-const offSummary=`<div style="background:var(--card);border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:space-around;text-align:center">
+const offSummary=`<div style="background:var(--card);border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:center;gap:40px;text-align:center">
 <div><div style="font-size:20px;font-weight:900;color:var(--dim)">${avgOff}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">평균 휴무</div></div>
 <div><div style="font-size:20px;font-weight:900;color:${s.off>avgOff?'var(--red)':s.off<avgOff?'var(--green)':'var(--text)'}">${s.off}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">나의 휴무</div></div>
-<div><div style="font-size:20px;font-weight:900;color:var(--text)">${s.work+s.duty}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">근무일</div></div>
 </div>`;
 
 v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2 style="color:${ec}">${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
