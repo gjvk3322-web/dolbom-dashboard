@@ -136,6 +136,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .mc-cell:active{background:var(--card2)}
 .mc-cell.today{border:1.5px solid var(--blue)}
 .mc-cell.has-job{background:rgba(48,209,88,.06)}
+.mc-cell.mc-cell-off{background:rgba(255,69,58,.06)}
 .mc-cell.empty{background:transparent;min-height:0;cursor:default}
 .mc-date{font-size:12px;font-weight:700;padding:2px 4px;margin-bottom:2px}
 .mc-date.sun{color:var(--red)}.mc-date.sat{color:var(--blue)}
@@ -157,6 +158,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .mc-emp-bar{flex:1;height:16px;background:var(--card2);border-radius:6px;overflow:hidden;display:flex}
 .mc-emp-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
 .mc-emp-num{font-size:10px;color:var(--dim);min-width:60px;text-align:right;font-family:monospace}
+
+/* 당번 모드 */
+.admin-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
+.admin-btn.off{background:var(--card2);color:var(--dim)}
+.admin-btn.on{background:rgba(48,209,88,.2);color:var(--green);border:1px solid rgba(48,209,88,.3)}
+.pin-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.pin-overlay.show{display:flex}
+.pin-box{background:var(--card);border-radius:20px;max-width:300px;width:100%;padding:28px 24px;text-align:center;animation:popIn .2s ease}
+.pin-box h3{font-size:16px;font-weight:900;margin-bottom:6px}
+.pin-box p{font-size:12px;color:var(--dim);margin-bottom:18px}
+.pin-input{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+.pin-input input{width:44px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card2);color:var(--text);font-size:22px;font-weight:900;text-align:center;font-family:var(--font);caret-color:var(--green)}
+.pin-input input:focus{outline:none;border-color:var(--green)}
+.pin-error{font-size:12px;color:var(--red);margin-bottom:12px;display:none}
+.admin-bar{display:none;background:rgba(48,209,88,.1);border-bottom:1px solid rgba(48,209,88,.2);padding:8px 16px;font-size:12px;color:var(--green);text-align:center;font-weight:600}
+.admin-bar.show{display:block}
 </style>
 </head>
 <body>
@@ -171,15 +188,35 @@ localStorage.setItem('dolbom_region','bs');
             <span onclick="localStorage.removeItem('dolbom_region');location.href='./app.html'" style="font-size:18px;cursor:pointer;opacity:.5">🏠</span>
             <h1>돌봄매트 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
         </div>
-        <div style="display:flex;background:var(--card2);border-radius:10px;padding:2px;gap:2px">
-            <span style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--red);color:#fff;cursor:default">부산</span>
-            <span onclick="localStorage.setItem('dolbom_region','gg');location.href='./scheduler-gg.html'" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer">경기</span>
+        <div style="display:flex;align-items:center;gap:6px">
+            <button class="admin-btn off" id="adminToggle" onclick="toggleAdmin()">🔑</button>
+            <div style="display:flex;background:var(--card2);border-radius:10px;padding:2px;gap:2px">
+                <span style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;background:var(--red);color:#fff;cursor:default">부산</span>
+                <span onclick="localStorage.setItem('dolbom_region','gg');location.href='./scheduler-gg.html'" style="padding:5px 14px;border-radius:8px;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer">경기</span>
+            </div>
         </div>
     </div>
     <div class="hd-sub" id="sub">로딩 중...</div>
 </div>
 
+<div class="admin-bar" id="adminBar">🔑 당번 모드 활성 · 배정 수정 가능 <span onclick="adminOff()" style="margin-left:8px;cursor:pointer;opacity:.6">해제</span></div>
+
 <div id="updateBar" style="display:none;background:linear-gradient(135deg,#5b8def,#34d399);padding:10px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:#fff" onclick="location.reload(true)">🔄 새 버전이 있어요! 터치하면 업데이트</div>
+
+<div class="pin-overlay" id="pinOverlay" onclick="if(event.target===this)closePin()">
+<div class="pin-box">
+<h3>🔑 당번 모드</h3>
+<p>배정 수정 권한을 활성화합니다</p>
+<div class="pin-input" id="pinInputs">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+</div>
+<div class="pin-error" id="pinError">PIN이 올바르지 않습니다</div>
+<button onclick="closePin()" style="padding:10px 24px;border-radius:10px;background:var(--card2);color:var(--dim);border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">취소</button>
+</div>
+</div>
 
 <div id="donghoBar" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,191,36,.1));border-bottom:1px solid rgba(251,191,36,.3);padding:12px 16px;font-size:14px;color:var(--yellow);text-align:center;position:sticky;top:48px;z-index:99"></div>
 
@@ -299,6 +336,74 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 
 // Firebase 실시간 리스너 (배치 렌더링으로 깜빡임 방지)
 let isAssigning=false;
+
+// ===== 당번 모드 (PIN 잠금) =====
+const ADMIN_PIN='1123';
+let isAdmin=false;
+(function(){
+  const saved=localStorage.getItem('dolbom_admin');
+  if(saved){
+    const ts=parseInt(saved);
+    if(Date.now()-ts<7*24*60*60*1000){isAdmin=true}
+    else{localStorage.removeItem('dolbom_admin')}
+  }
+})();
+function toggleAdmin(){
+  if(isAdmin){adminOff();return}
+  document.getElementById('pinOverlay').classList.add('show');
+  const inputs=document.querySelectorAll('#pinInputs input');
+  inputs.forEach(inp=>{inp.value=''});
+  inputs[0].focus();
+  document.getElementById('pinError').style.display='none';
+}
+function closePin(){document.getElementById('pinOverlay').classList.remove('show')}
+function adminOn(){
+  isAdmin=true;
+  localStorage.setItem('dolbom_admin',Date.now().toString());
+  document.getElementById('adminToggle').className='admin-btn on';
+  document.getElementById('adminToggle').textContent='🔓';
+  document.getElementById('adminBar').classList.add('show');
+  closePin();
+  toast('🔑 당번 모드 활성화!','ok');
+  renderAll();
+}
+function adminOff(){
+  isAdmin=false;
+  localStorage.removeItem('dolbom_admin');
+  document.getElementById('adminToggle').className='admin-btn off';
+  document.getElementById('adminToggle').textContent='🔑';
+  document.getElementById('adminBar').classList.remove('show');
+  toast('당번 모드 해제됨','ok');
+  renderAll();
+}
+function requireAdmin(msg){
+  if(isAdmin)return true;
+  toast('🔒 당번 모드에서만 가능합니다','error');
+  return false;
+}
+// PIN 입력 자동 포커스
+document.addEventListener('DOMContentLoaded',function(){
+  const inputs=document.querySelectorAll('#pinInputs input');
+  inputs.forEach((inp,i)=>{
+    inp.addEventListener('input',function(){
+      if(this.value.length===1&&i<3)inputs[i+1].focus();
+      if(i===3&&this.value.length===1){
+        const pin=Array.from(inputs).map(x=>x.value).join('');
+        if(pin===ADMIN_PIN){adminOn()}
+        else{document.getElementById('pinError').style.display='block';inputs.forEach(x=>x.value='');inputs[0].focus()}
+      }
+    });
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Backspace'&&!this.value&&i>0)inputs[i-1].focus();
+    });
+  });
+  // 초기 상태 반영
+  if(isAdmin){
+    document.getElementById('adminToggle').className='admin-btn on';
+    document.getElementById('adminToggle').textContent='🔓';
+    document.getElementById('adminBar').classList.add('show');
+  }
+});
 let lastAHash='';
 function aHash(obj){return JSON.stringify(obj||{})}
 let fbPending=false;
@@ -791,10 +896,11 @@ renderAll();
 setTimeout(()=>{isAssigning=false},500);
 }
 
-function resetAssign(){if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});lastAHash=aHash(A);toast('초기화됨','ok');renderAll()}
+function resetAssign(){if(!requireAdmin())return;if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});lastAHash=aHash(A);toast('초기화됨','ok');renderAll()}
 
 // 수동 배정 (직원 1명)
 function ma(jobId,emp){
+if(!requireAdmin())return;
 const cur=A[jobId];
 if(cur&&cur.includes(emp)){
 A[jobId]=cur.filter(e=>e!==emp);
@@ -812,6 +918,7 @@ toast('✅ 배정 업데이트','ok');renderAll()}
 
 // 배정 취소 (자동배정 제외 처리)
 function unassign(jobId){
+if(!requireAdmin())return;
 delete A[jobId];
 SKIP.add(jobId);
 fbSave('skipJobs',[...SKIP]);
@@ -1548,6 +1655,7 @@ document.addEventListener('mouseup',onU);
 }
 
 function startDrag(el,x,y){
+if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return}
 const rect=el.getBoundingClientRect();
 const ghost=el.cloneNode(true);
 ghost.className=el.className+' drag-ghost';
@@ -1900,9 +2008,10 @@ function empDown(emp){lpTimer=setTimeout(()=>{openCal(emp);lpTimer='fired'},300)
 function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer);lpTimer=null}
 
 // ===== 월간 캘린더 =====
-let mYear,mMonth;
+let mYear,mMonth,monthEmp=null;
 (function(){const n=new Date();mYear=n.getFullYear();mMonth=n.getMonth()})();
 function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth()}
+function mSelectEmp(name){monthEmp=(monthEmp===name)?null:name;renderMonth()}
 
 function renderMonth(){
 const v=document.getElementById('monthView');if(!v)return;
@@ -1918,42 +2027,62 @@ const dayData={};
 for(let d=1;d<=lastDay;d++){
 const ds=ym+'-'+String(d).padStart(2,'0');
 dayData[d]={am:0,pm:0,as:0,move:0,offs:new Set(),jobs:[]};
-// OFFS에서 휴무
 if(OFFS[ds])OFFS[ds].forEach(n=>dayData[d].offs.add(n));
 }
-// 예약 건 수집
 J.forEach(j=>{
 const jd=new Date(j.date);
 if(jd.getFullYear()!==mYear||jd.getMonth()!==mMonth)return;
-const d=jd.getDate();
-if(!dayData[d])return;
-const isAm=j.time.startsWith('오전');
-const isPm=j.time.startsWith('오후');
-const isAs=j.time==='AS';
-if(isAm)dayData[d].am++;
-if(isPm)dayData[d].pm++;
-if(isAs)dayData[d].as++;
+const d=jd.getDate();if(!dayData[d])return;
+if(j.time.startsWith('오전'))dayData[d].am++;
+if(j.time.startsWith('오후'))dayData[d].pm++;
+if(j.time==='AS')dayData[d].as++;
 if((j.category||'').includes('이전설치'))dayData[d].move++;
 dayData[d].jobs.push(j);
-// doff 반영
 if(j.doff)j.doff.forEach(n=>dayData[d].offs.add(n));
 });
 
-// 캘린더 그리드
-let grid='';
-const dowNames=['일','월','화','수','목','금','토'];
-dowNames.forEach((d,i)=>{
-grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;
-});
-for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+// 직원별 통계 (공통)
+const empStats={};
+E.forEach(e=>{empStats[e]={work:0,off:0,am:0,pm:0,dutang:0}});
 for(let d=1;d<=lastDay;d++){
 const dd=dayData[d];
-const dow=(startDow+d-1)%7;
-const hasJob=dd.am+dd.pm+dd.as>0;
-const isToday=d===todayD;
-let cls='mc-cell';
-if(hasJob)cls+=' has-job';
-if(isToday)cls+=' today';
+dd.offs.forEach(n=>{if(empStats[n])empStats[n].off++});
+const dayEmps=new Set();const dayEmpSlots={};
+dd.jobs.forEach(j=>{
+const crew=A[j.id];if(!crew)return;
+crew.forEach(e=>{dayEmps.add(e);if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();dayEmpSlots[e].add(j.time.startsWith('오전')?'am':'pm');});
+});
+dayEmps.forEach(e=>{
+if(!empStats[e])return;empStats[e].work++;
+const slots=dayEmpSlots[e];if(slots){if(slots.has('am'))empStats[e].am++;if(slots.has('pm'))empStats[e].pm++;if(slots.has('am')&&slots.has('pm'))empStats[e].dutang++;}
+});
+}
+
+// ── 직원 뱃지 바 ──
+let badges=`<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">`;
+badges+=`<span onclick="mSelectEmp(null)" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;${!monthEmp?'background:var(--text);color:var(--bg)':'background:var(--card2);color:var(--dim)'}"}>전체</span>`;
+E.forEach((e,ei)=>{
+const sel=monthEmp===e;
+const c=ecl[ei%10];
+badges+=`<span onclick="mSelectEmp('${e}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;${sel?'background:'+c+';color:#000':'background:var(--card2);color:var(--dim)'}">${e}</span>`;
+});
+badges+=`</div>`;
+
+let grid='',calTitle='',calSub='';
+const dowNames=['일','월','화','수','목','금','토'];
+
+if(!monthEmp){
+// ── 전체 팀 월간 보기 ──
+let totalAm=0,totalPm=0,totalAs=0;
+for(let d=1;d<=lastDay;d++){totalAm+=dayData[d].am;totalPm+=dayData[d].pm;totalAs+=dayData[d].as}
+calTitle=`${mYear}년 ${mMonth+1}월`;
+calSub=`예약 ${totalAm+totalPm}건 (오전${totalAm} 오후${totalPm}) · AS ${totalAs}건`;
+
+dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
+for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+for(let d=1;d<=lastDay;d++){
+const dd=dayData[d];const dow=(startDow+d-1)%7;const hasJob=dd.am+dd.pm+dd.as>0;const isToday=d===todayD;
+let cls='mc-cell';if(hasJob)cls+=' has-job';if(isToday)cls+=' today';
 let inner=`<div class="mc-date ${dow===0?'sun':dow===6?'sat':''}">${d}</div>`;
 if(dd.am)inner+=`<div class="mc-badge am">AM ${dd.am}</div> `;
 if(dd.pm)inner+=`<div class="mc-badge pm">PM ${dd.pm}</div> `;
@@ -1963,73 +2092,60 @@ if(dd.offs.size)inner+=`<div class="mc-off">${[...dd.offs].map(n=>`<span style="
 grid+=`<div class="${cls}">${inner}</div>`;
 }
 
-// 직원별 요약
-const empStats={};
-E.forEach(e=>{empStats[e]={work:0,off:0,am:0,pm:0,dutang:0}});
-for(let d=1;d<=lastDay;d++){
-const dd=dayData[d];
-const ds=ym+'-'+String(d).padStart(2,'0');
-// 휴무 카운트
-dd.offs.forEach(n=>{if(empStats[n])empStats[n].off++});
-// 시공 카운트 (배정 기반)
-const dayEmps=new Set();
-const dayEmpSlots={};
-dd.jobs.forEach(j=>{
-const crew=A[j.id];
-if(!crew)return;
-crew.forEach(e=>{
-dayEmps.add(e);
-if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();
-const isAm=j.time.startsWith('오전');
-dayEmpSlots[e].add(isAm?'am':'pm');
-});
-});
-dayEmps.forEach(e=>{
-if(!empStats[e])return;
-empStats[e].work++;
-const slots=dayEmpSlots[e];
-if(slots){
-if(slots.has('am'))empStats[e].am++;
-if(slots.has('pm'))empStats[e].pm++;
-if(slots.has('am')&&slots.has('pm'))empStats[e].dutang++;
-}
-});
-}
-
-// 월 요약 통계
-let totalAm=0,totalPm=0,totalAs=0;
-for(let d=1;d<=lastDay;d++){totalAm+=dayData[d].am;totalPm+=dayData[d].pm;totalAs+=dayData[d].as}
-
-let sumHtml=`<div class="mc-summary">
-<div class="mc-summary-title">📊 ${mMonth+1}월 직원별 현황</div>`;
+// 직원별 요약 바
+let sumHtml=`<div class="mc-summary"><div class="mc-summary-title">📊 ${mMonth+1}월 직원별 현황</div>`;
 E.forEach((e,ei)=>{
-const s=empStats[e];
-const total=s.am+s.pm;
-const maxSlots=lastDay;
-const workPct=Math.round(s.work/lastDay*100);
-const offPct=Math.round(s.off/lastDay*100);
-const c=ecl[ei%10];
-sumHtml+=`<div class="mc-emp-row">
-<div class="mc-emp-name" style="color:${c}">${e}</div>
-<div class="mc-emp-bar">
-<div class="mc-emp-seg" style="width:${workPct}%;background:rgba(48,209,88,.25);color:var(--green)">${s.work>0?s.work+'일':''}</div>
-<div class="mc-emp-seg" style="width:${offPct}%;background:rgba(255,69,58,.2);color:var(--red)">${s.off>0?s.off:''}</div>
-</div>
-<div class="mc-emp-num">${s.dutang}두탕 ${s.off}휴</div>
-</div>`;
+const s=empStats[e];const workPct=Math.round(s.work/lastDay*100);const offPct=Math.round(s.off/lastDay*100);const c=ecl[ei%10];
+sumHtml+=`<div class="mc-emp-row" onclick="mSelectEmp('${e}')" style="cursor:pointer"><div class="mc-emp-name" style="color:${c}">${e}</div><div class="mc-emp-bar"><div class="mc-emp-seg" style="width:${workPct}%;background:rgba(48,209,88,.25);color:var(--green)">${s.work>0?s.work+'일':''}</div><div class="mc-emp-seg" style="width:${offPct}%;background:rgba(255,69,58,.2);color:var(--red)">${s.off>0?s.off:''}</div></div><div class="mc-emp-num">${s.dutang}두탕 ${s.off}휴</div></div>`;
 });
 sumHtml+=`</div>`;
 
-v.innerHTML=`
-<div class="mc-hd">
-<button class="mc-arrow" onclick="mMove(-1)">‹</button>
-<h2>${mYear}년 ${mMonth+1}월</h2>
-<button class="mc-arrow" onclick="mMove(1)">›</button>
-</div>
-<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">예약 ${totalAm+totalPm}건 (오전${totalAm} 오후${totalPm}) · AS ${totalAs}건</div>
+v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2>${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
+${badges}
+<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
 <div class="mc-grid">${grid}</div>
 <div class="mc-legend"><span class="lg-job">예약</span><span class="lg-am">오전</span><span class="lg-pm">오후</span><span class="lg-off2">휴무</span></div>
 ${sumHtml}`;
+
+}else{
+// ── 개인 직원 캘린더 ──
+const ei=E.indexOf(monthEmp);
+const ec=ecl[ei%10];
+const s=empStats[monthEmp];
+const offDays=new Set();const workDays=new Set();const dutangDays=new Set();
+
+for(let d=1;d<=lastDay;d++){
+if(dayData[d].offs.has(monthEmp))offDays.add(d);
+const daySlots=new Set();
+dayData[d].jobs.forEach(j=>{const crew=A[j.id];if(crew&&crew.includes(monthEmp))daySlots.add(j.time.startsWith('오전')?'am':'pm');});
+if(daySlots.size)workDays.add(d);
+if(daySlots.has('am')&&daySlots.has('pm'))dutangDays.add(d);
+}
+
+calTitle=`${monthEmp}의 ${mMonth+1}월`;
+calSub=`시공 ${s.work}일 · 두탕 ${s.dutang}회 · 휴무 ${s.off}일`;
+
+dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
+for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+for(let d=1;d<=lastDay;d++){
+const dow=(startDow+d-1)%7;const isOff=offDays.has(d);const isWork=workDays.has(d);const isDutang=dutangDays.has(d);const isToday=d===todayD;
+let cls='mc-cell';
+if(isOff)cls+=' mc-cell-off';
+if(isWork)cls+=' has-job';
+if(isToday)cls+=' today';
+let inner=`<div class="mc-date ${dow===0?'sun':dow===6?'sat':''}">${d}</div>`;
+if(isDutang)inner+=`<div class="mc-badge am" style="background:rgba(48,209,88,.15);color:var(--green)">두탕</div>`;
+else if(isWork)inner+=`<div class="mc-badge am">시공</div>`;
+if(isOff)inner+=`<div style="font-size:9px;color:var(--red);font-weight:700;margin-top:2px">휴무</div>`;
+grid+=`<div class="${cls}">${inner}</div>`;
+}
+
+v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2 style="color:${ec}">${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
+${badges}
+<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
+<div class="mc-grid">${grid}</div>
+<div class="mc-legend"><span class="lg-job">시공</span><span class="lg-am">두탕</span><span class="lg-off2">휴무</span></div>`;
+}
 }
 
 // ===== Init =====
@@ -2074,7 +2190,7 @@ if(badAssign){fbSave('assignments',A);lastAHash=aHash(A)}
 // 미배정 건 또는 1인 배정(사수만, 부사수 필요)이 있으면 자동 배정 실행
 const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
 const needAssignCnt=assignableJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
-if(needAssignCnt>0){await autoAssign()}
+if(needAssignCnt>0&&isAdmin){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM=new Date().getMonth()+1;
@@ -2136,7 +2252,7 @@ parseCSV(text);
 if(isNewReservation){
 const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
 const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
-if(unCnt>0)await autoAssign()}
+if(unCnt>0&&isAdmin)await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM2=new Date().getMonth()+1;
@@ -2151,6 +2267,7 @@ else if(showToast)toast('✅ 최신 상태예요','ok');
 function manualRefresh(){refreshSheet(true)}
 
 async function reAssign(){
+if(!requireAdmin())return;
 const hasLock=LOCK.size>0;
 const msg=hasLock?'모든 배정을 초기화하고 다시 배정할까요?\n\n🔒 확정된 '+LOCK.size+'건은 유지됩니다.\n(전부 초기화하려면 확정을 먼저 해제하세요)':'모든 배정을 초기화하고 다시 배정할까요?';
 if(!confirm(msg))return;
