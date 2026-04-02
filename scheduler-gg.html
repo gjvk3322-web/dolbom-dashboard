@@ -439,7 +439,7 @@ function fbSave(key,val){db.ref(key).set(val)}
 
 // 배정 결과를 구글시트에 역기록
 let sheetSyncTimer=null;
-function syncToSheet(){
+function syncToSheet(){if(!isAdmin)return;
 if(sheetSyncTimer)clearTimeout(sheetSyncTimer);
 sheetSyncTimer=setTimeout(()=>{
   const data=[];
@@ -2447,7 +2447,7 @@ renderAll();
 function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('show');pendingConfirmId=''}
 
 // 1분마다 구글시트 자동 갱신
-setInterval(()=>refreshSheet(false),60*1000);
+setInterval(()=>refreshSheet(false),180*1000);
 
 // 5분마다 새 버전 체크
 setInterval(()=>{
