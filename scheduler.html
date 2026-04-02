@@ -1400,8 +1400,6 @@ const pastDates=allDatesRange.filter(d=>d<todayStr);
 // 직원 색상 범례
 let html='';
 const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
-html+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center">${E.map((e,i)=>{const darkText=[2,5,6,7,9].includes(i%10);return `<span class="emp-badge" style="background:${ecl[i%10]};color:${darkText?'#000':'#fff'}" ontouchstart="empDown('${e}')" ontouchend="empUp(event)" ontouchcancel="empUp(event)" onmousedown="empDown('${e}')" onmouseup="empUp(event)">${e}</span>`}).join('')}</div>`;
-html+=`<div style="text-align:center;margin:-8px 0 12px;font-size:10px;color:var(--dim)">길게 누르면 캘린더 📅</div>`;
 
 // 최신화 + 재배정 버튼 (작게)
 html+=`<div style="display:flex;gap:6px;margin-bottom:10px">
