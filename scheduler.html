@@ -132,7 +132,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .mc-dow{text-align:center;font-size:10px;font-weight:700;color:var(--dim);padding:6px 0}
 .mc-dow.sun{color:var(--red)}.mc-dow.sat{color:var(--blue)}
-.mc-cell{background:var(--card);border-radius:10px;min-height:80px;padding:4px;overflow:hidden;cursor:pointer;transition:background .15s;border:1px solid transparent}
+.mc-cell{background:var(--card);border-radius:10px;min-height:80px;padding:4px;overflow:hidden;cursor:pointer;transition:background .15s;border:1px solid transparent;position:relative}
 .mc-cell:active{background:var(--card2)}
 .mc-cell.today{border:1.5px solid var(--blue)}
 .mc-cell.has-job{background:rgba(48,209,88,.06)}
@@ -2210,10 +2210,10 @@ if(isDuty||isWork)cls+=' has-job';
 if(isToday)cls+=' today';
 let inner=`<div class="mc-date ${dow===0||hol?'sun':dow===6?'sat':''}">${d}</div>`;
 if(hol&&!isWork&&!isDuty&&!isOff)inner+=`<div style="font-size:7px;color:var(--red);font-weight:600">${hol.name}</div>`;
-if(isDutang)inner+=`<div class="mc-badge am" style="background:rgba(48,209,88,.15);color:var(--green)">두탕</div>`;
-else if(isWork)inner+=`<div class="mc-badge am">시공</div>`;
+if(isDutang)inner+=`<div style="font-size:8px;font-weight:700;color:var(--green)">두탕</div>`;
+else if(isWork)inner+=`<div style="font-size:8px;font-weight:700;color:var(--green)">시공</div>`;
 if(isDuty){const reason=dayData[d].duty[monthEmp];inner+=`<div style="font-size:9px;color:var(--yellow);font-weight:700;margin-top:2px">🪖 ${reason}</div>`}
-else if(isOff)inner+=`<div style="font-size:9px;color:${ec};font-weight:700;margin-top:2px">${monthEmp}</div>`;
+else if(isOff)inner+=`<div style="position:absolute;top:3px;right:5px;font-size:8px;color:${ec};font-weight:700">${monthEmp}</div>`;
 grid+=`<div class="${cls}">${inner}</div>`;
 }
 
