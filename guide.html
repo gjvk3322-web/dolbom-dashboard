@@ -6,481 +6,122 @@
 <title>돌봄매트 시공 체크리스트</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;
-  --border:#e5e8eb;
-  --primary:#e8736c;--primary-light:#fdf0ef;--primary-dark:#d45a53;
-  --green:#20c997;--green-light:#e3faf1;
-  --red:#f04452;--red-light:#fff0f1;
-  --orange:#f59f00;--orange-light:#fff8e6;
-  --blue:#5b9bd5;--blue-light:#edf4fb;
-  --gold:#f59f00;
-  --radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:40px;}
-
-/* 헤더 */
-.header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));padding:20px;text-align:center;position:sticky;top:0;z-index:100;}
-.header h1{color:#fff;font-size:18px;font-weight:700;}
-.header .sub{color:rgba(255,255,255,0.8);font-size:12px;margin-top:4px;}
-
-/* 탭 */
-.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:56px;z-index:99;}
-.tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;user-select:none;}
-.tab.active{color:var(--primary);border-bottom-color:var(--primary);}
-
-/* 탭 콘텐츠 */
-.tab-content{display:none;animation:fadeUp .3s ease;}
-.tab-content.active{display:block;}
+:root{--bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;--border:#e5e8eb;--primary:#e8736c;--primary-light:#fdf0ef;--primary-dark:#d45a53;--green:#20c997;--green-light:#e3faf1;--red:#f04452;--orange:#f59f00;--gold:#f59f00;--radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:40px}
+.header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));padding:20px;text-align:center;position:sticky;top:0;z-index:100}
+.header h1{color:#fff;font-size:18px;font-weight:700}
+.header .sub{color:rgba(255,255,255,0.8);font-size:12px;margin-top:4px}
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:56px;z-index:99}
+.tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;user-select:none}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-content{display:none;animation:fadeUp .3s ease}
+.tab-content.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
-/* 카드 */
-.card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
-
-/* ── 시공 전 ── */
-.step-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:flex-start;}
-.step-num{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
-.step-body h3{font-size:14px;font-weight:700;margin-bottom:3px;}
-.step-body p{font-size:12px;color:var(--text3);line-height:1.5;}
-.step-time{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:6px;}
-.total-time{text-align:center;margin:16px;padding:14px;background:var(--primary-light);border-radius:var(--radius);font-size:14px;font-weight:700;color:var(--primary-dark);}
-
-/* ── 시공 후 ── */
-.check-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;-webkit-user-select:none;}
-.check-item:last-child{border-bottom:none;}
-.check-box{width:26px;height:26px;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .2s;}
-.check-box.checked{background:var(--green);border-color:var(--green);color:#fff;}
-.check-label{font-size:14px;font-weight:500;flex:1;}
-.check-desc{font-size:11px;color:var(--text3);margin-top:2px;}
-
-.star-row{display:flex;align-items:center;gap:12px;padding:14px 0;}
-.star-label{font-size:14px;font-weight:500;flex:1;}
-.stars{display:flex;gap:4px;}
-.star{font-size:28px;cursor:pointer;color:#ddd;transition:color .15s;user-select:none;-webkit-user-select:none;}
-.star.on{color:var(--gold);}
-
-.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:14px;}
-.submit-btn.green{background:var(--green);}
-.submit-btn.green:active{background:#1baa80;}
-.submit-btn.primary{background:var(--primary);}
-.submit-btn.primary:active{background:var(--primary-dark);}
-.submit-btn:disabled{opacity:0.4;cursor:not-allowed;}
-.submit-btn:active{transform:scale(0.98);}
-
-/* ── 후기이벤트 ── */
-.reward-header{text-align:center;padding:20px 16px 8px;}
-.reward-amount{font-size:32px;font-weight:800;color:var(--primary);}
-.reward-max{font-size:13px;color:var(--text3);margin-top:2px;}
-.progress-wrap{margin:12px 16px 4px;background:#e9ecef;border-radius:10px;height:10px;overflow:hidden;}
-.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--orange));border-radius:10px;transition:width .5s ease;}
-.progress-label{text-align:right;margin:4px 20px 12px;font-size:11px;color:var(--text3);font-weight:600;}
-
-.mission-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:all .2s;}
-.mission-header{display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;}
-.mission-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.mission-icon.done{background:var(--green-light);}
-.mission-icon.pending{background:#f2f4f6;}
-.mission-info{flex:1;}
-.mission-info h4{font-size:14px;font-weight:700;}
-.mission-info .reward{font-size:12px;font-weight:700;color:var(--primary);margin-top:2px;}
-.mission-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;}
-.mission-badge.done{background:var(--green-light);color:var(--green);}
-.mission-badge.pending{background:#f2f4f6;color:var(--text3);}
-
-.mission-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);margin-top:0;}
-.mission-body.open{display:block;animation:fadeUp .2s ease;}
-
-.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-top:10px;position:relative;overflow:hidden;}
-.upload-zone:active{border-color:var(--primary);background:var(--primary-light);}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.upload-zone .icon{font-size:28px;margin-bottom:4px;}
-.upload-zone .txt{font-size:12px;color:var(--text3);}
-.upload-preview{margin-top:10px;border-radius:10px;overflow:hidden;display:none;}
-.upload-preview img{width:100%;display:block;border-radius:10px;}
-
-.fg{display:flex;flex-direction:column;gap:5px;margin-top:10px;}
-.fg label{font-size:12px;font-weight:600;color:var(--text2);}
-.fg input,.fg select{padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);transition:border .2s;-webkit-appearance:none;appearance:none;}
-.fg select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px;}
-.fg input:focus,.fg select:focus{outline:none;border-color:var(--primary);}
-
-.account-section{margin:16px;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
-.account-section h3{font-size:15px;font-weight:700;margin-bottom:12px;}
-.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.account-grid .full{grid-column:1/-1;}
-
-.cashback-btn{width:calc(100% - 32px);margin:16px;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--orange));color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 12px rgba(232,115,108,0.3);}
-.cashback-btn:active{transform:scale(0.98);}
-.cashback-btn:disabled{opacity:0.4;cursor:not-allowed;}
-
-/* 토스트 */
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap;max-width:90%;}
-.toast.show{transform:translateX(-50%) translateY(0);}
-
-/* 로딩 */
-.loading-bar{height:3px;background:var(--primary);position:fixed;top:0;left:0;z-index:200;transition:width .3s;border-radius:0 2px 2px 0;}
-
-/* confetti overlay */
-.confetti-overlay{position:fixed;inset:0;pointer-events:none;z-index:400;}
-
-/* 완료 상태 */
-.inspection-done{text-align:center;padding:30px 16px;}
-.inspection-done .big-check{font-size:60px;margin-bottom:10px;}
-.inspection-done h3{font-size:18px;font-weight:700;color:var(--green);}
-.inspection-done p{font-size:13px;color:var(--text3);margin-top:6px;}
-
-@media(max-width:400px){.card,.step-card,.mission-card,.account-section{margin-left:10px;margin-right:10px;}.cashback-btn{width:calc(100% - 20px);margin-left:10px;margin-right:10px;}}
+.card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.step-card{background:var(--card);margin:10px 16px;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:flex-start}
+.step-num{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0}
+.step-body h3{font-size:14px;font-weight:700;margin-bottom:3px}
+.step-body p{font-size:12px;color:var(--text3);line-height:1.5}
+.step-time{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-light);padding:2px 8px;border-radius:6px}
+.total-time{text-align:center;margin:16px;padding:14px;background:var(--primary-light);border-radius:var(--radius);font-size:14px;font-weight:700;color:var(--primary-dark)}
+.check-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.check-item:last-child{border-bottom:none}
+.check-box{width:26px;height:26px;border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .2s}
+.check-box.checked{background:var(--green);border-color:var(--green);color:#fff}
+.check-label{font-size:14px;font-weight:500;flex:1}
+.check-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:14px}
+.submit-btn.green{background:var(--green)}
+.submit-btn:disabled{opacity:0.4;cursor:not-allowed}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.loading-bar{height:3px;background:var(--primary);position:fixed;top:0;left:0;z-index:200;transition:width .3s;border-radius:0 2px 2px 0}
+.inspection-done{text-align:center;padding:30px 16px}
+.inspection-done .big-check{font-size:60px;margin-bottom:10px}
+.inspection-done h3{font-size:18px;font-weight:700;color:var(--green)}
+.inspection-done p{font-size:13px;color:var(--text3);margin-top:6px}
+@media(max-width:400px){.card,.step-card{margin-left:10px;margin-right:10px}}
 </style>
 </head>
 <body>
-
 <div class="loading-bar" id="loadingBar" style="width:0%"></div>
+<div class="header"><h1>돌봄매트 시공 안내</h1><div class="sub" id="phoneDisplay"></div></div>
+<div class="tabs"><div class="tab active" onclick="switchTab(0)">시공 전</div><div class="tab" onclick="switchTab(1)">시공 후</div></div>
 
-<div class="header">
-  <h1>돌봄매트 시공 안내</h1>
-  <div class="sub" id="phoneDisplay"></div>
-</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchTab(0)">시공 전</div>
-  <div class="tab" onclick="switchTab(1)">시공 후</div>
-</div>
-
-<!-- ═══ 시공 전 ═══ -->
 <div class="tab-content active" id="tab0">
   <div class="total-time">전체 예상 소요시간 : 약 3~4시간</div>
+  <div class="step-card"><div class="step-num">1</div><div class="step-body"><h3>가구 이동</h3><p>시공 구역의 가구를 안전하게 이동합니다.<br>무거운 가구는 저희가 옮기니 걱정 마세요!</p></div></div>
 
-  <div class="step-card">
-    <div class="step-num">1</div>
-    <div class="step-body">
-      <h3>가구 이동</h3>
-      <p>시공 구역의 가구를 안전하게 이동합니다.<br>무거운 가구는 저희가 옮기니 걱정 마세요!</p>
+  <div class="step-card"><div class="step-num">2</div><div class="step-body"><h3>바닥 청소</h3>
+    <p style="margin-bottom:6px;color:var(--red);font-size:12px;font-weight:600;">⚠️ 작업 하루 전 청소는 직접 해주셔야 하며 시공 당일 물걸레 청소는 불가합니다.</p>
+    <p style="margin-top:6px;color:var(--primary);font-size:12px;font-weight:600;">💡 무거운 물건들은 저희가 옮기며 청소합니다!</p>
+    <p style="margin-top:4px;color:var(--primary);font-size:12px;font-weight:600;">💡 가벼운 물건은 전 날 치워주시면 좋을 것 같습니다!</p>
+    <p style="margin-top:4px;color:var(--primary);font-size:12px;font-weight:600;">💡 책장 아래 설치 시 책은 치워주셔야 합니다.</p>
+    <span class="step-time">약 10분</span>
+  </div></div>
+
+  <div class="step-card"><div class="step-num">3</div><div class="step-body"><h3>매트 설치</h3>
+    <p>오래 사용하고, 매트 최소한으로 사용 가능하게<br>신경 쓰도록 하겠습니다!</p>
+    <span class="step-time">기준작업 약 10분</span>
+    <div class="checklist-toggle" onclick="toggleChecklist(this)" style="margin-top:12px;padding:10px 14px;background:var(--primary-light);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:13px;font-weight:600;color:var(--primary-dark);">📋 작업에 관한 체크리스트</span>
+      <span class="chevron" style="font-size:12px;color:var(--primary);transition:transform .2s;">▼</span>
     </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">2</div>
-    <div class="step-body">
-      <h3>바닥 청소</h3>
-      <p>청소기를 들고가서 간단한 청소 진행 (쇼파 아래 포함)<br>무거운 물건들은 저희가 옮겨가며 진행됩니다.</p>
-      <p style="margin-top:6px;color:var(--primary);font-size:12px;font-weight:600;">💡 가벼운 물건은 전 날 치워주시면 좋을 것 같습니다!</p>
-      <span class="step-time">약 10분</span>
+    <div class="checklist-body" style="display:none;margin-top:8px;padding:12px 14px;background:#fafafa;border-radius:10px;border:1px solid var(--border);">
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">방문 앞 1cm 비우기</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">너무 바짝 붙이면 추후 방문이 안 열릴 수 있어요!</div></div></label>
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">손끼임 방지 처리</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">손끼임 방지가 있으면 그 전까지 경사매트로 처리됩니다.</div></div></label>
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">펜트리 문 확인</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">문이 안 열리면 위로 올려드리거나, 1cm 매트로 처리. 1cm도 안 되면 비워두고 작업합니다.</div><div style="font-size:11px;color:var(--red);margin-top:4px;font-weight:500;">⚠️ 펜트리 경첩 올림 시 타공으로 인한 자국은 남을 수 있으며, 경첩 조절로 인해 문 수평이 안 맞을 수 있습니다.</div></div></label>
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">화장실 앞 처리</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">경사매트가 아닌 매트 단면으로 처리하여 뒤틀림을 방지합니다.</div></div></label>
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">슬라이드 중문 처리</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">입구부분 기준으로 경사매트가 처리됩니다.</div></div></label>
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">주방 후라이팬 수납장</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">아래에 있는 경우 수납장을 사용 안 하고 동일하게 시공하는 방향을 추천합니다!</div></div></label>
+      <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;cursor:pointer;"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;"><div><div style="font-size:13px;font-weight:600;color:var(--text);">벽 없는 부분 고정</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">폼테이프로 고정. 추후 철거 쉽게 마스킹 테이프 부착 후 폼테이프 처리됩니다.</div></div></label>
     </div>
-  </div>
+  </div></div>
 
-  <div class="step-card">
-    <div class="step-num">3</div>
-    <div class="step-body">
-      <h3>매트 설치</h3>
-      <p>오래 사용하고, 매트 최소한으로 사용 가능하게<br>신경 쓰도록 하겠습니다!</p>
-      <span class="step-time">기준작업 약 10분</span>
-
-      <!-- 작업 체크리스트 아코디언 -->
-      <div class="checklist-toggle" onclick="toggleChecklist(this)" style="margin-top:12px;padding:10px 14px;background:var(--primary-light);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:13px;font-weight:600;color:var(--primary-dark);">📋 작업에 관한 체크리스트</span>
-        <span class="chevron" style="font-size:12px;color:var(--primary);transition:transform .2s;">▼</span>
-      </div>
-      <div class="checklist-body" style="display:none;margin-top:8px;padding:12px 14px;background:#fafafa;border-radius:10px;border:1px solid var(--border);">
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">방문 앞 1cm 비우기</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">너무 바짝 붙이면 추후 방문이 안 열릴 수 있어요!</div>
-          </div>
-        </label>
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">손끼임 방지 처리</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">손끼임 방지가 있으면 그 전까지 경사매트로 처리됩니다.</div>
-          </div>
-        </label>
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">펜트리 문 확인</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">문이 안 열리면 위로 올려드리거나, 1cm 매트로 처리. 1cm도 안 되면 비워두고 작업합니다.</div>
-          </div>
-        </label>
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">화장실 앞 처리</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">경사매트가 아닌 매트 단면으로 처리하여 뒤틀림을 방지합니다.</div>
-          </div>
-        </label>
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">슬라이드 중문 처리</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">입구부분 기준으로 경사매트가 처리됩니다.</div>
-          </div>
-        </label>
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">주방 후라이팬 수납장</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">아래에 있는 경우 수납장을 사용 안 하고 동일하게 시공하는 방향을 추천합니다!</div>
-          </div>
-        </label>
-
-        <label class="cl-item" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;cursor:pointer;">
-          <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);">벽 없는 부분 고정</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">폼테이프로 고정. 추후 철거 쉽게 마스킹 테이프 부착 후 폼테이프 처리됩니다.</div>
-          </div>
-        </label>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">4</div>
-    <div class="step-body">
-      <h3>가구 복원</h3>
-      <p>이동했던 가구를 원래 위치로 복원합니다.<br>쇼파 아래는 매트로 패드를 만들어드립니다.</p>
-      <p style="margin-top:6px;color:var(--text3);font-size:11px;line-height:1.5;">💡 다른 가구는 눌림이 있어도 그냥 사용하시는 게 가장 안전할 것 같아요!</p>
-    </div>
-  </div>
-
-  <div class="step-card">
-    <div class="step-num">5</div>
-    <div class="step-body">
-      <h3>마무리 청소</h3>
-      <p>시공 후 주변을 깔끔하게 정리합니다.<br>쓰레기 수거까지 완벽하게!</p>
-    </div>
-  </div>
+  <div class="step-card"><div class="step-num">4</div><div class="step-body"><h3>가구 복원</h3><p>이동했던 가구를 원래 위치로 복원합니다.<br>쇼파 아래는 매트로 패드를 만들어드립니다.</p><p style="margin-top:6px;color:var(--text3);font-size:11px;line-height:1.5;">💡 다른 가구는 눌림이 있어도 그냥 사용하시는 게 가장 안전할 것 같아요!</p></div></div>
+  <div class="step-card"><div class="step-num">5</div><div class="step-body"><h3>마무리 청소</h3><p>시공 후 주변을 깔끔하게 정리합니다.<br>쓰레기 수거까지 완벽하게!</p></div></div>
 </div>
 
-<!-- ═══ 시공 후 ═══ -->
 <div class="tab-content" id="tab1">
-  <div id="inspectionForm">
-    <div class="card">
-      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">검수 체크리스트</h3>
-      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">하나씩 확인 후 체크해 주세요</p>
-
-      <!-- 1. 작업 상태 확인 -->
-      <div style="font-size:13px;font-weight:700;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-light);">1. 작업 상태 확인</div>
-
-      <div class="check-item" onclick="toggleCheck(0)">
-        <div class="check-box" id="chk0"></div>
-        <div>
-          <div class="check-label">방문, 손끼임방지 확인</div>
-          <div class="check-desc">방문 앞 여유 공간 및 손끼임 방지 처리 상태</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(1)">
-        <div class="check-box" id="chk1"></div>
-        <div>
-          <div class="check-label">화장실, 펜트리 단면처리 확인</div>
-          <div class="check-desc">단면 마감이 깔끔하게 처리되었는지 확인</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(2)">
-        <div class="check-box" id="chk2"></div>
-        <div>
-          <div class="check-label">벽 휜 경우 틈 발생 안내</div>
-          <div class="check-desc">벽이 휜 부분에 약간의 틈이 생길 수 있음을 설명</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(3)">
-        <div class="check-box" id="chk3"></div>
-        <div>
-          <div class="check-label">매트 들뜸 확인 및 밀착시공 설명</div>
-          <div class="check-desc">들뜸 없이 바닥에 밀착되었는지 확인</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(4)">
-        <div class="check-box" id="chk4"></div>
-        <div>
-          <div class="check-label">잘린 단면 황변 설명</div>
-          <div class="check-desc">시간이 지나면 잘린 단면이 자연적으로 황변될 수 있음 안내</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(5)">
-        <div class="check-box" id="chk5"></div>
-        <div>
-          <div class="check-label">펜트리 문 열림 확인</div>
-          <div class="check-desc">매트 시공 후 펜트리 문이 정상적으로 열리는지 확인</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(6)">
-        <div class="check-box" id="chk6"></div>
-        <div>
-          <div class="check-label">냉장고 문 열림 확인</div>
-          <div class="check-desc">매트 높이로 인해 냉장고 문이 걸리지 않는지 확인</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(7)">
-        <div class="check-box" id="chk7"></div>
-        <div>
-          <div class="check-label">중문 슬라이드 걸림 확인</div>
-          <div class="check-desc">슬라이드 중문이 원활하게 작동하는지 확인</div>
-        </div>
-      </div>
-
-      <!-- 2. 가구 원위치 상태 확인 -->
-      <div style="font-size:13px;font-weight:700;color:var(--primary);padding:16px 0 6px;border-bottom:2px solid var(--primary-light);">2. 가구 원위치 상태 확인</div>
-
-      <div class="check-item" onclick="toggleCheck(8)">
-        <div class="check-box" id="chk8"></div>
-        <div>
-          <div class="check-label">쇼파 받침 확인</div>
-          <div class="check-desc">쇼파가 안정적으로 놓여있는지 확인</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(9)">
-        <div class="check-box" id="chk9"></div>
-        <div>
-          <div class="check-label">TV 연결 상태 확인</div>
-          <div class="check-desc">TV 전원 및 연결 케이블이 정상인지 확인</div>
-        </div>
-      </div>
-
-      <!-- 3. 압박시공 안내 -->
-      <div style="font-size:13px;font-weight:700;color:var(--primary);padding:16px 0 6px;border-bottom:2px solid var(--primary-light);">3. 기타 확인</div>
-
-      <div class="check-item" onclick="toggleCheck(10)">
-        <div class="check-box" id="chk10"></div>
-        <div>
-          <div class="check-label">압박시공 안내 완료</div>
-          <div class="check-desc">벽과 벽 사이보다 매트를 크게 재단하여 압박 시공하면 추후 벌어짐을 방지할 수 있음을 설명</div>
-        </div>
-      </div>
-      <div class="check-item" onclick="toggleCheck(11)">
-        <div class="check-box" id="chk11"></div>
-        <div>
-          <div class="check-label">작업자 짐 챙김 확인</div>
-          <div class="check-desc">공구, 자재 등 작업자 짐을 모두 가져갔는지 확인</div>
-        </div>
-      </div>
-
-      <button class="submit-btn green" id="inspectBtn" disabled onclick="submitInspection()">검수 완료</button>
-    </div>
-  </div>
-  <div id="inspectionDone" class="inspection-done" style="display:none;">
-    <div class="big-check">&#10003;</div>
-    <h3>검수가 완료되었습니다!</h3>
-    <p>소중한 확인 감사합니다.<br>쾌적한 생활 되세요!</p>
-  </div>
+  <div id="inspectionForm"><div class="card">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">검수 체크리스트</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">하나씩 확인 후 체크해 주세요</p>
+    <div style="font-size:13px;font-weight:700;color:var(--primary);padding:12px 0 6px;border-bottom:2px solid var(--primary-light);">1. 작업 상태 확인</div>
+    <div class="check-item" onclick="toggleCheck(0)"><div class="check-box" id="chk0"></div><div><div class="check-label">방문, 손끼임방지 확인</div><div class="check-desc">방문 앞 여유 공간 및 손끼임 방지 처리 상태</div></div></div>
+    <div class="check-item" onclick="toggleCheck(1)"><div class="check-box" id="chk1"></div><div><div class="check-label">화장실, 펜트리 단면처리 확인</div><div class="check-desc">단면 마감이 깔끔하게 처리되었는지 확인</div></div></div>
+    <div class="check-item" onclick="toggleCheck(2)"><div class="check-box" id="chk2"></div><div><div class="check-label">벽 휜 경우 틈 발생 안내</div><div class="check-desc">벽이 휜 부분에 약간의 틈이 생길 수 있음을 설명</div></div></div>
+    <div class="check-item" onclick="toggleCheck(3)"><div class="check-box" id="chk3"></div><div><div class="check-label">매트 들뜸 확인 및 밀착시공 설명</div><div class="check-desc">들뜸 없이 바닥에 밀착되었는지 확인</div></div></div>
+    <div class="check-item" onclick="toggleCheck(4)"><div class="check-box" id="chk4"></div><div><div class="check-label">잘린 단면 황변 설명</div><div class="check-desc">시간이 지나면 잘린 단면이 자연적으로 황변될 수 있음 안내</div></div></div>
+    <div class="check-item" onclick="toggleCheck(5)"><div class="check-box" id="chk5"></div><div><div class="check-label">펜트리 문 열림 확인</div><div class="check-desc">매트 시공 후 펜트리 문이 정상적으로 열리는지 확인</div></div></div>
+    <div class="check-item" onclick="toggleCheck(6)"><div class="check-box" id="chk6"></div><div><div class="check-label">냉장고 문 열림 확인</div><div class="check-desc">매트 높이로 인해 냉장고 문이 걸리지 않는지 확인</div></div></div>
+    <div class="check-item" onclick="toggleCheck(7)"><div class="check-box" id="chk7"></div><div><div class="check-label">중문 슬라이드 걸림 확인</div><div class="check-desc">슬라이드 중문이 원활하게 작동하는지 확인</div></div></div>
+    <div style="font-size:13px;font-weight:700;color:var(--primary);padding:16px 0 6px;border-bottom:2px solid var(--primary-light);">2. 가구 원위치 상태 확인</div>
+    <div class="check-item" onclick="toggleCheck(8)"><div class="check-box" id="chk8"></div><div><div class="check-label">쇼파 받침 확인</div><div class="check-desc">쇼파가 안정적으로 놓여있는지 확인</div></div></div>
+    <div class="check-item" onclick="toggleCheck(9)"><div class="check-box" id="chk9"></div><div><div class="check-label">TV 연결 상태 확인</div><div class="check-desc">TV 전원 및 연결 케이블이 정상인지 확인</div></div></div>
+    <div style="font-size:13px;font-weight:700;color:var(--primary);padding:16px 0 6px;border-bottom:2px solid var(--primary-light);">3. 기타 확인</div>
+    <div class="check-item" onclick="toggleCheck(10)"><div class="check-box" id="chk10"></div><div><div class="check-label">압박시공 안내 완료</div><div class="check-desc">벽과 벽이 100이면 매트 110을 시공하여 추후 벌어짐을 방지합니다. 이로 인해 매트와 매트 사이 + 단차는 타일처럼 완벽하게 맞추기 어렵습니다.</div></div></div>
+    <div class="check-item" onclick="toggleCheck(11)"><div class="check-box" id="chk11"></div><div><div class="check-label">작업자 짐 챙김 확인</div><div class="check-desc">공구, 자재 등 작업자 짐을 모두 가져갔는지 확인</div></div></div>
+    <button class="submit-btn green" id="inspectBtn" disabled onclick="submitInspection()">검수 완료</button>
+  </div></div>
+  <div id="inspectionDone" class="inspection-done" style="display:none;"><div class="big-check">&#10003;</div><h3>검수가 완료되었습니다!</h3><p>소중한 확인 감사합니다.<br>쾌적한 생활 되세요!</p></div>
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script>
-// ── 설정 ──
-const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
-const PHONE = new URLSearchParams(location.search).get('phone')||'';
-if(PHONE){
-  const masked = PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3');
-  document.getElementById('phoneDisplay').textContent = masked;
-}
-
-// ── 탭 ──
-function switchTab(idx){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
-  document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===idx));
-}
-
-// ── 작업 체크리스트 아코디언 ──
-function toggleChecklist(el){
-  var body=el.nextElementSibling;
-  var chevron=el.querySelector('.chevron');
-  if(body.style.display==='none'){
-    body.style.display='block';
-    chevron.style.transform='rotate(180deg)';
-  }else{
-    body.style.display='none';
-    chevron.style.transform='rotate(0deg)';
-  }
-}
-
-// ── 로딩 ──
+const API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const PHONE=new URLSearchParams(location.search).get('phone')||'';
+if(PHONE){const masked=PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3');document.getElementById('phoneDisplay').textContent=masked;}
+function switchTab(idx){document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===idx));}
+function toggleChecklist(el){var body=el.nextElementSibling;var chevron=el.querySelector('.chevron');if(body.style.display==='none'){body.style.display='block';chevron.style.transform='rotate(180deg)';}else{body.style.display='none';chevron.style.transform='rotate(0deg)';}}
 function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
-
-// ── 토스트 ──
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// ═══════════════════════════════════
-// 시공 후 - 검수
-// ═══════════════════════════════════
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 const checks=[false,false,false,false,false,false,false,false,false,false,false,false];
 let inspectionSubmitted=false;
-
-function toggleCheck(i){
-  if(inspectionSubmitted)return;
-  checks[i]=!checks[i];
-  const el=document.getElementById('chk'+i);
-  el.classList.toggle('checked',checks[i]);
-  el.textContent=checks[i]?'✓':'';
-  updateInspectBtn();
-}
-
-function updateInspectBtn(){
-  const allChecked=checks.every(Boolean);
-  document.getElementById('inspectBtn').disabled=!allChecked;
-}
-
-async function submitInspection(){
-  if(inspectionSubmitted)return;
-  const btn=document.getElementById('inspectBtn');
-  btn.disabled=true; btn.textContent='전송 중...';
-  try{
-    await fetch(API_URL,{
-      method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        type:'inspection',
-        phone:PHONE,
-        checks:checks,
-        submittedAt:new Date().toISOString()
-      })
-    });
-    inspectionSubmitted=true;
-    document.getElementById('inspectionForm').style.display='none';
-    document.getElementById('inspectionDone').style.display='block';
-    showToast('검수 완료! 감사합니다');
-  }catch(e){
-    btn.disabled=false; btn.textContent='검수 완료';
-    showToast('전송 실패 - 다시 시도해주세요');
-  }
-}
-
-// ── 데이터 로드 ──
-async function loadData(){
-  if(!PHONE)return;
-  showLoading(30);
-  try{
-    const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
-    showLoading(70);
-    const data=await res.json();
-    showLoading(100);
-    setTimeout(()=>showLoading(0),500);
-
-    if(data.inspection&&data.inspection.submitted){
-      inspectionSubmitted=true;
-      document.getElementById('inspectionForm').style.display='none';
-      document.getElementById('inspectionDone').style.display='block';
-    }
-  }catch(e){
-    console.error(e);
-    showLoading(0);
-  }
-}
-
-// ── 초기화 ──
+function toggleCheck(i){if(inspectionSubmitted)return;checks[i]=!checks[i];const el=document.getElementById('chk'+i);el.classList.toggle('checked',checks[i]);el.textContent=checks[i]?'✓':'';updateInspectBtn();}
+function updateInspectBtn(){document.getElementById('inspectBtn').disabled=!checks.every(Boolean);}
+async function submitInspection(){if(inspectionSubmitted)return;const btn=document.getElementById('inspectBtn');btn.disabled=true;btn.textContent='전송 중...';try{await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});inspectionSubmitted=true;document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';showToast('검수 완료! 감사합니다');}catch(e){btn.disabled=false;btn.textContent='검수 완료';showToast('전송 실패 - 다시 시도해주세요');}}
+async function loadData(){if(!PHONE)return;showLoading(30);try{const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));showLoading(70);const data=await res.json();showLoading(100);setTimeout(()=>showLoading(0),500);if(data.inspection&&data.inspection.submitted){inspectionSubmitted=true;document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';}}catch(e){console.error(e);showLoading(0);}}
 loadData();
 </script>
 </body>
