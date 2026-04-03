@@ -308,7 +308,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.03.21.34';
+const VER='2026.04.03.35';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -499,6 +499,37 @@ function getOffice(addr){return SOUTH.some(r=>addr.includes(r))?OFF_B:OFF_A}
 
 async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng)*2)}
 
+// 하루 경로 기반 이동거리: 사무실 → 시공1 → 시공2 → ... → 사무실
+function calcRouteKm(jobs){
+  if(!jobs.length)return 0;
+  const tOrd={'오전':0,'오후':1,'as':2,'실측':3};
+  const sorted=[...jobs].sort((a,b)=>(tOrd[a.time]||9)-(tOrd[b.time]||9));
+  const office=getOffice(sorted[0].addr||'');
+  const coords=sorted.map(j=>j.addr?DC[j.addr]:null).filter(Boolean);
+  if(!coords.length)return 0;
+  let total=0,prev=office;
+  for(const c of coords){total+=hav(prev.lat,prev.lng,c.lat,c.lng);prev=c}
+  total+=hav(prev.lat,prev.lng,office.lat,office.lng);
+  return Math.round(total);
+}
+
+// 직원별 날짜별 경로 거리 합산 헬퍼
+function calcEmpRouteTotals(jobList){
+  const dateJobs={};
+  jobList.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>{
+    const k=e+'|'+j.date;
+    if(!dateJobs[k])dateJobs[k]=[];
+    dateJobs[k].push(j);
+  })});
+  const totals={};
+  Object.entries(dateJobs).forEach(([k,jobs])=>{
+    const emp=k.split('|')[0];
+    if(!totals[emp])totals[emp]=0;
+    totals[emp]+=calcRouteKm(jobs);
+  });
+  return totals;
+}
+
 // ===== CSV Parse (새 시트 구조) =====
 // A:시간 B:시공일 C:주소 D:연락처 E:신축여부 F:평수 G:시공범위 H:제품 I:수량 J:사수 K:부사수 L:차량번호 M:결제방법 N:판매금액 O:결제상태 P:추천인 Q:유입경로 R:카톡URL S:채널명
 let OFFS={}; // {date: Set(이름)} 휴무 데이터
@@ -597,8 +628,9 @@ for(const j of J){if(j.addr&&!j.offOnly&&!j.dist){j.dist=await calcDist(j.addr)}
 const bd={};J.filter(j=>!j.offOnly).forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
 const empDist={};E.forEach(e=>empDist[e]=0);
 
-// 기존 배정 거리 반영
-J.forEach(j=>{if(A[j.id]){A[j.id].forEach(e=>{if(empDist[e]!==undefined)empDist[e]+=j.dist||0})}});
+// 기존 배정 거리 반영 (경로 기반: 사무실→시공1→시공2→...→사무실)
+const routeTotals=calcEmpRouteTotals(J.filter(j=>!j.offOnly));
+E.forEach(e=>{empDist[e]=routeTotals[e]||0});
 
 // ===== 공정성 점수 계산 (이번 달 누적) =====
 const fairScore={};
@@ -608,9 +640,10 @@ E.forEach(e=>{fairScore[e]={workDays:new Set(),double:0,km:0,days:{}}});
 monthJobs.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(!fairScore[e])return;
   fairScore[e].workDays.add(j.date);
   if(j.time!=='as'){if(!fairScore[e].days[j.date])fairScore[e].days[j.date]=0;fairScore[e].days[j.date]++}
-  const dKey=j.addr?j.addr.replace(/[.#$/\[\]]/g,'_'):'';
-  fairScore[e].km+=DIST[dKey]||0;
 })});
+// 경로 기반 km 계산
+const fairRouteTotals=calcEmpRouteTotals(monthJobs);
+E.forEach(e=>{fairScore[e].km=fairRouteTotals[e]||0});
 E.forEach(e=>{fairScore[e].double=Object.values(fairScore[e].days).filter(c=>c>=2).length;fairScore[e].wd=fairScore[e].workDays.size});
 // 평균 계산 (편차 기반 점수: 평균보다 많으면 +, 적으면 -)
 const avgWd=E.reduce((s,e)=>s+fairScore[e].wd,0)/Math.max(E.length,1);
@@ -651,13 +684,9 @@ function makeGroups(pool,jobCnt){
   return groups;
 }
 
-// ===== 월간 팀별 누적 이동거리 (날짜 간 공유) =====
+// ===== 월간 팀별 누적 이동거리 (경로 기반) =====
 const crossDateKm={};
-E.forEach(e=>{crossDateKm[e]=0});
-// 기존 배정의 이번달 거리 반영
-J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===curY&&new Date(j.date).getMonth()===curM).forEach(j=>{
-  if(A[j.id])A[j.id].forEach(e=>{if(crossDateKm[e]!==undefined)crossDateKm[e]+=j.dist||0});
-});
+E.forEach(e=>{crossDateKm[e]=fairRouteTotals[e]||0});
 function teamCrossKm(members){
   let t=0;members.forEach(m=>{t+=crossDateKm[m]||0});return t/Math.max(members.length,1);
 }
@@ -1743,9 +1772,11 @@ else{
 // 시공(오전/오후)만 날짜별 추적 (두탕 계산용)
 if(!es[e].days[j.date])es[e].days[j.date]=0;
 es[e].days[j.date]++}
-// 이동거리 (Firebase에서 캐시된 거리 사용)
-const dKey=j.addr?j.addr.replace(/[.#$/\[\]]/g,'_'):'';
-es[e].km+=DIST[dKey]||0}})});
+}})});
+
+// 경로 기반 이동거리: 사무실→시공1→시공2→...→사무실 (하루 단위)
+const fairTabRoutes=calcEmpRouteTotals(mj);
+E.forEach(e=>{es[e].km=fairTabRoutes[e]||0});
 
 // 두탕 = 같은 날 시공(오전+오후) 2건 이상 (AS 미포함)
 E.forEach(e=>{es[e].double=Object.values(es[e].days).filter(c=>c>=2).length});
