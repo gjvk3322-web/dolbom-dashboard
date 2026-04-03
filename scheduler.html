@@ -468,7 +468,7 @@ sheetSyncTimer=setTimeout(()=>{
     }
     const parts=j.id.split('_');
     const rowIdx=parseInt(parts[parts.length-1])+1;
-    data.push({row:rowIdx,sasu,busasu});
+    data.push({row:rowIdx,sasu,busasu,vehicle:Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||''});
   });
   if(!data.length)return;
   // Apps Script로 전송
