@@ -326,7 +326,7 @@ function copyBooking(){/* legacy */
   var addr=addrData?addrData.name+'\n  '+addrData.address+'\n  '+dongHo:'';
   var t='돌봄매트 시공 예약\n────────────────\n\n';
   if(REFERRAL_CODE)t+='추천인: '+REFERRAL_CODE+'\n\n';
-  t+='🏢 '+TEAM+'팀\n\n';
+  
   t+='■ 고객 정보\n  이름: '+name+'\n  연락처: '+phone+'\n  주소: '+addr+'\n  평수: '+pyung+'평\n';
   t+='\n■ 시공 정보\n  희망일: '+dateText+'\n  희망시간: '+selectedTime+'\n  제품: '+product.name+'\n  색상: '+selectedColor+'\n  시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'\n';
   if(memo)t+='  요청사항: '+memo+'\n';
@@ -350,7 +350,7 @@ function buildBookingImage(){
   var dongHo=(dong?(dong.includes('동')?dong:dong+'동')+' ':'')+(hosu?(hosu.includes('호')?hosu:hosu+'호'):'');
   var addr=addrData?addrData.name+' '+addrData.address+' '+dongHo:'';
   var h='<div style="padding:20px;background:#fff;font-family:Noto Sans KR,sans-serif">';
-  h+='<div style="text-align:center;padding-bottom:14px;border-bottom:2px solid #2E7D32;margin-bottom:14px"><div style="font-size:20px;font-weight:800;color:#2E7D32">돌봄매트 시공 예약</div><div style="font-size:11px;color:#999;margin-top:4px">'+TEAM+'팀</div></div>';
+  h+='<div style="text-align:center;padding-bottom:14px;border-bottom:2px solid #2E7D32;margin-bottom:14px"><div style="font-size:20px;font-weight:800;color:#2E7D32">돌봄매트 시공 예약</div></div>';
   if(REFERRAL_CODE)h+='<div style="padding:8px 12px;background:#E8F5E9;border-radius:8px;font-size:12px;color:#2E7D32;font-weight:600;text-align:center;margin-bottom:12px">🎉 '+REFERRAL_CODE+' 추천 할인 적용</div>';
   h+='<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:8px">■ 고객 정보</div>';
   h+='<div style="font-size:12px;color:#333;line-height:2">이름: '+name+'<br>연락처: '+phone+'<br>주소: '+addr+'<br>평수: '+pyung+'평</div></div>';
@@ -395,7 +395,7 @@ function buildBookingText(){
   var addr=addrData?addrData.name+'\n  '+addrData.address+'\n  '+dongHo:'';
   var t='돌봄매트 시공 예약\n────────────────\n\n';
   if(REFERRAL_CODE)t+='추천인: '+REFERRAL_CODE+'\n\n';
-  t+='🏢 '+TEAM+'팀\n\n';
+  
   t+='■ 고객 정보\n  이름: '+name+'\n  연락처: '+phone+'\n  주소: '+addr+'\n  평수: '+pyung+'평\n';
   t+='\n■ 시공 정보\n  희망일: '+dateText+'\n  희망시간: '+selectedTime+'\n  제품: '+product.name+'\n  색상: '+selectedColor+'\n  시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'\n';
   if(memo)t+='  요청사항: '+memo+'\n';
