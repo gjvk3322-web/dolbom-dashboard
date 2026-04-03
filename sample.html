@@ -31,7 +31,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 .map-section{max-width:480px;margin:0 auto;padding:0 16px;margin-top:16px}
 .map-section .map-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
 .map-section .map-title{padding:12px 16px 0;font-size:14px;font-weight:700;color:#1a1a1a;display:flex;align-items:center;gap:6px}
-.map-section iframe{width:100%;height:280px;border:none;display:block}
+.map-section iframe{width:100%;height:520px;border:none;display:block}
 .map-section .map-hint{padding:8px 16px 10px;font-size:11px;color:#999;text-align:center;background:#fff}
 
 .card{background:#fff;border:1px solid #e8e8e3;border-radius:14px;padding:24px 20px;margin-top:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
@@ -81,18 +81,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 
 .pet-tip{background:linear-gradient(135deg,rgba(46,125,50,.06),rgba(46,125,50,.02));border:1px solid rgba(46,125,50,.12);border-radius:12px;padding:14px 16px;margin-top:12px;font-size:12px;color:#2E7D32;line-height:1.6}
 
-.quote-banner{margin-top:14px;border-radius:14px;padding:18px 20px;text-align:center;cursor:pointer;transition:all .4s ease;text-decoration:none;display:block;background:#fff;border:1.5px solid #e0ddd6;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.quote-banner:active{transform:scale(.98)}
-.quote-banner .qb-icon{font-size:24px;margin-bottom:6px}
-.quote-banner .qb-title{font-size:14px;font-weight:700;color:#1a1a1a}
-.quote-banner .qb-desc{font-size:12px;color:#999;margin-top:4px;line-height:1.5}
-.quote-banner .qb-arrow{display:inline-block;margin-top:8px;font-size:12px;font-weight:600;color:#2E7D32;padding:5px 14px;border:1.5px solid #2E7D32;border-radius:20px;transition:all .2s}
-.quote-banner.highlighted{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border-color:#2E7D32;box-shadow:0 4px 20px rgba(46,125,50,.15);animation:quotePulse .6s ease}
-.quote-banner.highlighted .qb-title{color:#1B5E20}
-.quote-banner.highlighted .qb-desc{color:#2E7D32}
-.quote-banner.highlighted .qb-arrow{background:#2E7D32;color:#fff;border-color:#2E7D32}
-@keyframes quotePulse{0%{transform:scale(.95);opacity:0}50%{transform:scale(1.02)}100%{transform:scale(1);opacity:1}}
-
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .card{animation:fadeUp .5s ease both}
 .card:nth-child(2){animation-delay:.1s}
@@ -131,12 +119,11 @@ var hv = document.getElementById('heroVideo');
 if(hv){hv.play().catch(function(){document.addEventListener('touchstart',function once(){hv.play();document.removeEventListener('touchstart',once);});});}
 </script>
 
-<!-- 시공 사례 지도 -->
+<!-- 시공 사례 지도 (map.html 임베드) -->
 <div class="map-section">
   <div class="map-card">
     <div class="map-title">📍 우리집 근처 시공 사례</div>
-    <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
-    <div class="map-hint">지도를 확대해서 우리 동네 시공 내역을 확인해보세요</div>
+    <iframe src="https://my.dolbommat.com/map.html" style="width:100%;height:520px;border:none;display:block" allowfullscreen loading="lazy"></iframe>
   </div>
 </div>
 
@@ -159,19 +146,18 @@ if(hv){hv.play().catch(function(){document.addEventListener('touchstart',functio
         <input type="text" id="fAddress" placeholder="버튼을 눌러 검색" readonly style="cursor:pointer" onclick="searchAddress()" />
         <button type="button" class="addr-btn" onclick="searchAddress()">주소검색</button>
       </div>
-      <div id="regionBadge" style="display:none;margin-top:6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center"></div>
     </div>
     <div class="fg">
       <label>건물 유형 <span class="req">*</span></label>
       <div class="chip-group" id="chipBuilding">
         <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(true)">아파트</div>
-        <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(true)">빌라</div>
+        <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(false)">빌라</div>
         <div class="chip" style="flex:1;text-align:center" onclick="selectChip('chipBuilding',this);toggleDong(false)">주택</div>
       </div>
     </div>
     <div id="detailRow" style="display:none;gap:10px;margin-bottom:14px">
       <div id="dongBox" style="flex:1">
-        <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">동 <span style="font-size:10px;color:#bbb">(선택)</span></label>
+        <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">동</label>
         <input type="text" id="fDong" placeholder="예: 101" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
       </div>
       <div id="hoBox" style="flex:1">
@@ -212,11 +198,10 @@ if(hv){hv.play().catch(function(){document.addEventListener('touchstart',functio
     <div class="pet-tip">
       🏆 <strong>왜 돌봄매트일까요?</strong><br><br>
       ✅ 창업 6년, 6,700건 시공 완료<br>
-      ✅ 본사 직원 14명, 전문 시공팀 직접 시공<br>
       ✅ 전국 어린이집 80곳 시공 완료<br>
-      ✅ 경찰서 어린이집 5곳 시공<br>
+      ✅ 경찰서 어린이보호구역 5곳 시공<br>
       ✅ 5성급 호텔 키즈룸 시공<br><br>
-      하청 없이 본사에서 직접 시공합니다.<br>아이와 반려동물의 안전을 책임지는<br>돌봄매트를 직접 확인해보세요!
+      아이와 반려동물의 안전을 책임지는<br>돌봄매트를 직접 확인해보세요!
     </div>
   </div>
 
@@ -239,14 +224,6 @@ if(hv){hv.play().catch(function(){document.addEventListener('touchstart',functio
   </div>
 
   <button class="submit-btn" id="submitBtn" onclick="showConfirm()">무료 샘플 신청하기</button>
-
-  <!-- 셀프 견적 배너 (항상 보임, 신청 후 강조) -->
-  <a class="quote-banner" id="quoteBanner" onclick="goQuote()">
-    <div class="qb-icon">🧮</div>
-    <div class="qb-title" id="qbTitle">시공 비용이 궁금하시다면?</div>
-    <div class="qb-desc" id="qbDesc">평수만 입력하면 예상 견적을 바로 확인할 수 있어요</div>
-    <span class="qb-arrow" id="qbArrow">셀프 견적 보러가기 →</span>
-  </a>
 
 </div>
 
@@ -279,33 +256,12 @@ if(chParam){
   });
 }
 
-const BLOCKED_REGIONS=['전라','전남','전북','목포','여수','순천','익산','전주','군산','남원','정읍','강원','춘천','원주','강릉','속초','동해시','삼척','태백','제주','안동','영천','공주','보령','홍성','태안','부여','서천','청양','금산','예산','제천','옥천','영동군','단양','괴산','진천','음성','증평','보은'];
-
-function isBlockedRegion(addr, zonecode){
-  // 광주: 경기 광주시(12xxx)는 허용, 광주광역시(61~62xxx)는 차단
-  if(addr.includes('광주')&&!addr.includes('광주시')){
-    const zc=parseInt(zonecode);
-    if(zc>=61000&&zc<=62999) return true;
-  }
-  return BLOCKED_REGIONS.some(r=>addr.includes(r));
-}
-
 function searchAddress(){
   new daum.Postcode({
     oncomplete:function(data){
       let addr=data.roadAddress||data.jibunAddress;
       if(data.buildingName)addr+=' '+data.buildingName;
-      const fullAddr='('+data.zonecode+') '+addr;
-      document.getElementById('fAddress').value=fullAddr;
-      const badge=document.getElementById('regionBadge');
-      const blocked=isBlockedRegion(addr, data.zonecode);
-      if(blocked){
-        badge.textContent='😢 죄송합니다. 해당 지역은 현재 서비스 불가 지역입니다';
-        badge.style.display='block';badge.style.background='#fde8e8';badge.style.color='#e53935';badge.style.border='1px solid #e53935';
-      } else {
-        badge.textContent='✅ 서비스 가능 지역입니다!';
-        badge.style.display='block';badge.style.background='#E8F5E9';badge.style.color='#2E7D32';badge.style.border='1px solid #2E7D32';
-      }
+      document.getElementById('fAddress').value='('+data.zonecode+') '+addr;
     }
   }).open();
 }
@@ -336,21 +292,6 @@ function getChipValue(groupId){
 
 function getChipValues(groupId){
   return Array.from(document.querySelectorAll('#'+groupId+' .chip.selected')).map(c=>c.textContent).join(', ');
-}
-
-function goQuote(){
-  var quoteUrl='https://my.dolbommat.com/quote.html';
-  if(chParam) quoteUrl+='?ch='+encodeURIComponent(chParam);
-  location.href=quoteUrl;
-}
-
-function highlightQuoteBanner(){
-  var banner=document.getElementById('quoteBanner');
-  banner.classList.add('highlighted');
-  document.getElementById('qbTitle').textContent='✅ 샘플 신청 완료! 견적도 확인해보세요';
-  document.getElementById('qbDesc').textContent='샘플 도착 전에 미리 시공 비용을 알아보세요!';
-  document.getElementById('qbArrow').textContent='지금 바로 셀프 견적 보기 →';
-  banner.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 function showToast(msg,type){
@@ -430,13 +371,12 @@ function submitForm(){
       document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       document.getElementById('detailRow').style.display='none';
       btn.textContent='✅ 신청 완료!';
-      highlightQuoteBanner();
       setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
     }).catch(()=>{showToast('⚠️ 전송에 실패했습니다','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';});
   }).catch(()=>{
     btn.textContent='신청 중...';
     fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
-    }).then(()=>{showToast('✅ 샘플 신청이 완료되었습니다!','success');btn.textContent='✅ 신청 완료!';highlightQuoteBanner();setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    }).then(()=>{showToast('✅ 샘플 신청이 완료되었습니다!','success');btn.textContent='✅ 신청 완료!';setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
     }).catch(()=>{showToast('⚠️ 전송 실패','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';});
   });
 }
