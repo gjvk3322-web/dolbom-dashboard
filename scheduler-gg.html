@@ -484,6 +484,21 @@ sheetSyncTimer=setTimeout(()=>{
 },2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
 }
 
+
+// ===== 팀설정 시트 자동 동기화 =====
+function syncTeamsToSheet(){
+  if(!isAdmin)return;
+  const teamData=teams.map((t,i)=>({
+    region:'경기',teamNum:i+1,sasu:t[0]||'',busasu:t.slice(1).join(',')
+  }));
+  fetch(SHEET_REPORT_URL,{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'updateTeamConfig',data:teamData})
+  }).then(()=>console.log('[team-sync] OK:',teamData.length+'팀'))
+  .catch(e=>console.log('[team-sync] error:',e));
+}
+
 // 제품명 → CSS 클래스 매핑
 function matCls(t){if(t.includes('마블'))return'marble';if(t.includes('코튼'))return'cotton';if(t.includes('베이지'))return'beige';return'modern'}
 
@@ -1636,11 +1651,11 @@ html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
 document.getElementById('teamView').innerHTML=html;
 initDnD();}
 
-function addTeam(){teams.push([]);fbSave('gg_teams',teams);renderTeam()}
-function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('gg_teams',teams);renderTeam()}
-function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('gg_teams',teams);renderTeam()}
+function addTeam(){teams.push([]);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
 function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('gg_employees',E);renderTeam();toast(v+' 추가!','ok')}
-function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('gg_employees',E);fbSave('gg_teams',teams);renderTeam()}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('gg_employees',E);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
 
 // 드래그앤드롭으로 팀 이동 처리
 function moveMember(name,fromType,fromTi,toType,toTi){
@@ -1653,7 +1668,7 @@ if(toType==='team'&&toTi!==undefined){
   if(!teams[toTi].includes(name))teams[toTi].push(name);
 }
 // pool로 이동 = 어디에도 추가 안 함 (제거만)
-fbSave('gg_teams',teams);renderTeam();
+fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet();
 toast('✅ '+name+' 이동 완료','ok');
 }
 
