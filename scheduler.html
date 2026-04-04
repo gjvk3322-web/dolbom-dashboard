@@ -1516,7 +1516,7 @@ return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="pa
 
 return `<div style="padding:6px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
-<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAm?'오전':'오후'}${isAs?'AS':''}</span>
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAs?'AS':isAm?'오전':'오후'}</span>
 <span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
@@ -1562,7 +1562,7 @@ const ec=ecols[ei%10];
 return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div style="padding:6px 0;${idx>0?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
-<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAm?'오전':'오후'}${isAs?'AS':''}</span>
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAs?'AS':isAm?'오전':'오후'}</span>
 <span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
