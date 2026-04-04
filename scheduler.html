@@ -23,7 +23,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 
 /* Day Card - 토스 스타일 */
 .daycard{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden;border:none}
-.daycard-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 12px}
+.daycard-hd{display:flex;align-items:center;padding:16px 18px 12px;gap:8px;flex-wrap:wrap}
 .daycard-date{font-size:18px;font-weight:900;letter-spacing:-.5px}.daycard-dow{font-size:12px;font-weight:700;padding:4px 10px;border-radius:6px}
 .dow-mon{background:rgba(255,255,255,.15);color:#fff}.dow-tue{background:rgba(255,255,255,.15);color:#fff}.dow-wed{background:rgba(255,255,255,.15);color:#fff}.dow-thu{background:rgba(255,255,255,.15);color:#fff}.dow-fri{background:rgba(255,255,255,.15);color:#fff}.dow-sat{background:rgba(90,200,250,.15);color:var(--blue)}.dow-sun{background:rgba(255,69,58,.15);color:var(--red)}
 .daycard-off{padding:6px 18px;font-size:11px;color:#fff;font-weight:500;opacity:.7}
@@ -1508,15 +1508,15 @@ const dateColor=isSun?'var(--red)':isSat?'var(--blue)':'var(--text)';
 const offs=new Set();
 if(OFFS[date])OFFS[date].forEach(n=>offs.add(n));
 jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
-const offHtml=offs.size?'<div class="daycard-off">휴무 : '+[...offs].join(' ')+'</div>':'';
+const offHtml=offs.size?'<span style="font-size:11px;font-weight:500;opacity:.6">· 휴무 : '+[...offs].join(' ')+'</span>':'';
 
 if(!realJobs.length){
 const onDuty=E.filter(e=>!offs.has(e));
 const ecl2=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const dutyHtml=onDuty.length&&!isSun?'<div style="padding:4px 8px;font-size:11px;color:var(--dim)">👷 출근: '+onDuty.map(e=>{const ei=E.indexOf(e);return '<span style="font-weight:700;color:'+ecl2[ei%10]+'">'+e+'</span>'}).join(' · ')+'</div>':'';
 return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
-${offHtml}<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-size:13px;padding:8px">🔴 일요일</div>':'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'+dutyHtml}</div></div>`}
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${offHtml}</div>
+<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-size:13px;padding:8px">🔴 일요일</div>':'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'+dutyHtml}</div></div>`}
 
 // 팀별 그룹
 const tm={};const un=[];
@@ -1615,7 +1615,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 body+=`</div>`}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span></div>
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${offHtml}</div>
 ${offHtml}${(()=>{
 // 출근했는데 배정 못 받은 직원 표시
 const assigned=new Set();
