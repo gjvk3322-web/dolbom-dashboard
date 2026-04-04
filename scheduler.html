@@ -502,7 +502,7 @@ async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if
 // 하루 경로 기반 이동거리: 사무실 → 시공1 → 시공2 → ... → 사무실
 function calcRouteKm(jobs){
   if(!jobs.length)return 0;
-  const tOrd={'오전':0,'오후':1,'as':2,'실측':3};
+  const tOrd={'오전':0,'오후':1,'as':2,'AS':2,'실측':3};
   const sorted=[...jobs].sort((a,b)=>(tOrd[a.time]||9)-(tOrd[b.time]||9));
   const office=getOffice(sorted[0].addr||'');
   const coords=sorted.map(j=>j.addr?DC[j.addr]:null).filter(Boolean);
@@ -706,7 +706,7 @@ if(date<cutoffStr){
   if(!avail2.length){continue}
   
   const am2=dj2.filter(j=>(j.time.startsWith('오전')||j.time.includes('2:'))&&j.addr&&j.addr.trim());
-  const pm2=dj2.filter(j=>(j.time.startsWith('오후')||j.time==='as')&&j.addr&&j.addr.trim());
+  const pm2=dj2.filter(j=>(j.time.startsWith('오후')||j.time==='as'||j.time==='AS')&&j.addr&&j.addr.trim());
   const amUsed=new Set();
   am2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amUsed.add(e))});
   
@@ -884,7 +884,7 @@ if(unassigned.length){
 
   // 오전/오후 분리: 오전 먼저 → 오후는 오전 위치 기반
   const amUn=unassigned.filter(j=>j.time.startsWith('오전')||j.time.includes('2:'));
-  const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as');
+  const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as'||j.time==='AS');
 
   // 오전 배정: 건수 균등 라운드로빈
   amUn.forEach(j=>{
@@ -1496,12 +1496,12 @@ const hasNew=tg.jobs.some(j=>j.isNew);
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 
 // 오전 → 오후 → as 순서로 정렬
-const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2};
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2};
 const sorted=[...tg.jobs].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
 const jobRows=sorted.map(j=>{
 const isAm=j.time.startsWith('오전')||j.time.includes('2:');
-const isAs=j.time==='as';
+const isAs=j.time==='as'||j.time==='AS';
 const isMove=(j.category||'').includes('이전설치');
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
@@ -1524,7 +1524,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 <div style="display:flex;align-items:center;gap:3px;margin-top:2px">
 <span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
 <span onclick="event.stopPropagation();openKatalk('${safeChatUrl}','${safeChName}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">${safeChName?'📋카톡':'카톡'}</span>
-${j.time==='as'?
+${j.time==='as'||j.time==='AS'?
 `<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
 <span style="margin-left:auto;display:flex;gap:3px">
@@ -1542,13 +1542,13 @@ ${jobRows}</div>`}).join('');
 
 if(un.length){
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
-const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2};
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2};
 const sortedUn=[...un].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
 body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${sortedUn.length}건</div>`;
 body+=sortedUn.map((j,idx)=>{
 const isAm=j.time.startsWith('오전')||j.time.includes('2:');
-const isAs=j.time==='as';
+const isAs=j.time==='as'||j.time==='AS';
 const isMove=(j.category||'').includes('이전설치');
 const timeCls=isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
@@ -1767,7 +1767,7 @@ mj.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(es[e]){
 // 근무일 추적
 es[e].workDates.add(j.date);
 // AS 건수 (별도)
-if(j.time==='as'){es[e].as++}
+if(j.time==='as'||j.time==='AS'){es[e].as++}
 else{
 // 시공(오전/오후)만 날짜별 추적 (두탕 계산용)
 if(!es[e].days[j.date])es[e].days[j.date]=0;
@@ -2309,7 +2309,7 @@ if(needAssignCnt>0&&isAdmin){await autoAssign()}
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM=new Date().getMonth()+1;
 const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()});
-const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.time==='as'});
+const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.time==='as'||j.time==='AS'});
 document.getElementById('sub').textContent=curM+'월 '+monthJobs.length+'건 · AS '+monthAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
 renderAll()}
@@ -2371,7 +2371,7 @@ if(unCnt>0&&isAdmin)await autoAssign()}
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM2=new Date().getMonth()+1;
 const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim());
-const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.time==='as');
+const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.time==='as'||j.time==='AS');
 sub.textContent=curM2+'월 '+mJobs.length+'건 · AS '+mAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 renderAll();
 if(isNewReservation)toast('📋 새 예약 감지! 자동 배정 완료','ok');
