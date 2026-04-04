@@ -1508,7 +1508,7 @@ const dateColor=isSun?'var(--red)':isSat?'var(--blue)':'var(--text)';
 const offs=new Set();
 if(OFFS[date])OFFS[date].forEach(n=>offs.add(n));
 jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
-const offHtml=offs.size?'<div class="daycard-off">휴무 : '+[...offs].map(n=>n+' 휴무').join(' · ')+'</div>':'';
+const offHtml=offs.size?'<div class="daycard-off">휴무 : '+[...offs].join(' ')+'</div>':'';
 
 if(!realJobs.length){
 const onDuty=E.filter(e=>!offs.has(e));
