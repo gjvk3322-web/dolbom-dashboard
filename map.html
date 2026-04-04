@@ -91,16 +91,17 @@ function findMyLocation() {
   btn.textContent = '찾는 중...';
   if (!navigator.geolocation) {
     btn.textContent = '위치 지원 안됨';
+    setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
     return;
   }
   navigator.geolocation.getCurrentPosition(function(pos) {
     moveMap(pos.coords.latitude, pos.coords.longitude, 14);
     btn.textContent = '내 위치 완료!';
     setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
-  }, function() {
+  }, function(err) {
     btn.textContent = '위치 허용해주세요';
     setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
-  });
+  }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
 }
 </script>
 </body>
