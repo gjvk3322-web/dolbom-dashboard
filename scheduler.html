@@ -1013,7 +1013,7 @@ fbSave('lockedJobs',[...LOCK]);
 toast('🔓 확정 해제','ok');renderAll()}
 
 // ===== 시공보고서 =====
-let reportJobId='';
+let reportJobId='';let currentChannelName='';
 const PRICE_MAP={'마블50':16900,'코튼50':16900,'모던50':16900,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
 
 function formatFee(el){
@@ -1041,7 +1041,7 @@ document.getElementById('rUnpaid').value=(total-paid>0?(total-paid).toLocaleStri
 }
 
 function openReport(jobId){
-reportJobId=jobId;
+reportJobId=jobId;currentChannelName=(J.find(jj=>jj.id===jobId)||{}).channelName||'';
 const j=J.find(x=>x.id===jobId);if(!j)return;
 const team=(A[jobId]||[]).join('');
 const addr=j.addr||'';
