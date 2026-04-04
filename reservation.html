@@ -446,7 +446,7 @@ function renderDayDetail(ds){
   const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
   const sc=scheduleData[ds]||{am:[],pm:[]};
   const teamCount=employees.length||4;
-  const maxPS=Math.floor(teamCount/2);
+  const maxPS=99;
   const totalUsed=sc.am.length+sc.pm.length;
   const totalR=Math.max(0,maxPS*2-totalUsed);
 
@@ -629,7 +629,7 @@ function generateChannelName(){
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
   let name;
   if(isExtra){
-    name=`${time.toLowerCase()}/${region})${prefix}`;
+    name=`${time.toLowerCase()}/${region}/${product||'미정'})${prefix}`;
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
