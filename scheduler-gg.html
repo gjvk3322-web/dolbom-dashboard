@@ -1617,7 +1617,7 @@ body+=`</div>`}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
 <div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${offHtml}</div>
-${offHtml}${(()=>{
+${(()=>{
 // 출근했는데 배정 못 받은 직원 표시
 const assigned=new Set();
 realJobs.forEach(j=>{const t=RA[j.id];if(t)t.forEach(e=>assigned.add(e))});
