@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>돌봄매트 시공 스케줄러</title>
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="돌봄매트">
+<meta name="theme-color" content="#1a1a2e">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#191a20;--card:#21222c;--card2:#282a36;--border:rgba(255,255,255,.05);--text:#f2f2f7;--dim:#8e8e93;--sub:#aeaeb2;--blue:#5AC8FA;--green:#30D158;--red:#FF453A;--yellow:#FFD60A;--pink:#FF6482;--purple:#BF5AF2;--orange:#FF9F0A;--cyan:#64D2FF;--lime:#a3e635;--rose:#FF6482;--teal:#40E0D0;--font:'Noto Sans KR',sans-serif}
@@ -205,6 +212,11 @@ localStorage.setItem('dolbom_region','bs');
 <div class="admin-bar" id="adminBar">🔑 당번 모드 활성 · 배정 수정 가능 <span onclick="adminOff()" style="margin-left:8px;cursor:pointer;opacity:.6">해제</span></div>
 
 <div id="updateBar" style="display:none;background:linear-gradient(135deg,#5b8def,#34d399);padding:10px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:#fff" onclick="location.reload(true)">🔄 새 버전이 있어요! 터치하면 업데이트</div>
+<div id="installBar" style="display:none;background:linear-gradient(135deg,#2E7D32,#43A047);padding:12px 16px;text-align:center;font-size:13px;font-weight:700;color:#fff;position:relative">
+<span id="installMsg">📲 홈 화면에 추가하면 더 편하게 사용할 수 있어요!</span>
+<button id="installBtn" onclick="pwaInstall()" style="margin-left:8px;padding:6px 14px;border-radius:8px;border:none;background:#fff;color:#2E7D32;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit">설치</button>
+<span onclick="dismissInstall()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;opacity:.7;font-size:16px">✕</span>
+</div>
 
 <div class="pin-overlay" id="pinOverlay" onclick="if(event.target===this)closePin()">
 <div class="pin-box">
@@ -2548,6 +2560,47 @@ const m=html.match(/const VER='([^']+)'/);
 if(m&&m[1]!==VER)document.getElementById('updateBar').style.display='block'
 }).catch(()=>{})
 },5*60*1000);
+</script>
+<script>
+// PWA 홈화면 설치 배너
+let deferredPrompt=null;
+const isStandalone=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone;
+const dismissed=localStorage.getItem('installDismissed');
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  if(!isStandalone&&!dismissed){
+    document.getElementById('installBar').style.display='block';
+    document.getElementById('installMsg').textContent='📲 홈 화면에 추가하면 앱처럼 사용할 수 있어요!';
+    document.getElementById('installBtn').textContent='설치';
+  }
+});
+
+if(!isStandalone&&!dismissed&&!deferredPrompt){
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(isIOS){
+    setTimeout(()=>{
+      document.getElementById('installBar').style.display='block';
+      document.getElementById('installMsg').innerHTML='📲 하단 <b>공유(□↑)</b> 버튼 → <b>홈 화면에 추가</b>';
+      document.getElementById('installBtn').style.display='none';
+    },2000);
+  }
+}
+
+function pwaInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r=>{
+      if(r.outcome==='accepted')document.getElementById('installBar').style.display='none';
+      deferredPrompt=null;
+    });
+  }
+}
+function dismissInstall(){
+  document.getElementById('installBar').style.display='none';
+  localStorage.setItem('installDismissed','1');
+}
 </script>
 </body>
 </html>
