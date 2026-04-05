@@ -183,7 +183,8 @@ var DEFAULT_ROOMS=[{name:'거실',removable:false},{name:'복도',removable:fals
 <div id="scopeArea" style="margin-top:10px"><div style="font-size:11px;color:#999;margin-bottom:6px">시공 범위</div><div style="display:flex;flex-direction:column;gap:5px"><button class="scope-btn" onclick="selectScope('거실+복도',0)">거실+복도</button><button class="scope-btn" onclick="selectScope('거실+복도+아일랜드',1)">거실+복도+아일랜드</button><button class="scope-btn" onclick="selectScope('거실+복도+주방',2)">거실+복도+주방</button></div><div id="autoQtyResult" style="display:none;margin-top:8px;padding:8px 12px;background:#E8F5E9;border-radius:8px;font-size:13px;color:#2E7D32;font-weight:600;text-align:center"></div></div>
 <div class="small-room-section"><div class="small-room-header"><span class="small-room-label">🚪 작은방 추가 시공</span><span class="small-room-hint">선택 제품 기준 자동 환산</span></div><div class="small-room-counter"><button class="sr-btn" id="srMinus" onclick="changeSmallRoom(-1)">−</button><span class="sr-count" id="srCount">0</span><button class="sr-btn" onclick="changeSmallRoom(1)">+</button></div><div class="sr-result" id="srResult"></div></div>
 <div style="margin-top:12px"><div style="font-size:11px;color:#999;margin-bottom:4px">기타 궁금하신 내용</div><textarea id="etcMemo" placeholder="" style="width:100%;padding:10px 12px;border:1.5px solid #e0ddd6;border-radius:8px;font-size:13px;font-family:inherit;outline:none;resize:none;height:50px" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e0ddd6'"></textarea></div>
-<div class="dim-toggle" id="dimToggle" onclick="toggleDim()"><span>📐 도면 치수로 계산하기 <span style="font-size:10px;color:#2E7D32;background:#E8F5E9;padding:2px 6px;border-radius:4px;margin-left:4px">가장 정확!</span></span><span class="arrow">▼</span></div><div class="dim-area" id="dimArea"><div id="dimRooms"></div><div class="dim-add" onclick="addRoom()">+ 방 추가</div><div class="dim-total" id="dimTotal" style="display:none"><div class="dim-total-num" id="dimTotalNum">0장</div><div class="dim-total-label" id="dimTotalLabel">전체 예상 수량</div><button class="dim-apply" onclick="applyDimTotal()">이 수량으로 견적 보기</button></div><div style="font-size:10px;color:#bbb;margin-top:6px">도면에 적힌 mm 단위 치수를 입력하세요</div></div></div>
+<div class="dim-toggle" id="dimToggle" onclick="toggleDim()"><span>📐 도면 치수로 계산하기 <span style="font-size:10px;color:#2E7D32;background:#E8F5E9;padding:2px 6px;border-radius:4px;margin-left:4px">가장 정확!</span></span><span class="arrow">▼</span></div><div class="dim-area" id="dimArea"><div id="dimRooms"></div><div class="dim-add" onclick="addRoom()">+ 방 추가</div><div class="dim-total" id="dimTotal" style="display:none"><div class="dim-total-num" id="dimTotalNum">0장</div><div class="dim-total-label" id="dimTotalLabel">전체 예상 수량</div><button class="dim-apply" onclick="applyDimTotal()">이 수량으로 견적 보기</button>
+<button onclick="copyDimLink()" style="margin-top:6px;padding:6px 16px;background:#666;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer">📋 치수 링크 복사</button></div><div style="font-size:10px;color:#bbb;margin-top:6px">도면에 적힌 mm 단위 치수를 입력하세요</div></div></div>
 <div class="card"><div class="card-title">🎁 혜택 적용</div><div id="benefitList"></div></div>
 <div class="result" id="resultArea" style="display:none"><div id="rPresetRow" style="display:none;text-align:center;padding:6px 0 8px;font-size:12px;color:#9E9E9E;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:6px"><span id="rPresetInfo"></span></div><div class="result-row dim"><span id="rProduct">1000매트 22T</span><span id="rPrice">76,500원/장</span></div><div class="result-row"><span>매트 비용</span><span class="val" id="rMatCost">0원</span></div><div class="result-row" id="rSmallRoomRow" style="display:none"><span id="rSmallRoomLabel">작은방 (500매트)</span><span class="val" id="rSmallRoomCost">0원</span></div><div class="result-row" id="rInstallRow" style="display:none"><span>시공비 (소량 추가)</span><span class="val" id="rInstall">100,000원</span></div><div class="result-row dim" id="rBenefitRow" style="display:none"><span>혜택 할인</span><span class="val" id="rBenefit">0원</span></div><div id="rBenefitDetails"></div><div class="result-divider"></div><div class="result-total"><span class="result-total-label">예상 체감가</span><span class="result-total-val" id="rTotal">0원</span></div><div class="result-row dim"><span id="rPerSheetLabel">1m 22T 장당</span><span class="val" id="rPerSheet" style="color:#81C784">0원</span></div><div id="rReviewSection" style="display:none"><div class="result-divider"></div><div class="result-row" style="color:#FFD54F"><span>⭐ 후기 이벤트 참여 시</span><span class="val" id="rReviewDiscount">-100,000원</span></div><div class="result-total"><span class="result-total-label" style="color:#FFD54F">최종 체감가</span><span class="result-total-val" id="rFinalTotal" style="color:#FFD54F">0원</span></div><div class="result-row dim"><span id="rFinalPerSheetLabel">1m 22T 장당</span><span class="val" id="rFinalPerSheet" style="color:#FFD54F">0원</span></div></div><div class="result-save" id="rSaveRow" style="display:none"><span class="result-save-label">💰 총 절약 금액</span><span class="result-save-val" id="rSave">0원</span></div></div>
 <div class="card"><ul class="notice" id="noticeList"></ul><div style="text-align:center;margin-top:10px;font-size:12px;color:#999">궁금한 점은 언제든 문의해주세요! 💕</div></div>
@@ -231,6 +232,41 @@ function updateRoomDim(id,axis,val){var r=rooms.find(function(x){return x.id===i
 function calcAllDim(){if(!selectedProduct)return;var ms=selectedProduct.key.startsWith('mat1000')?1000:500,ma=ms*ms,rt=0;rooms.forEach(function(r){var w=parseInt(r.w)||0,h=parseInt(r.h)||0,el=document.getElementById('dimRes'+r.id);if(w>0&&h>0){var s=(w*h)/ma;rt+=s;if(el)el.textContent='→ '+s.toFixed(1)+'장'}else{if(el)el.textContent=''}});var te=document.getElementById('dimTotal');if(rt>0){te.style.display='block';document.getElementById('dimTotalNum').textContent=Math.ceil(Math.ceil(rt)*1.1)+'장';document.getElementById('dimTotalLabel').innerHTML='전체 예상 수량 <span style="font-size:10px;color:#888">(재단 여유분 +10% 포함)</span>'}else{te.style.display='none'}}
 function applyDimTotal(){var n=parseInt(document.getElementById('dimTotalNum').textContent)||0;if(n>0){selectedPresetInfo=(isExpand?'확장형':'비확장형')+' · 도면 치수 계산';document.getElementById('qtyInput').value=n;calculate();showToast(n+'장이 적용되었습니다')}}
 initRooms();
+// URL에서 치수 데이터 복원
+(function(){
+var params=new URLSearchParams(window.location.search);
+var dim=params.get('dim');
+if(!dim)return;
+document.getElementById('dimArea').classList.add('show');
+document.getElementById('dimToggle').classList.add('open');
+var parts=decodeURIComponent(dim).split(',');
+rooms=[];roomIdCounter=0;
+parts.forEach(function(p){
+  var m=p.match(/^(.+?):(\d+)x(\d+)$/);
+  if(m){
+    var isDefault=DEFAULT_ROOMS.some(function(d){return d.name===m[1]});
+    rooms.push({id:roomIdCounter++,name:m[1],removable:!isDefault,w:m[2],h:m[3]});
+  }
+});
+DEFAULT_ROOMS.forEach(function(d){
+  if(!rooms.some(function(r){return r.name===d.name})){
+    rooms.push({id:roomIdCounter++,name:d.name,removable:false,w:'',h:''});
+  }
+});
+renderRooms();
+setTimeout(function(){calcAllDim()},100);
+})();
+function copyDimLink(){
+var dimParts=[];
+rooms.forEach(function(r){if(r.w&&r.h)dimParts.push(r.name+':'+r.w+'x'+r.h)});
+if(!dimParts.length){showToast('⚠️ 치수를 먼저 입력해주세요');return}
+var base=window.location.origin+window.location.pathname;
+var url=base+'?dim='+encodeURIComponent(dimParts.join(','));
+var ch=new URLSearchParams(window.location.search).get('ch');
+if(ch)url+='&ch='+encodeURIComponent(ch);
+navigator.clipboard.writeText(url).then(function(){showToast('✅ 치수 링크 복사 완료!')}).catch(function(){
+var ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✅ 치수 링크 복사 완료!')});
+}
 var smallRoomCount=0;
 function updateSmallRoomDisplay(){var py=parseInt(document.getElementById('pyeongInput').value)||0;var srEl=document.getElementById('srResult');if(smallRoomCount>0&&py>0){var sr=getSmallRoomInfo();if(sr.cost>0){srEl.style.display='block';srEl.innerHTML='<span style="font-size:12px;font-weight:700">작은방 '+smallRoomCount+'개 → '+sr.prodName+' '+sr.qty+'장 추가</span><br><span style="font-size:12px;font-weight:700;color:#1B5E20">('+sr.cost.toLocaleString()+'원)</span>'}else{srEl.style.display='none'}}else{srEl.style.display='none'}}
 function changeSmallRoom(delta){smallRoomCount=Math.max(0,smallRoomCount+delta);document.getElementById('srCount').textContent=smallRoomCount;document.getElementById('srMinus').className=smallRoomCount<=0?'sr-btn disabled':'sr-btn';updateSmallRoomDisplay();calculate()}
