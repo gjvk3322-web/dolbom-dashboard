@@ -457,7 +457,7 @@ sheetSyncTimer=setTimeout(()=>{
       if(teams.length){teamOrder=teams.find(t=>crew.some(c=>t.includes(c)))}
       if(teamOrder){
         // 팀 순서대로: 첫번째=사수
-        const ordered=teamOrder.filter(m=>crew.includes(m));
+        const ordered=teamOrder.filter(m=>crew.includes(m)).sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
         sasu=ordered[0]||crew[0];
         // 나머지 전부 부사수 (3명 이상 대응)
         const rest=crew.filter(e=>e!==sasu);
@@ -1678,11 +1678,11 @@ html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
 document.getElementById('teamView').innerHTML=html;
 initDnD();}
 
-function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam()}
-function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam()}
-function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam()}
+function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
 function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
-function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam()}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
 
 // 드래그앤드롭으로 팀 이동 처리
 function moveMember(name,fromType,fromTi,toType,toTi){
@@ -1695,7 +1695,7 @@ if(toType==='team'&&toTi!==undefined){
   if(!teams[toTi].includes(name))teams[toTi].push(name);
 }
 // pool로 이동 = 어디에도 추가 안 함 (제거만)
-fbSave('teams',teams);renderTeam();
+fbSave('teams',teams);renderTeam();syncTeamsToSheet();
 toast('✅ '+name+' 이동 완료','ok');
 }
 

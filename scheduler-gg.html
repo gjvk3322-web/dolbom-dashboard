@@ -458,7 +458,7 @@ sheetSyncTimer=setTimeout(()=>{
       if(teams.length){teamOrder=teams.find(t=>crew.some(c=>t.includes(c)))}
       if(teamOrder){
         // 팀 순서대로: 첫번째=사수
-        const ordered=teamOrder.filter(m=>crew.includes(m));
+        const ordered=teamOrder.filter(m=>crew.includes(m)).sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
         sasu=ordered[0]||crew[0];
         // 나머지 전부 부사수 (3명 이상 대응)
         const rest=crew.filter(e=>e!==sasu);
