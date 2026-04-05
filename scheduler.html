@@ -1605,7 +1605,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>{const pl=Object.keys(VEHICLES).find(p=>VEHICLES[p]===m)||'';return `<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}${pl?' <span style="font-size:8px;opacity:.5">'+pl+'</span>':''}</span>`}).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
@@ -2015,6 +2015,7 @@ function updateDriver(idx){
   const next={...VEHICLES};
   next[plate]=driver;
   fbSave('vehicles',next);
+  syncToSheet();renderSched();
   toast(plate+' → '+(driver||'미배정'),'ok');
 }
 
