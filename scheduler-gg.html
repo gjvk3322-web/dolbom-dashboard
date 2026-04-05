@@ -697,7 +697,7 @@ function makeGroups(pool,jobCnt){
     const grouped=avTeams.map(t=>t.members);
     const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
     const orphans=pool.filter(m=>!inTeam.has(m));
-    const fullTeams=grouped.filter(g=>g.length>=2);
+    const fullTeams=grouped.filter(g=>g.length>=2).map(g=>g.sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999')));
     const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
     const allSingles=[...soloTeam,...orphans].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
     const paired=[];
