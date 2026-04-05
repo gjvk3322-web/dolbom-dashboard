@@ -315,6 +315,7 @@ const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=o
 const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
 let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217';
 let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
+const CSV_TEAM_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735';
 const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
@@ -548,6 +549,20 @@ function calcEmpRouteTotals(jobList){
 // A:시간 B:시공일 C:주소 D:연락처 E:신축여부 F:평수 G:시공범위 H:제품 I:수량 J:사수 K:부사수 L:차량번호 M:결제방법 N:판매금액 O:결제상태 P:추천인 Q:유입경로 R:카톡URL S:채널명
 let OFFS={}; // {date: Set(이름)} 휴무 데이터
 let DUTY={}; // {date: {이름: 사유}} 예비군/교육 등 (배정제외 but 근무 카운트)
+let hireDate={}; // {이름: '2024-01-15'} 입사일
+// 팀설정 CSV 파싱 (입사일 추출)
+// A:지역 B:팀번호 C:이름 D:직급 E:색상코드 F:연락처 G:입사일
+function parseTeamConfigCSV(text){
+const lines=text.split('\n');hireDate={};
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[2])continue;
+const name=r[2].trim();
+const hd=(r[6]||'').trim();
+if(name&&hd)hireDate[name]=hd;
+}}
 
 function parseCSV(text){
 const lines=text.split('\n');J=[];
@@ -683,7 +698,7 @@ function makeGroups(pool,jobCnt){
     const orphans=pool.filter(m=>!inTeam.has(m));
     const fullTeams=grouped.filter(g=>g.length>=2);
     const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
-    const allSingles=[...soloTeam,...orphans];
+    const allSingles=[...soloTeam,...orphans].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
     const paired=[];
     for(let i=0;i<allSingles.length;i+=2){
       if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]]);
@@ -2309,6 +2324,7 @@ OFFS={};DUTY={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
+try{const tR=await fetch(CSV_TEAM_URL+'&_='+Date.now());const tText=await tR.text();parseTeamConfigCSV(tText)}catch(e){}
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
 // 새 일정 감지
