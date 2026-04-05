@@ -273,12 +273,13 @@ localStorage.setItem('dolbom_region','bs');
 <div id="submitToast" style="display:none;margin-top:4px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)"></div>
 <div id="reportSubmitBtn" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
 <div style="display:flex;gap:8px">
-<button onclick="copyCustomerMsg()" style="flex:3;padding:12px;border-radius:10px;background:var(--yellow);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">📋 고객전달</button>
-<button onclick="openKatalk(currentChatUrl,currentChannelName)" style="flex:1;padding:12px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:13px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font)">💬 채널</button>
+<button onclick="saveReportData()" style="flex:2;padding:12px;border-radius:10px;background:var(--yellow);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">① 보고서 저장</button>
+<button onclick="openKatalk(currentChatUrl,currentChannelName)" style="flex:1;padding:12px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:13px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font)">② 채널</button>
+<button onclick="copyCustomerMsg()" style="flex:1;padding:12px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:13px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font)">③ 고객안내</button>
 </div>
 <div style="display:flex;gap:8px">
-<button onclick="submitReport()" style="flex:3;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
-<button onclick="window.open('https://t.me/+wGa7HFAwtk02NGI1','_blank')" style="flex:1;padding:12px;border-radius:10px;background:rgba(52,163,235,.15);color:var(--blue);font-weight:900;font-size:13px;border:1px solid rgba(52,163,235,.3);cursor:pointer;font-family:var(--font)">📨 텔레</button>
+<button onclick="submitReport()" style="flex:2;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">④ 보고서 제출</button>
+<button onclick="window.open('https://t.me/+wGa7HFAwtk02NGI1','_blank')" style="flex:1;padding:12px;border-radius:10px;background:rgba(52,163,235,.15);color:var(--blue);font-weight:900;font-size:13px;border:1px solid rgba(52,163,235,.3);cursor:pointer;font-family:var(--font)">⑤ 텔레</button>
 <button onclick="closeReport()" style="flex:1;padding:12px;border-radius:10px;background:var(--card2);color:var(--dim);font-weight:900;font-size:13px;border:1px solid var(--border);cursor:pointer;font-family:var(--font)">✕ 닫기</button>
 </div>
 </div>
@@ -1131,6 +1132,23 @@ calcReport();
 
 function closeReport(){document.getElementById('reportOverlay').style.display='none'}
 
+function saveReportData(){
+const g=id=>(document.getElementById(id)||{}).value||'';
+const discountChecks=document.querySelectorAll('.rDiscount:checked');
+const discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
+const discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:discountTotal.toString(),couponNames:discountStr,pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
+if(typeof reportJobId!=='undefined'&&reportJobId){
+  fbSave('reports/'+reportJobId,reportData);
+  if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
+    const jobParts=reportJobId.split('_');
+    const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{});
+  }
+}
+showCustomerToast('✅ 시공보고서 저장 완료!');
+}
+
 function copyCustomerMsg(){
 const g=id=>(document.getElementById(id)||{}).value||'';
 const phone=g('rPhone');
@@ -1205,26 +1223,12 @@ msg+=`
 
 감사합니다. 돌봄매트 드림 💌`;
 
-// 고객전달 시 보고서 데이터도 저장
-const dc2=document.querySelectorAll('.rDiscount:checked');
-const ds2=dc2.length?Array.from(dc2).map(x=>x.dataset.name).join('+'):'없음';
-const dt2=Array.from(dc2).reduce((s,c)=>s+(parseInt(c.value)||0),0);
-const rd2={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:dt2.toString(),couponNames:ds2,pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
-if(typeof reportJobId!=='undefined'&&reportJobId){
-  fbSave('reports/'+reportJobId,rd2);
-  if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
-    const jp2=reportJobId.split('_');
-    const sr2=parseInt(jp2[jp2.length-1])+1;
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sr2,...rd2,jobId:reportJobId})}).catch(()=>{});
-  }
-}
-
 try{
-navigator.clipboard.writeText(msg).then(()=>showCustomerToast('📋 고객전달 복사 + 보고서 저장 완료!')).catch(()=>{
+navigator.clipboard.writeText(msg).then(()=>showCustomerToast('📋 고객안내 메시지 복사 완료!')).catch(()=>{
 const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-showCustomerToast('📋 고객전달 복사 + 보고서 저장 완료!');
+showCustomerToast('📋 고객안내 메시지 복사 완료!');
 });
-}catch(e){showCustomerToast('📋 고객전달 복사 + 보고서 저장 완료!');}
+}catch(e){showCustomerToast('📋 고객안내 메시지 복사 완료!');}
 }
 
 function submitReport(){
