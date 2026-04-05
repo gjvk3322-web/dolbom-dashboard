@@ -274,7 +274,7 @@ localStorage.setItem('dolbom_region','bs');
 <div id="reportSubmitBtn" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
 <div style="display:flex;gap:8px">
 <button onclick="copyCustomerMsg()" style="flex:3;padding:12px;border-radius:10px;background:var(--yellow);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">📋 고객전달</button>
-<button onclick="window.open('https://business.kakao.com/_UMyBK/chats?t_src=business_partnercenter&t_ch=lnb','_blank')" style="flex:1;padding:12px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:13px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font)">💬 채널</button>
+<button onclick="openKatalk(currentChatUrl,currentChannelName)" style="flex:1;padding:12px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:13px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font)">💬 채널</button>
 </div>
 <div style="display:flex;gap:8px">
 <button onclick="submitReport()" style="flex:3;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">✅ 보고서 제출</button>
@@ -1028,6 +1028,7 @@ fbSave('lockedJobs',[...LOCK]);
 toast('🔓 확정 해제','ok');renderAll()}
 
 // ===== 시공보고서 =====
+let currentChatUrl='';
 let reportJobId='';let currentChannelName='';
 const PRICE_MAP={'마블50':16900,'코튼50':16900,'모던50':16900,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
 
@@ -1056,7 +1057,7 @@ document.getElementById('rUnpaid').value=(total-paid>0?(total-paid).toLocaleStri
 }
 
 function openReport(jobId){
-reportJobId=jobId;currentChannelName=(J.find(jj=>jj.id===jobId)||{}).channelName||'';
+reportJobId=jobId;const _rj=J.find(jj=>jj.id===jobId)||{};currentChannelName=_rj.channelName||'';currentChatUrl=_rj.chatUrl||'';
 const j=J.find(x=>x.id===jobId);if(!j)return;
 const team=(A[jobId]||[]).join('');
 const addr=j.addr||'';
