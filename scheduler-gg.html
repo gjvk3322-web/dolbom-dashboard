@@ -488,12 +488,15 @@ sheetSyncTimer=setTimeout(()=>{
 // ===== 팀설정 시트 자동 동기화 =====
 function syncTeamsToSheet(){
   if(!isAdmin)return;
-  const teamData=teams.map((t,i)=>({
-    region:'경기',teamNum:i+1,sasu:t[0]||'',busasu:t.slice(1).join(',')
-  }));
+  const teamData=[];
+  teams.forEach((t,i)=>{t.forEach((name,j)=>{teamData.push({region:'경기',teamNum:i+1,name:name,rank:j===0?'사수':'부사수'});});});
   fetch(SHEET_REPORT_URL,{
     method:'POST',mode:'no-cors',
     headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'updateTeamConfig',data:teamData})
+  }).then(()=>console.log('[team-sync] OK:',teamData.length+'명'))
+  .catch(e=>console.log('[team-sync] error:',e));
+},
     body:JSON.stringify({action:'updateTeamConfig',data:teamData})
   }).then(()=>console.log('[team-sync] OK:',teamData.length+'팀'))
   .catch(e=>console.log('[team-sync] error:',e));
