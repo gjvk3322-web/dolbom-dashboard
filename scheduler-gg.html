@@ -1606,7 +1606,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>{const pl=Object.keys(VEHICLES).find(p=>VEHICLES[p]===m)||'';return `<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}${pl?' <span style="font-size:8px;opacity:.5">'+pl+'</span>':''}</span>`}).join('')}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const cp=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value)" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
@@ -2018,6 +2018,15 @@ function updateDriver(idx){
   fbSave('gg_vehicles',next);
   syncToSheet();renderSched();
   toast(plate+' → '+(driver||'미배정'),'ok');
+}
+
+function quickVehicle(sasu,plate){
+  const next={...VEHICLES};
+  Object.keys(next).forEach(p=>{if(next[p]===sasu)next[p]=''});
+  if(plate)next[plate]=sasu;
+  fbSave('gg_vehicles',next);
+  syncToSheet();renderSched();renderCars();
+  toast('🚗 '+sasu+' → '+(plate||'미배정'),'ok');
 }
 
 function deleteCar(idx){
