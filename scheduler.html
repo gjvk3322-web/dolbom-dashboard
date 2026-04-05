@@ -1852,6 +1852,9 @@ E.forEach(e=>{es[e].double=Object.values(es[e].days).filter(c=>c>=2).length});
 // 일 평균 km 계산
 E.forEach(e=>{const wd=es[e].workDates.size;es[e].avgKm=wd>0?Math.round(es[e].km/wd):0;es[e].workDays=wd});
 
+// 입사일 기준 정렬 (고참→막내)
+const sE=[...E].sort(hdSort);
+
 // 최대값 (바 차트 비율용)
 const maxDouble=Math.max(...E.map(e=>es[e].double),1);
 const maxAs=Math.max(...E.map(e=>es[e].as),1);
@@ -1860,14 +1863,14 @@ let html=`<div style="text-align:center;padding:12px;margin-bottom:12px;font-siz
 
 // 두탕 횟수
 html+=`<div class="fcard"><div class="sec">🔥 두탕 (오전+오후 시공, 인센티브 💰)</div>`;
-html+=E.map((e,i)=>{
+html+=sE.map((e,i)=>{
 const v=es[e].double;const w=Math.round(v/maxDouble*100);
 return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[i%10]}">${v}</div></div><span class="fval">${v}일</span></div>`}).join('');
 html+=`</div>`;
 
 // AS 건수
 html+=`<div class="fcard"><div class="sec">🔧 AS 건수</div>`;
-html+=E.map((e,i)=>{
+html+=sE.map((e,i)=>{
 const v=es[e].as;const w=Math.round(v/maxAs*100);
 return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[i%10]}">${v}</div></div><span class="fval">${v}건</span></div>`}).join('');
 html+=`</div>`;
@@ -1879,7 +1882,7 @@ const maxTotalKm=Math.max(...E.map(e=>es[e].km),1);
 html+=`<div class="fcard"><div class="sec">🚗 이동거리 <span style="font-size:11px;font-weight:400;color:var(--dim)">(${calcAddrs.length}/${totalAddrs.size} 주소 계산됨)</span></div>`;
 const hasKm=E.some(e=>es[e].km>0);
 if(hasKm){
-html+=E.map((e,i)=>{
+html+=sE.map((e,i)=>{
 const s=es[e];
 const wTotal=Math.round(s.km/maxTotalKm*100);
 const wAvg=s.km>0?Math.round(s.avgKm/maxTotalKm*s.workDays/1*100):0;
@@ -1909,7 +1912,7 @@ html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:col
 <th style="text-align:center;padding:8px 4px;color:var(--dim);font-size:11px">AS</th>
 <th style="text-align:right;padding:8px 4px;color:var(--dim);font-size:11px">평균km</th>
 </tr>`;
-html+=E.map((e,i)=>{const s=es[e];
+html+=sE.map((e,i)=>{const s=es[e];
 return `<tr style="border-bottom:1px solid var(--border)">
 <td style="padding:10px 4px;font-weight:700;color:${cl[i%10]}">${e}</td>
 <td style="text-align:center;padding:10px 4px;font-weight:700">${s.workDays}일</td>
