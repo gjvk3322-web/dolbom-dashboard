@@ -1595,6 +1595,8 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 <span onclick="event.stopPropagation();openKatalk('${safeChatUrl}','${safeChName}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">${safeChName?'📋카톡':'카톡'}</span>
 ${j.time==='as'||j.time==='AS'?
 `<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
+isMeasure?
+`<span onclick="event.stopPropagation();window.open('https://my.dolbommat.com/quote.html','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">📐실측</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
 <span style="margin-left:auto;display:flex;gap:3px">
 ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
