@@ -1039,7 +1039,7 @@ toast('🔓 확정 해제','ok');renderAll()}
 // ===== 시공보고서 =====
 let currentChatUrl='';
 let reportJobId='';let currentChannelName='';
-const PRICE_MAP={'마블50':16900,'코튼50':16900,'모던50':16900,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
+const PRICE_MAP={'마블50':16000,'코튼50':16000,'모던50':16000,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
 
 function formatFee(el){
 const v=el.value;
@@ -1056,7 +1056,7 @@ let coupon=0;checks.forEach(c=>coupon+=parseInt(c.value)||0);
 const isGonggu=document.getElementById('rGonggu').value==='O';
 const unitPrice=PRICE_MAP[color]||0;
 let total=qty*unitPrice-coupon;
-if(isGonggu) total=Math.round(total*0.97);
+if(isGonggu) total=total-(qty*500);
 const installFee=document.getElementById('rInstallFee').value;
 const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
 total+=fee;
@@ -1103,7 +1103,7 @@ const html=`
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
 <span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatFee(this);calcReport()">
-<span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (3%할인)</option></select>
+<span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option></select>
 <span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:nowrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label></div>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
 <span style="${lE}">16. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}" oninput="calcReport()">
@@ -1179,9 +1179,9 @@ calcLines.push(`할인적용(${couponNames.join('+')}) -${couponVal.toLocaleStri
 }
 let afterCoupon=baseTotal-couponVal;
 if(isGonggu){
-const discount=Math.round(afterCoupon*0.03);
-calcLines.push(`공동구매 3% 할인 -${discount.toLocaleString()}원`);
-afterCoupon=Math.round(afterCoupon*0.97);
+const discount=qty*500;
+calcLines.push(`공동구매 장당 500원 할인 -${discount.toLocaleString()}원`);
+afterCoupon=afterCoupon-discount;
 }
 const installFee=g('rInstallFee');
 if(installFee&&installFee!=='X'&&installFee!=='x'&&installFee!=='0'){
