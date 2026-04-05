@@ -41,7 +41,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:60
 .tjob:active{background:rgba(255,255,255,.04);transform:scale(.99)}
 .tjob-team{display:inline-block;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:6px}
 .tjob-time{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;flex-shrink:0}
-.tjob-time.am{background:rgba(255,214,10,.1);color:var(--yellow)}.tjob-time.pm{background:rgba(191,90,242,.1);color:var(--purple)}
+.tjob-time.am{background:rgba(255,214,10,.1);color:var(--yellow)}.tjob-time.pm{background:rgba(191,90,242,.1);color:var(--purple)}.tjob-time.measure{background:rgba(52,211,153,.15);color:var(--green)}
 .mat{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700}
 .mat-marble{background:rgba(90,200,250,.12);color:var(--blue)}.mat-cotton{background:rgba(48,209,88,.12);color:var(--green)}.mat-modern{background:rgba(255,69,58,.12);color:var(--red)}.mat-beige{background:rgba(255,214,10,.12);color:var(--yellow)}
 .new-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(255,69,58,.15);color:var(--red);animation:pulse 1.5s infinite}
@@ -1565,14 +1565,15 @@ const hasNew=tg.jobs.some(j=>j.isNew);
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
 
 // 오전 → 오후 → as 순서로 정렬
-const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2};
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2,'실측':3};
 const sorted=[...tg.jobs].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
 const jobRows=sorted.map(j=>{
 const isAm=j.time.startsWith('오전')||j.time.includes('2:');
 const isAs=j.time==='as'||j.time==='AS';
+const isMeasure=j.time==='실측';
 const isMove=(j.category||'').includes('이전설치');
-const timeCls=isAs?'pm':isAm?'am':'pm';
+const timeCls=isMeasure?'measure':isAs?'pm':isAm?'am':'pm';
 const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
@@ -1585,7 +1586,7 @@ return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="pa
 
 return `<div style="padding:6px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
-<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAs?'AS':isAm?'오전':'오후'}</span>
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isMeasure?'실측':isAs?'AS':isAm?'오전':'오후'}</span>
 <span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
@@ -1611,15 +1612,16 @@ ${jobRows}</div>`}).join('');
 
 if(un.length){
 const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
-const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2};
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2,'실측':3};
 const sortedUn=[...un].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
 
 body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${sortedUn.length}건</div>`;
 body+=sortedUn.map((j,idx)=>{
 const isAm=j.time.startsWith('오전')||j.time.includes('2:');
 const isAs=j.time==='as'||j.time==='AS';
+const isMeasure=j.time==='실측';
 const isMove=(j.category||'').includes('이전설치');
-const timeCls=isAs?'pm':isAm?'am':'pm';
+const timeCls=isMeasure?'measure':isAs?'pm':isAm?'am':'pm';
 const safeAddr=j.addr.replace(/'/g,"\\'");
 const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
 const safeChName2=j.channelName?(j.channelName+'').replace(/'/g,"\\'"):'';
@@ -1631,7 +1633,7 @@ const ec=ecols[ei%10];
 return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
 return `<div style="padding:6px 0;${idx>0?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
-<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isAs?'AS':isAm?'오전':'오후'}</span>
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isMeasure?'실측':isAs?'AS':isAm?'오전':'오후'}</span>
 <span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
 ${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
 </div>
