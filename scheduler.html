@@ -550,6 +550,7 @@ function calcEmpRouteTotals(jobList){
 let OFFS={}; // {date: Set(이름)} 휴무 데이터
 let DUTY={}; // {date: {이름: 사유}} 예비군/교육 등 (배정제외 but 근무 카운트)
 let hireDate={}; // {이름: '2024-01-15'} 입사일
+function hdSort(a,b){return(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999')}
 // 팀설정 CSV 파싱 (입사일 추출)
 // A:지역 B:팀번호 C:이름 D:직급 E:색상코드 F:연락처 G:입사일
 function parseTeamConfigCSV(text){
@@ -746,11 +747,11 @@ if(date<cutoffStr){
       const myTeam=teams.find(t=>t.includes(sasu));
       if(myTeam){
         const partner=myTeam.find(m=>m!==sasu&&avail2.includes(m)&&!amUsed.has(m));
-        if(partner){A[j.id]=[sasu,partner].sort();amUsed.add(partner);return}
+        if(partner){A[j.id]=[sasu,partner].sort(hdSort);amUsed.add(partner);return}
       }
     }
     const free=avail2.filter(e=>!amUsed.has(e)&&e!==sasu);
-    if(free.length){A[j.id]=[sasu,free[0]].sort();amUsed.add(free[0])}
+    if(free.length){A[j.id]=[sasu,free[0]].sort(hdSort);amUsed.add(free[0])}
   });
   const amEmpty2=am2.filter(j=>!A[j.id]&&!SKIP.has(j.id)&&!LOCK.has(j.id));
   if(amEmpty2.length){
@@ -759,7 +760,7 @@ if(date<cutoffStr){
     let gi2=0;
     amEmpty2.forEach(j=>{
       if(amG2.length){
-        A[j.id]=[...amG2[gi2%amG2.length]].sort();
+        A[j.id]=[...amG2[gi2%amG2.length]].sort(hdSort);
         amG2[gi2%amG2.length].forEach(e=>amUsed.add(e));
         gi2++;
       }
@@ -776,11 +777,11 @@ if(date<cutoffStr){
       const myTeam=teams.find(t=>t.includes(sasu));
       if(myTeam){
         const partner=myTeam.find(m=>m!==sasu&&avail2.includes(m)&&!pmUsed.has(m));
-        if(partner){A[j.id]=[sasu,partner].sort();pmUsed.add(partner);return}
+        if(partner){A[j.id]=[sasu,partner].sort(hdSort);pmUsed.add(partner);return}
       }
     }
     const free=avail2.filter(e=>!pmUsed.has(e)&&e!==sasu);
-    if(free.length){A[j.id]=[sasu,free[0]].sort();pmUsed.add(free[0])}
+    if(free.length){A[j.id]=[sasu,free[0]].sort(hdSort);pmUsed.add(free[0])}
   });
   
   const pmEmpty2=pm2.filter(j=>!A[j.id]&&!SKIP.has(j.id)&&!LOCK.has(j.id));
@@ -827,7 +828,7 @@ if(date<cutoffStr){
             if(d<minD){minD=d;bestIdle=it}
           }
         }
-        A[j.id]=[...bestIdle].sort();
+        A[j.id]=[...bestIdle].sort(hdSort);
         bestIdle.forEach(e=>{pmUsed.add(e);crossDateKm[e]+=(j.dist||0)});
         return;
       }
@@ -844,7 +845,7 @@ if(date<cutoffStr){
           return scoreA-scoreB;
         });
         const best=availTeams[0];
-        A[j.id]=[...best.team].sort();
+        A[j.id]=[...best.team].sort(hdSort);
         best.team.forEach(e=>{pmUsed.add(e);crossDateKm[e]+=(j.dist||0)});
         best.pmCount++;
         return;
@@ -855,7 +856,7 @@ if(date<cutoffStr){
           t._dist2=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
         });
         amTeamInfo.sort((a,b)=>a._dist2-b._dist2);
-        A[j.id]=[...amTeamInfo[0].team].sort();
+        A[j.id]=[...amTeamInfo[0].team].sort(hdSort);
         amTeamInfo[0].pmCount++;
         return;
       }
@@ -863,7 +864,7 @@ if(date<cutoffStr){
       const freeP=avail2.filter(e=>!pmUsed.has(e));
       const gP=makeGroups(freeP,1);
       if(gP.length){
-        A[j.id]=[...gP[0]].sort();
+        A[j.id]=[...gP[0]].sort(hdSort);
         gP[0].forEach(e=>pmUsed.add(e));
       }
     });
@@ -902,11 +903,11 @@ needWork.filter(j=>A[j.id]&&A[j.id].length===1).forEach(j=>{
     const myTeam=teams.find(t=>t.includes(sasu));
     if(myTeam){
       const partner=myTeam.find(m=>m!==sasu&&avail.includes(m));
-      if(partner){A[j.id]=[sasu,partner].sort();return}
+      if(partner){A[j.id]=[sasu,partner].sort(hdSort);return}
     }
   }
   const myGroup=dayTeams.find(g=>g.includes(sasu));
-  if(myGroup){const partner=myGroup.find(m=>m!==sasu);if(partner)A[j.id]=[sasu,partner].sort()}
+  if(myGroup){const partner=myGroup.find(m=>m!==sasu);if(partner)A[j.id]=[sasu,partner].sort(hdSort)}
 });
 
 // 미배정 건 GPS 거리 기반 배정
@@ -931,7 +932,7 @@ if(unassigned.length){
     const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>a.count-b.count);
     if(allTeamsSorted.length){
       const best=allTeamsSorted[0];
-      A[j.id]=[...best.team].sort();
+      A[j.id]=[...best.team].sort(hdSort);
       best.count++;
       if(j._geo)best.lastGeo=j._geo;
     }
@@ -956,7 +957,7 @@ if(unassigned.length){
         return scoreA-scoreB;
       });
       const best=allTeamsSorted[0];
-      A[j.id]=[...best.team].sort();
+      A[j.id]=[...best.team].sort(hdSort);
       best.count++;
       // 월간 누적 갱신
       best.team.forEach(e=>{crossDateKm[e]+=(j.dist||0)});
@@ -966,7 +967,7 @@ if(unassigned.length){
       // GPS 없으면 건수 가장 적은 팀
       const fairTeam=Object.values(teamLoad).sort((a,b)=>a.count-b.count)[0];
       if(fairTeam){
-        A[j.id]=[...fairTeam.team].sort();
+        A[j.id]=[...fairTeam.team].sort(hdSort);
         fairTeam.count++;
       }
     }
