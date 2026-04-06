@@ -2025,7 +2025,7 @@ function quickVehicle(sasu,plate,rows){
     fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:rows.map(function(r){return{row:r,vehicle:plate}})  ,gid:'144225567'})  });
     J.forEach(function(j){var p=j.id.split('_');var ri=parseInt(p[p.length-1])+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
     renderSched();
-    toast('ð '+sasu+' â '+(plate||'ë¯¸ë°°ì ')+' (í´ë¹ ë ì§ë§)','ok');
+    toast('🚗 '+sasu+' → '+(plate||'미배정')+' (해당 날짜만)','ok');
     return;
   }
   const next={...VEHICLES};
@@ -2033,7 +2033,7 @@ function quickVehicle(sasu,plate,rows){
   if(plate)next[plate]=sasu;
   fbSave('vehicles',next);
   syncToSheet();renderSched();renderCars();
-  toast('ð '+sasu+' â '+(plate||'ë¯¸ë°°ì '),'ok');
+  toast('🚗 '+sasu+' → '+(plate||'미배정'),'ok');
 }
 
 function deleteCar(idx){
@@ -2399,7 +2399,7 @@ if(needAssignCnt>0&&isAdmin){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM=new Date().getMonth()+1;
-const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()&&j.time!=='as'&&j.time!=='AS'&&j.time!=='실측'});
+const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()&&(j.time.startsWith('오전')||j.time.startsWith('오후'))});
 const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&(j.time==='as'||j.time==='AS')});
 document.getElementById('sub').textContent=curM+'월 '+monthJobs.length+'건 · AS '+monthAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
@@ -2461,7 +2461,7 @@ if(unCnt>0&&isAdmin)await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM2=new Date().getMonth()+1;
-const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim()&&j.time!=='as'&&j.time!=='AS'&&j.time!=='실측');
+const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim()&&(j.time.startsWith('오전')||j.time.startsWith('오후')));
 const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&(j.time==='as'||j.time==='AS'));
 sub.textContent=curM2+'월 '+mJobs.length+'건 · AS '+mAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 renderAll();
