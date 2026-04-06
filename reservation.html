@@ -18,7 +18,7 @@
   --radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px;max-width:480px;margin:0 auto;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px;max-width:960px;margin:0 auto;}
 
 .header{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;position:sticky;top:0;z-index:100;transition:background .3s;}
 .header.busan{background:var(--busan);}
@@ -177,13 +177,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div id="searchList"></div>
 </div>
 
-<div class="card">
+<div class="card" style="max-width:1200px">
   <div class="team-bar busan" id="teamBar"></div>
-  <div style="display:flex;gap:4px;margin-bottom:10px">
-    <button id="tabCal" onclick="switchView('cal')" style="flex:1;padding:8px;border:1.5px solid var(--accent,#2E7D32);border-radius:8px;background:var(--accent,#2E7D32);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📅 달력</button>
-    <button id="tabList" onclick="switchView('list')" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 리스트</button>
-  </div>
-  <div id="viewCal">
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+  <div style="flex:1;min-width:300px">
   <div class="cal-header">
     <h2 id="calTitle"></h2>
     <div class="cal-nav"><button onclick="changeMonth(-1)">‹</button><button onclick="changeMonth(1)">›</button></div>
@@ -197,9 +194,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
   <div class="sync-info" id="syncInfo">데이터 로딩 중...</div>
   </div>
-  <div id="viewList" style="display:none">
+  <div style="flex:1;min-width:300px;max-height:500px;overflow-y:auto;border-left:1px solid #f0f0eb;padding-left:16px">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;position:sticky;top:0;background:#fff;padding:4px 0;z-index:1">📋 향후 2주 일정</div>
     <div id="weekList"></div>
     <div class="sync-info" id="syncInfo2"></div>
+  </div>
   </div>
 </div>
 
@@ -491,16 +490,6 @@ function findNearby(keyword){
 // ── 주간 일정 요약 ──
 let weekViewOpen=true;
 let currentView='cal';
-function switchView(v){
-  currentView=v;
-  document.getElementById('viewCal').style.display=v==='cal'?'block':'none';
-  document.getElementById('viewList').style.display=v==='list'?'block':'none';
-  const bc=document.getElementById('tabCal'),bl=document.getElementById('tabList');
-  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#2E7D32';
-  if(v==='cal'){bc.style.background=accent;bc.style.borderColor=accent;bc.style.color='#fff';bl.style.background='#fff';bl.style.borderColor='var(--border)';bl.style.color='var(--text2)';}
-  else{bl.style.background=accent;bl.style.borderColor=accent;bl.style.color='#fff';bc.style.background='#fff';bc.style.borderColor='var(--border)';bc.style.color='var(--text2)';}
-  if(v==='list')renderWeekView();
-}
 function renderWeekView(){
   const el=document.getElementById('weekList');if(!el)return;
   const today=new Date();const dn=['일','월','화','수','목','금','토'];
