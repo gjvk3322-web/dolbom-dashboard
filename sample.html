@@ -112,10 +112,36 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 <div class="map-section">
   <div class="map-card">
     <div class="map-title">📍 우리집 근처 시공 사례</div>
-    <iframe src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
-    <div class="map-hint">지도를 확대해서 우리 동네 시공 내역을 확인해보세요</div>
+    <div style="text-align:center;padding:16px 16px 0">
+      <div style="font-size:36px;font-weight:900;color:#1a1a1a;line-height:1.1">6,700+</div>
+      <div style="font-size:12px;color:#888;margin-top:2px">시공 완료 현장</div>
+      <div style="display:inline-block;margin-top:8px;background:#2E7D32;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px">대리점이 아닌 본사 직접 시공</div>
+    </div>
+    <div style="display:flex;gap:6px;padding:12px 12px 0">
+      <div onclick="moveToHotel()" style="flex:1;background:#f8f8f5;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer" class="map-stat">
+        <div style="font-size:13px;font-weight:700;color:#2E7D32">5성급 호텔</div>
+        <div style="font-size:10px;color:#999;margin-top:1px" id="hotelBtn">키즈룸 시공</div>
+      </div>
+      <div onclick="moveToKinder()" style="flex:1;background:#f8f8f5;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer" class="map-stat">
+        <div style="font-size:13px;font-weight:700;color:#E5A100">80개+</div>
+        <div style="font-size:10px;color:#999;margin-top:1px" id="kinderBtn">어린이집 시공</div>
+      </div>
+      <div onclick="findMyLocation()" style="flex:1;background:#E8F5E9;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer" class="map-stat">
+        <div style="font-size:16px">📍</div>
+        <div style="font-size:10px;color:#2E7D32;font-weight:500;margin-top:1px" id="locBtn">내 위치로 이동</div>
+      </div>
+    </div>
+    <iframe id="mapFrame" src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy" style="margin-top:10px"></iframe>
+    <div class="map-hint">🏠 = 돌봄매트 시공 완료 현장 | 마커를 눌러 시공 정보를 확인하세요</div>
   </div>
 </div>
+<script>
+var BASE_MAP='https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
+var KINDER_MAP='https://www.google.com/maps/d/embed?mid=1tESvkcaYjerdKkkaJJnn6mPtqJtKkjw&ehbc=2E312F&noprof=1';
+function moveToHotel(){var b=document.getElementById('hotelBtn');b.textContent='이동 중...';document.getElementById('mapFrame').src=BASE_MAP+'&ll=35.1594,129.1653&z=18';setTimeout(function(){b.textContent='키즈룸 시공'},2000)}
+function moveToKinder(){var b=document.getElementById('kinderBtn');b.textContent='전환 중...';document.getElementById('mapFrame').src=KINDER_MAP+'&z=7';setTimeout(function(){b.textContent='어린이집 시공'},2000)}
+function findMyLocation(){var b=document.getElementById('locBtn');b.textContent='찾는 중...';if(!navigator.geolocation){b.textContent='위치 지원 안됨';setTimeout(function(){b.textContent='내 위치로 이동'},3000);return}navigator.geolocation.getCurrentPosition(function(p){document.getElementById('mapFrame').src=BASE_MAP+'&ll='+p.coords.latitude+','+p.coords.longitude+'&z=14';b.textContent='내 위치 완료!';setTimeout(function(){b.textContent='내 위치로 이동'},3000)},function(){b.textContent='위치 허용해주세요';setTimeout(function(){b.textContent='내 위치로 이동'},3000)},{enableHighAccuracy:false,timeout:8000,maximumAge:300000})}
+</script>
 
 <div class="container">
 
