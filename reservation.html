@@ -228,7 +228,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <option value="모던1m22">모던1m22</option>
         <option value="베이지1m17">베이지1m17</option>
         <option value="베이지1m22">베이지1m22</option>
-        <option value="미정">미정</option>
       </select>
     </div>
     <div class="fg">
@@ -242,7 +241,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <option value="모던1m22">모던1m22</option>
         <option value="베이지1m17">베이지1m17</option>
         <option value="베이지1m22">베이지1m22</option>
-        <option value="미정">미정</option>
       </select>
       <div class="product-match" id="productMatch"></div>
     </div>
@@ -265,8 +263,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <span style="font-size:11px;color:var(--accent);font-weight:500">복사</span>
       </div>
     </div>
-    <div class="submit-area full">
-      <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()">예약 접수하기</button>
+    <div class="submit-area full" style="display:flex;gap:8px">
+      <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()" style="flex:2">예약 접수하기</button>
+      <button id="cancelBtn" onclick="cancelReservation()" style="display:none;flex:1;padding:14px;border:none;border-radius:12px;background:#e53935;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">예약 취소</button>
     </div>
   </div>
 </div>
@@ -446,7 +445,7 @@ function renderDayDetail(ds){
   const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
   const sc=scheduleData[ds]||{am:[],pm:[]};
   const teamCount=employees.length||4;
-  const maxPS=99;
+  const maxPS=Math.floor(teamCount/2);
   const totalUsed=sc.am.length+sc.pm.length;
   const totalR=Math.max(0,maxPS*2-totalUsed);
 
@@ -508,6 +507,7 @@ function openForm(time,ds){
   editMode=null;
   document.getElementById('formTitle').textContent='📝 새 예약 접수';
   document.getElementById('submitBtn').textContent='예약 접수하기';
+  document.getElementById('cancelBtn').style.display='none';
   const form=document.getElementById('formSection');form.classList.add('show');
   if(time)document.getElementById('fTime').value=time;
   if(ds)document.getElementById('fDate').value=ds;
@@ -522,6 +522,7 @@ function editItem(time,ds,index){
   editMode={time,date:ds,index,row:item.row};
   document.getElementById('formTitle').textContent='✏️ 예약 수정';
   document.getElementById('submitBtn').textContent='수정 완료';
+  document.getElementById('cancelBtn').style.display='block';
   const form=document.getElementById('formSection');form.classList.add('show');
   // 폼 초기화 후 기존 데이터 채우기
   ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
@@ -564,6 +565,21 @@ function switchTeam(team){
   document.getElementById('dayDetail').classList.remove('show');
   document.getElementById('formSection').classList.remove('show');
   loadData();
+}
+
+function cancelReservation(){
+  if(!editMode||!editMode.row){showToast('⚠️ 취소할 예약이 없습니다');return;}
+  if(!confirm('정말로 이 예약을 취소하시겠습니까?\n삭제된 예약은 복구할 수 없습니다.')){return;}
+  const btn=document.getElementById('cancelBtn');btn.disabled=true;btn.textContent='취소 중...';
+  fetch(API_URL,{
+    method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'cancel',team:currentTeam,row:editMode.row})
+  }).then(()=>{
+    document.getElementById('formSection').classList.remove('show');
+    showToast('✅ 예약이 취소되었습니다');
+    editMode=null;
+    setTimeout(()=>loadData(),2000);
+  }).catch(()=>{showToast('⚠️ 취소 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 취소';});
 }
 
 function submitReservation(){
@@ -629,7 +645,7 @@ function generateChannelName(){
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
   let name;
   if(isExtra){
-    name=`${time.toLowerCase()}/${region}/${product||'미정'})${prefix}`;
+    name=`${time.toLowerCase()}/${region})${prefix}`;
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
