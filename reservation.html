@@ -637,7 +637,7 @@ function searchByKeyword(val){
 
 // ── 캘린더 ──
 function renderCalendar(){
-  const cal=document.getElementById('calDays');document.getElementById('calTitle').textContent=`${currentYear}년 ${currentMonth}월`;
+  const cal=document.getElementById('calDays');if(!cal)return;document.getElementById('calTitle').textContent=`${currentYear}년 ${currentMonth}월`;
   const fd=new Date(currentYear,currentMonth-1,1).getDay();const dim=new Date(currentYear,currentMonth,0).getDate();const pd=new Date(currentYear,currentMonth-1,0).getDate();
   const today=new Date();const tStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   const teamCount = employees.length || 4;
