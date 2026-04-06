@@ -352,6 +352,24 @@ function parseOffCSV(text){
     }
   }
 }
+async function loadEmployeesFromCSV(){
+  try{
+    const res=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735&_='+Date.now());
+    const text=await res.text();
+    const lines=text.split('\n');
+    empAll={부산:[],경기:[]};
+    for(let i=1;i<lines.length;i++){
+      const r=[];let cur='',inQ=false;
+      for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+      r.push(cur.trim().replace(/^"|"$/g,''));
+      if(!r[2])continue;
+      const region=(r[0]||'').trim();
+      const name=r[2].trim();
+      if(region==='부산')empAll['부산'].push({name,team:'부산'});
+      else if(region==='경기')empAll['경기'].push({name,team:'경기'});
+    }
+  }catch(e){console.error('직원CSV로드실패:',e);}
+}
 async function loadHolidays(){
   try{
     const [resBS,resGG]=await Promise.all([
@@ -426,10 +444,10 @@ async function loadData(){
     showLoading(90);
     // 부산 파싱
     parseScheduleDataTo(jsonBS.schedules||jsonBS.rows||[],'부산');
-    empAll['부산']=(jsonBS.employees||[]).filter(e=>e.team==='부산'||e.team==='');
     // 경기 파싱
     parseScheduleDataTo(jsonGG.schedules||jsonGG.rows||[],'경기');
-    empAll['경기']=(jsonGG.employees||[]).filter(e=>e.team==='경기'||e.team==='');
+    // 직원 데이터는 팀설정 CSV에서 로드
+    await loadEmployeesFromCSV();
     // 현재 팀 동기화
     scheduleData=schedAll[currentTeam];
     employees=empAll[currentTeam];
