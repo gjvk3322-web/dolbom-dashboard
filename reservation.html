@@ -179,6 +179,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div class="card">
   <div class="team-bar busan" id="teamBar"></div>
+  <div style="display:flex;gap:4px;margin-bottom:10px">
+    <button id="tabCal" onclick="switchView('cal')" style="flex:1;padding:8px;border:1.5px solid var(--accent,#2E7D32);border-radius:8px;background:var(--accent,#2E7D32);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📅 달력</button>
+    <button id="tabList" onclick="switchView('list')" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📋 리스트</button>
+  </div>
+  <div id="viewCal">
   <div class="cal-header">
     <h2 id="calTitle"></h2>
     <div class="cal-nav"><button onclick="changeMonth(-1)">‹</button><button onclick="changeMonth(1)">›</button></div>
@@ -191,15 +196,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>마감</div>
   </div>
   <div class="sync-info" id="syncInfo">데이터 로딩 중...</div>
-</div>
-
-<!-- 주간 일정 요약 -->
-<div class="card" id="weekCard">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <h3 style="font-size:14px;font-weight:700;color:var(--text)">📋 향후 2주 일정</h3>
-    <button class="badge badge-accent" onclick="toggleWeekView()" id="weekToggle" style="cursor:pointer;border:none;font-family:inherit">접기</button>
   </div>
-  <div id="weekList"></div>
+  <div id="viewList" style="display:none">
+    <div id="weekList"></div>
+    <div class="sync-info" id="syncInfo2"></div>
+  </div>
 </div>
 
 <!-- 근접 매칭 -->
@@ -394,6 +395,7 @@ async function loadData(){
     employees = (json.employees || []).filter(e=>e.team===currentTeam || e.team==='');
     lastSync = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${Object.values(scheduleData).reduce((a,d)=>a+d.am.length+d.pm.length,0)}건`;
+    document.getElementById('syncInfo2').textContent=`마지막 동기화: ${lastSync} · ${Object.values(scheduleData).reduce((a,d)=>a+d.am.length+d.pm.length,0)}건`;
     showLoading(100);
     setTimeout(()=>showLoading(0),500);
     renderCalendar();
@@ -488,7 +490,17 @@ function findNearby(keyword){
 
 // ── 주간 일정 요약 ──
 let weekViewOpen=true;
-function toggleWeekView(){weekViewOpen=!weekViewOpen;document.getElementById('weekList').style.display=weekViewOpen?'block':'none';document.getElementById('weekToggle').textContent=weekViewOpen?'접기':'펼치기';}
+let currentView='cal';
+function switchView(v){
+  currentView=v;
+  document.getElementById('viewCal').style.display=v==='cal'?'block':'none';
+  document.getElementById('viewList').style.display=v==='list'?'block':'none';
+  const bc=document.getElementById('tabCal'),bl=document.getElementById('tabList');
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#2E7D32';
+  if(v==='cal'){bc.style.background=accent;bc.style.borderColor=accent;bc.style.color='#fff';bl.style.background='#fff';bl.style.borderColor='var(--border)';bl.style.color='var(--text2)';}
+  else{bl.style.background=accent;bl.style.borderColor=accent;bl.style.color='#fff';bc.style.background='#fff';bc.style.borderColor='var(--border)';bc.style.color='var(--text2)';}
+  if(v==='list')renderWeekView();
+}
 function renderWeekView(){
   const el=document.getElementById('weekList');if(!el)return;
   const today=new Date();const dn=['일','월','화','수','목','금','토'];
