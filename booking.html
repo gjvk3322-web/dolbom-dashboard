@@ -363,7 +363,27 @@ function buildBookingImage(){
   return h;
 }
 function saveBookingImage(){
-  if(document.getElementById('submitBtn').disabled){showToast('모든 항목을 입력해주세요');return}
+  // 미입력 필드 검사 + 스크롤
+  var checks=[
+    {ok:document.getElementById('name').value.trim(), el:'name', msg:'이름'},
+    {ok:document.getElementById('phone').value.trim(), el:'phone', msg:'연락처'},
+    {ok:addrData, el:'addrInput', msg:'주소'},
+    {ok:document.getElementById('hosu').value.trim(), el:'hosu', msg:'호수'},
+    {ok:document.getElementById('pyung').value.trim(), el:'pyung', msg:'평수'},
+    {ok:dateAny||selectedDates.length>0, el:'dateAnyBtn', msg:'시공일'},
+    {ok:selectedProduct>=0, el:'prod0', msg:'제품'},
+    {ok:selectedColor, el:'colorGroup', msg:'색상'},
+    {ok:selectedScope||document.getElementById('scopeInput').value.trim(), el:'scopeGroup', msg:'시공 범위'},
+    {ok:agreed, el:'agreeCheck', msg:'개인정보 동의'}
+  ];
+  var missing=checks.filter(function(c){return !c.ok});
+  if(missing.length>0){
+    var first=missing[0];
+    var el=document.getElementById(first.el);
+    if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid #e53935';el.style.outlineOffset='4px';setTimeout(function(){el.style.outline='';el.style.outlineOffset=''},2000)}
+    showToast('⚠️ '+missing.map(function(m){return m.msg}).join(', ')+' 입력해주세요');
+    return;
+  }
   showToast('📸 예약서 이미지 생성 중...');
   var t=buildBookingText();
   navigator.clipboard.writeText(t).catch(function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta)});
