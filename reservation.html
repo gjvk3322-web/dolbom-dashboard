@@ -572,13 +572,9 @@ function renderWeekView(){
   const offs=OFFS_ALL[currentTeam]||{};
   const emps=empAll[currentTeam]||[];
   let h='';
-  function shortAddr(addr){const m=addr.match(/([\uAC00-\uD7AF]+[시구군])/g);return m?m.slice(0,2).join(' '):addr.substring(0,15);}
-  // 지역 그룹핑 (같은 권역끼리 묶기)
-  const REGION_MAP={'부산':1,'양산':1,'김해':1,'창원':2,'진주':2,'거제':2,'통영':2,'밀양':2,'함안':2,'마산':2,'사천':2,'대구':3,'경산':3,'칠곡':3,'구미':4,'포항':5,'울산':6,'울주':6,'서울':10,'강동':10,'송파':10,'강남':10,'서초':10,'강서':10,'영등포':10,'마포':10,'노원':10,'성동':10,'동대문':10,'중랑':10,'광진':10,'용산':10,'종로':10,'중구':10,'성북':10,'강북':10,'도봉':10,'은평':10,'서대문':10,'동작':10,'관악':10,'금천':10,'구로':10,'양천':10,'인천':11,'미추홀':11,'계양':11,'부천':11,'김포':12,'고양':12,'파주':12,'수원':13,'화성':13,'오산':13,'평택':14,'안성':14,'용인':15,'성남':15,'광주시':15,'이천':16,'여주':16,'양평':16,'의정부':17,'남양주':17,'구리':17,'하남':17,'시흥':18,'안산':18,'광명':18,'안양':19,'군포':19,'의왕':19,'과천':19,'천안':20,'아산':20,'당진':21,'서산':21};
-  function regionKey(addr){
-    for(const k of Object.keys(REGION_MAP)){if(addr.includes(k))return REGION_MAP[k];}
-    return 99;
-  }
+  function shortAddr(addr){const m=addr.match(/([가-힯]+[시구군])/g);return m?m.slice(0,2).join(' '):addr.substring(0,15);}
+  const RM={'부산':1,'양산':1,'김해':1,'창원':2,'진주':2,'거제':2,'통영':2,'밀양':2,'함안':2,'마산':2,'사천':2,'대구':3,'경산':3,'칠곡':3,'구미':4,'포항':5,'울산':6,'울주':6,'서울':10,'강동':10,'송파':10,'강남':10,'서초':10,'강서':10,'영등포':10,'마포':10,'노원':10,'성동':10,'동대문':10,'중랑':10,'광진':10,'용산':10,'종로':10,'중구':10,'성북':10,'강북':10,'도봉':10,'은평':10,'서대문':10,'동작':10,'관악':10,'금천':10,'구로':10,'양천':10,'인천':11,'미추홀':11,'계양':11,'부천':11,'김포':12,'고양':12,'파주':12,'수원':13,'화성':13,'오산':13,'평택':14,'안성':14,'용인':15,'성남':15,'광주시':15,'이천':16,'여주':16,'양평':16,'의정부':17,'남양주':17,'구리':17,'하남':17,'시흥':18,'안산':18,'광명':18,'안양':19,'군포':19,'의왕':19,'과천':19,'천안':20,'아산':20,'당진':21,'서산':21};
+  function rg(addr){for(const k of Object.keys(RM)){if(addr.includes(k))return RM[k];}return 99;}
   for(let i=0;i<14;i++){
     const d=new Date(today);d.setDate(d.getDate()+i);
     const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -589,21 +585,33 @@ function renderWeekView(){
     const activeCount=Math.max(totalEmp-offNames.length,0);
     const maxPS=Math.floor(activeCount/2);
     const amRemain=Math.max(0,maxPS-sc.am.length);
-    const all=[];
-    sc.am.forEach(s=>all.push({cls:'wk-am',label:shortAddr(s.address),rg:regionKey(s.address)}));
-    sc.pm.forEach(s=>all.push({cls:'wk-pm',label:shortAddr(s.address),rg:regionKey(s.address)}));
-    (sc.as||[]).forEach(s=>all.push({cls:'wk-as',label:'AS '+shortAddr(s.address),rg:regionKey(s.address)}));
-    (sc.ms||[]).forEach(s=>all.push({cls:'wk-as',label:'실측 '+shortAddr(s.address),rg:regionKey(s.address)}));
-    all.sort((a,b)=>a.rg-b.rg||a.label.localeCompare(b.label));
-    let addrHtml=all.map(j=>`<span class="${j.cls}">${j.label}</span>`).join('');
-    if(!addrHtml) addrHtml='<span style="color:var(--text3);font-size:10px">예약 없음</span>';
-    h+=`<div class="wk-row" onclick="selectDate('${ds}')">`;
-    h+=`<div class="wk-date">${d.getMonth()+1}/${d.getDate()}`;
-    if(offNames.length>0) h+=`<small style="color:#C62828">휴무 ${offNames.length}</small>`;
-    h+=`</div>`;
-    h+=`<div class="wk-addr">${addrHtml}</div>`;
-    h+=`<div class="wk-badge ${amRemain===0?'full':'avail'}">${amRemain===0?'마감':'잔여'+amRemain}</div>`;
-    h+=`</div>`;
+    const amList=sc.am.map(s=>({label:shortAddr(s.address),r:rg(s.address)})).sort((a,b)=>a.r-b.r);
+    const pmAll=[];
+    sc.pm.forEach(s=>pmAll.push({label:shortAddr(s.address),r:rg(s.address),cls:'wk-pm'}));
+    (sc.as||[]).forEach(s=>pmAll.push({label:'AS '+shortAddr(s.address),r:rg(s.address),cls:'wk-as'}));
+    (sc.ms||[]).forEach(s=>pmAll.push({label:'실측 '+shortAddr(s.address),r:rg(s.address),cls:'wk-as'}));
+    const pmPaired=[];const pmUsed=new Set();
+    amList.forEach(am=>{let best=-1,bd=999;pmAll.forEach((pm,idx)=>{if(pmUsed.has(idx))return;const dist=Math.abs(pm.r-am.r);if(dist<bd){bd=dist;best=idx;}});if(best>=0&&bd<=3){pmPaired.push(pmAll[best]);pmUsed.add(best);}else{pmPaired.push(null);}});
+    const pmExtra=pmAll.filter((_,i)=>!pmUsed.has(i));
+    let rows='';
+    for(let r=0;r<amList.length;r++){
+      const am=amList[r];
+      let pm=pmPaired[r];
+      if(!pm&&pmExtra.length>0)pm=pmExtra.shift();
+      rows+='<div style="display:flex;gap:4px;min-height:20px">';
+      rows+='<div style="flex:1"><span class="wk-am">'+am.label+'</span></div>';
+      rows+='<div style="flex:1">';if(pm)rows+='<span class="'+pm.cls+'">'+pm.label+'</span>';rows+='</div></div>';
+    }
+    while(pmExtra.length>0){const pm=pmExtra.shift();rows+='<div style="display:flex;gap:4px;min-height:20px"><div style="flex:1"></div><div style="flex:1"><span class="'+pm.cls+'">'+pm.label+'</span></div></div>';}
+    if(!rows&&amList.length===0&&pmAll.length===0)rows='<div style="color:var(--text3);font-size:10px">예약 없음</div>';
+    h+='<div class="wk-row" onclick="selectDate(\''+ds+'\')" style="flex-direction:column;gap:2px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:700">'+(d.getMonth()+1)+'/'+d.getDate()+'</span>';
+    if(offNames.length>0)h+='<span style="font-size:10px;color:#C62828">휴무 '+offNames.length+'</span>';
+    h+='</div><div class="wk-badge '+(amRemain===0?'full':'avail')+'">'+(amRemain===0?'마감':'잔여'+amRemain)+'</div></div>';
+    h+='<div style="display:flex;gap:4px;border-bottom:1px solid #f0f0eb;padding-bottom:2px;margin-bottom:2px"><div style="flex:1;font-size:9px;color:var(--text3)">오전</div><div style="flex:1;font-size:9px;color:var(--text3)">오후 / AS</div></div>';
+    h+=rows;
+    h+='</div>';
   }
   if(!h)h='<div class="wk-empty">데이터 없음</div>';
   el.innerHTML=h;
