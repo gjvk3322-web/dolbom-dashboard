@@ -595,7 +595,7 @@ if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
 const id=ds+'_'+r[0]+'_'+i;
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
-J.push({id,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim()})}}
+J.push({id,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim()})}}
 
 // 휴무 CSV 파싱 (A:날짜 B:요일 C~L:이름1~이름10)
 function parseOffCSV(text){
@@ -678,7 +678,7 @@ const monthJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===curY&&n
 E.forEach(e=>{fairScore[e]={workDays:new Set(),double:0,km:0,days:{}}});
 monthJobs.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(!fairScore[e])return;
   fairScore[e].workDays.add(j.date);
-  if(j.time!=='as'){if(!fairScore[e].days[j.date])fairScore[e].days[j.date]=0;fairScore[e].days[j.date]++}
+  if(j.time!=='as'&&j.time!=='AS'&&j.time!=='실측'){if(!fairScore[e].days[j.date])fairScore[e].days[j.date]=0;fairScore[e].days[j.date]++}
 })});
 // 경로 기반 km 계산
 const fairRouteTotals=calcEmpRouteTotals(monthJobs);
@@ -1529,10 +1529,11 @@ function renderDayCards(dates,dimmed){
 return dates.map(date=>{
 const jobs=bd[date]||[];const realJobs=jobs.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());const d=new Date(date);const di=d.getDay();const dn=DOW[di];
 const isToday=date===todayStr;
-const isSun=di===0;const isSat=di===6;
-const dateBorderColor=isSun?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue)':'var(--border)';
-const dateBorderWidth=isSun||isSat||isToday?'2px':'1px';
-const dateColor=isSun?'var(--red)':isSat?'var(--blue)':'var(--text)';
+const holiday=isHoliday(date);
+const isSun=di===0;const isSat=di===6;const isRedDay=isSun||!!holiday;
+const dateBorderColor=isRedDay?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue)':'var(--border)';
+const dateBorderWidth=isRedDay||isSat||isToday?'2px':'1px';
+const dateColor=isRedDay?'var(--red)':isSat?'var(--blue)':'var(--text)';
 
 // 휴무 표시 (OFFS + doff 합산)
 const offs=new Set();
@@ -1545,7 +1546,7 @@ const onDuty=E.filter(e=>!offs.has(e));
 const ecl2=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
 const dutyHtml=onDuty.length&&!isSun?'<div style="padding:4px 8px;font-size:11px;color:var(--dim)">👷 출근: '+onDuty.map(e=>{const ei=E.indexOf(e);return '<span style="font-weight:700;color:'+ecl2[ei%10]+'">'+e+'</span>'}).join(' · ')+'</div>':'';
 return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${offHtml}</div>
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${holiday?'<span style="font-size:10px;color:var(--red);margin-left:4px">🔴 '+holiday+'</span>':''}${offHtml}</div>
 <div class="daycard-body">${isSun?'<div style="color:var(--dim);font-size:13px;padding:8px">🔴 일요일</div>':'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'+dutyHtml}</div></div>`}
 
 // 팀별 그룹
@@ -1609,7 +1610,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const cp=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value)" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:(Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'');const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
@@ -1649,7 +1650,7 @@ ${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-
 body+=`</div>`}
 
 return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
-<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${offHtml}</div>
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${holiday?'<span style="font-size:10px;color:var(--red);margin-left:4px">🔴 '+holiday+'</span>':''}${offHtml}</div>
 ${(()=>{
 // 출근했는데 배정 못 받은 직원 표시
 const assigned=new Set();
@@ -1838,7 +1839,7 @@ mj.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(es[e]){
 // 근무일 추적
 es[e].workDates.add(j.date);
 // AS 건수 (별도)
-if(j.time==='as'||j.time==='AS'){es[e].as++}
+if(j.time==='as'||j.time==='AS'||j.time==='실측'){if(j.time==='as'||j.time==='AS')es[e].as++}
 else{
 // 시공(오전/오후)만 날짜별 추적 (두탕 계산용)
 if(!es[e].days[j.date])es[e].days[j.date]=0;
@@ -2020,13 +2021,20 @@ function updateDriver(idx){
   toast(plate+' → '+(driver||'미배정'),'ok');
 }
 
-function quickVehicle(sasu,plate){
+function quickVehicle(sasu,plate,rows){
+  if(rows&&rows.length){
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:rows.map(function(r){return{row:r,vehicle:plate}})  ,gid:'1995986285'})  });
+    J.forEach(function(j){var p=j.id.split('_');var ri=parseInt(p[p.length-1])+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
+    renderSched();
+    toast('ð '+sasu+' â '+(plate||'ë¯¸ë°°ì ')+' (í´ë¹ ë ì§ë§)','ok');
+    return;
+  }
   const next={...VEHICLES};
-  Object.keys(next).forEach(p=>{if(next[p]===sasu)next[p]=''});
+  Object.keys(next).forEach(function(p){if(next[p]===sasu)next[p]=''});
   if(plate)next[plate]=sasu;
-  fbSave('gg_vehicles',next);
+  fbSave('vehicles',next);
   syncToSheet();renderSched();renderCars();
-  toast('🚗 '+sasu+' → '+(plate||'미배정'),'ok');
+  toast('ð '+sasu+' â '+(plate||'ë¯¸ë°°ì '),'ok');
 }
 
 function deleteCar(idx){
@@ -2209,7 +2217,7 @@ dd.offs.forEach(n=>{if(empStats[n]){
 const dayEmps=new Set();const dayEmpSlots={};
 dd.jobs.forEach(j=>{
 const crew=A[j.id];if(!crew)return;
-crew.forEach(e=>{dayEmps.add(e);if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();dayEmpSlots[e].add(j.time.startsWith('오전')?'am':'pm');});
+crew.forEach(e=>{dayEmps.add(e);if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();if(j.time!=='as'&&j.time!=='AS'&&j.time!=='실측')dayEmpSlots[e].add(j.time.startsWith('오전')?'am':'pm');});
 });
 dayEmps.forEach(e=>{
 if(!empStats[e])return;empStats[e].work++;
@@ -2392,8 +2400,8 @@ if(needAssignCnt>0&&isAdmin){await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM=new Date().getMonth()+1;
-const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()});
-const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.time==='as'||j.time==='AS'});
+const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()&&j.time!=='as'&&j.time!=='AS'&&j.time!=='실측'});
+const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&(j.time==='as'||j.time==='AS')});
 document.getElementById('sub').textContent=curM+'월 '+monthJobs.length+'건 · AS '+monthAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 }catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
 renderAll()}
@@ -2454,8 +2462,8 @@ if(unCnt>0&&isAdmin)await autoAssign()}
 
 const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
 const curM2=new Date().getMonth()+1;
-const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim());
-const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.time==='as'||j.time==='AS');
+const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim()&&j.time!=='as'&&j.time!=='AS'&&j.time!=='실측');
+const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&(j.time==='as'||j.time==='AS'));
 sub.textContent=curM2+'월 '+mJobs.length+'건 · AS '+mAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
 renderAll();
 if(isNewReservation)toast('📋 새 예약 감지! 자동 배정 완료','ok');
