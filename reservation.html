@@ -591,12 +591,22 @@ function renderWeekView(){
     var right=[].concat(pm,as,ms);
     var used={};
     var pairs=[];
-    am.forEach(function(a){
+    // 1차: 같은 권역 먼저 매칭 (distance 0)
+    am.forEach(function(a,ai){
+      var best=-1;
+      right.forEach(function(p,idx){if(used[idx])return;if(p.r===a.r&&best<0)best=idx;});
+      if(best>=0){pairs.push({am:a,pm:right[best],ai:ai});used[best]=true;}
+    });
+    // 2차: 근접 권역 매칭 (distance 1-3)
+    am.forEach(function(a,ai){
+      if(pairs.some(function(p){return p.ai===ai;}))return;
       var best=-1,bd=999;
       right.forEach(function(p,idx){if(used[idx])return;var dist=Math.abs(p.r-a.r);if(dist<bd){bd=dist;best=idx;}});
-      if(best>=0&&bd<=3){pairs.push({am:a,pm:right[best]});used[best]=true;}
-      else{pairs.push({am:a,pm:null});}
+      if(best>=0&&bd<=3){pairs.push({am:a,pm:right[best],ai:ai});used[best]=true;}
+      else{pairs.push({am:a,pm:null,ai:ai});}
     });
+    // 정렬: AM 원래 순서대로
+    pairs.sort(function(a,b){return(a.ai||0)-(b.ai||0);});
     right.forEach(function(p,idx){if(!used[idx])pairs.push({am:null,pm:p});});
     h+='<div class="wk-row" onclick="selectDate(\''+ds+'\')" style="flex-direction:column;gap:2px">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center">';
