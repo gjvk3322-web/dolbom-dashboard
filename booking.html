@@ -95,8 +95,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="fg">
       <label>주소 검색 <span class="req">*</span></label>
       <div class="addr-row">
-        <div class="fg" style="margin-bottom:0"><input type="text" id="addrInput" placeholder="아파트/오피스텔 이름 또는 주소 검색"></div>
-        <button class="addr-btn" onclick="searchAddr()">검색</button>
+        <div class="fg" style="margin-bottom:0"><input type="text" id="addrInput" placeholder="버튼을 눌러 주소 검색" readonly style="cursor:pointer" onclick="searchAddr()"></div>
+        <button class="addr-btn" onclick="searchAddr()">주소검색</button>
       </div>
       <div class="addr-result" id="addrResult"></div>
     </div>
@@ -258,22 +258,23 @@ var selectedProduct=-1,selectedColor='',selectedDates=[],dateAny=false,selectedT
 if(REFERRAL_CODE){document.getElementById('refBadge').style.display='block';document.getElementById('refBadgeText').textContent='🎉 '+REFERRAL_CODE+' 추천 할인 적용중'}
 
 function searchAddr(){
-  var q=document.getElementById('addrInput').value.trim();
-  if(!q){showToast('주소를 입력해주세요');return}
-  fetch('https://dapi.kakao.com/v2/local/search/keyword.json?query='+encodeURIComponent(q),{headers:{'Authorization':'KakaoAK ec66e2d1679323ded4d66c96f157ba70'}})
-  .then(function(r){return r.json()})
-  .then(function(data){
-    if(!data.documents||!data.documents.length){showToast('검색 결과가 없습니다');return}
-    var d=data.documents[0];
-    addrData={name:d.place_name||'',address:d.road_address_name||d.address_name||'',x:d.x,y:d.y};
-    var result=document.getElementById('addrResult');
-    result.style.display='block';
-    result.textContent='📍 '+addrData.name+' ('+addrData.address+')';
-    var detected=detectTeam(addrData.address);
-    if(detected==='blocked'||detected==='unknown'){switchTeam('부산')}
-    else{switchTeam(detected)}
-    renderCal();checkSubmit();
-  }).catch(function(){showToast('검색 실패 - 다시 시도해주세요')});
+  new daum.Postcode({
+    oncomplete:function(data){
+      var addr=data.roadAddress||data.jibunAddress;
+      var name=data.buildingName||'';
+      if(name)addr+=' '+name;
+      var fullAddr='('+data.zonecode+') '+addr;
+      document.getElementById('addrInput').value=fullAddr;
+      addrData={name:name,address:addr,zonecode:data.zonecode};
+      var result=document.getElementById('addrResult');
+      result.style.display='block';
+      result.textContent='📍 '+(name?name+' ('+addr+')':addr);
+      var detected=detectTeam(addr);
+      if(detected==='blocked'||detected==='unknown'){switchTeam('부산')}
+      else{switchTeam(detected)}
+      renderCal();checkSubmit();
+    }
+  }).open();
 }
 
 function toggleDateAny(){dateAny=!dateAny;var btn=document.getElementById('dateAnyBtn');if(dateAny){btn.classList.add('active');selectedDates=[];renderCal();updateDateDisplay()}else{btn.classList.remove('active')}checkSubmit()}
@@ -444,5 +445,6 @@ window.addEventListener('beforeunload',function(e){
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500)}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </body>
 </html>
