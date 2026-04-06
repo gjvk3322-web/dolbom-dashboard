@@ -578,7 +578,7 @@ function renderWeekView(){
   for(var i=0;i<14;i++){
     var d=new Date(today);d.setDate(d.getDate()+i);
     var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    if(d.getDay()===0)continue;
+    if(d.getDay()===0){h+='<div class="wk-row" style="opacity:.4;pointer-events:none;padding:6px 0;border-bottom:1px solid #e0e0e0"><span style="font-size:13px;font-weight:700;color:var(--text3)">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span><span style="font-size:10px;color:var(--text3);margin-left:8px">\uC77C\uC694\uC77C \uD734\uBB34</span></div>';continue;}
     var sc=sd[ds]||{am:[],pm:[],as:[],ms:[]};
     var offNames=offs[ds]?[...offs[ds]]:[];
     var activeCount=Math.max((emps.length||4)-offNames.length,0);
