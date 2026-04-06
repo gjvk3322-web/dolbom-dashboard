@@ -599,10 +599,10 @@ function renderWeekView(){
       let pm=pmPaired[r];
       if(!pm&&pmExtra.length>0)pm=pmExtra.shift();
       rows+='<div style="display:flex;gap:4px;min-height:20px">';
-      rows+='<div style="flex:1"><span class="wk-am">'+am.label+'</span></div>';
-      rows+='<div style="flex:1">';if(pm)rows+='<span class="'+pm.cls+'">'+pm.label+'</span>';rows+='</div></div>';
+      rows+='<div class="wk-addr" style="flex:1"><span class="wk-am">'+am.label+'</span></div>';
+      rows+='<div class="wk-addr" style="flex:1">';if(pm)rows+='<span class="'+pm.cls+'">'+pm.label+'</span>';rows+='</div></div>';
     }
-    while(pmExtra.length>0){const pm=pmExtra.shift();rows+='<div style="display:flex;gap:4px;min-height:20px"><div style="flex:1"></div><div style="flex:1"><span class="'+pm.cls+'">'+pm.label+'</span></div></div>';}
+    while(pmExtra.length>0){const pm=pmExtra.shift();rows+='<div style="display:flex;gap:4px;min-height:20px"><div class="wk-addr" style="flex:1"></div><div class="wk-addr" style="flex:1"><span class="'+pm.cls+'">'+pm.label+'</span></div></div>';}
     if(!rows&&amList.length===0&&pmAll.length===0)rows='<div style="color:var(--text3);font-size:10px">예약 없음</div>';
     h+='<div class="wk-row" onclick="selectDate(\''+ds+'\')" style="flex-direction:column;gap:2px">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center">';
