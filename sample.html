@@ -198,7 +198,7 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
     <div class="fg">
       <label>시공 목적 <span class="req">*</span></label>
       <div class="chip-group" id="chipPurpose">
-        <div class="chip" onclick="toggleChip(this)">입주</div>
+        <div class="chip" onclick="toggleChip(this)">이사</div>
         <div class="chip" onclick="toggleChip(this)">신축입주</div>
         <div class="chip" onclick="toggleChip(this)">반려견</div>
         <div class="chip" onclick="toggleChip(this)">아이안전</div>
@@ -207,7 +207,7 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
       </div>
     </div>
     <div class="fg">
-      <label>저희 브랜드를 알게 된 경로 <span class="req">*</span></label>
+      <label>돌봄매트를 알게 된 경로 <span class="req">*</span></label>
       <input type="text" id="fRoute" placeholder="간단히 적어주세요" />
     </div>
 
@@ -215,8 +215,8 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
       🏆 <strong>왜 돌봄매트일까요?</strong><br><br>
       ✅ 창업 6년, 6,700건 시공 완료<br>
       ✅ 전국 어린이집 80곳 시공 완료<br>
-      ✅ 경찰서 어린이보호구역 5곳 시공<br>
-      ✅ 5성급 호텔 키즈룸 시공<br><br>
+      ✅ 경찰서 어린이보호구역 5곳 시공 완료<br>
+      ✅ 5성급 호텔 키즈룸 시공 완료<br><br>
       아이와 반려동물의 안전을 책임지는<br>돌봄매트를 직접 확인해보세요!
     </div>
   </div>
@@ -382,7 +382,7 @@ function submitForm(){
       method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
-      showToast('✅ 샘플 신청이 완료되었습니다! 2~3일 내 배송됩니다','success');
+      showSuccessPopup();
       document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fConsent').checked=false;
       document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       document.getElementById('detailRow').style.display='none';
@@ -392,10 +392,34 @@ function submitForm(){
   }).catch(()=>{
     btn.textContent='신청 중...';
     fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
-    }).then(()=>{showToast('✅ 샘플 신청이 완료되었습니다!','success');btn.textContent='✅ 신청 완료!';setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    }).then(()=>{showSuccessPopup();btn.textContent='✅ 신청 완료!';setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
     }).catch(()=>{showToast('⚠️ 전송 실패','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';});
   });
 }
+function showSuccessPopup(){document.getElementById('successOverlay').style.display='flex';document.body.style.overflow='hidden';var v=document.getElementById('airVideoSample');if(v)v.play().catch(function(){});}
+function closeSuccessPopup(){document.getElementById('successOverlay').style.display='none';document.body.style.overflow='';}
 </script>
+
+<!-- 신청 완료 팝업 -->
+<div id="successOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:400;justify-content:center;align-items:center;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:20px;max-width:380px;width:100%;padding:24px 20px;text-align:center">
+    <div style="font-size:40px;margin-bottom:8px">✅</div>
+    <div style="font-size:18px;font-weight:800;color:#1a1a1a;margin-bottom:4px">샘플 신청 완료!</div>
+    <div style="font-size:13px;color:#888;margin-bottom:16px">2~3일 내 배송됩니다 😊</div>
+    <div style="background:#f8f8f5;border-radius:14px;padding:16px;text-align:center">
+      <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:10px">🌬️ 돌봄매트만의 공기순환통로</div>
+      <video id="airVideoSample" autoplay muted loop playsinline webkit-playsinline style="width:100%;border-radius:10px;margin-bottom:10px">
+        <source src="air_channel.mp4" type="video/mp4">
+        <source src="air_channel.mov" type="video/quicktime">
+      </video>
+      <div style="font-size:12px;color:#666;line-height:1.6;text-align:left">매트 하단 <strong style="color:#2E7D32">공기순환통로</strong>로 습기 배출 →<br><strong style="color:#2E7D32">곰팡이 걱정 제로!</strong> 6,700가정이 검증했습니다</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="closeSuccessPopup()" style="flex:1;padding:14px;border:1.5px solid #e0ddd6;border-radius:12px;background:#fff;color:#555;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">닫기</button>
+      <a href="http://pf.kakao.com/_UMyBK/chat" style="flex:1;padding:14px;border:none;border-radius:12px;background:#FEE500;color:#3C1E1E;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center">💬 카톡 상담</a>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
