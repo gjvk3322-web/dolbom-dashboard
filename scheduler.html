@@ -744,7 +744,7 @@ if(date<cutoffStr){
   if(!avail2.length){continue}
   
   const am2=dj2.filter(j=>(j.time.startsWith('오전')||j.time.includes('2:'))&&j.addr&&j.addr.trim());
-  const pm2=dj2.filter(j=>(j.time.startsWith('오후')||j.time==='as'||j.time==='AS')&&j.addr&&j.addr.trim());
+  const pm2=dj2.filter(j=>(j.time.startsWith('오후')||j.time==='as'||j.time==='AS'||j.time==='실측')&&j.addr&&j.addr.trim());
   const amUsed=new Set();
   am2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amUsed.add(e))});
   
@@ -932,7 +932,7 @@ if(unassigned.length){
 
   // 오전/오후 분리: 오전 먼저 → 오후는 오전 위치 기반
   const amUn=unassigned.filter(j=>j.time.startsWith('오전')||j.time.includes('2:'));
-  const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as'||j.time==='AS');
+  const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as'||j.time==='AS'||j.time==='실측');
 
   // 오전 배정: 건수 균등 라운드로빈
   amUn.forEach(j=>{
