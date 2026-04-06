@@ -1825,12 +1825,10 @@ dndState=null;
 // ===== Render Fair =====
 function renderFair(){
 const cl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
-const now=new Date();
-const curYear=now.getFullYear(),curMonth=now.getMonth();
-const monthStr=curYear+'년 '+(curMonth+1)+'월';
+const monthStr=mYear+'년 '+(mMonth+1)+'월';
 
-// 이번 달 시공 건만 필터
-const mj=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===curYear&&new Date(j.date).getMonth()===curMonth);
+// 선택한 달 시공 건 필터
+const mj=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===mYear&&new Date(j.date).getMonth()===mMonth);
 
 // 직원별 집계
 const es={};E.forEach(e=>es[e]={double:0,as:0,km:0,days:{},workDates:new Set()});
@@ -1863,7 +1861,7 @@ const sE=[...E].sort(hdSort);
 const maxDouble=Math.max(...E.map(e=>es[e].double),1);
 const maxAs=Math.max(...E.map(e=>es[e].as),1);
 
-let html=`<div style="text-align:center;padding:12px;margin-bottom:12px;font-size:15px;font-weight:900">📊 ${monthStr} 실적</div>`;
+let html=`<div style="text-align:center;padding:12px;margin-bottom:12px;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:16px"><span onclick="fairMove(-1)" style="cursor:pointer;font-size:20px;color:var(--dim);padding:4px 8px">◀</span>📊 ${monthStr} 실적<span onclick="fairMove(1)" style="cursor:pointer;font-size:20px;color:var(--dim);padding:4px 8px">▶</span></div>`;
 
 // 두탕 횟수
 html+=`<div class="fcard"><div class="sec">🔥 두탕 (오전+오후 시공, 인센티브 💰)</div>`;
@@ -2167,7 +2165,8 @@ return result;
 
 let mYear,mMonth,monthEmp=null;
 (function(){const n=new Date();mYear=n.getFullYear();mMonth=n.getMonth()})();
-function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth()}
+function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth();renderFair()}
+function fairMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderFair();renderMonth()}
 function mSelectEmp(name){monthEmp=(monthEmp===name)?null:name;renderMonth()}
 
 function renderMonth(){
