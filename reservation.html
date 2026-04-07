@@ -717,7 +717,8 @@ function renderCalendar(){
       else dc='dot-green';
     }
     if(isClosed(ds)&&!isPast) cls+=' closed';
-    const dots=(dow===0||isPast)?'':`<div class="slot-dots">${used>0||isClosed(ds)?`<div class="slot-dot ${dc}"></div>`:''}</div>`;
+    const amCnt=sc.am?sc.am.length:0;
+    const dots=(dow===0||isPast)?'':`<div class="slot-dots">${amCnt>0?`<div class="slot-dot ${dc}" style="width:auto;height:auto;border-radius:3px;font-size:9px;padding:0 3px;color:#fff;line-height:14px">${amCnt}</div>`:isClosed(ds)?`<div class="slot-dot dot-red"></div>`:''}</div>`;
     h+=`<div class="${cls}" onclick="selectDate('${ds}')">${d}${dots}</div>`;
   }
   const rem=7-((fd+dim)%7);if(rem<7)for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month">${i}</div>`;
