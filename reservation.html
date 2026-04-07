@@ -196,7 +196,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
   <!-- 2열: 2주 일정 -->
   <div class="card" style="flex:1;min-width:320px;margin:0;margin-top:12px;max-height:calc(100vh - 180px);overflow-y:auto">
-    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;position:sticky;top:0;background:#fff;padding:4px 0;z-index:1">📋 향후 2주 일정</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;position:sticky;top:0;background:#fff;padding:4px 0;z-index:1">📋 전체 일정</div>
     <div id="weekList"></div>
     <div id="nearbyCard" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e3">
       <h3 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">📍 근접 매칭 결과</h3>
@@ -575,9 +575,21 @@ function renderWeekView(){
   function sa(a){var m=a.match(/([\uAC00-\uD7AF]+[\uc2dc\uAD6C\uAD70])/g);return m?m.slice(0,2).join(' '):a.substring(0,12);}
   var RM={'\uBD80\uC0B0':1,'\uC591\uC0B0':1,'\uAE40\uD574':1,'\uCC3D\uC6D0':2,'\uC9C4\uC8FC':2,'\uAC70\uC81C':2,'\uD1B5\uC601':2,'\uBC00\uC591':2,'\uD568\uC548':2,'\uB9C8\uC0B0':2,'\uC0AC\uCC9C':2,'\uB300\uAD6C':3,'\uACBD\uC0B0':3,'\uCE60\uACE4':3,'\uAD6C\uBBF8':4,'\uD3EC\uD56D':5,'\uC6B8\uC0B0':6,'\uC6B8\uC8FC':6,'\uC11C\uC6B8':10,'\uAC15\uB3D9':10,'\uC1A1\uD30C':10,'\uAC15\uB0A8':10,'\uC11C\uCD08':10,'\uAC15\uC11C':10,'\uC601\uB4F1\uD3EC':10,'\uB9C8\uD3EC':10,'\uB178\uC6D0':10,'\uC131\uB3D9':10,'\uB3D9\uB300\uBB38':10,'\uC911\uB791':10,'\uAD11\uC9C4':10,'\uC6A9\uC0B0':10,'\uC885\uB85C':10,'\uC911\uAD6C':10,'\uC131\uBD81':10,'\uAC15\uBD81':10,'\uB3C4\uBD09':10,'\uC740\uD3C9':10,'\uC11C\uB300\uBB38':10,'\uB3D9\uC791':10,'\uAD00\uC545':10,'\uAE08\uCC9C':10,'\uAD6C\uB85C':10,'\uC591\uCC9C':10,'\uC778\uCC9C':11,'\uBBF8\uCD94\uD640':11,'\uACC4\uC591':11,'\uBD80\uCC9C':11,'\uAE40\uD3EC':12,'\uACE0\uC591':12,'\uD30C\uC8FC':12,'\uC218\uC6D0':13,'\uD654\uC131':13,'\uC624\uC0B0':13,'\uD3C9\uD0DD':14,'\uC548\uC131':14,'\uC6A9\uC778':15,'\uC131\uB0A8':15,'\uAD11\uC8FC\uC2DC':15,'\uC774\uCC9C':16,'\uC5EC\uC8FC':16,'\uC591\uD3C9':16,'\uC758\uC815\uBD80':17,'\uB0A8\uC591\uC8FC':17,'\uAD6C\uB9AC':17,'\uD558\uB0A8':17,'\uC2DC\uD765':18,'\uC548\uC0B0':18,'\uAD11\uBA85':18,'\uC548\uC591':19,'\uAD70\uD3EC':19,'\uC758\uC655':19,'\uACFC\uCC9C':19,'\uCC9C\uC548':20,'\uC544\uC0B0':20,'\uB2F9\uC9C4':21,'\uC11C\uC0B0':21};
   function rg(a){for(var k in RM){if(a.includes(k))return RM[k];}return 99;}
-  for(var i=0;i<14;i++){
-    var d=new Date(today);d.setDate(d.getDate()+i);
-    var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  // 오늘 이후 모든 날짜 수집
+  var todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var allDates=Object.keys(sd).filter(function(ds){return ds>=todayStr;}).sort();
+  // 빈 날짜도 채우기 (오늘~마지막 날짜)
+  if(allDates.length>0){
+    var last=new Date(allDates[allDates.length-1]);
+    var dateSet=new Set(allDates);
+    for(var dd=new Date(today);dd<=last;dd.setDate(dd.getDate()+1)){
+      var dds=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+      if(!dateSet.has(dds))allDates.push(dds);
+    }
+    allDates.sort();
+  }
+  allDates.forEach(function(ds){
+    var d=new Date(ds+'T00:00:00');
     if(d.getDay()===0){h+='<div class="wk-row" style="opacity:.4;pointer-events:none;padding:6px 0;border-bottom:1px solid #e0e0e0"><span style="font-size:13px;font-weight:700;color:var(--text3)">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span><span style="font-size:10px;color:var(--text3);margin-left:8px">\uC77C\uC694\uC77C \uD734\uBB34</span></div>';continue;}
     var sc=sd[ds]||{am:[],pm:[],as:[],ms:[]};
     var offNames=offs[ds]?[...offs[ds]]:[];
@@ -623,7 +635,7 @@ function renderWeekView(){
       h+='</div></div>';
     });}
     h+='</div>';
-  }
+  });
   if(!h)h='<div class="wk-empty">\uB370\uC774\uD130 \uC5C6\uC74C</div>';
   el.innerHTML=h;
 }
@@ -930,7 +942,7 @@ function generateChannelName(){
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
   let name;
   if(isExtra){
-    name=`${time.toLowerCase()}/${region})${prefix}`;
+    name=product?`${time.toLowerCase()}/${region}/${product})${prefix}`:`${time.toLowerCase()}/${region})${prefix}`;
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
