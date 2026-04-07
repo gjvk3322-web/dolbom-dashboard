@@ -321,7 +321,7 @@ const fbDb=firebase.database();
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 
-let currentTeam='부산',currentYear=2026,currentMonth=3,selectedDate=null;
+let currentTeam='부산',currentYear=new Date().getFullYear(),currentMonth=new Date().getMonth()+1,selectedDate=null;
 let scheduleData={};
 let schedAll={부산:{},경기:{}};
 let empAll={부산:[],경기:[]};
@@ -590,7 +590,7 @@ function renderWeekView(){
   }
   allDates.forEach(function(ds){
     var d=new Date(ds+'T00:00:00');
-    if(d.getDay()===0){h+='<div class="wk-row" style="opacity:.4;pointer-events:none;padding:6px 0;border-bottom:1px solid #e0e0e0"><span style="font-size:13px;font-weight:700;color:var(--text3)">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span><span style="font-size:10px;color:var(--text3);margin-left:8px">\uC77C\uC694\uC77C \uD734\uBB34</span></div>';continue;}
+    if(d.getDay()===0){h+='<div class="wk-row" style="opacity:.4;pointer-events:none;padding:6px 0;border-bottom:1px solid #e0e0e0"><span style="font-size:13px;font-weight:700;color:var(--text3)">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span><span style="font-size:10px;color:var(--text3);margin-left:8px">\uC77C\uC694\uC77C \uD734\uBB34</span></div>';return;}
     var sc=sd[ds]||{am:[],pm:[],as:[],ms:[]};
     var offNames=offs[ds]?[...offs[ds]]:[];
     var activeCount=Math.max((emps.length||4)-offNames.length,0);
