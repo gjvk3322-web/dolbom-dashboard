@@ -446,6 +446,8 @@ let VEHICLES={}; // {준형: "804서 6771", ...}
 db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
+function saveLock(){const o={};LOCK.forEach(id=>o[id]=true);db.ref('gg_lockedJobs').set(Object.keys(o).length?o:null)}
+function saveSkip(){const o={};SKIP.forEach(id=>o[id]=true);db.ref('gg_skipJobs').set(Object.keys(o).length?o:null)}
 
 // 배정 결과를 구글시트에 역기록
 let sheetSyncTimer=null;
@@ -489,7 +491,7 @@ sheetSyncTimer=setTimeout(()=>{
   // Apps Script로 전송
   fetch(SHEET_REPORT_URL,{
     method:'POST',
-    mode:'no-cors',
+
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'updateAssignments',data,gid:'1995986285'})
   }).then(()=>{
@@ -505,7 +507,7 @@ function syncTeamsToSheet(){
   const teamData=[];
   teams.forEach((t,i)=>{t.forEach((name,j)=>{teamData.push({region:'경기',teamNum:i+1,name:name,rank:j===0?'사수':'부사수'});});});
   fetch(SHEET_REPORT_URL,{
-    method:'POST',mode:'no-cors',
+    method:'POST',
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'updateTeamConfig',data:teamData})
   }).then(()=>console.log('[team-sync] OK:',teamData.length+'명'))
@@ -1038,7 +1040,7 @@ A[jobId]=[...cur,emp].sort(hdSort);
 A[jobId]=[emp];
 }
 // 수동 배정하면 SKIP 해제
-if(SKIP.has(jobId)){SKIP.delete(jobId);db.ref('gg_skipJobs/'+jobId).remove()}
+if(SKIP.has(jobId)){SKIP.delete(jobId);saveSkip()}
 db.ref('gg_assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('✅ 배정 업데이트','ok');renderAll()}
@@ -1048,7 +1050,7 @@ function unassign(jobId){
 if(!requireAdmin())return;
 delete A[jobId];
 SKIP.add(jobId);
-db.ref('gg_skipJobs/'+jobId).set(true);
+saveSkip();
 db.ref('gg_assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
 // 재배정 방지: 2초간 자동배정 차단
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
@@ -1058,13 +1060,13 @@ toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
 function lockJob(jobId){
 if(!A[jobId]||A[jobId].length<2){toast('2인 배정 후 확정 가능','ok');return}
 LOCK.add(jobId);
-db.ref('gg_lockedJobs/'+jobId).set(true);
+saveLock();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('🔒 배정 확정!','ok');renderAll()}
 
 function unlockJob(jobId){
 LOCK.delete(jobId);
-db.ref('gg_lockedJobs/'+jobId).remove();
+saveLock();
 toast('🔓 확정 해제','ok');renderAll()}
 
 // ===== 시공보고서 =====
@@ -1399,7 +1401,7 @@ const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
-fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({...reportData,jobId:asReportJobId})}).catch(()=>{})}
+fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...reportData,jobId:asReportJobId})}).catch(()=>{})}
 
 document.getElementById('asReportText').textContent=txt;
 document.getElementById('asReportResult').style.display='block';
