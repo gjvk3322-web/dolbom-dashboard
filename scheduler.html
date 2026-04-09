@@ -469,7 +469,7 @@ sheetSyncTimer=setTimeout(()=>{
     }else{
       // 팀에서 순서 확인
       let teamOrder=null;
-      if(teams.length){teamOrder=teams.find(t=>crew.some(c=>t.includes(c)))}
+      if(teams.length){teamOrder=teams.find(t=>crew.every(c=>t.includes(c)))}
       if(teamOrder){
         // 팀 순서대로: 첫번째=사수
         const ordered=teamOrder.filter(m=>crew.includes(m)).sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
@@ -478,8 +478,9 @@ sheetSyncTimer=setTimeout(()=>{
         const rest=crew.filter(e=>e!==sasu);
         busasu=rest.join(',');
       }else{
-        sasu=crew[0];
-        busasu=crew.slice(1).join(',');
+        const sorted=[...crew].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
+        sasu=sorted[0];
+        busasu=sorted.slice(1).join(',');
       }
     }
     const parts=j.id.split('_');
