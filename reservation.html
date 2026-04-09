@@ -812,7 +812,7 @@ function editItem(time,ds,index){
   const items=time==='오전'?sc.am:time==='오후'?sc.pm:time==='AS'?(sc.as||[]):(sc.ms||[]);
   const item=items[index];
   if(!item)return;
-  editMode={time,date:ds,index,row:item.row};
+  editMode={time,date:ds,index,row:item.row,address:item.address||'',phone:item.phone||''};
   document.getElementById('formTitle').textContent='✏️ 예약 수정';
   document.getElementById('submitBtn').textContent='수정 완료';
   document.getElementById('cancelBtn').style.display='block';
@@ -871,7 +871,7 @@ function cancelReservation(){
   const btn=document.getElementById('cancelBtn');btn.disabled=true;btn.textContent='취소 중...';
   fetch(API_URL,{
     method:'POST',headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({type:'cancel',team:currentTeam,row:editMode.row})
+    body:JSON.stringify({type:'cancel',team:currentTeam,row:editMode.row,date:editMode.date,address:editMode.address,phone:editMode.phone})
   }).then(()=>{
     document.getElementById('formSection').classList.remove('show');
     showToast('✅ 예약이 취소되었습니다');

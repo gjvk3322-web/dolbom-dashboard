@@ -487,7 +487,7 @@ sheetSyncTimer=setTimeout(()=>{
     const parts=j.id.split('_');
     const rowIdx=parseInt(parts[parts.length-1])+1;
     if(isNaN(rowIdx)||rowIdx<2||rowIdx>maxRow)return;
-    data.push({row:rowIdx,sasu,busasu,vehicle:Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||''});
+    data.push({row:rowIdx,sasu,busasu,vehicle:Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||'',date:j.date,address:j.addr,time:j.time});
   });
   if(!data.length)return;
   // Apps Script로 전송
@@ -2072,7 +2072,8 @@ function updateDriver(idx){
 function quickVehicle(sasu,plate,rows){
   if(rows&&rows.length){
     console.log('[vehicle] rows:',rows,'plate:',plate,'sasu:',sasu);
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:rows.map(function(r){return{row:r,vehicle:plate}})  ,gid:'1995986285'})  }).then(r=>r.text()).then(t=>console.log('[vehicle] 응답:',t)).catch(e=>console.log('[vehicle] error:',e));
+    var vData=rows.map(function(r){var job=J.find(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1===r});return{row:r,vehicle:plate,date:job?job.date:'',address:job?job.addr:''}});
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:vData,gid:'1995986285'})}).then(r=>r.text()).then(t=>console.log('[vehicle] 응답:',t)).catch(e=>console.log('[vehicle] error:',e));
     J.forEach(function(j){var p=j.id.split('_');var ri=parseInt(p[p.length-1])+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
     renderSched();
     toast('🚗 '+sasu+' → '+(plate||'미배정')+' (해당 날짜만)','ok');
