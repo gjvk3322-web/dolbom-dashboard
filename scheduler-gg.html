@@ -1510,57 +1510,25 @@ bar.style.display='block';
 const encoded=encodeURIComponent(naviAddr);
 const webUrl='https://map.naver.com/v5/search/'+encoded;
 const isAndroid=/Android/i.test(navigator.userAgent);
+const isSamsungBrowser=/SamsungBrowser/i.test(navigator.userAgent);
 const isPWA=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
 
-// 1) 카카오 API로 주소 → 좌표 변환 후 네비 실행
-toast('🧭 네비 준비 중...','ok');
-fetch('https://dapi.kakao.com/v2/local/search/address.json?query='+encoded,{
-  headers:{'Authorization':'KakaoAK ec66e2d1679323ded4d66c96f157ba70'}
-}).then(r=>r.json()).then(res=>{
-  let lat,lng;
-  if(res.documents&&res.documents.length>0){lat=res.documents[0].y;lng=res.documents[0].x;}
-  if(!lat||!lng){
-    // 주소 검색 실패 → 키워드 검색 시도
-    return fetch('https://dapi.kakao.com/v2/local/search/keyword.json?query='+encoded,{
-      headers:{'Authorization':'KakaoAK ec66e2d1679323ded4d66c96f157ba70'}
-    }).then(r2=>r2.json()).then(res2=>{
-      if(res2.documents&&res2.documents.length>0){lat=res2.documents[0].y;lng=res2.documents[0].x;}
-      openNaviApp(lat,lng,naviAddr,encoded,webUrl,isAndroid,isPWA);
-    });
-  }
-  openNaviApp(lat,lng,naviAddr,encoded,webUrl,isAndroid,isPWA);
-}).catch(()=>{
-  // API 실패 → 검색 모드로 폴백
-  openNaviApp(null,null,naviAddr,encoded,webUrl,isAndroid,isPWA);
-});
-}
-
-function openNaviApp(lat,lng,name,encoded,webUrl,isAndroid,isPWA){
-if(lat&&lng){
-  // 좌표 있음 → 경로 안내 모드로 바로 시작
-  const naviUrl='nmap://route/car?dlat='+lat+'&dlng='+lng+'&dname='+encoded+'&appname=dolbommat';
-  const intentNavi='intent://route/car?dlat='+lat+'&dlng='+lng+'&dname='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
-  if(isAndroid){
-    if(isPWA){const a=document.createElement('a');a.href=intentNavi;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);}
-    else if(/SamsungBrowser/i.test(navigator.userAgent)){const s=Date.now();location.href=naviUrl;setTimeout(()=>{if(Date.now()-s<2000)location.href=webUrl},1500);}
-    else{location.href=intentNavi;}
+if(isSamsungBrowser){
+  // 삼성 브라우저: 네이버맵 웹 URL로 열기 (앱으로 보기 자동 제공)
+  window.open(webUrl,'_blank');
+}else if(isAndroid){
+  const intentUrl='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+  if(isPWA){
+    const a=document.createElement('a');a.href=intentUrl;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);
   }else{
-    // iOS
-    const s=Date.now();location.href=naviUrl;
-    setTimeout(()=>{if(Date.now()-s<2000)location.href=webUrl},1500);
+    location.href=intentUrl;
   }
 }else{
-  // 좌표 없음 → 검색 모드 폴백
-  const searchUrl='nmap://search?query='+encoded+'&appname=dolbommat';
-  const intentSearch='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
-  if(isAndroid){
-    if(isPWA){const a=document.createElement('a');a.href=intentSearch;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);}
-    else if(/SamsungBrowser/i.test(navigator.userAgent)){const s=Date.now();location.href=searchUrl;setTimeout(()=>{if(Date.now()-s<2000)location.href=webUrl},1500);}
-    else{location.href=intentSearch;}
-  }else{
-    const s=Date.now();location.href=searchUrl;
-    setTimeout(()=>{if(Date.now()-s<2000)location.href=webUrl},1500);
-  }
+  // iOS
+  const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
+  const start=Date.now();
+  location.href=appUrl;
+  setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500);
 }
 }
 
