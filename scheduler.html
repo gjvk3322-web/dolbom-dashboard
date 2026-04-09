@@ -452,10 +452,11 @@ function syncToSheet(){if(!isAdmin)return;
 if(sheetSyncTimer)clearTimeout(sheetSyncTimer);
 sheetSyncTimer=setTimeout(()=>{
   const data=[];
+  const maxRow=J.filter(j=>!j.offOnly).length+1;
   J.forEach(j=>{
     if(j.offOnly)return;
     if(!j.addr||!j.addr.trim())return;
-    if(!j.date)return;
+    if(!j.date||!j.time)return;
     const crew=A[j.id];
     if(!crew||!crew.length)return;
     // 사수/부사수 분리: 팀설정에서 첫번째=사수, 나머지=부사수
@@ -480,6 +481,7 @@ sheetSyncTimer=setTimeout(()=>{
     }
     const parts=j.id.split('_');
     const rowIdx=parseInt(parts[parts.length-1])+1;
+    if(isNaN(rowIdx)||rowIdx<2||rowIdx>maxRow)return;
     data.push({row:rowIdx,sasu,busasu,vehicle:Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||''});
   });
   if(!data.length)return;
