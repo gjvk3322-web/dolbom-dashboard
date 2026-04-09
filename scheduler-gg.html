@@ -490,13 +490,13 @@ sheetSyncTimer=setTimeout(()=>{
   });
   if(!data.length)return;
   // Apps Script로 전송
+  console.log('[sheet-sync] 전송 데이터:',data.slice(0,3),'...총',data.length+'건');
   fetch(SHEET_REPORT_URL,{
     method:'POST',
-
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'updateAssignments',data,gid:'1995986285'})
-  }).then(()=>{
-    console.log('[sheet-sync] OK:',data.length+'건');
+  }).then(r=>r.text()).then(t=>{
+    console.log('[sheet-sync] 응답:',t);
   }).catch(e=>console.log('[sheet-sync] error:',e));
 },2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
 }
@@ -2069,7 +2069,8 @@ function updateDriver(idx){
 
 function quickVehicle(sasu,plate,rows){
   if(rows&&rows.length){
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:rows.map(function(r){return{row:r,vehicle:plate}})  ,gid:'1995986285'})  });
+    console.log('[vehicle] rows:',rows,'plate:',plate,'sasu:',sasu);
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:rows.map(function(r){return{row:r,vehicle:plate}})  ,gid:'1995986285'})  }).then(r=>r.text()).then(t=>console.log('[vehicle] 응답:',t)).catch(e=>console.log('[vehicle] error:',e));
     J.forEach(function(j){var p=j.id.split('_');var ri=parseInt(p[p.length-1])+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
     renderSched();
     toast('🚗 '+sasu+' → '+(plate||'미배정')+' (해당 날짜만)','ok');
@@ -2078,7 +2079,7 @@ function quickVehicle(sasu,plate,rows){
   const next={...VEHICLES};
   Object.keys(next).forEach(function(p){if(next[p]===sasu)next[p]=''});
   if(plate)next[plate]=sasu;
-  fbSave('vehicles',next);
+  fbSave('gg_vehicles',next);
   syncToSheet();renderSched();renderCars();
   toast('🚗 '+sasu+' → '+(plate||'미배정'),'ok');
 }

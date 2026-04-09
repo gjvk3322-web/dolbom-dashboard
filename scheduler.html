@@ -488,13 +488,13 @@ sheetSyncTimer=setTimeout(()=>{
   });
   if(!data.length)return;
   // Apps Script로 전송
+  console.log('[sheet-sync] 전송 데이터:',data.slice(0,3),'...총',data.length+'건');
   fetch(SHEET_REPORT_URL,{
     method:'POST',
-
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'updateAssignments',data,gid:'144225567'})
-  }).then(()=>{
-    console.log('[sheet-sync] OK:',data.length+'건');
+  }).then(r=>r.text()).then(t=>{
+    console.log('[sheet-sync] 응답:',t);
   }).catch(e=>console.log('[sheet-sync] error:',e));
 },2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
 }
