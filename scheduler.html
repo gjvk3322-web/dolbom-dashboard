@@ -1463,11 +1463,18 @@ bar.style.display='block';
 }
 
 const encoded=encodeURIComponent(naviAddr);
-const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
 const webUrl='https://map.naver.com/v5/search/'+encoded;
+const isAndroid=/Android/i.test(navigator.userAgent);
+if(isAndroid){
+// 안드로이드: intent 스킴 → 앱 없으면 자동 웹 폴백
+location.href='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+}else{
+// iOS 등: 기존 방식
+const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
 const start=Date.now();
 location.href=appUrl;
-setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500)}
+setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500);
+}}
 
 function copyAddr(addr){
 navigator.clipboard.writeText(addr).then(()=>{toast('📋 주소 복사됨!','copy')}).catch(()=>{
