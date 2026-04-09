@@ -459,7 +459,6 @@ function syncToSheet(){if(!isAdmin)return;
 if(sheetSyncTimer)clearTimeout(sheetSyncTimer);
 sheetSyncTimer=setTimeout(()=>{
   const data=[];
-  const maxRow=J.filter(j=>!j.offOnly).length+1;
   J.forEach(j=>{
     if(j.offOnly)return;
     if(!j.addr||!j.addr.trim())return;
@@ -490,7 +489,7 @@ sheetSyncTimer=setTimeout(()=>{
     }
     const parts=j.id.split('_');
     const rowIdx=parseInt(parts[parts.length-1])+1;
-    if(isNaN(rowIdx)||rowIdx<2||rowIdx>maxRow)return;
+    if(isNaN(rowIdx)||rowIdx<2)return;
     data.push({row:rowIdx,sasu,busasu,vehicle:Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||'',date:j.date,address:j.addr,time:j.time});
   });
   if(!data.length)return;
