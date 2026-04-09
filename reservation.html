@@ -870,13 +870,13 @@ function cancelReservation(){
   if(!confirm('정말로 이 예약을 취소하시겠습니까?\n삭제된 예약은 복구할 수 없습니다.')){return;}
   const btn=document.getElementById('cancelBtn');btn.disabled=true;btn.textContent='취소 중...';
   fetch(API_URL,{
-    method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+    method:'POST',headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({type:'cancel',team:currentTeam,row:editMode.row})
   }).then(()=>{
     document.getElementById('formSection').classList.remove('show');
     showToast('✅ 예약이 취소되었습니다');
     editMode=null;
-    setTimeout(()=>loadData(),2000);
+    loadData();
   }).catch(()=>{showToast('⚠️ 취소 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 취소';});
 }
 
