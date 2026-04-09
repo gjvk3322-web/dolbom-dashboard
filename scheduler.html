@@ -1487,6 +1487,10 @@ const msg=dongHoText?
 '🧭 네비 열기\n\n📍 '+naviAddr+'\n\n이 주소로 이동하시겠습니까?';
 if(!confirm(msg))return;
 
+// 주소 클립보드 복사 (네비 앱 실패해도 붙여넣기 가능)
+try{navigator.clipboard.writeText(naviAddr).catch(()=>{});}catch(e){}
+toast('📋 주소 복사됨! 네비 앱을 여는 중...','ok');
+
 // 동/호수 있으면 알림 띄우기
 if(dongHoText){
 // 1) 웹 알림 (네비 앱에서도 보임)
