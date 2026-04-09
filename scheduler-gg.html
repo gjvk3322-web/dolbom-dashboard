@@ -1511,19 +1511,13 @@ bar.style.display='block';
 const encoded=encodeURIComponent(naviAddr);
 const webUrl='https://map.naver.com/v5/search/'+encoded;
 const isAndroid=/Android/i.test(navigator.userAgent);
-const isSamsungBrowser=/SamsungBrowser/i.test(navigator.userAgent);
-const isPWA=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
 
-if(isSamsungBrowser){
-  // 삼성 브라우저: 같은 탭에서 네이버맵 웹 이동 (뒤로가기로 복귀)
-  location.href=webUrl;
-}else if(isAndroid){
+if(isAndroid){
+  // 안드로이드 공통: intent → 실패 시 1.5초 후 웹 폴백 (삼성/크롬/PWA 모두 대응)
   const intentUrl='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
-  if(isPWA){
-    const a=document.createElement('a');a.href=intentUrl;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);
-  }else{
-    location.href=intentUrl;
-  }
+  const start=Date.now();
+  location.href=intentUrl;
+  setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500);
 }else{
   // iOS
   const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
