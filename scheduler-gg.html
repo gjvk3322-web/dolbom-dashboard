@@ -731,6 +731,15 @@ E.forEach(e=>{crossDateKm[e]=fairRouteTotals[e]||0});
 function teamCrossKm(members){
   let t=0;members.forEach(m=>{t+=crossDateKm[m]||0});return t/Math.max(members.length,1);
 }
+// ===== 배정 중 누적 건수 (날짜 간 공정성 유지) =====
+const crossDateCnt={};
+E.forEach(e=>{crossDateCnt[e]=fairScore[e]?fairScore[e].wd:0});
+function teamFairSort(a,b){
+  const sa=a.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(a.team.length,1);
+  const sb=b.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(b.team.length,1);
+  return sa-sb;
+}
+function bumpCnt(members,date){members.forEach(m=>{if(!crossDateCnt._d)crossDateCnt._d={};if(!crossDateCnt._d[m])crossDateCnt._d[m]=new Set();if(!crossDateCnt._d[m].has(date)){crossDateCnt._d[m]=crossDateCnt._d[m]||new Set();crossDateCnt._d[m].add(date);crossDateCnt[m]=(crossDateCnt[m]||0)+1}})}
 
 for(const date of Object.keys(bd).sort()){
 // 3일 뒤부터만 전체 자동배정 (오늘~모레는 확정된 배정 보호)
@@ -937,17 +946,18 @@ if(unassigned.length){
   const amUn=unassigned.filter(j=>j.time.startsWith('오전')||j.time.includes('2:'));
   const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as'||j.time==='AS'||j.time==='실측');
 
-  // 오전 배정: 건수 균등 + 공정성 점수
+  // 오전 배정: 건수 균등 + 누적 공정성
   amUn.forEach(j=>{
     if(A[j.id])return;
     const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>{
       if(a.count!==b.count)return a.count-b.count;
-      return teamFairPenalty(a.team)-teamFairPenalty(b.team);
+      return teamFairSort(a,b);
     });
     if(allTeamsSorted.length){
       const best=allTeamsSorted[0];
       A[j.id]=[...best.team].sort(hdSort);
       best.count++;
+      bumpCnt(best.team,date);
       if(j._geo)best.lastGeo=j._geo;
     }
   });
@@ -964,28 +974,32 @@ if(unassigned.length){
         const fromGeo=t.lastGeo||OFF_B;
         t._dist=hav(fromGeo.lat,fromGeo.lng,pmGeo.lat,pmGeo.lng);
       });
-      // 0건 팀 우선 (count*15) + GPS 거리 + 공정성
+      // 0건 팀 우선 (count*15) + GPS 거리 + 누적 공정성
       allTeamsSorted.sort((a,b)=>{
-        const scoreA=a._dist+(a.count*15)+teamFairPenalty(a.team)*2;
-        const scoreB=b._dist+(b.count*15)+teamFairPenalty(b.team)*2;
+        const cntA=a.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(a.team.length,1);
+        const cntB=b.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(b.team.length,1);
+        const scoreA=a._dist+(a.count*15)+cntA*5;
+        const scoreB=b._dist+(b.count*15)+cntB*5;
         return scoreA-scoreB;
       });
       const best=allTeamsSorted[0];
       A[j.id]=[...best.team].sort(hdSort);
       best.count++;
+      bumpCnt(best.team,date);
       // 월간 누적 갱신
       best.team.forEach(e=>{crossDateKm[e]+=(j.dist||0)});
       // 이 팀의 마지막 위치를 오후 건으로 갱신 (다음 오후 건 거리 계산에 반영)
       if(pmGeo)best.lastGeo=pmGeo;
     }else{
-      // GPS 없으면 건수 + 공정성
+      // GPS 없으면 건수 + 누적 공정성
       const fairTeam=Object.values(teamLoad).sort((a,b)=>{
         if(a.count!==b.count)return a.count-b.count;
-        return teamFairPenalty(a.team)-teamFairPenalty(b.team);
+        return teamFairSort(a,b);
       })[0];
       if(fairTeam){
         A[j.id]=[...fairTeam.team].sort(hdSort);
         fairTeam.count++;
+        bumpCnt(fairTeam.team,date);
       }
     }
   });
