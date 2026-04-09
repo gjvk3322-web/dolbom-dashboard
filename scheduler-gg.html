@@ -1513,6 +1513,7 @@ const isAndroid=/Android/i.test(navigator.userAgent);
 const isPWA=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
 
 // 1) 카카오 API로 주소 → 좌표 변환 후 네비 실행
+toast('🧭 네비 준비 중...','ok');
 fetch('https://dapi.kakao.com/v2/local/search/address.json?query='+encoded,{
   headers:{'Authorization':'KakaoAK ec66e2d1679323ded4d66c96f157ba70'}
 }).then(r=>r.json()).then(res=>{
@@ -1536,9 +1537,9 @@ fetch('https://dapi.kakao.com/v2/local/search/address.json?query='+encoded,{
 
 function openNaviApp(lat,lng,name,encoded,webUrl,isAndroid,isPWA){
 if(lat&&lng){
-  // 좌표 있음 → 네비게이션 모드로 바로 시작
-  const naviUrl='nmap://navigation?dlat='+lat+'&dlng='+lng+'&dname='+encoded+'&appname=dolbommat';
-  const intentNavi='intent://navigation?dlat='+lat+'&dlng='+lng+'&dname='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+  // 좌표 있음 → 경로 안내 모드로 바로 시작
+  const naviUrl='nmap://route/car?dlat='+lat+'&dlng='+lng+'&dname='+encoded+'&appname=dolbommat';
+  const intentNavi='intent://route/car?dlat='+lat+'&dlng='+lng+'&dname='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
   if(isAndroid){
     if(isPWA){const a=document.createElement('a');a.href=intentNavi;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);}
     else if(/SamsungBrowser/i.test(navigator.userAgent)){const s=Date.now();location.href=naviUrl;setTimeout(()=>{if(Date.now()-s<2000)location.href=webUrl},1500);}
