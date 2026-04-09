@@ -1183,7 +1183,8 @@ if(typeof reportJobId!=='undefined'&&reportJobId){
   if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
     const jobParts=reportJobId.split('_');
     const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{});
+    const _rjob=J.find(jj=>jj.id===reportJobId)||{};
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob.date||'',address:_rjob.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{});
   }
 }
 showCustomerToast('✅ 시공보고서 저장 완료!');
@@ -1307,7 +1308,8 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 const jobParts=reportJobId.split('_');
 const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
-fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,...reportData,jobId:reportJobId})}).catch(()=>{})}
+const _rjob2=J.find(jj=>jj.id===reportJobId)||{};
+fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob2.date||'',address:_rjob2.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{})}
 
 // 시공보고서 텍스트 복사
 try{navigator.clipboard.writeText(txt).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);})}catch(e){}
