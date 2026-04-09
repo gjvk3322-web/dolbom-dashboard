@@ -348,6 +348,7 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 
 // Firebase 실시간 리스너 (배치 렌더링으로 깜빡임 방지)
 let isAssigning=false;
+let lastManualEdit=0;
 
 // ===== 당번 모드 (PIN 잠금) =====
 const ADMIN_PIN='1123';
@@ -1019,7 +1020,7 @@ lastAHash=aHash(A);syncToSheet();
 //console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
 toast('✅ 자동 배정 완료!','ok');
 renderAll();
-setTimeout(()=>{isAssigning=false},500);
+setTimeout(()=>{isAssigning=false},3000);
 }
 
 function resetAssign(){if(!requireAdmin())return;if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});lastAHash=aHash(A);toast('초기화됨','ok');renderAll()}
@@ -1039,6 +1040,7 @@ A[jobId]=[emp];
 // 수동 배정하면 SKIP 해제
 if(SKIP.has(jobId)){SKIP.delete(jobId);saveSkip()}
 db.ref('assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
+lastManualEdit=Date.now();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('✅ 배정 업데이트','ok');renderAll()}
 
@@ -2484,8 +2486,7 @@ const sub=document.getElementById('sub');
 if(showToast)sub.textContent='🔄 갱신 중...';
 
 // 휴무 데이터 먼저 갱신
-OFFS={};DUTY={};
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
@@ -2501,7 +2502,7 @@ lastCSVRowCount=newRowCount;
 parseCSV(text);
 
 // 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
-if(isNewReservation){
+if(isNewReservation&&(Date.now()-lastManualEdit>60000)){
 const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
 const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
 if(unCnt>0&&isAdmin)await autoAssign()}
@@ -2550,8 +2551,7 @@ document.getElementById('confirmOkBtn').style.display='none';
 document.getElementById('confirmOverlay').classList.add('show');
 
 try{
-OFFS={};DUTY={};
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
 parseCSV(text);
