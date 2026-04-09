@@ -331,8 +331,39 @@ let highlightDates=[];
 let lastSync='';
 let CLOSED={};
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+const SCHED_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285'};
 const OFF_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653'};
 let OFFS={};
+let rowMapReady=false;
+
+// 범용 CSV → 객체배열 파서 (헤더행 기반)
+function csvToObjects(text){
+  const lines=text.split('\n');
+  if(lines.length<2) return [];
+  // 헤더 파싱
+  const headers=parseCSVLine(lines[0]);
+  const result=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const vals=parseCSVLine(lines[i]);
+    const obj={};
+    headers.forEach((h,idx)=>{obj[h]=vals[idx]||'';});
+    obj._csvRow=i+1; // 시트 행번호 (헤더=1행, 데이터=2행부터)
+    result.push(obj);
+  }
+  return result;
+}
+function parseCSVLine(line){
+  const r=[];let cur='',inQ=false;
+  for(let c=0;c<line.length;c++){
+    const ch=line[c];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur='';}
+    else{cur+=ch;}
+  }
+  r.push(cur.trim().replace(/^"|"$/g,''));
+  return r;
+}
 function parseOffCSV(text){
   OFFS={};const lines=text.split('\n');
   for(let i=1;i<lines.length;i++){
@@ -432,39 +463,126 @@ function setAccentColors(team){
 function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
 
 async function loadData(){
-  showLoading(30);
+  showLoading(20);
   document.getElementById('syncInfo').textContent='데이터 로딩 중...';
   try{
-    const [resBS,resGG] = await Promise.all([
-      fetch(API_URL+'?type=schedule&team='+encodeURIComponent('부산')),
-      fetch(API_URL+'?type=schedule&team='+encodeURIComponent('경기'))
+    // 1단계: CSV 3건 + 휴무 2건 모두 병렬 로딩 (Apps Script 안 거침 → 빠름)
+    const [schedBS,schedGG,empRes,offBS,offGG] = await Promise.all([
+      fetch(SCHED_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(SCHED_CSV['경기']+'&_='+Date.now()).then(r=>r.text()),
+      fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735&_='+Date.now()).then(r=>r.text()),
+      fetch(OFF_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(OFF_CSV['경기']+'&_='+Date.now()).then(r=>r.text())
     ]);
-    showLoading(70);
-    const [jsonBS,jsonGG] = await Promise.all([resBS.json(),resGG.json()]);
-    showLoading(90);
-    // 부산 파싱
-    parseScheduleDataTo(jsonBS.schedules||jsonBS.rows||[],'부산');
-    // 경기 파싱
-    parseScheduleDataTo(jsonGG.schedules||jsonGG.rows||[],'경기');
-    // 직원 데이터는 팀설정 CSV에서 로드
-    await loadEmployeesFromCSV();
+    showLoading(60);
+
+    // 스케줄 파싱
+    const bsRows=csvToObjects(schedBS);
+    const ggRows=csvToObjects(schedGG);
+    parseScheduleDataTo(bsRows,'부산');
+    parseScheduleDataTo(ggRows,'경기');
+    showLoading(80);
+
+    // 직원 파싱
+    parseEmployeeCSV(empRes);
+
+    // 휴무 파싱
+    OFFS_ALL['부산']=parseOffCSVTo(offBS);
+    OFFS_ALL['경기']=parseOffCSVTo(offGG);
+    OFFS=OFFS_ALL[currentTeam];
+
     // 현재 팀 동기화
     scheduleData=schedAll[currentTeam];
     employees=empAll[currentTeam];
     const totalJobs=Object.values(schedAll['부산']).reduce((a,d)=>a+d.am.length+d.pm.length,0)+Object.values(schedAll['경기']).reduce((a,d)=>a+d.am.length+d.pm.length,0);
-    lastSync = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · 부산+경기 ${totalJobs}건`;
     showLoading(100);
     setTimeout(()=>showLoading(0),500);
     renderCalendar();
     renderWeekView();
     if(selectedDate) renderDayDetail(selectedDate);
+
+    // 2단계: 백그라운드에서 Apps Script → row 번호 매칭 (수정/취소용)
+    loadRowNumbers();
   }catch(err){
-    console.error('loadData error:',err);
-    document.getElementById('syncInfo').textContent='데이터 로딩 실패: '+err.message;
-    showLoading(0);
-    showToast('⚠️ 로딩 실패: '+err.message);
+    console.error('loadData CSV error:',err);
+    // CSV 실패 시 기존 Apps Script 방식으로 폴백
+    console.log('CSV 실패, Apps Script 폴백...');
+    await loadDataFallback();
   }
+}
+
+// CSV 실패 시 기존 Apps Script GET 폴백
+async function loadDataFallback(){
+  try{
+    showLoading(30);
+    document.getElementById('syncInfo').textContent='데이터 로딩 중 (폴백)...';
+    const [resBS,resGG]=await Promise.all([
+      fetch(API_URL+'?type=schedule&team='+encodeURIComponent('부산')),
+      fetch(API_URL+'?type=schedule&team='+encodeURIComponent('경기'))
+    ]);
+    showLoading(70);
+    const [jsonBS,jsonGG]=await Promise.all([resBS.json(),resGG.json()]);
+    showLoading(90);
+    parseScheduleDataTo(jsonBS.schedules||jsonBS.rows||[],'부산');
+    parseScheduleDataTo(jsonGG.schedules||jsonGG.rows||[],'경기');
+    await loadEmployeesFromCSV();
+    scheduleData=schedAll[currentTeam];
+    employees=empAll[currentTeam];
+    const totalJobs=Object.values(schedAll['부산']).reduce((a,d)=>a+d.am.length+d.pm.length,0)+Object.values(schedAll['경기']).reduce((a,d)=>a+d.am.length+d.pm.length,0);
+    lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · 부산+경기 ${totalJobs}건 (폴백)`;
+    showLoading(100);setTimeout(()=>showLoading(0),500);
+    renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);
+    rowMapReady=true; // 폴백은 row 포함
+  }catch(err2){
+    document.getElementById('syncInfo').textContent='데이터 로딩 실패: '+err2.message;
+    showLoading(0);showToast('⚠️ 로딩 실패: '+err2.message);
+  }
+}
+
+// 직원 CSV 파싱 (기존 loadEmployeesFromCSV를 동기화 버전으로)
+function parseEmployeeCSV(text){
+  const lines=text.split('\n');
+  empAll={부산:[],경기:[]};
+  for(let i=1;i<lines.length;i++){
+    const r=parseCSVLine(lines[i]);
+    if(!r[2])continue;
+    const region=(r[0]||'').trim();
+    const name=r[2].trim();
+    if(region==='부산')empAll['부산'].push({name,team:'부산'});
+    else if(region==='경기')empAll['경기'].push({name,team:'경기'});
+  }
+}
+
+// 백그라운드: Apps Script에서 row 번호 가져와 기존 데이터에 매칭
+function loadRowNumbers(){
+  rowMapReady=false;
+  Promise.all([
+    fetch(API_URL+'?type=schedule&team='+encodeURIComponent('부산')).then(r=>r.json()).catch(()=>null),
+    fetch(API_URL+'?type=schedule&team='+encodeURIComponent('경기')).then(r=>r.json()).catch(()=>null)
+  ]).then(([jsonBS,jsonGG])=>{
+    if(jsonBS) mergeRowNumbers(jsonBS.schedules||jsonBS.rows||[],'부산');
+    if(jsonGG) mergeRowNumbers(jsonGG.schedules||jsonGG.rows||[],'경기');
+    rowMapReady=true;
+    console.log('Row 번호 매칭 완료');
+  }).catch(()=>{console.warn('Row 번호 로딩 실패 - 수정/취소 시 재시도됩니다');});
+}
+
+function mergeRowNumbers(apiRows,team){
+  const sd=schedAll[team];
+  apiRows.forEach(r=>{
+    const time=(r['시간']||'').trim();
+    let dateStr='';const rawDate=r['시공일']||'';
+    if(rawDate){const d=new Date(rawDate);if(!isNaN(d.getTime()))dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;else dateStr=String(rawDate).substring(0,10);}
+    if(!dateStr||!time||!sd[dateStr])return;
+    const addr=(r['주소']||'').trim();
+    const slot=time.includes('오전')?'am':time.includes('오후')?'pm':time==='AS'?'as':time==='실측'?'ms':null;
+    if(!slot)return;
+    const match=sd[dateStr][slot].find(e=>e.address.trim()===addr&&e.time===time);
+    if(match) match.row=r.row;
+  });
 }
 
 function parseScheduleDataTo(rows,team){
@@ -475,7 +593,7 @@ function parseScheduleDataTo(rows,team){
     if(rawDate){const d=new Date(rawDate);if(!isNaN(d.getTime()))dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;else dateStr=String(rawDate).substring(0,10);}
     if(!dateStr||!time)return;
     if(!sd[dateStr])sd[dateStr]={am:[],pm:[],as:[],ms:[]};
-    const entry={time,category:r['구분']||'',address:r['주소']||'',product:r['제품']||'',phone:r['연락처']||'',isNew:r['신축여부']||'',size:r['평수']||'',scope:r['시공범위']||'',qty:r['수량']||'',sasu:r['사수']||'',busasu:r['부사수']||'',car:r['차량번호']||'',referrer:r['추천인']||'',channelName:r['채널명']||'',row:r.row};
+    const entry={time,category:r['구분']||'',address:r['주소']||'',product:r['제품']||'',phone:r['연락처']||'',isNew:r['신축여부']||'',size:r['평수']||'',scope:r['시공범위']||'',qty:r['수량']||'',sasu:r['사수']||'',busasu:r['부사수']||'',car:r['차량번호']||'',referrer:r['추천인']||'',channelName:r['채널명']||'',row:r.row||r._csvRow};
     if(time==='오전'||time==='오전(이전설치)')sd[dateStr].am.push(entry);
     else if(time==='오후'||time==='오후(이전설치)')sd[dateStr].pm.push(entry);
     else if(time==='AS')sd[dateStr].as.push(entry);
@@ -866,7 +984,10 @@ function switchTeam(team){
 }
 
 function cancelReservation(){
-  if(!editMode||!editMode.row){showToast('⚠️ 취소할 예약이 없습니다');return;}
+  if(!editMode||!editMode.row){
+    if(!rowMapReady){showToast('⏳ 데이터 동기화 중... 잠시 후 다시 시도해주세요');return;}
+    showToast('⚠️ 취소할 예약이 없습니다');return;
+  }
   if(!confirm('정말로 이 예약을 취소하시겠습니까?\n삭제된 예약은 복구할 수 없습니다.')){return;}
   const btn=document.getElementById('cancelBtn');btn.disabled=true;btn.textContent='취소 중...';
   fetch(API_URL,{
@@ -909,7 +1030,10 @@ function submitReservation(){
     referrer:document.getElementById('fReferrer').value.trim(),
     channelName:(document.getElementById('channelText').textContent||'').trim()
   };
-  if(editMode) payload.row = editMode.row;
+  if(editMode) {
+    if(!editMode.row){showToast('⏳ 데이터 동기화 중... 잠시 후 다시 시도해주세요');btn.disabled=false;btn.textContent='수정 완료';return;}
+    payload.row = editMode.row;
+  }
 
   fetch(API_URL,{
     method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)
@@ -969,7 +1093,6 @@ setAccentColors('부산');
 const now=new Date();currentYear=now.getFullYear();currentMonth=now.getMonth()+1;
 renderCalendar();
 loadData();
-loadHolidays();
 </script>
 </body>
 </html>
