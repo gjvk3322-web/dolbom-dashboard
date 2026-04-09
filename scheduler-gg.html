@@ -1497,8 +1497,15 @@ bar.style.display='block';
 const encoded=encodeURIComponent(naviAddr);
 const webUrl='https://map.naver.com/v5/search/'+encoded;
 const isAndroid=/Android/i.test(navigator.userAgent);
+const isPWA=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
 if(isAndroid){
-location.href='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+const intentUrl='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+if(isPWA){
+// PWA에서는 <a target=_blank>로 외부 브라우저 경유
+const a=document.createElement('a');a.href=intentUrl;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);
+}else{
+location.href=intentUrl;
+}
 }else{
 const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
 const start=Date.now();

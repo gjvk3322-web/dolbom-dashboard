@@ -1494,11 +1494,15 @@ bar.style.display='block';
 const encoded=encodeURIComponent(naviAddr);
 const webUrl='https://map.naver.com/v5/search/'+encoded;
 const isAndroid=/Android/i.test(navigator.userAgent);
+const isPWA=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
 if(isAndroid){
-// 안드로이드: intent 스킴 → 앱 없으면 자동 웹 폴백
-location.href='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+const intentUrl='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+if(isPWA){
+const a=document.createElement('a');a.href=intentUrl;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),100);
 }else{
-// iOS 등: 기존 방식
+location.href=intentUrl;
+}
+}else{
 const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
 const start=Date.now();
 location.href=appUrl;
