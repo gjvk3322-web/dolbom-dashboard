@@ -349,6 +349,8 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 // Firebase 실시간 리스너 (배치 렌더링으로 깜빡임 방지)
 let isAssigning=false;
 let lastManualEdit=0;
+let syncStatus='idle';
+function getSyncBadge(){return syncStatus==='syncing'?'<span style="font-size:9px;color:#FFB300;margin-left:4px">🟡저장중</span>':syncStatus==='success'?'<span style="font-size:9px;color:#4CAF50;margin-left:4px">🟢저장</span>':syncStatus==='error'?'<span style="font-size:9px;color:#e53935;margin-left:4px;cursor:pointer" onclick="syncToSheet()">🔴실패</span>':''}
 
 // ===== 당번 모드 (PIN 잠금) =====
 const ADMIN_PIN='1123';
@@ -490,6 +492,7 @@ sheetSyncTimer=setTimeout(()=>{
   });
   if(!data.length)return;
   // Apps Script로 전송
+  syncStatus='syncing';renderAll();
   console.log('[sheet-sync] 전송 데이터:',data.slice(0,3),'...총',data.length+'건');
   fetch(SHEET_REPORT_URL,{
     method:'POST',
@@ -497,7 +500,9 @@ sheetSyncTimer=setTimeout(()=>{
     body:JSON.stringify({action:'updateAssignments',data,gid:'144225567'})
   }).then(r=>r.text()).then(t=>{
     console.log('[sheet-sync] 응답:',t);
-  }).catch(e=>console.log('[sheet-sync] error:',e));
+    syncStatus=t.includes('OK')?'success':'error';renderAll();
+    if(syncStatus==='success')setTimeout(()=>{syncStatus='idle';renderAll()},3000);
+  }).catch(e=>{console.log('[sheet-sync] error:',e);syncStatus='error';renderAll();});
 },2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
 }
 
@@ -1656,7 +1661,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:(Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'');const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:(Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'');const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
