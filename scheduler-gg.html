@@ -454,7 +454,9 @@ if(sheetSyncTimer)clearTimeout(sheetSyncTimer);
 sheetSyncTimer=setTimeout(()=>{
   const data=[];
   J.forEach(j=>{
+    if(j.offOnly)return;
     if(!j.addr||!j.addr.trim())return;
+    if(!j.date)return;
     const crew=A[j.id];
     if(!crew||!crew.length)return;
     // 사수/부사수 분리: 팀설정에서 첫번째=사수, 나머지=부사수
