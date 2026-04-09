@@ -418,6 +418,7 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 let lastAHash='';
 function aHash(obj){return JSON.stringify(obj||{})}
+let fbLoaded={a:false,lock:false,skip:false};
 let fbPending=false;
 function fbRender(){
   if(fbPending||isAssigning)return;
@@ -433,13 +434,13 @@ db.ref('gg_assignments').on('value',snap=>{
   const h=aHash(v);
   if(h===lastAHash)return;
   lastAHash=h;
-  A=v;fbRender()
+  A=v;fbLoaded.a=true;fbRender()
 });
 db.ref('gg_confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
 db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
 db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
-db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v)SKIP=new Set(v);else SKIP=new Set();});
-db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v)LOCK=new Set(v);else LOCK=new Set();fbRender()});
+db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))SKIP=new Set(Object.keys(v));else if(Array.isArray(v))SKIP=new Set(v);else SKIP=new Set();fbLoaded.skip=true;});
+db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))LOCK=new Set(Object.keys(v));else if(Array.isArray(v))LOCK=new Set(v);else LOCK=new Set();fbLoaded.lock=true;fbRender()});
 
 let VEHICLES={}; // {준형: "804서 6771", ...}
 db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
@@ -660,6 +661,7 @@ return null;
 async function autoAssign(){
 isAssigning=true;
 toast('⏳ 자동 배정 중...','ok');
+const _snapA=JSON.parse(JSON.stringify(A));
 
 // 거리 계산
 for(const j of J){if(j.addr&&!j.offOnly&&!j.dist){j.dist=await calcDist(j.addr)}}
@@ -990,8 +992,13 @@ if(unassigned.length){
 }}
 
 
-fbSave('gg_assignments',A);lastAHash=aHash(A);syncToSheet();
 fbSave('gg_prevJobIds',J.map(j=>j.id));
+// 변경된 건만 개별 저장 (다른 사용자 배정 덮어쓰기 방지)
+const _changes={};
+Object.keys(A).forEach(k=>{if(JSON.stringify(A[k])!==JSON.stringify(_snapA[k]))_changes[k]=A[k]});
+Object.keys(_snapA).forEach(k=>{if(!A[k])_changes[k]=null});
+if(Object.keys(_changes).length)db.ref('gg_assignments').update(_changes);
+lastAHash=aHash(A);syncToSheet();
 //console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
 toast('✅ 자동 배정 완료!','ok');
 renderAll();
@@ -1013,8 +1020,8 @@ A[jobId]=[...cur,emp].sort(hdSort);
 A[jobId]=[emp];
 }
 // 수동 배정하면 SKIP 해제
-if(SKIP.has(jobId)){SKIP.delete(jobId);fbSave('gg_skipJobs',[...SKIP])}
-fbSave('gg_assignments',A);lastAHash=aHash(A);syncToSheet();
+if(SKIP.has(jobId)){SKIP.delete(jobId);db.ref('gg_skipJobs/'+jobId).remove()}
+db.ref('gg_assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('✅ 배정 업데이트','ok');renderAll()}
 
@@ -1023,8 +1030,8 @@ function unassign(jobId){
 if(!requireAdmin())return;
 delete A[jobId];
 SKIP.add(jobId);
-fbSave('gg_skipJobs',[...SKIP]);
-fbSave('gg_assignments',A);lastAHash=aHash(A);syncToSheet();
+db.ref('gg_skipJobs/'+jobId).set(true);
+db.ref('gg_assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
 // 재배정 방지: 2초간 자동배정 차단
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
@@ -1033,13 +1040,13 @@ toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
 function lockJob(jobId){
 if(!A[jobId]||A[jobId].length<2){toast('2인 배정 후 확정 가능','ok');return}
 LOCK.add(jobId);
-fbSave('gg_lockedJobs',[...LOCK]);
+db.ref('gg_lockedJobs/'+jobId).set(true);
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('🔒 배정 확정!','ok');renderAll()}
 
 function unlockJob(jobId){
 LOCK.delete(jobId);
-fbSave('gg_lockedJobs',[...LOCK]);
+db.ref('gg_lockedJobs/'+jobId).remove();
 toast('🔓 확정 해제','ok');renderAll()}
 
 // ===== 시공보고서 =====
@@ -2391,18 +2398,23 @@ A[j.id]=A[j.id].filter(e=>!offs.has(e));
 if(A[j.id].length===0)delete A[j.id];
 if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
-if(changed){fbSave('gg_assignments',A);lastAHash=aHash(A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
+if(changed){const _ch={};J.forEach(j=>{const offs=dateOffs[j.date];if(offs&&offs.size){_ch[j.id]=A[j.id]||null}});if(Object.keys(_ch).length)db.ref('gg_assignments').update(_ch);lastAHash=aHash(A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
 
 // 1인 배정 자동 수정 + 주소 없는 건 배정 제거
 const realJ=J.filter(j=>!j.offOnly);
 let badAssign=false;
+const _badCh={};
 realJ.forEach(j=>{
 // 주소 없는 건은 배정 제거
-if(A[j.id]&&(!j.addr||!j.addr.trim())){delete A[j.id];badAssign=true}
+if(A[j.id]&&(!j.addr||!j.addr.trim())){_badCh[j.id]=null;delete A[j.id];badAssign=true}
 // 1인 배정은 제거 → 대기로 (단, 시트에서 사수/부사수가 지정된 건은 유지)
-if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){delete A[j.id];badAssign=true}
+if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){_badCh[j.id]=null;delete A[j.id];badAssign=true}
 });
-if(badAssign){fbSave('gg_assignments',A);lastAHash=aHash(A)}
+if(badAssign){if(Object.keys(_badCh).length)db.ref('gg_assignments').update(_badCh);lastAHash=aHash(A)}
+
+// Firebase LOCK/SKIP 로드 대기 (최대 5초)
+if(!fbLoaded.lock||!fbLoaded.skip||!fbLoaded.a){
+await new Promise(r=>{const c=setInterval(()=>{if(fbLoaded.lock&&fbLoaded.skip&&fbLoaded.a){clearInterval(c);r()}},100);setTimeout(()=>{clearInterval(c);r()},5000)})}
 
 // 미배정 건 또는 1인 배정(사수만, 부사수 필요)이 있으면 자동 배정 실행
 const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
@@ -2492,7 +2504,7 @@ if(!confirm(msg))return;
 const lockedA={};
 LOCK.forEach(id=>{if(A[id])lockedA[id]=A[id]});
 A=lockedA;
-SKIP=new Set();fbSave('gg_skipJobs',[]);
+SKIP=new Set();db.ref('gg_skipJobs').set(null);
 toast('⏳ 재배정 중...','ok');
 await autoAssign();
 toast('✅ 재배정 완료!','ok');
