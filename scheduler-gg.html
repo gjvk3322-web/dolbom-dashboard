@@ -419,11 +419,12 @@ document.addEventListener('DOMContentLoaded',function(){
 let lastAHash='';
 function aHash(obj){return JSON.stringify(obj||{})}
 let fbLoaded={a:false,lock:false,skip:false};
+let currentTab='sched';
 let fbPending=false;
 function fbRender(){
   if(fbPending||isAssigning)return;
   fbPending=true;
-  setTimeout(()=>{fbPending=false;if(n==='month')renderMonth();
+  setTimeout(()=>{fbPending=false;if(currentTab==='month')renderMonth();
 renderAll()},300);
 }
 db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
@@ -2093,6 +2094,7 @@ function deleteCar(idx){
 
 // ===== Nav =====
 function sw(n){
+currentTab=n;
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
