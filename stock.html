@@ -154,13 +154,58 @@ function renderIncoming(){
   document.getElementById('bl').innerHTML=`📥 <b>${team} 입고</b>`;
   const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='입고 기록 저장';sb.className='btn btn-in';sb.onclick=submitIn;calc('in')}
 
-function renderSummary(){
+// 시공기준표 (평수별 센터 박스수)
+const STD={
+  '500':{25:9,30:10,35:12},
+  '1000_22':{25:7,30:8,35:9},
+  '1000_17':{25:5,30:6,35:6}
+};
+let stockCache=null;
+
+async function fetchStockData(){
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:team})});
+    const d=await r.json();stockCache=d;return d;
+  }catch(e){return null}
+}
+
+async function renderSummary(){
   let h=renderTabs();const T=TEAMS[team];
   const submitted=T.locs.filter(l=>{const d=fbInvData[fk(l)];return d&&d.time});const pending=T.locs.filter(l=>!submitted.includes(l));
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
+
+  // 재고조사 합산
   const totals={};T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data)Object.entries(d.data).forEach(([k,v])=>{totals[k]=(totals[k]||0)+v})});
   let gs=0;
+
+  // 시공 데이터 로딩 표시
+  h+=`<div id="stockLoading" style="text-align:center;padding:12px;font-size:12px;color:var(--dim)">📡 시공 데이터 로딩 중...</div>`;
+  document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
+
+  // 시공+입고 데이터 가져오기
+  const sd=await fetchStockData();
+  h=renderTabs();
+  if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
+  if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
+
+  // 시공 소모량 집계
+  let consumeBoxes={},consumeJobs=0;
+  if(sd&&sd.consumption){
+    consumeJobs=sd.consumption.length;
+    sd.consumption.forEach(c=>{
+      const pid=c.product==='500매트 22T'?'500':(c.product==='1000매트 22T'?'1000_22':'1000_17');
+      const sqm=c.sqm||30;const sqmK=sqm<=27?25:(sqm<=32?30:35);
+      const std=STD[pid]?STD[pid][sqmK]:10;
+      const key=pid+'_센터';
+      consumeBoxes[key]=(consumeBoxes[key]||0)+std;
+      // 사이드
+      const sKey=pid+'_사이드';
+      consumeBoxes[sKey]=(consumeBoxes[sKey]||0)+(pid==='500'?(sqmK>=30?2:1):1);
+    });
+  }
+
+  // 제품별 테이블
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
@@ -170,9 +215,43 @@ function renderSummary(){
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
       TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}">${v}</div>`});h+=`</div>`});h+=`</div>`});
+
+  // 사무실 메모
   const om=fbInvData[fk('사무실')]?.memo;
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
-  h+=`<div class="sum-card"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 종합 재고</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
+
+  // 종합 재고 카드
+  h+=`<div class="sum-card"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 재고조사 합계</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
+
+  // 최근 7일 시공 소모량
+  if(sd){
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">🔧 최근 7일 시공 소모</span><span style="font-size:12px;color:var(--dim)">${consumeJobs}건</span></div>`;
+    if(consumeJobs>0){
+      h+=`<div style="padding:10px 14px">`;
+      PR.forEach(p=>{
+        const cKey=p.id+'_센터',sKey=p.id+'_사이드';
+        const cb=consumeBoxes[cKey]||0,sb=consumeBoxes[sKey]||0;
+        if(cb>0||sb>0){
+          h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span style="color:var(--dim)">${p.name} ${p.badge}</span><span style="color:var(--red);font-weight:700">-${cb}센터 -${sb}사이드</span></div>`;
+        }
+      });
+      h+=`</div>`;
+    }else{h+=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dim)">시공 데이터 없음</div>`}
+    h+=`</div>`;
+
+    // 입고 기록
+    if(sd.incoming&&sd.incoming.length>0){
+      h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+      h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📥 최근 입고</div>`;
+      h+=`<div style="padding:10px 14px">`;
+      sd.incoming.forEach(i=>{
+        h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date} ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`;
+      });
+      h+=`</div></div>`;
+    }
+  }
+
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none'}
 
 function buildTable(pfx,ex){let h='';PR.forEach(p=>{
