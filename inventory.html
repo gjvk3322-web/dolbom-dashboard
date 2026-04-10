@@ -170,8 +170,9 @@ function renderTeamSelect(){
 function renderInput(){
   const T=TEAMS[team],tc=T.color;
   const dc=Object.keys(fbData).filter(k=>fbData[k]&&fbData[k].time).length,tl=T.locs.length;
-  let h=`<div class="hd"><h1><b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
-  h+=`<div class="team-badge team-badge-${tc}" onclick="team=null;loc=null;if(fbRef)fbRef.off();fbData={};render()">${team} ✕</div>`;
+  const tColor=tc==='busan'?'var(--red)':'var(--blue)';
+  let h=`<div class="hd"><h1 style="color:${tColor}">${team} <b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
+  h+=`<div class="team-badge team-badge-${tc}" onclick="team=null;loc=null;if(fbRef)fbRef.off();fbData={};render()">← 팀 변경</div>`;
   h+=`<div class="mode"><div class="mode-btn on" onclick="setMode('input')">📝 입력</div><div class="mode-btn" onclick="setMode('summary')">📊 종합</div></div>`;
   h+=`<div class="progress"><div class="prog-row"><span>완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%;background:${tc==='busan'?'var(--red)':'var(--blue)'}"></div></div></div>`;
 
@@ -219,8 +220,9 @@ function renderInput(){
 
 function renderSummary(){
   const T=TEAMS[team],tc=T.color;
-  let h=`<div class="hd"><h1><b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
-  h+=`<div class="team-badge team-badge-${tc}" onclick="team=null;loc=null;if(fbRef)fbRef.off();fbData={};render()">${team} ✕</div>`;
+  const tColor=tc==='busan'?'var(--red)':'var(--blue)';
+  let h=`<div class="hd"><h1 style="color:${tColor}">${team} <b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
+  h+=`<div class="team-badge team-badge-${tc}" onclick="team=null;loc=null;if(fbRef)fbRef.off();fbData={};render()">← 팀 변경</div>`;
   h+=`<div class="mode"><div class="mode-btn" onclick="setMode('input')">📝 입력</div><div class="mode-btn on" onclick="setMode('summary')">📊 종합</div></div>`;
 
   const submitted=T.locs.filter(l=>{const d=fbData[fk(l)];return d&&d.time});
