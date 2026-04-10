@@ -149,7 +149,7 @@ function renderIncoming(){
   let h=renderTabs();
   h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:12px">📥 오늘 ${team}에 입고된 수량을 입력하세요</div>`;
   h+=buildTable('in',null);
-  h+=`<div class="memo-sec"><div class="memo-hd">📝 비고</div><div class="memo-bd"><textarea class="memo" id="inMemo" placeholder="파손, 불량, 특이사항 등"></textarea></div></div>`;
+  h+=`<div class="memo-sec"><div class="memo-hd">📝 비고</div><div class="memo-bd"><textarea class="memo" id="inMemo" placeholder=""></textarea></div></div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='block';
   document.getElementById('bl').innerHTML=`📥 <b>${team} 입고</b>`;
   const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='입고 기록 저장';sb.className='btn btn-in';sb.onclick=submitIn;calc('in')}
@@ -223,11 +223,26 @@ async function renderSummary(){
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
 
   // 종합 재고 카드
-  h+=`<div class="sum-card"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 재고조사 합계</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
+  let totalConsumeSheets=0;
+  if(sd&&!sd.error&&sd.consumption){
+    sd.consumption.forEach(c=>{
+      const pid=c.product==='500매트 22T'?'500':(c.product==='1000매트 22T'?'1000_22':'1000_17');
+      const bpb=pid==='500'?12:(pid==='1000_22'?4:6);
+      const sqm=c.sqm||30;const sqmK=sqm<=27?25:(sqm<=32?30:35);
+      const std=STD[pid]?STD[pid][sqmK]:10;
+      const side=pid==='500'?(sqmK>=30?2:1):1;
+      totalConsumeSheets+=(std+side)*bpb;
+    });
+  }
+  h+=`<div class="sum-card"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 재고조사 합계</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div>`;
+  if(totalConsumeSheets>0){
+    h+=`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);font-size:12px;color:var(--dim)">7일 시공 소모: <span style="color:var(--red);font-weight:700">-${totalConsumeSheets.toLocaleString()}장</span></div>`;
+  }
+  h+=`</div>`;
 
   // 최근 7일 시공 소모량
   if(sd&&sd.error){
-    h+=`<div style="margin-top:4px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ API 오류: ${String(sd.error).substring(0,200)}</div>`;
+    h+=`<div style="margin-top:4px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
   }else if(sd){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">🔧 최근 7일 시공 소모</span><span style="font-size:12px;color:var(--dim)">${consumeJobs}건</span></div>`;
