@@ -259,6 +259,21 @@ async function renderSummary(){
     }else{h+=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dim)">시공 데이터 없음</div>`}
     h+=`</div>`;
 
+    // 로스율
+    const tSold=sd.totalSold||0,tTheory=sd.totalTheory||0;
+    if(tSold>0||tTheory>0){
+      const loss=tSold-tTheory;const lossRate=tTheory>0?Math.round((loss/tTheory)*100):0;
+      const isLoss=loss>0;
+      h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+      h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📊 로스율 (최근 7일)</div>`;
+      h+=`<div style="padding:14px">`;
+      h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span style="color:var(--dim)">이론 소모량 (기준표)</span><span style="font-weight:700">${tTheory.toLocaleString()}장</span></div>`;
+      h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span style="color:var(--dim)">실제 판매량 (시공보고서)</span><span style="font-weight:700">${tSold.toLocaleString()}장</span></div>`;
+      h+=`<div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:13px;border-top:.5px solid var(--border);margin-top:6px"><span style="font-weight:700">로스</span><span style="font-weight:800;color:${isLoss?'var(--red)':'var(--accent)'}">${isLoss?'+':''}${loss.toLocaleString()}장 (${lossRate>0?'+':''}${lossRate}%)</span></div>`;
+      if(tSold===0)h+=`<div style="font-size:11px;color:var(--dim);margin-top:6px">⚠️ 시공보고서 미제출 건이 있을 수 있어요</div>`;
+      h+=`</div></div>`;
+    }
+
     // 입고 기록
     if(sd.incoming&&sd.incoming.length>0){
       h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
