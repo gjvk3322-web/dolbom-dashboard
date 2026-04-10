@@ -236,7 +236,6 @@ localStorage.setItem('dolbom_region','gg');
 <div class="pane" id="p-team"><div id="teamView"></div></div>
 <div class="pane" id="p-fair"><div id="fairView"></div></div>
 <div class="pane" id="p-car"><div id="carView"></div></div>
-<div class="pane" id="p-inv"><div id="invView"></div></div>
 
 <nav class="nav">
     <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
@@ -244,7 +243,6 @@ localStorage.setItem('dolbom_region','gg');
     <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
     <a onclick="sw('car')" href="#"><span>🚗</span>차량</a>
     <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
-    <a onclick="sw('inv')" href="#"><span>🧮</span>재고</a>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -2117,10 +2115,9 @@ currentTab=n;
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
-const tabs=['sched','month','team','car','fair','inv'];
+const tabs=['sched','month','team','car','fair'];
 document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
 if(n==='month')renderMonth();
-if(n==='inv')renderInventory();
 renderAll()}
 
 let renderTimer=null;
@@ -2655,47 +2652,6 @@ document.addEventListener('visibilitychange',()=>{
     setTimeout(()=>{window.scrollBy(0,1);window.scrollBy(0,-1)},100);
   }
 });
-
-// ===== 재고조사 탭 =====
-const INV_TEAM='경기';
-const INV_CL={'모던':'#5b8def','마블':'#a78bfa','코튼':'#34d399','베이지':'#d4a574'};
-const INV_TY=['센터','사이드','코너','10T'];
-const INV_PR=[{id:'500',name:'500매트',badge:'22T',colors:['모던','마블','코튼']},{id:'1000_22',name:'1000매트',badge:'22T',colors:['모던','베이지']},{id:'1000_17',name:'1000매트',badge:'17T',colors:['모던','베이지']}];
-let invLoc=null,invProd='500';
-function renderInventory(){
-const v=document.getElementById('invView');if(!v)return;
-const plates=Object.keys(VEHICLES);
-const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
-let h=`<div style="padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:18px;font-weight:800">🧮 재고조사</div><div style="font-size:12px;color:var(--dim);background:var(--card);padding:4px 12px;border-radius:16px">${mm}.${dd} (${dow})</div></div>`;
-h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"><div style="padding:9px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid ${invLoc==='사무실'?'var(--blue)':'var(--border)'};background:${invLoc==='사무실'?'var(--blue)':'var(--card)'};color:${invLoc==='사무실'?'#fff':'var(--dim)'}" onclick="pickInvLoc('사무실')">🏢 사무실</div>`;
-plates.forEach(p=>{h+=`<div style="padding:9px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid ${invLoc===p?'var(--blue)':'var(--border)'};background:${invLoc===p?'var(--blue)':'var(--card)'};color:${invLoc===p?'#fff':'var(--dim)'}" onclick="pickInvLoc('${p}')">🚛 ${p}</div>`});
-h+=`</div>`;
-if(!invLoc){v.innerHTML=h+`<div style="text-align:center;padding:40px;color:var(--dim);font-size:14px;line-height:1.6">👆 위에서 <b>사무실</b> 또는 <b>차량</b>을 선택하세요</div></div>`;return}
-h+=`<div style="display:flex;gap:6px;margin-bottom:12px">`;
-INV_PR.forEach(p=>{h+=`<div style="padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid ${invProd===p.id?'var(--blue)':'var(--border)'};background:${invProd===p.id?'#1e293b':'var(--card)'};color:${invProd===p.id?'var(--blue)':'var(--dim)'}" onclick="invProd='${p.id}';renderInventory()">${p.name} <span style="opacity:.5">${p.badge}</span></div>`});
-h+=`</div>`;
-const prod=INV_PR.find(p=>p.id===invProd);
-prod.colors.forEach(c=>{const ci=prod.id+'_'+c;
-h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:.5px solid var(--border)"><div style="width:10px;height:10px;border-radius:50%;background:${INV_CL[c]}"></div><div style="font-size:15px;font-weight:700;flex:1">${c}</div><div style="font-size:17px;font-weight:800;color:var(--accent)" id="invCt_${ci}">0<i style="font-style:normal;font-size:11px;font-weight:500;color:var(--dim)">장</i></div></div>`;
-INV_TY.forEach(t=>{const si=ci+'_'+t;
-h+=`<div style="display:grid;grid-template-columns:48px 1fr;align-items:center;padding:10px 14px;border-bottom:.5px solid rgba(255,255,255,.03)"><div style="font-size:14px;font-weight:600">${t}</div><input type="number" inputmode="numeric" id="inv_${si}" placeholder="0" oninput="calcInv()" style="width:100%;height:42px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:18px;font-weight:700;text-align:center;outline:none;-webkit-appearance:none"></div>`});
-h+=`</div>`});
-h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden"><div style="padding:12px 14px;font-size:14px;font-weight:700;border-bottom:.5px solid var(--border)">📝 특이사항</div><div style="padding:12px 14px"><textarea id="invMemo" placeholder="파손, 오염, 부족 등" style="width:100%;height:52px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;padding:10px 12px;outline:none;resize:none;font-family:var(--font)"></textarea></div></div>`;
-h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px"><div style="font-size:13px;color:var(--dim)">📍 ${INV_TEAM} ${invLoc==='사무실'?'사무실':invLoc}</div><div style="font-size:13px;color:var(--dim)">합계 <span style="color:var(--accent);font-size:20px;font-weight:800" id="invGt">0</span>장</div></div>`;
-h+=`<button onclick="submitInv()" style="width:100%;padding:14px;background:var(--accent);border:none;border-radius:14px;font-size:16px;font-weight:800;color:#000;cursor:pointer;font-family:var(--font)">제출하기</button></div>`;
-v.innerHTML=h}
-function pickInvLoc(l){invLoc=l;renderInventory()}
-function calcInv(){let g=0;INV_PR.forEach(p=>{p.colors.forEach(c=>{let cs=0;INV_TY.forEach(t=>{cs+=(parseInt(document.getElementById('inv_'+p.id+'_'+c+'_'+t)?.value)||0)});g+=cs;const e=document.getElementById('invCt_'+p.id+'_'+c);if(e)e.innerHTML=cs+'<i style="font-style:normal;font-size:11px;font-weight:500;color:var(--dim)">장</i>'})});const e=document.getElementById('invGt');if(e)e.textContent=g.toLocaleString()}
-async function submitInv(){if(!invLoc){toast('위치를 선택하세요','ok');return}
-const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0');
-const data={action:'inventory',team:INV_TEAM,location:invLoc,date:now.getFullYear()+'-'+mm+'-'+dd,items:[],memo:document.getElementById('invMemo')?.value||''};
-INV_PR.forEach(p=>{p.colors.forEach(c=>{INV_TY.forEach(t=>{const v=parseInt(document.getElementById('inv_'+p.id+'_'+c+'_'+t)?.value)||0;if(v>0)data.items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v})})})});
-try{await fetch(SHEET_REPORT_URL,{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'text/plain'}});
-let txt=mm+dd+' '+INV_TEAM+' '+(invLoc==='사무실'?'사무실':invLoc)+'\n\n';
-INV_PR.forEach(p=>{let has=false,sec='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{INV_TY.forEach(t=>{const v=parseInt(document.getElementById('inv_'+p.id+'_'+c+'_'+t)?.value)||0;if(v>0){sec+=c+'('+t+') : '+v+'\n';has=true}})});if(has)txt+=sec+'\n'});
-if(data.memo)txt+='특이사항: '+data.memo+'\n';
-try{await navigator.clipboard.writeText(txt)}catch(e){}
-toast('✅ 시트 저장 + 클립보드 복사 완료!','ok')}catch(e){toast('제출 실패: '+e.message,'err')}}
 </script>
 </body>
 </html>
