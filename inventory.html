@@ -6,61 +6,54 @@
 <title>재고조사</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" rel="stylesheet">
 <style>
-:root{--bg:#09090b;--card:#141416;--border:#262628;--text:#f4f4f5;--dim:#71717a;--accent:#22c55e;--blue:#3b82f6;--orange:#f59e0b}
+:root{--bg:#09090b;--card:#141416;--border:#262628;--text:#f4f4f5;--dim:#71717a;--accent:#22c55e;--blue:#3b82f6}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
-
-.wrap{padding:16px 12px 100px;max-width:500px;margin:0 auto}
-
-/* 헤더 */
-.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.wrap{padding:16px 10px 110px;max-width:500px;margin:0 auto}
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .hd h1{font-size:18px;font-weight:800}
 .hd h1 b{color:var(--accent)}
 .badge{font-size:11px;color:var(--dim);background:var(--card);padding:4px 10px;border-radius:12px}
 
-/* 위치 선택 */
-.loc{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
-.loc-btn{padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--dim);transition:all .15s}
+.progress{background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.prog-row{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px}
+.prog-row b{color:var(--accent)}
+.prog-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+
+.loc{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.loc-btn{padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--dim);transition:all .15s;position:relative}
 .loc-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.loc-btn.done{border-color:#1a3a1a;background:#0d1f0d;color:var(--accent)}
+.loc-btn.done::after{content:'✓';position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--accent);color:#000;border-radius:50%;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.loc-time{display:block;font-size:9px;font-weight:500;color:var(--dim);margin-top:2px}
 
-/* 제품 테이블 */
-.ptitle{font-size:14px;font-weight:800;margin:16px 0 8px;padding-left:2px;display:flex;align-items:center;gap:6px}
-.ptitle .tag{font-size:11px;font-weight:600;color:var(--blue);background:#1e293b;padding:2px 8px;border-radius:6px}
+/* 제품 헤더 */
+.ph{display:flex;align-items:center;gap:6px;margin:14px 0 6px 2px}
+.ph-name{font-size:14px;font-weight:800}
+.ph-tag{font-size:10px;font-weight:600;color:var(--blue);background:#1e293b;padding:2px 7px;border-radius:5px}
+.ph-box{font-size:10px;color:var(--dim);margin-left:2px}
+.ph-sum{margin-left:auto;font-size:13px;font-weight:800;color:var(--accent)}
 
-.grid{background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:4px}
+/* 테이블 */
+.g{background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:4px}
+.g-hd{display:grid;grid-template-columns:54px repeat(4,1fr);border-bottom:.5px solid var(--border)}
+.g-hd div{padding:7px 0;text-align:center;font-size:10px;font-weight:700;color:var(--dim)}
+.g-hd div:first-child{text-align:left;padding-left:10px}
+.g-row{display:grid;grid-template-columns:54px repeat(4,1fr);align-items:center;border-bottom:.5px solid rgba(255,255,255,.03)}
+.g-row:last-child{border-bottom:none}
+.cl{padding:7px 0 7px 10px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.cd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ce{padding:4px 2px}
+.ce input{width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:15px;font-weight:700;text-align:center;outline:none;-webkit-appearance:none}
+.ce input:focus{border-color:var(--accent);background:#0a1a0a}
+.ce input::placeholder{color:#222}
 
-/* 헤더 행 */
-.grid-hd{display:grid;grid-template-columns:48px repeat(4,1fr);gap:0;border-bottom:.5px solid var(--border)}
-.grid-hd div{padding:8px 2px;text-align:center;font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.3px}
-.grid-hd div:first-child{text-align:left;padding-left:10px}
-
-/* 데이터 행 */
-.grid-row{display:grid;grid-template-columns:48px repeat(4,1fr);gap:0;align-items:center;border-bottom:.5px solid rgba(255,255,255,.03)}
-.grid-row:last-child{border-bottom:none}
-.grid-row .clabel{padding:8px 0 8px 10px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px}
-.cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.grid-row .cell{padding:5px 3px}
-.cell input{width:100%;height:36px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-weight:700;text-align:center;outline:none;-webkit-appearance:none}
-.cell input:focus{border-color:var(--accent);background:#0a1a0a}
-.cell input::placeholder{color:#2a2a2a}
-
-/* 소계 행 */
-.subtotal{display:flex;justify-content:flex-end;padding:4px 10px 8px;font-size:12px;color:var(--dim)}
-.subtotal b{color:var(--accent);margin-left:4px}
-
-/* 메모 */
-.memo-sec{margin-top:14px}
-.memo-label{font-size:13px;font-weight:700;margin-bottom:6px}
-.memo{width:100%;height:48px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;padding:10px;outline:none;resize:none;font-family:inherit}
-.memo:focus{border-color:var(--accent)}
-
-/* 하단 바 */
+/* 하단 */
 .bar{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,11,.96);backdrop-filter:blur(20px);border-top:.5px solid var(--border);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
 .bar-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.bar-loc{font-size:12px;color:var(--dim)}
-.bar-loc b{color:var(--blue)}
-.bar-n{font-size:12px;color:var(--dim)}
-.bar-n .n{color:var(--accent);font-size:18px;font-weight:800}
+.bar-loc{font-size:12px;color:var(--dim)}.bar-loc b{color:var(--blue)}
+.bar-n{font-size:12px;color:var(--dim)}.bar-n .n{color:var(--accent);font-size:18px;font-weight:800}
 .btn{width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;font-size:15px;font-weight:800;color:#000;cursor:pointer;font-family:inherit}
 .btn:active{transform:scale(.98);opacity:.9}
 .btn:disabled{background:var(--border);color:var(--dim)}
@@ -82,7 +75,7 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
     <div class="bar-loc" id="bl">위치를 선택하세요</div>
     <div class="bar-n">합계 <span class="n" id="gt">0</span>장</div>
   </div>
-  <button class="btn" id="sb" onclick="submit()" disabled>위치를 선택하세요</button>
+  <button class="btn" id="sbtn" onclick="submit()" disabled>위치를 선택하세요</button>
 </div>
 
 <div class="ov h" id="ov">
@@ -94,66 +87,75 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+firebase.initializeApp({databaseURL:'https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app'});
+const db=firebase.database();
+
 const TEAM='부산';
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 const LOCS=['사무실','802서2139','804서6771','821머1224'];
 const CL={'모던':'#3b82f6','마블':'#a855f7','코튼':'#22c55e','베이지':'#d4a574'};
 const TY=['센터','사이드','코너','10T'];
 const PR=[
-  {id:'500',name:'500매트',badge:'22T',colors:['모던','마블','코튼']},
-  {id:'1000_22',name:'1000매트',badge:'22T',colors:['모던','베이지']},
-  {id:'1000_17',name:'1000매트',badge:'17T',colors:['모던','베이지']}
+  {id:'500',name:'500매트',badge:'22T',bpb:12,colors:['모던','마블','코튼']},
+  {id:'1000_22',name:'1000매트',badge:'22T',bpb:4,colors:['모던','베이지']},
+  {id:'1000_17',name:'1000매트',badge:'17T',bpb:6,colors:['모던','베이지']}
 ];
 
-let loc=null;
+let loc=null,done={};
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
+const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
+
+const invRef=db.ref('inventory/'+dateKey+'/'+TEAM);
+invRef.on('value',snap=>{done=snap.val()||{};render()});
 
 function render(){
+  const dc=Object.keys(done).length,tl=LOCS.length;
   let h=`<div class="hd"><h1>🧮 <b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
+  h+=`<div class="progress"><div class="prog-row"><span>완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%"></div></div></div>`;
 
-  // 위치 선택
   h+=`<div class="loc">`;
   LOCS.forEach(l=>{
     const icon=l==='사무실'?'🏢':'🚛';
-    h+=`<div class="loc-btn ${loc===l?'on':''}" onclick="pickLoc('${l}')">${icon} ${l}</div>`;
+    const dk=l.replace(/[.#$/\[\]]/g,'_');
+    const isDone=done[dk];
+    const isOn=loc===l;
+    const cls=isOn?'on':(isDone?'done':'');
+    h+=`<div class="loc-btn ${cls}" onclick="pickLoc('${l}')">${icon} ${l}${isDone?'<span class="loc-time">'+isDone+'</span>':''}</div>`;
   });
   h+=`</div>`;
 
+  if(dc>=tl&&!loc){
+    h+=`<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">🎉</div><div style="font-size:16px;font-weight:700;margin-bottom:6px">오늘 재고조사 완료!</div><div style="font-size:13px;color:var(--dim)">모든 위치가 제출되었어요</div></div>`;
+    document.getElementById('app').innerHTML=h;return;
+  }
   if(!loc){
-    h+=`<div style="text-align:center;padding:60px 20px;color:var(--dim);font-size:14px">👆 위치를 먼저 선택하세요</div>`;
-    document.getElementById('app').innerHTML=h;
-    return;
+    h+=`<div style="text-align:center;padding:50px 20px;color:var(--dim);font-size:14px">👆 위치를 선택하세요</div>`;
+    document.getElementById('app').innerHTML=h;return;
   }
 
-  // 각 제품별 테이블
+  const dk=loc.replace(/[.#$/\[\]]/g,'_');
+  if(done[dk])h+=`<div style="text-align:center;padding:8px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${done[dk]}에 제출됨 · 다시 제출 시 덮어쓰기</div>`;
+
   PR.forEach(p=>{
-    h+=`<div class="ptitle">${p.name} <span class="tag">${p.badge}</span> <span style="margin-left:auto;font-size:13px;font-weight:800;color:var(--accent)" id="pt_${p.id}">0장</span></div>`;
-    h+=`<div class="grid">`;
-    h+=`<div class="grid-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum" id="ps_${p.id}">0장</span></div>`;
+    h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
     p.colors.forEach(c=>{
-      h+=`<div class="grid-row"><div class="clabel"><div class="cdot" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{
-        h+=`<div class="cell"><input type="number" inputmode="numeric" id="i_${p.id}_${c}_${t}" placeholder="0" oninput="calc()"></div>`;
-      });
+      h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
+      TY.forEach(t=>{h+=`<div class="ce"><input type="number" inputmode="numeric" id="i_${p.id}_${c}_${t}" placeholder="" oninput="calc()"></div>`});
       h+=`</div>`;
     });
     h+=`</div>`;
   });
 
-  // 메모
-  h+=`<div class="memo-sec"><div class="memo-label">📝 특이사항</div><textarea class="memo" id="mm" placeholder="파손, 부족 등"></textarea></div>`;
-
   document.getElementById('app').innerHTML=h;
 }
 
-function pickLoc(l){
-  loc=l;render();updBar();
-}
-
+function pickLoc(l){loc=l;render();updBar()}
 function updBar(){
-  const bl=document.getElementById('bl');
-  const sb=document.getElementById('sb');
+  const bl=document.getElementById('bl'),sb=document.getElementById('sbtn');
   if(!loc){bl.textContent='위치를 선택하세요';sb.disabled=true;sb.textContent='위치를 선택하세요'}
   else{bl.innerHTML=`📍 <b>${TEAM} ${loc}</b>`;sb.disabled=false;sb.textContent='제출하기'}
 }
@@ -161,43 +163,46 @@ function updBar(){
 function calc(){
   let grand=0;
   PR.forEach(p=>{
-    let ps=0;
-    p.colors.forEach(c=>{TY.forEach(t=>{
-      ps+=(parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0);
-    })});
-    grand+=ps;
-    const e=document.getElementById(`pt_${p.id}`);
-    if(e)e.textContent=ps+'장';
+    let boxes=0;
+    p.colors.forEach(c=>{TY.forEach(t=>{boxes+=(parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0)})});
+    const sheets=boxes*p.bpb;
+    grand+=sheets;
+    const e=document.getElementById(`ps_${p.id}`);
+    if(e)e.textContent=boxes+'박스 / '+sheets+'장';
   });
   document.getElementById('gt').textContent=grand.toLocaleString();
 }
 
 async function submit(){
   if(!loc)return;
-  const btn=document.getElementById('sb');
+  const btn=document.getElementById('sbtn');
   btn.disabled=true;btn.textContent='제출 중...';
-  const data={action:'inventory',team:TEAM,location:loc,date:now.getFullYear()+'-'+mm+'-'+dd,items:[],memo:document.getElementById('mm')?.value||''};
+  const data={action:'inventory',team:TEAM,location:loc,date:dateKey,items:[]};
   PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{
-    const v=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
-    if(v>0)data.items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v});
+    const boxes=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
+    if(boxes>0)data.items.push({product:p.name+' '+p.badge,color:c,type:t,qty:boxes,sheets:boxes*p.bpb});
   })})});
+
+  const hh=String(new Date().getHours()).padStart(2,'0'),mi=String(new Date().getMinutes()).padStart(2,'0');
   try{
     await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'text/plain'}});
+    const dk=loc.replace(/[.#$/\[\]]/g,'_');
+    await db.ref('inventory/'+dateKey+'/'+TEAM+'/'+dk).set(hh+':'+mi);
+
     let txt=mm+dd+' '+TEAM+' '+loc+'\n\n';
     PR.forEach(p=>{let has=false,sec='【'+p.name+' '+p.badge+'】\n';
       p.colors.forEach(c=>{TY.forEach(t=>{
-        const v=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
-        if(v>0){sec+=c+'('+t+') : '+v+'\n';has=true}
+        const b=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
+        if(b>0){sec+=c+'('+t+') : '+b+'박스('+b*p.bpb+'장)\n';has=true}
       })});if(has)txt+=sec+'\n'});
-    if(data.memo)txt+='특이사항: '+data.memo+'\n';
     try{await navigator.clipboard.writeText(txt)}catch(e){}
+
     document.getElementById('sm').textContent=`${TEAM} ${loc}\n시트 저장 + 클립보드 복사 완료!`;
     document.getElementById('ov').classList.remove('h');
+    loc=null;updBar();
   }catch(e){alert('실패: '+e.message)}
   btn.disabled=false;btn.textContent='제출하기';
 }
-
-render();
 </script>
 </body>
 </html>
