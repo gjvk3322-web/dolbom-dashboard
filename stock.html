@@ -165,8 +165,9 @@ let stockCache=null;
 async function fetchStockData(){
   try{
     const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:team})});
-    const d=await r.json();stockCache=d;return d;
-  }catch(e){return null}
+    const txt=await r.text();
+    try{const d=JSON.parse(txt);stockCache=d;return d;}catch(e){console.error('JSON parse error:',txt);return {error:txt}}
+  }catch(e){console.error('fetch error:',e);return {error:e.message}}
 }
 
 async function renderSummary(){
@@ -185,6 +186,7 @@ async function renderSummary(){
 
   // 시공+입고 데이터 가져오기
   const sd=await fetchStockData();
+  if(sd&&sd.error){console.error('API error:',sd.error)}
   h=renderTabs();
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
@@ -224,7 +226,9 @@ async function renderSummary(){
   h+=`<div class="sum-card"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 재고조사 합계</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
 
   // 최근 7일 시공 소모량
-  if(sd){
+  if(sd&&sd.error){
+    h+=`<div style="margin-top:4px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ API 오류: ${String(sd.error).substring(0,200)}</div>`;
+  }else if(sd){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">🔧 최근 7일 시공 소모</span><span style="font-size:12px;color:var(--dim)">${consumeJobs}건</span></div>`;
     if(consumeJobs>0){
