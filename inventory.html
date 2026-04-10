@@ -187,8 +187,8 @@ async function submit(){if(!loc)return;const btn=document.getElementById('sbtn')
   if(memo)txt+='필요용품: '+memo+'\n';
   try{await navigator.clipboard.writeText(txt)}catch(e){}
   fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:TEAM,location:loc,date:dateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).catch(()=>{});
-  document.getElementById('sm').textContent=`${TEAM} ${loc}\n저장 완료 + 클립보드 복사!`;document.getElementById('ov').classList.remove('h');
-  btn.disabled=false;btn.textContent='제출하기'}
+  toast('✅ '+TEAM+' '+loc+' 저장 완료!');
+  btn.disabled=false;btn.textContent='제출하기';updBar()}
 </script>
 </body>
 </html>
