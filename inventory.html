@@ -11,17 +11,23 @@
 body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
 .wrap{padding:16px 10px 110px;max-width:500px;margin:0 auto}
 .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.hd h1{font-size:18px;font-weight:800}
-.hd h1 b{color:var(--accent)}
+.hd h1{font-size:18px;font-weight:800}.hd h1 b{color:var(--accent)}
 .badge{font-size:11px;color:var(--dim);background:var(--card);padding:4px 10px;border-radius:12px}
 
+/* 모드 탭 */
+.mode{display:flex;gap:0;margin-bottom:14px;background:var(--card);border-radius:10px;overflow:hidden;border:.5px solid var(--border)}
+.mode-btn{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:var(--dim);transition:all .15s}
+.mode-btn.on{background:var(--accent);color:#000}
+
+/* 진행 */
 .progress{background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px}
 .prog-row{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px}
 .prog-row b{color:var(--accent)}
 .prog-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
 
-.loc{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+/* 위치 */
+.loc{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .loc-btn{padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--dim);transition:all .15s;position:relative}
 .loc-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
 .loc-btn.done{border-color:#1a3a1a;background:#0d1f0d;color:var(--accent)}
@@ -49,6 +55,15 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 .ce input:focus{border-color:var(--accent);background:#0a1a0a}
 .ce input::placeholder{color:#222}
 
+/* 종합 테이블 (읽기전용) */
+.g-row .rv{padding:7px 0;text-align:center;font-size:14px;font-weight:700;color:var(--text)}
+.g-row .rv.zero{color:#333}
+
+/* 종합 위치별 소계 */
+.loc-sub{font-size:11px;color:var(--dim);padding:4px 10px;border-bottom:.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
+.loc-sub span{display:flex;align-items:center;gap:3px}
+.loc-sub b{font-weight:700;color:var(--text)}
+
 /* 하단 */
 .bar{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,11,.96);backdrop-filter:blur(20px);border-top:.5px solid var(--border);padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
 .bar-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -70,7 +85,7 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 <body>
 <div class="wrap" id="app"></div>
 
-<div class="bar">
+<div class="bar" id="barEl">
   <div class="bar-row">
     <div class="bar-loc" id="bl">위치를 선택하세요</div>
     <div class="bar-n">합계 <span class="n" id="gt">0</span>장</div>
@@ -104,56 +119,159 @@ const PR=[
   {id:'1000_17',name:'1000매트',badge:'17T',bpb:6,colors:['모던','베이지']}
 ];
 
-let loc=null,done={};
+let loc=null,mode='input',fbData={};
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
 const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
 
-const invRef=db.ref('inventory/'+dateKey+'/'+TEAM);
-invRef.on('value',snap=>{done=snap.val()||{};render()});
+// Firebase 실시간 감지 (전체 데이터)
+db.ref('inventory/'+dateKey+'/'+TEAM).on('value',snap=>{
+  fbData=snap.val()||{};
+  render();
+});
+
+function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 
 function render(){
-  const dc=Object.keys(done).length,tl=LOCS.length;
+  if(mode==='summary') return renderSummary();
+  renderInput();
+}
+
+function renderInput(){
+  const dc=Object.keys(fbData).filter(k=>fbData[k]&&fbData[k].time).length;
+  const tl=LOCS.length;
   let h=`<div class="hd"><h1>🧮 <b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
+  
+  // 모드 탭
+  h+=`<div class="mode"><div class="mode-btn on" onclick="setMode('input')">📝 입력</div><div class="mode-btn" onclick="setMode('summary')">📊 종합</div></div>`;
+  
   h+=`<div class="progress"><div class="prog-row"><span>완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%"></div></div></div>`;
 
   h+=`<div class="loc">`;
   LOCS.forEach(l=>{
     const icon=l==='사무실'?'🏢':'🚛';
-    const dk=l.replace(/[.#$/\[\]]/g,'_');
-    const isDone=done[dk];
+    const dk=fk(l);
+    const d=fbData[dk];
+    const isDone=d&&d.time;
     const isOn=loc===l;
     const cls=isOn?'on':(isDone?'done':'');
-    h+=`<div class="loc-btn ${cls}" onclick="pickLoc('${l}')">${icon} ${l}${isDone?'<span class="loc-time">'+isDone+'</span>':''}</div>`;
+    h+=`<div class="loc-btn ${cls}" onclick="pickLoc('${l}')">${icon} ${l}${isDone?'<span class="loc-time">'+d.time+'</span>':''}</div>`;
   });
   h+=`</div>`;
 
-  if(dc>=tl&&!loc){
-    h+=`<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">🎉</div><div style="font-size:16px;font-weight:700;margin-bottom:6px">오늘 재고조사 완료!</div><div style="font-size:13px;color:var(--dim)">모든 위치가 제출되었어요</div></div>`;
-    document.getElementById('app').innerHTML=h;return;
-  }
   if(!loc){
-    h+=`<div style="text-align:center;padding:50px 20px;color:var(--dim);font-size:14px">👆 위치를 선택하세요</div>`;
-    document.getElementById('app').innerHTML=h;return;
+    if(dc>=tl){
+      h+=`<div style="text-align:center;padding:30px 20px"><div style="font-size:36px;margin-bottom:10px">🎉</div><div style="font-size:16px;font-weight:700;margin-bottom:6px">모든 위치 제출 완료!</div><div style="font-size:13px;color:var(--dim);margin-bottom:16px">종합 탭에서 전체 재고를 확인하세요</div><div style="display:inline-block;padding:10px 24px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer" onclick="setMode('summary')">📊 종합 재고 보기</div></div>`;
+    } else {
+      h+=`<div style="text-align:center;padding:50px 20px;color:var(--dim);font-size:14px">👆 위치를 선택하세요</div>`;
+    }
+    document.getElementById('app').innerHTML=h;
+    return;
   }
 
-  const dk=loc.replace(/[.#$/\[\]]/g,'_');
-  if(done[dk])h+=`<div style="text-align:center;padding:8px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${done[dk]}에 제출됨 · 다시 제출 시 덮어쓰기</div>`;
+  const dk=fk(loc);
+  const existing=fbData[dk];
+  if(existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨 · 다시 제출 시 덮어쓰기</div>`;
 
   PR.forEach(p=>{
     h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum" id="ps_${p.id}">0장</span></div>`;
     h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
     p.colors.forEach(c=>{
       h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{h+=`<div class="ce"><input type="number" inputmode="numeric" id="i_${p.id}_${c}_${t}" placeholder="" oninput="calc()"></div>`});
+      TY.forEach(t=>{
+        const key=p.id+'_'+c+'_'+t;
+        const prev=(existing&&existing.data&&existing.data[key])||'';
+        h+=`<div class="ce"><input type="number" inputmode="numeric" id="i_${key}" value="${prev}" placeholder="" oninput="calc()"></div>`;
+      });
       h+=`</div>`;
     });
     h+=`</div>`;
   });
 
   document.getElementById('app').innerHTML=h;
+  calc();
 }
 
-function pickLoc(l){loc=l;render();updBar()}
+function renderSummary(){
+  let h=`<div class="hd"><h1>🧮 <b>재고</b>조사</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
+  h+=`<div class="mode"><div class="mode-btn" onclick="setMode('input')">📝 입력</div><div class="mode-btn on" onclick="setMode('summary')">📊 종합</div></div>`;
+
+  // 제출된 위치 목록
+  const submitted=LOCS.filter(l=>{const d=fbData[fk(l)];return d&&d.time});
+  const pending=LOCS.filter(l=>!submitted.includes(l));
+  
+  h+=`<div style="margin-bottom:14px">`;
+  if(pending.length>0){
+    h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:6px">⏳ 미제출: <span style="color:#ef4444;font-weight:700">${pending.join(', ')}</span></div>`;
+  }
+  h+=`<div style="font-size:12px;color:var(--dim)">✅ 제출: <span style="color:var(--accent);font-weight:700">${submitted.length?submitted.map(l=>l+' ('+fbData[fk(l)].time+')').join(', '):'없음'}</span></div></div>`;
+
+  // 종합 데이터 계산
+  const totals={};
+  LOCS.forEach(l=>{
+    const d=fbData[fk(l)];
+    if(d&&d.data){
+      Object.entries(d.data).forEach(([k,v])=>{
+        totals[k]=(totals[k]||0)+v;
+      });
+    }
+  });
+
+  let grandSheets=0;
+
+  PR.forEach(p=>{
+    let pBoxes=0;
+    // 위치별 소계 계산
+    const locSubs={};
+    LOCS.forEach(l=>{
+      const d=fbData[fk(l)];
+      if(d&&d.data){
+        let lb=0;
+        p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});
+        if(lb>0)locSubs[l]=lb;
+      }
+    });
+
+    p.colors.forEach(c=>{TY.forEach(t=>{pBoxes+=(totals[p.id+'_'+c+'_'+t]||0)})});
+    const pSheets=pBoxes*p.bpb;
+    grandSheets+=pSheets;
+
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum">${pBoxes}박스 / ${pSheets}장</span></div>`;
+    h+=`<div class="g">`;
+    
+    // 위치별 소계
+    if(Object.keys(locSubs).length>0){
+      h+=`<div class="loc-sub">`;
+      Object.entries(locSubs).forEach(([l,b])=>{
+        h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}박스</b></span>`;
+      });
+      h+=`</div>`;
+    }
+    
+    h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
+    p.colors.forEach(c=>{
+      h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
+      TY.forEach(t=>{
+        const v=totals[p.id+'_'+c+'_'+t]||0;
+        h+=`<div class="rv ${v===0?'zero':''}">${v}</div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  });
+
+  // 최종 합계
+  h+=`<div style="text-align:center;margin:20px 0;padding:16px;background:var(--card);border-radius:12px;border:.5px solid var(--border)">
+    <div style="font-size:12px;color:var(--dim);margin-bottom:4px">종합 재고</div>
+    <div style="font-size:28px;font-weight:800;color:var(--accent)">${grandSheets.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div>
+  </div>`;
+
+  document.getElementById('app').innerHTML=h;
+  // 종합 모드에선 하단 바 숨기기
+  document.getElementById('barEl').style.display=mode==='summary'?'none':'block';
+}
+
+function setMode(m){mode=m;render();document.getElementById('barEl').style.display=m==='summary'?'none':'block'}
+function pickLoc(l){loc=l;mode='input';render();updBar();document.getElementById('barEl').style.display='block'}
 function updBar(){
   const bl=document.getElementById('bl'),sb=document.getElementById('sbtn');
   if(!loc){bl.textContent='위치를 선택하세요';sb.disabled=true;sb.textContent='위치를 선택하세요'}
@@ -162,14 +280,8 @@ function updBar(){
 
 function calc(){
   let grand=0;
-  PR.forEach(p=>{
-    let boxes=0;
-    p.colors.forEach(c=>{TY.forEach(t=>{boxes+=(parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0)})});
-    const sheets=boxes*p.bpb;
-    grand+=sheets;
-    const e=document.getElementById(`ps_${p.id}`);
-    if(e)e.textContent=boxes+'박스 / '+sheets+'장';
-  });
+  PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{pb+=(parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0)})});
+    grand+=pb*p.bpb;const e=document.getElementById(`ps_${p.id}`);if(e)e.textContent=pb+'박스 / '+pb*p.bpb+'장'});
   document.getElementById('gt').textContent=grand.toLocaleString();
 }
 
@@ -177,23 +289,33 @@ async function submit(){
   if(!loc)return;
   const btn=document.getElementById('sbtn');
   btn.disabled=true;btn.textContent='제출 중...';
-  const data={action:'inventory',team:TEAM,location:loc,date:dateKey,items:[]};
+
+  // 데이터 수집
+  const items=[],dataMap={};
   PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{
-    const boxes=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
-    if(boxes>0)data.items.push({product:p.name+' '+p.badge,color:c,type:t,qty:boxes,sheets:boxes*p.bpb});
+    const key=p.id+'_'+c+'_'+t;
+    const v=parseInt(document.getElementById(`i_${key}`)?.value)||0;
+    dataMap[key]=v;
+    if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb});
   })})});
 
-  const hh=String(new Date().getHours()).padStart(2,'0'),mi=String(new Date().getMinutes()).padStart(2,'0');
-  try{
-    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'text/plain'}});
-    const dk=loc.replace(/[.#$/\[\]]/g,'_');
-    await db.ref('inventory/'+dateKey+'/'+TEAM+'/'+dk).set(hh+':'+mi);
+  const hhmm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
+  const dk=fk(loc);
 
+  try{
+    // 1. 구글시트 저장
+    const sheetData={action:'inventory',team:TEAM,location:loc,date:dateKey,items:items};
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(sheetData),headers:{'Content-Type':'text/plain'}});
+
+    // 2. Firebase에 완료 + 데이터 저장
+    await db.ref('inventory/'+dateKey+'/'+TEAM+'/'+dk).set({time:hhmm,data:dataMap});
+
+    // 3. 카톡 복사
     let txt=mm+dd+' '+TEAM+' '+loc+'\n\n';
     PR.forEach(p=>{let has=false,sec='【'+p.name+' '+p.badge+'】\n';
       p.colors.forEach(c=>{TY.forEach(t=>{
-        const b=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
-        if(b>0){sec+=c+'('+t+') : '+b+'박스('+b*p.bpb+'장)\n';has=true}
+        const v=parseInt(document.getElementById(`i_${p.id}_${c}_${t}`)?.value)||0;
+        if(v>0){sec+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}
       })});if(has)txt+=sec+'\n'});
     try{await navigator.clipboard.writeText(txt)}catch(e){}
 
