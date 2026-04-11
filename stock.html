@@ -103,6 +103,7 @@ let team=null,loc=null,tab='inventory';
 let fbInvData={},fbInRef=null;
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
 const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
+const urlTeam=new URLSearchParams(window.location.search).get('team');
 function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function pickTeam(t){team=t;loc=null;if(fbInRef)fbInRef.off();fbInRef=db.ref('inventory/'+dateKey+'/'+team);fbInRef.on('value',snap=>{fbInvData=snap.val()||{};render()})}
@@ -296,7 +297,7 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
     toast('✅ '+team+' 입고 완료!')}catch(e){toast('실패')}
   btn.disabled=false;btn.textContent='입고 기록 저장'}
 
-render();
+if(urlTeam&&TEAMS[urlTeam]){pickTeam(urlTeam)}else if(urlTeam==='경기도'&&TEAMS['경기']){pickTeam('경기')}else{render()}
 </script>
 </body>
 </html>
