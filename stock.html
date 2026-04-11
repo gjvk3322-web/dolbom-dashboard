@@ -208,31 +208,66 @@ async function renderSummary(){
   const om=fbInvData[fk('사무실')]?.memo;
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
 
-  // 종합 재고 + 미래 예측 카드
+  // 제품별+색상별 현재 재고 계산
+  const prodColorStock={};
+  PR.forEach(p=>{
+    p.colors.forEach(c=>{
+      let sheets=0;
+      TY.forEach(t=>{sheets+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb});
+      if(sheets>0)prodColorStock[p.id+'_'+c]=sheets;
+    });
+  });
+
+  // 제품별+색상별 미래 소모 계산
+  const prodColorFuture={};
+  if(sd&&sd.futureList)sd.futureList.forEach(j=>{
+    const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
+    const c=j.color||'미정';
+    const key=pid+'_'+c;
+    if(!prodColorFuture[key])prodColorFuture[key]={n:0,s:0};
+    prodColorFuture[key].n++;prodColorFuture[key].s+=j.expected;
+  });
+
   const ft=sd&&!sd.error?sd.futureTotal||0:0;
   const fj=sd&&!sd.error?sd.futureJobs||0:0;
   const pj=sd&&!sd.error?sd.pastJobs||0:0;
   const remaining=gs-ft;
   const isShort=remaining<0;
 
+  // 전체 재고 카드
   h+=`<div class="sum-card">`;
-  h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 현재 재고</div>`;
+  h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고</div>`;
   h+=`<div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div>`;
   if(ft>0){
-    // 색상별 집계
-    const cs={};
-    if(sd&&sd.futureList)sd.futureList.forEach(j=>{const c=j.color||'미정';if(!cs[c])cs[c]={n:0,s:0};cs[c].n++;cs[c].s+=j.expected});
-    
-    h+=`<div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--border)">`;
-    h+=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span style="color:var(--dim)">다음 7일 예약 (${fj}건)</span><span style="color:var(--red);font-weight:700">-${ft.toLocaleString()}장</span></div>`;
-    // 색상별 표시
-    Object.entries(cs).forEach(([c,v])=>{
-      h+=`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0 2px 10px"><span style="color:var(--dim)"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c} ${v.n}건</span><span style="color:var(--dim)">-${v.s.toLocaleString()}장</span></div>`;
-    });
+    h+=`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--dim)">다음 7일 예약 (${fj}건)</span><span style="color:var(--red);font-weight:700">-${ft.toLocaleString()}장</span></div>`;
     h+=`<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border)"><span>예상 잔여</span><span style="color:${isShort?'var(--red)':'var(--accent)'}">${remaining.toLocaleString()}장</span></div>`;
     if(isShort)h+=`<div style="margin-top:6px;padding:8px 10px;background:#1a0505;border-radius:8px;font-size:12px;color:var(--red);font-weight:700;text-align:center">⚠️ 재고 부족 예상! 발주가 필요합니다</div>`;
-    h+=`</div>`;
   }
+  h+=`</div>`;
+
+  // 제품별+색상별 예상 잔여 카드
+  h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+  h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">🎨 제품·색상별 예상 잔여</div>`;
+  PR.forEach(p=>{
+    const hasData=p.colors.some(c=>prodColorStock[p.id+'_'+c]||prodColorFuture[p.id+'_'+c]);
+    if(!hasData&&!ft)return;
+    h+=`<div style="padding:8px 14px 2px;font-size:12px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${p.name} ${p.badge}</div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;font-size:10px;color:var(--dim);padding:4px 14px 2px"><span></span><span style="text-align:right">현재</span><span style="text-align:right">소모</span><span style="text-align:right">잔여</span></div>`;
+    p.colors.forEach(c=>{
+      const key=p.id+'_'+c;
+      const cur=prodColorStock[key]||0;
+      const fut=prodColorFuture[key]?prodColorFuture[key].s:0;
+      const cnt=prodColorFuture[key]?prodColorFuture[key].n:0;
+      const rem=cur-fut;
+      if(cur===0&&fut===0)return;
+      h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;font-size:13px;padding:4px 14px;align-items:center">`;
+      h+=`<span style="font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CL[c]};margin-right:4px"></span>${c}${cnt?' ('+cnt+')':''}</span>`;
+      h+=`<span style="text-align:right;color:var(--dim)">${cur.toLocaleString()}</span>`;
+      h+=`<span style="text-align:right;color:${fut>0?'var(--red)':'var(--dim)'}">${fut>0?'-'+fut.toLocaleString():'-'}</span>`;
+      h+=`<span style="text-align:right;font-weight:700;color:${rem<0?'var(--red)':'var(--accent)'}">${rem.toLocaleString()}</span>`;
+      h+=`</div>`;
+    });
+  });
   h+=`</div>`;
 
   // 다음 7일 예약 상세
@@ -278,7 +313,7 @@ function buildTable(pfx,ex){let h='';PR.forEach(p=>{
   h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
   p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
     TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const pv=(ex&&ex.data&&ex.data[k])||'';
-      h+=`<div class="ce ${pfx==='in'?'incoming':''}"><input type="number" inputmode="numeric" id="${pfx}_${k}" value="${pv}" oninput="calc('${pfx}')"></div>`});h+=`</div>`});h+=`</div>`});return h}
+      h+=`<div class="ce ${pfx==='in'?'incoming':''}"><input type="number" inputmode="numeric" min="0" id="${pfx}_${k}" value="${pv}" oninput="calc('${pfx}')"></div>`});h+=`</div>`});h+=`</div>`});return h}
 
 function calc(pfx){let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{pb+=(parseInt(document.getElementById(`${pfx}_${p.id}_${c}_${t}`)?.value)||0)})});g+=pb*p.bpb;
   const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=pb+'박스 / '+pb*p.bpb+'장'});document.getElementById('gt').textContent=g.toLocaleString()}
@@ -292,7 +327,7 @@ async function submitInv(){if(!loc||!team)return;const btn=document.getElementBy
   try{await db.ref('inventory/'+dateKey+'/'+team+'/'+fk(loc)).set(fb);toast('✅ '+team+' '+loc+' 저장!')}catch(e){toast('실패');btn.disabled=false;btn.textContent='재고 제출';return}
   let txt=mm+dd+' '+team+' '+loc+'\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:dateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).catch(()=>{});
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:dateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).then(r=>{if(!r.ok)toast('⚠️ 시트 저장 실패')}).catch(()=>toast('⚠️ 시트 저장 실패'));
   btn.disabled=false;btn.textContent='재고 제출'}
 
 async function submitIn(){if(!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
