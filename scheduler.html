@@ -488,7 +488,7 @@ sheetSyncTimer=setTimeout(()=>{
     const parts=j.id.split('_');
     const rowIdx=parseInt(parts[parts.length-1])+1;
     if(isNaN(rowIdx)||rowIdx<2)return;
-    data.push({row:rowIdx,sasu,busasu,vehicle:Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||'',date:j.date,address:j.addr,time:j.time});
+    data.push({row:rowIdx,sasu,busasu,vehicle:j.vehicle||(Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||''),date:j.date,address:j.addr,time:j.time});
   });
   if(!data.length)return;
   // Apps Script로 전송
