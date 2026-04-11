@@ -2055,6 +2055,7 @@ el.innerHTML=html;
 }
 
 function addCar(){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return;}
   const plate=document.getElementById('newPlate').value.trim();
   if(!plate){toast('차량번호를 입력하세요','ok');return;}
   if(VEHICLES[plate]!==undefined){toast('이미 등록된 차량이에요','ok');return;}
@@ -2065,6 +2066,7 @@ function addCar(){
 }
 
 function updateDriver(idx){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');renderCars();return;}
   const plates=Object.keys(VEHICLES);
   const plate=plates[idx];
   const driver=document.getElementById('drv_'+idx).value;
@@ -2076,7 +2078,12 @@ function updateDriver(idx){
 }
 
 function quickVehicle(sasu,plate,rows){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return;}
   if(rows&&rows.length){
+    // 잠긴 건 체크
+    var lockedRows=[];
+    rows.forEach(function(r){var job=J.find(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1===r});if(job&&LOCK.has(job.id))lockedRows.push(r)});
+    if(lockedRows.length>0){toast('🔒 잠긴 건이 포함되어 변경 불가','error');return;}
     var vData=rows.map(function(r){var job=J.find(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1===r});return{row:r,vehicle:plate,date:job?job.date:'',address:job?job.addr:''}});
     fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:vData,gid:'144225567'})});
     J.forEach(function(j){var p=j.id.split('_');var ri=parseInt(p[p.length-1])+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
@@ -2093,6 +2100,7 @@ function quickVehicle(sasu,plate,rows){
 }
 
 function deleteCar(idx){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return;}
   const plates=Object.keys(VEHICLES);
   const plate=plates[idx];
   const next={...VEHICLES};
