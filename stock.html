@@ -295,8 +295,7 @@ function renderOrder(){
     p.colors.forEach(c=>{
       h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
       TY.forEach(t=>{
-        const curBox=totals[p.id+'_'+c+'_'+t]||0;
-        h+=`<div class="ce incoming"><input type="number" inputmode="numeric" min="0" id="ord_${p.id}_${c}_${t}" value="" placeholder="${curBox}" oninput="calcOrder()"></div>`;
+        h+=`<div class="ce incoming"><input type="number" inputmode="numeric" min="0" id="ord_${p.id}_${c}_${t}" value="" oninput="calcOrder()"></div>`;
       });
       h+=`</div>`;
     });
@@ -310,7 +309,7 @@ function renderOrder(){
   document.getElementById('barEl').style.display='block';
   document.getElementById('bl').innerHTML=`📋 <b>${team} 발주서</b>`;
   document.getElementById('gt').textContent='0';
-  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='📸 발주서 저장';sb.className='btn btn-in';sb.onclick=saveOrder;
+  const sb=document.getElementById('sbtn');sb.disabled=true;sb.textContent='수량을 입력하세요';sb.className='btn btn-in';sb.onclick=showOrderConfirm;
 }
 
 function calcOrder(){
@@ -329,15 +328,71 @@ function calcOrder(){
   document.getElementById('ordPallet').textContent=totalPallet+' / '+mp;
   document.getElementById('ordPallet').style.color=totalPallet>mp?'var(--red)':'var(--orange)';
   document.getElementById('gt').textContent=totalSheet.toLocaleString();
+  const sb=document.getElementById('sbtn');
+  if(totalPallet>mp){sb.disabled=true;sb.textContent='⚠️ '+mp+'파레트 초과'}
+  else if(totalBox===0){sb.disabled=true;sb.textContent='수량을 입력하세요'}
+  else{sb.disabled=false;sb.textContent='확인 →'}
+}
+
+function showOrderConfirm(){
+  let h=renderTabs();const mp=team==='경기'?8:16;
+  const pd={'500':{bpb:12,bpp:24,name:'500매트 22T'},'1000_22':{bpb:4,bpp:18,name:'1000매트 22T'},'1000_17':{bpb:6,bpp:15,name:'1000매트 17T'}};
+  const ordDate=document.getElementById('ordDate')?.value||'';
+  const ordMemo=document.getElementById('ordMemo')?.value||'';
+  let totalBox=0,totalSheet=0,totalPallet=0;
+  const orderData=[];
+
+  h+=`<div id="orderConfirm">`;
+  h+=`<div style="text-align:center;margin-bottom:16px"><div style="font-size:16px;font-weight:800;margin-bottom:4px">📋 ${team} 발주서</div><div style="font-size:12px;color:var(--dim)">${dateKey} 작성</div></div>`;
+
+  PR.forEach(p=>{
+    const d=pd[p.id];let pBox=0;let hasItems=false;
+    let rows=[];
+    p.colors.forEach(c=>{
+      TY.forEach(t=>{
+        const v=parseInt(document.getElementById('ord_'+p.id+'_'+c+'_'+t)?.value)||0;
+        if(v>0){rows.push({color:c,type:t,box:v,sheet:v*d.bpb});pBox+=v;hasItems=true}
+      });
+    });
+    if(!hasItems)return;
+    const pallet=Math.ceil(pBox/d.bpp);
+    totalBox+=pBox;totalSheet+=pBox*d.bpb;totalPallet+=pallet;
+    orderData.push({product:d.name,rows:rows,totalBox:pBox,pallet:pallet});
+
+    h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px">`;
+    h+=`<div style="padding:10px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">${p.name} <span style="color:var(--blue)">${p.badge}</span></span><span style="font-size:13px;font-weight:700;color:var(--orange)">${pBox}박스 (${pallet}파레트)</span></div>`;
+    rows.forEach(r=>{
+      h+=`<div style="display:flex;justify-content:space-between;padding:6px 14px;font-size:13px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[r.color]};margin-right:4px"></span>${r.color} ${r.type}</span><span style="font-weight:700">${r.box}박스 (${r.sheet}장)</span></div>`;
+    });
+    h+=`</div>`;
+  });
+
+  if(ordDate)h+=`<div style="font-size:13px;color:var(--dim);margin:8px 0">📅 도착 예정: <span style="color:var(--text);font-weight:600">${ordDate}</span></div>`;
+  if(ordMemo)h+=`<div style="font-size:13px;color:var(--dim);margin:4px 0">📝 ${ordMemo}</div>`;
+
+  h+=`<div class="sum-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;color:var(--dim)">총 발주량</div><div style="font-size:24px;font-weight:800;color:var(--orange)">${totalBox}박스 / ${totalSheet.toLocaleString()}장</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--dim)">파레트</div><div style="font-size:24px;font-weight:800;color:var(--orange)">${totalPallet} / ${mp}</div></div></div></div>`;
+  h+=`</div>`;
+
+  document.getElementById('app').innerHTML=h;
+  document.getElementById('barEl').style.display='block';
+  document.getElementById('bl').innerHTML=`<span style="cursor:pointer" onclick="renderOrder()">← 수정</span>`;
+  document.getElementById('gt').textContent=totalSheet.toLocaleString();
+  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='📸 발주서 저장';sb.className='btn btn-in';sb.onclick=saveOrder;
 }
 
 async function saveOrder(){
+  // 파레트 초과 체크
+  const mp=team==='경기'?8:16;
+  let tp=0;const pd={'500':{bpp:24},'1000_22':{bpp:18},'1000_17':{bpp:15}};
+  PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{pb+=(parseInt(document.getElementById('ord_'+p.id+'_'+c+'_'+t)?.value)||0)})});tp+=Math.ceil(pb/pd[p.id].bpp)});
+  if(tp>mp){toast('⚠️ '+mp+'파레트 초과! 수량을 줄여주세요');return}
+  if(tp===0){toast('⚠️ 발주 수량을 입력하세요');return}
   if(typeof html2canvas==='undefined'){
     const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     document.head.appendChild(s);await new Promise(r=>s.onload=r);
   }
   try{
-    const canvas=await html2canvas(document.querySelector('.wrap'),{backgroundColor:'#09090b',scale:2});
+    const canvas=await html2canvas(document.getElementById('orderConfirm')||document.querySelector('.wrap'),{backgroundColor:'#09090b',scale:2});
     const link=document.createElement('a');
     link.download='발주서_'+team+'_'+dateKey+'.png';
     link.href=canvas.toDataURL();link.click();
