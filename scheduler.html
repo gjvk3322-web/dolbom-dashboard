@@ -1667,7 +1667,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const hasLk=tg.jobs.some(jj=>LOCK.has(jj.id));const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const cp=hasLk&&tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:autoV;const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:autoV;const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
@@ -2561,7 +2561,16 @@ async function doRefresh(){
 const btn=document.getElementById('refreshBtn');
 if(btn){btn.textContent='⏳ 갱신중...';btn.style.opacity='.6';btn.style.pointerEvents='none'}
 await refreshSheet(false);
-if(isAdmin)syncToSheet();// 차량 등 변경사항 시트에 반영
+// 잠기지 않은 건들의 차량을 사수 기준으로 정리
+J.forEach(j=>{
+  if(j.offOnly||LOCK.has(j.id))return;
+  const crew=A[j.id];if(!crew||!crew.length)return;
+  const sa=crew.sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'))[0];
+  const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';
+  if(autoV)j.vehicle=autoV;
+});
+renderAll();
+if(isAdmin)syncToSheet();
 if(btn){btn.textContent='✅ 갱신됨';btn.style.opacity='1';btn.style.pointerEvents='auto';setTimeout(()=>{btn.textContent='🔄 최신화'},2000)}
 toast('✅ 최신 상태로 갱신됨!','ok')}
 
