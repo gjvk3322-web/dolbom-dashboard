@@ -202,7 +202,6 @@ function renderMissions(){
       ${done?`<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">${paid?'💰 지급완료!':'✅ 달성 완료!'} (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>${s.url?`<a href="${s.url}" target="_blank" style="font-size:12px;color:var(--blue);word-break:break-all;display:block;margin-top:6px">📎 ${s.url}</a>`:''}</div>`:`
       <div class="upload-zone" id="uzone${idx}"><input type="file" accept="image/*" onchange="handleUpload(${idx},this)"><div class="icon">📷</div><div class="txt">스크린샷을 업로드해 주세요</div></div>
       <div class="upload-preview" id="uprev${idx}"><img id="uimg${idx}"></div>
-      <div class="fg"><label>후기 URL (선택)</label><input type="url" id="murl${idx}" placeholder="https://" value="${s.url||''}"></div>
       <button class="submit-btn primary" onclick="submitMission(${idx})" id="msubmit${idx}" disabled>미션 달성하기</button>`}
     </div>`;
     list.appendChild(card);
@@ -213,16 +212,33 @@ let openIdx=-1;
 function toggleMission(idx){const b=document.getElementById('mbody'+idx);if(!b)return;if(openIdx===idx){b.classList.remove('open');openIdx=-1;}else{if(openIdx>=0){const p=document.getElementById('mbody'+openIdx);if(p)p.classList.remove('open');}b.classList.add('open');openIdx=idx;}}
 
 const uploadData={};
-function handleUpload(idx,input){const f=input.files[0];if(!f)return;if(f.size>10*1024*1024){showToast('10MB 이하만 가능');return;}const r=new FileReader();r.onload=function(e){uploadData[idx]=e.target.result;document.getElementById('uprev'+idx).style.display='block';document.getElementById('uimg'+idx).src=e.target.result;document.getElementById('uzone'+idx).querySelector('.txt').textContent='업로드 완료!';const btn=document.getElementById('msubmit'+idx);if(btn)btn.disabled=false;};r.readAsDataURL(f);}
+function handleUpload(idx,input){const f=input.files[0];if(!f)return;if(f.size>10*1024*1024){showToast('10MB 이하만 가능');return;}
+  // 이미지 압축 (최대 1200px, 품질 80%)
+  const r=new FileReader();r.onload=function(e){
+    const img=new Image();img.onload=function(){
+      const maxW=1200,maxH=1200;let w=img.width,h=img.height;
+      if(w>maxW||h>maxH){const ratio=Math.min(maxW/w,maxH/h);w=Math.round(w*ratio);h=Math.round(h*ratio)}
+      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+      uploadData[idx]=canvas.toDataURL('image/jpeg',0.8);
+      document.getElementById('uprev'+idx).style.display='block';
+      document.getElementById('uimg'+idx).src=uploadData[idx];
+      document.getElementById('uzone'+idx).querySelector('.txt').textContent='업로드 완료!';
+      const btn=document.getElementById('msubmit'+idx);if(btn)btn.disabled=false;
+    };img.src=e.target.result;
+  };r.readAsDataURL(f);}
 
 async function submitMission(idx){
   const m=MISSIONS[idx];if(!uploadData[idx]){showToast('스크린샷을 업로드해 주세요');return;}
-  const btn=document.getElementById('msubmit'+idx);btn.disabled=true;btn.textContent='전송 중...';
-  const url=document.getElementById('murl'+idx);
+  const btn=document.getElementById('msubmit'+idx);btn.disabled=true;btn.textContent='사진 업로드 중...';
   try{
-    await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type:'mission',phone:PHONE,missionId:m.id,missionTitle:m.title,reward:m.reward,url:url?url.value:'',submittedAt:new Date().toISOString()})});
-    missionState[m.id]={done:true,url:url?url.value:'',submittedAt:new Date().toISOString()};
+    // 사진을 Google Drive에 업로드
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[idx]})});
+    const txt=await res.text();
+    let result={};try{result=JSON.parse(txt)}catch(e){}
+    if(result.error){btn.disabled=false;btn.textContent='미션 달성하기';showToast('업로드 실패: '+result.error);return;}
+    missionState[m.id]={done:true,url:result.url||'',submittedAt:new Date().toISOString()};
     renderMissions();fireConfetti();showToast('🎉 '+m.title+' 달성! +'+m.reward.toLocaleString()+'원');
   }catch(e){btn.disabled=false;btn.textContent='미션 달성하기';showToast('전송 실패');}
 }
@@ -237,7 +253,7 @@ async function requestCashback(){
   const reqAmt=earned-paidTotal;if(reqAmt<=0){showToast('신청 가능한 캐시백이 없습니다');return;}
   const btn=document.getElementById('cashbackBtn');btn.disabled=true;btn.textContent='신청 중...';
   try{
-    await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'cashback',phone:PHONE,bank,accountName:name,accountNum:num,totalEarned:earned,paidAmount:paidTotal,requestAmount:reqAmt,submittedAt:new Date().toISOString()})});
     document.getElementById('successAmt').textContent=reqAmt.toLocaleString()+'원';
     document.getElementById('successOverlay').classList.add('show');
