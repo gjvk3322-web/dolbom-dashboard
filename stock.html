@@ -279,201 +279,168 @@ async function renderSummary(){
   if(sd&&sd.error)h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none'}
 
-// ===== 발주 탭 =====
-async function renderOrder(){
-  let h=renderTabs();const T=TEAMS[team];
-  const totals={};T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data)Object.entries(d.data).forEach(([k,v])=>{totals[k]=(totals[k]||0)+v})});
-  const mp=team==='경기'?8:16;
+// ===== 발주 탭 (월간 발주서) =====
+let deliveries=[];
+let delIdCounter=0;
 
-  // 로딩
-  h+=`<div style="text-align:center;padding:20px;font-size:12px;color:var(--dim)">📡 추천 발주량 계산 중...</div>`;
-  document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
+function renderOrder(){
+  let h=renderTabs();
+  const mon=new Date().getMonth()+1;
 
-  // 시공 데이터 가져오기
-  const sd=stockCache||await fetchStockData();
-
-  // 2주 예상 소모 계산 (제품/색상/형태별)
-  const need={};// need['500_모던_센터'] = 필요 박스 수
-  if(sd&&sd.futureList){
-    // 1주 데이터 × 2 = 2주 예상
-    sd.futureList.forEach(j=>{
-      const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
-      const c=j.color||'';if(!c)return;
-      const sqmKey=j.sqm<=27?25:(j.sqm<=32?30:35);
-      const std=STD[pid]?.[sqmKey];if(!std)return;
-      TY.forEach(t=>{
-        const k=pid+'_'+c+'_'+t;
-        need[k]=(need[k]||0)+((std[t]||0)*2);// ×2 for 2 weeks
-      });
-    });
-  }
-
-  // 추천 발주 = max(0, 2주 필요 - 현재 재고), 파레트 단위 올림
-  const recommend={};
-  const bppMap={'500':24,'1000_22':18,'1000_17':15};
-  Object.keys(need).forEach(k=>{
-    const cur=totals[k]||0;
-    const rec=Math.max(0,need[k]-cur);
-    if(rec>0)recommend[k]=rec;
-  });
-  // 제품별 합계 → 파레트 올림 → 센터에 추가분 배분
-  PR.forEach(p=>{
-    let pTotal=0;const keys=[];
-    p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;if(recommend[k])pTotal+=recommend[k];keys.push(k)})});
-    if(pTotal===0)return;
-    const bpp=bppMap[p.id];
-    const rounded=Math.ceil(pTotal/bpp)*bpp;
-    const extra=rounded-pTotal;
-    // 가장 큰 셀(센터)에 추가분 배분
-    if(extra>0){
-      let maxK='',maxV=0;
-      keys.forEach(k=>{if((recommend[k]||0)>maxV){maxV=recommend[k]||0;maxK=k}});
-      if(maxK)recommend[maxK]=(recommend[maxK]||0)+extra;
-    }
-  });
-
-  // 화면 렌더 — 좌우 레이아웃 (데스크톱)
-  h=renderTabs();
-  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">`;
-
-  // 왼쪽: 추천 요약
-  h+=`<div>`;
-  h+=`<div style="font-size:14px;font-weight:800;margin-bottom:12px">📊 추천 발주량</div>`;
-  h+=`<div style="font-size:11px;color:var(--dim);margin-bottom:12px">시공기준표 기반 2주 예상<br>현재 재고 차감 후 파레트 단위 올림</div>`;
-  PR.forEach(p=>{
-    let pTotal=0;const rows=[];
-    p.colors.forEach(c=>{TY.forEach(t=>{const v=recommend[p.id+'_'+c+'_'+t]||0;if(v>0){rows.push({c,t,v});pTotal+=v}})});
-    if(pTotal===0)return;
-    const pallet=Math.ceil(pTotal/bppMap[p.id]);
-    h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px">`;
-    h+=`<div style="padding:10px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">${p.name} <span style="color:var(--blue)">${p.badge}</span></span><span style="font-size:13px;font-weight:700;color:var(--orange)">${pallet}파레트 (${pTotal}박스)</span></div>`;
-    rows.forEach(r=>{
-      h+=`<div style="display:flex;justify-content:space-between;padding:4px 14px;font-size:13px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[r.c]};margin-right:4px"></span>${r.c} ${r.t}</span><span style="font-weight:600">${r.v}박스</span></div>`;
-    });
-    h+=`</div>`;
-  });
-  if(Object.keys(recommend).length===0){
-    h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:20px;text-align:center;color:var(--accent);font-size:13px;font-weight:700">✅ 현재 재고 충분<br><span style="font-size:11px;color:var(--dim);font-weight:500">2주 예상 소모 대비 부족 없음</span></div>`;
-  }
+  h+=`<div id="orderSheet" style="background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;padding:16px">`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">`;
+  h+=`<div style="font-size:18px;font-weight:800">돌봄 ${mon}월 발주서</div>`;
+  h+=`<button onclick="addDelivery()" style="padding:8px 16px;background:var(--orange);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ 배송 추가</button>`;
   h+=`</div>`;
 
-  // 오른쪽: 수정 폼
-  h+=`<div>`;
-  h+=`<div style="font-size:14px;font-weight:800;margin-bottom:12px">✏️ 발주서 작성</div>`;
-  h+=`<div id="orderForm">`;
-  const palletData={'500매트 22T':{bpb:12,bpp:24},'1000매트 22T':{bpb:4,bpp:18},'1000매트 17T':{bpb:6,bpp:15}};
-  PR.forEach(p=>{
-    const pi=palletData[p.name+' '+p.badge];
-    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1파레트=${pi.bpp}박스</span><span class="ph-sum" id="op_${p.id}">0파레트</span></div>`;
-    h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
-    p.colors.forEach(c=>{
-      h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{
-        const recVal=recommend[p.id+'_'+c+'_'+t]||'';
-        h+=`<div class="ce incoming"><input type="number" inputmode="numeric" min="0" id="ord_${p.id}_${c}_${t}" value="${recVal}" oninput="calcOrder()"></div>`;
-      });
+  if(deliveries.length===0){
+    h+=`<div style="text-align:center;padding:40px;color:var(--dim);font-size:13px">"+ 배송 추가" 버튼을 눌러 배송일을 추가하세요</div>`;
+  } else {
+    // 테이블
+    const cols=deliveries.length;
+    const gcols=`120px repeat(${cols},1fr)`;
+
+    // 배송 헤더 (위치+날짜+삭제)
+    h+=`<div style="display:grid;grid-template-columns:${gcols};gap:1px;margin-bottom:2px">`;
+    h+=`<div></div>`;
+    deliveries.forEach(d=>{
+      h+=`<div style="text-align:center;padding:6px 4px;background:var(--bg);border-radius:6px;position:relative">`;
+      h+=`<select id="dloc_${d.id}" onchange="calcMonthlyOrder()" style="width:100%;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;font-weight:700;text-align:center;font-family:inherit;margin-bottom:4px">`;
+      h+=`<option value="부산" ${d.loc==='부산'?'selected':''}>부산</option><option value="안산" ${d.loc==='안산'?'selected':''}>안산</option></select>`;
+      h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="calcMonthlyOrder()" style="width:100%;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;font-family:inherit">`;
+      h+=`<div onclick="removeDelivery(${d.id})" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;background:var(--red);color:#fff;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900">×</div>`;
       h+=`</div>`;
     });
     h+=`</div>`;
-  });
-  h+=`<div style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">📅 도착 예정일</div><input type="date" id="ordDate" style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit" /></div>`;
-  h+=`<div class="memo-sec"><div class="memo-hd">📝 메모</div><div class="memo-bd"><textarea class="memo" id="ordMemo" placeholder=""></textarea></div></div>`;
-  h+=`</div>`;// orderForm
-  h+=`<div class="sum-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;color:var(--dim)">총 발주량</div><div style="font-size:24px;font-weight:800;color:var(--orange)" id="ordTotal">0박스 / 0장</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--dim)">파레트</div><div style="font-size:24px;font-weight:800;color:var(--orange)" id="ordPallet">0 / ${mp}</div></div></div></div>`;
-  h+=`</div>`;// 오른쪽 컬럼
-  h+=`</div>`;// 그리드
-  document.getElementById('app').innerHTML=h;
-  document.querySelector('.wrap').style.maxWidth='960px';
-  document.getElementById('barEl').style.display='block';
-  document.getElementById('bl').innerHTML=`📋 <b>${team} 발주서</b>`;
-  document.getElementById('gt').textContent='0';
-  const sb=document.getElementById('sbtn');sb.disabled=true;sb.textContent='수량을 입력하세요';sb.className='btn btn-in';sb.onclick=showOrderConfirm;
-  calcOrder();// 추천값이 있으면 합계 계산
-}
 
-function calcOrder(){
-  let totalBox=0,totalSheet=0,totalPallet=0;
-  const pd={'500':{bpb:12,bpp:24},'1000_22':{bpb:4,bpp:18},'1000_17':{bpb:6,bpp:15}};
-  PR.forEach(p=>{
-    let pBox=0;
-    p.colors.forEach(c=>{TY.forEach(t=>{pBox+=(parseInt(document.getElementById('ord_'+p.id+'_'+c+'_'+t)?.value)||0)})});
-    const d=pd[p.id];const pallet=Math.ceil(pBox/d.bpp);
-    totalBox+=pBox;totalSheet+=pBox*d.bpb;totalPallet+=pallet;
-    const el=document.getElementById('op_'+p.id);
-    if(el)el.textContent=pBox>0?pBox+'박스 ('+pallet+'파레트)':'0파레트';
-  });
-  const mp=team==='경기'?8:16;
-  document.getElementById('ordTotal').textContent=totalBox+'박스 / '+totalSheet.toLocaleString()+'장';
-  document.getElementById('ordPallet').textContent=totalPallet+' / '+mp;
-  document.getElementById('ordPallet').style.color=totalPallet>mp?'var(--red)':'var(--orange)';
-  document.getElementById('gt').textContent=totalSheet.toLocaleString();
-  const sb=document.getElementById('sbtn');
-  if(totalPallet>mp){sb.disabled=true;sb.textContent='⚠️ '+mp+'파레트 초과'}
-  else if(totalBox===0){sb.disabled=true;sb.textContent='수량을 입력하세요'}
-  else{sb.disabled=false;sb.textContent='확인 →'}
-}
-
-function showOrderConfirm(){
-  let h=renderTabs();const mp=team==='경기'?8:16;
-  const pd={'500':{bpb:12,bpp:24,name:'500매트 22T'},'1000_22':{bpb:4,bpp:18,name:'1000매트 22T'},'1000_17':{bpb:6,bpp:15,name:'1000매트 17T'}};
-  const ordDate=document.getElementById('ordDate')?.value||'';
-  const ordMemo=document.getElementById('ordMemo')?.value||'';
-  let totalBox=0,totalSheet=0,totalPallet=0;
-  const orderData=[];
-
-  h+=`<div id="orderConfirm">`;
-  h+=`<div style="text-align:center;margin-bottom:16px"><div style="font-size:16px;font-weight:800;margin-bottom:4px">📋 ${team} 발주서</div><div style="font-size:12px;color:var(--dim)">${dateKey} 작성</div></div>`;
-
-  PR.forEach(p=>{
-    const d=pd[p.id];let pBox=0;let hasItems=false;
-    let rows=[];
-    p.colors.forEach(c=>{
-      TY.forEach(t=>{
-        const v=parseInt(document.getElementById('ord_'+p.id+'_'+c+'_'+t)?.value)||0;
-        if(v>0){rows.push({color:c,type:t,box:v,sheet:v*d.bpb});pBox+=v;hasItems=true}
+    // 제품별 행
+    const allRows=[];
+    PR.forEach(p=>{
+      allRows.push({type:'header',label:`${p.name} ${p.badge}`,pid:p.id});
+      p.colors.forEach(c=>{
+        ['센터','사이드','코너'].forEach(t=>{
+          allRows.push({type:'cell',label:`${c}(${t})`,pid:p.id,color:c,shape:t});
+        });
       });
     });
-    if(!hasItems)return;
-    const pallet=Math.ceil(pBox/d.bpp);
-    totalBox+=pBox;totalSheet+=pBox*d.bpb;totalPallet+=pallet;
-    orderData.push({product:d.name,rows:rows,totalBox:pBox,pallet:pallet});
 
-    h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px">`;
-    h+=`<div style="padding:10px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">${p.name} <span style="color:var(--blue)">${p.badge}</span></span><span style="font-size:13px;font-weight:700;color:var(--orange)">${pBox}박스 (${pallet}파레트)</span></div>`;
-    rows.forEach(r=>{
-      h+=`<div style="display:flex;justify-content:space-between;padding:6px 14px;font-size:13px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[r.color]};margin-right:4px"></span>${r.color} ${r.type}</span><span style="font-weight:700">${r.box}박스 (${r.sheet}장)</span></div>`;
+    allRows.forEach(row=>{
+      if(row.type==='header'){
+        h+=`<div style="display:grid;grid-template-columns:${gcols};gap:1px;margin-top:8px">`;
+        h+=`<div style="padding:6px 8px;font-size:12px;font-weight:800;color:var(--blue);background:var(--bg);border-radius:4px">${row.label}</div>`;
+        deliveries.forEach(()=>h+=`<div></div>`);
+        h+=`</div>`;
+      } else {
+        h+=`<div style="display:grid;grid-template-columns:${gcols};gap:1px">`;
+        h+=`<div style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--dim);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[row.color]||'#888'}"></span>${row.label}</div>`;
+        deliveries.forEach(d=>{
+          const cellId=`oc_${d.id}_${row.pid}_${row.color}_${row.shape}`;
+          h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="calcMonthlyOrder()" style="width:100%;height:30px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-weight:700;text-align:center;outline:none;font-family:inherit"></div>`;
+        });
+        h+=`</div>`;
+      }
     });
+
+    // 수량 합계 행
+    h+=`<div style="display:grid;grid-template-columns:${gcols};gap:1px;margin-top:8px;border-top:2px solid var(--border);padding-top:6px">`;
+    h+=`<div style="padding:6px 8px;font-size:13px;font-weight:800">수량</div>`;
+    deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:14px;font-weight:800;padding:6px" id="dsum_${d.id}">0</div>`);
     h+=`</div>`;
-  });
 
-  if(ordDate)h+=`<div style="font-size:13px;color:var(--dim);margin:8px 0">📅 도착 예정: <span style="color:var(--text);font-weight:600">${ordDate}</span></div>`;
-  if(ordMemo)h+=`<div style="font-size:13px;color:var(--dim);margin:4px 0">📝 ${ordMemo}</div>`;
+    // 파레트 행
+    h+=`<div style="display:grid;grid-template-columns:${gcols};gap:1px">`;
+    h+=`<div style="padding:6px 8px;font-size:13px;font-weight:800">파레트</div>`;
+    deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:14px;font-weight:800;padding:6px" id="dpal_${d.id}">0</div>`);
+    h+=`</div>`;
+  }
 
-  h+=`<div class="sum-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;color:var(--dim)">총 발주량</div><div style="font-size:24px;font-weight:800;color:var(--orange)">${totalBox}박스 / ${totalSheet.toLocaleString()}장</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--dim)">파레트</div><div style="font-size:24px;font-weight:800;color:var(--orange)">${totalPallet} / ${mp}</div></div></div></div>`;
-  h+=`</div>`;
+  // 메모
+  h+=`<div style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">📝 메모</div><textarea id="ordMemo" style="width:100%;height:48px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px;outline:none;resize:none;font-family:inherit"></textarea></div>`;
+
+  h+=`</div>`;// orderSheet
 
   document.getElementById('app').innerHTML=h;
-  document.getElementById('barEl').style.display='block';
-  document.getElementById('bl').innerHTML=`<span style="cursor:pointer" onclick="renderOrder()">← 수정</span>`;
-  document.getElementById('gt').textContent=totalSheet.toLocaleString();
-  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='📸 발주서 저장';sb.className='btn btn-in';sb.onclick=saveOrder;
+  document.querySelector('.wrap').style.maxWidth='960px';
+
+  if(deliveries.length>0){
+    document.getElementById('barEl').style.display='block';
+    document.getElementById('bl').innerHTML=`📋 <b>돌봄 ${mon}월 발주서</b>`;
+    document.getElementById('gt').textContent='0';
+    const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='📸 발주서 저장';sb.className='btn btn-in';sb.onclick=saveMonthlyOrder;
+  } else {
+    document.getElementById('barEl').style.display='none';
+  }
 }
 
-async function saveOrder(){
-  // 파레트 초과 체크
-  const mp=team==='경기'?8:16;
-  let tp=0;const pd={'500':{bpp:24},'1000_22':{bpp:18},'1000_17':{bpp:15}};
-  PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{pb+=(parseInt(document.getElementById('ord_'+p.id+'_'+c+'_'+t)?.value)||0)})});tp+=Math.ceil(pb/pd[p.id].bpp)});
-  if(tp>mp){toast('⚠️ '+mp+'파레트 초과! 수량을 줄여주세요');return}
-  if(tp===0){toast('⚠️ 발주 수량을 입력하세요');return}
+function addDelivery(){
+  const id=++delIdCounter;
+  const d=new Date();
+  d.setDate(d.getDate()+7*deliveries.length);
+  const ds=d.toISOString().split('T')[0];
+  deliveries.push({id:id,loc:'부산',date:ds});
+  renderOrder();
+}
+
+function removeDelivery(id){
+  deliveries=deliveries.filter(d=>d.id!==id);
+  renderOrder();
+}
+
+function calcMonthlyOrder(){
+  const bppMap={'500':24,'1000_22':18,'1000_17':15};
+  const bpbMap={'500':12,'1000_22':4,'1000_17':6};
+  let grandTotal=0;
+
+  deliveries.forEach(d=>{
+    // 위치/날짜 업데이트
+    const locEl=document.getElementById('dloc_'+d.id);
+    const dateEl=document.getElementById('ddate_'+d.id);
+    if(locEl)d.loc=locEl.value;
+    if(dateEl)d.date=dateEl.value;
+
+    let colTotal=0;
+    PR.forEach(p=>{
+      p.colors.forEach(c=>{
+        ['센터','사이드','코너'].forEach(t=>{
+          const v=parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0;
+          colTotal+=v;
+        });
+      });
+    });
+    // 파레트 계산 (제품별로)
+    let pallets=0;
+    PR.forEach(p=>{
+      let pBox=0;
+      p.colors.forEach(c=>{
+        ['센터','사이드','코너'].forEach(t=>{
+          pBox+=(parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0);
+        });
+      });
+      if(pBox>0)pallets+=Math.ceil(pBox/bppMap[p.id]);
+    });
+
+    const maxP=d.loc==='부산'?16:8;
+    const sumEl=document.getElementById('dsum_'+d.id);
+    const palEl=document.getElementById('dpal_'+d.id);
+    if(sumEl)sumEl.textContent=colTotal;
+    if(palEl){palEl.textContent=pallets+'/'+maxP;palEl.style.color=pallets>maxP?'var(--red)':'var(--text)'}
+    grandTotal+=colTotal;
+  });
+  const gtEl=document.getElementById('gt');
+  if(gtEl)gtEl.textContent=grandTotal.toLocaleString();
+}
+
+async function saveMonthlyOrder(){
   if(typeof html2canvas==='undefined'){
     const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     document.head.appendChild(s);await new Promise(r=>s.onload=r);
   }
   try{
-    const canvas=await html2canvas(document.getElementById('orderConfirm')||document.querySelector('.wrap'),{backgroundColor:'#09090b',scale:2});
+    const el=document.getElementById('orderSheet');
+    const canvas=await html2canvas(el,{backgroundColor:'#141416',scale:2});
     const link=document.createElement('a');
-    link.download='발주서_'+team+'_'+dateKey+'.png';
+    const mon=new Date().getMonth()+1;
+    link.download='발주서_'+mon+'월_'+dateKey+'.png';
     link.href=canvas.toDataURL();link.click();
     toast('✅ 발주서 이미지 저장!');
   }catch(e){toast('저장 실패');console.error(e)}
