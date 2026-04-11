@@ -75,7 +75,8 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 <div class="modal-bg" id="topicModal">
   <div class="modal">
     <h3>📌 새 주제 추가</h3>
-    <input type="text" id="newTopicInput" placeholder="예: 알림톡 시스템" />
+    <input type="text" id="newTopicInput" placeholder="주제명 (예: 스케줄러)" />
+    <input type="url" id="newTopicUrl" placeholder="링크 주소 (예: https://my.dolbommat.com/scheduler.html)" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:12px" />
     <div class="modal-btns">
       <button class="cancel" onclick="closeTopicModal()">취소</button>
       <button class="confirm" onclick="addTopic()">추가</button>
@@ -85,7 +86,6 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 
 <!-- 입력 영역 -->
 <div class="input-area">
-  <div class="name-bar" id="nameBar"></div>
   <div class="input-row">
     <input type="text" id="ideaInput" placeholder="아이디어를 입력하세요" />
     <button id="ideaBtn" onclick="submitIdea()" disabled>등록</button>
@@ -134,6 +134,10 @@ function render(){
 
   // 선택된 주제의 아이디어
   if(selectedTopic){
+    const currentTopic=topics.find(t=>t.id===selectedTopic);
+    if(currentTopic&&currentTopic.url){
+      h+=`<a href="${currentTopic.url}" target="_blank" style="display:block;padding:10px 14px;background:var(--card);border:.5px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px;color:var(--blue);text-decoration:none;font-weight:600">🔗 ${currentTopic.name} 바로가기 →</a>`;
+    }
     const topicIdeas=Object.entries(ideas)
       .filter(([k,v])=>v.topic===selectedTopic)
       .map(([k,v])=>({id:k,...v}))
@@ -158,7 +162,7 @@ function render(){
         h+=`<div class="idea-text">${idea.text}</div>`;
         h+=`<div class="idea-check ${idea.done?'checked':''}" onclick="toggleDone('${idea.id}',${!idea.done})"></div>`;
         h+=`</div>`;
-        h+=`<div class="idea-meta"><span class="idea-author">${idea.author||'익명'}</span><span>${dateStr}</span></div>`;
+        h+=`<div class="idea-meta"><span>${dateStr}</span></div>`;
         h+=`</div>`;
       });
     }
@@ -167,7 +171,7 @@ function render(){
   }
 
   document.getElementById('app').innerHTML=h;
-  renderNameBar();
+  updateBtn();
 }
 
 function renderNameBar(){
@@ -193,7 +197,7 @@ function selectTopic(id){
 function updateBtn(){
   const input=document.getElementById('ideaInput');
   const btn=document.getElementById('ideaBtn');
-  btn.disabled=!selectedName||!input.value.trim()||!selectedTopic;
+  btn.disabled=!input.value.trim()||!selectedTopic;
 }
 
 document.getElementById('ideaInput').addEventListener('input',updateBtn);
@@ -202,12 +206,12 @@ document.getElementById('ideaInput').addEventListener('keydown',e=>{if(e.key==='
 function submitIdea(){
   const input=document.getElementById('ideaInput');
   const text=input.value.trim();
-  if(!text||!selectedName||!selectedTopic)return;
+  if(!text||!selectedTopic)return;
 
   const id=Date.now()+'_'+Math.random().toString(36).substr(2,5);
   db.ref('feedback/ideas/'+id).set({
     text:text,
-    author:selectedName,
+    author:'익명',
     topic:selectedTopic,
     done:false,
     timestamp:Date.now()
@@ -226,30 +230,25 @@ function toggleDone(id,done){
 function openTopicModal(){
   document.getElementById('topicModal').style.display='flex';
   document.getElementById('newTopicInput').value='';
+  document.getElementById('newTopicUrl').value='';
   document.getElementById('newTopicInput').focus();
 }
 function closeTopicModal(){document.getElementById('topicModal').style.display='none'}
 function addTopic(){
   const name=document.getElementById('newTopicInput').value.trim();
+  const url=document.getElementById('newTopicUrl').value.trim();
   if(!name){toast('주제명을 입력하세요');return}
   const id=Date.now().toString(36);
-  db.ref('feedback/topics/'+id).set({name:name,order:topics.length});
+  const data={name:name,order:topics.length};
+  if(url)data.url=url;
+  db.ref('feedback/topics/'+id).set(data);
   selectedTopic=id;
   closeTopicModal();
   toast('✅ 주제 추가!');
 }
 document.getElementById('newTopicInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTopic()});
 
-// 초기 주제 없으면 기본 생성
-setTimeout(()=>{
-  if(topics.length===0){
-    const defaults=['스케줄러','재고관리','예약시스템','알림톡','시공보고서'];
-    defaults.forEach((name,i)=>{
-      const id=Date.now().toString(36)+'_'+i;
-      db.ref('feedback/topics/'+id).set({name:name,order:i});
-    });
-  }
-},2000);
+// 기본 주제 없음 - 대장님이 직접 추가
 </script>
 </body>
 </html>
