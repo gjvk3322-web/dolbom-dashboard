@@ -2561,6 +2561,7 @@ async function doRefresh(){
 const btn=document.getElementById('refreshBtn');
 if(btn){btn.textContent='⏳ 갱신중...';btn.style.opacity='.6';btn.style.pointerEvents='none'}
 await refreshSheet(false);
+if(isAdmin)syncToSheet();// 차량 등 변경사항 시트에 반영
 if(btn){btn.textContent='✅ 갱신됨';btn.style.opacity='1';btn.style.pointerEvents='auto';setTimeout(()=>{btn.textContent='🔄 최신화'},2000)}
 toast('✅ 최신 상태로 갱신됨!','ok')}
 
