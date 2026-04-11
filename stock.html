@@ -191,22 +191,6 @@ async function renderSummary(){
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
 
-  // 시공 소모량 집계
-  let consumeBoxes={},consumeJobs=0;
-  if(sd&&sd.consumption){
-    consumeJobs=sd.consumption.length;
-    sd.consumption.forEach(c=>{
-      const pid=c.product==='500매트 22T'?'500':(c.product==='1000매트 22T'?'1000_22':'1000_17');
-      const sqm=c.sqm||30;const sqmK=sqm<=27?25:(sqm<=32?30:35);
-      const std=STD[pid]?STD[pid][sqmK]:10;
-      const key=pid+'_센터';
-      consumeBoxes[key]=(consumeBoxes[key]||0)+std;
-      // 사이드
-      const sKey=pid+'_사이드';
-      consumeBoxes[sKey]=(consumeBoxes[sKey]||0)+(pid==='500'?(sqmK>=30?2:1):1);
-    });
-  }
-
   // 제품별 테이블
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
@@ -222,68 +206,57 @@ async function renderSummary(){
   const om=fbInvData[fk('사무실')]?.memo;
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
 
-  // 종합 재고 카드
-  let totalConsumeSheets=0;
-  if(sd&&!sd.error&&sd.consumption){
-    sd.consumption.forEach(c=>{
-      const pid=c.product==='500매트 22T'?'500':(c.product==='1000매트 22T'?'1000_22':'1000_17');
-      const bpb=pid==='500'?12:(pid==='1000_22'?4:6);
-      const sqm=c.sqm||30;const sqmK=sqm<=27?25:(sqm<=32?30:35);
-      const std=STD[pid]?STD[pid][sqmK]:10;
-      const side=pid==='500'?(sqmK>=30?2:1):1;
-      totalConsumeSheets+=(std+side)*bpb;
-    });
-  }
-  h+=`<div class="sum-card"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 재고조사 합계</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div>`;
-  if(totalConsumeSheets>0){
-    h+=`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);font-size:12px;color:var(--dim)">7일 시공 소모: <span style="color:var(--red);font-weight:700">-${totalConsumeSheets.toLocaleString()}장</span></div>`;
+  // 종합 재고 + 미래 예측 카드
+  const ft=sd&&!sd.error?sd.futureTotal||0:0;
+  const fj=sd&&!sd.error?sd.futureJobs||0:0;
+  const pj=sd&&!sd.error?sd.pastJobs||0:0;
+  const remaining=gs-ft;
+  const isShort=remaining<0;
+
+  h+=`<div class="sum-card">`;
+  h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 현재 재고</div>`;
+  h+=`<div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div>`;
+  if(ft>0){
+    h+=`<div style="margin-top:10px;padding-top:10px;border-top:.5px solid var(--border)">`;
+    h+=`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span style="color:var(--dim)">다음 7일 예약 (${fj}건)</span><span style="color:var(--red);font-weight:700">-${ft.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border)"><span>예상 잔여</span><span style="color:${isShort?'var(--red)':'var(--accent)'}">${remaining.toLocaleString()}장</span></div>`;
+    if(isShort)h+=`<div style="margin-top:6px;padding:8px 10px;background:#1a0505;border-radius:8px;font-size:12px;color:var(--red);font-weight:700;text-align:center">⚠️ 재고 부족 예상! 발주가 필요합니다</div>`;
+    h+=`</div>`;
   }
   h+=`</div>`;
 
-  // 최근 7일 시공 소모량
-  if(sd&&sd.error){
-    h+=`<div style="margin-top:4px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
-  }else if(sd){
+  // 다음 7일 예약 상세
+  if(sd&&!sd.error&&sd.futureList&&sd.futureList.length>0){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">🔧 최근 7일 시공 소모</span><span style="font-size:12px;color:var(--dim)">${consumeJobs}건</span></div>`;
-    if(consumeJobs>0){
-      h+=`<div style="padding:10px 14px">`;
-      PR.forEach(p=>{
-        const cKey=p.id+'_센터',sKey=p.id+'_사이드';
-        const cb=consumeBoxes[cKey]||0,sb=consumeBoxes[sKey]||0;
-        if(cb>0||sb>0){
-          h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span style="color:var(--dim)">${p.name} ${p.badge}</span><span style="color:var(--red);font-weight:700">-${cb}센터 -${sb}사이드</span></div>`;
-        }
-      });
-      h+=`</div>`;
-    }else{h+=`<div style="padding:16px;text-align:center;font-size:13px;color:var(--dim)">시공 데이터 없음</div>`}
+    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">📅 다음 7일 예약</span><span style="font-size:12px;color:var(--dim)">${fj}건</span></div>`;
+    h+=`<div style="padding:10px 14px">`;
+    sd.futureList.forEach(j=>{
+      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${j.sqm}평 · ${j.product.replace('매트 ','')}</span><span style="font-weight:600">~${j.expected}장</span></div>`;
+    });
+    h+=`</div></div>`;
+  }
+
+  // 지난 7일 시공 현황
+  if(sd&&!sd.error&&pj>0){
+    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">`;
+    h+=`<span style="font-size:13px;font-weight:700">🔧 지난 7일 시공</span><span style="font-size:13px;color:var(--dim)">${pj}건 완료</span>`;
     h+=`</div>`;
+  }
 
-    // 로스율
-    const tSold=sd.totalSold||0,tTheory=sd.totalTheory||0;
-    if(tSold>0||tTheory>0){
-      const loss=tSold-tTheory;const lossRate=tTheory>0?Math.round((loss/tTheory)*100):0;
-      const isLoss=loss>0;
-      h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-      h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📊 로스율 (최근 7일)</div>`;
-      h+=`<div style="padding:14px">`;
-      h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span style="color:var(--dim)">이론 소모량 (기준표)</span><span style="font-weight:700">${tTheory.toLocaleString()}장</span></div>`;
-      h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span style="color:var(--dim)">실제 판매량 (시공보고서)</span><span style="font-weight:700">${tSold.toLocaleString()}장</span></div>`;
-      h+=`<div style="display:flex;justify-content:space-between;padding:8px 0 4px;font-size:13px;border-top:.5px solid var(--border);margin-top:6px"><span style="font-weight:700">로스</span><span style="font-weight:800;color:${isLoss?'var(--red)':'var(--accent)'}">${isLoss?'+':''}${loss.toLocaleString()}장 (${lossRate>0?'+':''}${lossRate}%)</span></div>`;
-      if(tSold===0)h+=`<div style="font-size:11px;color:var(--dim);margin-top:6px">⚠️ 시공보고서 미제출 건이 있을 수 있어요</div>`;
-      h+=`</div></div>`;
-    }
+  // 입고 기록
+  if(sd&&!sd.error&&sd.incoming&&sd.incoming.length>0){
+    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📥 최근 입고</div>`;
+    h+=`<div style="padding:10px 14px">`;
+    sd.incoming.forEach(i=>{
+      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date} ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`;
+    });
+    h+=`</div></div>`;
+  }
 
-    // 입고 기록
-    if(sd.incoming&&sd.incoming.length>0){
-      h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-      h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📥 최근 입고</div>`;
-      h+=`<div style="padding:10px 14px">`;
-      sd.incoming.forEach(i=>{
-        h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date} ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`;
-      });
-      h+=`</div></div>`;
-    }
+  // 에러
+  if(sd&&sd.error){
+    h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
   }
 
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none'}
