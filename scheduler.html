@@ -488,7 +488,10 @@ sheetSyncTimer=setTimeout(()=>{
     const parts=j.id.split('_');
     const rowIdx=parseInt(parts[parts.length-1])+1;
     if(isNaN(rowIdx)||rowIdx<2)return;
-    data.push({row:rowIdx,sasu,busasu,vehicle:j.vehicle||(Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||''),date:j.date,address:j.addr,time:j.time});
+    const autoVehicle=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||'';
+    const finalVehicle=(LOCK.has(j.id)&&j.vehicle)?j.vehicle:autoVehicle;
+    j.vehicle=finalVehicle;// 로컬도 동기화
+    data.push({row:rowIdx,sasu,busasu,vehicle:finalVehicle,date:j.date,address:j.addr,time:j.time});
   });
   if(!data.length)return;
   // Apps Script로 전송
@@ -1664,7 +1667,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:(Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'');const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const hasLk=tg.jobs.some(jj=>LOCK.has(jj.id));const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const cp=hasLk&&tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:autoV;const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
