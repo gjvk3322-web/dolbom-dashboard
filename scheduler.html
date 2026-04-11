@@ -790,9 +790,9 @@ if(date<cutoffStr){
     const amG2=makeGroups(amFree2,amEmpty2.length);
     let gi2=0;
     amEmpty2.forEach(j=>{
-      if(amG2.length){
-        A[j.id]=[...amG2[gi2%amG2.length]].sort(hdSort);
-        amG2[gi2%amG2.length].forEach(e=>amUsed.add(e));
+      if(gi2<amG2.length){
+        A[j.id]=[...amG2[gi2]].sort(hdSort);
+        amG2[gi2].forEach(e=>amUsed.add(e));
         gi2++;
       }
     });
