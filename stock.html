@@ -109,7 +109,7 @@ function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function pickTeam(t){team=t;loc=null;if(fbInRef)fbInRef.off();fbInRef=db.ref('inventory/'+dateKey+'/'+team);fbInRef.on('value',snap=>{fbInvData=snap.val()||{};render()})}
 function setTab(t){tab=t;loc=null;render()}
-function render(){if(!team)return renderTeamSelect();if(tab==='summary')return renderSummary();if(tab==='incoming')return renderIncoming();renderInventory()}
+function render(){if(!team)return renderTeamSelect();if(tab==='summary')return renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
   document.getElementById('barEl').style.display='none';
@@ -124,7 +124,7 @@ function renderTabs(){
   const tc=TEAMS[team].color,tColor=tc==='busan'?'var(--red)':'var(--blue)';
   let h=`<div class="hd"><h1 style="color:${tColor}">${team} 재고관리</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
   h+=`<div class="team"><div class="team-btn" onclick="team=null;loc=null;if(fbInRef)fbInRef.off();fbInvData={};render()">← 팀 변경</div></div>`;
-  h+=`<div class="tabs"><div class="tab ${tab==='inventory'?'on-inv':''}" onclick="setTab('inventory')">📦 재고조사</div><div class="tab ${tab==='incoming'?'on-in':''}" onclick="setTab('incoming')">📥 입고기록</div><div class="tab ${tab==='summary'?'on-sum':''}" onclick="setTab('summary')">📊 종합</div></div>`;
+  h+=`<div class="tabs"><div class="tab ${tab==='inventory'?'on-inv':''}" onclick="setTab('inventory')">📦 재고조사</div><div class="tab ${tab==='incoming'?'on-in':''}" onclick="setTab('incoming')">📥 입고기록</div><div class="tab ${tab==='summary'?'on-sum':''}" onclick="setTab('summary')">📊 종합</div><div class="tab ${tab==='order'?'on-in':''}" onclick="setTab('order')">📋 발주</div></div>`;
   return h}
 
 function renderInventory(){
@@ -178,22 +178,18 @@ async function renderSummary(){
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
 
-  // 재고조사 합산
   const totals={};T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data)Object.entries(d.data).forEach(([k,v])=>{totals[k]=(totals[k]||0)+v})});
   let gs=0;
 
-  // 시공 데이터 로딩 표시
-  h+=`<div id="stockLoading" style="text-align:center;padding:12px;font-size:12px;color:var(--dim)">📡 시공 데이터 로딩 중...</div>`;
+  h+=`<div id="stockLoading" style="text-align:center;padding:12px;font-size:12px;color:var(--dim)">📡 데이터 로딩 중...</div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
 
-  // 시공+입고 데이터 가져오기
   const sd=await fetchStockData();
-  if(sd&&sd.error){console.error('API error:',sd.error)}
   h=renderTabs();
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
 
-  // 제품별 테이블
+  // 제품별 재고 테이블
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
@@ -204,77 +200,46 @@ async function renderSummary(){
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
       TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}">${v}</div>`});h+=`</div>`});h+=`</div>`});
 
-  // 사무실 메모
   const om=fbInvData[fk('사무실')]?.memo;
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
 
-  // 제품별+색상별 현재 재고 계산
+  // 데이터 계산
   const prodColorStock={};
-  PR.forEach(p=>{
-    p.colors.forEach(c=>{
-      let sheets=0;
-      TY.forEach(t=>{sheets+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb});
-      if(sheets>0)prodColorStock[p.id+'_'+c]=sheets;
-    });
-  });
-
-  // 제품별+색상별 미래 소모 계산
+  PR.forEach(p=>{p.colors.forEach(c=>{let s=0;TY.forEach(t=>{s+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb});if(s>0)prodColorStock[p.id+'_'+c]=s})});
   const prodColorFuture={};
   if(sd&&sd.futureList)sd.futureList.forEach(j=>{
     const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
-    const c=j.color||'미정';
-    const key=pid+'_'+c;
-    if(!prodColorFuture[key])prodColorFuture[key]={n:0,s:0};
-    prodColorFuture[key].n++;prodColorFuture[key].s+=j.expected;
+    const c=j.color||'미정';const key=pid+'_'+c;
+    if(!prodColorFuture[key])prodColorFuture[key]={n:0,s:0};prodColorFuture[key].n++;prodColorFuture[key].s+=j.expected;
   });
-
   const ft=sd&&!sd.error?sd.futureTotal||0:0;
   const fj=sd&&!sd.error?sd.futureJobs||0:0;
   const pj=sd&&!sd.error?sd.pastJobs||0:0;
   const remaining=gs-ft;
-  const isShort=remaining<0;
 
-  // 전체 재고 카드
-  h+=`<div class="sum-card">`;
-  h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고</div>`;
-  h+=`<div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div>`;
-  if(ft>0){
-    h+=`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--dim)">다음 7일 예약 (${fj}건)</span><span style="color:var(--red);font-weight:700">-${ft.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border)"><span>예상 잔여</span><span style="color:${isShort?'var(--red)':'var(--accent)'}">${remaining.toLocaleString()}장</span></div>`;
-    if(isShort)h+=`<div style="margin-top:6px;padding:8px 10px;background:#1a0505;border-radius:8px;font-size:12px;color:var(--red);font-weight:700;text-align:center">⚠️ 재고 부족 예상! 발주가 필요합니다</div>`;
-  }
-  h+=`</div>`;
-
-  // 제품별+색상별 예상 잔여 카드
+  // 통합 카드: 전체 재고 + 색상별 잔여
   h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-  h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">🎨 제품·색상별 예상 잔여</div>`;
+  h+=`<div style="padding:16px 14px;text-align:center;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
   PR.forEach(p=>{
     const hasData=p.colors.some(c=>prodColorStock[p.id+'_'+c]||prodColorFuture[p.id+'_'+c]);
     if(!hasData&&!ft)return;
-    h+=`<div style="padding:8px 14px 2px;font-size:12px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${p.name} ${p.badge}</div>`;
-    h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;font-size:10px;color:var(--dim);padding:4px 14px 2px"><span></span><span style="text-align:right">현재</span><span style="text-align:right">소모</span><span style="text-align:right">잔여</span></div>`;
+    h+=`<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${p.name} ${p.badge}</div>`;
     p.colors.forEach(c=>{
-      const key=p.id+'_'+c;
-      const cur=prodColorStock[key]||0;
-      const fut=prodColorFuture[key]?prodColorFuture[key].s:0;
-      const cnt=prodColorFuture[key]?prodColorFuture[key].n:0;
-      const rem=cur-fut;
+      const key=p.id+'_'+c;const cur=prodColorStock[key]||0;const fut=prodColorFuture[key]?prodColorFuture[key].s:0;const rem=cur-fut;
       if(cur===0&&fut===0)return;
-      h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;font-size:13px;padding:4px 14px;align-items:center">`;
-      h+=`<span style="font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CL[c]};margin-right:4px"></span>${c}${cnt?' ('+cnt+')':''}</span>`;
-      h+=`<span style="text-align:right;color:var(--dim)">${cur.toLocaleString()}</span>`;
-      h+=`<span style="text-align:right;color:${fut>0?'var(--red)':'var(--dim)'}">${fut>0?'-'+fut.toLocaleString():'-'}</span>`;
-      h+=`<span style="text-align:right;font-weight:700;color:${rem<0?'var(--red)':'var(--accent)'}">${rem.toLocaleString()}</span>`;
-      h+=`</div>`;
+      h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:12px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]};margin-right:4px"></span>${c}</span><span style="color:var(--dim)">${cur.toLocaleString()} ${fut>0?'<span style="color:var(--red)">-'+fut.toLocaleString()+'</span> = ':''}<span style="font-weight:700;color:${rem<0?'var(--red)':'var(--accent)'}">${rem.toLocaleString()}</span></span></div>`;
     });
   });
+  if(ft>0){
+    h+=`<div style="padding:8px 14px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>7일 후 예상 잔여</span><span style="color:${remaining<0?'var(--red)':'var(--accent)'}">${remaining.toLocaleString()}장</span></div>`;
+  }
   h+=`</div>`;
 
-  // 다음 7일 예약 상세
+  // 다음 7일 예약 (접기/펼치기)
   if(sd&&!sd.error&&sd.futureList&&sd.futureList.length>0){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">📅 다음 7일 예약</span><span style="font-size:12px;color:var(--dim)">${fj}건</span></div>`;
-    h+=`<div style="padding:10px 14px">`;
+    h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('futureDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📅 다음 7일 예약 <span style="color:var(--red)">-${ft.toLocaleString()}장</span></span><span style="font-size:12px;color:var(--dim)">${fj}건 <span class="arrow">▸</span></span></div>`;
+    h+=`<div id="futureDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
     sd.futureList.forEach(j=>{
       const pName=j.product.replace('매트','');
       const cDot=j.color?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[j.color]||'#888'};margin-right:3px"></span>`:'';
@@ -283,81 +248,102 @@ async function renderSummary(){
     h+=`</div></div>`;
   }
 
-  // 지난 7일 시공 현황
-  if(sd&&!sd.error&&pj>0){
-    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">`;
-    h+=`<span style="font-size:13px;font-weight:700">🔧 지난 7일 시공</span><span style="font-size:13px;color:var(--dim)">${pj}건 완료${sd.totalSold?' · '+sd.totalSold.toLocaleString()+'장 판매':''}</span>`;
-    h+=`</div>`;
-  }
-
   // 로스율
   if(sd&&!sd.error&&sd.lossData){
-    const ld=sd.lossData;
-    const isLoss=ld.loss>0;
-    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📉 로스율</div>`;
-    h+=`<div style="padding:12px 14px;font-size:12px">`;
-    h+=`<div style="color:var(--dim);margin-bottom:8px">${ld.prevDate} → ${ld.currentDate} 기간</div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">이전 재고</span><span>${ld.prevStock.toLocaleString()}장</span></div>`;
-    if(ld.inBetween>0)h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">+ 입고</span><span style="color:var(--orange)">+${ld.inBetween.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">- 판매 (시공보고서)</span><span style="color:var(--red)">-${ld.soldBetween.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:5px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="color:var(--dim)">있어야 할 재고</span><span style="font-weight:700">${ld.expectedStock.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">실제 재고 (재고조사)</span><span style="font-weight:700">${ld.currentStock.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-size:14px"><span style="font-weight:800">로스</span><span style="font-weight:800;color:${isLoss?'var(--red)':'var(--accent)'}">${isLoss?'':'+'} ${Math.abs(ld.loss).toLocaleString()}장 (${ld.lossRate}%)</span></div>`;
+    const ld=sd.lossData;const isLoss=ld.loss>0;
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('lossDetail');el.style.display=el.style.display==='none'?'block':'none'"><span style="font-size:13px;font-weight:700">📉 로스율</span><span style="font-size:14px;font-weight:800;color:${isLoss?'var(--red)':'var(--accent)'}">${Math.abs(ld.loss).toLocaleString()}장 (${ld.lossRate}%)</span></div>`;
+    h+=`<div id="lossDetail" style="display:none;padding:10px 14px;border-top:.5px solid var(--border);font-size:12px">`;
+    h+=`<div style="color:var(--dim);margin-bottom:6px">${ld.prevDate} → ${ld.currentDate}</div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">이전 재고</span><span>${ld.prevStock.toLocaleString()}장</span></div>`;
+    if(ld.inBetween>0)h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">+ 입고</span><span style="color:var(--orange)">+${ld.inBetween.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">- 판매</span><span style="color:var(--red)">-${ld.soldBetween.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;margin-top:4px;border-top:.5px solid var(--border)"><span>있어야 할 재고</span><span style="font-weight:700">${ld.expectedStock.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span>실제 재고</span><span style="font-weight:700">${ld.currentStock.toLocaleString()}장</span></div>`;
     h+=`</div></div>`;
-  } else if(sd&&!sd.error&&!sd.lossData){
-    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px">`;
-    h+=`<div style="font-size:13px;font-weight:700;margin-bottom:4px">📉 로스율</div>`;
-    h+=`<div style="font-size:12px;color:var(--dim)">재고조사 2주치 데이터가 필요해요. 다음 수요일 재고조사 후 자동 계산됩니다.</div>`;
-    h+=`</div>`;
+  } else if(sd&&!sd.error){
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">📉 로스율</span><span style="font-size:12px;color:var(--dim)">다음주 자동 계산</span></div>`;
   }
 
-  // 발주 추천
-  if(sd&&!sd.error){
-    const tw=sd.twoWeekEstimate||0;
-    const mp=sd.maxPallets||16;
-    const pi=sd.palletInfo||{};
-    const orderNeeded=tw>0&&gs>0&&tw>gs*0.3; // 2주 소모가 현재 재고의 30% 이상이면 발주 고려
-    
-    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📦 발주 추천</div>`;
-    h+=`<div style="padding:12px 14px;font-size:12px">`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">현재 재고</span><span>${gs.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">2주 예상 소모</span><span style="color:var(--red)">-${tw.toLocaleString()}장</span></div>`;
-    const afterTwo=gs-tw;
-    h+=`<div style="display:flex;justify-content:space-between;padding:5px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="font-weight:700">2주 후 예상 잔여</span><span style="font-weight:700;color:${afterTwo<0?'var(--red)':'var(--accent)'}">${afterTwo.toLocaleString()}장</span></div>`;
-    
-    // 파레트 정보
-    h+=`<div style="margin-top:10px;padding-top:8px;border-top:.5px solid var(--border);color:var(--dim)">`;
-    h+=`<div style="margin-bottom:6px">${team} 최대: ${mp}파레트/회</div>`;
-    Object.entries(pi).forEach(([prod,info])=>{
-      h+=`<div style="padding:2px 0">${prod.replace('매트 ','')} — 1파레트=${info.boxPerPallet}박스(${info.sheetsPerPallet}장)</div>`;
-    });
-    h+=`</div>`;
-    
-    if(afterTwo<0){
-      h+=`<div style="margin-top:8px;padding:10px;background:#1a0505;border-radius:8px;font-size:13px;color:var(--red);font-weight:700;text-align:center">🚨 발주가 시급합니다!</div>`;
-    }
-    h+=`</div></div>`;
+  // 지난 7일 + 입고 (한 줄씩)
+  if(sd&&!sd.error&&pj>0){
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">🔧 지난 7일 시공</span><span style="font-size:12px;color:var(--dim)">${pj}건 · ${(sd.totalSold||0).toLocaleString()}장</span></div>`;
   }
-
-  // 입고 기록
   if(sd&&!sd.error&&sd.incoming&&sd.incoming.length>0){
-    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📥 최근 입고</div>`;
-    h+=`<div style="padding:10px 14px">`;
-    sd.incoming.forEach(i=>{
-      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date} ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`;
-    });
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;cursor:pointer" onclick="const el=document.getElementById('inDetail');el.style.display=el.style.display==='none'?'block':'none'"><span style="font-size:13px;font-weight:700">📥 최근 입고</span><span style="font-size:12px;color:var(--dim)">${sd.incoming.length}건 ▸</span></div>`;
+    h+=`<div id="inDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
+    sd.incoming.forEach(i=>{h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date} ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`});
     h+=`</div></div>`;
   }
-
-  // 에러
-  if(sd&&sd.error){
-    h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
-  }
-
+  if(sd&&sd.error)h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none'}
+
+// ===== 발주 탭 =====
+function renderOrder(){
+  let h=renderTabs();const T=TEAMS[team];
+  const totals={};T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data)Object.entries(d.data).forEach(([k,v])=>{totals[k]=(totals[k]||0)+v})});
+  const mp=team==='경기'?8:16;
+
+  h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:12px">📋 ${team} 발주서 · 최대 ${mp}파레트/회</div>`;
+  h+=`<div id="orderForm">`;
+  const palletData={'500매트 22T':{bpb:12,bpp:24},'1000매트 22T':{bpb:4,bpp:18},'1000매트 17T':{bpb:6,bpp:15}};
+  PR.forEach(p=>{
+    const pi=palletData[p.name+' '+p.badge];
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1파레트=${pi.bpp}박스</span><span class="ph-sum" id="op_${p.id}">0파레트</span></div>`;
+    h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
+    p.colors.forEach(c=>{
+      h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
+      TY.forEach(t=>{
+        const curBox=totals[p.id+'_'+c+'_'+t]||0;
+        h+=`<div class="ce incoming"><input type="number" inputmode="numeric" min="0" id="ord_${p.id}_${c}_${t}" value="" placeholder="${curBox}" oninput="calcOrder()"></div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  });
+  h+=`<div style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">📅 도착 예정일</div><input type="date" id="ordDate" style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit" /></div>`;
+  h+=`<div class="memo-sec"><div class="memo-hd">📝 메모</div><div class="memo-bd"><textarea class="memo" id="ordMemo" placeholder=""></textarea></div></div>`;
+  h+=`</div>`;
+  h+=`<div class="sum-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;color:var(--dim)">총 발주량</div><div style="font-size:24px;font-weight:800;color:var(--orange)" id="ordTotal">0박스 / 0장</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--dim)">파레트</div><div style="font-size:24px;font-weight:800;color:var(--orange)" id="ordPallet">0 / ${mp}</div></div></div></div>`;
+  document.getElementById('app').innerHTML=h;
+  document.getElementById('barEl').style.display='block';
+  document.getElementById('bl').innerHTML=`📋 <b>${team} 발주서</b>`;
+  document.getElementById('gt').textContent='0';
+  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='📸 발주서 저장';sb.className='btn btn-in';sb.onclick=saveOrder;
+}
+
+function calcOrder(){
+  let totalBox=0,totalSheet=0,totalPallet=0;
+  const pd={'500':{bpb:12,bpp:24},'1000_22':{bpb:4,bpp:18},'1000_17':{bpb:6,bpp:15}};
+  PR.forEach(p=>{
+    let pBox=0;
+    p.colors.forEach(c=>{TY.forEach(t=>{pBox+=(parseInt(document.getElementById('ord_'+p.id+'_'+c+'_'+t)?.value)||0)})});
+    const d=pd[p.id];const pallet=Math.ceil(pBox/d.bpp);
+    totalBox+=pBox;totalSheet+=pBox*d.bpb;totalPallet+=pallet;
+    const el=document.getElementById('op_'+p.id);
+    if(el)el.textContent=pBox>0?pBox+'박스 ('+pallet+'파레트)':'0파레트';
+  });
+  const mp=team==='경기'?8:16;
+  document.getElementById('ordTotal').textContent=totalBox+'박스 / '+totalSheet.toLocaleString()+'장';
+  document.getElementById('ordPallet').textContent=totalPallet+' / '+mp;
+  document.getElementById('ordPallet').style.color=totalPallet>mp?'var(--red)':'var(--orange)';
+  document.getElementById('gt').textContent=totalSheet.toLocaleString();
+}
+
+async function saveOrder(){
+  if(typeof html2canvas==='undefined'){
+    const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    document.head.appendChild(s);await new Promise(r=>s.onload=r);
+  }
+  try{
+    const canvas=await html2canvas(document.querySelector('.wrap'),{backgroundColor:'#09090b',scale:2});
+    const link=document.createElement('a');
+    link.download='발주서_'+team+'_'+dateKey+'.png';
+    link.href=canvas.toDataURL();link.click();
+    toast('✅ 발주서 이미지 저장!');
+  }catch(e){toast('저장 실패');console.error(e)}
+}
 
 function buildTable(pfx,ex){let h='';PR.forEach(p=>{
   h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum" id="ps_${pfx}_${p.id}">0장</span></div>`;
@@ -394,7 +380,7 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
     toast('✅ '+team+' 입고 완료!')}catch(e){toast('실패')}
   btn.disabled=false;btn.textContent='입고 기록 저장'}
 
-if(urlTab&&['inventory','incoming','summary'].includes(urlTab))tab=urlTab;
+if(urlTab&&['inventory','incoming','summary','order'].includes(urlTab))tab=urlTab;
 if(urlTeam&&TEAMS[urlTeam]){pickTeam(urlTeam)}else if(urlTeam==='경기도'&&TEAMS['경기']){pickTeam('경기')}else{render()}
 </script>
 </body>
