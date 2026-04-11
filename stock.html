@@ -108,7 +108,7 @@ const urlTab=new URLSearchParams(window.location.search).get('tab');
 function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function pickTeam(t){team=t;loc=null;if(fbInRef)fbInRef.off();fbInRef=db.ref('inventory/'+dateKey+'/'+team);fbInRef.on('value',snap=>{fbInvData=snap.val()||{};render()})}
-function setTab(t){tab=t;loc=null;render()}
+function setTab(t){tab=t;loc=null;document.querySelector('.wrap').style.maxWidth=t==='order'?'960px':'520px';render()}
 function render(){if(!team)return renderTeamSelect();if(tab==='summary')return renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
@@ -308,24 +308,58 @@ async function renderOrder(){
     });
   }
 
-  // 추천 발주 = max(0, 2주 필요 - 현재 재고)
+  // 추천 발주 = max(0, 2주 필요 - 현재 재고), 파레트 단위 올림
   const recommend={};
+  const bppMap={'500':24,'1000_22':18,'1000_17':15};
   Object.keys(need).forEach(k=>{
     const cur=totals[k]||0;
     const rec=Math.max(0,need[k]-cur);
     if(rec>0)recommend[k]=rec;
   });
+  // 제품별 합계 → 파레트 올림 → 센터에 추가분 배분
+  PR.forEach(p=>{
+    let pTotal=0;const keys=[];
+    p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;if(recommend[k])pTotal+=recommend[k];keys.push(k)})});
+    if(pTotal===0)return;
+    const bpp=bppMap[p.id];
+    const rounded=Math.ceil(pTotal/bpp)*bpp;
+    const extra=rounded-pTotal;
+    // 가장 큰 셀(센터)에 추가분 배분
+    if(extra>0){
+      let maxK='',maxV=0;
+      keys.forEach(k=>{if((recommend[k]||0)>maxV){maxV=recommend[k]||0;maxK=k}});
+      if(maxK)recommend[maxK]=(recommend[maxK]||0)+extra;
+    }
+  });
 
-  // 화면 렌더
+  // 화면 렌더 — 좌우 레이아웃 (데스크톱)
   h=renderTabs();
-  const hasRec=Object.keys(recommend).length>0;
-  if(hasRec){
-    h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:4px">📋 시공기준표 기반 2주 예상 발주량</div>`;
-    h+=`<div style="font-size:11px;color:var(--dim);margin-bottom:12px">자동 계산된 추천 수량입니다. 수정 후 확인해주세요.</div>`;
-  } else {
-    h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:12px">📋 ${team} 발주서 · 최대 ${mp}파레트/회</div>`;
-  }
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">`;
 
+  // 왼쪽: 추천 요약
+  h+=`<div>`;
+  h+=`<div style="font-size:14px;font-weight:800;margin-bottom:12px">📊 추천 발주량</div>`;
+  h+=`<div style="font-size:11px;color:var(--dim);margin-bottom:12px">시공기준표 기반 2주 예상<br>현재 재고 차감 후 파레트 단위 올림</div>`;
+  PR.forEach(p=>{
+    let pTotal=0;const rows=[];
+    p.colors.forEach(c=>{TY.forEach(t=>{const v=recommend[p.id+'_'+c+'_'+t]||0;if(v>0){rows.push({c,t,v});pTotal+=v}})});
+    if(pTotal===0)return;
+    const pallet=Math.ceil(pTotal/bppMap[p.id]);
+    h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px">`;
+    h+=`<div style="padding:10px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">${p.name} <span style="color:var(--blue)">${p.badge}</span></span><span style="font-size:13px;font-weight:700;color:var(--orange)">${pallet}파레트 (${pTotal}박스)</span></div>`;
+    rows.forEach(r=>{
+      h+=`<div style="display:flex;justify-content:space-between;padding:4px 14px;font-size:13px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[r.c]};margin-right:4px"></span>${r.c} ${r.t}</span><span style="font-weight:600">${r.v}박스</span></div>`;
+    });
+    h+=`</div>`;
+  });
+  if(Object.keys(recommend).length===0){
+    h+=`<div style="background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:20px;text-align:center;color:var(--accent);font-size:13px;font-weight:700">✅ 현재 재고 충분<br><span style="font-size:11px;color:var(--dim);font-weight:500">2주 예상 소모 대비 부족 없음</span></div>`;
+  }
+  h+=`</div>`;
+
+  // 오른쪽: 수정 폼
+  h+=`<div>`;
+  h+=`<div style="font-size:14px;font-weight:800;margin-bottom:12px">✏️ 발주서 작성</div>`;
   h+=`<div id="orderForm">`;
   const palletData={'500매트 22T':{bpb:12,bpp:24},'1000매트 22T':{bpb:4,bpp:18},'1000매트 17T':{bpb:6,bpp:15}};
   PR.forEach(p=>{
@@ -344,9 +378,12 @@ async function renderOrder(){
   });
   h+=`<div style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">📅 도착 예정일</div><input type="date" id="ordDate" style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit" /></div>`;
   h+=`<div class="memo-sec"><div class="memo-hd">📝 메모</div><div class="memo-bd"><textarea class="memo" id="ordMemo" placeholder=""></textarea></div></div>`;
-  h+=`</div>`;
+  h+=`</div>`;// orderForm
   h+=`<div class="sum-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;color:var(--dim)">총 발주량</div><div style="font-size:24px;font-weight:800;color:var(--orange)" id="ordTotal">0박스 / 0장</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--dim)">파레트</div><div style="font-size:24px;font-weight:800;color:var(--orange)" id="ordPallet">0 / ${mp}</div></div></div></div>`;
+  h+=`</div>`;// 오른쪽 컬럼
+  h+=`</div>`;// 그리드
   document.getElementById('app').innerHTML=h;
+  document.querySelector('.wrap').style.maxWidth='960px';
   document.getElementById('barEl').style.display='block';
   document.getElementById('bl').innerHTML=`📋 <b>${team} 발주서</b>`;
   document.getElementById('gt').textContent='0';
