@@ -158,9 +158,9 @@ function renderIncoming(){
 
 // 시공기준표 (평수별 센터 박스수)
 const STD={
-  '500':{25:9,30:10,35:12},
-  '1000_22':{25:7,30:8,35:9},
-  '1000_17':{25:5,30:6,35:6}
+  '500':{25:{센터:9,사이드:1,코너:1,'10T':0},30:{센터:10,사이드:2,코너:1,'10T':0},35:{센터:12,사이드:2,코너:1,'10T':0}},
+  '1000_22':{25:{센터:7,사이드:1,코너:1,'10T':0},30:{센터:8,사이드:1,코너:1,'10T':0},35:{센터:9,사이드:1,코너:1,'10T':0}},
+  '1000_17':{25:{센터:5,사이드:1,코너:1,'10T':0},30:{센터:6,사이드:1,코너:1,'10T':0},35:{센터:6,사이드:1,코너:1,'10T':0}}
 };
 let stockCache=null;
 
@@ -280,12 +280,52 @@ async function renderSummary(){
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none'}
 
 // ===== 발주 탭 =====
-function renderOrder(){
+async function renderOrder(){
   let h=renderTabs();const T=TEAMS[team];
   const totals={};T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data)Object.entries(d.data).forEach(([k,v])=>{totals[k]=(totals[k]||0)+v})});
   const mp=team==='경기'?8:16;
 
-  h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:12px">📋 ${team} 발주서 · 최대 ${mp}파레트/회</div>`;
+  // 로딩
+  h+=`<div style="text-align:center;padding:20px;font-size:12px;color:var(--dim)">📡 추천 발주량 계산 중...</div>`;
+  document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
+
+  // 시공 데이터 가져오기
+  const sd=stockCache||await fetchStockData();
+
+  // 2주 예상 소모 계산 (제품/색상/형태별)
+  const need={};// need['500_모던_센터'] = 필요 박스 수
+  if(sd&&sd.futureList){
+    // 1주 데이터 × 2 = 2주 예상
+    sd.futureList.forEach(j=>{
+      const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
+      const c=j.color||'';if(!c)return;
+      const sqmKey=j.sqm<=27?25:(j.sqm<=32?30:35);
+      const std=STD[pid]?.[sqmKey];if(!std)return;
+      TY.forEach(t=>{
+        const k=pid+'_'+c+'_'+t;
+        need[k]=(need[k]||0)+((std[t]||0)*2);// ×2 for 2 weeks
+      });
+    });
+  }
+
+  // 추천 발주 = max(0, 2주 필요 - 현재 재고)
+  const recommend={};
+  Object.keys(need).forEach(k=>{
+    const cur=totals[k]||0;
+    const rec=Math.max(0,need[k]-cur);
+    if(rec>0)recommend[k]=rec;
+  });
+
+  // 화면 렌더
+  h=renderTabs();
+  const hasRec=Object.keys(recommend).length>0;
+  if(hasRec){
+    h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:4px">📋 시공기준표 기반 2주 예상 발주량</div>`;
+    h+=`<div style="font-size:11px;color:var(--dim);margin-bottom:12px">자동 계산된 추천 수량입니다. 수정 후 확인해주세요.</div>`;
+  } else {
+    h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:12px">📋 ${team} 발주서 · 최대 ${mp}파레트/회</div>`;
+  }
+
   h+=`<div id="orderForm">`;
   const palletData={'500매트 22T':{bpb:12,bpp:24},'1000매트 22T':{bpb:4,bpp:18},'1000매트 17T':{bpb:6,bpp:15}};
   PR.forEach(p=>{
@@ -295,7 +335,8 @@ function renderOrder(){
     p.colors.forEach(c=>{
       h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
       TY.forEach(t=>{
-        h+=`<div class="ce incoming"><input type="number" inputmode="numeric" min="0" id="ord_${p.id}_${c}_${t}" value="" oninput="calcOrder()"></div>`;
+        const recVal=recommend[p.id+'_'+c+'_'+t]||'';
+        h+=`<div class="ce incoming"><input type="number" inputmode="numeric" min="0" id="ord_${p.id}_${c}_${t}" value="${recVal}" oninput="calcOrder()"></div>`;
       });
       h+=`</div>`;
     });
@@ -310,6 +351,7 @@ function renderOrder(){
   document.getElementById('bl').innerHTML=`📋 <b>${team} 발주서</b>`;
   document.getElementById('gt').textContent='0';
   const sb=document.getElementById('sbtn');sb.disabled=true;sb.textContent='수량을 입력하세요';sb.className='btn btn-in';sb.onclick=showOrderConfirm;
+  calcOrder();// 추천값이 있으면 합계 계산
 }
 
 function calcOrder(){
