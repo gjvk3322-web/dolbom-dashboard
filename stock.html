@@ -233,8 +233,21 @@ async function renderSummary(){
     h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">📅 다음 7일 예약</span><span style="font-size:12px;color:var(--dim)">${fj}건</span></div>`;
     h+=`<div style="padding:10px 14px">`;
     sd.futureList.forEach(j=>{
-      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${j.sqm}평 · ${j.product.replace('매트','')}</span><span style="font-weight:600">~${j.expected}장</span></div>`;
+      const pName=j.product.replace('매트','');
+      const cDot=j.color?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[j.color]||'#888'};margin-right:3px"></span>`:'';
+      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${j.sqm}평 · ${cDot}${j.color||''} ${pName}</span><span style="font-weight:600">~${j.expected}장</span></div>`;
     });
+    // 색상별 소요 요약
+    const colorSum={};
+    sd.futureList.forEach(j=>{const c=j.color||'미정';if(!colorSum[c])colorSum[c]={count:0,sheets:0};colorSum[c].count++;colorSum[c].sheets+=j.expected});
+    if(Object.keys(colorSum).length>0){
+      h+=`<div style="padding:8px 14px 10px;border-top:.5px solid var(--border);font-size:12px;color:var(--dim)">색상별 요약</div>`;
+      h+=`<div style="padding:0 14px 10px;display:flex;flex-wrap:wrap;gap:6px">`;
+      Object.entries(colorSum).forEach(([c,v])=>{
+        h+=`<span style="padding:4px 10px;background:var(--bg);border-radius:6px;font-size:11px;font-weight:600"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:3px"></span>${c} ${v.count}건 ~${v.sheets}장</span>`;
+      });
+      h+=`</div>`;
+    }
     h+=`</div></div>`;
   }
 
