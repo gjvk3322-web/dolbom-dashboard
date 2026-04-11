@@ -286,8 +286,59 @@ async function renderSummary(){
   // 지난 7일 시공 현황
   if(sd&&!sd.error&&pj>0){
     h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">`;
-    h+=`<span style="font-size:13px;font-weight:700">🔧 지난 7일 시공</span><span style="font-size:13px;color:var(--dim)">${pj}건 완료</span>`;
+    h+=`<span style="font-size:13px;font-weight:700">🔧 지난 7일 시공</span><span style="font-size:13px;color:var(--dim)">${pj}건 완료${sd.totalSold?' · '+sd.totalSold.toLocaleString()+'장 판매':''}</span>`;
     h+=`</div>`;
+  }
+
+  // 로스율
+  if(sd&&!sd.error&&sd.lossData){
+    const ld=sd.lossData;
+    const isLoss=ld.loss>0;
+    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📉 로스율</div>`;
+    h+=`<div style="padding:12px 14px;font-size:12px">`;
+    h+=`<div style="color:var(--dim);margin-bottom:8px">${ld.prevDate} → ${ld.currentDate} 기간</div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">이전 재고</span><span>${ld.prevStock.toLocaleString()}장</span></div>`;
+    if(ld.inBetween>0)h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">+ 입고</span><span style="color:var(--orange)">+${ld.inBetween.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">- 판매 (시공보고서)</span><span style="color:var(--red)">-${ld.soldBetween.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:5px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="color:var(--dim)">있어야 할 재고</span><span style="font-weight:700">${ld.expectedStock.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">실제 재고 (재고조사)</span><span style="font-weight:700">${ld.currentStock.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-size:14px"><span style="font-weight:800">로스</span><span style="font-weight:800;color:${isLoss?'var(--red)':'var(--accent)'}">${isLoss?'':'+'} ${Math.abs(ld.loss).toLocaleString()}장 (${ld.lossRate}%)</span></div>`;
+    h+=`</div></div>`;
+  } else if(sd&&!sd.error&&!sd.lossData){
+    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px">`;
+    h+=`<div style="font-size:13px;font-weight:700;margin-bottom:4px">📉 로스율</div>`;
+    h+=`<div style="font-size:12px;color:var(--dim)">재고조사 2주치 데이터가 필요해요. 다음 수요일 재고조사 후 자동 계산됩니다.</div>`;
+    h+=`</div>`;
+  }
+
+  // 발주 추천
+  if(sd&&!sd.error){
+    const tw=sd.twoWeekEstimate||0;
+    const mp=sd.maxPallets||16;
+    const pi=sd.palletInfo||{};
+    const orderNeeded=tw>0&&gs>0&&tw>gs*0.3; // 2주 소모가 현재 재고의 30% 이상이면 발주 고려
+    
+    h+=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);font-size:13px;font-weight:700">📦 발주 추천</div>`;
+    h+=`<div style="padding:12px 14px;font-size:12px">`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">현재 재고</span><span>${gs.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">2주 예상 소모</span><span style="color:var(--red)">-${tw.toLocaleString()}장</span></div>`;
+    const afterTwo=gs-tw;
+    h+=`<div style="display:flex;justify-content:space-between;padding:5px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="font-weight:700">2주 후 예상 잔여</span><span style="font-weight:700;color:${afterTwo<0?'var(--red)':'var(--accent)'}">${afterTwo.toLocaleString()}장</span></div>`;
+    
+    // 파레트 정보
+    h+=`<div style="margin-top:10px;padding-top:8px;border-top:.5px solid var(--border);color:var(--dim)">`;
+    h+=`<div style="margin-bottom:6px">${team} 최대: ${mp}파레트/회</div>`;
+    Object.entries(pi).forEach(([prod,info])=>{
+      h+=`<div style="padding:2px 0">${prod.replace('매트 ','')} — 1파레트=${info.boxPerPallet}박스(${info.sheetsPerPallet}장)</div>`;
+    });
+    h+=`</div>`;
+    
+    if(afterTwo<0){
+      h+=`<div style="margin-top:8px;padding:10px;background:#1a0505;border-radius:8px;font-size:13px;color:var(--red);font-weight:700;text-align:center">🚨 발주가 시급합니다!</div>`;
+    }
+    h+=`</div></div>`;
   }
 
   // 입고 기록
