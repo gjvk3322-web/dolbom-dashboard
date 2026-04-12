@@ -129,11 +129,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
       <div class="row2">
         <div class="fg">
           <label>점검자1 <span class="req">*</span></label>
-          <select id="fDriver"><option value="">선택</option></select>
+          <input type="text" id="fDriver" placeholder="이름 입력" />
         </div>
         <div class="fg">
           <label>점검자2 <span class="req">*</span></label>
-          <select id="fPartner"><option value="">선택</option></select>
+          <input type="text" id="fPartner" placeholder="이름 입력" />
         </div>
       </div>
     </div>
@@ -259,22 +259,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 
 <div class="toast" id="toast"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 
-const TEAM_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/export?format=csv&gid=79962735';
+// Firebase URLs - try multiple formats
+const FB_URLS = [
+  'https://dolbomnote-be438-default-rtdb.firebaseio.com',
+  'https://dolbomnote-be438-default-rtdb.asia-southeast1.firebasedatabase.app',
+  'https://dolbomnote-be438.firebaseio.com'
+];
 
-// Firebase 초기화
-firebase.initializeApp({
-  apiKey: 'AIzaSyAjVerxCunFEIvkNfCOTDnedbO5YRVOma4',
-  databaseURL: 'https://dolbomnote-be438-default-rtdb.firebaseio.com',
-  projectId: 'dolbomnote-be438'
-});
-const db = firebase.database();
-
-let crewList = [];
 let vehiclesBusan = [];
 let vehiclesGG = [];
 let selectedRegion = '';
@@ -282,58 +276,52 @@ let oilChanged = null;
 
 // ===== 초기 로드 =====
 document.addEventListener('DOMContentLoaded', async function() {
-  await Promise.all([loadCrew(), loadVehicles()]);
-  console.log('직원:', crewList.length, '부산차량:', vehiclesBusan.length, '경기차량:', vehiclesGG.length);
+  await loadVehicles();
+  console.log('부산차량:', vehiclesBusan, '경기차량:', vehiclesGG);
 });
 
-// ===== 팀설정에서 직원 목록 로드 =====
-async function loadCrew() {
-  try {
-    const res = await fetch(TEAM_SHEET_CSV);
-    const text = await res.text();
-    const rows = text.split('\n').slice(1); // 헤더 스킵
-    crewList = [];
-    rows.forEach(row => {
-      // CSV 파싱: 쉼표로 분리하되 큰따옴표 내부 쉼표는 무시
-      const cols = row.match(/(".*?"|[^",\r]+)(?=\s*,|\s*$)/g) || row.split(',');
-      const name = (cols[0] || '').trim().replace(/"/g, '');
-      const region = (cols[1] || '').trim().replace(/"/g, '');
-      if (name && (region === '부산' || region === '경기')) {
-        crewList.push({ name, region });
-      }
-    });
-    console.log('직원 로드 완료:', crewList);
-  } catch (e) {
-    console.error('직원 목록 로드 실패:', e);
-  }
-}
-
-// ===== Firebase SDK로 차량 목록 로드 =====
+// ===== Firebase REST API로 차량 목록 로드 (여러 URL 시도) =====
 async function loadVehicles() {
-  try {
-    const [bSnap, gSnap] = await Promise.all([
-      db.ref('vehicles').once('value'),
-      db.ref('gg_vehicles').once('value')
-    ]);
-    const bData = bSnap.val();
-    const gData = gSnap.val();
+  for (const baseUrl of FB_URLS) {
+    try {
+      console.log('Firebase 시도:', baseUrl);
+      const [bRes, gRes] = await Promise.all([
+        fetch(baseUrl + '/vehicles.json'),
+        fetch(baseUrl + '/gg_vehicles.json')
+      ]);
 
-    console.log('Firebase vehicles 원본:', bData);
-    console.log('Firebase gg_vehicles 원본:', gData);
+      if (!bRes.ok && !gRes.ok) {
+        console.log('실패 (HTTP ' + bRes.status + '):', baseUrl);
+        continue;
+      }
 
-    vehiclesBusan = extractVehicles(bData);
-    vehiclesGG = extractVehicles(gData);
+      const bData = await bRes.json();
+      const gData = await gRes.json();
 
-    console.log('부산 차량:', vehiclesBusan);
-    console.log('경기 차량:', vehiclesGG);
-  } catch (e) {
-    console.error('차량 목록 로드 실패:', e);
+      console.log('vehicles 원본:', bData);
+      console.log('gg_vehicles 원본:', gData);
+
+      if (bData === null && gData === null) {
+        console.log('데이터 없음:', baseUrl);
+        continue;
+      }
+
+      vehiclesBusan = extractVehicles(bData);
+      vehiclesGG = extractVehicles(gData);
+
+      if (vehiclesBusan.length > 0 || vehiclesGG.length > 0) {
+        console.log('✅ Firebase 로드 성공:', baseUrl);
+        return; // 성공하면 중단
+      }
+    } catch (e) {
+      console.log('오류:', baseUrl, e.message);
+    }
   }
+  console.warn('⚠️ 모든 Firebase URL 실패');
 }
 
 function extractVehicles(data) {
   if (!data) return [];
-  // 다양한 Firebase 데이터 구조 대응
   if (Array.isArray(data)) {
     return data.filter(v => v).map(v => typeof v === 'string' ? v : (v.number || v.plate || v.name || String(v)));
   }
@@ -342,7 +330,7 @@ function extractVehicles(data) {
       if (typeof val === 'string') return val;
       if (val && typeof val === 'object') return val.number || val.plate || val.name || key;
       return '';
-    }).filter(v => v);
+    }).filter(v => v && v !== 'true' && v !== 'false');
   }
   return [];
 }
@@ -352,19 +340,7 @@ function selectRegion(region) {
   selectedRegion = region;
   document.querySelectorAll('#tabCheck .region-sel .region-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  updateCrewDropdowns(region);
   updateVehicleDropdown(region, 'fVehicle');
-}
-
-function updateCrewDropdowns(region) {
-  const filtered = crewList.filter(c => c.region === region);
-  ['fDriver', 'fPartner'].forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">선택</option>';
-    filtered.forEach(c => {
-      sel.innerHTML += '<option value="' + c.name + '">' + c.name + '</option>';
-    });
-  });
 }
 
 function updateVehicleDropdown(region, selectId) {
