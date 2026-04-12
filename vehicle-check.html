@@ -144,6 +144,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
       <div class="fg">
         <label>차량번호 <span class="req">*</span></label>
         <select id="fVehicle"><option value="">지역을 먼저 선택해주세요</option></select>
+        <input type="text" id="fVehicleManual" placeholder="차량번호 직접 입력" style="display:none;margin-top:8px" />
+        <div id="vehicleManualToggle" style="display:none;margin-top:6px">
+          <span style="font-size:11px;color:#1565C0;cursor:pointer;text-decoration:underline" onclick="toggleVehicleManual()">직접 입력하기</span>
+        </div>
       </div>
       <div class="fg">
         <label>현재 주행거리 (km) <span class="req">*</span></label>
@@ -350,6 +354,42 @@ function updateVehicleDropdown(region, selectId) {
   vehicles.forEach(v => {
     sel.innerHTML += '<option value="' + v + '">' + v + '</option>';
   });
+
+  // 차량 목록이 비어있으면 직접 입력 모드로 전환
+  if (selectId === 'fVehicle') {
+    if (vehicles.length === 0) {
+      sel.style.display = 'none';
+      document.getElementById('fVehicleManual').style.display = 'block';
+      document.getElementById('vehicleManualToggle').style.display = 'none';
+    } else {
+      sel.style.display = 'block';
+      document.getElementById('fVehicleManual').style.display = 'none';
+      document.getElementById('vehicleManualToggle').style.display = 'block';
+    }
+  }
+}
+
+function toggleVehicleManual() {
+  var sel = document.getElementById('fVehicle');
+  var manual = document.getElementById('fVehicleManual');
+  var toggle = document.getElementById('vehicleManualToggle');
+  if (manual.style.display === 'none') {
+    manual.style.display = 'block';
+    sel.style.display = 'none';
+    toggle.innerHTML = '<span style="font-size:11px;color:#1565C0;cursor:pointer;text-decoration:underline" onclick="toggleVehicleManual()">목록에서 선택하기</span>';
+  } else {
+    manual.style.display = 'none';
+    manual.value = '';
+    sel.style.display = 'block';
+    toggle.innerHTML = '<span style="font-size:11px;color:#1565C0;cursor:pointer;text-decoration:underline" onclick="toggleVehicleManual()">직접 입력하기</span>';
+  }
+}
+
+function getVehicleValue() {
+  var sel = document.getElementById('fVehicle');
+  var manual = document.getElementById('fVehicleManual');
+  if (manual.style.display !== 'none' && manual.value.trim()) return manual.value.trim();
+  return sel.value;
 }
 
 // ===== 상태 칩 선택 =====
@@ -383,7 +423,7 @@ async function submitCheck() {
   if (!selectedRegion) { showToast('⚠️ 지역을 선택해주세요', 'error'); return; }
   const driver = document.getElementById('fDriver').value;
   const partner = document.getElementById('fPartner').value;
-  const vehicle = document.getElementById('fVehicle').value;
+  const vehicle = getVehicleValue();
   const mileage = document.getElementById('fMileage').value.trim();
   const washDate = document.getElementById('fWashDate').value;
   const oil = getStatusValue('chipOil');
@@ -412,16 +452,16 @@ async function submitCheck() {
   const payload = {
     type: 'vehicleCheck',
     region: selectedRegion,
-    driver: driver,
-    partner: partner,
-    vehicle: vehicle,
+    sasu: driver,
+    busasu: partner,
+    vehicleNum: vehicle,
     mileage: parseInt(mileage),
     washDate: washDate || '',
-    oil: oil,
+    engineOil: oil,
     tire: tire,
     brake: brake,
-    warning: warning,
-    exterior: exterior,
+    warningLight: warning,
+    exteriorDamage: exterior,
     note: note,
     oilChanged: oilChanged,
     oilKm: oilChanged ? parseInt(document.getElementById('fOilKm').value) : null,
