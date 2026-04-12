@@ -259,21 +259,31 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 
-const FIREBASE_BASE = 'https://dolbomnote-be438-default-rtdb.firebaseio.com';
 const TEAM_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/export?format=csv&gid=79962735';
 
-let crewList = [];       // [{name, region, hireDate}]
+// Firebase 초기화
+firebase.initializeApp({
+  apiKey: 'AIzaSyAjVerxCunFEIvkNfCOTDnedbO5YRVOma4',
+  databaseURL: 'https://dolbomnote-be438-default-rtdb.firebaseio.com',
+  projectId: 'dolbomnote-be438'
+});
+const db = firebase.database();
+
+let crewList = [];
 let vehiclesBusan = [];
 let vehiclesGG = [];
 let selectedRegion = '';
-let oilChanged = null;   // true/false/null
+let oilChanged = null;
 
 // ===== 초기 로드 =====
 document.addEventListener('DOMContentLoaded', async function() {
   await Promise.all([loadCrew(), loadVehicles()]);
+  console.log('직원:', crewList.length, '부산차량:', vehiclesBusan.length, '경기차량:', vehiclesGG.length);
 });
 
 // ===== 팀설정에서 직원 목록 로드 =====
@@ -284,37 +294,57 @@ async function loadCrew() {
     const rows = text.split('\n').slice(1); // 헤더 스킵
     crewList = [];
     rows.forEach(row => {
-      const cols = row.split(',');
+      // CSV 파싱: 쉼표로 분리하되 큰따옴표 내부 쉼표는 무시
+      const cols = row.match(/(".*?"|[^",\r]+)(?=\s*,|\s*$)/g) || row.split(',');
       const name = (cols[0] || '').trim().replace(/"/g, '');
       const region = (cols[1] || '').trim().replace(/"/g, '');
       if (name && (region === '부산' || region === '경기')) {
         crewList.push({ name, region });
       }
     });
+    console.log('직원 로드 완료:', crewList);
   } catch (e) {
     console.error('직원 목록 로드 실패:', e);
   }
 }
 
-// ===== Firebase에서 차량 목록 로드 =====
+// ===== Firebase SDK로 차량 목록 로드 =====
 async function loadVehicles() {
   try {
-    const [bRes, gRes] = await Promise.all([
-      fetch(FIREBASE_BASE + '/vehicles.json'),
-      fetch(FIREBASE_BASE + '/gg_vehicles.json')
+    const [bSnap, gSnap] = await Promise.all([
+      db.ref('vehicles').once('value'),
+      db.ref('gg_vehicles').once('value')
     ]);
-    const bData = await bRes.json();
-    const gData = await gRes.json();
+    const bData = bSnap.val();
+    const gData = gSnap.val();
 
-    vehiclesBusan = bData ? Object.values(bData).filter(v => v).map(v => typeof v === 'string' ? v : (v.number || v.plate || '')) : [];
-    vehiclesGG = gData ? Object.values(gData).filter(v => v).map(v => typeof v === 'string' ? v : (v.number || v.plate || '')) : [];
+    console.log('Firebase vehicles 원본:', bData);
+    console.log('Firebase gg_vehicles 원본:', gData);
 
-    // 빈 문자열 제거
-    vehiclesBusan = vehiclesBusan.filter(v => v);
-    vehiclesGG = vehiclesGG.filter(v => v);
+    vehiclesBusan = extractVehicles(bData);
+    vehiclesGG = extractVehicles(gData);
+
+    console.log('부산 차량:', vehiclesBusan);
+    console.log('경기 차량:', vehiclesGG);
   } catch (e) {
     console.error('차량 목록 로드 실패:', e);
   }
+}
+
+function extractVehicles(data) {
+  if (!data) return [];
+  // 다양한 Firebase 데이터 구조 대응
+  if (Array.isArray(data)) {
+    return data.filter(v => v).map(v => typeof v === 'string' ? v : (v.number || v.plate || v.name || String(v)));
+  }
+  if (typeof data === 'object') {
+    return Object.entries(data).map(([key, val]) => {
+      if (typeof val === 'string') return val;
+      if (val && typeof val === 'object') return val.number || val.plate || val.name || key;
+      return '';
+    }).filter(v => v);
+  }
+  return [];
 }
 
 // ===== 지역 선택 =====
