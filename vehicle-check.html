@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 차량점검</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-height:100vh;padding-bottom:40px}
+
+.hero{background:linear-gradient(135deg,#1565C0 0%,#1976D2 40%,#1E88E5 100%);padding:32px 20px 24px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:rgba(255,255,255,0.06);border-radius:50%}
+.hero-badge{display:inline-block;background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:12px;letter-spacing:.5px;border:1px solid rgba(255,255,255,.2)}
+.hero h1{font-size:22px;font-weight:800;line-height:1.3;margin-bottom:6px;color:#fff}
+.hero p{font-size:13px;color:rgba(255,255,255,.7);line-height:1.5}
+
+.container{max-width:480px;margin:0 auto;padding:0 16px}
+
+.card{background:#fff;border:1px solid #e8e8e3;border-radius:14px;padding:22px 18px;margin-top:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:#1a1a1a}
+.card-title span{font-size:18px}
+
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px}
+.fg label .req{color:#e53935}
+.fg input,.fg select,.fg textarea{width:100%;padding:12px 14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a1a;transition:border .2s;-webkit-appearance:none;appearance:none}
+.fg select{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#1565C0}
+.fg input::placeholder{color:#bbb}
+.fg textarea{resize:none;height:60px}
+.fg .hint{font-size:11px;color:#bbb;margin-top:4px}
+
+.row2{display:flex;gap:10px}
+.row2 .fg{flex:1}
+
+.chip-group{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:10px 16px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;background:#fff;color:#888;user-select:none;flex:1;text-align:center;min-width:0}
+.chip:active{transform:scale(.96)}
+.chip.good{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32;font-weight:600}
+.chip.bad{border-color:#e53935;background:#FFEBEE;color:#e53935;font-weight:600}
+
+.oil-toggle{display:flex;gap:8px;margin-bottom:12px}
+.oil-toggle .chip{flex:1}
+.oil-km-box{display:none;animation:fadeUp .3s ease}
+
+.submit-btn{width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:20px;letter-spacing:.5px}
+.submit-btn:active{transform:scale(.98);opacity:.9}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* 오일 이력 섹션 */
+.history-section{margin-top:14px}
+.history-card{background:#fff;border:1px solid #e8e8e3;border-radius:14px;padding:22px 18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.history-empty{text-align:center;padding:20px 0;color:#bbb;font-size:13px}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f8f8f5;border-radius:10px;border:1px solid #e8e8e3;margin-bottom:8px}
+.history-item:last-child{margin-bottom:0}
+.hi-left{display:flex;flex-direction:column;gap:2px}
+.hi-date{font-size:12px;color:#999}
+.hi-who{font-size:13px;font-weight:600;color:#1a1a1a}
+.hi-right{text-align:right}
+.hi-km{font-size:14px;font-weight:700;color:#1565C0}
+.hi-next{font-size:11px;color:#999;margin-top:2px}
+
+.next-oil-banner{background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border:1px solid #90CAF9;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.next-oil-banner .nob-icon{font-size:24px;flex-shrink:0}
+.next-oil-banner .nob-text{font-size:13px;color:#1565C0;line-height:1.5}
+.next-oil-banner .nob-text strong{font-weight:700}
+.next-oil-warn{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border-color:#FFB74D}
+.next-oil-warn .nob-text{color:#E65100}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:14px 28px;border-radius:14px;font-size:14px;font-weight:600;z-index:200;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#2E7D32}
+.toast.error{background:#e53935}
+
+.loading{text-align:center;padding:30px 0;color:#999;font-size:13px}
+.loading::after{content:'';display:inline-block;width:16px;height:16px;border:2px solid #ddd;border-top-color:#1565C0;border-radius:50%;animation:spin .8s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.card{animation:fadeUp .4s ease both}
+.card:nth-child(2){animation-delay:.08s}
+.card:nth-child(3){animation-delay:.16s}
+.card:nth-child(4){animation-delay:.24s}
+
+.tab-bar{display:flex;gap:6px;margin-top:14px}
+.tab-bar button{flex:1;padding:12px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:13px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:all .2s}
+.tab-bar button.active{border-color:#1565C0;background:#E3F2FD;color:#1565C0}
+
+.section{display:none}
+.section.active{display:block}
+
+.region-sel{display:flex;gap:8px;margin-bottom:14px}
+.region-btn{flex:1;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:13px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center}
+.region-btn.active{border-color:#1565C0;background:#E3F2FD;color:#1565C0}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">🚗 월간 차량점검</div>
+  <h1>차량 상태를 점검해주세요</h1>
+  <p>매월 1회 차량 상태를 보고해주세요</p>
+</div>
+
+<div class="container">
+
+  <!-- 탭 전환 -->
+  <div class="tab-bar">
+    <button class="active" onclick="switchTab('check')">📋 점검 보고</button>
+    <button onclick="switchTab('history')">🛢️ 오일교체 이력</button>
+  </div>
+
+  <!-- ===== 점검 보고 탭 ===== -->
+  <div id="tabCheck" class="section active">
+
+    <!-- 지역 선택 -->
+    <div class="card">
+      <div class="card-title"><span>📍</span> 지역 선택</div>
+      <div class="region-sel">
+        <div class="region-btn" onclick="selectRegion('부산')">부산</div>
+        <div class="region-btn" onclick="selectRegion('경기')">경기</div>
+      </div>
+    </div>
+
+    <!-- 점검자 정보 -->
+    <div class="card">
+      <div class="card-title"><span>👤</span> 점검자 정보</div>
+      <div class="row2">
+        <div class="fg">
+          <label>점검자1 <span class="req">*</span></label>
+          <select id="fDriver"><option value="">선택</option></select>
+        </div>
+        <div class="fg">
+          <label>점검자2 <span class="req">*</span></label>
+          <select id="fPartner"><option value="">선택</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차량 정보 -->
+    <div class="card">
+      <div class="card-title"><span>🚗</span> 차량 정보</div>
+      <div class="fg">
+        <label>차량번호 <span class="req">*</span></label>
+        <select id="fVehicle"><option value="">지역을 먼저 선택해주세요</option></select>
+      </div>
+      <div class="fg">
+        <label>현재 주행거리 (km) <span class="req">*</span></label>
+        <input type="text" id="fMileage" placeholder="45200" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+      </div>
+    </div>
+
+    <!-- 세차 -->
+    <div class="card">
+      <div class="card-title"><span>🧽</span> 세차</div>
+      <div class="fg">
+        <label>최근 세차일</label>
+        <input type="date" id="fWashDate" />
+        <div class="hint">세차를 안 했으면 비워두셔도 됩니다</div>
+      </div>
+    </div>
+
+    <!-- 상태 점검 -->
+    <div class="card">
+      <div class="card-title"><span>🔧</span> 상태 점검</div>
+
+      <div class="fg">
+        <label>엔진오일 <span class="req">*</span></label>
+        <div class="chip-group" id="chipOil">
+          <div class="chip" onclick="selectStatus('chipOil',this,'good')">✅ 양호</div>
+          <div class="chip" onclick="selectStatus('chipOil',this,'bad')">⚠️ 교체필요</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>타이어 <span class="req">*</span></label>
+        <div class="chip-group" id="chipTire">
+          <div class="chip" onclick="selectStatus('chipTire',this,'good')">✅ 양호</div>
+          <div class="chip" onclick="selectStatus('chipTire',this,'bad')">⚠️ 교체필요</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>브레이크 <span class="req">*</span></label>
+        <div class="chip-group" id="chipBrake">
+          <div class="chip" onclick="selectStatus('chipBrake',this,'good')">✅ 정상</div>
+          <div class="chip" onclick="selectStatus('chipBrake',this,'bad')">⚠️ 이상있음</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>경고등 <span class="req">*</span></label>
+        <div class="chip-group" id="chipWarning">
+          <div class="chip" onclick="selectStatus('chipWarning',this,'good')">✅ 없음</div>
+          <div class="chip" onclick="selectStatus('chipWarning',this,'bad')">⚠️ 있음</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>외관 손상 <span class="req">*</span></label>
+        <div class="chip-group" id="chipExterior">
+          <div class="chip" onclick="selectStatus('chipExterior',this,'good')">✅ 없음</div>
+          <div class="chip" onclick="selectStatus('chipExterior',this,'bad')">⚠️ 있음</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 엔진오일 교체 -->
+    <div class="card">
+      <div class="card-title"><span>🛢️</span> 엔진오일 교체</div>
+      <div class="fg">
+        <label>이번 달에 엔진오일을 교체했나요?</label>
+        <div class="oil-toggle">
+          <div class="chip" onclick="toggleOilChange(true,this)">예, 교체했어요</div>
+          <div class="chip" onclick="toggleOilChange(false,this)">교체 안해도됨</div>
+        </div>
+      </div>
+      <div class="oil-km-box" id="oilKmBox">
+        <div class="fg">
+          <label>교체 시 주행거리 (km) <span class="req">*</span></label>
+          <input type="text" id="fOilKm" placeholder="45000" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+          <div class="hint">다음 교체 예정: 입력한 km + 5,000km 자동 계산</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기타 -->
+    <div class="card">
+      <div class="card-title"><span>📝</span> 기타</div>
+      <div class="fg">
+        <label>수리 필요사항 / 특이사항</label>
+        <textarea id="fNote" placeholder="있으면 적어주세요 (없으면 비워두세요)"></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitCheck()">점검 보고 제출하기</button>
+
+  </div>
+
+  <!-- ===== 오일교체 이력 탭 ===== -->
+  <div id="tabHistory" class="section">
+
+    <div class="card">
+      <div class="card-title"><span>🛢️</span> 전체 차량 오일교체 이력</div>
+      <div class="region-sel">
+        <div class="region-btn" onclick="selectHistoryRegion('부산')">부산</div>
+        <div class="region-btn" onclick="selectHistoryRegion('경기')">경기</div>
+      </div>
+    </div>
+
+    <div id="historyAllSection">
+      <div class="history-card" style="margin-top:14px"><div class="history-empty">지역을 선택하면 전체 차량의 오일교체 이력이 표시됩니다</div></div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+const FIREBASE_BASE = 'https://dolbomnote-be438-default-rtdb.firebaseio.com';
+const TEAM_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/export?format=csv&gid=79962735';
+
+let crewList = [];       // [{name, region, hireDate}]
+let vehiclesBusan = [];
+let vehiclesGG = [];
+let selectedRegion = '';
+let oilChanged = null;   // true/false/null
+
+// ===== 초기 로드 =====
+document.addEventListener('DOMContentLoaded', async function() {
+  await Promise.all([loadCrew(), loadVehicles()]);
+});
+
+// ===== 팀설정에서 직원 목록 로드 =====
+async function loadCrew() {
+  try {
+    const res = await fetch(TEAM_SHEET_CSV);
+    const text = await res.text();
+    const rows = text.split('\n').slice(1); // 헤더 스킵
+    crewList = [];
+    rows.forEach(row => {
+      const cols = row.split(',');
+      const name = (cols[0] || '').trim().replace(/"/g, '');
+      const region = (cols[1] || '').trim().replace(/"/g, '');
+      if (name && (region === '부산' || region === '경기')) {
+        crewList.push({ name, region });
+      }
+    });
+  } catch (e) {
+    console.error('직원 목록 로드 실패:', e);
+  }
+}
+
+// ===== Firebase에서 차량 목록 로드 =====
+async function loadVehicles() {
+  try {
+    const [bRes, gRes] = await Promise.all([
+      fetch(FIREBASE_BASE + '/vehicles.json'),
+      fetch(FIREBASE_BASE + '/gg_vehicles.json')
+    ]);
+    const bData = await bRes.json();
+    const gData = await gRes.json();
+
+    vehiclesBusan = bData ? Object.values(bData).filter(v => v).map(v => typeof v === 'string' ? v : (v.number || v.plate || '')) : [];
+    vehiclesGG = gData ? Object.values(gData).filter(v => v).map(v => typeof v === 'string' ? v : (v.number || v.plate || '')) : [];
+
+    // 빈 문자열 제거
+    vehiclesBusan = vehiclesBusan.filter(v => v);
+    vehiclesGG = vehiclesGG.filter(v => v);
+  } catch (e) {
+    console.error('차량 목록 로드 실패:', e);
+  }
+}
+
+// ===== 지역 선택 =====
+function selectRegion(region) {
+  selectedRegion = region;
+  document.querySelectorAll('#tabCheck .region-sel .region-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  updateCrewDropdowns(region);
+  updateVehicleDropdown(region, 'fVehicle');
+}
+
+function updateCrewDropdowns(region) {
+  const filtered = crewList.filter(c => c.region === region);
+  ['fDriver', 'fPartner'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">선택</option>';
+    filtered.forEach(c => {
+      sel.innerHTML += '<option value="' + c.name + '">' + c.name + '</option>';
+    });
+  });
+}
+
+function updateVehicleDropdown(region, selectId) {
+  const vehicles = region === '부산' ? vehiclesBusan : vehiclesGG;
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">선택</option>';
+  vehicles.forEach(v => {
+    sel.innerHTML += '<option value="' + v + '">' + v + '</option>';
+  });
+}
+
+// ===== 상태 칩 선택 =====
+function selectStatus(groupId, el, type) {
+  document.querySelectorAll('#' + groupId + ' .chip').forEach(c => {
+    c.classList.remove('good', 'bad');
+  });
+  el.classList.add(type);
+}
+
+function getStatusValue(groupId) {
+  const good = document.querySelector('#' + groupId + ' .chip.good');
+  const bad = document.querySelector('#' + groupId + ' .chip.bad');
+  if (good) return good.textContent.replace(/[✅⚠️]/g, '').trim();
+  if (bad) return bad.textContent.replace(/[✅⚠️]/g, '').trim();
+  return '';
+}
+
+// ===== 엔진오일 교체 토글 =====
+function toggleOilChange(changed, el) {
+  oilChanged = changed;
+  document.querySelectorAll('.oil-toggle .chip').forEach(c => c.classList.remove('good', 'bad'));
+  el.classList.add(changed ? 'good' : 'good');
+  document.getElementById('oilKmBox').style.display = changed ? 'block' : 'none';
+  if (!changed) document.getElementById('fOilKm').value = '';
+}
+
+// ===== 점검 제출 =====
+async function submitCheck() {
+  // 검증
+  if (!selectedRegion) { showToast('⚠️ 지역을 선택해주세요', 'error'); return; }
+  const driver = document.getElementById('fDriver').value;
+  const partner = document.getElementById('fPartner').value;
+  const vehicle = document.getElementById('fVehicle').value;
+  const mileage = document.getElementById('fMileage').value.trim();
+  const washDate = document.getElementById('fWashDate').value;
+  const oil = getStatusValue('chipOil');
+  const tire = getStatusValue('chipTire');
+  const brake = getStatusValue('chipBrake');
+  const warning = getStatusValue('chipWarning');
+  const exterior = getStatusValue('chipExterior');
+  const note = document.getElementById('fNote').value.trim();
+
+  if (!driver) { showToast('⚠️ 점검자1을 선택해주세요', 'error'); return; }
+  if (!partner) { showToast('⚠️ 점검자2를 선택해주세요', 'error'); return; }
+  if (!vehicle) { showToast('⚠️ 차량을 선택해주세요', 'error'); return; }
+  if (!mileage) { showToast('⚠️ 주행거리를 입력해주세요', 'error'); return; }
+  if (!oil) { showToast('⚠️ 엔진오일 상태를 선택해주세요', 'error'); return; }
+  if (!tire) { showToast('⚠️ 타이어 상태를 선택해주세요', 'error'); return; }
+  if (!brake) { showToast('⚠️ 브레이크 상태를 선택해주세요', 'error'); return; }
+  if (!warning) { showToast('⚠️ 경고등 여부를 선택해주세요', 'error'); return; }
+  if (!exterior) { showToast('⚠️ 외관 손상 여부를 선택해주세요', 'error'); return; }
+  if (oilChanged === null) { showToast('⚠️ 엔진오일 교체 여부를 선택해주세요', 'error'); return; }
+  if (oilChanged && !document.getElementById('fOilKm').value.trim()) { showToast('⚠️ 오일 교체 시 주행거리를 입력해주세요', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '제출 중...';
+
+  const payload = {
+    type: 'vehicleCheck',
+    region: selectedRegion,
+    driver: driver,
+    partner: partner,
+    vehicle: vehicle,
+    mileage: parseInt(mileage),
+    washDate: washDate || '',
+    oil: oil,
+    tire: tire,
+    brake: brake,
+    warning: warning,
+    exterior: exterior,
+    note: note,
+    oilChanged: oilChanged,
+    oilKm: oilChanged ? parseInt(document.getElementById('fOilKm').value) : null,
+    date: new Date().toISOString().split('T')[0]
+  };
+
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+
+    showToast('✅ 점검 보고가 제출되었습니다!', 'success');
+    btn.textContent = '✅ 제출 완료!';
+
+    // 폼 리셋
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '점검 보고 제출하기';
+    }, 3000);
+
+  } catch (e) {
+    showToast('⚠️ 제출에 실패했습니다. 다시 시도해주세요', 'error');
+    btn.disabled = false;
+    btn.textContent = '점검 보고 제출하기';
+  }
+}
+
+// ===== 탭 전환 =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+  if (tab === 'check') {
+    document.querySelector('.tab-bar button:first-child').classList.add('active');
+    document.getElementById('tabCheck').classList.add('active');
+  } else {
+    document.querySelector('.tab-bar button:last-child').classList.add('active');
+    document.getElementById('tabHistory').classList.add('active');
+  }
+}
+
+// ===== 이력 탭: 지역 선택 → 전체 차량 이력 로드 =====
+function selectHistoryRegion(region) {
+  document.querySelectorAll('#tabHistory .region-sel .region-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadAllOilHistory(region);
+}
+
+// ===== 전체 차량 오일교체 이력 조회 =====
+async function loadAllOilHistory(region) {
+  const section = document.getElementById('historyAllSection');
+  const vehicles = region === '부산' ? vehiclesBusan : vehiclesGG;
+
+  if (vehicles.length === 0) {
+    section.innerHTML = '<div class="history-card" style="margin-top:14px"><div class="history-empty">차량 목록을 불러올 수 없습니다</div></div>';
+    return;
+  }
+
+  section.innerHTML = '<div class="history-card" style="margin-top:14px"><div class="loading">전체 차량 이력 조회 중</div></div>';
+
+  try {
+    const res = await fetch(API_URL + '?type=oilHistoryAll&region=' + encodeURIComponent(region));
+    const text = await res.text();
+    const data = JSON.parse(text);
+    // data = { vehicles: { "12가3456": { records: [...], currentMileage: N }, ... } }
+
+    let html = '';
+
+    vehicles.forEach(v => {
+      const vData = (data.vehicles && data.vehicles[v]) || { records: [], currentMileage: null };
+      const records = vData.records || [];
+      const currentMileage = vData.currentMileage;
+
+      html += '<div class="history-card" style="margin-top:14px">';
+      html += '<div style="font-size:14px;font-weight:700;margin-bottom:12px;color:#1a1a1a">🚗 ' + v + '</div>';
+
+      // 다음 교체 예정 배너
+      if (records.length > 0) {
+        const latest = records[0];
+        if (latest.nextKm) {
+          const isWarn = currentMileage && (latest.nextKm - currentMileage <= 500);
+          html += '<div class="next-oil-banner ' + (isWarn ? 'next-oil-warn' : '') + '">';
+          html += '<div class="nob-icon">' + (isWarn ? '⚠️' : '🛢️') + '</div>';
+          html += '<div class="nob-text"><strong>다음 교체:</strong> ' + latest.nextKm.toLocaleString() + 'km';
+          if (currentMileage) {
+            const remain = latest.nextKm - currentMileage;
+            html += ' · 현재 ' + currentMileage.toLocaleString() + 'km';
+            html += remain > 0 ? ' (' + remain.toLocaleString() + 'km 남음)' : ' <span style="color:#e53935;font-weight:700">(교체 시기 지남!)</span>';
+          }
+          html += '</div></div>';
+        }
+
+        records.forEach(r => {
+          html += '<div class="history-item">';
+          html += '<div class="hi-left"><div class="hi-date">' + r.date + '</div><div class="hi-who">' + (r.changer || '-') + '</div></div>';
+          html += '<div class="hi-right"><div class="hi-km">' + (r.km ? r.km.toLocaleString() + ' km' : '-') + '</div>';
+          html += '<div class="hi-next">다음: ' + (r.nextKm ? r.nextKm.toLocaleString() + ' km' : '-') + '</div></div>';
+          html += '</div>';
+        });
+      } else {
+        html += '<div style="text-align:center;padding:12px 0;color:#bbb;font-size:12px">등록된 교체 이력 없음</div>';
+      }
+
+      html += '</div>';
+    });
+
+    section.innerHTML = html;
+
+  } catch (e) {
+    // API 미연동 시 빈 상태 표시
+    let html = '';
+    vehicles.forEach(v => {
+      html += '<div class="history-card" style="margin-top:14px">';
+      html += '<div style="font-size:14px;font-weight:700;margin-bottom:12px;color:#1a1a1a">🚗 ' + v + '</div>';
+      html += '<div style="text-align:center;padding:12px 0;color:#bbb;font-size:12px">등록된 교체 이력 없음</div>';
+      html += '</div>';
+    });
+    section.innerHTML = html;
+    console.error(e);
+  }
+}
+
+// ===== 유틸 =====
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
