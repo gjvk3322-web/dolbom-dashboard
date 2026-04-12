@@ -241,19 +241,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
   <!-- ===== 오일교체 이력 탭 ===== -->
   <div id="tabHistory" class="section">
 
-    <div class="card">
-      <div class="card-title"><span>🛢️</span> 오일교체 이력 조회</div>
-      <div class="fg">
-        <label>차량번호 입력</label>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="fHistoryVehicle" placeholder="예: 12가 3456" style="flex:1" />
-          <button onclick="loadOilHistory()" style="padding:12px 18px;border:1.5px solid #1565C0;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">조회</button>
-        </div>
-      </div>
-    </div>
-
     <div id="historyAllSection">
-      <div class="history-card" style="margin-top:14px"><div class="history-empty">차량번호를 입력하고 조회를 누르세요</div></div>
+      <div class="history-card" style="margin-top:14px"><div class="loading">전체 차량 이력 조회 중</div></div>
     </div>
 
   </div>
@@ -395,67 +384,84 @@ function switchTab(tab) {
   } else {
     document.querySelector('.tab-bar button:last-child').classList.add('active');
     document.getElementById('tabHistory').classList.add('active');
+    loadAllOilHistory();
   }
 }
 
-// ===== 오일교체 이력 조회 =====
-async function loadOilHistory() {
-  const vehicle = document.getElementById('fHistoryVehicle').value.trim();
+// ===== 전체 차량 오일교체 이력 조회 =====
+const OIL_INTERVAL = 8000;
+const ALL_VEHICLES = [...VEHICLES['부산'], ...VEHICLES['경기']];
+
+async function loadAllOilHistory() {
   const section = document.getElementById('historyAllSection');
-
-  if (!vehicle) {
-    showToast('⚠️ 차량번호를 입력해주세요', 'error');
-    return;
-  }
-
-  section.innerHTML = '<div class="history-card" style="margin-top:14px"><div class="loading">이력 조회 중</div></div>';
+  section.innerHTML = '<div class="history-card" style="margin-top:14px"><div class="loading">전체 차량 이력 조회 중</div></div>';
 
   try {
-    const res = await fetch(API_URL + '?type=oilHistory&vehicle=' + encodeURIComponent(vehicle));
-    const text = await res.text();
-    const data = JSON.parse(text);
+    const results = await Promise.all(
+      ALL_VEHICLES.map(v =>
+        fetch(API_URL + '?type=oilHistory&vehicle=' + encodeURIComponent(v))
+          .then(r => r.text())
+          .then(t => ({ vehicle: v, data: JSON.parse(t) }))
+          .catch(() => ({ vehicle: v, data: { records: [], currentMileage: 0 } }))
+      )
+    );
 
     let html = '';
+    // 부산
+    html += '<div style="margin-top:14px;font-size:13px;font-weight:700;color:#1565C0;padding:0 4px">📍 부산</div>';
+    results.filter(r => VEHICLES['부산'].includes(r.vehicle)).forEach(r => {
+      html += renderVehicleHistory(r.vehicle, r.data);
+    });
+    // 경기
+    html += '<div style="margin-top:20px;font-size:13px;font-weight:700;color:#1565C0;padding:0 4px">📍 경기</div>';
+    results.filter(r => VEHICLES['경기'].includes(r.vehicle)).forEach(r => {
+      html += renderVehicleHistory(r.vehicle, r.data);
+    });
 
-    if (!data.records || data.records.length === 0) {
-      html = '<div class="history-card" style="margin-top:14px"><div class="history-empty">🛢️ ' + vehicle + ' — 등록된 교체 이력이 없습니다</div></div>';
-      section.innerHTML = html;
-      return;
+    section.innerHTML = html;
+  } catch (e) {
+    section.innerHTML = '<div class="history-card" style="margin-top:14px"><div class="history-empty">⚠️ 조회 실패</div></div>';
+    console.error(e);
+  }
+}
+
+function renderVehicleHistory(vehicle, data) {
+  const records = data.records || [];
+  const currentMileage = data.currentMileage || 0;
+  let html = '<div class="history-card" style="margin-top:10px">';
+  html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:#1a1a1a">🚗 ' + vehicle + '</div>';
+
+  if (records.length > 0) {
+    const latest = records[0];
+    const nextKm = latest.nextKm || (latest.km + OIL_INTERVAL);
+    const isWarn = currentMileage && (nextKm - currentMileage <= 1000);
+    const isOver = currentMileage && (currentMileage >= nextKm);
+
+    html += '<div class="next-oil-banner ' + (isWarn || isOver ? 'next-oil-warn' : '') + '">';
+    html += '<div class="nob-icon">' + (isOver ? '🚨' : isWarn ? '⚠️' : '🛢️') + '</div>';
+    html += '<div class="nob-text"><strong>다음 교체:</strong> ' + nextKm.toLocaleString() + 'km';
+    if (currentMileage) {
+      const remain = nextKm - currentMileage;
+      html += ' · 현재 ' + currentMileage.toLocaleString() + 'km';
+      if (isOver) html += ' <span style="color:#e53935;font-weight:700">(교체 시기 지남!)</span>';
+      else html += ' (' + remain.toLocaleString() + 'km 남음)';
     }
+    html += '<br>교체주기: ' + OIL_INTERVAL.toLocaleString() + 'km';
+    html += '</div></div>';
 
-    // 다음 교체 예정 배너
-    const latest = data.records[0];
-    if (latest.nextKm) {
-      const isWarn = data.currentMileage && (latest.nextKm - data.currentMileage <= 500);
-      html += '<div class="next-oil-banner ' + (isWarn ? 'next-oil-warn' : '') + '" style="margin-top:14px">';
-      html += '<div class="nob-icon">' + (isWarn ? '⚠️' : '🛢️') + '</div>';
-      html += '<div class="nob-text"><strong>다음 교체:</strong> ' + latest.nextKm.toLocaleString() + 'km';
-      if (data.currentMileage) {
-        const remain = latest.nextKm - data.currentMileage;
-        html += ' · 현재 ' + data.currentMileage.toLocaleString() + 'km';
-        html += remain > 0 ? ' (' + remain.toLocaleString() + 'km 남음)' : ' <span style="color:#e53935;font-weight:700">(교체 시기 지남!)</span>';
-      }
-      html += '</div></div>';
-    }
-
-    html += '<div class="history-card" style="margin-top:14px">';
-    html += '<div style="font-size:14px;font-weight:700;margin-bottom:14px;color:#1a1a1a">🚗 ' + vehicle + ' 교체 이력</div>';
-
-    data.records.forEach(r => {
+    records.forEach(r => {
       html += '<div class="history-item">';
       html += '<div class="hi-left"><div class="hi-date">' + r.date + '</div><div class="hi-who">' + (r.changer || '-') + '</div></div>';
       html += '<div class="hi-right"><div class="hi-km">' + (r.km ? r.km.toLocaleString() + ' km' : '-') + '</div>';
       html += '<div class="hi-next">다음: ' + (r.nextKm ? r.nextKm.toLocaleString() + ' km' : '-') + '</div></div>';
       html += '</div>';
     });
-
-    html += '</div>';
-    section.innerHTML = html;
-
-  } catch (e) {
-    section.innerHTML = '<div class="history-card" style="margin-top:14px"><div class="history-empty">⚠️ 조회 실패 - Code.gs 배포를 확인해주세요</div></div>';
-    console.error(e);
+  } else {
+    html += '<div style="text-align:center;padding:10px 0;color:#bbb;font-size:12px">등록된 교체 이력 없음</div>';
   }
+
+  html += '</div>';
+  return html;
 }
 
 // ===== 유틸 =====
