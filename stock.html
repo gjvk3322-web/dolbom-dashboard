@@ -163,8 +163,12 @@ function renderTeamSelect(){
 
 function renderTabs(){
   const tc=TEAMS[team].color,tColor=tc==='busan'?'var(--red)':'var(--blue)';
+  const otherTeam=team==='부산'?'경기':'부산';
   let h=`<div class="hd"><h1 style="color:${tColor}">${team} 재고관리</h1><div class="badge">${mm}.${dd} (${dow})</div></div>`;
-  h+=`<div class="team"><div class="team-btn" onclick="team=null;loc=null;if(fbInRef)fbInRef.off();fbInvData={};render()">← 팀 변경</div></div>`;
+  h+=`<div class="team">`;
+  h+=`<div class="team-btn" style="${team==='부산'?'background:#7f1d1d;border-color:var(--red);color:#fca5a5':''}" onclick="if(team!=='부산'){loc=null;if(fbInRef)fbInRef.off();fbInvData={};pickTeam('부산')}">부산</div>`;
+  h+=`<div class="team-btn" style="${team==='경기'?'background:#1e3a5f;border-color:var(--blue);color:#93c5fd':''}" onclick="if(team!=='경기'){loc=null;if(fbInRef)fbInRef.off();fbInvData={};pickTeam('경기')}">경기</div>`;
+  h+=`</div>`;
   h+=`<div class="tabs"><div class="tab ${tab==='inventory'?'on-inv':''}" onclick="setTab('inventory')">📦 재고조사</div><div class="tab ${tab==='incoming'?'on-in':''}" onclick="setTab('incoming')">📥 입고기록</div><div class="tab ${tab==='summary'?'on-sum':''}" onclick="setTab('summary')">📊 종합</div><div class="tab ${tab==='order'?'on-in':''}" onclick="setTab('order')">📋 발주</div></div>`;
   return h}
 
