@@ -1089,10 +1089,19 @@ function copyChannel(){
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
 // ── 초기화 ──
-setAccentColors('부산');
+const _urlParams = new URLSearchParams(window.location.search);
+const _initRegion = _urlParams.get('region');
+if(_initRegion === '경기') {
+  setAccentColors('경기');
+  currentTeam = '경기';
+} else {
+  setAccentColors('부산');
+}
 const now=new Date();currentYear=now.getFullYear();currentMonth=now.getMonth()+1;
 renderCalendar();
-loadData();
+loadData().then(function(){
+  if(_initRegion === '경기') switchTeam('경기');
+}).catch(function(){});
 </script>
 </body>
 </html>
