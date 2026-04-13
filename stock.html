@@ -293,7 +293,7 @@ async function renderSummary(){
     
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:16px 14px;text-align:center;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">📊 ${team} 현재 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 기준)</span></div><div style="font-size:28px;font-weight:800;color:var(--accent)">${calcTotal.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
-    h+=`<div style="display:flex;justify-content:flex-end;gap:10px;padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border)"><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span></div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(50px,auto));padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span></div>`;
     
     prodOrder.forEach(pid=>{
       const colors=Object.keys(cr).filter(k=>k.startsWith(pid+'_')).map(k=>k.split('_').slice(-1)[0]);
@@ -303,11 +303,13 @@ async function renderSummary(){
         const key=pid+'_'+c;
         const d=cr[key];
         const calc=d.calculated;
-        let detail=d.survey.toLocaleString();
-        if(d.incoming>0)detail+=' <span style="color:var(--orange)">+'+d.incoming.toLocaleString()+'</span>';
-        if(d.used>0)detail+=' <span style="color:var(--red)">-'+d.used.toLocaleString()+'</span>';
-        detail+=' = <span style="font-weight:700;color:'+(calc<0?'var(--red)':'var(--accent)')+'">'+calc.toLocaleString()+'</span>';
-        h+=`<div style="display:flex;justify-content:space-between;padding:3px 14px;font-size:12px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span><span style="color:var(--dim)">${detail}</span></div>`;
+        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(50px,auto));padding:3px 14px;font-size:12px;text-align:right">`;
+        h+=`<span style="text-align:left"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span>`;
+        h+=`<span style="color:var(--dim)">${d.survey.toLocaleString()}</span>`;
+        h+=`<span style="color:var(--orange)">${d.incoming>0?'+'+d.incoming.toLocaleString():''}</span>`;
+        h+=`<span style="color:var(--red)">${d.used>0?'-'+d.used.toLocaleString():''}</span>`;
+        h+=`<span style="font-weight:700;color:${calc<0?'var(--red)':'var(--accent)'}">${calc.toLocaleString()}</span>`;
+        h+=`</div>`;
       });
     });
     
@@ -321,11 +323,11 @@ async function renderSummary(){
           const curStock=cr[key]?cr[key].calculated:0;
           const futUse=prodColorFuture[key].s;
           const after=curStock-futUse;
-          const parts=key.split('_');
-          const pName=parts[0]==='500'?'500':'1000';
-          const cName=parts[parts.length-1];
+          const cName=key.split('_').slice(-1)[0];
+          const pKey=key.replace('_'+cName,'');
+          const pLabel=prodNames[pKey]||pKey;
           if(after<0){
-            h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--red)">⚠️ ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)</span></div>`;
+            h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--red)">⚠️ ${pLabel} ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)</span></div>`;
           }
         });
       }
