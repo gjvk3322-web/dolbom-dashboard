@@ -275,34 +275,21 @@ async function renderSummary(){
   const pj=sd&&!sd.error?sd.pastJobs||0:0;
   const remaining=gs-ft;
 
-  // 통합 카드: 전체 재고 + 색상별 잔여
-  h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-  h+=`<div style="padding:16px 14px;text-align:center;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
-  PR.forEach(p=>{
-    const hasData=p.colors.some(c=>prodColorStock[p.id+'_'+c]||prodColorFuture[p.id+'_'+c]);
-    if(!hasData&&!ft)return;
-    h+=`<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${p.name} ${p.badge}</div>`;
-    p.colors.forEach(c=>{
-      const key=p.id+'_'+c;const cur=prodColorStock[key]||0;const fut=prodColorFuture[key]?prodColorFuture[key].s:0;const rem=cur-fut;
-      if(cur===0&&fut===0)return;
-      h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:12px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]};margin-right:4px"></span>${c}</span><span style="color:var(--dim)">${cur.toLocaleString()} ${fut>0?'<span style="color:var(--red)">-'+fut.toLocaleString()+'</span> = ':''}<span style="font-weight:700;color:${rem<0?'var(--red)':'var(--accent)'}">${rem.toLocaleString()}</span></span></div>`;
-    });
-  });
-  if(ft>0){
-    h+=`<div style="padding:8px 14px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>7일 후 예상 잔여</span><span style="color:${remaining<0?'var(--red)':'var(--accent)'}">${remaining.toLocaleString()}장</span></div>`;
-  }
-  h+=`</div>`;
-
-  // ===== 계산 재고 카드 (실사 + 입고 - 사용) =====
+  // ===== 📊 현재 재고 (메인 카드) =====
   const cr=sd&&!sd.error?sd.calcResult||{}:{};
   const surveyDate=sd&&!sd.error?sd.lastSurveyDate||'':'';
+  const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_17':'1000매트 17T'};
+  const prodOrder=['500','1000_22','1000_17'];
+  
   if(surveyDate&&Object.keys(cr).length>0){
+    // 계산 재고 총합
+    let calcTotal=0;
+    Object.values(cr).forEach(d=>{calcTotal+=d.calculated});
     const sdp=surveyDate.split('-');
-    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">📊 계산 재고</span><span style="font-size:11px;color:var(--dim)">${sdp[1]}.${sdp[2]} 실사 기준</span></div>`;
     
-    const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_17':'1000매트 17T'};
-    const prodOrder=['500','1000_22','1000_17'];
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:16px 14px;text-align:center;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">📊 ${team} 현재 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 기준)</span></div><div style="font-size:28px;font-weight:800;color:var(--accent)">${calcTotal.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
+    
     prodOrder.forEach(pid=>{
       const colors=Object.keys(cr).filter(k=>k.startsWith(pid+'_')).map(k=>k.split('_').slice(-1)[0]);
       if(colors.length===0)return;
@@ -318,6 +305,16 @@ async function renderSummary(){
         h+=`<div style="display:flex;justify-content:space-between;padding:3px 14px;font-size:12px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span><span style="color:var(--dim)">${detail}</span></div>`;
       });
     });
+    
+    // 7일 후 예상 잔여
+    if(ft>0){
+      h+=`<div style="padding:8px 14px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>📅 7일 후 예상</span><span style="color:${calcTotal-ft<0?'var(--red)':'var(--accent)'}">${(calcTotal-ft).toLocaleString()}장 <span style="font-weight:400;font-size:11px;color:var(--red)">(-${ft.toLocaleString()})</span></span></div>`;
+    }
+    h+=`</div>`;
+  } else {
+    // 계산 재고 없으면 Firebase 기반 표시
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:16px 14px;text-align:center"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고 (실사 기준)</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
     h+=`</div>`;
   }
 
