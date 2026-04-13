@@ -309,8 +309,7 @@ async function renderSummary(){
     h+=`<div style="padding:14px;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:10px;text-align:center">📊 ${team} 현재 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 기준)</span></div>`;
     h+=`<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">`;
     prodOrder.forEach(pid=>{
-      const pt=prodTotals[pid];
-      if(!pt)return;
+      const pt=prodTotals[pid]||{sheets:0,pallets:0};
       const label=pid==='500'?'500매트':pid==='1000_22'?'1000 22T':'1000 17T';
       const mult=pid==='500'?1:4;
       const houses=Math.round(pt.sheets*mult/145*10)/10;
