@@ -311,9 +311,24 @@ async function renderSummary(){
       });
     });
     
-    // 7일 후 예상 잔여
+    // 7일 후 예상 잔여 (제품별 표시)
     if(ft>0){
       h+=`<div style="padding:8px 14px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>📅 7일 후 예상</span><span style="color:${calcTotal-ft<0?'var(--red)':'var(--accent)'}">${(calcTotal-ft).toLocaleString()}장 <span style="font-weight:400;font-size:11px;color:var(--red)">(-${ft.toLocaleString()})</span></span></div>`;
+      // 제품별 부족 경고
+      const futKeys=Object.keys(prodColorFuture);
+      if(futKeys.length>0){
+        futKeys.forEach(key=>{
+          const curStock=cr[key]?cr[key].calculated:0;
+          const futUse=prodColorFuture[key].s;
+          const after=curStock-futUse;
+          const parts=key.split('_');
+          const pName=parts[0]==='500'?'500':'1000';
+          const cName=parts[parts.length-1];
+          if(after<0){
+            h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--red)">⚠️ ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)</span></div>`;
+          }
+        });
+      }
     }
     h+=`</div>`;
   } else {
@@ -681,7 +696,7 @@ function calc(pfx){let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEa
 
 async function submitInv(){if(!loc||!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const dm={},items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const v=parseInt(document.getElementById(`inv_${k}`)?.value)||0;dm[k]=v;
-    if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
+    items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
   const memo=document.getElementById('invMemo')?.value||'';
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
   const fb={time:hm,data:dm};if(loc==='사무실'&&memo)fb.memo=memo;
