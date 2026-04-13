@@ -107,8 +107,47 @@ const urlTeam=new URLSearchParams(window.location.search).get('team');
 const urlTab=new URLSearchParams(window.location.search).get('tab');
 function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
-function pickTeam(t){team=t;loc=null;if(fbInRef)fbInRef.off();fbInRef=db.ref('inventory/'+dateKey+'/'+team);fbInRef.on('value',snap=>{fbInvData=snap.val()||{};render()})}
-function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';render()}
+let invDataDate=dateKey; // 현재 보고있는 재고 날짜
+function pickTeam(t){
+  team=t;loc=null;invDataDate=dateKey;
+  if(fbInRef)fbInRef.off();
+  // 오늘 데이터 먼저 확인
+  fbInRef=db.ref('inventory/'+dateKey+'/'+team);
+  fbInRef.on('value',snap=>{
+    const val=snap.val()||{};
+    // 오늘 제출된 데이터가 있으면 바로 사용
+    const hasData=Object.keys(val).some(k=>val[k]&&val[k].time);
+    if(hasData){
+      fbInvData=val;invDataDate=dateKey;render();
+    } else {
+      // 오늘 데이터 없으면 최근 7일 탐색
+      findRecentInventory(team).then(result=>{
+        if(result){
+          fbInvData=result.data;invDataDate=result.date;
+        } else {
+          fbInvData={};invDataDate=dateKey;
+        }
+        render();
+      });
+    }
+  });
+}
+
+async function findRecentInventory(teamName){
+  for(let i=1;i<=7;i++){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const dk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    try{
+      const snap=await db.ref('inventory/'+dk+'/'+teamName).once('value');
+      const val=snap.val();
+      if(val&&Object.keys(val).some(k=>val[k]&&val[k].time)){
+        return {date:dk,data:val};
+      }
+    }catch(e){}
+  }
+  return null;
+}
+function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';render()}
 function render(){if(!team)return renderTeamSelect();if(tab==='summary')return renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
@@ -131,6 +170,10 @@ function renderInventory(){
   const T=TEAMS[team],tc=T.color;
   const dc=Object.keys(fbInvData).filter(k=>fbInvData[k]&&fbInvData[k].time).length,tl=T.locs.length;
   let h=renderTabs();
+  if(invDataDate!==dateKey){
+    const dp=invDataDate.split('-');
+    h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp[1]}.${dp[2]} 기준 재고 표시 중 (오늘 제출하면 업데이트됩니다)</div>`;
+  }
   h+=`<div class="progress"><div class="prog-row"><span>완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%;background:${tc==='busan'?'var(--red)':'var(--blue)'}"></div></div></div>`;
   h+=`<div class="loc">`;
   T.locs.forEach(l=>{const icon=l==='사무실'?'🏢':'🚛';const dk=fk(l);const d=fbInvData[dk];const isDone=d&&d.time;const isOn=loc===l;
@@ -174,6 +217,11 @@ async function fetchStockData(){
 
 async function renderSummary(){
   let h=renderTabs();const T=TEAMS[team];
+  // 과거 데이터 안내
+  if(invDataDate!==dateKey){
+    const dp=invDataDate.split('-');
+    h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp[1]}.${dp[2]} 기준 재고 (오늘 미제출)</div>`;
+  }
   const submitted=T.locs.filter(l=>{const d=fbInvData[fk(l)];return d&&d.time});const pending=T.locs.filter(l=>!submitted.includes(l));
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
@@ -291,11 +339,32 @@ const ORDER_SHAPES={'500':['센터','사이드','코너','10T'],'1000_22':['센�
 
 function initDefaultDeliveries(){
   if(deliveries.length>0)return;
+  // localStorage에서 불러오기
+  try{
+    const saved=localStorage.getItem('dolbom_order_'+team);
+    if(saved){
+      const d=JSON.parse(saved);
+      deliveries=d.deliveries||[];
+      delIdCounter=d.delIdCounter||0;
+      orderInputs=d.orderInputs||{};
+      orderMonth=d.orderMonth||new Date().getMonth()+1;
+      orderYear=d.orderYear||new Date().getFullYear();
+      if(deliveries.length>0)return;
+    }
+  }catch(e){}
   for(let i=0;i<7;i++){
     const id=++delIdCounter;
     const d=new Date();d.setDate(d.getDate()+7*i);
     deliveries.push({id:id,loc:'부산',date:d.toISOString().split('T')[0]});
   }
+}
+
+function saveOrderToStorage(){
+  try{
+    localStorage.setItem('dolbom_order_'+team,JSON.stringify({
+      deliveries,delIdCounter,orderInputs,orderMonth,orderYear
+    }));
+  }catch(e){}
 }
 
 function saveOrderInputs(){
@@ -314,6 +383,7 @@ function saveOrderInputs(){
   });
   const memo=document.getElementById('ordMemo');
   if(memo)orderInputs._memo=memo.value;
+  saveOrderToStorage();
 }
 
 function restoreOrderInputs(){
@@ -333,12 +403,14 @@ function restoreOrderInputs(){
     const memo=document.getElementById('ordMemo');
     if(memo&&orderInputs._memo)memo.value=orderInputs._memo;
     calcMonthlyOrder();
+    saveOrderToStorage();
   },50);
 }
 
 function resetOrder(){
   if(!confirm('발주서 데이터를 모두 초기화할까요?'))return;
   deliveries=[];delIdCounter=0;orderInputs={};
+  saveOrderToStorage();
   renderOrder();
 }
 
