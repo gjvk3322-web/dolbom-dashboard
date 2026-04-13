@@ -283,6 +283,34 @@ async function renderSummary(){
   }
   h+=`</div>`;
 
+  // ===== 계산 재고 카드 (실사 + 입고 - 사용) =====
+  const cr=sd&&!sd.error?sd.calcResult||{}:{};
+  const surveyDate=sd&&!sd.error?sd.lastSurveyDate||'':'';
+  if(surveyDate&&Object.keys(cr).length>0){
+    const sdp=surveyDate.split('-');
+    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">📊 계산 재고</span><span style="font-size:11px;color:var(--dim)">${sdp[1]}.${sdp[2]} 실사 기준</span></div>`;
+    
+    const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_17':'1000매트 17T'};
+    const prodOrder=['500','1000_22','1000_17'];
+    prodOrder.forEach(pid=>{
+      const colors=Object.keys(cr).filter(k=>k.startsWith(pid+'_')).map(k=>k.split('_').slice(-1)[0]);
+      if(colors.length===0)return;
+      h+=`<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${prodNames[pid]||pid}</div>`;
+      colors.forEach(c=>{
+        const key=pid+'_'+c;
+        const d=cr[key];
+        const calc=d.calculated;
+        let detail=d.survey.toLocaleString();
+        if(d.incoming>0)detail+=' <span style="color:var(--orange)">+'+d.incoming.toLocaleString()+'</span>';
+        if(d.used>0)detail+=' <span style="color:var(--red)">-'+d.used.toLocaleString()+'</span>';
+        detail+=' = <span style="font-weight:700;color:'+(calc<0?'var(--red)':'var(--accent)')+'">'+calc.toLocaleString()+'</span>';
+        h+=`<div style="display:flex;justify-content:space-between;padding:3px 14px;font-size:12px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span><span style="color:var(--dim)">${detail}</span></div>`;
+      });
+    });
+    h+=`</div>`;
+  }
+
   // 다음 7일 예약 (접기/펼치기)
   if(sd&&!sd.error&&sd.futureList&&sd.futureList.length>0){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
