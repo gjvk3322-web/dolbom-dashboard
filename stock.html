@@ -103,6 +103,8 @@ let team=null,loc=null,tab='inventory';
 let fbInvData={},fbInRef=null;
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
 const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
+const tmr=new Date(now.getTime()+86400000);const surveyDateKey=tmr.getFullYear()+'-'+String(tmr.getMonth()+1).padStart(2,'0')+'-'+String(tmr.getDate()).padStart(2,'0');
+let incomingDate=dateKey; // 입고 날짜 (선택 가능)
 const urlTeam=new URLSearchParams(window.location.search).get('team');
 const urlTab=new URLSearchParams(window.location.search).get('tab');
 function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
@@ -176,6 +178,7 @@ function renderInventory(){
     const dp=invDataDate.split('-');
     h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp[1]}.${dp[2]} 기준 재고 참고값 (오늘 제출하면 업데이트됩니다)</div>`;
   }
+  h+=`<div style="font-size:11px;color:var(--accent);background:rgba(34,197,94,.08);border:.5px solid rgba(34,197,94,.2);border-radius:8px;padding:8px 12px;margin-bottom:8px">📋 재고조사 기준일: <b>${surveyDateKey}</b> (오늘 작업분 반영 후 기록)</div>`;
   h+=`<div class="progress"><div class="prog-row"><span>오늘 완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%;background:${tc==='busan'?'var(--red)':'var(--blue)'}"></div></div></div>`;
   h+=`<div class="loc">`;
   T.locs.forEach(l=>{const icon=l==='사무실'?'🏢':'🚛';const dk=fk(l);const d=fbInvData[dk];const isDone=isToday&&d&&d.time;const isOn=loc===l;
@@ -195,7 +198,7 @@ function renderInventory(){
 
 function renderIncoming(){
   let h=renderTabs();
-  h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:12px">📥 오늘 ${team}에 입고된 수량을 입력하세요</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:13px;color:var(--dim)">📥 ${team} 입고 날짜:</span><input type="date" id="inDate" value="${incomingDate}" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit"></div>`;
   h+=buildTable('in',null);
   h+=`<div class="memo-sec"><div class="memo-hd">📝 비고</div><div class="memo-bd"><textarea class="memo" id="inMemo" placeholder=""></textarea></div></div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='block';
@@ -623,6 +626,29 @@ function calcMonthlyOrder(){
 }
 
 async function saveMonthlyOrder(){
+  // 1. 시트에 발주 데이터 저장
+  saveOrderInputs();
+  const orderData=[];
+  deliveries.forEach(d=>{
+    const items=[];
+    PR.forEach(p=>{
+      const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
+      (ORDER_COLORS[p.id]||[]).forEach(c=>{
+        shapes.forEach(t=>{
+          const v=parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0;
+          if(v>0)items.push({product:p.name+' '+p.badge,color:c,shape:t,qty:v});
+        });
+      });
+    });
+    if(items.length>0)orderData.push({loc:d.loc,date:d.date,items:items});
+  });
+  if(orderData.length>0){
+    fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'saveOrder',month:orderMonth+'월',deliveries:orderData})
+    }).catch(()=>{});
+  }
+
+  // 2. 이미지 저장
   if(typeof html2canvas==='undefined'){
     const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     document.head.appendChild(s);await new Promise(r=>s.onload=r);
@@ -633,8 +659,8 @@ async function saveMonthlyOrder(){
     const link=document.createElement('a');
     link.download='발주서_'+orderMonth+'월_'+dateKey+'.png';
     link.href=canvas.toDataURL();link.click();
-    toast('✅ 발주서 이미지 저장!');
-  }catch(e){toast('저장 실패');console.error(e)}
+    toast('✅ 발주서 저장 + 시트 기록 완료!');
+  }catch(e){toast('이미지 저장 실패 (시트 기록은 완료)');console.error(e)}
 }
 
 function buildTable(pfx,ex){let h='';PR.forEach(p=>{
@@ -653,10 +679,10 @@ async function submitInv(){if(!loc||!team)return;const btn=document.getElementBy
   const memo=document.getElementById('invMemo')?.value||'';
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
   const fb={time:hm,data:dm};if(loc==='사무실'&&memo)fb.memo=memo;
-  try{await db.ref('inventory/'+dateKey+'/'+team+'/'+fk(loc)).set(fb);toast('✅ '+team+' '+loc+' 저장!')}catch(e){toast('실패');btn.disabled=false;btn.textContent='재고 제출';return}
-  let txt=mm+dd+' '+team+' '+loc+'\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
+  try{await db.ref('inventory/'+dateKey+'/'+team+'/'+fk(loc)).set(fb);toast('✅ '+team+' '+loc+' 저장! (기준일:'+surveyDateKey+')')}catch(e){toast('실패');btn.disabled=false;btn.textContent='재고 제출';return}
+  let txt=mm+dd+' '+team+' '+loc+' (기준일:'+surveyDateKey+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:dateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).then(r=>{if(!r.ok)toast('⚠️ 시트 저장 실패')}).catch(()=>toast('⚠️ 시트 저장 실패'));
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:surveyDateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).then(r=>{if(!r.ok)toast('⚠️ 시트 저장 실패')}).catch(()=>toast('⚠️ 시트 저장 실패'));
   btn.disabled=false;btn.textContent='재고 제출'}
 
 async function submitIn(){if(!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
@@ -664,9 +690,11 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
     if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
   if(items.length===0){toast('수량을 입력하세요');btn.disabled=false;btn.textContent='입고 기록 저장';return}
   const memo=document.getElementById('inMemo')?.value||'';
+  const selDate=document.getElementById('inDate')?.value||dateKey;
+  incomingDate=selDate;
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
-  try{await db.ref('incoming/'+team+'/'+dateKey+'_'+hm.replace(':','')).set({time:hm,date:dateKey,items:items,memo:memo});
-    fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'incoming',team:team,date:dateKey,time:hm,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).catch(()=>{});
+  try{await db.ref('incoming/'+team+'/'+selDate+'_'+hm.replace(':','')).set({time:hm,date:selDate,items:items,memo:memo});
+    fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'incoming',team:team,date:selDate,time:hm,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).catch(()=>{});
     let txt=mm+dd+' '+team+' 입고\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
     if(memo)txt+='비고: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
     toast('✅ '+team+' 입고 완료!')}catch(e){toast('실패')}
