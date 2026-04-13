@@ -198,7 +198,7 @@ function renderInventory(){
   if(loc==='사무실'){const pm=(existing&&existing.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
   document.getElementById('app').innerHTML=h;
   document.getElementById('bl').innerHTML=`📍 <b>${team} ${loc}</b>`;
-  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='재고 제출';sb.className='btn btn-inv';sb.onclick=submitInv;calc('inv')}
+  const sb=document.getElementById('sbtn');const isWed=new Date().getDay()===3;sb.disabled=!isWed;sb.textContent=isWed?'재고 제출':'수요일에만 제출 가능';sb.className='btn btn-inv';sb.onclick=submitInv;calc('inv')}
 
 function renderIncoming(){
   let h=renderTabs();
@@ -694,7 +694,12 @@ function buildTable(pfx,ex){let h='';PR.forEach(p=>{
 function calc(pfx){let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{pb+=(parseInt(document.getElementById(`${pfx}_${p.id}_${c}_${t}`)?.value)||0)})});g+=pb*p.bpb;
   const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=pb+'박스 / '+pb*p.bpb+'장'});document.getElementById('gt').textContent=g.toLocaleString()}
 
-async function submitInv(){if(!loc||!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
+async function submitInv(){if(!loc||!team)return;
+  // 수요일 체크 (0=일, 3=수)
+  const today=new Date();const dayOfWeek=today.getDay();
+  if(dayOfWeek!==3){toast('⚠️ 재고조사는 매주 수요일에만 제출 가능합니다','error');return}
+  if(!confirm(team+' '+loc+' 재고를 제출하시겠습니까?\n\n제출하면 기존 데이터가 업데이트됩니다.'))return;
+  const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const dm={},items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const v=parseInt(document.getElementById(`inv_${k}`)?.value)||0;dm[k]=v;
     items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
   const memo=document.getElementById('invMemo')?.value||'';
