@@ -247,7 +247,10 @@ async function renderSummary(){
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
 
-  // 제품별 재고 테이블
+  // 제품별 실사 원본 (접기/펼치기)
+  h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+  h+=`<div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('surveyDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📦 실사 원본 (위치별 박스 수)</span><span style="font-size:12px;color:var(--dim)"><span class="arrow">▸</span></span></div>`;
+  h+=`<div id="surveyDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
@@ -257,6 +260,7 @@ async function renderSummary(){
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
       TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}">${v}</div>`});h+=`</div>`});h+=`</div>`});
+  h+=`</div></div>`;
 
   const om=fbInvData[fk('사무실')]?.memo;
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
