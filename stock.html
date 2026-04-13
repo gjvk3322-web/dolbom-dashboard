@@ -118,7 +118,7 @@ function pickTeam(t){
     // 오늘 제출된 데이터가 있으면 바로 사용
     const hasData=Object.keys(val).some(k=>val[k]&&val[k].time);
     if(hasData){
-      fbInvData=val;invDataDate=dateKey;render();
+      fbInvData=val;invDataDate=dateKey;if(tab!=='order')render();
     } else {
       // 오늘 데이터 없으면 최근 7일 탐색
       findRecentInventory(team).then(result=>{
@@ -127,7 +127,7 @@ function pickTeam(t){
         } else {
           fbInvData={};invDataDate=dateKey;
         }
-        render();
+        if(tab!=='order')render();
       });
     }
   });
@@ -502,7 +502,10 @@ function renderOrder(){
       h+=`<div style="padding:7px 10px;font-size:12px;font-weight:600;color:#555;display:flex;align-items:center;gap:5px;white-space:nowrap"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ORDER_CL[row.color]||'#888'}"></span>${row.label}</div>`;
       deliveries.forEach(d=>{
         const cellId=`oc_${d.id}_${row.pid}_${row.color}_${row.shape}`;
-        h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="calcMonthlyOrder()" style="width:100%;height:32px;background:#fafafa;border:1.5px solid #e0e0e0;border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='#2E7D32';this.style.background='#f0fdf4'" onblur="this.style.borderColor='#e0e0e0';this.style.background='#fafafa'"></div>`;
+        const cellBg=d.loc==='부산'?'#fff5f5':'#f0f7ff';
+        const cellBorder=d.loc==='부산'?'#f5c6c6':'#c6d9f5';
+        const focusBg=d.loc==='부산'?'#ffe8e8':'#e0eeff';
+        h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="calcMonthlyOrder()" style="width:100%;height:32px;background:${cellBg};border:1.5px solid ${cellBorder};border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='${d.loc==='부산'?'#e53935':'#1565c0'}';this.style.background='${focusBg}'" onblur="this.style.borderColor='${cellBorder}';this.style.background='${cellBg}'"></div>`;
       });
       h+=`</div>`;
     }
