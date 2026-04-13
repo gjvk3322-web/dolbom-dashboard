@@ -168,22 +168,25 @@ function renderTabs(){
 
 function renderInventory(){
   const T=TEAMS[team],tc=T.color;
-  const dc=Object.keys(fbInvData).filter(k=>fbInvData[k]&&fbInvData[k].time).length,tl=T.locs.length;
+  const isToday=invDataDate===dateKey;
+  const dc=isToday?Object.keys(fbInvData).filter(k=>fbInvData[k]&&fbInvData[k].time).length:0;
+  const tl=T.locs.length;
   let h=renderTabs();
-  if(invDataDate!==dateKey){
+  if(!isToday){
     const dp=invDataDate.split('-');
-    h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp[1]}.${dp[2]} 기준 재고 표시 중 (오늘 제출하면 업데이트됩니다)</div>`;
+    h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp[1]}.${dp[2]} 기준 재고 참고값 (오늘 제출하면 업데이트됩니다)</div>`;
   }
-  h+=`<div class="progress"><div class="prog-row"><span>완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%;background:${tc==='busan'?'var(--red)':'var(--blue)'}"></div></div></div>`;
+  h+=`<div class="progress"><div class="prog-row"><span>오늘 완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%;background:${tc==='busan'?'var(--red)':'var(--blue)'}"></div></div></div>`;
   h+=`<div class="loc">`;
-  T.locs.forEach(l=>{const icon=l==='사무실'?'🏢':'🚛';const dk=fk(l);const d=fbInvData[dk];const isDone=d&&d.time;const isOn=loc===l;
+  T.locs.forEach(l=>{const icon=l==='사무실'?'🏢':'🚛';const dk=fk(l);const d=fbInvData[dk];const isDone=isToday&&d&&d.time;const isOn=loc===l;
     h+=`<div class="loc-btn ${isOn?(tc==='busan'?'on':'on-gg'):(isDone?'done':'')}" onclick="loc='${l}';render()">${icon} ${l}${isDone?'<span class="loc-time">'+d.time+'</span>':''}</div>`});
   h+=`</div>`;
-  if(!loc){h+=dc>=tl?`<div style="text-align:center;padding:20px"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:16px;font-weight:700">모든 위치 제출 완료!</div></div>`:`<div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:14px">👆 위치를 선택하세요</div>`;
+  if(!loc){h+=dc>=tl&&isToday?`<div style="text-align:center;padding:20px"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:16px;font-weight:700">모든 위치 제출 완료!</div></div>`:`<div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:14px">👆 위치를 선택하세요</div>`;
     document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';return}
   document.getElementById('barEl').style.display='block';
   const dk=fk(loc),existing=fbInvData[dk];
-  if(existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨</div>`;
+  if(isToday&&existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨</div>`;
+  if(!isToday&&existing)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--orange);margin-bottom:4px">⚠️ ${invDataDate} 데이터 참고용 (제출하면 오늘 날짜로 저장)</div>`;
   h+=buildTable('inv',existing);
   if(loc==='사무실'){const pm=(existing&&existing.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
   document.getElementById('app').innerHTML=h;
