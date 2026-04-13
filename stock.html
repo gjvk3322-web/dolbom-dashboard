@@ -283,6 +283,8 @@ async function renderSummary(){
 let deliveries=[];
 let delIdCounter=0;
 let orderInputs={};  // 발주서 입력 데이터 유지용
+let orderMonth=new Date().getMonth()+1;  // 발주서 월
+let orderYear=new Date().getFullYear();
 const ORDER_CL={'모던':'#9ca3af','마블':'#3b82f6','베이지':'#d4a574'};
 const ORDER_COLORS={'500':['모던','마블'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
 
@@ -305,9 +307,7 @@ function saveOrderInputs(){
         });
       });
     });
-    const locEl=document.getElementById('dloc_'+d.id);
     const dateEl=document.getElementById('ddate_'+d.id);
-    if(locEl)d.loc=locEl.value;
     if(dateEl)d.date=dateEl.value;
   });
   const memo=document.getElementById('ordMemo');
@@ -339,15 +339,39 @@ function resetOrder(){
   renderOrder();
 }
 
+function changeOrderMonth(dir){
+  saveOrderInputs();
+  orderMonth+=dir;
+  if(orderMonth>12){orderMonth=1;orderYear++}
+  if(orderMonth<1){orderMonth=12;orderYear--}
+  renderOrder();
+}
+
+function toggleLoc(id){
+  const d=deliveries.find(x=>x.id===id);
+  if(d)d.loc=d.loc==='부산'?'안산':'부산';
+  renderOrder();
+}
+
+function confirmRemoveDelivery(id){
+  if(!confirm('이 배송 칸을 삭제할까요?'))return;
+  removeDelivery(id);
+}
+
 function renderOrder(){
   saveOrderInputs();
   initDefaultDeliveries();
   let h=renderTabs();
-  const mon=new Date().getMonth()+1;
 
   h+=`<div id="orderSheet" style="background:#ffffff;border-radius:14px;overflow:hidden;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)">`;
+
+  // 헤더: 월 선택 + 초기화/배송추가
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">`;
-  h+=`<div style="font-size:20px;font-weight:800;color:#1a1a1a">📋 돌봄 ${mon}월 발주서</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:8px">`;
+  h+=`<button onclick="changeOrderMonth(-1)" style="width:30px;height:30px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;color:#555;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">◀</button>`;
+  h+=`<div style="font-size:20px;font-weight:800;color:#1a1a1a">📋 돌봄 ${orderMonth}월 발주서</div>`;
+  h+=`<button onclick="changeOrderMonth(1)" style="width:30px;height:30px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;color:#555;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">▶</button>`;
+  h+=`</div>`;
   h+=`<div style="display:flex;gap:8px">`;
   h+=`<button onclick="resetOrder()" style="padding:8px 14px;background:#fff;color:#e53935;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🗑 초기화</button>`;
   h+=`<button onclick="addDelivery();renderOrder()" style="padding:8px 14px;background:#2E7D32;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">+ 배송 추가</button>`;
@@ -356,15 +380,16 @@ function renderOrder(){
   const cols=deliveries.length;
   const gcols=`110px repeat(${cols},1fr)`;
 
-  // 배송 헤더
+  // 배송 헤더 (select → 클릭 토글 텍스트, X 제거 → 클릭 삭제)
   h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;margin-bottom:4px">`;
   h+=`<div></div>`;
   deliveries.forEach(d=>{
-    h+=`<div style="text-align:center;padding:8px 4px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px;position:relative">`;
-    h+=`<select id="dloc_${d.id}" onchange="calcMonthlyOrder()" style="width:100%;padding:5px;background:#fff;border:1px solid #c8e6c9;border-radius:6px;color:#1a1a1a;font-size:12px;font-weight:700;text-align:center;font-family:inherit;margin-bottom:4px;-webkit-appearance:none">`;
-    h+=`<option value="부산" ${d.loc==='부산'?'selected':''}>부산</option><option value="안산" ${d.loc==='안산'?'selected':''}>안산</option></select>`;
-    h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="calcMonthlyOrder()" style="width:100%;padding:4px;background:#fff;border:1px solid #c8e6c9;border-radius:6px;color:#1a1a1a;font-size:11px;font-family:inherit">`;
-    h+=`<div onclick="removeDelivery(${d.id})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#e53935;color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,.15)">×</div>`;
+    const locColor=d.loc==='부산'?'#e53935':'#1565c0';
+    const locBg=d.loc==='부산'?'#ffebee':'#e3f2fd';
+    h+=`<div style="text-align:center;padding:8px 4px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px">`;
+    h+=`<div onclick="confirmRemoveDelivery(${d.id})" style="padding:5px;background:${locBg};border:1px solid ${locColor}30;border-radius:6px;color:${locColor};font-size:12px;font-weight:800;cursor:pointer;margin-bottom:4px;user-select:none">${d.loc}</div>`;
+    h+=`<div onclick="toggleLoc(${d.id})" style="font-size:9px;color:#999;cursor:pointer;margin-bottom:4px">↔ 위치변경</div>`;
+    h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="calcMonthlyOrder()" style="width:100%;padding:4px;background:#fff;border:1px solid #c8e6c9;border-radius:6px;color:#1a1a1a;font-size:11px;font-family:inherit;text-align:center">`;
     h+=`</div>`;
   });
   h+=`</div>`;
@@ -418,7 +443,7 @@ function renderOrder(){
   document.querySelector('.wrap').style.maxWidth='960px';
 
   document.getElementById('barEl').style.display='block';
-  document.getElementById('bl').innerHTML=`📋 <b>돌봄 ${mon}월 발주서</b>`;
+  document.getElementById('bl').innerHTML=`📋 <b>돌봄 ${orderMonth}월 발주서</b>`;
   document.getElementById('gt').textContent='0';
   const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='📸 발주서 저장';sb.className='btn btn-in';sb.onclick=saveMonthlyOrder;
 
@@ -446,9 +471,7 @@ function calcMonthlyOrder(){
   let grandTotal=0;
 
   deliveries.forEach(d=>{
-    const locEl=document.getElementById('dloc_'+d.id);
     const dateEl=document.getElementById('ddate_'+d.id);
-    if(locEl)d.loc=locEl.value;
     if(dateEl)d.date=dateEl.value;
 
     let colTotal=0;
@@ -491,8 +514,7 @@ async function saveMonthlyOrder(){
     const el=document.getElementById('orderSheet');
     const canvas=await html2canvas(el,{backgroundColor:'#ffffff',scale:2});
     const link=document.createElement('a');
-    const mon=new Date().getMonth()+1;
-    link.download='발주서_'+mon+'월_'+dateKey+'.png';
+    link.download='발주서_'+orderMonth+'월_'+dateKey+'.png';
     link.href=canvas.toDataURL();link.click();
     toast('✅ 발주서 이미지 저장!');
   }catch(e){toast('저장 실패');console.error(e)}
