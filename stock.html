@@ -287,6 +287,7 @@ let orderMonth=new Date().getMonth()+1;  // 발주서 월
 let orderYear=new Date().getFullYear();
 const ORDER_CL={'모던':'#9ca3af','마블':'#3b82f6','베이지':'#d4a574'};
 const ORDER_COLORS={'500':['마블','모던'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
+const ORDER_SHAPES={'500':['센터','사이드','코너','10T'],'1000_22':['센터','사이드','코너','10T'],'1000_17':['센터','사이드','코너']};
 
 function initDefaultDeliveries(){
   if(deliveries.length>0)return;
@@ -300,8 +301,9 @@ function initDefaultDeliveries(){
 function saveOrderInputs(){
   deliveries.forEach(d=>{
     PR.forEach(p=>{
+      const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
       (ORDER_COLORS[p.id]||[]).forEach(c=>{
-        ['센터','사이드','코너'].forEach(t=>{
+        shapes.forEach(t=>{
           const el=document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t);
           if(el&&el.value)orderInputs['oc_'+d.id+'_'+p.id+'_'+c+'_'+t]=el.value;
         });
@@ -318,8 +320,9 @@ function restoreOrderInputs(){
   setTimeout(()=>{
     deliveries.forEach(d=>{
       PR.forEach(p=>{
+        const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
         (ORDER_COLORS[p.id]||[]).forEach(c=>{
-          ['센터','사이드','코너'].forEach(t=>{
+          shapes.forEach(t=>{
             const key='oc_'+d.id+'_'+p.id+'_'+c+'_'+t;
             const el=document.getElementById(key);
             if(el&&orderInputs[key])el.value=orderInputs[key];
@@ -400,20 +403,28 @@ function renderOrder(){
   h+=`</div>`;
 
   // 제품별 행 (코튼 제외)
-  const palletLabel={'500':'24개 기준','1000_22':'16박스 기준','1000_17':'18박스 기준'};
+  const palletLabel={'500':'24박스 기준','1000_22':'16박스 기준','1000_17':'18박스 기준'};
+  const bppMap={'500':24,'1000_22':18,'1000_17':15};
   const allRows=[];
   PR.forEach(p=>{
+    const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
     allRows.push({type:'header',label:`${p.name} ${p.badge}`,pid:p.id,pallet:palletLabel[p.id]||''});
     (ORDER_COLORS[p.id]||[]).forEach(c=>{
-      ['센터','사이드','코너'].forEach(t=>{
+      shapes.forEach(t=>{
         allRows.push({type:'cell',label:`${c}(${t})`,pid:p.id,color:c,shape:t});
       });
     });
+    allRows.push({type:'subtotal',pid:p.id,bpp:bppMap[p.id]||24});
   });
 
   allRows.forEach(row=>{
     if(row.type==='header'){
       h+=`<div style="margin-top:10px;padding:8px 10px;font-size:13px;font-weight:800;color:#2E7D32;background:#e8f5e9;border-radius:6px;display:inline-block">${row.label} <span style="font-size:10px;font-weight:500;color:#888">${row.pallet}</span></div>`;
+    } else if(row.type==='subtotal'){
+      h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;border-top:1px solid #e0e0e0;margin-top:2px">`;
+      h+=`<div style="padding:5px 10px;font-size:11px;font-weight:700;color:#888">파레트</div>`;
+      deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:12px;font-weight:700;padding:5px;color:#2E7D32" id="palsub_${d.id}_${row.pid}">0</div>`);
+      h+=`</div>`;
     } else {
       h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px">`;
       h+=`<div style="padding:7px 10px;font-size:12px;font-weight:600;color:#555;display:flex;align-items:center;gap:5px;white-space:nowrap"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ORDER_CL[row.color]||'#888'}"></span>${row.label}</div>`;
@@ -470,7 +481,6 @@ function removeDelivery(id){
 
 function calcMonthlyOrder(){
   const bppMap={'500':24,'1000_22':18,'1000_17':15};
-  const bpbMap={'500':12,'1000_22':4,'1000_17':6};
   let grandTotal=0;
 
   deliveries.forEach(d=>{
@@ -478,30 +488,28 @@ function calcMonthlyOrder(){
     if(dateEl)d.date=dateEl.value;
 
     let colTotal=0;
+    let totalPallets=0;
     PR.forEach(p=>{
-      (ORDER_COLORS[p.id]||[]).forEach(c=>{
-        ['센터','사이드','코너'].forEach(t=>{
-          const v=parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0;
-          colTotal+=v;
-        });
-      });
-    });
-    let pallets=0;
-    PR.forEach(p=>{
+      const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
       let pBox=0;
       (ORDER_COLORS[p.id]||[]).forEach(c=>{
-        ['센터','사이드','코너'].forEach(t=>{
-          pBox+=(parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0);
+        shapes.forEach(t=>{
+          const v=parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0;
+          colTotal+=v;
+          pBox+=v;
         });
       });
-      if(pBox>0)pallets+=Math.ceil(pBox/bppMap[p.id]);
+      const pPal=pBox>0?Math.ceil(pBox/bppMap[p.id]):0;
+      totalPallets+=pPal;
+      const subEl=document.getElementById('palsub_'+d.id+'_'+p.id);
+      if(subEl)subEl.textContent=pPal>0?pPal+'P':'0';
     });
 
     const maxP=d.loc==='부산'?16:8;
     const sumEl=document.getElementById('dsum_'+d.id);
     const palEl=document.getElementById('dpal_'+d.id);
     if(sumEl)sumEl.textContent=colTotal;
-    if(palEl){palEl.textContent=pallets+'/'+maxP;palEl.style.color=pallets>maxP?'#e53935':'#555'}
+    if(palEl){palEl.textContent=totalPallets+'/'+maxP;palEl.style.color=totalPallets>maxP?'#e53935':'#555'}
     grandTotal+=colTotal;
   });
   const gtEl=document.getElementById('gt');
