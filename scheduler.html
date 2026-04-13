@@ -343,6 +343,7 @@ let CF={};  // 출발확인
 let DIST={};  // 거리 캐시 {주소: km}
 let SKIP=new Set(); // 수동 취소된 건 (자동배정 제외)
 let LOCK=new Set(); // 배정 확정(잠금)된 건 (자동배정 변경 불가)
+let LOCK_REASONS={}; // 잠금 사유 {jobId: '사유'}
 let J=[];
 let prevJobIds=new Set();
 let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
@@ -443,13 +444,13 @@ db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbR
 db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
 db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))SKIP=new Set(Object.keys(v));else if(Array.isArray(v))SKIP=new Set(v);else SKIP=new Set();fbLoaded.skip=true;});
-db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))LOCK=new Set(Object.keys(v));else if(Array.isArray(v))LOCK=new Set(v);else LOCK=new Set();fbLoaded.lock=true;fbRender()});
+db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v)){LOCK=new Set(Object.keys(v));LOCK_REASONS={};Object.keys(v).forEach(k=>{if(typeof v[k]==='string')LOCK_REASONS[k]=v[k]})}else if(Array.isArray(v)){LOCK=new Set(v);LOCK_REASONS={}}else{LOCK=new Set();LOCK_REASONS={}}fbLoaded.lock=true;fbRender()});
 
 let VEHICLES={}; // {준형: "804서 6771", ...}
 db.ref('vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
-function saveLock(){const o={};LOCK.forEach(id=>o[id]=true);db.ref('lockedJobs').set(Object.keys(o).length?o:null)}
+function saveLock(){const o={};LOCK.forEach(id=>o[id]=LOCK_REASONS[id]||true);db.ref('lockedJobs').set(Object.keys(o).length?o:null)}
 function saveSkip(){const o={};SKIP.forEach(id=>o[id]=true);db.ref('skipJobs').set(Object.keys(o).length?o:null)}
 
 // 배정 결과를 구글시트에 역기록
@@ -1067,13 +1068,19 @@ toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
 // 배정 확정(잠금) — 자동배정이 건드리지 않음
 function lockJob(jobId){
 if(!A[jobId]||A[jobId].length<2){toast('2인 배정 후 확정 가능','ok');return}
+const reason=prompt('🔒 잠금 사유를 입력해주세요\n(예: 오전만 작업, 개인 일정 등)');
+if(reason===null)return; // 취소
 LOCK.add(jobId);
+if(reason.trim())LOCK_REASONS[jobId]=reason.trim();
 saveLock();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('🔒 배정 확정!','ok');renderAll()}
 
 function unlockJob(jobId){
+const reason=LOCK_REASONS[jobId];
+if(reason&&!confirm('🔒 잠금 사유: '+reason+'\n\n정말 해제하시겠습니까?'))return;
 LOCK.delete(jobId);
+delete LOCK_REASONS[jobId];
 saveLock();
 toast('🔓 확정 해제','ok');renderAll()}
 
@@ -1658,7 +1665,7 @@ isMeasure?
 `<span onclick="event.stopPropagation();window.open('https://my.dolbommat.com/quote.html','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">📐실측</span>`:
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
 <span style="margin-left:auto;display:flex;gap:3px">
-${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
+${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>${LOCK_REASONS[j.id]?`<span style="font-size:9px;color:var(--green);opacity:.8;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${LOCK_REASONS[j.id]}">${LOCK_REASONS[j.id]}</span>`:''}`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
 <span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
 </span>
