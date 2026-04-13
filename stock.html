@@ -291,24 +291,32 @@ async function renderSummary(){
     Object.values(cr).forEach(d=>{calcTotal+=d.calculated});
     const sdp=surveyDate.split('-');
     
+    const spp={'500':288,'1000_22':72,'1000_17':93};
+    // 총 파레트 계산
+    let totalPallets=0;
+    Object.keys(cr).forEach(key=>{const pk=key.replace('_'+key.split('_').slice(-1)[0],'');const sp=spp[pk]||288;totalPallets+=cr[key].calculated/sp});
+    
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:16px 14px;text-align:center;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">📊 ${team} 현재 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 기준)</span></div><div style="font-size:28px;font-weight:800;color:var(--accent)">${calcTotal.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
-    h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(50px,auto));padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span></div>`;
+    h+=`<div style="padding:16px 14px;text-align:center;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">📊 ${team} 현재 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 기준)</span></div><div style="font-size:28px;font-weight:800;color:var(--accent)">${calcTotal.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div><div style="font-size:13px;color:var(--dim);margin-top:2px">${totalPallets.toFixed(1)} 파레트</div></div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(45px,auto)) minmax(40px,auto);padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span><span style="color:var(--dim)">파레트</span></div>`;
     
     prodOrder.forEach(pid=>{
       const colors=Object.keys(cr).filter(k=>k.startsWith(pid+'_')).map(k=>k.split('_').slice(-1)[0]);
       if(colors.length===0)return;
-      h+=`<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${prodNames[pid]||pid}</div>`;
+      const sp=spp[pid]||288;
+      h+=`<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${prodNames[pid]||pid} <span style="font-weight:400;font-size:9px">(1P=${sp}장)</span></div>`;
       colors.forEach(c=>{
         const key=pid+'_'+c;
         const d=cr[key];
         const calc=d.calculated;
-        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(50px,auto));padding:3px 14px;font-size:12px;text-align:right">`;
+        const pal=Math.round(calc/sp*10)/10;
+        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(45px,auto)) minmax(40px,auto);padding:3px 14px;font-size:12px;text-align:right">`;
         h+=`<span style="text-align:left"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span>`;
         h+=`<span style="color:var(--dim)">${d.survey.toLocaleString()}</span>`;
         h+=`<span style="color:var(--orange)">${d.incoming>0?'+'+d.incoming.toLocaleString():''}</span>`;
         h+=`<span style="color:var(--red)">${d.used>0?'-'+d.used.toLocaleString():''}</span>`;
         h+=`<span style="font-weight:700;color:${calc<0?'var(--red)':'var(--accent)'}">${calc.toLocaleString()}</span>`;
+        h+=`<span style="font-size:10px;color:var(--dim)">${pal}P</span>`;
         h+=`</div>`;
       });
     });
