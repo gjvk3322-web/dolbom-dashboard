@@ -760,8 +760,8 @@ function teamFairSort(a,b){
 function bumpCnt(members,date){members.forEach(m=>{if(!crossDateCnt._d)crossDateCnt._d={};if(!crossDateCnt._d[m])crossDateCnt._d[m]=new Set();if(!crossDateCnt._d[m].has(date)){crossDateCnt._d[m]=crossDateCnt._d[m]||new Set();crossDateCnt._d[m].add(date);crossDateCnt[m]=(crossDateCnt[m]||0)+1}})}
 
 for(const date of Object.keys(bd).sort()){
-// 3일 뒤부터만 전체 자동배정 (오늘~모레는 확정된 배정 보호)
-const cutoff=new Date();cutoff.setDate(cutoff.getDate()+3);
+// 4일 뒤부터만 전체 자동배정 (오늘~3일 후는 확정된 배정 보호)
+const cutoff=new Date();cutoff.setDate(cutoff.getDate()+4);
 const cutoffStr=cutoff.toISOString().slice(0,10);
 
 if(date<cutoffStr){
