@@ -280,6 +280,28 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_
 let selectedRegion = '';
 let oilChanged = null;
 
+// CSV 파서 (쉼표/따옴표 안전)
+function parseCSV(text) {
+  const rows = []; let row = []; let cell = ''; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i+1] === '"') { cell += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cell += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { row.push(cell.trim()); cell = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i+1] === '\n') i++;
+        row.push(cell.trim()); rows.push(row); row = []; cell = '';
+      } else cell += c;
+    }
+  }
+  if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
+  return rows;
+}
+
 const VEHICLES = {
   '부산': ['802서2139', '804서6771', '821머1224'],
   '경기': ['820라1210', '837머1201', '841부4647', '85가6506']
@@ -304,7 +326,7 @@ function loadTodayStatus() {
   fetch(csvUrl)
     .then(r => r.text())
     .then(csv => {
-      const rows = csv.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+      const rows = parseCSV(csv);
       // 헤더: 날짜,지역,사수,부사수,차량번호,주행거리,...
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
@@ -312,7 +334,10 @@ function loadTodayStatus() {
         const date = row[0], driver = row[2], vehicle = row[4];
         if (date === TODAY && vehicle) {
           // 같은 차량 여러 번 제출 시 마지막 것만 반영
-          todayChecked[vehicle] = { time: '시트', by: driver };
+          // localStorage에 이미 시간 정보가 있으면 유지, 없으면 '제출완료'
+          if (!todayChecked[vehicle]) {
+            todayChecked[vehicle] = { time: '제출완료', by: driver };
+          }
         }
       }
       saveTodayLocal();
