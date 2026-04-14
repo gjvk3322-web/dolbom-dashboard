@@ -408,7 +408,7 @@ function renderDailyChart(){
     <tr style="color:var(--text3);font-weight:600">
       <td style="padding:2px 0;width:52px"></td>
       <td style="padding:2px 4px;text-align:right;width:28px;color:var(--green)">시공</td>
-      <td style="padding:2px 4px;text-align:right;width:28px;color:var(--primary)">샘플</td>
+      <td style="padding:2px 4px;text-align:right;width:28px;color:#555">샘플</td>
       <td></td>
     </tr>`;
   
@@ -424,11 +424,11 @@ function renderDailyChart(){
     html+=`<tr>
       <td style="padding:3px 0;color:${dayColor};font-weight:${fw};text-align:right;padding-right:6px;white-space:nowrap">${x.d}일(${dow})</td>
       <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.r?'var(--green)':'var(--text3)'}">${x.r||'-'}</td>
-      <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.s?'var(--primary)':'var(--text3)'}">${x.s||'-'}</td>
+      <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.s?'#555':'var(--text3)'}">${x.s||'-'}</td>
       <td style="padding:3px 4px">
-        <div style="display:flex;gap:2px;align-items:center">
-          ${x.r?`<div style="height:8px;width:${rW}%;background:var(--green);border-radius:2px"></div>`:''}
-          ${x.s?`<div style="height:8px;width:${sW}%;background:var(--primary);border-radius:2px;opacity:.5"></div>`:''}
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${x.r?`<div style="height:7px;width:${rW}%;background:var(--green);border-radius:2px"></div>`:''}
+          ${x.s?`<div style="height:7px;width:${sW}%;background:#555;border-radius:2px;opacity:.45"></div>`:''}
         </div>
       </td>
     </tr>`;
@@ -437,7 +437,7 @@ function renderDailyChart(){
   html+=`<tr style="border-top:1px solid var(--border);font-weight:700">
     <td style="padding:6px 0;text-align:right;padding-right:6px;color:var(--text)">합계</td>
     <td style="padding:6px 4px;text-align:right;color:var(--green)">${totalRes}</td>
-    <td style="padding:6px 4px;text-align:right;color:var(--primary)">${totalSam}</td>
+    <td style="padding:6px 4px;text-align:right;color:#555">${totalSam}</td>
     <td></td>
   </tr></table>`;
   el.innerHTML=html;
