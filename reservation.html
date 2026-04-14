@@ -343,6 +343,19 @@ function getMonthJobCount(year,month){
   });
   return cnt;
 }
+function parseSampleDaily(text){
+  sampleDaily={};
+  const rows=csvToObjects(text);
+  rows.forEach(r=>{
+    let rd=(r['접수일시']||r['접수일']||'').trim();if(!rd)return;
+    rd=rd.replace(/\./g,'-').replace(/\s/g,'');
+    const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(!m)return;
+    const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+    sampleDaily[ds]=(sampleDaily[ds]||0)+1;
+  });
+}
+
 function updateSyncInfo(){
   const cnt=getMonthJobCount(currentYear,currentMonth);
   document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${currentMonth}월 시공 ${cnt}건`;
@@ -354,48 +367,67 @@ function renderDailyChart(){
   const prefix=`${currentYear}-${String(currentMonth).padStart(2,'0')}`;
   const dim=new Date(currentYear,currentMonth,0).getDate();
   
-  // 접수일 기준 일별 카운트
-  const daily={};
+  // 시공 접수일 기준
+  const resDaily={};
   ['부산','경기'].forEach(team=>{
     Object.values(schedAll[team]||{}).forEach(d=>{
       [...d.am,...d.pm].forEach(e=>{
         let rd=(e.receivedAt||'').trim();if(!rd)return;
-        // "2026. 4. 13" or "2026-04-13" 등 다양한 형식 처리
         rd=rd.replace(/\./g,'-').replace(/\s/g,'');
         const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
         if(!m)return;
         const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
         if(!ds.startsWith(prefix))return;
-        daily[ds]=(daily[ds]||0)+1;
+        resDaily[ds]=(resDaily[ds]||0)+1;
       });
     });
   });
   
-  const dates=Object.keys(daily).sort();
-  if(!dates.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">접수일 데이터 없음</div>';return;}
+  // 샘플 접수
+  const samDaily={};
+  Object.keys(sampleDaily).forEach(ds=>{if(ds.startsWith(prefix))samDaily[ds]=sampleDaily[ds];});
   
-  const maxCnt=Math.max(...Object.values(daily),1);
+  const allDates=new Set([...Object.keys(resDaily),...Object.keys(samDaily)]);
+  if(!allDates.size){el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">접수일 데이터 없음</div>';return;}
+  
+  // 해당 월 1일~말일
+  const days=[];
+  for(let d=1;d<=dim;d++){
+    const ds=`${prefix}-${String(d).padStart(2,'0')}`;
+    const r=resDaily[ds]||0;
+    const s=samDaily[ds]||0;
+    if(r||s)days.push({d,ds,r,s});
+  }
+  if(!days.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">접수일 데이터 없음</div>';return;}
+  
+  const maxCnt=Math.max(...days.map(x=>x.r+x.s),1);
+  const totalRes=days.reduce((a,x)=>a+x.r,0);
+  const totalSam=days.reduce((a,x)=>a+x.s,0);
   const today=new Date();const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   
-  // 최근 14일만 표시 (데이터 있는 날)
-  const recent=dates.slice(-14);
-  const totalMonth=Object.values(daily).reduce((a,b)=>a+b,0);
+  let html=`<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">📊 ${currentMonth}월 일별 접수</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;font-size:10px">
+    <span style="color:var(--green)">● 시공예약 ${totalRes}건</span>
+    <span style="color:var(--primary)">● 샘플 ${totalSam}건</span>
+  </div>
+  <div style="display:flex;align-items:flex-end;gap:2px;height:80px;border-bottom:1px solid var(--border-light);padding-bottom:2px">`;
   
-  let html=`<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">📊 일별 예약접수 <span style="font-weight:400;color:var(--text3)">${currentMonth}월 총 ${totalMonth}건</span></div>`;
-  html+=recent.map(d=>{
-    const day=parseInt(d.split('-')[2]);
-    const dow=['일','월','화','수','목','금','토'][new Date(d).getDay()];
-    const cnt=daily[d];
-    const pct=Math.max(cnt/maxCnt*100,8);
-    const isToday=d===todayStr;
-    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-      <span style="font-size:10px;color:${isToday?'var(--primary)':'var(--text3)'};width:42px;text-align:right;flex-shrink:0;font-weight:${isToday?'700':'400'}">${day}일(${dow})</span>
-      <div style="flex:1;height:14px;background:var(--border-light);border-radius:3px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${isToday?'var(--primary)':'var(--green)'};border-radius:3px;transition:width .3s"></div>
-      </div>
-      <span style="font-size:10px;font-weight:600;color:var(--text);width:20px">${cnt}</span>
+  days.forEach(x=>{
+    const rH=x.r?Math.max(x.r/(maxCnt)*70,3):0;
+    const sH=x.s?Math.max(x.s/(maxCnt)*70,3):0;
+    const isToday=x.ds===todayStr;
+    html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0" title="${x.d}일: 시공${x.r} 샘플${x.s}">
+      <div style="width:100%;max-width:18px;height:${sH}px;background:var(--primary);border-radius:2px 2px 0 0;opacity:.7"></div>
+      <div style="width:100%;max-width:18px;height:${rH}px;background:var(--green);border-radius:2px 2px 0 0"></div>
     </div>`;
-  }).join('');
+  });
+  
+  html+=`</div><div style="display:flex;gap:2px;margin-top:2px">`;
+  days.forEach(x=>{
+    const isToday=x.ds===todayStr;
+    html+=`<div style="flex:1;text-align:center;font-size:8px;color:${isToday?'var(--primary)':'var(--text3)'};font-weight:${isToday?'700':'400'};min-width:0;overflow:hidden">${x.d}</div>`;
+  });
+  html+=`</div>`;
   el.innerHTML=html;
 }
 let lastSync='';
@@ -403,6 +435,8 @@ let CLOSED={};
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const SCHED_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285'};
 const OFF_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653'};
+const SAMPLE_CSV='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1820061412';
+let sampleDaily={};
 let OFFS={};
 let rowMapReady=false;
 
@@ -537,12 +571,13 @@ async function loadData(){
   document.getElementById('syncInfo').textContent='데이터 로딩 중...';
   try{
     // 1단계: CSV 3건 + 휴무 2건 모두 병렬 로딩 (Apps Script 안 거침 → 빠름)
-    const [schedBS,schedGG,empRes,offBS,offGG] = await Promise.all([
+    const [schedBS,schedGG,empRes,offBS,offGG,sampleRes] = await Promise.all([
       fetch(SCHED_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
       fetch(SCHED_CSV['경기']+'&_='+Date.now()).then(r=>r.text()),
       fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735&_='+Date.now()).then(r=>r.text()),
       fetch(OFF_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
-      fetch(OFF_CSV['경기']+'&_='+Date.now()).then(r=>r.text())
+      fetch(OFF_CSV['경기']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(SAMPLE_CSV+'&_='+Date.now()).then(r=>r.text()).catch(()=>'')
     ]);
     showLoading(60);
 
@@ -560,6 +595,9 @@ async function loadData(){
     OFFS_ALL['부산']=parseOffCSVTo(offBS);
     OFFS_ALL['경기']=parseOffCSVTo(offGG);
     OFFS=OFFS_ALL[currentTeam];
+
+    // 샘플접수 일별 파싱
+    if(sampleRes){parseSampleDaily(sampleRes);}
 
     // 현재 팀 동기화
     scheduleData=schedAll[currentTeam];
