@@ -193,6 +193,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>마감</div>
     </div>
     <div class="sync-info" id="syncInfo">데이터 로딩 중...</div>
+    <div id="dailyChart" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"></div>
   </div>
   <!-- 2열: 2주 일정 -->
   <div class="card" style="flex:1;min-width:320px;margin:0;margin-top:12px;max-height:calc(100vh - 180px);overflow-y:auto">
@@ -345,6 +346,57 @@ function getMonthJobCount(year,month){
 function updateSyncInfo(){
   const cnt=getMonthJobCount(currentYear,currentMonth);
   document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${currentMonth}월 시공 ${cnt}건`;
+  renderDailyChart();
+}
+
+function renderDailyChart(){
+  const el=document.getElementById('dailyChart');if(!el)return;
+  const prefix=`${currentYear}-${String(currentMonth).padStart(2,'0')}`;
+  const dim=new Date(currentYear,currentMonth,0).getDate();
+  
+  // 접수일 기준 일별 카운트
+  const daily={};
+  ['부산','경기'].forEach(team=>{
+    Object.values(schedAll[team]||{}).forEach(d=>{
+      [...d.am,...d.pm].forEach(e=>{
+        let rd=(e.receivedAt||'').trim();if(!rd)return;
+        // "2026. 4. 13" or "2026-04-13" 등 다양한 형식 처리
+        rd=rd.replace(/\./g,'-').replace(/\s/g,'');
+        const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if(!m)return;
+        const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+        if(!ds.startsWith(prefix))return;
+        daily[ds]=(daily[ds]||0)+1;
+      });
+    });
+  });
+  
+  const dates=Object.keys(daily).sort();
+  if(!dates.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">접수일 데이터 없음</div>';return;}
+  
+  const maxCnt=Math.max(...Object.values(daily),1);
+  const today=new Date();const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  
+  // 최근 14일만 표시 (데이터 있는 날)
+  const recent=dates.slice(-14);
+  const totalMonth=Object.values(daily).reduce((a,b)=>a+b,0);
+  
+  let html=`<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">📊 일별 예약접수 <span style="font-weight:400;color:var(--text3)">${currentMonth}월 총 ${totalMonth}건</span></div>`;
+  html+=recent.map(d=>{
+    const day=parseInt(d.split('-')[2]);
+    const dow=['일','월','화','수','목','금','토'][new Date(d).getDay()];
+    const cnt=daily[d];
+    const pct=Math.max(cnt/maxCnt*100,8);
+    const isToday=d===todayStr;
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+      <span style="font-size:10px;color:${isToday?'var(--primary)':'var(--text3)'};width:42px;text-align:right;flex-shrink:0;font-weight:${isToday?'700':'400'}">${day}일(${dow})</span>
+      <div style="flex:1;height:14px;background:var(--border-light);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${isToday?'var(--primary)':'var(--green)'};border-radius:3px;transition:width .3s"></div>
+      </div>
+      <span style="font-size:10px;font-weight:600;color:var(--text);width:20px">${cnt}</span>
+    </div>`;
+  }).join('');
+  el.innerHTML=html;
 }
 let lastSync='';
 let CLOSED={};
@@ -609,7 +661,7 @@ function parseScheduleDataTo(rows,team){
     if(rawDate){const d=new Date(rawDate);if(!isNaN(d.getTime()))dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;else dateStr=String(rawDate).substring(0,10);}
     if(!dateStr||!time)return;
     if(!sd[dateStr])sd[dateStr]={am:[],pm:[],as:[],ms:[]};
-    const entry={time,category:r['구분']||'',address:r['주소']||'',product:r['제품']||'',phone:r['연락처']||'',isNew:r['신축여부']||'',size:r['평수']||'',scope:r['시공범위']||'',qty:r['수량']||'',sasu:r['사수']||'',busasu:r['부사수']||'',car:r['차량번호']||'',referrer:r['추천인']||'',channelName:r['채널명']||'',row:r.row||r._csvRow};
+    const entry={time,category:r['구분']||'',address:r['주소']||'',product:r['제품']||'',phone:r['연락처']||'',isNew:r['신축여부']||'',size:r['평수']||'',scope:r['시공범위']||'',qty:r['수량']||'',sasu:r['사수']||'',busasu:r['부사수']||'',car:r['차량번호']||'',referrer:r['추천인']||'',channelName:r['채널명']||'',row:r.row||r._csvRow,receivedAt:r['접수일']||''};
     if(time==='오전'||time==='오전(이전설치)')sd[dateStr].am.push(entry);
     else if(time==='오후'||time==='오후(이전설치)')sd[dateStr].pm.push(entry);
     else if(time==='AS')sd[dateStr].as.push(entry);
@@ -648,7 +700,8 @@ function parseScheduleData(rows){
       car: r['차량번호']||'',
       referrer: r['추천인']||'',
       channelName: r['채널명']||'',
-      row: r.row
+      row: r.row,
+      receivedAt: r['접수일']||''
     };
     if(time==='오전'||time==='오전(이전설치)') scheduleData[dateStr].am.push(entry);
     else if(time==='오후'||time==='오후(이전설치)') scheduleData[dateStr].pm.push(entry);
