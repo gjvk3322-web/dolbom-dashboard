@@ -400,29 +400,46 @@ function renderDailyChart(){
   const totalRes=days.reduce((a,x)=>a+x.r,0);
   const totalSam=days.reduce((a,x)=>a+x.s,0);
   
-  // 데이터 있는 날만 필터
   const active=days.filter(x=>x.r||x.s);
   if(!active.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">접수 데이터 없음</div>';return;}
   
-  let html=`<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px">📊 ${currentMonth}월 일별 접수
-    <span style="font-weight:400;color:var(--text3);margin-left:4px">시공 ${totalRes} · 샘플 ${totalSam}</span></div>`;
+  let html=`<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px">📊 ${currentMonth}월 일별 접수</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px">
+    <tr style="color:var(--text3);font-weight:600">
+      <td style="padding:2px 0;width:52px"></td>
+      <td style="padding:2px 4px;text-align:right;width:28px;color:var(--green)">시공</td>
+      <td style="padding:2px 4px;text-align:right;width:28px;color:var(--primary)">샘플</td>
+      <td></td>
+    </tr>`;
   
   active.forEach(x=>{
     const dow=['일','월','화','수','목','금','토'][new Date(x.ds).getDay()];
     const isToday=x.ds===todayStr;
     const isSun=new Date(x.ds).getDay()===0;
     const isSat=new Date(x.ds).getDay()===6;
-    const dayColor=isToday?'var(--primary)':isSun?'var(--red)':isSat?'var(--primary)':'var(--text)';
-    const rPct=x.r?Math.max(x.r/maxCnt*100,8):0;
-    const sPct=x.s?Math.max(x.s/maxCnt*100,8):0;
-    html+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-      <span style="font-size:10px;color:${dayColor};width:48px;flex-shrink:0;font-weight:${isToday?'800':'500'};text-align:right">${x.d}일(${dow})</span>
-      <div style="flex:1;display:flex;flex-direction:column;gap:1px">
-        ${x.r?`<div style="display:flex;align-items:center;gap:4px"><div style="height:10px;width:${rPct}%;background:var(--green);border-radius:2px;min-width:4px"></div><span style="font-size:9px;color:var(--green);font-weight:600">${x.r}</span></div>`:''}
-        ${x.s?`<div style="display:flex;align-items:center;gap:4px"><div style="height:10px;width:${sPct}%;background:var(--primary);border-radius:2px;opacity:.6;min-width:4px"></div><span style="font-size:9px;color:var(--primary);font-weight:600">${x.s}</span></div>`:''}
-      </div>
-    </div>`;
+    const dayColor=isToday?'var(--primary)':isSun?'var(--red)':isSat?'var(--primary)':'var(--text2)';
+    const fw=isToday?'800':'500';
+    const rW=x.r?Math.max(x.r/maxCnt*100,6):0;
+    const sW=x.s?Math.max(x.s/maxCnt*100,6):0;
+    html+=`<tr>
+      <td style="padding:3px 0;color:${dayColor};font-weight:${fw};text-align:right;padding-right:6px;white-space:nowrap">${x.d}일(${dow})</td>
+      <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.r?'var(--green)':'var(--text3)'}">${x.r||'-'}</td>
+      <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.s?'var(--primary)':'var(--text3)'}">${x.s||'-'}</td>
+      <td style="padding:3px 4px">
+        <div style="display:flex;gap:2px;align-items:center">
+          ${x.r?`<div style="height:8px;width:${rW}%;background:var(--green);border-radius:2px"></div>`:''}
+          ${x.s?`<div style="height:8px;width:${sW}%;background:var(--primary);border-radius:2px;opacity:.5"></div>`:''}
+        </div>
+      </td>
+    </tr>`;
   });
+  
+  html+=`<tr style="border-top:1px solid var(--border);font-weight:700">
+    <td style="padding:6px 0;text-align:right;padding-right:6px;color:var(--text)">합계</td>
+    <td style="padding:6px 4px;text-align:right;color:var(--green)">${totalRes}</td>
+    <td style="padding:6px 4px;text-align:right;color:var(--primary)">${totalSam}</td>
+    <td></td>
+  </tr></table>`;
   el.innerHTML=html;
 }
 let lastSync='';
