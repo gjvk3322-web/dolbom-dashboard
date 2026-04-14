@@ -202,7 +202,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 /* 마인드맵 */
 .mm-view{display:none;flex:1;overflow:hidden;flex-direction:row;}
 .mm-view.active{display:flex;}
-.mm-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);background-size:24px 24px;}
+.mm-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,rgba(0,0,0,.08) 1px,transparent 1px);background-size:24px 24px;cursor:grab;}
 .mm-canvas svg.mm-lines{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
 .mm-node{position:absolute;min-width:100px;max-width:240px;padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);box-shadow:var(--card-shadow);cursor:grab;z-index:10;transition:box-shadow .15s,border-color .15s;user-select:none;}
 .mm-node:hover{box-shadow:var(--card-shadow-hover);border-color:var(--primary);}
@@ -907,9 +907,8 @@ function mmInit(){
       mmPositionAll();
     }
     if(_mmDrag){
-      const wr=wrap.getBoundingClientRect();
-      _mmDrag.node.x=(_mmDrag.ox+(e.clientX-_mmDrag.sx))/mmScale;
-      _mmDrag.node.y=(_mmDrag.oy+(e.clientY-_mmDrag.sy))/mmScale;
+      _mmDrag.node.x=_mmDrag.ox+(e.clientX-_mmDrag.sx)/mmScale;
+      _mmDrag.node.y=_mmDrag.oy+(e.clientY-_mmDrag.sy)/mmScale;
       mmPositionAll();
     }
   });
@@ -970,7 +969,7 @@ function mmRenderAll(){
       if(e.target.isContentEditable)return;
       e.stopPropagation();e.preventDefault();
       mmSelectNode(n.id);
-      _mmDrag={node:n,el,sx:e.clientX,sy:e.clientY,ox:n.x*mmScale,oy:n.y*mmScale};
+      _mmDrag={node:n,el,sx:e.clientX,sy:e.clientY,ox:n.x,oy:n.y};
       el.classList.add('dragging');
     });
 
@@ -1012,6 +1011,10 @@ function mmPositionAll(){
     el.style.transform=`scale(${mmScale})`;
     el.style.transformOrigin='0 0';
   });
+  // 그리드 배경도 팬/줌 따라 이동
+  const gs=24*mmScale;
+  wrap.style.backgroundSize=gs+'px '+gs+'px';
+  wrap.style.backgroundPosition=(mmPanX%gs)+'px '+(mmPanY%gs)+'px';
   mmDrawLines();
 }
 
