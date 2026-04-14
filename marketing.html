@@ -199,65 +199,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 
-/* 마인드맵 */
-.mm-view{display:none;flex:1;overflow:hidden;flex-direction:row;}
-.mm-view.active{display:flex;}
-.mm-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,rgba(0,0,0,.08) 1px,transparent 1px);background-size:24px 24px;cursor:grab;}
-.mm-canvas svg.mm-lines{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
-.mm-node{position:absolute;min-width:130px;max-width:280px;padding:14px 18px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--card-shadow);cursor:grab;z-index:10;transition:box-shadow .15s,border-color .15s;user-select:none;}
-.mm-node:hover{box-shadow:var(--card-shadow-hover);border-color:var(--primary);}
-.mm-node.root{border-color:var(--primary);background:var(--primary-light);min-width:180px;text-align:center;padding:18px 24px;}
-.mm-node.selected{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.2);}
-.mm-node.dragging{opacity:.7;cursor:grabbing;z-index:50;}
-.mm-node-text{font-size:14px;font-weight:600;outline:none;min-height:20px;line-height:1.5;word-break:break-word;}
-.mm-node.root .mm-node-text{font-size:16px;font-weight:700;}
-.mm-node-text:empty::before{content:attr(data-placeholder);color:var(--text3);font-weight:400;}
-.mm-node-actions{display:none;position:absolute;top:-10px;right:-10px;gap:3px;}
-.mm-node:hover .mm-node-actions{display:flex;}
-.mm-node-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:all .15s;}
-.mm-node-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
-.mm-node-btn.del:hover{border-color:var(--red);color:var(--red);background:var(--red-light);}
-.mm-toolbar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;box-shadow:0 2px 10px rgba(0,0,0,.08);z-index:20;align-items:center;}
-.mm-tb-btn{height:28px;padding:0 10px;border:none;border-radius:5px;background:transparent;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;color:var(--text2);transition:all .15s;font-family:inherit;white-space:nowrap;}
-.mm-tb-btn:hover{background:var(--primary-light);color:var(--primary);}
-.mm-tb-sep{width:1px;height:18px;background:var(--border);margin:0 2px;flex-shrink:0;}
-.mm-zoom-info{font-size:11px;color:var(--text3);padding:0 4px;white-space:nowrap;}
-
-/* AI 패널 */
-.mm-ai-panel{width:380px;border-left:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0;z-index:10;transition:width .3s,padding .3s;}
-.mm-ai-panel.collapsed{width:0;overflow:hidden;border:none;padding:0;}
-.mm-ai-open-btn{position:absolute;top:12px;right:12px;z-index:25;padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);box-shadow:0 2px 8px rgba(0,0,0,.08);transition:all .15s;}
-.mm-ai-open-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
-.mm-ai-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.mm-ai-header h3{font-size:14px;font-weight:700;flex:1;}
-.mm-ai-toggle{padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .15s;}
-.mm-ai-toggle:hover{border-color:var(--primary);color:var(--primary);}
-.mm-ai-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
-.mm-ai-msg{padding:12px 16px;border-radius:10px;font-size:13px;line-height:1.6;max-width:95%;}
-.mm-ai-msg.user{background:var(--primary);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
-.mm-ai-msg.ai{background:var(--bg);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px;}
-.mm-ai-msg.ai .ai-label{font-size:10px;font-weight:700;color:var(--primary);margin-bottom:4px;}
-.mm-ai-msg.ai h4{font-size:13px;font-weight:700;margin:8px 0 4px;color:var(--text);}
-.mm-ai-msg.ai ul{margin:4px 0 4px 16px;padding:0;}
-.mm-ai-msg.ai li{margin-bottom:3px;}
-.mm-ai-msg.loading{color:var(--text3);font-style:italic;}
-.mm-ai-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;}
-.mm-ai-footer input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text);}
-.mm-ai-footer input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1);}
-.mm-ai-footer button{padding:10px 16px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
-.mm-ai-footer button:hover{background:var(--primary-dark);}
-.mm-ai-footer button:disabled{opacity:.5;cursor:not-allowed;}
-.mm-ai-quick{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 8px;}
-.mm-ai-quick button{padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--bg2);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .15s;}
-.mm-ai-quick button:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
-
-/* 마인드맵 저장 목록 모달 */
-.mm-list-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-light);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .15s;}
-.mm-list-item:hover{border-color:var(--primary);background:var(--primary-light);}
-.mm-list-item .mm-list-name{flex:1;font-size:13px;font-weight:600;}
-.mm-list-item .mm-list-date{font-size:10px;color:var(--text3);}
-.mm-list-item .mm-list-del{color:var(--text3);cursor:pointer;padding:2px 4px;font-size:14px;}
-.mm-list-item .mm-list-del:hover{color:var(--red);}
+/* 메모보드 */
+.memo-view{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.memo-view.active{display:flex;}
+.memo-header{padding:16px 24px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.memo-add-btn{padding:8px 16px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;}
+.memo-add-btn:hover{background:var(--primary-dark);}
+.memo-search{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text);width:240px;}
+.memo-search:focus{outline:none;border-color:var(--primary);}
+.memo-tabs{display:flex;gap:4px;margin-left:auto;}
+.memo-tab{padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg2);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .15s;}
+.memo-tab:hover{border-color:var(--primary);color:var(--primary);}
+.memo-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+.memo-grid{flex:1;overflow-y:auto;padding:0 24px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;align-content:start;}
+.memo-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0;box-shadow:var(--card-shadow);transition:all .15s;position:relative;display:flex;flex-direction:column;}
+.memo-card:hover{box-shadow:var(--card-shadow-hover);border-color:var(--primary);}
+.memo-card-tag{height:6px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;flex-shrink:0;}
+.memo-card-body{padding:16px 18px;flex:1;cursor:pointer;}
+.memo-card-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.memo-card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4;}
+.memo-card-content{font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:120px;overflow:hidden;}
+.memo-card-footer{padding:8px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border-light);}
+.memo-card-date{font-size:10px;color:var(--text3);}
+.memo-card-actions{display:flex;gap:4px;}
+.memo-card-actions button{padding:4px 8px;border:none;border-radius:4px;background:transparent;font-size:11px;cursor:pointer;color:var(--text3);transition:all .15s;font-family:inherit;}
+.memo-card-actions button:hover{background:var(--bg);color:var(--text);}
+.memo-card-actions button.del:hover{color:var(--red);background:var(--red-light);}
+.memo-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text3);font-size:14px;}
 </style>
 </head>
 <body>
@@ -269,7 +237,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="nav-label">메뉴</div>
       <div class="nav-item active" data-view="kanban" onclick="switchView('kanban')"><span class="nav-item-icon">📋</span><span class="nav-item-name">칸반보드</span><span class="nav-item-badge" id="navTotal">0</span></div>
       <div class="nav-item" data-view="dashboard" onclick="switchView('dashboard')"><span class="nav-item-icon">📊</span><span class="nav-item-name">대시보드</span></div>
-      <div class="nav-item" data-view="mindmap" onclick="switchView('mindmap')"><span class="nav-item-icon">🧠</span><span class="nav-item-name">마인드맵</span></div>
+      <div class="nav-item" data-view="memo" onclick="switchView('memo')"><span class="nav-item-icon">📝</span><span class="nav-item-name">메모보드</span></div>
     </div>
     <div class="nav-section" id="channelNav"></div>
   </nav>
@@ -304,51 +272,42 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
 </div>
 
-  <!-- 마인드맵 뷰 -->
-  <div class="mm-view" id="mmView">
-    <div class="mm-canvas-wrap" id="mmCanvasWrap">
-      <svg class="mm-lines" id="mmSvg"></svg>
-      <button class="mm-ai-open-btn" id="mmAiOpenBtn" onclick="toggleAiPanel()" style="display:none;">🤖 AI 어시스턴트</button>
-      <div class="mm-toolbar">
-        <button class="mm-tb-btn" onclick="mmAddChild()">+ 추가</button>
-        <button class="mm-tb-btn" onclick="mmDeleteSelected()">삭제</button>
-        <div class="mm-tb-sep"></div>
-        <button class="mm-tb-btn" onclick="mmZoom(0.1)">+</button>
-        <span class="mm-zoom-info" id="mmZoomInfo">100%</span>
-        <button class="mm-tb-btn" onclick="mmZoom(-0.1)">−</button>
-        <button class="mm-tb-btn" onclick="mmFitView()">맞춤</button>
-        <div class="mm-tb-sep"></div>
-        <button class="mm-tb-btn" onclick="mmSave()">저장</button>
-        <button class="mm-tb-btn" onclick="openMmList()">불러오기</button>
-        <button class="mm-tb-btn" onclick="mmClear()">새로</button>
+  <!-- 메모보드 뷰 -->
+  <div class="memo-view" id="memoView">
+    <div class="memo-header">
+      <button class="memo-add-btn" onclick="memoAdd()">+ 메모 추가</button>
+      <input class="memo-search" placeholder="검색..." oninput="memoRender()">
+      <div class="memo-tabs">
+        <div class="memo-tab active" data-cat="all" onclick="memoFilter(this,'all')">전체</div>
+        <div class="memo-tab" data-cat="idea" onclick="memoFilter(this,'idea')">💡 아이디어</div>
+        <div class="memo-tab" data-cat="plan" onclick="memoFilter(this,'plan')">📋 실행계획</div>
+        <div class="memo-tab" data-cat="note" onclick="memoFilter(this,'note')">🔍 메모</div>
+        <div class="memo-tab" data-cat="done" onclick="memoFilter(this,'done')">✅ 완료</div>
       </div>
     </div>
-    <div class="mm-ai-panel" id="mmAiPanel">
-      <div class="mm-ai-header">
-        <span style="font-size:20px">🤖</span>
-        <h3>AI 마케팅 어시스턴트</h3>
-        <button class="mm-ai-toggle" onclick="toggleAiPanel()">패널 닫기</button>
-      </div>
-      <div class="mm-ai-body" id="mmAiBody">
-        <div class="mm-ai-msg ai"><div class="ai-label">Claude AI</div>마인드맵에 생각을 정리한 후, 아래 버튼을 눌러 AI 피드백을 받아보세요.<br><br>마인드맵의 내용을 분석해서 <b>마케팅 전략 분석</b>과 <b>아이디어 확장 제안</b>을 해드립니다.</div>
-      </div>
-      <div class="mm-ai-quick" id="mmAiQuick">
-        <button onclick="mmAiAnalyze('strategy')">📊 전략 분석</button>
-        <button onclick="mmAiAnalyze('expand')">💡 아이디어 확장</button>
-        <button onclick="mmAiAnalyze('both')">🔄 전체 분석</button>
-      </div>
-      <div class="mm-ai-footer">
-        <input id="mmAiInput" placeholder="AI에게 추가 질문하기..." onkeydown="if(event.key==='Enter')mmAiSend()">
-        <button onclick="mmAiSend()" id="mmAiSendBtn">전송</button>
-      </div>
-    </div>
+    <div class="memo-grid" id="memoGrid"></div>
   </div>
 
-<!-- 마인드맵 저장 목록 모달 -->
-<div class="modal-overlay" id="mmListOverlay">
-  <div class="modal" style="width:460px">
-    <div class="modal-head"><h2>📂 저장된 마인드맵</h2><button class="modal-close" onclick="closeMmList()">✕</button></div>
-    <div class="modal-body" id="mmListBody"></div>
+<!-- 메모 편집 모달 -->
+<div class="modal-overlay" id="memoEditOverlay">
+  <div class="modal" style="width:520px">
+    <div class="modal-head"><h2 id="memoEditTitle">📝 메모 추가</h2><button class="modal-close" onclick="memoCloseEdit()">✕</button></div>
+    <div class="modal-body">
+      <div class="f-group"><div class="f-label">카테고리</div>
+        <select id="memoEditCat" class="f-input">
+          <option value="idea">💡 아이디어</option>
+          <option value="plan">📋 실행계획</option>
+          <option value="note">🔍 메모</option>
+          <option value="done">✅ 완료</option>
+        </select>
+      </div>
+      <div class="f-group"><div class="f-label">제목</div><input id="memoEditName" class="f-input" placeholder="제목을 입력하세요"></div>
+      <div class="f-group"><div class="f-label">내용</div><textarea id="memoEditContent" class="f-input" rows="8" placeholder="내용을 자유롭게 적어주세요..." style="resize:vertical"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn-secondary" onclick="memoCloseEdit()">취소</button>
+        <button class="btn-primary" onclick="memoSave()">저장</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -386,7 +345,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="f-group"><div class="f-label">Google Apps Script URL</div><input class="f-input" id="setUrl" placeholder="https://script.google.com/macros/s/.../exec"><div style="font-size:10px;color:var(--text3);margin-top:4px">구글시트 > 확장 프로그램 > Apps Script 배포 URL</div></div>
       <div class="f-group"><div class="f-label">상태</div><div id="setStatus" style="font-size:13px;color:var(--text3)">미연결</div></div>
       <div style="border-top:1px solid var(--border);margin:16px 0"></div>
-      <div class="f-group"><div class="f-label">🤖 Claude AI (마인드맵)</div><div style="font-size:12px;color:var(--text2);padding:8px 12px;background:var(--bg);border-radius:6px">API 키는 AWS 서버에서 안전하게 관리됩니다.<br><span style="font-size:10px;color:var(--text3)">서버: 3.35.253.214:5050</span></div></div>
+      <div class="f-group"><div class="f-label">🤖 Claude AI</div><div style="font-size:12px;color:var(--text2);padding:8px 12px;background:var(--bg);border-radius:6px">추후 AI 기능 연동 예정</div></div>
     </div>
     <div class="modal-footer"><button class="btn" onclick="closeSetting()">닫기</button><button class="btn primary" style="min-width:100px" onclick="testApi()">테스트</button><button class="btn primary" onclick="saveSetting()">저장</button></div>
   </div>
@@ -712,14 +671,14 @@ document.getElementById('chAddOverlay').addEventListener('click',e=>{if(e.target
 // ===== 뷰 전환 =====
 function switchView(v){
   document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.classList.toggle('active',n.dataset.view===v));
-  const mw=document.querySelector('.main-wrap'),ka=document.getElementById('kanbanArea'),sr=document.getElementById('summaryRow'),dv=document.getElementById('dashView'),mv=document.getElementById('mmView');
-  const titles={'kanban':'마케팅 칸반보드','dashboard':'실시간 대시보드','mindmap':'🧠 마인드맵'};
+  const mw=document.querySelector('.main-wrap'),ka=document.getElementById('kanbanArea'),sr=document.getElementById('summaryRow'),dv=document.getElementById('dashView'),mv=document.getElementById('memoView');
+  const titles={'kanban':'마케팅 칸반보드','dashboard':'실시간 대시보드','memo':'📝 메모보드'};
   document.getElementById('headerTitle').textContent=titles[v]||'';
   const tb=document.getElementById('targetBar');
   ka.style.display='none';sr.style.display='none';tb.style.display='none';dv.classList.remove('active');mv.classList.remove('active');
-  if(v==='mindmap'){
+  if(v==='memo'){
     mw.style.display='none';
-    mv.classList.add('active');mmInit();
+    mv.classList.add('active');memoRender();
   } else {
     mw.style.display='';
     if(v==='dashboard'){dv.classList.add('active');loadDash();}
@@ -885,412 +844,99 @@ function renderWidgetContent(id,d){
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
 
-// ===== 마인드맵 엔진 (v2) =====
-const MMK='dolbom_mkt_mindmaps',MMCK='dolbom_mkt_mm_current';
-const nodeColors=['#2563eb','#16a34a','#ea580c','#7c3aed','#db2777','#0891b2','#ca8a04','#dc2626'];
-const nodeColorsBg=['#eff4ff','#f0fdf4','#fff7ed','#f5f3ff','#fdf2f8','#ecfeff','#fefce8','#fef2f2'];
-let mmNodes=[],mmSelected=null,mmScale=1,mmPanX=0,mmPanY=0;
-let _mmDrag=null,_mmPan=null,mmInited=false;
-// 노드 크기 캐시 (연결선 계산용)
-const _mmSizes={};
+// ===== 메모보드 =====
+const MEMO_KEY='dolbom_mkt_memos';
+let memos=[],memoEditId=null,memoCurCat='all';
+const memoCats={idea:{label:'💡 아이디어',color:'#2563eb',bg:'#eff4ff'},plan:{label:'📋 실행계획',color:'#16a34a',bg:'#f0fdf4'},note:{label:'🔍 메모',color:'#ea580c',bg:'#fff7ed'},done:{label:'✅ 완료',color:'#7c3aed',bg:'#f5f3ff'}};
 
-function mmInit(){
-  if(mmInited){mmRenderAll();return;}
-  mmInited=true;
-  // 기본으로 AI 패널 숨기기
-  mmAiOpen=false;
-  document.getElementById('mmAiPanel').classList.add('collapsed');
-  document.getElementById('mmAiOpenBtn').style.display='';
-  try{const d=JSON.parse(localStorage.getItem(MMCK));if(d&&d.nodes?.length){mmNodes=d.nodes;mmScale=d.scale||1;mmPanX=d.panX||0;mmPanY=d.panY||0;}else mmNewMap();}catch{mmNewMap();}
-  const wrap=document.getElementById('mmCanvasWrap');
+function memoLoad(){try{memos=JSON.parse(localStorage.getItem(MEMO_KEY))||[];}catch{memos=[];}}
+function memoSaveAll(){localStorage.setItem(MEMO_KEY,JSON.stringify(memos));}
 
-  // === 팬 (빈 공간 드래그로 캔버스 이동) ===
-  wrap.addEventListener('mousedown',e=>{
-    if(e.target.closest('.mm-node')||e.target.closest('.mm-toolbar'))return;
-    _mmPan={sx:e.clientX,sy:e.clientY,ox:mmPanX,oy:mmPanY};
-    wrap.style.cursor='grabbing';
-    mmSelectNode(null);
-    e.preventDefault();
-  });
+function memoRender(){
+const grid=document.getElementById('memoGrid');if(!grid)return;
+const q=(document.querySelector('.memo-search')||{}).value||'';
+let list=memos.filter(m=>{
+  if(memoCurCat!=='all'&&m.cat!==memoCurCat)return false;
+  if(q&&!m.title.includes(q)&&!m.content.includes(q))return false;
+  return true;
+});
+list.sort((a,b)=>b.updated-a.updated);
+if(!list.length){grid.innerHTML='<div class="memo-empty">메모가 없습니다. + 메모 추가 버튼을 눌러보세요.</div>';return;}
+grid.innerHTML=list.map(m=>{
+  const c=memoCats[m.cat]||memoCats.note;
+  const d=new Date(m.updated);
+  const ds=(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return `<div class="memo-card">
+    <div class="memo-card-tag" style="background:${c.color}"></div>
+    <div class="memo-card-body" onclick="memoEdit('${m.id}')">
+      <div class="memo-card-cat" style="color:${c.color}">${c.label}</div>
+      <div class="memo-card-title">${esc(m.title)||'(제목 없음)'}</div>
+      <div class="memo-card-content">${esc(m.content)}</div>
+    </div>
+    <div class="memo-card-footer">
+      <span class="memo-card-date">${ds}</span>
+      <div class="memo-card-actions">
+        <button onclick="memoEdit('${m.id}')">수정</button>
+        <button class="del" onclick="memoDel('${m.id}')">삭제</button>
+      </div>
+    </div>
+  </div>`;
+}).join('');
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-  // === 통합 mousemove ===
-  window.addEventListener('mousemove',e=>{
-    if(_mmPan){
-      mmPanX=_mmPan.ox+(e.clientX-_mmPan.sx);
-      mmPanY=_mmPan.oy+(e.clientY-_mmPan.sy);
-      mmPositionAll();
-    }
-    if(_mmDrag){
-      _mmDrag.node.x=_mmDrag.ox+(e.clientX-_mmDrag.sx)/mmScale;
-      _mmDrag.node.y=_mmDrag.oy+(e.clientY-_mmDrag.sy)/mmScale;
-      mmPositionAll();
-    }
-  });
-
-  // === 통합 mouseup ===
-  window.addEventListener('mouseup',()=>{
-    if(_mmPan){_mmPan=null;wrap.style.cursor='';}
-    if(_mmDrag){
-      _mmDrag.el.classList.remove('dragging');
-      _mmDrag=null;
-      mmAutoSave();
-    }
-  });
-
-  // === 줌 (마우스 휠) ===
-  wrap.addEventListener('wheel',e=>{
-    e.preventDefault();
-    const old=mmScale;
-    mmScale=Math.max(0.3,Math.min(2.5,mmScale+(e.deltaY>0?-0.08:0.08)));
-    // 마우스 위치 기준 줌
-    const wr=wrap.getBoundingClientRect();
-    const mx=e.clientX-wr.left,my=e.clientY-wr.top;
-    mmPanX=mx-(mx-mmPanX)*(mmScale/old);
-    mmPanY=my-(my-mmPanY)*(mmScale/old);
-    mmPositionAll();
-    document.getElementById('mmZoomInfo').textContent=Math.round(mmScale*100)+'%';
-  },{passive:false});
-
-  mmRenderAll();
-  // 처음 로드 시 화면 맞춤
-  setTimeout(()=>mmFitView(),100);
+function memoFilter(el,cat){
+memoCurCat=cat;
+document.querySelectorAll('.memo-tab').forEach(t=>t.classList.toggle('active',t.dataset.cat===cat));
+memoRender();
 }
 
-function mmNewMap(){
-  // 화면 중앙에 루트 노드 배치
-  const wrap=document.getElementById('mmCanvasWrap');
-  const cx=wrap?wrap.clientWidth/2-90:400;
-  const cy=wrap?wrap.clientHeight/2-25:300;
-  mmNodes=[{id:'root',text:'돌봄매트 마케팅',x:0,y:0,parent:null,color:0}];
-  mmSelected=null;mmScale=1;mmPanX=cx;mmPanY=cy;
-  mmAutoSave();
+function memoAdd(){
+memoEditId=null;
+document.getElementById('memoEditTitle').textContent='📝 메모 추가';
+document.getElementById('memoEditCat').value='idea';
+document.getElementById('memoEditName').value='';
+document.getElementById('memoEditContent').value='';
+document.getElementById('memoEditOverlay').classList.add('show');
+setTimeout(()=>document.getElementById('memoEditName').focus(),100);
 }
 
-// === 노드 DOM 생성 ===
-function mmRenderAll(){
-  const wrap=document.getElementById('mmCanvasWrap');
-  // 기존 노드 제거
-  wrap.querySelectorAll('.mm-node').forEach(el=>el.remove());
-
-  mmNodes.forEach(n=>{
-    const el=document.createElement('div');
-    el.className='mm-node'+(n.id==='root'?' root':'')+(mmSelected===n.id?' selected':'');
-    el.dataset.nid=n.id;
-    if(n.id!=='root'){
-      el.style.borderColor=nodeColors[n.color%nodeColors.length];
-    }
-    el.innerHTML=`<div class="mm-node-text" contenteditable="true" data-placeholder="내용 입력...">${n.text||''}</div><div class="mm-node-actions"><button class="mm-node-btn" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();mmAddChildOf('${n.id}')">+</button>${n.id!=='root'?`<button class="mm-node-btn del" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();mmDelNode('${n.id}')">✕</button>`:''}</div>`;
-
-    // 노드 드래그
-    el.addEventListener('mousedown',e=>{
-      if(e.target.closest('.mm-node-actions'))return;
-      if(e.target.isContentEditable)return;
-      e.stopPropagation();e.preventDefault();
-      mmSelectNode(n.id);
-      _mmDrag={node:n,el,sx:e.clientX,sy:e.clientY,ox:n.x,oy:n.y};
-      el.classList.add('dragging');
-    });
-
-    el.addEventListener('click',e=>{
-      if(!e.target.closest('.mm-node-actions'))mmSelectNode(n.id);
-    });
-
-    // 텍스트 편집
-    const txt=el.querySelector('.mm-node-text');
-    txt.addEventListener('input',()=>{n.text=txt.innerText;mmAutoSave();
-      // 크기 변경 반영
-      _mmSizes[n.id]={w:el.offsetWidth,h:el.offsetHeight};
-      mmDrawLines();
-    });
-    txt.addEventListener('keydown',e=>{
-      if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();mmAddChildOf(n.id);}
-      if(e.key==='Tab'){e.preventDefault();mmAddChildOf(n.id);}
-      if(e.key==='Delete'&&e.ctrlKey&&n.id!=='root'){mmDelNode(n.id);}
-    });
-    txt.addEventListener('focus',()=>mmSelectNode(n.id));
-
-    wrap.appendChild(el);
-    // 크기 캐시
-    _mmSizes[n.id]={w:el.offsetWidth,h:el.offsetHeight};
-  });
-
-  mmPositionAll();
-  document.getElementById('mmZoomInfo').textContent=Math.round(mmScale*100)+'%';
+function memoEdit(id){
+const m=memos.find(x=>x.id===id);if(!m)return;
+memoEditId=id;
+document.getElementById('memoEditTitle').textContent='📝 메모 수정';
+document.getElementById('memoEditCat').value=m.cat;
+document.getElementById('memoEditName').value=m.title;
+document.getElementById('memoEditContent').value=m.content;
+document.getElementById('memoEditOverlay').classList.add('show');
+setTimeout(()=>document.getElementById('memoEditName').focus(),100);
 }
 
-// === 위치 업데이트 (transform 없이 직접 left/top) ===
-function mmPositionAll(){
-  const wrap=document.getElementById('mmCanvasWrap');
-  mmNodes.forEach(n=>{
-    const el=wrap.querySelector(`.mm-node[data-nid="${n.id}"]`);
-    if(!el)return;
-    el.style.left=(n.x*mmScale+mmPanX)+'px';
-    el.style.top=(n.y*mmScale+mmPanY)+'px';
-    el.style.transform=`scale(${mmScale})`;
-    el.style.transformOrigin='0 0';
-  });
-  // 그리드 배경도 팬/줌 따라 이동
-  const gs=24*mmScale;
-  wrap.style.backgroundSize=gs+'px '+gs+'px';
-  wrap.style.backgroundPosition=(mmPanX%gs)+'px '+(mmPanY%gs)+'px';
-  mmDrawLines();
+function memoSave(){
+const cat=document.getElementById('memoEditCat').value;
+const title=document.getElementById('memoEditName').value.trim();
+const content=document.getElementById('memoEditContent').value.trim();
+if(!title&&!content){toast('내용을 입력해주세요');return;}
+if(memoEditId){
+  const m=memos.find(x=>x.id===memoEditId);
+  if(m){m.cat=cat;m.title=title;m.content=content;m.updated=Date.now();}
+}else{
+  memos.push({id:'m'+Date.now(),cat,title,content,created:Date.now(),updated:Date.now()});
+}
+memoSaveAll();memoCloseEdit();memoRender();toast('💾 저장 완료');
 }
 
-// === SVG 연결선 (데이터 기반, DOM 의존 최소화) ===
-function mmDrawLines(){
-  const svg=document.getElementById('mmSvg');
-  svg.innerHTML='';
-  mmNodes.forEach(n=>{
-    if(!n.parent)return;
-    const p=mmNodes.find(x=>x.id===n.parent);
-    if(!p)return;
-    const ps=_mmSizes[p.id]||{w:120,h:40};
-    const ns=_mmSizes[n.id]||{w:120,h:40};
-    // 부모 중심점
-    const px=p.x*mmScale+mmPanX+ps.w*mmScale/2;
-    const py=p.y*mmScale+mmPanY+ps.h*mmScale/2;
-    // 자식 중심점
-    const nx=n.x*mmScale+mmPanX+ns.w*mmScale/2;
-    const ny=n.y*mmScale+mmPanY+ns.h*mmScale/2;
-    const color=nodeColors[n.color%nodeColors.length];
-    // 곡선
-    const dx=nx-px,dy=ny-py;
-    const cx1=px+dx*0.4,cy1=py;
-    const cx2=px+dx*0.6,cy2=ny;
-    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d',`M${px},${py} C${cx1},${cy1} ${cx2},${cy2} ${nx},${ny}`);
-    path.setAttribute('stroke',color);
-    path.setAttribute('stroke-width',Math.max(1.5,2*mmScale).toFixed(1));
-    path.setAttribute('fill','none');
-    path.setAttribute('opacity','0.45');
-    svg.appendChild(path);
-  });
+function memoDel(id){
+if(!confirm('이 메모를 삭제할까요?'))return;
+memos=memos.filter(x=>x.id!==id);
+memoSaveAll();memoRender();toast('삭제 완료');
 }
 
-// === 줌/뷰 ===
-function mmZoom(d){
-  mmScale=Math.max(0.3,Math.min(2.5,mmScale+d));
-  mmPositionAll();
-  document.getElementById('mmZoomInfo').textContent=Math.round(mmScale*100)+'%';
-}
+function memoCloseEdit(){document.getElementById('memoEditOverlay').classList.remove('show');memoEditId=null;}
+function memoInit(){memoLoad();memoRender();}
 
-function mmFitView(){
-  if(!mmNodes.length)return;
-  const wrap=document.getElementById('mmCanvasWrap'),wr=wrap.getBoundingClientRect();
-  if(!wr.width)return;
-  const xs=mmNodes.map(n=>n.x),ys=mmNodes.map(n=>n.y);
-  const pad=80;
-  const minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+240+pad;
-  const minY=Math.min(...ys)-pad,maxY=Math.max(...ys)+60+pad;
-  const w=maxX-minX||1,h=maxY-minY||1;
-  mmScale=Math.min(wr.width/w,wr.height/h,1.2);
-  mmScale=Math.max(0.3,mmScale);
-  mmPanX=(wr.width-w*mmScale)/2-minX*mmScale;
-  mmPanY=(wr.height-h*mmScale)/2-minY*mmScale;
-  mmPositionAll();
-  document.getElementById('mmZoomInfo').textContent=Math.round(mmScale*100)+'%';
-}
-
-// === 선택/추가/삭제 ===
-function mmSelectNode(id){
-  mmSelected=id;
-  document.querySelectorAll('.mm-node').forEach(el=>el.classList.toggle('selected',el.dataset.nid===id));
-}
-
-function mmAddChild(){mmAddChildOf(mmSelected||'root');}
-function mmAddChildOf(pid){
-  const p=mmNodes.find(n=>n.id===pid);if(!p)return;
-  const children=mmNodes.filter(n=>n.parent===pid);
-  const depth=mmGetDepth(pid)+1;
-  const dist=180;
-  // 자식 개수에 따라 각도 분산
-  const totalKids=children.length;
-  const startAngle=-60;
-  const angle=startAngle+totalKids*45;
-  const rad=(angle*Math.PI)/180;
-  const id='n'+Date.now().toString(36)+Math.random().toString(36).slice(2,4);
-  mmNodes.push({id,text:'',x:p.x+dist*Math.cos(rad),y:p.y+dist*Math.sin(rad),parent:pid,color:depth%nodeColors.length});
-  mmSelected=id;
-  mmAutoSave();mmRenderAll();
-  setTimeout(()=>{
-    const txt=document.querySelector(`.mm-node[data-nid="${id}"] .mm-node-text`);
-    if(txt)txt.focus();
-  },50);
-}
-
-function mmGetDepth(id){let d=0,cur=mmNodes.find(n=>n.id===id);while(cur?.parent){d++;cur=mmNodes.find(n=>n.id===cur.parent);}return d;}
-
-function mmDelNode(id){
-  if(id==='root')return;
-  const toRemove=new Set();
-  const collect=nid=>{toRemove.add(nid);mmNodes.filter(n=>n.parent===nid).forEach(c=>collect(c.id));};
-  collect(id);
-  mmNodes=mmNodes.filter(n=>!toRemove.has(n.id));
-  if(mmSelected===id)mmSelected=null;
-  mmAutoSave();mmRenderAll();toast('노드 삭제됨');
-}
-
-function mmDeleteSelected(){
-  if(mmSelected&&mmSelected!=='root')mmDelNode(mmSelected);
-  else if(mmSelected==='root')toast('루트 노드는 삭제할 수 없습니다');
-}
-
-// === 저장/불러오기 ===
-function mmAutoSave(){localStorage.setItem(MMCK,JSON.stringify({nodes:mmNodes,scale:mmScale,panX:mmPanX,panY:mmPanY}));}
-
-function mmSave(){
-  const name=prompt('마인드맵 이름을 입력하세요:',mmNodes[0]?.text||'마인드맵');if(!name)return;
-  let maps=[];try{maps=JSON.parse(localStorage.getItem(MMK))||[];}catch{}
-  maps.push({name,date:new Date().toISOString(),data:{nodes:mmNodes}});
-  localStorage.setItem(MMK,JSON.stringify(maps));toast('저장됨: '+name);
-}
-
-function openMmList(){
-  let maps=[];try{maps=JSON.parse(localStorage.getItem(MMK))||[];}catch{}
-  const body=document.getElementById('mmListBody');
-  if(!maps.length){body.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">저장된 마인드맵이 없습니다</div>';
-  }else{
-    body.innerHTML=maps.map((m,i)=>`<div class="mm-list-item" onclick="mmLoadMap(${i})"><span style="font-size:18px">🧠</span><div class="mm-list-name">${m.name}</div><div class="mm-list-date">${new Date(m.date).toLocaleDateString('ko-KR')}</div><span class="mm-list-del" onclick="event.stopPropagation();mmDelMap(${i})">✕</span></div>`).join('');
-  }
-  document.getElementById('mmListOverlay').classList.add('show');
-}
-function closeMmList(){document.getElementById('mmListOverlay').classList.remove('show');}
-function mmLoadMap(i){
-  let maps=[];try{maps=JSON.parse(localStorage.getItem(MMK))||[];}catch{}
-  if(!maps[i])return;
-  mmNodes=maps[i].data.nodes;mmSelected=null;mmScale=1;mmPanX=0;mmPanY=0;
-  mmAutoSave();closeMmList();mmRenderAll();setTimeout(()=>mmFitView(),50);toast('불러옴: '+maps[i].name);
-}
-function mmDelMap(i){
-  let maps=[];try{maps=JSON.parse(localStorage.getItem(MMK))||[];}catch{}
-  if(!confirm(`'${maps[i]?.name}' 삭제할까요?`))return;
-  maps.splice(i,1);localStorage.setItem(MMK,JSON.stringify(maps));openMmList();toast('삭제됨');
-}
-function mmClear(){
-  if(!confirm('현재 마인드맵을 초기화할까요?'))return;
-  mmNewMap();mmRenderAll();setTimeout(()=>mmFitView(),50);toast('새 마인드맵');
-}
-document.getElementById('mmListOverlay')?.addEventListener('click',e=>{if(e.target.id==='mmListOverlay')closeMmList();});
-
-// AI 패널 토글
-let mmAiOpen=true;
-function toggleAiPanel(){
-  mmAiOpen=!mmAiOpen;
-  const panel=document.getElementById('mmAiPanel');
-  const openBtn=document.getElementById('mmAiOpenBtn');
-  if(mmAiOpen){
-    panel.classList.remove('collapsed');
-    openBtn.style.display='none';
-    document.querySelector('.mm-ai-toggle').textContent='패널 닫기';
-  } else {
-    panel.classList.add('collapsed');
-    openBtn.style.display='';
-    document.querySelector('.mm-ai-toggle').textContent='AI 열기';
-  }
-  // 패널 토글 후 마인드맵 영역 재조정
-  setTimeout(()=>mmFitView(),350);
-}
-
-// 마인드맵 → 텍스트 변환
-function mmToText(){
-  const root=mmNodes.find(n=>n.id==='root');if(!root)return '';
-  const build=(node,depth=0)=>{
-    const indent='  '.repeat(depth);
-    let text=indent+(depth===0?'[중심주제] ':depth===1?'├─ ':'│  ├─ ')+(node.text||'(빈 노드)')+'\n';
-    mmNodes.filter(n=>n.parent===node.id).forEach(c=>{text+=build(c,depth+1);});
-    return text;
-  };
-  return build(root);
-}
-
-// ===== Claude AI API (AWS 프록시 경유) =====
-const CLAUDE_PROXY='http://3.35.253.214:5050/ai';
-
-async function mmAiCall(messages){
-  try{
-    const res=await fetch(CLAUDE_PROXY,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2048,
-        system:'당신은 돌봄매트(TPU 층간소음 매트 시공 전문업체)의 마케팅 전략 어시스턴트입니다. 부산·경기·인천 지역에서 아파트 입주민을 주 타겟으로 하며, 네이버 검색광고, 맘카페, 블로그, 인스타그램 등 다양한 채널을 운영합니다. 돌봄매트의 강점: 직접 시공, TPU 소재(친환경), 14명 직원 7팀 운영, 자체 물류. 항상 한국어로 실용적이고 구체적인 마케팅 조언을 해주세요.',
-        messages
-      })
-    });
-    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||`API 오류 (${res.status})`);}
-    const data=await res.json();
-    return data.content?.[0]?.text||'응답 없음';
-  }catch(e){
-    toast('AI 오류: '+e.message);return null;
-  }
-}
-
-function mmAiAddMsg(role,html){
-  const body=document.getElementById('mmAiBody');
-  const div=document.createElement('div');
-  div.className='mm-ai-msg '+(role==='user'?'user':'ai');
-  div.innerHTML=role==='ai'?`<div class="ai-label">Claude AI</div>${html}`:html;
-  body.appendChild(div);body.scrollTop=body.scrollHeight;
-  return div;
-}
-
-async function mmAiAnalyze(mode){
-  const mapText=mmToText();
-  if(mmNodes.length<=1){toast('먼저 마인드맵에 내용을 추가해주세요');return;}
-
-  let prompt='';
-  const label=mode==='strategy'?'전략 분석':mode==='expand'?'아이디어 확장':'전체 분석';
-  mmAiAddMsg('user',`📊 ${label} 요청\n\n${mapText.substring(0,200)}...`);
-  const loading=mmAiAddMsg('ai','<span class="loading">분석 중...</span>');
-
-  if(mode==='strategy'||mode==='both'){
-    prompt+=`아래는 사용자가 마인드맵으로 정리한 마케팅 아이디어/계획입니다:\n\n${mapText}\n\n`;
-    if(mode==='both')prompt+='다음 두 가지를 모두 해주세요:\n\n1. **마케팅 전략 분석**: 이 마인드맵의 강점, 약점, 개선할 점을 분석해주세요. 각 항목을 구체적으로.\n\n2. **아이디어 확장 제안**: 마인드맵에 있는 아이디어를 기반으로 추가할 수 있는 새로운 아이디어나 실행 방안을 제안해주세요.\n\n마크다운 형식으로 깔끔하게 정리해주세요.';
-    else prompt+='이 마인드맵의 마케팅 전략을 분석해주세요:\n- 강점 (잘 구성된 부분)\n- 약점 (빠진 부분이나 개선할 점)\n- 구체적 개선 제안\n\n마크다운 형식으로 깔끔하게 정리해주세요.';
-  }else{
-    prompt=`아래는 사용자가 마인드맵으로 정리한 마케팅 아이디어입니다:\n\n${mapText}\n\n이 아이디어를 확장해주세요:\n- 각 가지에서 더 발전시킬 수 있는 아이디어\n- 완전히 새로운 방향 제안\n- 실행 가능한 구체적 액션 플랜\n\n마크다운 형식으로 깔끔하게 정리해주세요.`;
-  }
-
-  const result=await mmAiCall([{role:'user',content:prompt}]);
-  loading.remove();
-  if(result){
-    // 마크다운을 간단한 HTML로 변환
-    const html=mdToHtml(result);
-    mmAiAddMsg('ai',html);
-  }
-}
-
-async function mmAiSend(){
-  const inp=document.getElementById('mmAiInput');
-  const q=inp.value.trim();if(!q)return;
-  inp.value='';
-  const mapText=mmToText();
-  mmAiAddMsg('user',q);
-  const loading=mmAiAddMsg('ai','<span class="loading">생각 중...</span>');
-
-  const prompt=`사용자의 현재 마인드맵:\n${mapText}\n\n사용자 질문: ${q}`;
-  const result=await mmAiCall([{role:'user',content:prompt}]);
-  loading.remove();
-  if(result)mmAiAddMsg('ai',mdToHtml(result));
-}
-
-// 간단한 마크다운→HTML 변환
-function mdToHtml(md){
-  return md
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/^### (.+)$/gm,'<h4>$1</h4>')
-    .replace(/^## (.+)$/gm,'<h4>$1</h4>')
-    .replace(/^# (.+)$/gm,'<h4>$1</h4>')
-    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
-    .replace(/<\/ul>\s*<ul>/g,'')
-    .replace(/\n\n/g,'<br><br>')
-    .replace(/\n/g,'<br>');
-}
-
-window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeEdit();closeGoals();closeSetting();closeChAdd();closeWidgetAdd();closeMmList();}});
-loadAll();loadWidgets();render();
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeEdit();closeGoals();closeSetting();closeChAdd();closeWidgetAdd();memoCloseEdit();}});
+loadAll();loadWidgets();render();memoInit();
 </script>
 </body>
 </html>
