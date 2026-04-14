@@ -1356,6 +1356,8 @@ setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 let asReportJobId='';
 
 function calcAsReport(){
+const pay=document.getElementById('arPay').value;
+if(pay==='무료'){document.getElementById('arSalePrice').value='-';return;}
 const color=document.getElementById('arColor').value;
 const qtySelect=document.getElementById('arQty').value;
 let qty=0;
@@ -1412,16 +1414,16 @@ const html=`
 <span style="${lE}">8. 이전작업자1</span><select id="arPrev1" style="${eS}"><option value="">선택</option>${empOpts}</select>
 <span style="${lE}">9. 이전작업자2</span><select id="arPrev2" style="${eS}"><option value="">선택</option>${empOpts}</select>
 <span style="${lE}">10. 색상</span><select id="arColor" style="${eS}" onchange="calcAsReport()">${colorSelect}</select>
-<span style="${lE}">11. 시공범위</span><input id="arScope" value="${j.scope||''}" style="${eS}">
+<span style="${lE}">11. 시공범위</span><input id="arScope" value="" style="${eS}" placeholder="시공범위 입력">
 <span style="${lE}">12. 내용</span><textarea id="arContent" rows="2" style="${eS};resize:vertical"></textarea>
 <span style="${lE}">13. 조치</span><textarea id="arAction" rows="2" style="${eS};resize:vertical"></textarea>
 </div>
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
-<span style="${lE}">14. 시공비</span><input id="arInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatAsReportFee(this);calcAsReport()">
+<span style="${lE}">14. 시공비</span><input id="arInstallFee" value="" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatAsReportFee(this);calcAsReport()">
 <span style="${lE}">15. 들어간 장수</span><div style="display:flex;gap:4px;align-items:center"><select id="arQty" style="${eS};flex:1" onchange="if(this.value==='기타'){document.getElementById('arQtyCustom').style.display='block';document.getElementById('arQtyCustom').focus();}else{document.getElementById('arQtyCustom').style.display='none';document.getElementById('arQtyCustom').value='';}calcAsReport()"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option><option>기타</option></select><input id="arQtyCustom" type="number" min="6" placeholder="장수" style="${eS};display:none;width:70px" inputmode="numeric" oninput="calcAsReport()"></div>
 <span style="${lG}">16. 판매비용</span><input id="arSalePrice" value="0원" style="${autoS}" readonly>
-<span style="${lE}">17. 결제방법</span><select id="arPay" style="${eS}"><option>무료</option><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
+<span style="${lE}">17. 결제방법</span><select id="arPay" style="${eS}" onchange="calcAsReport()"><option>무료</option><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
 <span style="${lE}">18. 현금영수증</span><select id="arReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
 <span style="${lE}">19. 특이사항</span><textarea id="arNote" rows="2" style="${eS};resize:vertical"></textarea>
 </div>`;
