@@ -93,6 +93,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
 .region-sel{display:flex;gap:8px;margin-bottom:14px}
 .region-btn{flex:1;padding:10px;border:1.5px solid #e0ddd6;border-radius:10px;background:#fff;font-size:13px;font-weight:600;color:#888;cursor:pointer;font-family:inherit;transition:all .2s;text-align:center}
 .region-btn.active{border-color:#1565C0;background:#E3F2FD;color:#1565C0}
+
+/* 제출 현황 바 */
+.check-status{margin-top:12px;display:none}
+.check-status.show{display:block}
+.check-status-title{font-size:12px;font-weight:600;color:#999;margin-bottom:8px}
+.check-status-bar{display:flex;gap:6px;flex-wrap:wrap}
+.cs-item{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1.5px solid #e0ddd6;background:#fff;font-size:13px;font-weight:600;color:#888;flex:1;min-width:0;justify-content:center;position:relative}
+.cs-item.done{border-color:#2E7D32;background:#E8F5E9;color:#2E7D32}
+.cs-item .cs-check{display:none;font-size:14px}
+.cs-item.done .cs-check{display:inline}
+.cs-item .cs-time{font-size:10px;color:#2E7D32;position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.check-progress{margin-top:18px;margin-bottom:4px}
+.check-progress-bar{height:6px;background:#e8e8e3;border-radius:3px;overflow:hidden}
+.check-progress-fill{height:100%;background:linear-gradient(90deg,#2E7D32,#43A047);border-radius:3px;transition:width .3s}
+.check-progress-text{font-size:11px;color:#999;margin-top:4px;text-align:right}
 </style>
 </head>
 <body>
@@ -120,6 +135,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-
       <div class="region-sel">
         <div class="region-btn" onclick="selectRegion('부산')">부산</div>
         <div class="region-btn" onclick="selectRegion('경기')">경기</div>
+      </div>
+      <!-- 제출 현황 -->
+      <div class="check-status" id="checkStatus">
+        <div class="check-progress">
+          <div class="check-progress-bar"><div class="check-progress-fill" id="checkFill" style="width:0%"></div></div>
+          <div class="check-progress-text" id="checkCount">0 / 0 완료</div>
+        </div>
+        <div class="check-status-bar" id="checkBar"></div>
       </div>
     </div>
 
@@ -262,6 +285,74 @@ const VEHICLES = {
   '경기': ['820라1210', '837머1201', '841부4647', '85가6506']
 };
 
+// ===== 오늘 제출 현황 =====
+let todayChecked = {}; // { '802서2139': { time: '14:30', by: '강승재' }, ... }
+const TODAY = new Date().toISOString().split('T')[0];
+
+function loadTodayStatus() {
+  // localStorage에서 즉시 로드 (빠른 표시)
+  try {
+    const saved = JSON.parse(localStorage.getItem('vc_today') || '{}');
+    if (saved.date === TODAY) todayChecked = saved.data || {};
+  } catch(e) {}
+
+  // 시트에서도 비동기 조회 (다른 사람이 제출한 것도 반영)
+  fetch(API_URL + '?type=vehicleCheckStatus&date=' + TODAY)
+    .then(r => r.text())
+    .then(t => {
+      try {
+        const res = JSON.parse(t);
+        if (res && res.checks) {
+          // 시트 데이터로 병합
+          Object.keys(res.checks).forEach(v => {
+            todayChecked[v] = res.checks[v];
+          });
+          saveTodayLocal();
+          if (selectedRegion) renderCheckStatus(selectedRegion);
+        }
+      } catch(e) {}
+    })
+    .catch(() => {});
+}
+
+function saveTodayLocal() {
+  localStorage.setItem('vc_today', JSON.stringify({ date: TODAY, data: todayChecked }));
+}
+
+function markChecked(vehicleNum, driverName) {
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  todayChecked[vehicleNum] = { time: timeStr, by: driverName };
+  saveTodayLocal();
+  if (selectedRegion) renderCheckStatus(selectedRegion);
+}
+
+function renderCheckStatus(region) {
+  const wrap = document.getElementById('checkStatus');
+  const bar = document.getElementById('checkBar');
+  const vehicles = VEHICLES[region] || [];
+  if (!vehicles.length) { wrap.classList.remove('show'); return; }
+
+  wrap.classList.add('show');
+  let doneCount = 0;
+  let html = '';
+  vehicles.forEach(v => {
+    const info = todayChecked[v];
+    const done = !!info;
+    if (done) doneCount++;
+    html += '<div class="cs-item ' + (done ? 'done' : '') + '">';
+    html += '<span class="cs-check">✅</span>';
+    html += '🚗 ' + v.slice(-4);
+    if (done) html += '<span class="cs-time">' + info.by + ' · ' + info.time + '</span>';
+    html += '</div>';
+  });
+  bar.innerHTML = html;
+
+  const pct = Math.round((doneCount / vehicles.length) * 100);
+  document.getElementById('checkFill').style.width = pct + '%';
+  document.getElementById('checkCount').textContent = doneCount + ' / ' + vehicles.length + ' 완료';
+}
+
 // ===== 지역 선택 =====
 function selectRegion(region) {
   selectedRegion = region;
@@ -270,8 +361,29 @@ function selectRegion(region) {
   const sel = document.getElementById('fVehicle');
   sel.innerHTML = '<option value="">선택</option>';
   (VEHICLES[region] || []).forEach(v => {
-    sel.innerHTML += '<option value="' + v + '">' + v + '</option>';
+    const done = todayChecked[v];
+    sel.innerHTML += '<option value="' + v + '">' + v + (done ? ' ✅' : '') + '</option>';
   });
+  renderCheckStatus(region);
+  updateSubmitButton();
+}
+
+// 차량 선택 시 버튼 텍스트 변경
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fVehicle').addEventListener('change', updateSubmitButton);
+  loadTodayStatus();
+});
+
+function updateSubmitButton() {
+  const v = document.getElementById('fVehicle').value;
+  const btn = document.getElementById('submitBtn');
+  if (v && todayChecked[v]) {
+    btn.textContent = '📝 점검 보고 수정하기';
+    btn.style.background = 'linear-gradient(135deg,#E65100,#BF360C)';
+  } else {
+    btn.textContent = '점검 보고 제출하기';
+    btn.style.background = 'linear-gradient(135deg,#1565C0,#0D47A1)';
+  }
 }
 
 // ===== 상태 칩 선택 =====
@@ -331,8 +443,10 @@ async function submitCheck() {
   btn.disabled = true;
   btn.textContent = '제출 중...';
 
+  const isEditMode = !!todayChecked[vehicle];
   const payload = {
     type: 'vehicleCheck',
+    isEdit: isEditMode,
     region: selectedRegion,
     sasu: driver,
     busasu: partner,
@@ -357,14 +471,20 @@ async function submitCheck() {
       body: JSON.stringify(payload)
     });
 
-    showToast('✅ 점검 보고가 제출되었습니다!', 'success');
-    btn.textContent = '✅ 제출 완료!';
+    const isEdit = !!todayChecked[vehicle];
+    showToast(isEdit ? '✅ 점검 보고가 수정되었습니다!' : '✅ 점검 보고가 제출되었습니다!', 'success');
+    btn.textContent = '✅ ' + (isEdit ? '수정' : '제출') + ' 완료!';
 
-    // 폼 리셋
+    // 제출 현황 업데이트
+    markChecked(vehicle, driver);
+    // 차량 드롭다운에도 체크 표시 반영
+    const opt = document.querySelector('#fVehicle option[value="' + vehicle + '"]');
+    if (opt && !opt.textContent.includes('✅')) opt.textContent = vehicle + ' ✅';
+
     setTimeout(() => {
       btn.disabled = false;
-      btn.textContent = '점검 보고 제출하기';
-    }, 3000);
+      updateSubmitButton();
+    }, 2000);
 
   } catch (e) {
     showToast('⚠️ 제출에 실패했습니다. 다시 시도해주세요', 'error');
