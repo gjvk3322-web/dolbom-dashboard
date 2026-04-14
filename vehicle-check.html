@@ -384,7 +384,10 @@ function renderCheckStatus(region) {
     html += '<div class="cs-item ' + (done ? 'done' : '') + '">';
     html += '<span class="cs-check">✅</span>';
     html += '🚗 ' + v.slice(-4);
-    if (done) html += '<span class="cs-time">' + info.by + ' · ' + info.time + '</span>';
+    if (done) {
+      const timeText = (info.time === '시트' || info.time === '제출완료') ? '제출완료' : info.time;
+      html += '<span class="cs-time">' + info.by + ' · ' + timeText + '</span>';
+    }
     html += '</div>';
   });
   bar.innerHTML = html;
