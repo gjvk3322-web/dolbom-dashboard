@@ -35,6 +35,20 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 .idea-author{background:var(--bg);padding:2px 8px;border-radius:6px;font-weight:600}
 .idea-count{font-size:11px;color:var(--dim);margin-bottom:8px}
 
+/* 댓글 */
+.comments{margin-top:8px;padding-top:8px;border-top:.5px solid var(--border)}
+.comment{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.comment-badge{font-size:10px;font-weight:800;color:var(--accent);background:#143a14;padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px}
+.comment-text{font-size:13px;color:#d4d4d8;line-height:1.5;word-break:break-word}
+.comment-time{font-size:10px;color:var(--dim);margin-left:auto;white-space:nowrap;margin-top:2px}
+.reply-row{display:flex;gap:6px;margin-top:6px}
+.reply-row input{flex:1;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;outline:none}
+.reply-row input:focus{border-color:var(--accent)}
+.reply-row button{padding:8px 12px;background:var(--accent);color:#000;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.reply-row button:active{transform:scale(.97)}
+.reply-toggle{font-size:11px;color:var(--dim);cursor:pointer;margin-top:6px;display:inline-block}
+.reply-toggle:active{color:var(--text)}
+
 /* 입력 */
 .input-area{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,11,.96);backdrop-filter:blur(20px);border-top:.5px solid var(--border);padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
 .input-row{display:flex;gap:8px;max-width:520px;margin:0 auto}
@@ -103,6 +117,7 @@ let selectedName=localStorage.getItem('fb_name')||'';
 let selectedTopic='';
 let topics=[];
 let ideas={};
+let comments={};
 
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
@@ -116,6 +131,11 @@ db.ref('feedback/topics').on('value',snap=>{
 
 db.ref('feedback/ideas').on('value',snap=>{
   ideas=snap.val()||{};
+  render();
+});
+
+db.ref('feedback/comments').on('value',snap=>{
+  comments=snap.val()||{};
   render();
 });
 
@@ -163,6 +183,22 @@ function render(){
         h+=`<div class="idea-check ${idea.done?'checked':''}" onclick="toggleDone('${idea.id}',${!idea.done})"></div>`;
         h+=`</div>`;
         h+=`<div class="idea-meta"><span>${dateStr}</span></div>`;
+
+        // 댓글 영역
+        const ideaComments=comments[idea.id]?Object.entries(comments[idea.id]).map(([ck,cv])=>({id:ck,...cv})).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0)):[];
+        if(ideaComments.length>0){
+          h+=`<div class="comments">`;
+          ideaComments.forEach(c=>{
+            const cd=c.timestamp?new Date(c.timestamp):null;
+            const cds=cd?`${cd.getMonth()+1}/${cd.getDate()} ${String(cd.getHours()).padStart(2,'0')}:${String(cd.getMinutes()).padStart(2,'0')}`:'';
+            h+=`<div class="comment"><span class="comment-badge">${c.author||'대장님'}</span><span class="comment-text">${c.text}</span><span class="comment-time">${cds}</span></div>`;
+          });
+          h+=`</div>`;
+        }
+
+        // 댓글 입력
+        h+=`<div class="reply-row"><input type="text" id="reply_${idea.id}" placeholder="댓글 입력..." onkeydown="if(event.key==='Enter')submitReply('${idea.id}')"/><button onclick="submitReply('${idea.id}')">등록</button></div>`;
+
         h+=`</div>`;
       });
     }
@@ -224,6 +260,21 @@ function submitIdea(){
 
 function toggleDone(id,done){
   db.ref('feedback/ideas/'+id+'/done').set(done);
+}
+
+function submitReply(ideaId){
+  const input=document.getElementById('reply_'+ideaId);
+  if(!input)return;
+  const text=input.value.trim();
+  if(!text)return;
+  const cid=Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  db.ref('feedback/comments/'+ideaId+'/'+cid).set({
+    text:text,
+    author:'관리자',
+    timestamp:Date.now()
+  });
+  input.value='';
+  toast('댓글 등록!');
 }
 
 // 주제 모달

@@ -204,12 +204,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .mm-view.active{display:flex;}
 .mm-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg);background-image:radial-gradient(circle,rgba(0,0,0,.08) 1px,transparent 1px);background-size:24px 24px;cursor:grab;}
 .mm-canvas svg.mm-lines{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
-.mm-node{position:absolute;min-width:100px;max-width:240px;padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--card);box-shadow:var(--card-shadow);cursor:grab;z-index:10;transition:box-shadow .15s,border-color .15s;user-select:none;}
+.mm-node{position:absolute;min-width:130px;max-width:280px;padding:14px 18px;border-radius:12px;border:2px solid var(--border);background:var(--card);box-shadow:var(--card-shadow);cursor:grab;z-index:10;transition:box-shadow .15s,border-color .15s;user-select:none;}
 .mm-node:hover{box-shadow:var(--card-shadow-hover);border-color:var(--primary);}
-.mm-node.root{border-color:var(--primary);background:var(--primary-light);min-width:140px;text-align:center;}
+.mm-node.root{border-color:var(--primary);background:var(--primary-light);min-width:180px;text-align:center;padding:18px 24px;}
 .mm-node.selected{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.2);}
 .mm-node.dragging{opacity:.7;cursor:grabbing;z-index:50;}
-.mm-node-text{font-size:13px;font-weight:600;outline:none;min-height:18px;line-height:1.4;word-break:break-word;}
+.mm-node-text{font-size:14px;font-weight:600;outline:none;min-height:20px;line-height:1.5;word-break:break-word;}
+.mm-node.root .mm-node-text{font-size:16px;font-weight:700;}
 .mm-node-text:empty::before{content:attr(data-placeholder);color:var(--text3);font-weight:400;}
 .mm-node-actions{display:none;position:absolute;top:-10px;right:-10px;gap:3px;}
 .mm-node:hover .mm-node-actions{display:flex;}
@@ -223,7 +224,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .mm-zoom-info{font-size:11px;color:var(--text3);padding:0 4px;white-space:nowrap;}
 
 /* AI 패널 */
-.mm-ai-panel{width:380px;border-left:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0;z-index:10;}
+.mm-ai-panel{width:380px;border-left:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0;z-index:10;transition:width .3s,padding .3s;}
+.mm-ai-panel.collapsed{width:0;overflow:hidden;border:none;padding:0;}
+.mm-ai-open-btn{position:absolute;top:12px;right:12px;z-index:25;padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);box-shadow:0 2px 8px rgba(0,0,0,.08);transition:all .15s;}
+.mm-ai-open-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
 .mm-ai-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
 .mm-ai-header h3{font-size:14px;font-weight:700;flex:1;}
 .mm-ai-toggle{padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .15s;}
@@ -304,6 +308,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="mm-view" id="mmView">
     <div class="mm-canvas-wrap" id="mmCanvasWrap">
       <svg class="mm-lines" id="mmSvg"></svg>
+      <button class="mm-ai-open-btn" id="mmAiOpenBtn" onclick="toggleAiPanel()" style="display:none;">🤖 AI 어시스턴트</button>
       <div class="mm-toolbar">
         <button class="mm-tb-btn" onclick="mmAddChild()">+ 추가</button>
         <button class="mm-tb-btn" onclick="mmDeleteSelected()">삭제</button>
@@ -707,14 +712,19 @@ document.getElementById('chAddOverlay').addEventListener('click',e=>{if(e.target
 // ===== 뷰 전환 =====
 function switchView(v){
   document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.classList.toggle('active',n.dataset.view===v));
-  const ka=document.getElementById('kanbanArea'),sr=document.getElementById('summaryRow'),dv=document.getElementById('dashView'),mv=document.getElementById('mmView');
+  const mw=document.querySelector('.main-wrap'),ka=document.getElementById('kanbanArea'),sr=document.getElementById('summaryRow'),dv=document.getElementById('dashView'),mv=document.getElementById('mmView');
   const titles={'kanban':'마케팅 칸반보드','dashboard':'실시간 대시보드','mindmap':'🧠 마인드맵'};
   document.getElementById('headerTitle').textContent=titles[v]||'';
   const tb=document.getElementById('targetBar');
   ka.style.display='none';sr.style.display='none';tb.style.display='none';dv.classList.remove('active');mv.classList.remove('active');
-  if(v==='dashboard'){dv.classList.add('active');loadDash();}
-  else if(v==='mindmap'){mv.classList.add('active');mmInit();}
-  else{ka.style.display='';sr.style.display='';tb.style.display='';render();}
+  if(v==='mindmap'){
+    mw.style.display='none';
+    mv.classList.add('active');mmInit();
+  } else {
+    mw.style.display='';
+    if(v==='dashboard'){dv.classList.add('active');loadDash();}
+    else{ka.style.display='';sr.style.display='';tb.style.display='';render();}
+  }
 }
 
 // ===== 설정 =====
@@ -887,6 +897,10 @@ const _mmSizes={};
 function mmInit(){
   if(mmInited){mmRenderAll();return;}
   mmInited=true;
+  // 기본으로 AI 패널 숨기기
+  mmAiOpen=false;
+  document.getElementById('mmAiPanel').classList.add('collapsed');
+  document.getElementById('mmAiOpenBtn').style.display='';
   try{const d=JSON.parse(localStorage.getItem(MMCK));if(d&&d.nodes?.length){mmNodes=d.nodes;mmScale=d.scale||1;mmPanX=d.panX||0;mmPanY=d.panY||0;}else mmNewMap();}catch{mmNewMap();}
   const wrap=document.getElementById('mmCanvasWrap');
 
@@ -943,8 +957,12 @@ function mmInit(){
 }
 
 function mmNewMap(){
+  // 화면 중앙에 루트 노드 배치
+  const wrap=document.getElementById('mmCanvasWrap');
+  const cx=wrap?wrap.clientWidth/2-90:400;
+  const cy=wrap?wrap.clientHeight/2-25:300;
   mmNodes=[{id:'root',text:'돌봄매트 마케팅',x:0,y:0,parent:null,color:0}];
-  mmSelected=null;mmScale=1;mmPanX=0;mmPanY=0;
+  mmSelected=null;mmScale=1;mmPanX=cx;mmPanY=cy;
   mmAutoSave();
 }
 
@@ -1158,8 +1176,19 @@ document.getElementById('mmListOverlay')?.addEventListener('click',e=>{if(e.targ
 let mmAiOpen=true;
 function toggleAiPanel(){
   mmAiOpen=!mmAiOpen;
-  document.getElementById('mmAiPanel').style.display=mmAiOpen?'':'none';
-  document.querySelector('.mm-ai-toggle').textContent=mmAiOpen?'패널 닫기':'AI 열기';
+  const panel=document.getElementById('mmAiPanel');
+  const openBtn=document.getElementById('mmAiOpenBtn');
+  if(mmAiOpen){
+    panel.classList.remove('collapsed');
+    openBtn.style.display='none';
+    document.querySelector('.mm-ai-toggle').textContent='패널 닫기';
+  } else {
+    panel.classList.add('collapsed');
+    openBtn.style.display='';
+    document.querySelector('.mm-ai-toggle').textContent='AI 열기';
+  }
+  // 패널 토글 후 마인드맵 영역 재조정
+  setTimeout(()=>mmFitView(),350);
 }
 
 // 마인드맵 → 텍스트 변환
