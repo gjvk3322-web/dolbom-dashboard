@@ -1359,6 +1359,28 @@ setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 
 // ===== AS 보고서 =====
 let asReportJobId='';
+
+function calcAsReport(){
+const color=document.getElementById('arColor').value;
+const qtySelect=document.getElementById('arQty').value;
+let qty=0;
+if(qtySelect==='기타'){qty=parseInt(document.getElementById('arQtyCustom').value)||0;}
+else if(qtySelect!=='자투리사용'){qty=parseInt(qtySelect)||0;}
+const unitPrice=PRICE_MAP[color]||0;
+let total=qty*unitPrice;
+const installFee=document.getElementById('arInstallFee').value;
+const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
+total+=fee;
+document.getElementById('arSalePrice').value=total>0?total.toLocaleString()+'원':'0원';
+}
+
+function formatAsReportFee(el){
+const v=el.value;
+if(v.toUpperCase()==='X'||v==='')return;
+const num=parseInt(v.replace(/[^0-9]/g,''))||0;
+if(num>0)el.value=num.toLocaleString();
+}
+
 function openAsReport(jobId){
 asReportJobId=jobId;
 const j=J.find(x=>x.id===jobId);if(!j)return;
@@ -1369,16 +1391,22 @@ const apt=addr;
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
+const colorVal=j.mat.length?j.mat[0].t:'';
+const colorOpts=['마블50','코튼50','모던50','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
+
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
 const eS='background:rgba(255,69,58,.06);border:1px solid rgba(255,69,58,.25);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
+const autoS='background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:6px;padding:5px 8px;color:var(--green);font-size:11px;font-family:var(--font);font-weight:600';
 const lA='color:var(--dim);font-size:10px';
 const lE='color:var(--red);font-size:10px;font-weight:600';
+const lG='color:var(--green);font-size:10px;font-weight:600';
 
 const empOpts=E.map(e=>`<option>${e}</option>`).join('');
 
 const html=`
-<div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;gap:10px"><span>⬛ 자동</span><span style="color:var(--red)">🔴 입력</span></div>
-<div style="display:grid;grid-template-columns:78px 1fr;gap:4px;align-items:center">
+<div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;gap:10px"><span>⬛ 자동</span><span style="color:var(--red)">🔴 입력</span><span style="color:var(--green)">🟢 자동계산</span></div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
 <span style="${lA}">1. 시공일자</span><input id="arDate" value="${j.date}" style="${aS}" readonly>
 <span style="${lA}">2. AS팀원</span><input id="arTeam" value="${team}" style="${aS}" readonly>
 <span style="${lA}">3. 지역</span><input id="arRegion" value="${region}" style="${aS}" readonly>
@@ -1388,24 +1416,46 @@ const html=`
 <span style="${lA}">7. 평수</span><input id="arPy" value="${j.py}평" style="${aS}" readonly>
 <span style="${lE}">8. 이전작업자1</span><select id="arPrev1" style="${eS}"><option value="">선택</option>${empOpts}</select>
 <span style="${lE}">9. 이전작업자2</span><select id="arPrev2" style="${eS}"><option value="">선택</option>${empOpts}</select>
-<span style="${lE}">10. 내용</span><textarea id="arContent" rows="2" style="${eS};resize:vertical"></textarea>
-<span style="${lE}">11. 조치</span><textarea id="arAction" rows="2" style="${eS};resize:vertical"></textarea>
-<span style="${lE}">12. 들어간 장수</span><select id="arQty" style="${eS}" onchange="if(this.value==='기타'){document.getElementById('arQtyCustom').style.display='inline-block';document.getElementById('arQtyCustom').focus();}else{document.getElementById('arQtyCustom').style.display='none';document.getElementById('arQtyCustom').value='';}"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option><option>기타</option></select><input id="arQtyCustom" type="number" min="6" placeholder="장수 입력" style="${eS};display:none;width:100px;margin-left:8px" inputmode="numeric">
-<span style="${lE}">13. 결제금액</span><input id="arPrice" inputmode="numeric" style="${eS}">
-<span style="${lE}">14. 결제방법</span><select id="arPay" style="${eS}"><option>무료</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
+<span style="${lE}">10. 색상</span><select id="arColor" style="${eS}" onchange="calcAsReport()">${colorSelect}</select>
+<span style="${lE}">11. 시공범위</span><input id="arScope" value="${j.scope||''}" style="${eS}">
+<span style="${lE}">12. 내용</span><textarea id="arContent" rows="2" style="${eS};resize:vertical"></textarea>
+<span style="${lE}">13. 조치</span><textarea id="arAction" rows="2" style="${eS};resize:vertical"></textarea>
+</div>
+<div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
+<span style="${lE}">14. 시공비</span><input id="arInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatAsReportFee(this);calcAsReport()">
+<span style="${lE}">15. 들어간 장수</span><div style="display:flex;gap:4px;align-items:center"><select id="arQty" style="${eS};flex:1" onchange="if(this.value==='기타'){document.getElementById('arQtyCustom').style.display='block';document.getElementById('arQtyCustom').focus();}else{document.getElementById('arQtyCustom').style.display='none';document.getElementById('arQtyCustom').value='';}calcAsReport()"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option><option>기타</option></select><input id="arQtyCustom" type="number" min="6" placeholder="장수" style="${eS};display:none;width:70px" inputmode="numeric" oninput="calcAsReport()"></div>
+<span style="${lG}">16. 판매비용</span><input id="arSalePrice" value="0원" style="${autoS}" readonly>
+<span style="${lE}">17. 결제방법</span><select id="arPay" style="${eS}"><option>무료</option><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
+<span style="${lE}">18. 현금영수증</span><select id="arReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
+<span style="${lE}">19. 특이사항</span><textarea id="arNote" rows="2" style="${eS};resize:vertical"></textarea>
 </div>`;
 document.getElementById('asReportForm').innerHTML=html;
 document.getElementById('asReportForm').style.display='block';
 document.getElementById('asReportResult').style.display='none';
 document.getElementById('asReportSubmitBtn').style.display='block';
 document.getElementById('asReportOverlay').style.display='block';
-loadAsReportDraft(jobId)}
+calcAsReport();
+db.ref('asReports/'+jobId).once('value').then(snap=>{
+const d=snap.val();if(!d)return;
+if(d.color){const sel=document.getElementById('arColor');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.color)sel.selectedIndex=i;}}
+if(d.scope)document.getElementById('arScope').value=d.scope;
+if(d.prevWorker){const pw=d.prevWorker.split(', ');if(pw[0]){const sel=document.getElementById('arPrev1');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[0])sel.selectedIndex=i;}}if(pw[1]){const sel=document.getElementById('arPrev2');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[1])sel.selectedIndex=i;}}}
+if(d.content)document.getElementById('arContent').value=d.content;
+if(d.action)document.getElementById('arAction').value=d.action;
+if(d.installFee)document.getElementById('arInstallFee').value=d.installFee;
+if(d.qty){const qv=d.qty;const sel=document.getElementById('arQty');let matched=false;for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===qv){sel.selectedIndex=i;matched=true;}}if(!matched&&qv.includes('장')){sel.value='기타';document.getElementById('arQtyCustom').style.display='block';document.getElementById('arQtyCustom').value=parseInt(qv)||'';}}
+if(d.pay){const sel=document.getElementById('arPay');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.pay)sel.selectedIndex=i;}}
+if(d.receipt){const sel=document.getElementById('arReceipt');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.receipt)sel.selectedIndex=i;}}
+if(d.note)document.getElementById('arNote').value=d.note;
+calcAsReport();
+}).catch(()=>{loadAsReportDraft(jobId)})}
 
 function closeAsReport(){document.getElementById('asReportOverlay').style.display='none'}
 
 function saveAsReportDraft(){
 const g=id=>{const el=document.getElementById(id);return el?el.value:''};
-const draft={jobId:asReportJobId,arPrev1:g('arPrev1'),arPrev2:g('arPrev2'),arContent:g('arContent'),arAction:g('arAction'),arQty:g('arQty'),arQtyCustom:g('arQtyCustom'),arPrice:g('arPrice'),arPay:g('arPay'),savedAt:new Date().toISOString()};
+const draft={jobId:asReportJobId,arPrev1:g('arPrev1'),arPrev2:g('arPrev2'),arColor:g('arColor'),arScope:g('arScope'),arContent:g('arContent'),arAction:g('arAction'),arInstallFee:g('arInstallFee'),arQty:g('arQty'),arQtyCustom:g('arQtyCustom'),arPay:g('arPay'),arReceipt:g('arReceipt'),arNote:g('arNote'),savedAt:new Date().toISOString()};
 localStorage.setItem('asReportDraft_'+asReportJobId,JSON.stringify(draft));
 toast('💾 임시저장 완료!','ok')}
 
@@ -1413,8 +1463,9 @@ function loadAsReportDraft(jobId){
 try{const d=JSON.parse(localStorage.getItem('asReportDraft_'+jobId));if(!d)return;
 setTimeout(()=>{
 const s=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v};
-s('arPrev1',d.arPrev1);s('arPrev2',d.arPrev2);s('arContent',d.arContent);s('arAction',d.arAction);s('arQty',d.arQty);s('arPrice',d.arPrice);s('arPay',d.arPay);
-if(d.arQty==='기타'){document.getElementById('arQtyCustom').style.display='inline-block';s('arQtyCustom',d.arQtyCustom);}
+s('arPrev1',d.arPrev1);s('arPrev2',d.arPrev2);s('arColor',d.arColor);s('arScope',d.arScope);s('arContent',d.arContent);s('arAction',d.arAction);s('arInstallFee',d.arInstallFee);s('arQty',d.arQty);s('arPay',d.arPay);s('arReceipt',d.arReceipt);s('arNote',d.arNote);
+if(d.arQty==='기타'){document.getElementById('arQtyCustom').style.display='block';s('arQtyCustom',d.arQtyCustom);}
+calcAsReport();
 toast('📋 임시저장 불러옴','ok');
 },50);}catch(e){}}
 
@@ -1423,6 +1474,7 @@ function clearAsReportDraft(jobId){localStorage.removeItem('asReportDraft_'+jobI
 function submitAsReport(){
 const g=id=>document.getElementById(id).value;
 const prev=[g('arPrev1'),g('arPrev2')].filter(Boolean).join(', ');
+const qtyVal=g('arQty')==='기타'?(g('arQtyCustom')+'장'):g('arQty');
 const txt=`🔧 AS 보고서
 1. 시공일자 : ${g('arDate')}
 2. AS팀원 : ${g('arTeam')}
@@ -1432,14 +1484,19 @@ const txt=`🔧 AS 보고서
 6. 연락처 : ${g('arPhone')}
 7. 평수 : ${g('arPy')}
 8. 이전 작업자 : ${prev}
-9. 내용 : ${g('arContent')}
-10. 조치 : ${g('arAction')}
-11. 들어간 장 수 : ${g('arQty')==='기타'?(g('arQtyCustom')+'장'):g('arQty')}
-12. 결제금액 : ${g('arPrice')}
-13. 결제방법 : ${g('arPay')}`;
+9. 색상 : ${g('arColor')}
+10. 시공범위 : ${g('arScope')}
+11. 내용 : ${g('arContent')}
+12. 조치 : ${g('arAction')}
+── 결제 정보 ──
+13. 시공비 : ${g('arInstallFee')}
+14. 들어간 장수 : ${qtyVal}
+15. 판매비용 : ${g('arSalePrice')}
+16. 결제방법 : ${g('arPay')}
+17. 현금영수증 : ${g('arReceipt')}
+18. 특이사항 : ${g('arNote')}`;
 
-const qtyVal=g('arQty')==='기타'?(g('arQtyCustom')+'장'):g('arQty');
-const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,content:g('arContent'),action:g('arAction'),qty:qtyVal,price:g('arPrice'),pay:g('arPay'),submittedAt:new Date().toISOString()};
+const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,color:g('arColor'),scope:g('arScope'),content:g('arContent'),action:g('arAction'),installFee:g('arInstallFee'),qty:qtyVal,salePrice:g('arSalePrice'),pay:g('arPay'),receipt:g('arReceipt'),note:g('arNote'),submittedAt:new Date().toISOString()};
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
