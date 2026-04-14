@@ -99,7 +99,7 @@ const PR=[
   {id:'1000_22',name:'1000매트',badge:'22T',bpb:4,colors:['모던','베이지']},
   {id:'1000_17',name:'1000매트',badge:'17T',bpb:6,colors:['모던','베이지']}
 ];
-let team=null,loc=null,tab='inventory';
+let team=null,loc=null,tab='summary';
 let fbInvData={},fbInRef=null;
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
 const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
@@ -112,6 +112,8 @@ function toast(msg){const t=document.getElementById('toastMsg');t.textContent=ms
 let invDataDate=dateKey; // 현재 보고있는 재고 날짜
 function pickTeam(t){
   team=t;loc=null;invDataDate=dateKey;
+  // URL 업데이트 (새로고침 없이)
+  const url=new URL(window.location);url.searchParams.set('team',t);window.history.replaceState({},'',url);
   if(fbInRef)fbInRef.off();
   // 오늘 데이터 먼저 확인
   fbInRef=db.ref('inventory/'+dateKey+'/'+team);
@@ -149,7 +151,7 @@ async function findRecentInventory(teamName){
   }
   return null;
 }
-function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';render()}
+function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
 function render(){if(!team)return renderTeamSelect();if(tab==='summary')return renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
