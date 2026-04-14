@@ -328,6 +328,24 @@ let empAll={부산:[],경기:[]};
 let OFFS_ALL={부산:{},경기:{}};
 let employees=[];
 let highlightDates=[];
+
+function getMonthJobCount(year,month){
+  const prefix=`${year}-${String(month).padStart(2,'0')}`;
+  let cnt=0;
+  ['부산','경기'].forEach(team=>{
+    Object.keys(schedAll[team]||{}).forEach(date=>{
+      if(date.startsWith(prefix)){
+        const d=schedAll[team][date];
+        cnt+=d.am.length+d.pm.length;
+      }
+    });
+  });
+  return cnt;
+}
+function updateSyncInfo(){
+  const cnt=getMonthJobCount(currentYear,currentMonth);
+  document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${currentMonth}월 시공 ${cnt}건`;
+}
 let lastSync='';
 let CLOSED={};
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
@@ -494,9 +512,8 @@ async function loadData(){
     // 현재 팀 동기화
     scheduleData=schedAll[currentTeam];
     employees=empAll[currentTeam];
-    const totalJobs=Object.values(schedAll['부산']).reduce((a,d)=>a+d.am.length+d.pm.length,0)+Object.values(schedAll['경기']).reduce((a,d)=>a+d.am.length+d.pm.length,0);
     lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · 부산+경기 ${totalJobs}건`;
+    updateSyncInfo();
     showLoading(100);
     setTimeout(()=>showLoading(0),500);
     renderCalendar();
@@ -530,9 +547,8 @@ async function loadDataFallback(){
     await loadEmployeesFromCSV();
     scheduleData=schedAll[currentTeam];
     employees=empAll[currentTeam];
-    const totalJobs=Object.values(schedAll['부산']).reduce((a,d)=>a+d.am.length+d.pm.length,0)+Object.values(schedAll['경기']).reduce((a,d)=>a+d.am.length+d.pm.length,0);
     lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · 부산+경기 ${totalJobs}건 (폴백)`;
+    updateSyncInfo();
     showLoading(100);setTimeout(()=>showLoading(0),500);
     renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);
     rowMapReady=true; // 폴백은 row 포함
@@ -843,7 +859,7 @@ function renderCalendar(){
   cal.innerHTML=h;
 }
 
-function changeMonth(d){currentMonth+=d;if(currentMonth>12){currentMonth=1;currentYear++;}if(currentMonth<1){currentMonth=12;currentYear--;}selectedDate=null;document.getElementById('dayDetail').classList.remove('show');document.getElementById('formSection').classList.remove('show');renderCalendar();}
+function changeMonth(d){currentMonth+=d;if(currentMonth>12){currentMonth=1;currentYear++;}if(currentMonth<1){currentMonth=12;currentYear--;}selectedDate=null;document.getElementById('dayDetail').classList.remove('show');document.getElementById('formSection').classList.remove('show');renderCalendar();updateSyncInfo();}
 
 function selectDate(ds){selectedDate=ds;renderCalendar();renderDayDetail(ds);}
 
