@@ -205,11 +205,13 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
       <div class="chip-group" id="chipPurpose">
         <div class="chip" onclick="toggleChip(this)">이사</div>
         <div class="chip" onclick="toggleChip(this)">신축입주</div>
+        <div class="chip" onclick="toggleChip(this)">출산 예정</div>
         <div class="chip" onclick="toggleChip(this)">반려견</div>
         <div class="chip" onclick="toggleChip(this)">아이안전</div>
         <div class="chip" onclick="toggleChip(this)">층간소음</div>
-        <div class="chip" onclick="toggleChip(this)">기타</div>
+        <div class="chip" onclick="toggleChipEtc(this)">기타</div>
       </div>
+      <input type="text" id="fPurposeEtc" placeholder="기타 목적을 적어주세요" style="display:none;margin-top:8px" />
     </div>
     <div class="fg">
       <label>돌봄매트를 알게 된 경로 <span class="req">*</span></label>
@@ -306,13 +308,30 @@ function selectChip(groupId,el){
 
 function toggleChip(el){el.classList.toggle('selected');}
 
+function toggleChipEtc(el){
+  el.classList.toggle('selected');
+  var etcInput=document.getElementById('fPurposeEtc');
+  if(el.classList.contains('selected')){
+    etcInput.style.display='block';
+    etcInput.focus();
+  } else {
+    etcInput.style.display='none';
+    etcInput.value='';
+  }
+}
+
 function getChipValue(groupId){
   const sel=document.querySelector('#'+groupId+' .chip.selected');
   return sel?sel.textContent:'';
 }
 
 function getChipValues(groupId){
-  return Array.from(document.querySelectorAll('#'+groupId+' .chip.selected')).map(c=>c.textContent).join(', ');
+  var values=Array.from(document.querySelectorAll('#'+groupId+' .chip.selected')).map(c=>c.textContent);
+  if(groupId==='chipPurpose'){
+    var etcVal=document.getElementById('fPurposeEtc').value.trim();
+    if(etcVal) values=values.map(v=>v==='기타'?'기타('+etcVal+')':v);
+  }
+  return values.join(', ');
 }
 
 function showToast(msg,type){
@@ -388,7 +407,7 @@ function submitForm(){
       body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
       showSuccessPopup();
-      document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fConsent').checked=false;
+      document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fPurposeEtc').value='';document.getElementById('fPurposeEtc').style.display='none';document.getElementById('fConsent').checked=false;
       document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       document.getElementById('detailRow').style.display='none';
       btn.textContent='✅ 신청 완료!';
