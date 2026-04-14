@@ -301,8 +301,9 @@ localStorage.setItem('dolbom_region','gg');
 <button onclick="closeAsReport()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:14px;cursor:pointer;font-family:var(--font)">✕ 닫기</button>
 </div>
 <div id="asReportForm"></div>
-<div id="asReportSubmitBtn" style="margin-top:10px">
-<button onclick="submitAsReport()" style="width:100%;padding:12px;border-radius:10px;background:var(--red);color:#fff;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">🔧 AS 보고서 제출</button>
+<div id="asReportSubmitBtn" style="margin-top:10px;display:flex;gap:8px">
+<button onclick="saveAsReportDraft()" style="flex:1;padding:12px;border-radius:10px;background:var(--card2);color:var(--text);font-weight:700;font-size:13px;border:1px solid var(--border);cursor:pointer;font-family:var(--font)">💾 임시저장</button>
+<button onclick="submitAsReport()" style="flex:2;padding:12px;border-radius:10px;background:var(--red);color:#fff;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">🔧 AS 보고서 제출</button>
 </div>
 <div id="asReportResult" style="display:none;margin-top:10px">
 <div style="background:var(--card2);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;line-height:1.6" id="asReportText"></div>
@@ -1389,7 +1390,7 @@ const html=`
 <span style="${lE}">9. 이전작업자2</span><select id="arPrev2" style="${eS}"><option value="">선택</option>${empOpts}</select>
 <span style="${lE}">10. 내용</span><textarea id="arContent" rows="2" style="${eS};resize:vertical"></textarea>
 <span style="${lE}">11. 조치</span><textarea id="arAction" rows="2" style="${eS};resize:vertical"></textarea>
-<span style="${lE}">12. 들어간 장수</span><select id="arQty" style="${eS}"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option></select>
+<span style="${lE}">12. 들어간 장수</span><select id="arQty" style="${eS}" onchange="if(this.value==='기타'){document.getElementById('arQtyCustom').style.display='inline-block';document.getElementById('arQtyCustom').focus();}else{document.getElementById('arQtyCustom').style.display='none';document.getElementById('arQtyCustom').value='';}"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option><option>기타</option></select><input id="arQtyCustom" type="number" min="6" placeholder="장수 입력" style="${eS};display:none;width:100px;margin-left:8px" inputmode="numeric">
 <span style="${lE}">13. 결제금액</span><input id="arPrice" inputmode="numeric" style="${eS}">
 <span style="${lE}">14. 결제방법</span><select id="arPay" style="${eS}"><option>무료</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
 </div>`;
@@ -1397,9 +1398,27 @@ document.getElementById('asReportForm').innerHTML=html;
 document.getElementById('asReportForm').style.display='block';
 document.getElementById('asReportResult').style.display='none';
 document.getElementById('asReportSubmitBtn').style.display='block';
-document.getElementById('asReportOverlay').style.display='block'}
+document.getElementById('asReportOverlay').style.display='block';
+loadAsReportDraft(jobId)}
 
 function closeAsReport(){document.getElementById('asReportOverlay').style.display='none'}
+
+function saveAsReportDraft(){
+const g=id=>{const el=document.getElementById(id);return el?el.value:''};
+const draft={jobId:asReportJobId,arPrev1:g('arPrev1'),arPrev2:g('arPrev2'),arContent:g('arContent'),arAction:g('arAction'),arQty:g('arQty'),arQtyCustom:g('arQtyCustom'),arPrice:g('arPrice'),arPay:g('arPay'),savedAt:new Date().toISOString()};
+localStorage.setItem('asReportDraft_'+asReportJobId,JSON.stringify(draft));
+toast('💾 임시저장 완료!','ok')}
+
+function loadAsReportDraft(jobId){
+try{const d=JSON.parse(localStorage.getItem('asReportDraft_'+jobId));if(!d)return;
+setTimeout(()=>{
+const s=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v};
+s('arPrev1',d.arPrev1);s('arPrev2',d.arPrev2);s('arContent',d.arContent);s('arAction',d.arAction);s('arQty',d.arQty);s('arPrice',d.arPrice);s('arPay',d.arPay);
+if(d.arQty==='기타'){document.getElementById('arQtyCustom').style.display='inline-block';s('arQtyCustom',d.arQtyCustom);}
+toast('📋 임시저장 불러옴','ok');
+},50);}catch(e){}}
+
+function clearAsReportDraft(jobId){localStorage.removeItem('asReportDraft_'+jobId)}
 
 function submitAsReport(){
 const g=id=>document.getElementById(id).value;
@@ -1415,11 +1434,12 @@ const txt=`🔧 AS 보고서
 8. 이전 작업자 : ${prev}
 9. 내용 : ${g('arContent')}
 10. 조치 : ${g('arAction')}
-11. 들어간 장 수 : ${g('arQty')}
+11. 들어간 장 수 : ${g('arQty')==='기타'?(g('arQtyCustom')+'장'):g('arQty')}
 12. 결제금액 : ${g('arPrice')}
 13. 결제방법 : ${g('arPay')}`;
 
-const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,content:g('arContent'),action:g('arAction'),qty:g('arQty'),price:g('arPrice'),pay:g('arPay'),submittedAt:new Date().toISOString()};
+const qtyVal=g('arQty')==='기타'?(g('arQtyCustom')+'장'):g('arQty');
+const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,content:g('arContent'),action:g('arAction'),qty:qtyVal,price:g('arPrice'),pay:g('arPay'),submittedAt:new Date().toISOString()};
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
@@ -1427,6 +1447,7 @@ fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',headers:{'Content-Type':'text/p
 
 document.getElementById('asReportText').textContent=txt;
 document.getElementById('asReportResult').style.display='block';
+clearAsReportDraft(asReportJobId);
 alert('🔧 AS 보고서 제출 완료!\n\n수정이 필요하면 위에서 수정 후 다시 제출하세요.');
 toast('🔧 AS 보고서 제출 완료!','ok')}
 
