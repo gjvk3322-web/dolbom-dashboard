@@ -295,24 +295,40 @@ function loadTodayStatus() {
     const saved = JSON.parse(localStorage.getItem('vc_today') || '{}');
     if (saved.date === TODAY) todayChecked = saved.data || {};
   } catch(e) {}
+  if (selectedRegion) renderCheckStatus(selectedRegion);
 
-  // 시트에서도 비동기 조회 (다른 사람이 제출한 것도 반영)
-  fetch(API_URL + '?type=vehicleCheckStatus&date=' + TODAY)
+  // 시트 CSV에서 오늘 제출 현황 로드 (다른 기기/이전 제출 포함)
+  const SHEET_ID = '1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+  const GID = '261254036'; // [차량]월간점검
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv&gid=' + GID;
+  fetch(csvUrl)
     .then(r => r.text())
-    .then(t => {
-      try {
-        const res = JSON.parse(t);
-        if (res && res.checks) {
-          // 시트 데이터로 병합
-          Object.keys(res.checks).forEach(v => {
-            todayChecked[v] = res.checks[v];
-          });
-          saveTodayLocal();
-          if (selectedRegion) renderCheckStatus(selectedRegion);
+    .then(csv => {
+      const rows = csv.split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+      // 헤더: 날짜,지역,사수,부사수,차량번호,주행거리,...
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 5) continue;
+        const date = row[0], driver = row[2], vehicle = row[4];
+        if (date === TODAY && vehicle) {
+          // 같은 차량 여러 번 제출 시 마지막 것만 반영
+          todayChecked[vehicle] = { time: '시트', by: driver };
         }
-      } catch(e) {}
+      }
+      saveTodayLocal();
+      if (selectedRegion) renderCheckStatus(selectedRegion);
+      // 차량 드롭다운 체크 표시도 갱신
+      if (selectedRegion) {
+        const sel = document.getElementById('fVehicle');
+        const curVal = sel.value;
+        sel.innerHTML = '<option value="">선택</option>';
+        (VEHICLES[selectedRegion] || []).forEach(v => {
+          const done = todayChecked[v];
+          sel.innerHTML += '<option value="' + v + '"' + (v===curVal?' selected':'') + '>' + v + (done ? ' ✅' : '') + '</option>';
+        });
+      }
     })
-    .catch(() => {});
+    .catch(e => console.log('시트 로드 실패:', e));
 }
 
 function saveTodayLocal() {
