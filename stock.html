@@ -194,10 +194,9 @@ function renderInventory(){
     document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';return}
   document.getElementById('barEl').style.display='block';
   const dk=fk(loc),existing=fbInvData[dk];
-  if(isToday&&existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨</div>`;
-  if(!isToday&&existing)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--orange);margin-bottom:4px">⚠️ ${invDataDate} 데이터 참고용 (제출하면 오늘 날짜로 저장)</div>`;
-  h+=buildTable('inv',existing);
-  if(loc==='사무실'){const pm=(existing&&existing.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
+  if(isToday&&existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨 · 수정시 재작성 후 재고제출</div>`;
+  h+=buildTable('inv',null);
+  if(loc==='사무실'){h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항"></textarea></div></div>`}
   document.getElementById('app').innerHTML=h;
   document.getElementById('bl').innerHTML=`📍 <b>${team} ${loc}</b>`;
   const sb=document.getElementById('sbtn');const isWed=new Date().getDay()===3;sb.disabled=!isWed;sb.textContent=isWed?'재고 제출':'수요일에만 제출 가능';sb.className='btn btn-inv';sb.onclick=submitInv;calc('inv')}
@@ -245,6 +244,8 @@ async function renderSummary(){
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
 
   const sd=await fetchStockData();
+  // 탭이 바뀌었으면 렌더링 중단 (async 경쟁조건 방지)
+  if(tab!=='summary')return;
   h=renderTabs();
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
@@ -750,7 +751,9 @@ async function submitInv(){if(!loc||!team)return;
   let txt=mm+dd+' '+team+' '+loc+' (기준일:'+surveyDateKey+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
   fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:surveyDateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).then(r=>{if(!r.ok)toast('⚠️ 시트 저장 실패')}).catch(()=>toast('⚠️ 시트 저장 실패'));
-  btn.disabled=false;btn.textContent='재고 제출'}
+  btn.disabled=false;btn.textContent='재고 제출';
+  // 제출 후 위치 선택으로 돌아가기 (입력 초기화)
+  loc=null;render()}
 
 async function submitIn(){if(!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;
