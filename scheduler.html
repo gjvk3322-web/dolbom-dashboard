@@ -1359,8 +1359,6 @@ setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 let asReportJobId='';
 
 function calcAsReport(){
-const pay=document.getElementById('arPay').value;
-if(pay==='무료'){document.getElementById('arSalePrice').value='-';return;}
 const color=document.getElementById('arColor').value;
 const qtySelect=document.getElementById('arQty').value;
 let qty=0;
@@ -1372,6 +1370,8 @@ const installFee=document.getElementById('arInstallFee').value;
 const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
 total+=fee;
 document.getElementById('arSalePrice').value=total>0?total.toLocaleString()+'원':'0원';
+const paid=parseInt((document.getElementById('arPaid').value||'0').replace(/[^0-9]/g,''))||0;
+document.getElementById('arUnpaid').value=(total-paid>0?(total-paid).toLocaleString()+'원':'0원');
 }
 
 function formatAsReportFee(el){
@@ -1425,10 +1425,12 @@ const html=`
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
 <span style="${lE}">14. 시공비</span><input id="arInstallFee" value="" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatAsReportFee(this);calcAsReport()">
 <span style="${lE}">15. 들어간 장수</span><div style="display:flex;gap:4px;align-items:center"><select id="arQty" style="${eS};flex:1" onchange="if(this.value==='기타'){document.getElementById('arQtyCustom').style.display='block';document.getElementById('arQtyCustom').focus();}else{document.getElementById('arQtyCustom').style.display='none';document.getElementById('arQtyCustom').value='';}calcAsReport()"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option><option>기타</option></select><input id="arQtyCustom" type="number" min="6" placeholder="장수" style="${eS};display:none;width:70px" inputmode="numeric" oninput="calcAsReport()"></div>
-<span style="${lG}">16. 판매비용</span><input id="arSalePrice" value="0원" style="${autoS}" readonly>
-<span style="${lE}">17. 결제방법</span><select id="arPay" style="${eS}" onchange="calcAsReport()"><option>무료</option><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
-<span style="${lE}">18. 현금영수증</span><select id="arReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
-<span style="${lE}">19. 특이사항</span><textarea id="arNote" rows="2" style="${eS};resize:vertical"></textarea>
+<span style="${lE}">16. 결제방법</span><select id="arPay" style="${eS}" onchange="calcAsReport()"><option>무료</option><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
+<span style="${lG}">17. 판매비용</span><input id="arSalePrice" value="0원" style="${autoS}" readonly>
+<span style="${lE}">18. 결제금액</span><input id="arPaid" inputmode="numeric" style="${eS}" oninput="formatAsReportFee(this);calcAsReport()" placeholder="실제 받은 금액">
+<span style="${lG}">19. 미결제금액</span><input id="arUnpaid" value="0원" style="${autoS}" readonly>
+<span style="${lE}">20. 현금영수증</span><select id="arReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
+<span style="${lE}">21. 특이사항</span><textarea id="arNote" rows="2" style="${eS};resize:vertical"></textarea>
 </div>`;
 document.getElementById('asReportForm').innerHTML=html;
 document.getElementById('asReportForm').style.display='block';
@@ -1448,6 +1450,7 @@ if(d.qty){const qv=d.qty;const sel=document.getElementById('arQty');let matched=
 if(d.pay){const sel=document.getElementById('arPay');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.pay)sel.selectedIndex=i;}}
 if(d.receipt){const sel=document.getElementById('arReceipt');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.receipt)sel.selectedIndex=i;}}
 if(d.note)document.getElementById('arNote').value=d.note;
+if(d.paid)document.getElementById('arPaid').value=d.paid;
 calcAsReport();
 }).catch(()=>{loadAsReportDraft(jobId)})}
 
@@ -1455,7 +1458,7 @@ function closeAsReport(){document.getElementById('asReportOverlay').style.displa
 
 function saveAsReportDraft(){
 const g=id=>{const el=document.getElementById(id);return el?el.value:''};
-const draft={jobId:asReportJobId,arPrev1:g('arPrev1'),arPrev2:g('arPrev2'),arColor:g('arColor'),arScope:g('arScope'),arContent:g('arContent'),arAction:g('arAction'),arInstallFee:g('arInstallFee'),arQty:g('arQty'),arQtyCustom:g('arQtyCustom'),arPay:g('arPay'),arReceipt:g('arReceipt'),arNote:g('arNote'),savedAt:new Date().toISOString()};
+const draft={jobId:asReportJobId,arPrev1:g('arPrev1'),arPrev2:g('arPrev2'),arColor:g('arColor'),arScope:g('arScope'),arContent:g('arContent'),arAction:g('arAction'),arInstallFee:g('arInstallFee'),arQty:g('arQty'),arQtyCustom:g('arQtyCustom'),arPay:g('arPay'),arPaid:g('arPaid'),arReceipt:g('arReceipt'),arNote:g('arNote'),savedAt:new Date().toISOString()};
 localStorage.setItem('asReportDraft_'+asReportJobId,JSON.stringify(draft));
 toast('💾 임시저장 완료!','ok')}
 
@@ -1463,7 +1466,7 @@ function loadAsReportDraft(jobId){
 try{const d=JSON.parse(localStorage.getItem('asReportDraft_'+jobId));if(!d)return;
 setTimeout(()=>{
 const s=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v};
-s('arPrev1',d.arPrev1);s('arPrev2',d.arPrev2);s('arColor',d.arColor);s('arScope',d.arScope);s('arContent',d.arContent);s('arAction',d.arAction);s('arInstallFee',d.arInstallFee);s('arQty',d.arQty);s('arPay',d.arPay);s('arReceipt',d.arReceipt);s('arNote',d.arNote);
+s('arPrev1',d.arPrev1);s('arPrev2',d.arPrev2);s('arColor',d.arColor);s('arScope',d.arScope);s('arContent',d.arContent);s('arAction',d.arAction);s('arInstallFee',d.arInstallFee);s('arQty',d.arQty);s('arPay',d.arPay);s('arPaid',d.arPaid);s('arReceipt',d.arReceipt);s('arNote',d.arNote);
 if(d.arQty==='기타'){document.getElementById('arQtyCustom').style.display='block';s('arQtyCustom',d.arQtyCustom);}
 calcAsReport();
 toast('📋 임시저장 불러옴','ok');
@@ -1491,12 +1494,14 @@ const txt=`🔧 AS 보고서
 ── 결제 정보 ──
 13. 시공비 : ${g('arInstallFee')}
 14. 들어간 장수 : ${qtyVal}
-15. 판매비용 : ${g('arSalePrice')}
-16. 결제방법 : ${g('arPay')}
-17. 현금영수증 : ${g('arReceipt')}
-18. 특이사항 : ${g('arNote')}`;
+15. 결제방법 : ${g('arPay')}
+16. 판매비용 : ${g('arSalePrice')}
+17. 결제금액 : ${g('arPaid')||'0'}
+18. 미결제금액 : ${g('arUnpaid')}
+19. 현금영수증 : ${g('arReceipt')}
+20. 특이사항 : ${g('arNote')}`;
 
-const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,color:g('arColor'),scope:g('arScope'),content:g('arContent'),action:g('arAction'),installFee:g('arInstallFee'),qty:qtyVal,salePrice:g('arSalePrice'),pay:g('arPay'),receipt:g('arReceipt'),note:g('arNote'),submittedAt:new Date().toISOString()};
+const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,color:g('arColor'),scope:g('arScope'),content:g('arContent'),action:g('arAction'),installFee:g('arInstallFee'),qty:qtyVal,salePrice:g('arSalePrice'),pay:g('arPay'),paid:g('arPaid')||'0',unpaid:g('arUnpaid'),receipt:g('arReceipt'),note:g('arNote'),submittedAt:new Date().toISOString()};
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
