@@ -445,6 +445,9 @@ db.ref('gg_assignments').on('value',snap=>{
 });
 db.ref('gg_confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
 db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
+// 좌표 캐시를 Firebase에서 로드 → 모든 기기가 같은 좌표 공유
+let _dcTimer=null;function saveDCtoFB(){clearTimeout(_dcTimer);_dcTimer=setTimeout(()=>{db.ref('gg_geocode_cache').set(JSON.stringify(DC))},3000)}
+db.ref('gg_geocode_cache').once('value',snap=>{const v=snap.val();if(v){try{const obj=JSON.parse(v);let m=0;Object.keys(obj).forEach(k=>{if(!DC[k]){DC[k]=obj[k];m++}});if(m){localStorage.setItem('s4_dc',JSON.stringify(DC));console.log('📍 Firebase 좌표 캐시에서 '+m+'개 주소 로드')}}catch(e){}}});
 db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
 db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))SKIP=new Set(Object.keys(v));else if(Array.isArray(v))SKIP=new Set(v);else SKIP=new Set();fbLoaded.skip=true;});
 db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v)){LOCK=new Set(Object.keys(v));LOCK_REASONS={};Object.keys(v).forEach(k=>{if(typeof v[k]==='string')LOCK_REASONS[k]=v[k]})}else if(Array.isArray(v)){LOCK=new Set(v);LOCK_REASONS={}}else{LOCK=new Set();LOCK_REASONS={}}fbLoaded.lock=true;fbRender()});
@@ -535,7 +538,7 @@ function matCls(t){if(t.includes('마블'))return'marble';if(t.includes('코튼'
 async function geo(addr){
 if(DC[addr])return DC[addr];
 try{const r=await fetch('https://maps.googleapis.com/maps/api/geocode/json?address='+encodeURIComponent(addr)+'&key=AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw&language=ko');
-const d=await r.json();if(d.results&&d.results[0]){const l=d.results[0].geometry.location;DC[addr]={lat:l.lat,lng:l.lng};localStorage.setItem('s4_dc',JSON.stringify(DC));return DC[addr]}}catch(e){}
+const d=await r.json();if(d.results&&d.results[0]){const l=d.results[0].geometry.location;DC[addr]={lat:l.lat,lng:l.lng};localStorage.setItem('s4_dc',JSON.stringify(DC));saveDCtoFB();return DC[addr]}}catch(e){}
 return null}
 
 function hav(a1,n1,a2,n2){const R=6371,x=(a2-a1)*Math.PI/180,y=(n2-n1)*Math.PI/180,z=Math.sin(x/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z))}
