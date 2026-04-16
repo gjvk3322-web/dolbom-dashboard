@@ -120,6 +120,12 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .platform-list-title{font-size:11px;font-weight:700;color:#666;padding:8px 10px 6px;letter-spacing:.5px}
 .platform-group-header{font-size:10px;font-weight:700;color:#999;padding:8px 10px 4px;margin-top:6px;letter-spacing:1px;display:flex;align-items:center;gap:5px;border-top:1px dashed #e5e5e0}
 .platform-group-header:first-of-type{margin-top:0;border-top:none}
+
+/* 오프라인 섹션 묶음 - 회색 배경 */
+.platform-group-offline{background:#f0f0ed;border-radius:10px;padding:6px;margin-top:10px}
+.platform-group-offline .platform-group-header{border-top:none;color:#666;padding-top:4px}
+.platform-group-offline .pitem:not(.active){background:#fafaf8}
+.platform-group-offline .pitem:not(.active):hover{background:#fff}
 .pitem-wrap{position:relative}
 .pitem{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:all .15s;background:transparent;border:none;font-family:inherit;text-align:left;width:100%}
 .pitem:hover{background:#fff;color:#1a1a1a}
@@ -170,16 +176,17 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .ws-strategy{font-size:12px;color:#555;background:#fffef0;border-left:3px solid #eab308;padding:11px 14px;border-radius:0 8px 8px 0;line-height:1.7;min-height:50px}
 .ws-strategy-edit{width:100%;font-size:12px;background:#fffef0;border:1px solid #eab308;border-radius:8px;padding:11px 14px;font-family:inherit;line-height:1.7;resize:vertical;min-height:80px}
 
-.platform-memo{width:100%;min-height:300px;padding:14px;border:1px solid #e5e5e0;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.7;background:#fffef9}
-.platform-memo:focus{outline:none;border-color:#1a1a1a}
+.platform-memo{width:100%;min-height:500px;padding:16px 18px;border:1px solid #e5e5e0;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.8;background:#fffef9}
+.platform-memo:focus{outline:none;border-color:#1a1a1a;box-shadow:0 0 0 2px rgba(26,26,26,.05)}
 .memo-save-info{font-size:10px;color:#888;font-weight:400}
 
 /* AI Prompt buttons */
-.ai-buttons{display:flex;gap:8px;margin-top:10px}
-.ai-prompt-btn{flex:1;padding:12px 14px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
-.ai-prompt-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.3)}
-.ai-preview-btn{padding:12px 14px;background:#fff;border:1.5px solid #8b5cf6;border-radius:9px;color:#7c3aed;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.ai-preview-btn:hover{background:#f5f3ff}
+.ai-buttons{display:flex;gap:10px;margin-top:16px}
+.ai-prompt-btn{flex:1;padding:16px 18px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(99,102,241,.2)}
+.ai-prompt-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(99,102,241,.35)}
+.ai-prompt-btn:active{transform:translateY(0)}
+.ai-preview-btn{padding:16px 22px;background:#fff;border:1.5px solid #8b5cf6;border-radius:10px;color:#7c3aed;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px}
+.ai-preview-btn:hover{background:#f5f3ff;transform:translateY(-1px)}
 
 .platform-empty{text-align:center;padding:60px 20px;color:#999;font-size:13px}
 
@@ -881,7 +888,7 @@ function renderPlatformList(){
   
   let html='';
   
-  // 온라인 섹션
+  // 온라인 섹션 (배경 없음)
   html+='<div class="platform-group-header">🌐 온라인 ('+onlinePfs.length+')</div>';
   if(onlinePfs.length===0){
     html+='<div style="font-size:10px;color:#bbb;padding:6px 12px">플랫폼이 없어요</div>';
@@ -891,7 +898,8 @@ function renderPlatformList(){
     });
   }
   
-  // 오프라인 섹션
+  // 오프라인 섹션 (회색 배경으로 감싸기)
+  html+='<div class="platform-group-offline">';
   html+='<div class="platform-group-header">🏢 오프라인 ('+offlinePfs.length+')</div>';
   if(offlinePfs.length===0){
     html+='<div style="font-size:10px;color:#bbb;padding:6px 12px">플랫폼이 없어요</div>';
@@ -900,6 +908,7 @@ function renderPlatformList(){
       html+=buildPlatformItemHTML(pf,idx,offlinePfs.length);
     });
   }
+  html+='</div>';
   
   list.innerHTML=html;
 }
