@@ -480,7 +480,7 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 const firebaseConfig={apiKey:"AIzaSyAjVerxCunFEIvkNfCOTDnedbO5YRVOma4",databaseURL:"https://dolbomnote-be438-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"dolbomnote-be438"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
-const MK='marketing_v4';
+const MK='marketing_v5';
 
 // === 기본 전체 설정 ===
 const DEFAULT_GS={
@@ -560,7 +560,11 @@ let editingStrategy=false,lastGeneratedPrompt='';  // editingStrategy deprecated
 
 function syncOnline(on){const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');if(on){dot.classList.remove('offline');txt.textContent='연결됨'}else{dot.classList.add('offline');txt.textContent='연결 안됨'}}
 function arrToObj(arr){const o={};arr.forEach(x=>{o[x.id]=x});return o}
-function saveToFB(key,val){db.ref(MK+'/'+key).set(val).catch(e=>{console.error(e);syncOnline(false)})}
+function saveToFB(key,val){
+  db.ref(MK+'/'+key).set(val).catch(e=>{console.error(e);syncOnline(false)});
+  // localStorage에도 즉시 백업
+  setTimeout(saveToLS,100);
+}
 
 function resetData(){
   if(!confirm('전체 설정 + 페르소나 + 플랫폼을 기본값으로 복원할까요?\n(메모는 유지)'))return;
@@ -578,42 +582,96 @@ function resetData(){
   toast('✅ 기본 데이터 복원됨');
 }
 
+// localStorage backup keys
+const LS_KEY='dolbom_marketing_v5_backup';
+
+function saveToLS(){
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify({
+      gs,competitors,benchmarks,personas,platforms,memos,
+      _saved:Date.now()
+    }));
+  }catch(e){console.error('LS save failed',e)}
+}
+
+function loadFromLS(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch(e){return null}
+}
+
 function loadAll(){
+  // 1단계: localStorage에서 즉시 복원 (빠른 표시)
+  const ls=loadFromLS();
+  if(ls){
+    gs={...DEFAULT_GS,...(ls.gs||{})};
+    competitors=ls.competitors&&ls.competitors.length>0?ls.competitors:[...DEFAULT_COMPETITORS];
+    benchmarks=ls.benchmarks&&ls.benchmarks.length>0?ls.benchmarks:[...DEFAULT_BENCHMARKS];
+    personas=ls.personas&&ls.personas.length>0?ls.personas:[...DEFAULT_PERSONAS];
+    platforms=ls.platforms&&ls.platforms.length>0?ls.platforms:[...DEFAULT_PLATFORMS];
+    memos=ls.memos||{};
+  } else {
+    // 처음 방문
+    gs={...DEFAULT_GS};
+    competitors=[...DEFAULT_COMPETITORS];
+    benchmarks=[...DEFAULT_BENCHMARKS];
+    personas=[...DEFAULT_PERSONAS];
+    platforms=[...DEFAULT_PLATFORMS];
+    memos={};
+  }
+  personas.sort((a,b)=>(a.order||0)-(b.order||0));
+  platforms.sort((a,b)=>(a.order||0)-(b.order||0));
+  renderAll();
+  
+  // 2단계: Firebase에서 최신 데이터 받기
   db.ref(MK).once('value').then(snap=>{
     const d=snap.val()||{};
-    gs=d.gs?{...DEFAULT_GS,...d.gs}:{...DEFAULT_GS};
-    competitors=d.competitors?Object.values(d.competitors):[...DEFAULT_COMPETITORS];
-    benchmarks=d.benchmarks?Object.values(d.benchmarks):[...DEFAULT_BENCHMARKS];
-    personas=d.personas&&Object.keys(d.personas).length>0?Object.values(d.personas):[...DEFAULT_PERSONAS];
-    platforms=d.platforms&&Object.keys(d.platforms).length>0?Object.values(d.platforms):[...DEFAULT_PLATFORMS];
-    memos=d.memos||{};
+    let hasAnyData=false;
     
-    if(!d.gs)saveToFB('gs',gs);
-    if(!d.competitors)saveToFB('competitors',arrToObj(competitors));
-    if(!d.benchmarks)saveToFB('benchmarks',arrToObj(benchmarks));
-    if(!d.personas)saveToFB('personas',arrToObj(personas));
-    if(!d.platforms)saveToFB('platforms',arrToObj(platforms));
+    if(d.gs&&Object.keys(d.gs).length>0){gs={...DEFAULT_GS,...d.gs};hasAnyData=true}
+    if(d.competitors&&Object.keys(d.competitors).length>0){competitors=Object.values(d.competitors);hasAnyData=true}
+    if(d.benchmarks&&Object.keys(d.benchmarks).length>0){benchmarks=Object.values(d.benchmarks);hasAnyData=true}
+    if(d.personas&&Object.keys(d.personas).length>0){personas=Object.values(d.personas);hasAnyData=true}
+    if(d.platforms&&Object.keys(d.platforms).length>0){platforms=Object.values(d.platforms);hasAnyData=true}
+    if(d.memos)memos=d.memos;
+    
+    // Firebase에 데이터 없으면 → 현재 기본값을 Firebase에 저장
+    if(!hasAnyData){
+      console.log('Firebase empty, uploading defaults');
+      saveToFB('gs',gs);
+      saveToFB('competitors',arrToObj(competitors));
+      saveToFB('benchmarks',arrToObj(benchmarks));
+      saveToFB('personas',arrToObj(personas));
+      saveToFB('platforms',arrToObj(platforms));
+    }
     
     personas.sort((a,b)=>(a.order||0)-(b.order||0));
     platforms.sort((a,b)=>(a.order||0)-(b.order||0));
-    
+    saveToLS();
     renderAll();
     syncOnline(true);
-  }).catch(e=>{syncOnline(false);console.error(e);
-    gs={...DEFAULT_GS};competitors=[...DEFAULT_COMPETITORS];benchmarks=[...DEFAULT_BENCHMARKS];
-    personas=[...DEFAULT_PERSONAS];platforms=[...DEFAULT_PLATFORMS];
-    renderAll();
-  });
+  }).catch(e=>{syncOnline(false);console.error('Firebase load failed',e)});
   
+  // 3단계: 실시간 업데이트 (다른 기기에서 변경 시)
   db.ref(MK).on('value',snap=>{
-    const d=snap.val();if(!d)return;
-    if(d.gs)gs={...DEFAULT_GS,...d.gs};
-    if(d.competitors)competitors=Object.values(d.competitors);
-    if(d.benchmarks)benchmarks=Object.values(d.benchmarks);
-    if(d.personas&&Object.keys(d.personas).length>0){personas=Object.values(d.personas);personas.sort((a,b)=>(a.order||0)-(b.order||0))}
-    if(d.platforms&&Object.keys(d.platforms).length>0){platforms=Object.values(d.platforms);platforms.sort((a,b)=>(a.order||0)-(b.order||0))}
-    if(d.memos)memos=d.memos;
-    renderAll();
+    const d=snap.val();
+    if(!d)return;
+    let changed=false;
+    
+    // 안전하게: 비어있지 않을 때만 덮어쓰기
+    if(d.gs&&Object.keys(d.gs).length>0){gs={...DEFAULT_GS,...d.gs};changed=true}
+    if(d.competitors&&Object.keys(d.competitors).length>0){competitors=Object.values(d.competitors);changed=true}
+    if(d.benchmarks&&Object.keys(d.benchmarks).length>0){benchmarks=Object.values(d.benchmarks);changed=true}
+    if(d.personas&&Object.keys(d.personas).length>0){personas=Object.values(d.personas);personas.sort((a,b)=>(a.order||0)-(b.order||0));changed=true}
+    if(d.platforms&&Object.keys(d.platforms).length>0){platforms=Object.values(d.platforms);platforms.sort((a,b)=>(a.order||0)-(b.order||0));changed=true}
+    if(d.memos){memos=d.memos;changed=true}
+    
+    if(changed){
+      saveToLS();
+      renderAll();
+    }
   });
 }
 
