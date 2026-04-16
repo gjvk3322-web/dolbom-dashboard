@@ -1104,7 +1104,7 @@ function calcReport(){
 const color=document.getElementById('rColor').value;
 const qty=parseInt(document.getElementById('rQty').value)||0;
 const checks=document.querySelectorAll('.rDiscount:checked');
-let coupon=0;checks.forEach(c=>coupon+=parseInt(c.value)||0);
+let coupon=0;checks.forEach(c=>coupon+=parseInt(c.value)||0);const extraD=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;coupon+=extraD;
 const isGonggu=document.getElementById('rGonggu').value==='O';
 const unitPrice=PRICE_MAP[color]||0;
 let total=qty*unitPrice-coupon;
@@ -1156,7 +1156,7 @@ const html=`
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
 <span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatFee(this);calcReport()">
 <span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option></select>
-<span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label></div>
+<span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" id="rExtraDiscountChk" onchange="document.getElementById('rExtraDiscount').style.display=this.checked?'block':'none';if(!this.checked){document.getElementById('rExtraDiscount').value='';};calcReport()">추가할인</label><input id="rExtraDiscount" type="text" inputmode="numeric" placeholder="금액 입력" style="display:none;${eS};width:90px;font-size:10px" oninput="formatFee(this);calcReport()"></div>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
 <span style="${lE}">16. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}" oninput="calcReport()">
 <span style="${lG}">17. 판매비용</span><input id="rPrice" value="0원" style="${autoS}" readonly>
@@ -1181,7 +1181,7 @@ if(d.scope)document.getElementById('rScope').value=d.scope;
 if(d.isNew){const sel=document.getElementById('rNew');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.isNew)sel.selectedIndex=i;}}
 if(d.installFee)document.getElementById('rInstallFee').value=d.installFee;
 if(d.gonggu){const sel=document.getElementById('rGonggu');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.gonggu)sel.selectedIndex=i;}}
-if(d.couponNames&&d.couponNames!=='없음'){const names=d.couponNames.split('+');document.querySelectorAll('.rDiscount').forEach(c=>{if(names.includes(c.dataset.name))c.checked=true;});}
+if(d.couponNames&&d.couponNames!=='없음'){const names=d.couponNames.split('+');document.querySelectorAll('.rDiscount').forEach(c=>{if(names.includes(c.dataset.name))c.checked=true;});const extraMatch=names.find(n=>n.startsWith('추가'));if(extraMatch){document.getElementById('rExtraDiscountChk').checked=true;document.getElementById('rExtraDiscount').style.display='block';document.getElementById('rExtraDiscount').value=extraMatch.replace('추가','');}}
 if(d.pay){const sel=document.getElementById('rPay');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.pay)sel.selectedIndex=i;}}
 if(d.qty)document.getElementById('rQty').value=d.qty;
 if(d.paid)document.getElementById('rPaid').value=d.paid;
@@ -1195,8 +1195,9 @@ function closeReport(){document.getElementById('reportOverlay').style.display='n
 function saveReportData(){
 const g=id=>(document.getElementById(id)||{}).value||'';
 const discountChecks=document.querySelectorAll('.rDiscount:checked');
-const discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
-const discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+let discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
+let discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+const _ed3=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_ed3>0){discountStr+=(discountStr==='없음'?'':'+')+('추가'+_ed3.toLocaleString());discountTotal+=_ed3;}
 const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:discountTotal.toString(),couponNames:discountStr,pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
 if(typeof reportJobId!=='undefined'&&reportJobId){
   fbSave('reports/'+reportJobId,reportData);
@@ -1217,7 +1218,7 @@ const color=g('rColor');
 const qty=parseInt(g('rQty'))||0;
 const checks=document.querySelectorAll('.rDiscount:checked');
 let couponVal=0;const couponNames=[];
-checks.forEach(c=>{couponVal+=parseInt(c.value)||0;couponNames.push(c.dataset.name);});
+checks.forEach(c=>{couponVal+=parseInt(c.value)||0;couponNames.push(c.dataset.name);});const _edCalc=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_edCalc>0){couponVal+=_edCalc;couponNames.push('추가'+_edCalc.toLocaleString());}
 const isGonggu=g('rGonggu')==='O';
 const unitPrice=PRICE_MAP[color]||0;
 const unpaid=g('rUnpaid');
@@ -1309,7 +1310,7 @@ const txt=`📋 시공보고서
 ── 결제 정보 ──
 12. 시공비 : ${g('rInstallFee')}
 13. 공동구매 : ${g('rGonggu')}
-14. 할인적용 : ${(()=>{const c=document.querySelectorAll('.rDiscount:checked');return c.length?Array.from(c).map(x=>x.dataset.name).join('+'):'없음'})()}
+14. 할인적용 : ${(()=>{const c=document.querySelectorAll('.rDiscount:checked');let r=c.length?Array.from(c).map(x=>x.dataset.name).join('+'):'없음';const _ed=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_ed>0)r+=(r==='없음'?'':'+')+('추가'+_ed.toLocaleString());return r})()}
 15. 결제방법 : ${g('rPay')}
 16. 판매갯수 : ${g('rQty')}
 17. 판매비용 : ${g('rPrice')}
@@ -1319,8 +1320,9 @@ const txt=`📋 시공보고서
 21. 특이사항 : ${g('rNote')}`;
 
 const discountChecks=document.querySelectorAll('.rDiscount:checked');
-const discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
-const discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+let discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
+let discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+const _ed3=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_ed3>0){discountStr+=(discountStr==='없음'?'':'+')+('추가'+_ed3.toLocaleString());discountTotal+=_ed3;}
 const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:discountTotal.toString(),couponNames:discountStr,pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
 fbSave('reports/'+reportJobId,reportData);
 
