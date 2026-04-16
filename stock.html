@@ -194,9 +194,10 @@ function renderInventory(){
     document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';return}
   document.getElementById('barEl').style.display='block';
   const dk=fk(loc),existing=fbInvData[dk];
-  if(isToday&&existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨 · 수정시 재작성 후 재고제출</div>`;
-  h+=buildTable('inv',null);
-  if(loc==='사무실'){h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항"></textarea></div></div>`}
+  if(isToday&&existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨</div>`;
+  if(!isToday&&existing)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--orange);margin-bottom:4px">⚠️ ${invDataDate} 데이터 참고용 (제출하면 오늘 날짜로 저장)</div>`;
+  h+=buildTable('inv',existing);
+  if(loc==='사무실'){const pm=(existing&&existing.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
   document.getElementById('app').innerHTML=h;
   document.getElementById('bl').innerHTML=`📍 <b>${team} ${loc}</b>`;
   const sb=document.getElementById('sbtn');const isWed=new Date().getDay()===3;sb.disabled=!isWed;sb.textContent=isWed?'재고 제출':'수요일에만 제출 가능';sb.className='btn btn-inv';sb.onclick=submitInv;calc('inv')}
@@ -244,8 +245,6 @@ async function renderSummary(){
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
 
   const sd=await fetchStockData();
-  // 탭이 바뀌었으면 렌더링 중단 (async 경쟁조건 방지)
-  if(tab!=='summary')return;
   h=renderTabs();
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
@@ -402,9 +401,11 @@ async function renderSummary(){
     h+=`<div style="color:var(--dim);margin-bottom:6px">${ld.prevDate} → ${ld.currentDate}</div>`;
     h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">이전 재고</span><span>${ld.prevStock.toLocaleString()}장</span></div>`;
     if(ld.inBetween>0)h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">+ 입고</span><span style="color:var(--orange)">+${ld.inBetween.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">- 판매</span><span style="color:var(--red)">-${ld.soldBetween.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--dim)">- 판매 (보고서 기준)</span><span style="color:var(--red)">-${ld.soldBetween.toLocaleString()}장</span></div>`;
+    if(ld.missingQtyCount>0)h+=`<div style="padding:4px 8px;margin:4px 0;background:rgba(255,69,58,.1);border-radius:6px;color:var(--red);font-size:11px">⚠️ 판매갯수 미입력 ${ld.missingQtyCount}건 — 로스가 실제보다 높게 표시될 수 있음</div>`;
     h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;margin-top:4px;border-top:.5px solid var(--border)"><span>있어야 할 재고</span><span style="font-weight:700">${ld.expectedStock.toLocaleString()}장</span></div>`;
     h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span>실제 재고</span><span style="font-weight:700">${ld.currentStock.toLocaleString()}장</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:4px 0;margin-top:4px;border-top:.5px solid var(--border);font-size:11px;color:var(--dim)"><span>로스율 = 로스 ÷ 이전재고</span></div>`;
     h+=`</div></div>`;
   } else if(sd&&!sd.error){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">📉 로스율</span><span style="font-size:12px;color:var(--dim)">다음주 자동 계산</span></div>`;
@@ -751,9 +752,7 @@ async function submitInv(){if(!loc||!team)return;
   let txt=mm+dd+' '+team+' '+loc+' (기준일:'+surveyDateKey+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
   fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:surveyDateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).then(r=>{if(!r.ok)toast('⚠️ 시트 저장 실패')}).catch(()=>toast('⚠️ 시트 저장 실패'));
-  btn.disabled=false;btn.textContent='재고 제출';
-  // 제출 후 위치 선택으로 돌아가기 (입력 초기화)
-  loc=null;render()}
+  btn.disabled=false;btn.textContent='재고 제출'}
 
 async function submitIn(){if(!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;
