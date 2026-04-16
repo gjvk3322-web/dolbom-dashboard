@@ -184,6 +184,20 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .modal-title{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
 .modal-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:11px;font-family:'Monaco',monospace;line-height:1.7;white-space:pre-wrap;max-height:500px;overflow-y:auto;color:#334155}
 
+/* Emoji picker */
+.emoji-picker-label{font-size:11px;font-weight:600;color:#666;margin:6px 0 6px}
+.emoji-picker{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:10px;background:#fafaf8;border:1px solid #e5e5e0;border-radius:8px;padding:8px;max-height:180px;overflow-y:auto}
+.emoji-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#fff;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .1s;font-family:inherit}
+.emoji-btn:hover{background:#f3e8ff;border-color:#c4b5fd;transform:scale(1.15)}
+.emoji-btn.selected{background:#ede9fe;border-color:#7c3aed;box-shadow:0 0 0 2px rgba(124,58,237,.2)}
+.emoji-category{grid-column:1/-1;font-size:10px;color:#999;font-weight:700;padding:4px 2px 2px;letter-spacing:.5px;text-transform:uppercase}
+.emoji-input-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.emoji-input-row .selected-preview{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:24px;background:#fff;border:1.5px solid #e5e5e0;border-radius:8px;flex-shrink:0}
+.emoji-input-row input{flex:1}
+@media(max-width:640px){
+  .emoji-picker{grid-template-columns:repeat(8,1fr)}
+}
+
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:#fff;padding:11px 22px;border-radius:10px;font-size:12px;font-weight:600;z-index:200;transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
@@ -332,10 +346,15 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
   
   <div class="form-box" id="personaForm" style="display:none">
     <div class="form-title">새 페르소나</div>
-    <div class="row">
-      <input type="text" id="pEmoji" placeholder="이모지 (예: 👩‍👧)" maxlength="4">
-      <input type="text" id="pName" placeholder="이름 (예: 신축엄마 수진)">
+    
+    <div class="emoji-picker-label">🎨 이모지 선택</div>
+    <div class="emoji-input-row">
+      <div class="selected-preview" id="pEmojiPreview">👤</div>
+      <input type="text" id="pEmoji" placeholder="직접 입력 (예: 👩‍👧)" maxlength="4" value="👤" oninput="syncPEmojiPreview()" style="padding:8px 11px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">
+      <input type="text" id="pName" placeholder="이름 (예: 신축엄마 수진)" style="flex:1;padding:8px 11px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">
     </div>
+    <div class="emoji-picker" id="personaEmojiPicker" style="max-height:140px;margin-bottom:10px"></div>
+    
     <input type="text" id="pLabel" placeholder="한줄 설명">
     <div class="row">
       <select id="pTier">
@@ -389,10 +408,19 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 <!-- Platform add modal -->
 <div class="modal" id="platformModal">
-  <div class="modal-box" style="max-width:480px">
+  <div class="modal-box" style="max-width:520px">
     <div class="modal-title">새 플랫폼 추가</div>
-    <input type="text" id="newPlatformName" placeholder="이름 (예: 유튜브)" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:8px">
-    <input type="text" id="newPlatformIcon" placeholder="이모지 (예: 🎬)" maxlength="4" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:14px">
+    
+    <div class="emoji-picker-label">📛 이름</div>
+    <input type="text" id="newPlatformName" placeholder="예: 유튜브, 틱톡, 네이버카페" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:12px">
+    
+    <div class="emoji-picker-label">🎨 아이콘 선택 (또는 직접 입력)</div>
+    <div class="emoji-input-row">
+      <div class="selected-preview" id="emojiPreview">📌</div>
+      <input type="text" id="newPlatformIcon" placeholder="직접 입력 (예: 🎬)" maxlength="4" value="📌" oninput="syncEmojiPreview()" style="padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit">
+    </div>
+    <div class="emoji-picker" id="emojiPicker"></div>
+    
     <div style="display:flex;gap:6px;justify-content:flex-end">
       <button class="btn secondary small" onclick="closePlatformModal()">취소</button>
       <button class="btn small" onclick="savePlatform()">추가</button>
@@ -697,11 +725,84 @@ function selectPersona(id){
 
 function showAllPersonas(){selectedPersonaId=null;renderAll()}
 
-function toggleForm(id){const f=document.getElementById(id);f.style.display=f.style.display==='none'?'block':'none';if(f.style.display==='block'&&id==='personaForm'){editingPersonaId=null;clearPersonaForm()}}
+function toggleForm(id){
+  const f=document.getElementById(id);
+  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='block'&&id==='personaForm'){
+    editingPersonaId=null;
+    clearPersonaForm();
+    renderPersonaEmojiPicker();
+  }
+}
 
-function clearPersonaForm(){['pEmoji','pName','pLabel','pPurpose','pChannel','pBudget','pDetail'].forEach(id=>document.getElementById(id).value='');document.getElementById('pTier').value='3'}
+function clearPersonaForm(){
+  ['pEmoji','pName','pLabel','pPurpose','pChannel','pBudget','pDetail'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pTier').value='3';
+  document.getElementById('pEmoji').value='👤';
+  document.getElementById('pEmojiPreview').textContent='👤';
+}
 
-function editPersona(id){const p=personas.find(x=>x.id===id);if(!p)return;editingPersonaId=id;document.getElementById('pEmoji').value=p.emoji||'';document.getElementById('pName').value=p.name||'';document.getElementById('pLabel').value=p.label||'';document.getElementById('pTier').value=p.tier||3;document.getElementById('pPurpose').value=p.purpose||'';document.getElementById('pChannel').value=p.channel||'';document.getElementById('pBudget').value=p.budget||'';document.getElementById('pDetail').value=p.detail||'';document.getElementById('personaForm').style.display='block';document.getElementById('personaForm').scrollIntoView({behavior:'smooth',block:'center'})}
+function renderPersonaEmojiPicker(){
+  const picker=document.getElementById('personaEmojiPicker');
+  if(!picker)return;
+  // 페르소나용 카테고리는 사람/가족/직업 중심
+  const PERSONA_EMOJIS={
+    '👥 기본/가족':['👤','👥','👶','👧','👦','👩','👨','🧑','👩‍👧','👨‍👧','👩‍👦','👨‍👦','👩‍👧‍👦','👨‍👧‍👦','👪','🧑‍🤝‍🧑','🤱','🤰','👩‍🍼','👨‍🍼'],
+    '👔 직업/역할':['🏢','🏫','👩‍🏫','👨‍🏫','👩‍💼','👨‍💼','👮','👷','🧑‍🎓','👑','🎓','💼','🧑‍🔧','🧑‍⚕️','👩‍⚕️','👨‍⚕️','🧑‍🍳','🎨','🎤','📷'],
+    '🐾 반려동물':['🐕','🐶','🐩','🦮','🐕‍🦺','🐱','🐈','🐈‍⬛','🐰','🐹','🐭','🦜','🐠','🐟','🐢','🦎','🐍','🐾','🦴','🎾'],
+    '🏠 상황/특성':['🏠','🏡','🏘️','🏢','🏫','🏗️','🔨','🏅','🎪','🎁','💎','💰','💵','📦','🚚','🚗','🗺️','📍','⭐','✨'],
+    '😊 감정/성격':['😊','😎','🤓','🧐','😌','🥰','😍','💕','💖','🌟','🔥','💪','🙏','🎯','💡','🎨','🎵','📚','🧠','👑']
+  };
+  let html='';
+  for(const [category,emojis] of Object.entries(PERSONA_EMOJIS)){
+    html+=`<div class="emoji-category">${category}</div>`;
+    emojis.forEach(emoji=>{
+      html+=`<button type="button" class="emoji-btn" onclick="selectPersonaEmoji('${emoji}')" title="${emoji}">${emoji}</button>`;
+    });
+  }
+  picker.innerHTML=html;
+  // 현재 선택된 이모지 하이라이트
+  const current=document.getElementById('pEmoji').value||'👤';
+  setTimeout(()=>{
+    document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>{
+      if(b.textContent===current)b.classList.add('selected');
+    });
+  },50);
+}
+
+function selectPersonaEmoji(emoji){
+  document.getElementById('pEmoji').value=emoji;
+  document.getElementById('pEmojiPreview').textContent=emoji;
+  document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>{
+    if(b.textContent===emoji)b.classList.add('selected');
+  });
+}
+
+function syncPEmojiPreview(){
+  const val=document.getElementById('pEmoji').value.trim()||'👤';
+  document.getElementById('pEmojiPreview').textContent=val;
+  document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>{
+    b.classList.toggle('selected',b.textContent===val);
+  });
+}
+
+function editPersona(id){
+  const p=personas.find(x=>x.id===id);if(!p)return;
+  editingPersonaId=id;
+  document.getElementById('pEmoji').value=p.emoji||'👤';
+  document.getElementById('pEmojiPreview').textContent=p.emoji||'👤';
+  document.getElementById('pName').value=p.name||'';
+  document.getElementById('pLabel').value=p.label||'';
+  document.getElementById('pTier').value=p.tier||3;
+  document.getElementById('pPurpose').value=p.purpose||'';
+  document.getElementById('pChannel').value=p.channel||'';
+  document.getElementById('pBudget').value=p.budget||'';
+  document.getElementById('pDetail').value=p.detail||'';
+  document.getElementById('personaForm').style.display='block';
+  renderPersonaEmojiPicker();
+  document.getElementById('personaForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
 
 function savePersona(){const name=document.getElementById('pName').value.trim();if(!name){toast('⚠️ 이름을 입력하세요');return}const data={id:editingPersonaId||('p_'+Date.now()),emoji:document.getElementById('pEmoji').value.trim()||'👤',name,label:document.getElementById('pLabel').value.trim(),tier:parseInt(document.getElementById('pTier').value),purpose:document.getElementById('pPurpose').value.trim(),channel:document.getElementById('pChannel').value.trim(),budget:document.getElementById('pBudget').value.trim(),detail:document.getElementById('pDetail').value.trim(),order:editingPersonaId?personas.find(x=>x.id===editingPersonaId).order:personas.length+1};if(editingPersonaId){const idx=personas.findIndex(x=>x.id===editingPersonaId);personas[idx]=data}else personas.push(data);saveToFB('personas',arrToObj(personas));toggleForm('personaForm');renderAll();toast('✅ 저장 완료')}
 
@@ -897,7 +998,57 @@ function toggleStrategyEdit(){
 }
 
 // === Platform add/delete ===
-function openPlatformModal(){document.getElementById('newPlatformName').value='';document.getElementById('newPlatformIcon').value='';document.getElementById('platformModal').classList.add('show')}
+const EMOJI_CATEGORIES={
+  '📱 플랫폼/SNS':['📱','📸','🎬','📹','📺','🎥','📷','🎵','🎶','🎤','🎙️','🎧','📻','🎞️','📼','🖥️','💻','⌨️','🖱️','📞'],
+  '💬 소통/메시지':['💬','💭','🗨️','📢','📣','📯','🔔','🔕','📧','📨','📩','📮','📪','💌','📝','✉️','📤','📥','📨','📤'],
+  '🔍 검색/광고':['🔍','🔎','🎯','📊','📈','📉','📌','📍','🔖','🏷️','💯','✨','⭐','🌟','💫','🆕','🆒','🆓','🔥','💥'],
+  '🏢 비즈니스':['🏢','🏬','🏪','🏫','🏭','🏛️','🏘️','🏗️','🏛️','🏦','🛍️','🛒','💼','📁','📂','🗂️','📋','📃','📄','📑'],
+  '👥 사람/고객':['👤','👥','👶','👧','👦','👩','👨','👩‍👧','👨‍👧','👩‍👦','👨‍👦','👩‍👧‍👦','👪','🧑‍🤝‍🧑','🤝','👋','💪','🙌','👍','❤️'],
+  '🎪 이벤트/행사':['🎪','🎭','🎨','🎢','🎡','🎠','🎗️','🎟️','🎫','🎖️','🏆','🏅','🥇','🥈','🥉','🎉','🎊','🎁','🎀','🎆'],
+  '🏠 집/공간':['🏠','🏡','🏘️','🏚️','🛋️','🛏️','🚪','🪑','🚿','🛁','🌡️','🔨','🧰','⚒️','🛠️','🔧','🪛','🧹','🧼','🧽'],
+  '🐾 반려/아기':['🐶','🐕','🐩','🦮','🐕‍🦺','🐱','🐈','🐈‍⬛','🐰','🐹','🐭','🍼','🧸','👶','🏀','⚽','🎲','🧩','🎨','🖍️'],
+  '💰 금융/가격':['💰','💵','💴','💶','💷','💸','💳','💎','🪙','⚖️','🧾','🔖','🏷️','💹','📊','📈','📉','💲','💱','🤑'],
+  '✅ 상태/감정':['✅','☑️','✔️','❌','⭕','⚠️','❗','❓','💡','🚀','⚡','🎯','🔔','📣','💯','🔥','✨','⏰','📅','🗓️']
+};
+
+function renderEmojiPicker(){
+  const picker=document.getElementById('emojiPicker');
+  if(!picker)return;
+  let html='';
+  for(const [category,emojis] of Object.entries(EMOJI_CATEGORIES)){
+    html+=`<div class="emoji-category">${category}</div>`;
+    emojis.forEach(emoji=>{
+      html+=`<button type="button" class="emoji-btn" onclick="selectEmoji('${emoji}')" title="${emoji}">${emoji}</button>`;
+    });
+  }
+  picker.innerHTML=html;
+}
+
+function selectEmoji(emoji){
+  document.getElementById('newPlatformIcon').value=emoji;
+  document.getElementById('emojiPreview').textContent=emoji;
+  // Highlight selected
+  document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.emoji-btn').forEach(b=>{
+    if(b.textContent===emoji)b.classList.add('selected');
+  });
+}
+
+function syncEmojiPreview(){
+  const val=document.getElementById('newPlatformIcon').value.trim()||'📌';
+  document.getElementById('emojiPreview').textContent=val;
+  document.querySelectorAll('.emoji-btn').forEach(b=>{
+    b.classList.toggle('selected',b.textContent===val);
+  });
+}
+
+function openPlatformModal(){
+  document.getElementById('newPlatformName').value='';
+  document.getElementById('newPlatformIcon').value='📌';
+  document.getElementById('emojiPreview').textContent='📌';
+  renderEmojiPicker();
+  document.getElementById('platformModal').classList.add('show');
+}
 function closePlatformModal(){document.getElementById('platformModal').classList.remove('show')}
 function savePlatform(){const name=document.getElementById('newPlatformName').value.trim();const icon=document.getElementById('newPlatformIcon').value.trim()||'📌';if(!name){toast('⚠️ 이름을 입력하세요');return}const data={id:'pf_'+Date.now(),name,icon,strategy:'',settings:{},order:platforms.length+1};platforms.push(data);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=data.id;closePlatformModal();renderAll();toast('✅ 플랫폼 추가됨')}
 function deletePlatform(id){if(!confirm('이 플랫폼을 삭제할까요?'))return;platforms=platforms.filter(p=>p.id!==id);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=platforms.length>0?platforms[0].id:null;renderAll();toast('🗑️ 삭제됨')}
