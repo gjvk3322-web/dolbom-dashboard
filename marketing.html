@@ -37,6 +37,7 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .btn.ghost{background:transparent;border-color:#e5e5e0;color:#666}
 .btn.ghost:hover{border-color:#1a1a1a;color:#1a1a1a}
 
+/* Persona section */
 .filter-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
 .fchip{padding:5px 11px;background:#fff;border:1px solid #e5e5e0;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;color:#666;transition:all .15s}
 .fchip:hover{border-color:#1a1a1a;color:#1a1a1a}
@@ -63,30 +64,45 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .persona-actions-row{display:none;gap:4px;margin-top:7px;padding-top:7px;border-top:1px dashed #e5e5e0}
 .persona.active .persona-actions-row{display:flex}
 
-.persona-filter-bar{display:none;justify-content:space-between;align-items:center;padding:8px 14px;background:#fff3cd;border:1px solid #ffe69c;border-radius:9px;font-size:12px;margin-bottom:12px}
+.persona-filter-bar{display:none;justify-content:space-between;align-items:center;padding:10px 14px;background:#fff3cd;border:1px solid #ffe69c;border-radius:9px;font-size:12px;margin-bottom:12px}
 
-.platform-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #e5e5e0}
-.ptab{padding:7px 12px;border:1px solid #e5e5e0;border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;color:#666}
-.ptab:hover{border-color:#1a1a1a;color:#1a1a1a}
-.ptab.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
-.ptab .count{display:inline-block;margin-left:5px;padding:1px 6px;background:rgba(255,255,255,.2);border-radius:7px;font-size:10px}
-.ptab:not(.active) .count{background:#f0f0ed;color:#888}
-.ptab-add{padding:7px 12px;border:1px dashed #c0c0b8;border-radius:7px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#888}
-.ptab-add:hover{border-style:solid;color:#1a1a1a;border-color:#1a1a1a}
+/* Workspace - Split layout */
+.workspace{display:grid;grid-template-columns:220px 1fr;gap:16px;min-height:600px}
 
-.platform-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:9px 13px;background:#fafaf8;border-radius:8px}
-.platform-name-edit{font-size:14px;font-weight:700;background:transparent;border:none;font-family:inherit;outline:none;flex:1}
-.platform-name-edit:focus{background:#fff;padding:3px 7px;border-radius:5px}
-.platform-strategy{font-size:11px;color:#666;background:#fffef0;border-left:3px solid #eab308;padding:8px 12px;margin-bottom:10px;border-radius:0 6px 6px 0;line-height:1.6}
+/* Left: platform list vertical */
+.platform-list{background:#fafaf8;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px;align-self:flex-start;position:sticky;top:20px}
+.platform-list-title{font-size:11px;font-weight:700;color:#666;padding:8px 10px 6px;letter-spacing:.5px}
+.pitem{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:all .15s;background:transparent;border:none;font-family:inherit;text-align:left;width:100%}
+.pitem:hover{background:#fff;color:#1a1a1a}
+.pitem.active{background:#1a1a1a;color:#fff}
+.pitem-icon{font-size:15px;flex-shrink:0}
+.pitem-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pitem-count{font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.2);font-weight:700}
+.pitem:not(.active) .pitem-count{background:#e5e5e0;color:#666}
+.platform-add{padding:10px 12px;border:1px dashed #c0c0b8;border-radius:8px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#888;margin-top:4px}
+.platform-add:hover{border-style:solid;color:#1a1a1a;border-color:#1a1a1a}
 
-.actions-grid{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
-.action-item{background:#fff;border:1px solid #e5e5e0;border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;transition:all .15s}
-.action-item:hover{border-color:#c0c0b8}
+/* Right: workspace content */
+.workspace-main{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:20px;min-height:600px}
+.ws-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0f0ed}
+.ws-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.ws-actions{display:flex;gap:6px}
+.ws-persona-tag{font-size:11px;color:#666;background:#fffaeb;border:1px solid #fcd34d;border-radius:8px;padding:4px 10px;margin-left:8px}
+
+.ws-section{margin-bottom:18px}
+.ws-section-title{font-size:12px;font-weight:700;color:#444;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.ws-strategy{font-size:12px;color:#555;background:#fffef0;border-left:3px solid #eab308;padding:11px 14px;border-radius:0 8px 8px 0;line-height:1.7;min-height:50px}
+.ws-strategy-edit{width:100%;font-size:12px;background:#fffef0;border:1px solid #eab308;border-radius:8px;padding:11px 14px;font-family:inherit;line-height:1.7;resize:vertical;min-height:80px}
+
+/* Actions list */
+.actions-grid{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.action-item{background:#fafaf8;border:1px solid #e5e5e0;border-radius:8px;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;transition:all .15s}
+.action-item:hover{border-color:#c0c0b8;background:#fff}
 .action-check{width:18px;height:18px;border:2px solid #c0c0b8;border-radius:4px;cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .action-check.done{background:#10b981;border-color:#10b981}
 .action-check.done::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
 .action-body{flex:1;min-width:0}
-.action-title{font-size:12px;font-weight:600;margin-bottom:3px}
+.action-title{font-size:13px;font-weight:600;margin-bottom:3px}
 .action-item.done .action-title{text-decoration:line-through;color:#999}
 .action-meta{display:flex;gap:5px;flex-wrap:wrap;font-size:10px;color:#888;margin-top:3px}
 .action-persona{padding:2px 6px;background:#f0f0ed;border-radius:5px}
@@ -94,12 +110,18 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .action-del{background:transparent;border:none;color:#ccc;cursor:pointer;font-size:13px;padding:2px 5px;border-radius:4px}
 .action-del:hover{color:#ef4444;background:#fef2f2}
 
-.platform-empty{text-align:center;padding:30px 20px;color:#999;font-size:12px}
+.quick-add{display:flex;gap:6px;background:#fafaf8;border:1px dashed #c0c0b8;border-radius:8px;padding:8px;margin-bottom:12px}
+.quick-add input{flex:1;padding:7px 10px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff}
+.quick-add button{padding:7px 14px;border:none;border-radius:6px;background:#1a1a1a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
 
-.memo-area{width:100%;min-height:180px;padding:14px;border:1px solid #e5e5e0;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.7;background:#fffef9}
-.memo-area:focus{outline:none;border-color:#1a1a1a}
-.memo-save{font-size:10px;color:#888}
+/* Platform memo - big */
+.platform-memo{width:100%;min-height:300px;padding:14px;border:1px solid #e5e5e0;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.7;background:#fffef9}
+.platform-memo:focus{outline:none;border-color:#1a1a1a}
+.memo-save-info{font-size:10px;color:#888;font-weight:400}
 
+.platform-empty{text-align:center;padding:60px 20px;color:#999;font-size:13px}
+
+/* Form box */
 .form-box{background:#fafaf8;border:2px dashed #c0c0b8;border-radius:10px;padding:12px;margin-top:10px}
 .form-box input,.form-box select,.form-box textarea{width:100%;padding:8px 11px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;margin-bottom:6px;font-family:inherit;background:#fff}
 .form-box .row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -107,6 +129,7 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .form-box .form-title{font-size:12px;font-weight:700;margin-bottom:9px}
 .form-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
 
+/* Modal */
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:center;padding:20px}
 .modal.show{display:flex}
 .modal-box{background:#fff;border-radius:14px;padding:22px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto}
@@ -119,6 +142,11 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .empty-emoji{font-size:36px;margin-bottom:8px;opacity:.5}
 .empty-text{font-size:12px;margin-bottom:10px}
 
+@media(max-width:900px){
+  .workspace{grid-template-columns:1fr}
+  .platform-list{position:static;flex-direction:row;flex-wrap:wrap}
+  .pitem{flex:1;min-width:120px}
+}
 @media(max-width:640px){
   .persona-grid{grid-template-columns:1fr}
   .header h1{font-size:18px}
@@ -137,7 +165,7 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <div class="header-logo">D</div>
     <div>
       <h1>🎯 돌봄매트 마케팅</h1>
-      <div class="sub">페르소나 · 플랫폼 · 메모 통합 보드</div>
+      <div class="sub">페르소나 선택 → 플랫폼별 전략 세우기</div>
     </div>
   </div>
   <div class="header-right">
@@ -147,12 +175,12 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
   </div>
 </div>
 
-<!-- Section 1: Personas -->
+<!-- Section 1: Personas (top) -->
 <div class="section">
   <div class="sec-header">
     <div>
       <div class="sec-title">👥 페르소나 (23개)</div>
-      <div class="sec-desc">클릭하면 해당 페르소나 대상 플랫폼 실행만 필터링</div>
+      <div class="sec-desc">페르소나를 선택하면 아래 작업공간에서 해당 타겟 전략을 세울 수 있어요</div>
     </div>
     <div class="sec-actions">
       <button class="btn secondary small" onclick="showAllPersonas()">전체 보기</button>
@@ -189,53 +217,28 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
   </div>
 </div>
 
-<!-- Section 2: Platforms -->
+<!-- Section 2: Workspace (left platforms + right content) -->
 <div class="section">
   <div class="sec-header">
     <div>
-      <div class="sec-title">📱 마케팅 플랫폼별 실행</div>
-      <div class="sec-desc" id="platformFilter">전체 페르소나</div>
-    </div>
-    <div class="sec-actions">
-      <button class="btn small" onclick="toggleForm('actionForm')">+ 실행 추가</button>
+      <div class="sec-title">📱 플랫폼별 전략 작성</div>
+      <div class="sec-desc" id="wsFilterDesc">플랫폼을 선택하면 오른쪽에서 전략/실행/메모를 작성할 수 있어요</div>
     </div>
   </div>
   
-  <div class="platform-tabs" id="platformTabs"></div>
-  <div id="platformContent"></div>
-  
-  <div class="form-box" id="actionForm" style="display:none">
-    <div class="form-title">새 실행 항목</div>
-    <input type="text" id="aTitle" placeholder="제목 (예: 신축엄마 타겟 블로그 포스팅)">
-    <div class="row">
-      <select id="aPersona"></select>
-      <select id="aPlatform"></select>
+  <div class="workspace">
+    <!-- Left: platform vertical list -->
+    <div class="platform-list">
+      <div class="platform-list-title">📱 플랫폼</div>
+      <div id="platformList"></div>
+      <button class="platform-add" onclick="openPlatformModal()">+ 플랫폼 추가</button>
     </div>
-    <div class="row">
-      <input type="date" id="aDate">
-      <select id="aStatus">
-        <option value="pending">진행 중</option>
-        <option value="done">완료</option>
-      </select>
-    </div>
-    <textarea id="aNote" placeholder="메모 (선택)"></textarea>
-    <div class="form-actions">
-      <button class="btn secondary small" onclick="toggleForm('actionForm')">취소</button>
-      <button class="btn small" onclick="saveAction()">추가</button>
+    
+    <!-- Right: workspace -->
+    <div class="workspace-main" id="workspaceMain">
+      <div class="platform-empty">← 왼쪽에서 플랫폼을 선택하세요</div>
     </div>
   </div>
-</div>
-
-<!-- Section 3: Memo -->
-<div class="section">
-  <div class="sec-header">
-    <div>
-      <div class="sec-title">📝 마케팅 메모</div>
-      <div class="sec-desc">아이디어, 전략, 회의록 자유롭게</div>
-    </div>
-    <div class="memo-save" id="memoStatus">자동 저장됨</div>
-  </div>
-  <textarea class="memo-area" id="memoArea" placeholder="• 이번 달 마케팅 방향&#10;• 경쟁사 분석&#10;• 캠페인 아이디어&#10;• ..."></textarea>
 </div>
 
 </div>
@@ -246,8 +249,7 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
   <div class="modal-box">
     <div class="modal-title">새 플랫폼 추가</div>
     <input type="text" id="newPlatformName" placeholder="이름 (예: 유튜브)" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:8px">
-    <input type="text" id="newPlatformIcon" placeholder="이모지 (예: 🎬)" maxlength="4" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:8px">
-    <textarea id="newPlatformStrategy" placeholder="이 플랫폼 전략 (선택)" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:12px;font-family:inherit;margin-bottom:14px;min-height:60px;resize:vertical"></textarea>
+    <input type="text" id="newPlatformIcon" placeholder="이모지 (예: 🎬)" maxlength="4" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:14px">
     <div style="display:flex;gap:6px;justify-content:flex-end">
       <button class="btn secondary small" onclick="closePlatformModal()">취소</button>
       <button class="btn small" onclick="savePlatform()">추가</button>
@@ -298,8 +300,9 @@ const DEFAULT_PLATFORMS=[
   {id:'pf_b2b',name:'B2B 영업',icon:'🏢',order:8,strategy:'어린이집 원장 네트워크. 80곳 레퍼런스 자료집. 구청/시청 복지과 리플렛. 세금계산서 발행. 원장 추천 프로그램.'}
 ];
 
-let personas=[],platforms=[],actions=[],memo='';
+let personas=[],platforms=[],actions=[],memos={};
 let selectedPersonaId=null,selectedPlatformId=null,editingPersonaId=null,tierFilter='all';
+let editingStrategy=false;
 
 function syncOnline(on){const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');if(on){dot.classList.remove('offline');txt.textContent='연결됨'}else{dot.classList.add('offline');txt.textContent='연결 안됨'}}
 function arrToObj(arr){const o={};arr.forEach(x=>{o[x.id]=x});return o}
@@ -324,15 +327,13 @@ function loadAll(){
     if(d.platforms&&Object.keys(d.platforms).length>0)platforms=Object.values(d.platforms);
     else{platforms=[...DEFAULT_PLATFORMS];saveToFB('platforms',arrToObj(platforms))}
     actions=d.actions?Object.values(d.actions):[];
-    memo=d.memo||'';
+    memos=d.memos||{};
     personas.sort((a,b)=>(a.order||0)-(b.order||0));
     platforms.sort((a,b)=>(a.order||0)-(b.order||0));
-    if(platforms.length>0)selectedPlatformId=platforms[0].id;
     renderAll();
     syncOnline(true);
   }).catch(e=>{syncOnline(false);console.error(e);
     personas=[...DEFAULT_PERSONAS];platforms=[...DEFAULT_PLATFORMS];
-    if(platforms.length>0)selectedPlatformId=platforms[0].id;
     renderAll();
   });
   
@@ -341,7 +342,7 @@ function loadAll(){
     if(d.personas&&Object.keys(d.personas).length>0){personas=Object.values(d.personas);personas.sort((a,b)=>(a.order||0)-(b.order||0))}
     if(d.platforms&&Object.keys(d.platforms).length>0){platforms=Object.values(d.platforms);platforms.sort((a,b)=>(a.order||0)-(b.order||0))}
     actions=d.actions?Object.values(d.actions):[];
-    if(d.memo!==undefined&&d.memo!==memo){memo=d.memo;const ma=document.getElementById('memoArea');if(document.activeElement!==ma)ma.value=memo}
+    if(d.memos)memos=d.memos;
     renderAll();
   });
 }
@@ -384,15 +385,24 @@ function renderPersonas(){
   const bar=document.getElementById('personaFilterBar');
   if(selectedPersonaId){
     const p=personas.find(x=>x.id===selectedPersonaId);
-    if(p){bar.style.display='flex';bar.innerHTML=`<span>🎯 <b>${p.emoji} ${p.name}</b> 선택됨 · 아래 플랫폼에 필터링 적용</span><button class="btn secondary small" onclick="showAllPersonas()">선택 해제</button>`}
+    if(p){bar.style.display='flex';bar.innerHTML=`<span>🎯 <b>${p.emoji} ${p.name}</b> 선택됨 · 아래 플랫폼에서 이 페르소나 대상으로 작업하세요</span><button class="btn secondary small" onclick="showAllPersonas()">선택 해제</button>`}
   } else bar.style.display='none';
 }
 
 function setTierFilter(v){tierFilter=v==='all'?'all':parseInt(v);renderPersonas()}
-function selectPersona(id){selectedPersonaId=selectedPersonaId===id?null:id;renderAll()}
+
+function selectPersona(id){
+  selectedPersonaId=selectedPersonaId===id?null:id;
+  // 페르소나 선택 시 workspace도 리셋
+  if(selectedPersonaId&&!selectedPlatformId&&platforms.length>0)selectedPlatformId=platforms[0].id;
+  renderAll();
+  // workspace로 스크롤
+  if(selectedPersonaId)setTimeout(()=>document.querySelector('.workspace').scrollIntoView({behavior:'smooth',block:'start'}),200);
+}
+
 function showAllPersonas(){selectedPersonaId=null;renderAll()}
 
-function toggleForm(id){const f=document.getElementById(id);f.style.display=f.style.display==='none'?'block':'none';if(f.style.display==='block'){if(id==='personaForm'){editingPersonaId=null;clearPersonaForm()}else if(id==='actionForm'){populateActionSelects();if(selectedPersonaId)document.getElementById('aPersona').value=selectedPersonaId;if(selectedPlatformId)document.getElementById('aPlatform').value=selectedPlatformId;document.getElementById('aDate').value=new Date().toISOString().slice(0,10);document.getElementById('aTitle').value='';document.getElementById('aNote').value=''}}}
+function toggleForm(id){const f=document.getElementById(id);f.style.display=f.style.display==='none'?'block':'none';if(f.style.display==='block'&&id==='personaForm'){editingPersonaId=null;clearPersonaForm()}}
 
 function clearPersonaForm(){['pEmoji','pName','pLabel','pPurpose','pChannel','pDetail'].forEach(id=>document.getElementById(id).value='');document.getElementById('pTier').value='3'}
 
@@ -402,84 +412,169 @@ function savePersona(){const name=document.getElementById('pName').value.trim();
 
 function deletePersona(id){if(!confirm('삭제할까요?'))return;personas=personas.filter(x=>x.id!==id);if(selectedPersonaId===id)selectedPersonaId=null;saveToFB('personas',arrToObj(personas));renderAll();toast('🗑️ 삭제됨')}
 
-function renderPlatforms(){
-  const tabs=document.getElementById('platformTabs');
-  const filtered=selectedPersonaId?actions.filter(a=>a.personaId===selectedPersonaId):actions;
-  tabs.innerHTML=platforms.map(pf=>{
-    const count=filtered.filter(a=>a.platformId===pf.id).length;
-    return `<button class="ptab ${selectedPlatformId===pf.id?'active':''}" onclick="selectPlatform('${pf.id}')">${pf.icon} ${pf.name}<span class="count">${count}</span></button>`;
-  }).join('')+`<button class="ptab-add" onclick="openPlatformModal()">+ 플랫폼</button>`;
-  renderPlatformContent();
-  
-  if(selectedPersonaId){const p=personas.find(x=>x.id===selectedPersonaId);if(p)document.getElementById('platformFilter').innerHTML=`🎯 <b>${p.emoji} ${p.name}</b> 대상 · <a href="#" onclick="showAllPersonas();return false" style="color:#1a1a1a">전체 보기</a>`}
-  else document.getElementById('platformFilter').textContent='전체 페르소나';
+// === Platform list (left) ===
+function renderPlatformList(){
+  const list=document.getElementById('platformList');
+  list.innerHTML=platforms.map(pf=>{
+    let pfActions=actions.filter(a=>a.platformId===pf.id);
+    if(selectedPersonaId)pfActions=pfActions.filter(a=>a.personaId===selectedPersonaId);
+    const count=pfActions.length;
+    return `<button class="pitem ${selectedPlatformId===pf.id?'active':''}" onclick="selectPlatform('${pf.id}')">
+      <span class="pitem-icon">${pf.icon}</span>
+      <span class="pitem-name">${pf.name}</span>
+      ${count>0?`<span class="pitem-count">${count}</span>`:''}
+    </button>`;
+  }).join('');
 }
 
-function selectPlatform(id){selectedPlatformId=id;renderPlatforms()}
+function selectPlatform(id){selectedPlatformId=id;editingStrategy=false;renderAll()}
 
-function actionItemHTML(a){
-  const persona=personas.find(p=>p.id===a.personaId);
-  return `<div class="action-item ${a.done?'done':''}">
-    <div class="action-check ${a.done?'done':''}" onclick="toggleAction('${a.id}')"></div>
-    <div class="action-body">
-      <div class="action-title">${a.title}</div>
-      ${a.note?`<div class="action-note">${a.note}</div>`:''}
-      <div class="action-meta">
-        ${persona?`<span class="action-persona">${persona.emoji} ${persona.name}</span>`:'<span class="action-persona">전체</span>'}
-        ${a.date?`<span>📅 ${a.date}</span>`:''}
-      </div>
-    </div>
-    <button class="action-del" onclick="deleteAction('${a.id}')">✕</button>
-  </div>`;
-}
-
-function renderPlatformContent(){
-  const container=document.getElementById('platformContent');
+// === Workspace (right) ===
+function renderWorkspace(){
+  const ws=document.getElementById('workspaceMain');
   const pf=platforms.find(p=>p.id===selectedPlatformId);
-  if(!pf){container.innerHTML='<div class="platform-empty">플랫폼을 선택하거나 추가하세요</div>';return}
-  let filtered=actions.filter(a=>a.platformId===pf.id);
-  if(selectedPersonaId)filtered=filtered.filter(a=>a.personaId===selectedPersonaId);
-  filtered.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(!pf){ws.innerHTML='<div class="platform-empty">← 왼쪽에서 플랫폼을 선택하세요</div>';return}
   
-  let html=`<div class="platform-info">
-    <input type="text" class="platform-name-edit" value="${pf.icon} ${pf.name}" onchange="renamePlatform('${pf.id}',this.value)" />
-    <div style="display:flex;gap:5px">
-      <button class="btn ghost small" onclick="editPlatformStrategy('${pf.id}')">전략 수정</button>
-      <button class="btn danger small" onclick="deletePlatform('${pf.id}')">삭제</button>
+  const selectedPersona=selectedPersonaId?personas.find(p=>p.id===selectedPersonaId):null;
+  
+  // Actions 필터
+  let actionsList=actions.filter(a=>a.platformId===pf.id);
+  if(selectedPersonaId)actionsList=actionsList.filter(a=>a.personaId===selectedPersonaId);
+  actionsList.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  
+  // 메모 키: 페르소나별+플랫폼별로 분리
+  const memoKey=(selectedPersonaId||'all')+'_'+pf.id;
+  const memoValue=memos[memoKey]||'';
+  
+  let html=`<div class="ws-header">
+    <div class="ws-title">
+      ${pf.icon} ${pf.name}
+      ${selectedPersona?`<span class="ws-persona-tag">🎯 ${selectedPersona.emoji} ${selectedPersona.name}</span>`:''}
+    </div>
+    <div class="ws-actions">
+      <button class="btn ghost small" onclick="deletePlatform('${pf.id}')">플랫폼 삭제</button>
     </div>
   </div>`;
-  if(pf.strategy)html+=`<div class="platform-strategy"><b>💡 전략:</b> ${pf.strategy}</div>`;
-  if(filtered.length===0)html+=`<div class="platform-empty">${selectedPersonaId?'이 페르소나에 대한 ':''}실행이 없어요.<br>"+ 실행 추가" 버튼으로 추가해보세요.</div>`;
-  else html+='<div class="actions-grid">'+filtered.map(a=>actionItemHTML(a)).join('')+'</div>';
-  container.innerHTML=html;
+  
+  // 전략 섹션
+  html+=`<div class="ws-section">
+    <div class="ws-section-title">
+      <span>💡 플랫폼 전략</span>
+      <button class="btn ghost small" onclick="toggleStrategyEdit()">${editingStrategy?'✅ 저장':'✏️ 수정'}</button>
+    </div>`;
+  if(editingStrategy){
+    html+=`<textarea class="ws-strategy-edit" id="strategyEditArea" placeholder="이 플랫폼에서 어떻게 마케팅할지 전략을 적어주세요">${pf.strategy||''}</textarea>`;
+  } else {
+    html+=`<div class="ws-strategy">${pf.strategy||'전략이 아직 없어요. "수정" 버튼으로 작성해주세요.'}</div>`;
+  }
+  html+=`</div>`;
+  
+  // 실행 항목 섹션
+  html+=`<div class="ws-section">
+    <div class="ws-section-title">
+      <span>✅ 실행 항목 ${selectedPersona?`(${selectedPersona.name} 대상)`:'(전체)'}</span>
+      <span style="font-weight:400;color:#888;font-size:11px">총 ${actionsList.length}건 · 완료 ${actionsList.filter(a=>a.done).length}건</span>
+    </div>
+    <div class="quick-add">
+      <input type="text" id="quickActionInput" placeholder="빠른 추가 (Enter)" onkeydown="if(event.key==='Enter')quickAddAction()">
+      <button onclick="quickAddAction()">추가</button>
+    </div>`;
+  
+  if(actionsList.length===0){
+    html+=`<div style="text-align:center;padding:20px;color:#999;font-size:12px">아직 실행 항목이 없어요. 위에서 추가해보세요!</div>`;
+  } else {
+    html+='<div class="actions-grid">'+actionsList.map(a=>{
+      const ap=personas.find(p=>p.id===a.personaId);
+      return `<div class="action-item ${a.done?'done':''}">
+        <div class="action-check ${a.done?'done':''}" onclick="toggleAction('${a.id}')"></div>
+        <div class="action-body">
+          <div class="action-title">${a.title}</div>
+          ${a.note?`<div class="action-note">${a.note}</div>`:''}
+          <div class="action-meta">
+            ${ap?`<span class="action-persona">${ap.emoji} ${ap.name}</span>`:'<span class="action-persona">전체</span>'}
+            ${a.date?`<span>📅 ${a.date}</span>`:''}
+          </div>
+        </div>
+        <button class="action-del" onclick="deleteAction('${a.id}')">✕</button>
+      </div>`;
+    }).join('')+'</div>';
+  }
+  html+=`</div>`;
+  
+  // 메모 섹션 (크게)
+  html+=`<div class="ws-section">
+    <div class="ws-section-title">
+      <span>📝 ${selectedPersona?selectedPersona.emoji+' '+selectedPersona.name:'전체'} × ${pf.icon} ${pf.name} 메모</span>
+      <span class="memo-save-info" id="memoSaveInfo_${memoKey}">자동 저장</span>
+    </div>
+    <textarea class="platform-memo" id="memoArea_${memoKey}" data-memokey="${memoKey}" placeholder="이 페르소나 × 이 플랫폼 조합 아이디어를 자유롭게 작성하세요&#10;&#10;예)&#10;• 콘텐츠 주제 아이디어&#10;• 키메시지 (이 사람한테 어떻게 말할지)&#10;• 사용할 이미지/사진&#10;• 해시태그&#10;• 주기/빈도&#10;• 경쟁사 레퍼런스&#10;• 주의사항">${memoValue}</textarea>
+  </div>`;
+  
+  ws.innerHTML=html;
+  
+  // 메모 자동 저장 설정
+  const ma=document.getElementById('memoArea_'+memoKey);
+  if(ma){
+    ma.addEventListener('input',()=>{
+      const info=document.getElementById('memoSaveInfo_'+memoKey);
+      if(info)info.textContent='저장 중...';
+      clearTimeout(window._memoTimers);
+      window._memoTimers=setTimeout(()=>{
+        memos[memoKey]=ma.value;
+        saveToFB('memos',memos);
+        if(info)info.textContent='✅ 저장됨 '+new Date().toLocaleTimeString('ko-KR');
+      },800);
+    });
+  }
 }
 
-function renamePlatform(id,val){const pf=platforms.find(p=>p.id===id);if(!pf)return;const m=val.match(/^(\S+)\s+(.+)$/);if(m){pf.icon=m[1];pf.name=m[2]}else pf.name=val;saveToFB('platforms',arrToObj(platforms));renderAll()}
+function toggleStrategyEdit(){
+  const pf=platforms.find(p=>p.id===selectedPlatformId);if(!pf)return;
+  if(editingStrategy){
+    // 저장
+    const val=document.getElementById('strategyEditArea').value;
+    pf.strategy=val;
+    saveToFB('platforms',arrToObj(platforms));
+    editingStrategy=false;
+    toast('✅ 전략 저장됨');
+  } else {
+    editingStrategy=true;
+  }
+  renderWorkspace();
+}
 
-function editPlatformStrategy(id){const pf=platforms.find(p=>p.id===id);if(!pf)return;const s=prompt('이 플랫폼의 전략을 입력하세요',pf.strategy||'');if(s!==null){pf.strategy=s;saveToFB('platforms',arrToObj(platforms));renderAll();toast('✅ 전략 저장됨')}}
-
-function openPlatformModal(){document.getElementById('newPlatformName').value='';document.getElementById('newPlatformIcon').value='';document.getElementById('newPlatformStrategy').value='';document.getElementById('platformModal').classList.add('show')}
-function closePlatformModal(){document.getElementById('platformModal').classList.remove('show')}
-function savePlatform(){const name=document.getElementById('newPlatformName').value.trim();const icon=document.getElementById('newPlatformIcon').value.trim()||'📌';const strategy=document.getElementById('newPlatformStrategy').value.trim();if(!name){toast('⚠️ 이름을 입력하세요');return}const data={id:'pf_'+Date.now(),name,icon,strategy,order:platforms.length+1};platforms.push(data);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=data.id;closePlatformModal();renderAll();toast('✅ 플랫폼 추가됨')}
-function deletePlatform(id){if(!confirm('이 플랫폼과 관련 실행을 모두 삭제할까요?'))return;platforms=platforms.filter(p=>p.id!==id);actions=actions.filter(a=>a.platformId!==id);saveToFB('platforms',arrToObj(platforms));saveToFB('actions',arrToObj(actions));selectedPlatformId=platforms.length>0?platforms[0].id:null;renderAll();toast('🗑️ 삭제됨')}
-
-function populateActionSelects(){const ps=document.getElementById('aPersona');const pfs=document.getElementById('aPlatform');ps.innerHTML='<option value="">전체 (특정 페르소나 아님)</option>'+personas.map(p=>`<option value="${p.id}">${p.emoji} ${p.name}</option>`).join('');pfs.innerHTML=platforms.map(p=>`<option value="${p.id}">${p.icon} ${p.name}</option>`).join('')}
-
-function saveAction(){const title=document.getElementById('aTitle').value.trim();if(!title){toast('⚠️ 제목을 입력하세요');return}const data={id:'a_'+Date.now(),title,personaId:document.getElementById('aPersona').value||null,platformId:document.getElementById('aPlatform').value,date:document.getElementById('aDate').value,note:document.getElementById('aNote').value.trim(),done:document.getElementById('aStatus').value==='done',createdAt:Date.now()};actions.push(data);saveToFB('actions',arrToObj(actions));toggleForm('actionForm');renderAll();toast('✅ 추가됨')}
+function quickAddAction(){
+  const input=document.getElementById('quickActionInput');
+  const title=input.value.trim();
+  if(!title){toast('⚠️ 제목을 입력하세요');return}
+  const data={id:'a_'+Date.now(),title,personaId:selectedPersonaId||null,platformId:selectedPlatformId,date:new Date().toISOString().slice(0,10),note:'',done:false,createdAt:Date.now()};
+  actions.push(data);
+  saveToFB('actions',arrToObj(actions));
+  input.value='';
+  renderAll();
+  toast('✅ 추가됨');
+}
 
 function toggleAction(id){const a=actions.find(x=>x.id===id);if(!a)return;a.done=!a.done;saveToFB('actions',arrToObj(actions));renderAll()}
-
 function deleteAction(id){if(!confirm('삭제할까요?'))return;actions=actions.filter(x=>x.id!==id);saveToFB('actions',arrToObj(actions));renderAll();toast('🗑️ 삭제됨')}
 
-let memoSaveTimer=null;
-function setupMemo(){const ma=document.getElementById('memoArea');ma.addEventListener('input',()=>{document.getElementById('memoStatus').textContent='저장 중...';clearTimeout(memoSaveTimer);memoSaveTimer=setTimeout(()=>{memo=ma.value;saveToFB('memo',memo);document.getElementById('memoStatus').textContent='✅ 저장됨 '+new Date().toLocaleTimeString('ko-KR')},800)})}
+function openPlatformModal(){document.getElementById('newPlatformName').value='';document.getElementById('newPlatformIcon').value='';document.getElementById('platformModal').classList.add('show')}
+function closePlatformModal(){document.getElementById('platformModal').classList.remove('show')}
+function savePlatform(){const name=document.getElementById('newPlatformName').value.trim();const icon=document.getElementById('newPlatformIcon').value.trim()||'📌';if(!name){toast('⚠️ 이름을 입력하세요');return}const data={id:'pf_'+Date.now(),name,icon,strategy:'',order:platforms.length+1};platforms.push(data);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=data.id;closePlatformModal();renderAll();toast('✅ 플랫폼 추가됨')}
+function deletePlatform(id){if(!confirm('이 플랫폼과 관련 실행을 모두 삭제할까요?'))return;platforms=platforms.filter(p=>p.id!==id);actions=actions.filter(a=>a.platformId!==id);saveToFB('platforms',arrToObj(platforms));saveToFB('actions',arrToObj(actions));selectedPlatformId=platforms.length>0?platforms[0].id:null;renderAll();toast('🗑️ 삭제됨')}
 
-function renderAll(){renderPersonas();renderPlatforms();const ma=document.getElementById('memoArea');if(ma&&document.activeElement!==ma)ma.value=memo}
+function renderAll(){
+  renderPersonas();
+  renderPlatformList();
+  renderWorkspace();
+  // filter desc
+  const sp=selectedPersonaId?personas.find(p=>p.id===selectedPersonaId):null;
+  document.getElementById('wsFilterDesc').innerHTML=sp?`🎯 <b>${sp.emoji} ${sp.name}</b> 대상 작업 중 · <a href="#" onclick="showAllPersonas();return false" style="color:#1a1a1a">전체 보기</a>`:'플랫폼을 선택하면 오른쪽에서 전략/실행/메모를 작성할 수 있어요';
+}
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
 loadAll();
-setupMemo();
 </script>
 
 </body>
