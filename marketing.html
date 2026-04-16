@@ -118,6 +118,9 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 
 .platform-list{background:#fafaf8;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px;position:sticky;top:20px}
 .platform-list-title{font-size:11px;font-weight:700;color:#666;padding:8px 10px 6px;letter-spacing:.5px}
+.platform-group-header{font-size:10px;font-weight:700;color:#999;padding:8px 10px 4px;margin-top:6px;letter-spacing:1px;display:flex;align-items:center;gap:5px;border-top:1px dashed #e5e5e0}
+.platform-group-header:first-of-type{margin-top:0;border-top:none}
+.pitem-wrap{position:relative}
 .pitem{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:all .15s;background:transparent;border:none;font-family:inherit;text-align:left;width:100%}
 .pitem:hover{background:#fff;color:#1a1a1a}
 .pitem.active{background:#1a1a1a;color:#fff}
@@ -126,6 +129,17 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
 .pitem-count{font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.2);font-weight:700}
 .pitem:not(.active) .pitem-count{background:#e5e5e0;color:#666}
 .pitem-has-settings{width:6px;height:6px;border-radius:50%;background:#10b981;flex-shrink:0}
+
+/* Item controls (appear on hover) */
+.pitem-controls{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:none;gap:2px;background:rgba(255,255,255,.95);padding:2px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.pitem-wrap:hover .pitem-controls{display:flex}
+.pitem.active ~ .pitem-controls{background:rgba(255,255,255,.2)}
+.ctrl-btn{width:22px;height:22px;border:none;background:#fff;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#555;font-family:inherit;padding:0}
+.ctrl-btn:hover{background:#f0f0ed;color:#1a1a1a}
+.ctrl-btn:disabled{opacity:.3;cursor:not-allowed}
+.ctrl-btn.move-group{background:#fef3c7;color:#92400e}
+.ctrl-btn.move-group:hover{background:#fde68a}
+
 .platform-add{padding:10px 12px;border:1px dashed #c0c0b8;border-radius:8px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#888;margin-top:4px}
 .platform-add:hover{border-style:solid;color:#1a1a1a;border-color:#1a1a1a}
 
@@ -414,6 +428,18 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
     <div class="emoji-picker-label">📛 이름</div>
     <input type="text" id="newPlatformName" placeholder="예: 유튜브, 틱톡, 네이버카페" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:12px">
     
+    <div class="emoji-picker-label">📂 분류</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <label style="flex:1;padding:10px;border:1.5px solid #e5e5e0;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px" id="groupOnlineLabel">
+        <input type="radio" name="newPlatformGroup" value="online" checked style="margin:0" onchange="updateGroupSelection()">
+        🌐 온라인
+      </label>
+      <label style="flex:1;padding:10px;border:1.5px solid #e5e5e0;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px" id="groupOfflineLabel">
+        <input type="radio" name="newPlatformGroup" value="offline" style="margin:0" onchange="updateGroupSelection()">
+        🏢 오프라인
+      </label>
+    </div>
+    
     <div class="emoji-picker-label">🎨 아이콘 선택 (또는 직접 입력)</div>
     <div class="emoji-input-row">
       <div class="selected-preview" id="emojiPreview">📌</div>
@@ -509,20 +535,21 @@ const DEFAULT_PERSONAS=[
 ];
 
 const DEFAULT_PLATFORMS=[
-  {id:'pf_blog',name:'블로그',icon:'📝',order:1,strategy:'네이버 블로그 SEO. "아기매트 추천", "층간소음매트", "어린이집 매트 시공" 키워드. 비포·애프터+시공 과정. 월 4~8건.',settings:{}},
-  {id:'pf_insta',name:'인스타그램',icon:'📸',order:2,strategy:'시공 전후 릴스, 강아지 미끄럼 시연, 아이 놀이. #강아지매트 #아기매트 #층간소음 #시공후기. 주 3~5회.',settings:{}},
-  {id:'pf_cafe',name:'맘카페',icon:'💬',order:3,strategy:'맘스홀릭/지역맘카페 후기. 질문 글에 자연스럽게 답변. 광고성 금지, 경험담 위주. 주 1~2회.',settings:{}},
-  {id:'pf_naver',name:'네이버 검색광고',icon:'🎯',order:4,strategy:'파워링크+쇼핑광고. 키워드: 아기매트 시공, 층간소음매트, 어린이집 매트. 월 예산 CPC 관리.',settings:{}},
-  {id:'pf_youtube',name:'유튜브',icon:'🎬',order:5,strategy:'반려견 슬개골 예방, 층간소음 실험, 시공 브이로그. 숏폼(쇼츠) 우선. 장기 채널 구축.',settings:{}},
-  {id:'pf_kakao',name:'카카오채널',icon:'💛',order:6,strategy:'기존 고객 관리, 재구매/추천 유도. 월 2회 소식. 할인/이벤트 고지. 친구톡.',settings:{}},
-  {id:'pf_fair',name:'박람회/페어',icon:'🎪',order:7,strategy:'입주박람회(대단지)+베이비페어(코엑스/킨텍스). 부스 샘플 체험, 박람회 특가 쿠폰, 카톡채널 QR.',settings:{}},
-  {id:'pf_b2b',name:'B2B 영업',icon:'🏢',order:8,strategy:'어린이집 원장 네트워크. 80곳 레퍼런스 자료집. 구청/시청 복지과 리플렛. 세금계산서 발행. 원장 추천 프로그램.',settings:{}}
+  {id:'pf_blog',name:'블로그',icon:'📝',group:'online',order:1,settings:{}},
+  {id:'pf_insta',name:'인스타그램',icon:'📸',group:'online',order:2,settings:{}},
+  {id:'pf_cafe',name:'맘카페',icon:'💬',group:'online',order:3,settings:{}},
+  {id:'pf_naver',name:'네이버 검색광고',icon:'🎯',group:'online',order:4,settings:{}},
+  {id:'pf_youtube',name:'유튜브',icon:'🎬',group:'online',order:5,settings:{}},
+  {id:'pf_kakao',name:'카카오채널',icon:'💛',group:'online',order:6,settings:{}},
+  {id:'pf_fair',name:'박람회/페어',icon:'🎪',group:'offline',order:7,settings:{}},
+  {id:'pf_b2b',name:'B2B 영업',icon:'🏢',group:'offline',order:8,settings:{}}
 ];
 
 let gs={...DEFAULT_GS},competitors=[],benchmarks=[];
 let personas=[],platforms=[],memos={};
 let selectedPersonaId=null,selectedPlatformId=null,editingPersonaId=null,tierFilter='all';
-let editingStrategy=false,lastGeneratedPrompt='';
+let editingStrategy=false,lastGeneratedPrompt='';  // editingStrategy deprecated
+
 
 function syncOnline(on){const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');if(on){dot.classList.remove('offline');txt.textContent='연결됨'}else{dot.classList.add('offline');txt.textContent='연결 안됨'}}
 function arrToObj(arr){const o={};arr.forEach(x=>{o[x.id]=x});return o}
@@ -847,15 +874,94 @@ function hasPlatformSettings(pf){
 
 function renderPlatformList(){
   const list=document.getElementById('platformList');
-  list.innerHTML=platforms.map(pf=>`
+  
+  // 그룹별로 분리
+  const onlinePfs=platforms.filter(p=>(p.group||'online')==='online').sort((a,b)=>(a.order||0)-(b.order||0));
+  const offlinePfs=platforms.filter(p=>p.group==='offline').sort((a,b)=>(a.order||0)-(b.order||0));
+  
+  let html='';
+  
+  // 온라인 섹션
+  html+='<div class="platform-group-header">🌐 온라인 ('+onlinePfs.length+')</div>';
+  if(onlinePfs.length===0){
+    html+='<div style="font-size:10px;color:#bbb;padding:6px 12px">플랫폼이 없어요</div>';
+  } else {
+    onlinePfs.forEach((pf,idx)=>{
+      html+=buildPlatformItemHTML(pf,idx,onlinePfs.length);
+    });
+  }
+  
+  // 오프라인 섹션
+  html+='<div class="platform-group-header">🏢 오프라인 ('+offlinePfs.length+')</div>';
+  if(offlinePfs.length===0){
+    html+='<div style="font-size:10px;color:#bbb;padding:6px 12px">플랫폼이 없어요</div>';
+  } else {
+    offlinePfs.forEach((pf,idx)=>{
+      html+=buildPlatformItemHTML(pf,idx,offlinePfs.length);
+    });
+  }
+  
+  list.innerHTML=html;
+}
+
+function buildPlatformItemHTML(pf,idx,total){
+  const isFirst=idx===0;
+  const isLast=idx===total-1;
+  const group=pf.group||'online';
+  const otherGroup=group==='online'?'offline':'online';
+  const otherGroupLabel=group==='online'?'🏢':'🌐';
+  const otherGroupTitle=group==='online'?'오프라인으로 이동':'온라인으로 이동';
+  
+  return `<div class="pitem-wrap">
     <button class="pitem ${selectedPlatformId===pf.id?'active':''}" onclick="selectPlatform('${pf.id}')">
       <span class="pitem-icon">${pf.icon}</span>
       <span class="pitem-name">${pf.name}</span>
       ${hasPlatformSettings(pf)?'<span class="pitem-has-settings" title="설정됨"></span>':''}
-    </button>`).join('');
+    </button>
+    <div class="pitem-controls">
+      <button class="ctrl-btn" onclick="movePlatform('${pf.id}','up')" ${isFirst?'disabled':''} title="위로">▲</button>
+      <button class="ctrl-btn" onclick="movePlatform('${pf.id}','down')" ${isLast?'disabled':''} title="아래로">▼</button>
+      <button class="ctrl-btn move-group" onclick="movePlatformGroup('${pf.id}')" title="${otherGroupTitle}">${otherGroupLabel}</button>
+    </div>
+  </div>`;
 }
 
-function selectPlatform(id){selectedPlatformId=id;editingStrategy=false;renderAll()}
+function movePlatform(id,direction){
+  const pf=platforms.find(p=>p.id===id);
+  if(!pf)return;
+  const group=pf.group||'online';
+  const groupPfs=platforms.filter(p=>(p.group||'online')===group).sort((a,b)=>(a.order||0)-(b.order||0));
+  const currentIdx=groupPfs.findIndex(p=>p.id===id);
+  if(currentIdx===-1)return;
+  
+  const targetIdx=direction==='up'?currentIdx-1:currentIdx+1;
+  if(targetIdx<0||targetIdx>=groupPfs.length)return;
+  
+  // order 값 swap
+  const currentOrder=groupPfs[currentIdx].order;
+  const targetOrder=groupPfs[targetIdx].order;
+  groupPfs[currentIdx].order=targetOrder;
+  groupPfs[targetIdx].order=currentOrder;
+  
+  saveToFB('platforms',arrToObj(platforms));
+  renderAll();
+}
+
+function movePlatformGroup(id){
+  const pf=platforms.find(p=>p.id===id);
+  if(!pf)return;
+  const newGroup=(pf.group||'online')==='online'?'offline':'online';
+  pf.group=newGroup;
+  // 새 그룹의 마지막 순서로
+  const targetGroupPfs=platforms.filter(p=>(p.group||'online')===newGroup);
+  const maxOrder=targetGroupPfs.length>0?Math.max(...targetGroupPfs.map(p=>p.order||0)):0;
+  pf.order=maxOrder+1;
+  saveToFB('platforms',arrToObj(platforms));
+  renderAll();
+  toast(`✅ ${newGroup==='online'?'온라인':'오프라인'}으로 이동됨`);
+}
+
+function selectPlatform(id){selectedPlatformId=id;renderAll()}
 
 // === Workspace ===
 function renderWorkspace(){
@@ -916,19 +1022,6 @@ function renderWorkspace(){
     </div>
   </div>`;
   
-  // 플랫폼 전략
-  html+=`<div class="ws-section">
-    <div class="ws-section-title">
-      <span>💡 플랫폼 전략</span>
-      <button class="btn ghost small" onclick="toggleStrategyEdit()">${editingStrategy?'✅ 저장':'✏️ 수정'}</button>
-    </div>`;
-  if(editingStrategy){
-    html+=`<textarea class="ws-strategy-edit" id="strategyEditArea" placeholder="이 플랫폼의 전반적 전략을 적어주세요">${pf.strategy||''}</textarea>`;
-  } else {
-    html+=`<div class="ws-strategy">${pf.strategy||'전략이 아직 없어요. "수정" 버튼으로 작성해주세요.'}</div>`;
-  }
-  html+=`</div>`;
-  
   // 메모
   html+=`<div class="ws-section">
     <div class="ws-section-title">
@@ -986,17 +1079,6 @@ function savePFSettings(){
   toast('✅ 플랫폼 설정 저장됨');
 }
 
-function toggleStrategyEdit(){
-  const pf=platforms.find(p=>p.id===selectedPlatformId);if(!pf)return;
-  if(editingStrategy){
-    pf.strategy=document.getElementById('strategyEditArea').value;
-    saveToFB('platforms',arrToObj(platforms));
-    editingStrategy=false;
-    toast('✅ 전략 저장됨');
-  } else {editingStrategy=true}
-  renderWorkspace();
-}
-
 // === Platform add/delete ===
 const EMOJI_CATEGORIES={
   '📱 플랫폼/SNS':['📱','📸','🎬','📹','📺','🎥','📷','🎵','🎶','🎤','🎙️','🎧','📻','🎞️','📼','🖥️','💻','⌨️','🖱️','📞'],
@@ -1042,15 +1124,42 @@ function syncEmojiPreview(){
   });
 }
 
+function updateGroupSelection(){
+  const online=document.querySelector('input[name="newPlatformGroup"][value="online"]');
+  const offline=document.querySelector('input[name="newPlatformGroup"][value="offline"]');
+  document.getElementById('groupOnlineLabel').style.borderColor=online.checked?'#1a1a1a':'#e5e5e0';
+  document.getElementById('groupOnlineLabel').style.background=online.checked?'#f0f0ed':'#fff';
+  document.getElementById('groupOfflineLabel').style.borderColor=offline.checked?'#1a1a1a':'#e5e5e0';
+  document.getElementById('groupOfflineLabel').style.background=offline.checked?'#f0f0ed':'#fff';
+}
+
 function openPlatformModal(){
   document.getElementById('newPlatformName').value='';
   document.getElementById('newPlatformIcon').value='📌';
   document.getElementById('emojiPreview').textContent='📌';
+  // 온라인 기본 선택
+  document.querySelector('input[name="newPlatformGroup"][value="online"]').checked=true;
+  updateGroupSelection();
   renderEmojiPicker();
   document.getElementById('platformModal').classList.add('show');
 }
 function closePlatformModal(){document.getElementById('platformModal').classList.remove('show')}
-function savePlatform(){const name=document.getElementById('newPlatformName').value.trim();const icon=document.getElementById('newPlatformIcon').value.trim()||'📌';if(!name){toast('⚠️ 이름을 입력하세요');return}const data={id:'pf_'+Date.now(),name,icon,strategy:'',settings:{},order:platforms.length+1};platforms.push(data);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=data.id;closePlatformModal();renderAll();toast('✅ 플랫폼 추가됨')}
+function savePlatform(){
+  const name=document.getElementById('newPlatformName').value.trim();
+  const icon=document.getElementById('newPlatformIcon').value.trim()||'📌';
+  const group=document.querySelector('input[name="newPlatformGroup"]:checked').value;
+  if(!name){toast('⚠️ 이름을 입력하세요');return}
+  // 같은 그룹 내 최대 order + 1
+  const groupPfs=platforms.filter(p=>(p.group||'online')===group);
+  const maxOrder=groupPfs.length>0?Math.max(...groupPfs.map(p=>p.order||0)):0;
+  const data={id:'pf_'+Date.now(),name,icon,group,settings:{},order:maxOrder+1};
+  platforms.push(data);
+  saveToFB('platforms',arrToObj(platforms));
+  selectedPlatformId=data.id;
+  closePlatformModal();
+  renderAll();
+  toast('✅ 플랫폼 추가됨');
+}
 function deletePlatform(id){if(!confirm('이 플랫폼을 삭제할까요?'))return;platforms=platforms.filter(p=>p.id!==id);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=platforms.length>0?platforms[0].id:null;renderAll();toast('🗑️ 삭제됨')}
 
 // === AI Prompt Generation ===
@@ -1107,9 +1216,7 @@ TPU 바닥매트 브랜드 "돌봄매트"의 마케팅 계획을 맡았습니다
   prompt+=`---
 
 ## 🎯 타겟 플랫폼: ${pf.icon} ${pf.name}
-
-### 플랫폼 전략
-${pf.strategy||'(아직 전략 없음)'}
+- 유형: ${pf.group==='offline'?'오프라인':'온라인'}
 
 `;
 
