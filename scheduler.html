@@ -2036,11 +2036,10 @@ html+=dbRanked.map((e,i)=>{
   const diffStr=diff>0?`+${diff}회 과다`:(diff<0?`${diff}회 부족`:'평균');
   const diffColor=diff>0?'#ef4444':(diff<0?'var(--green)':'var(--dim)');
   return `<div class="frow" style="${isFirst?'background:rgba(251,191,36,0.1);border-radius:6px;padding:4px 6px':''}">
-    <span style="font-size:14px;margin-right:4px">${medal}</span>
+    <span style="font-size:14px;width:20px;display:inline-block;text-align:center;flex-shrink:0">${medal}</span>
     <span class="fname">${e}</span>
     <div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[ci%10]}">${v}</div></div>
-    <span class="fval" style="min-width:80px;text-align:right">${v}일 <span style="font-size:10px;color:${diffColor}">${diffStr}</span></span>
-    ${isFirst?'<span style="font-size:10px;font-weight:800;color:#f59e0b;margin-left:4px">⭐다음</span>':''}
+    <span class="fval" style="min-width:100px;text-align:right">${v}일 ${isFirst?'<span style="font-size:10px;font-weight:800;color:#f59e0b">⭐</span>':`<span style="font-size:10px;color:${diffColor}">${diffStr}</span>`}</span>
   </div>`;
 }).join('');
 html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--dim);text-align:center">
