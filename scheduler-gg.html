@@ -2026,6 +2026,100 @@ const maxAs=Math.max(...E.map(e=>es[e].as),1);
 
 let html=`<div style="text-align:center;padding:12px;margin-bottom:12px;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:16px"><span onclick="fairMove(-1)" style="cursor:pointer;font-size:20px;color:var(--dim);padding:4px 8px">◀</span>📊 ${monthStr} 실적<span onclick="fairMove(1)" style="cursor:pointer;font-size:20px;color:var(--dim);padding:4px 8px">▶</span></div>`;
 
+// ========== 🏆 두탕 순위 (TOP 카드) ==========
+const dbRanked=[...sE].sort((a,b)=>es[a].double-es[b].double);
+const dbAvg=E.reduce((s,e)=>s+es[e].double,0)/Math.max(E.length,1);
+const dbMax2=Math.max(...E.map(e=>es[e].double),1);
+const medals=['🥇','🥈','🥉'];
+html+=`<div class="fcard" style="background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(251,191,36,0.02));border:1px solid rgba(251,191,36,0.2)">`;
+html+=`<div class="sec">🏆 이번달 두탕 순위 <span style="font-size:11px;font-weight:400;color:var(--dim)">(적게 간 순 = 다음 배정 우선)</span></div>`;
+html+=dbRanked.map((e,i)=>{
+  const v=es[e].double;
+  const diff=Math.round((v-dbAvg)*10)/10;
+  const w=Math.round(v/dbMax2*100);
+  const medal=i<3?medals[i]:'  ';
+  const ci=E.indexOf(e);
+  const isFirst=i===0;
+  const diffStr=diff>0?`+${diff}회 과다`:(diff<0?`${diff}회 부족`:'평균');
+  const diffColor=diff>0?'#ef4444':(diff<0?'var(--green)':'var(--dim)');
+  return `<div class="frow" style="${isFirst?'background:rgba(251,191,36,0.1);border-radius:6px;padding:4px 6px':''}">
+    <span style="font-size:14px;margin-right:4px">${medal}</span>
+    <span class="fname">${e}</span>
+    <div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[ci%10]}">${v}</div></div>
+    <span class="fval" style="min-width:80px;text-align:right">${v}일 <span style="font-size:10px;color:${diffColor}">${diffStr}</span></span>
+    ${isFirst?'<span style="font-size:10px;font-weight:800;color:#f59e0b;margin-left:4px">⭐다음</span>':''}
+  </div>`;
+}).join('');
+html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--dim);text-align:center">
+  평균 ${Math.round(dbAvg*10)/10}회 · 편차 ${Math.max(...E.map(e=>es[e].double))-Math.min(...E.map(e=>es[e].double))}회
+</div>`;
+html+=`</div>`;
+
+// ========== 📐 공정성 점수 설명 카드 ==========
+const fairAvgWd=E.reduce((s,e)=>s+es[e].workDays,0)/Math.max(E.length,1);
+const fairAvgDb=E.reduce((s,e)=>s+es[e].double,0)/Math.max(E.length,1);
+const fairAvgKm=E.reduce((s,e)=>s+es[e].km,0)/Math.max(E.length,1);
+const personalScores={};
+E.forEach(e=>{
+  const dbDiff=es[e].double-fairAvgDb;
+  const wdDiff=es[e].workDays-fairAvgWd;
+  const kmDiff=es[e].km-fairAvgKm;
+  const score=Math.round((dbDiff*8+wdDiff*3+kmDiff/20)*10)/10;
+  personalScores[e]={dbDiff:Math.round(dbDiff*10)/10,wdDiff:Math.round(wdDiff*10)/10,kmDiff:Math.round(kmDiff),score:score};
+});
+const scoreSorted=[...E].sort((a,b)=>personalScores[a].score-personalScores[b].score);
+
+html+=`<div class="fcard" style="background:linear-gradient(135deg,rgba(59,130,246,0.05),rgba(59,130,246,0.01));border:1px solid rgba(59,130,246,0.15)">`;
+html+=`<div class="sec">📐 종합 공정성 점수 <span style="font-size:11px;font-weight:400;color:var(--dim)">(점수 낮을수록 다음 배정 우선)</span></div>`;
+
+// 테이블 헤더
+html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px">
+  <tr style="border-bottom:1px solid var(--border);color:var(--dim);font-size:10px">
+    <th style="text-align:left;padding:6px 4px">이름</th>
+    <th style="text-align:center;padding:6px 4px">두탕</th>
+    <th style="text-align:center;padding:6px 4px">근무일</th>
+    <th style="text-align:center;padding:6px 4px">이동km</th>
+    <th style="text-align:right;padding:6px 4px">점수</th>
+  </tr>`;
+html+=scoreSorted.map((e,i)=>{
+  const p=personalScores[e];
+  const ci=E.indexOf(e);
+  const isFirst=i===0;
+  const isLast=i===scoreSorted.length-1;
+  const scoreColor=p.score<-2?'var(--green)':(p.score>5?'#ef4444':'var(--text)');
+  const sign=(n,dec=1)=>n>0?`+${n.toFixed(dec)}`:n.toFixed(dec);
+  return `<tr style="border-bottom:1px solid var(--border);${isFirst?'background:rgba(52,211,153,0.08)':''}${isLast?'background:rgba(239,68,68,0.05)':''}">
+    <td style="padding:8px 4px;font-weight:700;color:${cl[ci%10]}">${e}${isFirst?' 🏆':''}${isLast?' ⚠️':''}</td>
+    <td style="text-align:center;padding:8px 4px;font-size:11px;color:${p.dbDiff>0?'#ef4444':(p.dbDiff<0?'var(--green)':'var(--dim)')}">${sign(p.dbDiff)}</td>
+    <td style="text-align:center;padding:8px 4px;font-size:11px;color:${p.wdDiff>0?'#ef4444':(p.wdDiff<0?'var(--green)':'var(--dim)')}">${sign(p.wdDiff)}</td>
+    <td style="text-align:center;padding:8px 4px;font-size:11px;color:${p.kmDiff>0?'#ef4444':(p.kmDiff<0?'var(--green)':'var(--dim)')}">${sign(p.kmDiff,0)}</td>
+    <td style="text-align:right;padding:8px 4px;font-weight:800;color:${scoreColor}">${sign(p.score)}</td>
+  </tr>`;
+}).join('');
+html+=`</table></div>`;
+
+// 계산식 설명 박스
+html+=`<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;line-height:1.7">
+  <div style="font-weight:700;color:var(--text);margin-bottom:6px">🔢 계산식</div>
+  <div style="color:var(--dim)">
+    점수 = <span style="color:#f59e0b">두탕 초과 × 8</span>
+    + <span style="color:var(--blue)">근무일 초과 × 3</span>
+    + <span style="color:var(--green)">이동거리 초과 ÷ 20</span>
+  </div>
+  <div style="margin-top:6px;color:var(--dim)">
+    <b style="color:var(--text)">"초과"란?</b> 전체 평균과의 차이<br>
+    예) 이달 평균 두탕 ${Math.round(fairAvgDb*10)/10}회 → 내가 ${Math.round(fairAvgDb*10)/10+2}회면 "+2회 초과"
+  </div>
+  <div style="margin-top:6px;color:var(--dim)">
+    <b style="color:var(--text)">왜 두탕이 가장 큰가요?</b> 인센티브 기회 균등 배분을 위해 가중치 8 (근무일은 3)
+  </div>
+  <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);color:var(--dim)">
+    <b style="color:var(--green)">🟢 음수(-)</b>: 평균보다 적게 받음 → 다음 배정 우선<br>
+    <b style="color:#ef4444">🔴 양수(+)</b>: 평균보다 많이 받음 → 다음 배정 후순위
+  </div>
+</div>`;
+html+=`</div>`;
+
 // 두탕 횟수
 html+=`<div class="fcard"><div class="sec">🔥 두탕 (오전+오후 시공, 인센티브 💰)</div>`;
 html+=sE.map((e,i)=>{
