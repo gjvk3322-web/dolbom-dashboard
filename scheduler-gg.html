@@ -168,7 +168,7 @@ html{overflow-x:hidden;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;
 .mc-emp-name{font-size:11px;font-weight:700;min-width:32px}
 .mc-emp-bar{flex:1;height:16px;background:var(--card2);border-radius:6px;overflow:hidden;display:flex}
 .mc-emp-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
-.mc-emp-num{font-size:10px;color:var(--dim);min-width:60px;text-align:right;font-family:monospace}
+.mc-emp-num{font-size:10px;color:var(--dim);min-width:140px;text-align:right;font-family:monospace;white-space:nowrap}
 
 /* 당번 모드 */
 .admin-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
@@ -2473,7 +2473,7 @@ if(j.doff)j.doff.forEach(n=>dayData[d].offs.add(n));
 
 // 직원별 통계 (공통)
 const empStats={};
-E.forEach(e=>{empStats[e]={work:0,off:0,duty:0,am:0,pm:0,dutang:0}});
+E.forEach(e=>{empStats[e]={work:0,off:0,duty:0,am:0,pm:0,dutang:0,as:0,silcheuk:0}});
 for(let d=1;d<=lastDay;d++){
 const dd=dayData[d];
 dd.offs.forEach(n=>{if(empStats[n]){
@@ -2483,11 +2483,24 @@ dd.offs.forEach(n=>{if(empStats[n]){
 const dayEmps=new Set();const dayEmpSlots={};
 dd.jobs.forEach(j=>{
 const crew=A[j.id];if(!crew)return;
-crew.forEach(e=>{dayEmps.add(e);if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();if(j.time!=='as'&&j.time!=='AS'&&j.time!=='실측')dayEmpSlots[e].add(j.time.startsWith('오전')?'am':'pm');});
+crew.forEach(e=>{
+  dayEmps.add(e);
+  if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();
+  if(j.time==='as'||j.time==='AS')dayEmpSlots[e].add('as');
+  else if(j.time==='실측')dayEmpSlots[e].add('silcheuk');
+  else dayEmpSlots[e].add(j.time.startsWith('오전')?'am':'pm');
+});
 });
 dayEmps.forEach(e=>{
 if(!empStats[e])return;empStats[e].work++;
-const slots=dayEmpSlots[e];if(slots){if(slots.has('am'))empStats[e].am++;if(slots.has('pm'))empStats[e].pm++;if(slots.has('am')&&slots.has('pm'))empStats[e].dutang++;}
+const slots=dayEmpSlots[e];
+if(slots){
+  if(slots.has('am'))empStats[e].am++;
+  if(slots.has('pm'))empStats[e].pm++;
+  if(slots.has('am')&&slots.has('pm'))empStats[e].dutang++;
+  if(slots.has('as'))empStats[e].as++;
+  if(slots.has('silcheuk'))empStats[e].silcheuk++;
+}
 });
 }
 
@@ -2542,7 +2555,7 @@ grid+=`<div class="${cls}">${inner}</div>`;
 let sumHtml=`<div class="mc-summary"><div class="mc-summary-title">📊 ${mMonth+1}월 직원별 현황</div>`;
 E.forEach((e,ei)=>{
 const s=empStats[e];const workPct=Math.round(s.work/lastDay*100);const offPct=Math.round(s.off/lastDay*100);const c=ecl[ei%10];
-sumHtml+=`<div class="mc-emp-row" onclick="mSelectEmp('${e}')" style="cursor:pointer"><div class="mc-emp-name" style="color:${c}">${e}</div><div class="mc-emp-bar"><div class="mc-emp-seg" style="width:${workPct}%;background:rgba(48,209,88,.25);color:var(--green)">${s.work>0?s.work+'일':''}</div><div class="mc-emp-seg" style="width:${offPct}%;background:rgba(255,69,58,.2);color:var(--red)">${s.off>0?s.off:''}</div></div><div class="mc-emp-num">${s.dutang}두탕 ${s.off}휴</div></div>`;
+sumHtml+=`<div class="mc-emp-row" onclick="mSelectEmp('${e}')" style="cursor:pointer"><div class="mc-emp-name" style="color:${c}">${e}</div><div class="mc-emp-bar"><div class="mc-emp-seg" style="width:${workPct}%;background:rgba(48,209,88,.25);color:var(--green)">${s.work>0?s.work+'일':''}</div><div class="mc-emp-seg" style="width:${offPct}%;background:rgba(255,69,58,.2);color:var(--red)">${s.off>0?s.off:''}</div></div><div class="mc-emp-num"><span style="color:var(--blue)">AM${s.am}</span> <span style="color:var(--pink)">PM${s.pm}</span>${s.as?' <span style="color:var(--yellow)">AS'+s.as+'</span>':''}${s.silcheuk?' <span style="color:var(--purple)">실측'+s.silcheuk+'</span>':''} <span style="color:var(--red)">휴${s.off}</span></div></div>`;
 });
 sumHtml+=`</div>`;
 
@@ -2559,6 +2572,7 @@ const ei=E.indexOf(monthEmp);
 const ec=ecl[ei%10];
 const s=empStats[monthEmp];
 const offDays=new Set();const workDays=new Set();const dutangDays=new Set();const dutyDays=new Set();
+const daySlotsMap={}; // {일: Set('am','pm','as','silcheuk')}
 
 for(let d=1;d<=lastDay;d++){
 if(dayData[d].offs.has(monthEmp)){
@@ -2566,7 +2580,13 @@ if(dayData[d].offs.has(monthEmp)){
   else offDays.add(d);
 }
 const daySlots=new Set();
-dayData[d].jobs.forEach(j=>{const crew=A[j.id];if(crew&&crew.includes(monthEmp))daySlots.add(j.time.startsWith('오전')?'am':'pm');});
+dayData[d].jobs.forEach(j=>{
+  const crew=A[j.id];if(!crew||!crew.includes(monthEmp))return;
+  if(j.time==='as'||j.time==='AS')daySlots.add('as');
+  else if(j.time==='실측')daySlots.add('silcheuk');
+  else daySlots.add(j.time.startsWith('오전')?'am':'pm');
+});
+daySlotsMap[d]=daySlots;
 if(daySlots.size)workDays.add(d);
 if(daySlots.has('am')&&daySlots.has('pm'))dutangDays.add(d);
 }
@@ -2583,7 +2603,7 @@ mHolidays2.forEach(h=>{offDates.add(h.date)}); // 공휴일 (중복 자동 제�
 const avgOff=offDates.size;
 
 calTitle=`${monthEmp}의 ${mMonth+1}월`;
-calSub=`시공 ${s.work}일 · 두탕 ${s.dutang}회${s.duty?' · 🪖 '+s.duty+'일':''}`;
+calSub=`AM ${s.am} · PM ${s.pm}${s.as?' · AS '+s.as:''}${s.silcheuk?' · 실측 '+s.silcheuk:''} · 🔥두탕 ${s.dutang}${s.duty?' · 🪖 '+s.duty+'일':''}`;
 
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
@@ -2597,8 +2617,19 @@ else if(dow===6)cls+=' mc-sat';
 if(isToday)cls+=' today';
 let inner=`<div class="mc-date ${dow===0||hol?'sun':dow===6?'sat':''}">${d}</div>`;
 if(hol&&!isWork&&!isDuty&&!isOff)inner+=`<div style="font-size:7px;color:var(--red);font-weight:600">${hol.name}</div>`;
-if(isDutang)inner+=`<div style="font-size:8px;font-weight:700;color:var(--green)">두탕</div>`;
-else if(isWork)inner+=`<div style="font-size:8px;font-weight:700;color:var(--green)">시공</div>`;
+if(isDutang){
+  // 두탕 = AM+PM 둘 다 (인센티브!) → 강조 표시
+  inner+=`<div style="font-size:8px;font-weight:800;color:var(--green)">🔥AM+PM</div>`;
+}else if(isWork){
+  // 개별 타임 표시
+  const daySlots=daySlotsMap[d]||new Set();
+  const labels=[];
+  if(daySlots.has('am'))labels.push('<span style="color:var(--blue)">AM</span>');
+  if(daySlots.has('pm'))labels.push('<span style="color:var(--pink)">PM</span>');
+  if(daySlots.has('as'))labels.push('<span style="color:var(--yellow)">AS</span>');
+  if(daySlots.has('silcheuk'))labels.push('<span style="color:var(--purple)">실측</span>');
+  inner+=`<div style="font-size:9px;font-weight:700">${labels.join(' ')}</div>`;
+}
 if(isDuty){const reason=dayData[d].duty[monthEmp];inner+=`<div style="font-size:9px;color:var(--yellow);font-weight:700;margin-top:2px">🪖 ${reason}</div>`}
 else if(isOff){inner+=`<div style="position:absolute;top:3px;right:5px;font-size:8px;color:${ec};font-weight:700">${monthEmp}</div>`;inner+=`<div style="font-size:14px;font-weight:900;color:#EF9F27;opacity:.5;text-align:center;margin-top:6px">휴무</div>`}
 grid+=`<div class="${cls}">${inner}</div>`;
@@ -2614,7 +2645,7 @@ v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹
 ${badges}
 <div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
 <div class="mc-grid">${grid}</div>
-<div class="mc-legend"><span class="lg-job">시공</span><span class="lg-am">두탕</span><span class="lg-off2">휴무</span></div>
+<div class="mc-legend"><span style="color:var(--blue)">AM</span><span style="color:var(--pink)">PM</span><span style="color:var(--yellow)">AS</span><span style="color:var(--purple)">실측</span><span style="color:var(--green)">🔥AM+PM(두탕)</span><span class="lg-off2">휴무</span></div>
 ${offSummary}`;
 }
 }
