@@ -631,14 +631,50 @@ const CATEGORY_META={
 };
 
 const DEFAULT_PLATFORMS=[
-  {id:'pf_blog',name:'블로그',icon:'📝',group:'online',order:1,settings:{}},
-  {id:'pf_insta',name:'인스타그램',icon:'📸',group:'online',order:2,settings:{}},
-  {id:'pf_cafe',name:'맘카페',icon:'💬',group:'online',order:3,settings:{}},
-  {id:'pf_naver',name:'네이버 검색광고',icon:'🎯',group:'online',order:4,settings:{}},
-  {id:'pf_youtube',name:'유튜브',icon:'🎬',group:'online',order:5,settings:{}},
-  {id:'pf_kakao',name:'카카오채널',icon:'💛',group:'online',order:6,settings:{}},
-  {id:'pf_fair',name:'박람회/페어',icon:'🎪',group:'offline',order:7,settings:{}},
-  {id:'pf_b2b',name:'B2B 영업',icon:'🏢',group:'offline',order:8,settings:{}}
+  // 🔍 검색/포털 (5)
+  {id:'pf_naver',name:'네이버 검색광고',icon:'🎯',group:'online',order:1,settings:{notes:'이미 운영 중. bid_manager_v2.py로 673개 키워드 시간대별 입찰 자동화. adRelevanceScore 4/10 개선 중.'}},
+  {id:'pf_naver_shop',name:'네이버 쇼핑검색광고',icon:'🛍️',group:'online',order:2,settings:{notes:'"층간소음매트", "유아매트", "애견매트" 쇼핑탭 상위 노출. 스마트스토어 연계 필수. 랭킹 알고리즘이 리뷰수·판매량 중시.'}},
+  {id:'pf_naver_place',name:'네이버 플레이스 광고',icon:'📍',group:'online',order:3,settings:{notes:'사상구 엄궁 매장 지역 노출. "매트시공", "바닥매트 시공업체" 검색 시 지도에 뜸. 플레이스 등록/리뷰 관리 선행.'}},
+  {id:'pf_naver_gfa',name:'네이버 GFA (리타게팅)',icon:'🔄',group:'online',order:4,settings:{notes:'홈페이지/검색 방문자 추적 → 재노출. 픽셀 설치 필요. 샘플신청 미완료 고객 리타게팅에 최적.'}},
+  {id:'pf_google',name:'구글 검색광고',icon:'🔍',group:'online',order:5,settings:{notes:'네이버 대비 경쟁 적고 CPC 저렴. 30~40대 맘 구글 검색 비중 증가 중. 유튜브/GDN 디스플레이와 연계.'}},
+  
+  // 💬 메신저/SNS (8)
+  {id:'pf_kakao_biz',name:'카카오톡 비즈보드',icon:'📢',group:'online',order:6,settings:{notes:'카톡 최상단 배너. 도달률 압도적. CPM 높지만 맘 타겟 정교. 카카오모먼트 계정 필요.'}},
+  {id:'pf_kakao',name:'카카오채널',icon:'💛',group:'online',order:7,settings:{notes:'기존 고객 상담/AS/알림톡 핵심 채널. 알림톡 템플릿 KA01TP260320062958424mxw8jvjD7ro(AM)/KA01TP260320063056710yPKtNC72BmC(PM) 운영 중.'}},
+  {id:'pf_insta',name:'인스타그램',icon:'📸',group:'online',order:8,settings:{notes:'비포/애프터 릴스 핵심. 주 3회 목표. 시공 영상 + 시공팀 루틴 + 고객 후기 리포스트. 쓰레드 연동 필수.'}},
+  {id:'pf_threads',name:'쓰레드',icon:'🧵',group:'online',order:9,settings:{accountStatus:'인스타 계정 @dolbommat 연동만 하면 즉시 시작 가능',keywords:'#층간소음 #육아맘일상 #애견육아 #아파트인테리어 #신축아파트',success:'(텍스트 공감형) "오늘 아이가 뛰어서 아랫집 쪽지 받았어요...😭" 같은 일상 고민 → 자연스러운 솔루션 암시가 먹힘',fail:'과도한 판매 목적 포스팅, 긴 링크, 해시태그 10개 이상 폭탄',notes:'🆕 대장님 블루오션! 경쟁사(쿠키매트/까사플로아 등) 대부분 미운영. 주 3~5회, 사진+짧은 글(2~3줄). 알고리즘이 팔로워 적어도 관대. 5분이면 포스팅 1개 작성 가능.'}},
+  {id:'pf_youtube',name:'유튜브',icon:'🎬',group:'online',order:10,settings:{notes:'시공 Before/After 영상, 14명 팀 소개, 고객 후기 인터뷰. 쇼츠로 확장. 한 번 만들면 오래가는 SEO 자산.'}},
+  {id:'pf_youtube_ppl',name:'유튜브 육아채널 PPL',icon:'🎥',group:'online',order:11,settings:{notes:'하정훈TV, 베싸TV, 육아맘 브이로거 협찬. 전문가 신뢰도 차용. 1건당 300~1500만원, 단 ROI 좋음.'}},
+  {id:'pf_facebook',name:'페이스북 광고',icon:'👍',group:'online',order:12,settings:{notes:'맘 타겟 정교한 머신러닝. 인스타와 메타 계정 통합. 관심사 타게팅(육아/인테리어/반려견).'}},
+  {id:'pf_band',name:'네이버 밴드 광고',icon:'🎵',group:'online',order:13,settings:{notes:'40~50대 중장년층 밀집. 어린이집 원장님 타겟 B2B에 특히 유효. 지역 커뮤니티 노출.'}},
+  {id:'pf_tiktok',name:'틱톡 광고',icon:'🎶',group:'online',order:14,settings:{notes:'2030 젊은 부모 테스트용. 소액(일 1~3만원) 부터. 해시태그 챌린지보다는 일상 감성 영상이 효율 좋음.'}},
+  
+  // 🏘️ 커뮤니티/로컬 (4)
+  {id:'pf_cafe',name:'맘카페 (공동구매)',icon:'💬',group:'online',order:15,settings:{notes:'최우선! 부산/경기 대형 맘카페 3곳 우선 컨택. 공동구매 할인 + 지역 배너. "엄마들끼리 사는 것" 구조로 전환.'}},
+  {id:'pf_danggn',name:'당근마켓',icon:'🥕',group:'online',order:16,settings:{notes:'사상구/경기 비즈프로필 + 지역광고. 동네 인증 고객 대상. 저렴한 CPC. "우리 동네 시공업체" 포지셔닝.'}},
+  {id:'pf_hogang',name:'호갱노노 / 아실',icon:'🏠',group:'online',order:17,settings:{notes:'신축 입주 예정자 커뮤니티. 단지별 입주민 단톡방 침투. 신축 시공 비중 높은 돌봄매트에 딱.'}},
+  {id:'pf_jikbang',name:'직방 / 다방',icon:'🏘️',group:'online',order:18,settings:{notes:'이사철(2~3월, 8~9월) 집중 타겟. "이사 전 필수 체크리스트" 콘텐츠 협업.'}},
+  
+  // 🛒 커머스 (5)
+  {id:'pf_ohouse',name:'오늘의집',icon:'🛋️',group:'online',order:19,settings:{accountStatus:'미입점 상태 (등록 필요)',notes:'⭐ 아직 안 하셨다면 1순위! 입점 신청 → 승인 2~3주. 인테리어 집들이 콘텐츠에 매트 자연 노출. 실제 사용자 사진이 검색 알고리즘 상위 노출 핵심.'}},
+  {id:'pf_coupang',name:'쿠팡 광고',icon:'📦',group:'online',order:20,settings:{notes:'매트 카테고리 경쟁 치열. 로켓배송 가능 여부가 핵심. 아이템위너 확보 필수. 광고는 상품 검색광고부터.'}},
+  {id:'pf_smartstore',name:'스마트스토어 + 라방',icon:'🛒',group:'online',order:21,settings:{notes:'네이버 쇼핑검색과 연결. 쇼핑라이브로 시공 시연 방송. 샘플 무료배송 이벤트가 전환율 높음.'}},
+  {id:'pf_mall',name:'종합몰 (11번가/G마켓)',icon:'🏪',group:'online',order:22,settings:{notes:'40대+ 여전히 활발. 특가 이벤트 유입. 위메프/티몬 포함 묶어서 관리.'}},
+  {id:'pf_blog_event',name:'네이버 블로그 체험단',icon:'✍️',group:'online',order:23,settings:{notes:'레뷰, 디너의여왕 등록. 월 5~10건 체험단 돌리기. SEO 누적 자산이 복리로 쌓임. 체험단 1건당 5~15만원.'}},
+  
+  // 📝 콘텐츠/인플루언서 (3)
+  {id:'pf_blog',name:'블로그 (공식운영)',icon:'📝',group:'online',order:24,settings:{notes:'돌봄매트 공식 블로그 (네이버/티스토리). 시공 사례·팁·FAQ 누적. 한 번 작성 시 SEO 반영까지 2~4주.'}},
+  {id:'pf_insta_influ',name:'인스타 인플루언서 협찬',icon:'⭐',group:'online',order:25,settings:{notes:'나노(1만~)/마이크로(10만~) 육아맘 계정. 1건 30~200만원. 실거주 집 시공 사례로 제작. 가성비 최고.'}},
+  
+  // 👶 육아 특화 (3)
+  {id:'pf_momq',name:'맘큐/맘스다이어리 앱',icon:'👶',group:'online',order:26,settings:{notes:'임산부~영유아 부모 집중 앱. 푸시 광고 + 배너. 조리원맘 타겟에 최적. 이벤트 참여형 광고 효율 좋음.'}},
+  {id:'pf_kidsmom',name:'키즈맘/아이러브맘',icon:'🧸',group:'online',order:27,settings:{notes:'육아 전문 커뮤니티. 트래픽 작지만 순도 높음. 전문가 칼럼형 콘텐츠가 잘 먹힘.'}},
+  {id:'pf_pet',name:'펫프렌즈/어바웃펫',icon:'🐾',group:'online',order:28,settings:{notes:'애견매트 전용 타겟. 대형견 슬개골 보호 스토리. 반려인 현우 페르소나 집중 공략.'}},
+  
+  // 🏢 오프라인 (3)
+  {id:'pf_fair',name:'박람회/페어 (입주+베이비)',icon:'🎪',group:'offline',order:29,settings:{notes:'코베·베페·서울베이비키즈 + 입주박람회. 샘플 체험 + QR 코드로 온라인 유입. 박람회 특가 10~15% 할인.'}},
+  {id:'pf_b2b',name:'B2B 영업 (기관)',icon:'🏢',group:'offline',order:30,settings:{notes:'어린이집·조리원·호텔. 원장 소개가 최강 채널. 어린이집 80곳 레퍼런스 활용. 세금계산서·KC인증 필수.'}},
+  {id:'pf_gov',name:'나라장터/학교장터',icon:'🏛️',group:'offline',order:31,settings:{accountStatus:'등록 필요 (공공 입찰 자격)',notes:'공공 어린이집/유치원 입찰. KC인증 있으시니 진입 가능. 등록 절차 복잡하지만 한 번 등록하면 안정적 수주.'}}
 ];
 
 let gs={...DEFAULT_GS},competitors=[],benchmarks=[];
@@ -729,6 +765,27 @@ function migratePersonaCategories(){
   }
 }
 
+// === 플랫폼 마이그레이션: 기존 메모/설정 보존 + 신규 DEFAULT 플랫폼만 자동 추가 ===
+function migratePlatforms(){
+  let changed=false;
+  const existingIds=new Set(platforms.map(p=>p.id));
+  DEFAULT_PLATFORMS.forEach(def=>{
+    if(!existingIds.has(def.id)){
+      // 기존 최대 order 뒤에 붙이기 (기존 플랫폼 순서 보존)
+      const maxOrder=platforms.reduce((m,p)=>Math.max(m,p.order||0),0);
+      const newPf={...def,order:maxOrder+(def.order||1)};
+      platforms.push(newPf);
+      changed=true;
+      console.log('🚀 신규 플랫폼 자동 추가:',def.name);
+    }
+  });
+  if(changed){
+    sortPlatforms();
+    saveToFB('platforms',arrToObj(platforms));
+    console.log('플랫폼 마이그레이션 완료 - 총',platforms.length,'개');
+  }
+}
+
 function loadAll(){
   // 1단계: localStorage에서 즉시 복원 (빠른 표시)
   const ls=loadFromLS();
@@ -751,7 +808,9 @@ function loadAll(){
   sortPersonas();
   sortPlatforms();
   migratePersonaCategories();
+  migratePlatforms();
   sortPersonas(); // 새 페르소나 추가 후 재정렬
+  sortPlatforms();
   renderAll();
   
   // 2단계: Firebase에서 최신 데이터 받기
@@ -779,7 +838,9 @@ function loadAll(){
     sortPersonas();
     sortPlatforms();
     migratePersonaCategories();
+    migratePlatforms();
     sortPersonas();
+    sortPlatforms();
     saveToLS();
     renderAll();
     syncOnline(true);
@@ -1823,12 +1884,16 @@ function generateRecommendations(){
   // 1) Tier 1 페르소나 × 온라인 플랫폼 조합 중 메모 없거나 30자 미만인 것 → HOT
   // 2) Tier 2 페르소나 × 주요 플랫폼 조합 중 메모 없는 것 → 일반 추천
   // 3) 플랫폼 설정도 비어있는 조합에 보너스
+  // 4) 🆕 블루오션 플랫폼(쓰레드, 오늘의집 등) 보너스
   // 최대 6개 추천
+  
+  // 블루오션 플랫폼 (경쟁사 미운영 or 선점 기회)
+  const blueOceanPfIds=new Set(['pf_threads','pf_ohouse','pf_gov']);
   
   const recs=[];
   const tier1=personas.filter(p=>p.tier===1);
   const tier2=personas.filter(p=>p.tier===2);
-  const onlinePfs=platforms.filter(p=>(p.group||'online')==='online').slice(0,6);
+  const onlinePfs=platforms.filter(p=>(p.group||'online')==='online').slice(0,10);
   const allPfs=[...onlinePfs,...platforms.filter(p=>p.group==='offline')];
   
   // 1단계: Tier 1 × 온라인 플랫폼 (HOT)
@@ -1836,11 +1901,12 @@ function generateRecommendations(){
     onlinePfs.forEach(pf=>{
       const memoLen=getMemoLengthForCombo(p.id,pf.id);
       if(memoLen<30){
+        const isBlueOcean=blueOceanPfIds.has(pf.id);
         recs.push({
           persona:p, platform:pf,
           priority:'hot',
-          reason: memoLen===0?'아직 메모/전략이 없어요':'메모가 너무 짧아요 (보강 필요)',
-          score: 100 - (memoLen*2) - (hasPlatformSettingsFilled(pf)?0:10)
+          reason: isBlueOcean ? '🌊 블루오션 플랫폼 (경쟁사 미운영, 선점 기회!)' : (memoLen===0?'아직 메모/전략이 없어요':'메모가 너무 짧아요 (보강 필요)'),
+          score: 100 - (memoLen*2) - (hasPlatformSettingsFilled(pf)?0:10) + (isBlueOcean?25:0)
         });
       }
     });
@@ -1848,14 +1914,15 @@ function generateRecommendations(){
   
   // 2단계: Tier 2 × 플랫폼
   tier2.forEach(p=>{
-    allPfs.slice(0,4).forEach(pf=>{
+    allPfs.slice(0,6).forEach(pf=>{
       const memoLen=getMemoLengthForCombo(p.id,pf.id);
       if(memoLen===0){
+        const isBlueOcean=blueOceanPfIds.has(pf.id);
         recs.push({
           persona:p, platform:pf,
           priority:'normal',
-          reason: '아직 공략 전략이 없어요',
-          score: 50 - (hasPlatformSettingsFilled(pf)?0:5)
+          reason: isBlueOcean ? '🌊 블루오션 플랫폼' : '아직 공략 전략이 없어요',
+          score: 50 - (hasPlatformSettingsFilled(pf)?0:5) + (isBlueOcean?20:0)
         });
       }
     });
