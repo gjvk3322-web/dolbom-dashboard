@@ -150,27 +150,6 @@
 
 .cta-kakao:active { transform: scale(0.98); }
 
-.cta-sample {
-  margin-top: 10px;
-  background: #fff;
-  color: var(--text-secondary);
-  padding: 12px 20px;
-  border-radius: 14px;
-  text-align: center;
-  cursor: pointer;
-  border: 1.5px solid var(--border);
-  width: 100%;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.cta-sample:active { transform: scale(0.98); }
-
 .works-section {
   margin-top: 24px;
 }
@@ -287,10 +266,6 @@
     <button class="cta-kakao" id="btnKakao">
       💬 카카오톡으로 상담하기
     </button>
-
-    <button class="cta-sample" id="btnSample">
-      🎁 무료 샘플 받아보기
-    </button>
   </div>
 
   <div class="works-section fade-up fade-up-3">
@@ -379,10 +354,6 @@ function handleClick(type) {
       // 카톡 상담 · 정보 수집 후 카톡 연결
       window.location.href = `./cs-welcome.html?ref=${teamId}&next=kakao`;
       break;
-    case 'sample':
-      // 샘플 신청은 정보 수집 후 카톡 상담으로 유도 (진성 고객 필터링)
-      window.location.href = `./cs-welcome.html?ref=${teamId}&next=kakao`;
-      break;
   }
 }
 
@@ -390,7 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
   init();
   document.getElementById('btnQuote').addEventListener('click', () => handleClick('quote'));
   document.getElementById('btnKakao').addEventListener('click', () => handleClick('kakao'));
-  document.getElementById('btnSample').addEventListener('click', () => handleClick('sample'));
 });
 </script>
 </body>
