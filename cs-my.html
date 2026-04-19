@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>내 마케팅 대시보드 · 돌봄매트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;color:#1a1a1a;min-height:100vh;padding-bottom:40px}
+
+/* ===== 직원 선택 화면 ===== */
+.selector-wrap{max-width:460px;margin:0 auto;padding:20px 16px}
+.selector-header{padding:20px 0;text-align:center}
+.selector-logo{font-size:11px;letter-spacing:3px;color:#999;font-weight:500}
+.selector-title{font-size:22px;font-weight:800;margin-top:8px;color:#1a1a1a}
+.selector-sub{font-size:13px;color:#888;margin-top:4px}
+.selector-region{margin-top:24px}
+.selector-region-name{font-size:13px;font-weight:700;color:#666;margin-bottom:10px;padding-left:4px}
+.selector-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.selector-card{background:#fff;border:1.5px solid #e8e5de;border-radius:14px;padding:20px 14px;cursor:pointer;transition:all .2s;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.selector-card:active{transform:scale(.97);border-color:#2E7D32}
+.selector-card-name{font-size:18px;font-weight:700;color:#1a1a1a}
+
+/* ===== 메인 대시보드 ===== */
+.hero{background:linear-gradient(135deg,#1B5E20 0%,#2E7D32 50%,#388E3C 100%);color:#fff;padding:24px 20px 60px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-30%;width:320px;height:320px;background:rgba(255,255,255,.06);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-30%;left:-20%;width:240px;height:240px;background:rgba(255,255,255,.04);border-radius:50%}
+.hero-inner{position:relative;z-index:1;max-width:460px;margin:0 auto}
+.hero-badge{font-size:11px;opacity:.8;letter-spacing:1px}
+.hero-title{font-size:24px;font-weight:800;margin-top:4px}
+.hero-title .name{color:#FDD835}
+.hero-sub{font-size:12px;opacity:.7;margin-top:4px}
+.hero-date{font-size:11px;opacity:.6;margin-top:2px}
+
+.hero-switch{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;padding:6px 12px;border-radius:16px;cursor:pointer;z-index:2;font-family:inherit;transition:all .15s}
+.hero-switch:active{background:rgba(255,255,255,.2)}
+
+.container{max-width:460px;margin:-40px auto 0;padding:0 16px;position:relative;z-index:2}
+
+/* ===== 카드 공통 ===== */
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.04);animation:fadeUp .5s ease both}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px;color:#1a1a1a}
+.card-title .emoji{font-size:16px}
+.card-title .help{margin-left:auto;font-size:10px;color:#aaa;font-weight:400}
+
+/* ===== 3대 지표 ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:linear-gradient(135deg,#f9f7f2 0%,#fff 100%);border-radius:14px;padding:14px 10px;text-align:center;border:1px solid #f0ede6}
+.stat-label{font-size:10px;color:#888;margin-bottom:4px;font-weight:500}
+.stat-num{font-size:20px;font-weight:800;color:#2E7D32;line-height:1;letter-spacing:-.5px}
+.stat-unit{font-size:11px;color:#666;font-weight:600;margin-left:1px}
+.stat-delta{font-size:10px;margin-top:4px;font-weight:600}
+.stat-delta.up{color:#E53935}
+.stat-delta.down{color:#757575}
+.stat-delta.same{color:#aaa}
+.stat-revenue{background:linear-gradient(135deg,#E8F5E9 0%,#F1F8E9 100%);border-color:#C5E1A5}
+.stat-revenue .stat-num{color:#1B5E20}
+
+/* ===== 리더보드 ===== */
+.board-item{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;margin-bottom:4px;transition:all .2s;font-size:12px}
+.board-item.me{background:linear-gradient(135deg,#FFF8E1,#FFF3E0);border:1.5px solid #FFB74D}
+.board-item.me .board-name{color:#E65100;font-weight:700}
+.board-rank{width:28px;height:28px;border-radius:50%;background:#f0ede6;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#666}
+.board-item.rank-1 .board-rank{background:linear-gradient(135deg,#FFD700,#FFA500);color:#fff;font-size:14px}
+.board-item.rank-2 .board-rank{background:linear-gradient(135deg,#C0C0C0,#808080);color:#fff;font-size:14px}
+.board-item.rank-3 .board-rank{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff;font-size:14px}
+.board-name{font-weight:500;color:#333;font-size:13px}
+.board-region{font-size:10px;color:#999;margin-left:4px}
+.board-value{font-size:12px;font-weight:700;color:#2E7D32;text-align:right}
+.board-value .small{font-size:10px;color:#888;font-weight:400;display:block;margin-top:1px}
+.board-encourage{margin-top:10px;padding:10px 12px;background:linear-gradient(135deg,#E3F2FD,#E1F5FE);border-radius:10px;font-size:12px;color:#0277BD;font-weight:500;text-align:center}
+
+/* ===== 내 고객 ===== */
+.cust-filters{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.cust-filter{padding:6px 12px;border:1.5px solid #e0ddd6;border-radius:16px;background:#fff;font-size:11px;font-weight:500;color:#888;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}
+.cust-filter.active{background:#2E7D32;color:#fff;border-color:#2E7D32;font-weight:600}
+.cust-item{padding:12px;background:#fafaf7;border-radius:12px;margin-bottom:6px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.cust-info{min-width:0}
+.cust-head{display:flex;align-items:baseline;gap:6px;margin-bottom:2px}
+.cust-name{font-size:13px;font-weight:700;color:#1a1a1a}
+.cust-phone{font-size:11px;color:#666;font-family:'Menlo',monospace}
+.cust-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:10px;color:#888}
+.cust-status{padding:2px 6px;border-radius:4px;font-weight:600;font-size:10px}
+.cust-status.완공{background:#E8F5E9;color:#2E7D32}
+.cust-status.예약{background:#FFF3E0;color:#E65100}
+.cust-status.샘플{background:#E3F2FD;color:#1976D2}
+.cust-status.유입{background:#f5f5f5;color:#757575}
+.cust-date{color:#aaa}
+.cust-revenue{font-size:11px;color:#2E7D32;font-weight:700;margin-top:2px}
+.cust-call{width:36px;height:36px;border-radius:50%;background:#2E7D32;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:16px;cursor:pointer;transition:all .15s}
+.cust-call:active{transform:scale(.92)}
+.cust-empty{padding:40px 20px;text-align:center;color:#bbb;font-size:13px}
+
+/* ===== 마케팅 링크 ===== */
+.link-wrap{background:#fafaf7;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.link-label{font-size:11px;color:#888;margin-bottom:4px}
+.link-url{font-size:12px;color:#2E7D32;font-weight:500;font-family:'Menlo',monospace;word-break:break-all;line-height:1.5}
+.copy-btn{width:100%;padding:14px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.copy-btn:active{transform:scale(.98)}
+.copy-btn.copied{background:linear-gradient(135deg,#4CAF50,#2E7D32)}
+.qr-hint{font-size:11px;color:#999;text-align:center;margin-top:8px}
+
+/* ===== 콘텐츠 가이드 ===== */
+.guide-section{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed #eee}
+.guide-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.guide-label{font-size:11px;font-weight:700;color:#666;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.guide-label .dot{width:6px;height:6px;background:#2E7D32;border-radius:50%}
+.guide-topic{background:#FFF8E1;border-left:3px solid #FFB300;border-radius:6px;padding:8px 12px;margin-bottom:4px;font-size:12px;color:#444;line-height:1.5}
+.tag-list{display:flex;flex-wrap:wrap;gap:5px}
+.tag{padding:4px 10px;background:#E8F5E9;color:#2E7D32;border-radius:14px;font-size:11px;font-weight:500;cursor:pointer}
+.tag:active{background:#C8E6C9}
+.caption-box{background:#fafaf7;border-radius:8px;padding:10px 12px;font-size:11px;color:#555;line-height:1.7;margin-bottom:4px;position:relative}
+.caption-copy{position:absolute;top:6px;right:6px;font-size:10px;color:#2E7D32;background:#fff;border:1px solid #2E7D32;padding:2px 8px;border-radius:6px;cursor:pointer;font-family:inherit}
+.time-tip{display:flex;gap:6px;flex-wrap:wrap}
+.time-item{background:#F3E5F5;color:#6A1B9A;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:500}
+
+/* ===== 로딩 ===== */
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#999;font-size:13px}
+.loader-dot{width:8px;height:8px;background:#2E7D32;border-radius:50%;animation:pulse 1s infinite}
+.loader-dot:nth-child(2){animation-delay:.2s}
+.loader-dot:nth-child(3){animation-delay:.4s}
+.loader-dots{display:flex;gap:6px;margin-bottom:12px}
+
+/* ===== 토스트 ===== */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:14px 28px;border-radius:14px;font-size:14px;font-weight:600;z-index:200;transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#2E7D32}
+.toast.error{background:#e53935}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+.card:nth-child(2){animation-delay:.05s}
+.card:nth-child(3){animation-delay:.1s}
+.card:nth-child(4){animation-delay:.15s}
+.card:nth-child(5){animation-delay:.2s}
+
+/* 스크롤바 숨기기 */
+.cust-filters::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- 로딩 화면 -->
+<div id="loadingScreen">
+  <div class="loader">
+    <div class="loader-dots">
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+      <div class="loader-dot"></div>
+    </div>
+    <div>불러오는 중...</div>
+  </div>
+</div>
+
+<!-- 직원 선택 화면 -->
+<div id="selectorScreen" style="display:none">
+  <div class="selector-wrap">
+    <div class="selector-header">
+      <div class="selector-logo">DOLBOM MAT</div>
+      <div class="selector-title">내 마케팅 대시보드</div>
+      <div class="selector-sub">이름을 선택해주세요</div>
+    </div>
+    <div id="selectorList"></div>
+  </div>
+</div>
+
+<!-- 메인 대시보드 -->
+<div id="dashboardScreen" style="display:none">
+  <div class="hero">
+    <button class="hero-switch" onclick="switchUser()">이름 변경</button>
+    <div class="hero-inner">
+      <div class="hero-badge">DOLBOM MAT · 내 대시보드</div>
+      <div class="hero-title">안녕하세요, <span class="name" id="userName">-</span>님! 👋</div>
+      <div class="hero-sub" id="userMeta">-</div>
+      <div class="hero-date" id="dateInfo">-</div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- 3대 지표 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📊</span> 이번 달 내 실적 <span class="help">(<span id="periodLabel">2026년 4월</span>)</span></div>
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-label">유입 고객</div>
+          <div><span class="stat-num" id="statInflow">0</span><span class="stat-unit">명</span></div>
+          <div class="stat-delta" id="deltaInflow"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">완공</div>
+          <div><span class="stat-num" id="statCompleted">0</span><span class="stat-unit">건</span></div>
+          <div class="stat-delta" id="deltaCompleted"></div>
+        </div>
+        <div class="stat stat-revenue">
+          <div class="stat-label">예상 인센티브</div>
+          <div><span class="stat-num" id="statIncentive">0</span><span class="stat-unit">원</span></div>
+          <div class="stat-delta" id="deltaIncentive"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed #eee">
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">샘플 <strong style="color:#1976D2;font-size:13px" id="miniSample">0</strong></div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">예약 <strong style="color:#E65100;font-size:13px" id="miniReserved">0</strong></div>
+        <div style="flex:1;text-align:center;font-size:10px;color:#888">총매출 <strong style="color:#2E7D32;font-size:13px" id="miniRevenue">0원</strong></div>
+      </div>
+    </div>
+
+    <!-- 리더보드 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">🏆</span> 이번 달 팀 리더보드 <span class="help">(인센티브 기준)</span></div>
+      <div id="leaderboardList"></div>
+      <div id="boardEncourage" class="board-encourage" style="display:none"></div>
+    </div>
+
+    <!-- 내 고객 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">👥</span> 내 고객 타임라인 <span class="help">(최근 20명)</span></div>
+      <div class="cust-filters">
+        <button class="cust-filter active" data-filter="all" onclick="setFilter('all')">전체 <span id="cntAll"></span></button>
+        <button class="cust-filter" data-filter="유입" onclick="setFilter('유입')">유입 <span id="cntInflow"></span></button>
+        <button class="cust-filter" data-filter="샘플" onclick="setFilter('샘플')">샘플 <span id="cntSample"></span></button>
+        <button class="cust-filter" data-filter="예약" onclick="setFilter('예약')">예약 <span id="cntReserved"></span></button>
+        <button class="cust-filter" data-filter="완공" onclick="setFilter('완공')">완공 <span id="cntCompleted"></span></button>
+      </div>
+      <div id="customerList"></div>
+    </div>
+
+    <!-- 내 마케팅 링크 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📱</span> 내 마케팅 링크 <span class="help">(인스타 바이오용)</span></div>
+      <div class="link-wrap">
+        <div class="link-label">🎯 랜딩 페이지 (샘플+견적)</div>
+        <div class="link-url" id="linkWelcome">-</div>
+      </div>
+      <div class="link-wrap">
+        <div class="link-label">🏠 허브 (모든 메뉴)</div>
+        <div class="link-url" id="linkHub">-</div>
+      </div>
+      <div class="link-wrap">
+        <div class="link-label">💰 견적 바로가기</div>
+        <div class="link-url" id="linkQuote">-</div>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyMainLink()">
+        📋 <span id="copyBtnLabel">링크 복사하기</span>
+      </button>
+      <div class="qr-hint">복사해서 인스타 바이오 / 카톡 프로필에 붙여넣으세요</div>
+    </div>
+
+    <!-- 콘텐츠 가이드 -->
+    <div class="card">
+      <div class="card-title"><span class="emoji">📸</span> 이번 주 인스타 콘텐츠 가이드</div>
+
+      <div class="guide-section">
+        <div class="guide-label"><span class="dot"></span>🔥 추천 주제 5가지</div>
+        <div class="guide-topic">1. 시공 현장 BEFORE / AFTER 비교샷</div>
+        <div class="guide-topic">2. 시공 완료 순간 15초 영상 (먼지 터는 샷)</div>
+        <div class="guide-topic">3. 반려견이 매트 위에서 편히 쉬는 모습</div>
+        <div class="guide-topic">4. 이음새 비교 · 1000mm vs 타사 600mm</div>
+        <div class="guide-topic">5. 고객 후기 캡처 + 감사 인사</div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-label"><span class="dot"></span>#️⃣ 추천 해시태그 (탭하면 복사)</div>
+        <div class="tag-list" id="tagList">
+          <span class="tag" onclick="copyTag(this)">#돌봄매트</span>
+          <span class="tag" onclick="copyTag(this)">#층간소음해결</span>
+          <span class="tag" onclick="copyTag(this)">#아파트매트</span>
+          <span class="tag" onclick="copyTag(this)">#신축입주</span>
+          <span class="tag" onclick="copyTag(this)">#층간소음매트</span>
+          <span class="tag" onclick="copyTag(this)">#바닥매트</span>
+          <span class="tag" onclick="copyTag(this)">#육아맘</span>
+          <span class="tag" onclick="copyTag(this)">#아이안전매트</span>
+          <span class="tag" onclick="copyTag(this)">#반려견매트</span>
+          <span class="tag" onclick="copyTag(this)">#강아지매트</span>
+          <span class="tag" onclick="copyTag(this)">#TPU매트</span>
+          <span class="tag" onclick="copyTag(this)">#인테리어</span>
+          <span class="tag" onclick="copyTag(this)">#시공전후</span>
+          <span class="tag" onclick="copyTag(this)">#입주준비</span>
+          <span class="tag" onclick="copyTag(this)">#신혼집</span>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-label"><span class="dot"></span>📝 캡션 템플릿 3종 (탭하면 복사)</div>
+        <div class="caption-box">
+          <button class="caption-copy" onclick="copyCaption(this)">복사</button>
+          <div class="caption-text">오늘의 시공 현장 📍<br>1000mm TPU 매트로 이음새 최소화!<br>아이와 반려동물이 마음 놓고 뛰놀 수 있어요 🐕<br><br>무료 샘플 신청은 프로필 링크 ✨</div>
+        </div>
+        <div class="caption-box">
+          <button class="caption-copy" onclick="copyCaption(this)">복사</button>
+          <div class="caption-text">✨ BEFORE / AFTER ✨<br>타사 600mm → 돌봄매트 1000mm<br>이음새가 이렇게나 달라집니다!<br><br>우리집 맞춤 견적받기 👉 프로필 링크</div>
+        </div>
+        <div class="caption-box">
+          <button class="caption-copy" onclick="copyCaption(this)">복사</button>
+          <div class="caption-text">감사합니다 고객님 💚<br>만족도 100% 후기 인증!<br>6,700건 시공 경험의 차이,<br>돌봄매트에서 직접 확인하세요.<br><br>샘플 무료 배송 🎁 프로필 링크</div>
+        </div>
+      </div>
+
+      <div class="guide-section">
+        <div class="guide-label"><span class="dot"></span>⏰ 업로드 황금 시간대</div>
+        <div class="time-tip">
+          <span class="time-item">🌅 오전 8-9시</span>
+          <span class="time-item">☕ 점심 12-1시</span>
+          <span class="time-item">🌇 저녁 7-9시</span>
+          <span class="time-item">🌙 밤 10-11시</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// 설정
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const BASE_URL = 'https://my.dolbommat.com';
+
+let currentUser = '';
+let allCustomers = [];
+let currentFilter = 'all';
+
+// ============================================================
+// 초기 실행
+// ============================================================
+window.addEventListener('load', function() {
+  const params = new URLSearchParams(window.location.search);
+  const u = params.get('u') || '';
+  
+  if (u) {
+    currentUser = u;
+    loadDashboard(u);
+  } else {
+    loadSelector();
+  }
+});
+
+// ============================================================
+// 직원 선택 화면
+// ============================================================
+function loadSelector() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('selectorScreen').style.display = 'block';
+  
+  fetch(API_URL + '?type=teamList')
+    .then(r => r.json())
+    .then(data => {
+      renderSelector(data.members || []);
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('팀 정보를 불러올 수 없습니다', 'error');
+    });
+}
+
+function renderSelector(members) {
+  const regions = {};
+  members.forEach(m => {
+    if (!regions[m.region]) regions[m.region] = [];
+    regions[m.region].push(m);
+  });
+  
+  let html = '';
+  Object.keys(regions).forEach(region => {
+    html += `<div class="selector-region">
+      <div class="selector-region-name">${region} 팀</div>
+      <div class="selector-grid">`;
+    regions[region].forEach(m => {
+      html += `<div class="selector-card" onclick="selectUser('${m.name}')">
+        <div class="selector-card-name">${m.name}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  document.getElementById('selectorList').innerHTML = html;
+}
+
+function selectUser(name) {
+  const url = window.location.pathname + '?u=' + encodeURIComponent(name);
+  window.location.href = url;
+}
+
+function switchUser() {
+  if (confirm('이름 선택 화면으로 돌아갈까요?')) {
+    window.location.href = window.location.pathname;
+  }
+}
+
+// ============================================================
+// 대시보드 로드
+// ============================================================
+function loadDashboard(user) {
+  document.getElementById('loadingScreen').style.display = 'flex';
+  
+  fetch(API_URL + '?type=myStats&ref=' + encodeURIComponent(user))
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        showToast('오류: ' + data.error, 'error');
+        setTimeout(() => {
+          window.location.href = window.location.pathname;
+        }, 2000);
+        return;
+      }
+      renderDashboard(user, data);
+    })
+    .catch(err => {
+      console.error(err);
+      showToast('데이터 로드 실패', 'error');
+    });
+}
+
+function renderDashboard(user, data) {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('dashboardScreen').style.display = 'block';
+  
+  // 사용자 정보
+  document.getElementById('userName').textContent = user;
+  const me = (data.leaderboard || []).find(m => m.isMe);
+  if (me) {
+    document.getElementById('userMeta').textContent = 
+      me.region + ' 팀 · 현재 순위 ' + me.rankNo + '위';
+  }
+  
+  // 날짜 표시
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  document.getElementById('periodLabel').textContent = y + '년 ' + m + '월';
+  document.getElementById('dateInfo').textContent = 
+    y + '. ' + m + '. ' + now.getDate() + ' · 실시간 업데이트';
+  
+  // 3대 지표
+  const stats = data.stats || {};
+  document.getElementById('statInflow').textContent = stats.inflow || 0;
+  document.getElementById('statCompleted').textContent = stats.completed || 0;
+  document.getElementById('statIncentive').textContent = formatNum(stats.incentive || 0);
+  
+  // 지난달 대비
+  const prevInc = stats.prevMonthIncentive || 0;
+  const curInc = stats.incentive || 0;
+  setDelta('deltaIncentive', curInc - prevInc, '원');
+  
+  // 미니 지표
+  document.getElementById('miniSample').textContent = stats.sample || 0;
+  document.getElementById('miniReserved').textContent = stats.reserved || 0;
+  document.getElementById('miniRevenue').textContent = formatNum(stats.revenue || 0) + '원';
+  
+  // 리더보드
+  renderLeaderboard(data.leaderboard || [], user);
+  
+  // 내 고객
+  allCustomers = data.customers || [];
+  renderCustomers();
+  
+  // 마케팅 링크
+  const encUser = encodeURIComponent(user);
+  document.getElementById('linkWelcome').textContent = 
+    BASE_URL + '/cs-welcome.html?ref=' + user;
+  document.getElementById('linkHub').textContent = 
+    BASE_URL + '/cs-hub.html?u=' + user;
+  document.getElementById('linkQuote').textContent = 
+    BASE_URL + '/quote.html?ch=' + user;
+}
+
+function setDelta(id, delta, unit) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (delta > 0) {
+    el.className = 'stat-delta up';
+    el.textContent = '↑ ' + formatNum(delta) + unit;
+  } else if (delta < 0) {
+    el.className = 'stat-delta down';
+    el.textContent = '↓ ' + formatNum(Math.abs(delta)) + unit;
+  } else {
+    el.className = 'stat-delta same';
+    el.textContent = '지난달과 동일';
+  }
+}
+
+function formatNum(n) {
+  return (n || 0).toLocaleString();
+}
+
+// ============================================================
+// 리더보드
+// ============================================================
+function renderLeaderboard(list, me) {
+  let html = '';
+  list.forEach(m => {
+    const cls = 'board-item' + (m.isMe ? ' me' : '') + ' rank-' + m.rankNo;
+    const medal = m.rankNo === 1 ? '🥇' : (m.rankNo === 2 ? '🥈' : (m.rankNo === 3 ? '🥉' : m.rankNo));
+    html += `<div class="${cls}">
+      <div class="board-rank">${medal}</div>
+      <div>
+        <span class="board-name">${m.name}${m.isMe ? ' (나)' : ''}</span>
+        <span class="board-region">${m.region}</span>
+      </div>
+      <div class="board-value">
+        ${formatNum(m.incentive)}원
+        <span class="small">완공 ${m.completed}건</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('leaderboardList').innerHTML = html;
+  
+  // 격려 메시지
+  const myIdx = list.findIndex(m => m.isMe);
+  if (myIdx > 0) {
+    const aboveMe = list[myIdx - 1];
+    const diff = aboveMe.incentive - list[myIdx].incentive;
+    const box = document.getElementById('boardEncourage');
+    box.style.display = 'block';
+    if (diff === 0) {
+      box.textContent = '🔥 ' + aboveMe.name + '님과 동점! 한 건만 더 완공하면 앞섭니다!';
+    } else {
+      box.innerHTML = '💪 ' + (myIdx) + '위 <strong>' + aboveMe.name + '</strong>님까지 <strong>' + formatNum(diff) + '원</strong>! 파이팅!';
+    }
+  } else if (myIdx === 0) {
+    const box = document.getElementById('boardEncourage');
+    box.style.display = 'block';
+    box.innerHTML = '🏆 축하합니다! 이번 달 1위입니다! 🎉';
+  }
+}
+
+// ============================================================
+// 내 고객
+// ============================================================
+function renderCustomers() {
+  const filtered = currentFilter === 'all' 
+    ? allCustomers 
+    : allCustomers.filter(c => getStatus(c) === currentFilter);
+  
+  // 카운트
+  document.getElementById('cntAll').textContent = '(' + allCustomers.length + ')';
+  document.getElementById('cntInflow').textContent = '(' + allCustomers.filter(c => getStatus(c) === '유입').length + ')';
+  document.getElementById('cntSample').textContent = '(' + allCustomers.filter(c => getStatus(c) === '샘플').length + ')';
+  document.getElementById('cntReserved').textContent = '(' + allCustomers.filter(c => getStatus(c) === '예약').length + ')';
+  document.getElementById('cntCompleted').textContent = '(' + allCustomers.filter(c => getStatus(c) === '완공').length + ')';
+  
+  if (filtered.length === 0) {
+    document.getElementById('customerList').innerHTML = 
+      '<div class="cust-empty">아직 해당하는 고객이 없습니다</div>';
+    return;
+  }
+  
+  let html = '';
+  filtered.forEach(c => {
+    const status = getStatus(c);
+    const phoneFormatted = formatPhone(c.phone);
+    const revLine = c.revenue ? '<div class="cust-revenue">💰 ' + formatNum(c.revenue) + '원 · 인센 ' + formatNum(c.incentive) + '원</div>' : '';
+    html += `<div class="cust-item">
+      <div class="cust-info">
+        <div class="cust-head">
+          <span class="cust-name">${escapeHtml(c.name)}</span>
+          <span class="cust-phone">${phoneFormatted}</span>
+        </div>
+        <div class="cust-meta">
+          <span class="cust-status ${status}">${statusLabel(status)}</span>
+          <span class="cust-date">${c.entryDate || '-'}</span>
+        </div>
+        ${revLine}
+      </div>
+      <a href="tel:${c.phone}" class="cust-call">📞</a>
+    </div>`;
+  });
+  document.getElementById('customerList').innerHTML = html;
+}
+
+function getStatus(c) {
+  if (c.completed) return '완공';
+  if (c.reserved) return '예약';
+  if (c.sample) return '샘플';
+  return '유입';
+}
+
+function statusLabel(s) {
+  const map = {'완공':'✅ 완공','예약':'🎯 예약','샘플':'📋 샘플','유입':'👀 유입'};
+  return map[s] || s;
+}
+
+function formatPhone(p) {
+  if (!p) return '';
+  const clean = String(p).replace(/[^0-9]/g, '');
+  if (clean.length === 11) return clean.slice(0,3) + '-' + clean.slice(3,7) + '-' + clean.slice(7);
+  if (clean.length === 10) return clean.slice(0,3) + '-' + clean.slice(3,6) + '-' + clean.slice(6);
+  return clean;
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.cust-filter').forEach(b => b.classList.remove('active'));
+  document.querySelector('.cust-filter[data-filter="' + f + '"]').classList.add('active');
+  renderCustomers();
+}
+
+// ============================================================
+// 링크 복사
+// ============================================================
+function copyMainLink() {
+  const url = document.getElementById('linkWelcome').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.classList.add('copied');
+    document.getElementById('copyBtnLabel').textContent = '✓ 복사됐어요!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      document.getElementById('copyBtnLabel').textContent = '링크 복사하기';
+    }, 2000);
+    showToast('링크가 복사되었습니다!', 'success');
+  }).catch(() => {
+    // 폴백: 텍스트 선택 방식
+    const temp = document.createElement('textarea');
+    temp.value = url;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    showToast('링크가 복사되었습니다!', 'success');
+  });
+}
+
+function copyTag(el) {
+  const tag = el.textContent;
+  navigator.clipboard.writeText(tag).then(() => {
+    showToast(tag + ' 복사됨!', 'success');
+  });
+}
+
+function copyCaption(btn) {
+  const text = btn.parentElement.querySelector('.caption-text').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('캡션이 복사되었습니다!', 'success');
+  });
+}
+
+// ============================================================
+// 유틸
+// ============================================================
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
