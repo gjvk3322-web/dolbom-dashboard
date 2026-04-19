@@ -105,7 +105,7 @@
 
 <div id="errorBox" class="err-msg hidden">
   추천 링크 정보를 찾을 수 없습니다.<br>
-  <a href="/home.html" style="color:#c62828;text-decoration:underline;">메인으로</a>
+  <a href="javascript:history.back()" style="color:#c62828;text-decoration:underline;">이전 페이지로</a>
 </div>
 
 <div id="mainContent" class="hidden">
@@ -297,7 +297,8 @@ async function handleNext(nextStep) {
   if (nextStep === 'quote') {
     showToast('✅ 맞춤견적 페이지로 이동합니다', 'success');
     setTimeout(() => {
-      window.location.href = `./cs-quote.html?ref=${ref}&phone=${data.phone}&name=${encodeURIComponent(data.name)}`;
+      // 기존 quote.html 사용 · ch 파라미터로 추천인 추적
+      window.location.href = `./quote.html?ch=${ref}`;
     }, 600);
   } else if (nextStep === 'kakao') {
     showToast('✅ 카카오톡 상담으로 이동합니다', 'success');

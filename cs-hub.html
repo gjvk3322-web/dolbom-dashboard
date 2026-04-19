@@ -92,34 +92,41 @@
   margin-top: 20px;
 }
 
-.cta-primary {
+.cta-quote-box {
   background: linear-gradient(135deg, #43A047, #2E7D32);
-  color: #fff;
-  padding: 18px 20px;
   border-radius: 16px;
+  padding: 18px 16px 14px;
   text-align: center;
   cursor: pointer;
   border: none;
   width: 100%;
-  font-size: 16px;
-  font-weight: 800;
   font-family: inherit;
   transition: transform 0.15s;
   box-shadow: 0 4px 14px rgba(67,160,71,0.3);
+  display: block;
+}
+
+.cta-quote-box:active { transform: scale(0.98); }
+
+.cta-quote-main {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-bottom: 10px;
 }
 
-.cta-primary:active { transform: scale(0.98); }
-
-.cta-recommend {
+.cta-quote-recommend {
   text-align: center;
   font-size: 11px;
-  color: var(--primary);
-  margin-top: 6px;
+  color: rgba(255,255,255,0.9);
   font-weight: 600;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 10px;
+  margin: 0 -4px;
 }
 
 .cta-kakao {
@@ -268,10 +275,14 @@
   </div>
 
   <div class="cta-section fade-up fade-up-2">
-    <button class="cta-primary" id="btnQuote">
-      📋 셀프 맞춤견적 받기
+    <button class="cta-quote-box" id="btnQuote">
+      <div class="cta-quote-main">
+        📋 셀프 맞춤견적 받기
+      </div>
+      <div class="cta-quote-recommend">
+        ⭐ 추천 · 3분만에 내 집 견적 확인
+      </div>
     </button>
-    <div class="cta-recommend">⭐ 추천 · 3분만에 내 집 견적 확인</div>
 
     <button class="cta-kakao" id="btnKakao">
       💬 카카오톡으로 상담하기
@@ -361,15 +372,15 @@ function init() {
 function handleClick(type) {
   switch (type) {
     case 'quote':
-      // 셀프 견적 · welcome 거치지 않고 바로 quote로
-      window.location.href = `./cs-welcome.html?ref=${teamId}`;
+      // 셀프 견적 · 기존 quote.html 직접 이동 (ch 파라미터로 추천인 추적)
+      window.location.href = `./quote.html?ch=${teamId}`;
       break;
     case 'kakao':
-      // 카톡 상담 · welcome에서 번호 기록 후 카톡
+      // 카톡 상담 · 정보 수집 후 카톡 연결
       window.location.href = `./cs-welcome.html?ref=${teamId}`;
       break;
     case 'sample':
-      // 샘플 신청은 카톡 상담으로 유도
+      // 샘플 신청은 정보 수집 후 카톡 상담으로 유도 (진성 고객 필터링)
       window.location.href = `./cs-welcome.html?ref=${teamId}`;
       break;
   }
