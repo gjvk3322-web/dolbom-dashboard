@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 시공 전문가</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./cs-common.css">
+<style>
+.hub-container {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.profile-card {
+  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 30px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(46,125,50,0.2);
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 220px;
+  height: 220px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+
+.profile-img {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  border: 3px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  position: relative;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.profile-role {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 14px;
+  padding: 14px 10px;
+  position: relative;
+}
+
+.profile-stat-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.profile-stat-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.75);
+  margin-top: 2px;
+}
+
+.cta-section {
+  margin-top: 20px;
+}
+
+.cta-primary {
+  background: linear-gradient(135deg, #43A047, #2E7D32);
+  color: #fff;
+  padding: 18px 20px;
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: inherit;
+  transition: transform 0.15s;
+  box-shadow: 0 4px 14px rgba(67,160,71,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cta-primary:active { transform: scale(0.98); }
+
+.cta-recommend {
+  text-align: center;
+  font-size: 11px;
+  color: var(--primary);
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.cta-kakao {
+  margin-top: 10px;
+  background: var(--kakao);
+  color: var(--kakao-text);
+  padding: 14px 20px;
+  border-radius: 14px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cta-kakao:active { transform: scale(0.98); }
+
+.cta-sample {
+  margin-top: 10px;
+  background: #fff;
+  color: var(--text-secondary);
+  padding: 12px 20px;
+  border-radius: 14px;
+  text-align: center;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cta-sample:active { transform: scale(0.98); }
+
+.works-section {
+  margin-top: 24px;
+}
+
+.works-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.work-item {
+  aspect-ratio: 1;
+  background: #e8e5dc;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+
+.work-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.work-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 24px;
+}
+
+.footer-note {
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+.footer-note a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.trust-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.trust-chip {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+
+<div class="hub-container">
+
+  <div class="profile-card fade-up">
+    <div class="profile-img" id="profileImg">SJ</div>
+    <div class="profile-name" id="profileName">승재 시공팀</div>
+    <div class="profile-role" id="profileRole">부산 · 5년차 베테랑</div>
+    <div class="profile-stats">
+      <div>
+        <div class="profile-stat-num" id="statSites">127</div>
+        <div class="profile-stat-label">시공 완료</div>
+      </div>
+      <div>
+        <div class="profile-stat-num" id="statRating">4.9</div>
+        <div class="profile-stat-label">평균 별점</div>
+      </div>
+      <div>
+        <div class="profile-stat-num" id="statSatisfaction">98%</div>
+        <div class="profile-stat-label">만족도</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-section fade-up fade-up-2">
+    <button class="cta-primary" id="btnQuote">
+      📋 셀프 맞춤견적 받기
+    </button>
+    <div class="cta-recommend">⭐ 추천 · 3분만에 내 집 견적 확인</div>
+
+    <button class="cta-kakao" id="btnKakao">
+      💬 카카오톡으로 상담하기
+    </button>
+
+    <button class="cta-sample" id="btnSample">
+      🎁 무료 샘플 받아보기
+    </button>
+  </div>
+
+  <div class="works-section fade-up fade-up-3">
+    <div class="works-title">
+      🏆 최근 작품
+    </div>
+    <div class="works-grid" id="worksGrid">
+      <div class="work-item"><div class="work-placeholder">📷</div></div>
+      <div class="work-item"><div class="work-placeholder">📷</div></div>
+      <div class="work-item"><div class="work-placeholder">📷</div></div>
+    </div>
+
+    <div class="trust-row">
+      <div class="trust-chip">✅ 6,700건 시공</div>
+      <div class="trust-chip">🏅 KCL 인증</div>
+      <div class="trust-chip">🔒 품질 보증</div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    돌봄매트 · TPU 매트 전문 시공<br>
+    <a href="https://m.site.naver.com/1AWJU">⭐ 고객 리뷰 보기</a> ·
+    <a href="https://m.site.naver.com/1Ac41">🏅 인증서</a>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
+
+// URL 파라미터
+const params = new URLSearchParams(window.location.search);
+const teamId = params.get('u') || 'sj';
+
+// 시공팀 정보 (임시 하드코딩 · 추후 API 연동)
+const TEAM_DATA = {
+  'sj':  { name:'승재', initial:'SJ', region:'부산', years:5,  sites:127, rating:4.9, satisfaction:98, role:'베테랑' },
+  'sw':  { name:'세욱', initial:'SW', region:'부산', years:4,  sites:98,  rating:4.8, satisfaction:97, role:'전문가' },
+  'jh':  { name:'준형', initial:'JH', region:'부산', years:6,  sites:152, rating:4.9, satisfaction:98, role:'베테랑' },
+  'yc':  { name:'윤철', initial:'YC', region:'부산', years:3,  sites:72,  rating:4.7, satisfaction:96, role:'전문가' },
+  'mw':  { name:'민우', initial:'MW', region:'경기', years:5,  sites:118, rating:4.9, satisfaction:97, role:'베테랑' },
+  'hs':  { name:'형석', initial:'HS', region:'경기', years:4,  sites:95,  rating:4.8, satisfaction:96, role:'전문가' },
+  'sj2': { name:'선재', initial:'SJ', region:'경기', years:3,  sites:68,  rating:4.8, satisfaction:97, role:'전문가' },
+  'kj':  { name:'경준', initial:'KJ', region:'경기', years:3,  sites:65,  rating:4.7, satisfaction:95, role:'전문가' },
+  'hj':  { name:'현진', initial:'HJ', region:'경기', years:2,  sites:42,  rating:4.8, satisfaction:96, role:'전문가' },
+  'jm':  { name:'재문', initial:'JM', region:'경기', years:4,  sites:88,  rating:4.8, satisfaction:97, role:'전문가' }
+};
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function init() {
+  const team = TEAM_DATA[teamId];
+
+  if (!team) {
+    document.getElementById('profileName').textContent = '시공팀 정보 없음';
+    showToast('⚠️ 잘못된 링크입니다', 'error');
+    return;
+  }
+
+  document.getElementById('profileImg').textContent = team.initial;
+  document.getElementById('profileName').textContent = team.name + ' 시공팀';
+  document.getElementById('profileRole').textContent = `${team.region} · ${team.years}년차 ${team.role}`;
+  document.getElementById('statSites').textContent = team.sites;
+  document.getElementById('statRating').textContent = team.rating;
+  document.getElementById('statSatisfaction').textContent = team.satisfaction + '%';
+
+  // 타이틀 업데이트
+  document.title = `${team.name} 시공팀 · 돌봄매트`;
+}
+
+function handleClick(type) {
+  switch (type) {
+    case 'quote':
+      // 셀프 견적 · welcome 거치지 않고 바로 quote로
+      window.location.href = `./cs-welcome.html?ref=${teamId}`;
+      break;
+    case 'kakao':
+      // 카톡 상담 · welcome에서 번호 기록 후 카톡
+      window.location.href = `./cs-welcome.html?ref=${teamId}`;
+      break;
+    case 'sample':
+      // 샘플 신청은 카톡 상담으로 유도
+      window.location.href = `./cs-welcome.html?ref=${teamId}`;
+      break;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  init();
+  document.getElementById('btnQuote').addEventListener('click', () => handleClick('quote'));
+  document.getElementById('btnKakao').addEventListener('click', () => handleClick('kakao'));
+  document.getElementById('btnSample').addEventListener('click', () => handleClick('sample'));
+});
+</script>
+</body>
+</html>

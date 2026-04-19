@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 · 셀프 맞춤견적</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./cs-common.css">
+<style>
+.step-hero {
+  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 40%, #43A047 100%);
+  padding: 24px 20px 20px;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 280px;
+  height: 280px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+
+.step-hero h1 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.step-hero p {
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  position: relative;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  position: relative;
+}
+
+.step-dot {
+  width: 30px;
+  height: 6px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+  transition: all 0.3s;
+}
+
+.step-dot.active {
+  background: var(--accent);
+  width: 50px;
+}
+
+.step-dot.done {
+  background: rgba(255,255,255,0.8);
+}
+
+.step-section {
+  display: none;
+}
+
+.step-section.active {
+  display: block;
+  animation: fadeUp 0.4s ease;
+}
+
+.product-card {
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+}
+
+.product-card.selected {
+  border-color: var(--primary);
+  background: var(--success-light);
+}
+
+.product-card:active {
+  transform: scale(0.98);
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.product-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.product-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: var(--warning-light);
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.product-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.product-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.result-card {
+  background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 24px 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.result-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.result-price {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.result-discount {
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.result-detail {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.result-row .label {
+  color: var(--text-secondary);
+}
+
+.result-row .value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nav-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.nav-btns .btn-back {
+  flex: 1;
+  background: #fff;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  max-width: 100px;
+}
+
+.nav-btns .btn-next {
+  flex: 2;
+}
+
+.recommend-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+</style>
+</head>
+<body>
+
+<div class="step-hero">
+  <h1>📋 셀프 맞춤견적</h1>
+  <p>3단계로 내 집 견적을 확인하세요</p>
+  <div class="step-indicator">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Step 1 · 공간 입력 -->
+  <div class="step-section active" id="step1">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🏠</span> 시공 공간 정보</div>
+
+      <div class="fg">
+        <label>아파트 이름 <span class="req">*</span></label>
+        <input type="text" id="fApartment" placeholder="예: 신개금엘지 1차" />
+      </div>
+
+      <div class="fg">
+        <label>평수 <span class="req">*</span></label>
+        <div class="chip-group" id="chipPyeong">
+          <div class="chip" data-val="24" style="flex:1;text-align:center">24평</div>
+          <div class="chip" data-val="31" style="flex:1;text-align:center">31평</div>
+          <div class="chip" data-val="33" style="flex:1;text-align:center">33평</div>
+          <div class="chip" data-val="44" style="flex:1;text-align:center">44평</div>
+          <div class="chip" data-val="custom" style="flex:1;text-align:center">직접입력</div>
+        </div>
+        <input type="number" id="fPyeongCustom" placeholder="평수 직접 입력" class="hidden" style="margin-top:8px" inputmode="numeric" />
+      </div>
+
+      <div class="fg">
+        <label>시공 공간 <span class="req">*</span> (복수 선택 가능)</label>
+        <div class="chip-group" id="chipSpaces">
+          <div class="chip" data-val="거실">거실</div>
+          <div class="chip" data-val="복도">복도</div>
+          <div class="chip" data-val="주방">주방</div>
+          <div class="chip" data-val="침실">침실</div>
+          <div class="chip" data-val="전체">전체</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-large mt-2" id="btnNext1">다음 · 제품 선택 →</button>
+  </div>
+
+  <!-- Step 2 · 제품 선택 -->
+  <div class="step-section" id="step2">
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🎯</span> 제품 선택</div>
+
+      <div class="product-card" data-product="22T" id="prod22T" style="position:relative">
+        <div class="recommend-badge">추천</div>
+        <div class="product-header">
+          <div class="product-name">1000매트 22T</div>
+          <div class="product-badge">일반형</div>
+        </div>
+        <div class="product-desc">
+          대부분 가정에 적합한 두께<br>
+          소음 흡수 + 푹신한 쿠션감
+        </div>
+        <div class="product-price">16,000원/장</div>
+      </div>
+
+      <div class="product-card" data-product="17T" id="prod17T">
+        <div class="product-header">
+          <div class="product-name">1000매트 17T</div>
+          <div class="product-badge" style="background:var(--info-light);color:var(--info)">반려견 전용</div>
+        </div>
+        <div class="product-desc">
+          반려동물 발톱에 최적화된 얇은 매트<br>
+          미끄럼 방지 · 관리 편리
+        </div>
+        <div class="product-price">16,000원/장</div>
+      </div>
+
+      <div class="product-card" data-product="500" id="prod500">
+        <div class="product-header">
+          <div class="product-name">500매트</div>
+          <div class="product-badge" style="background:#f3e5f5;color:#6a1b9a">소형</div>
+        </div>
+        <div class="product-desc">
+          부분 시공 · 특정 공간용<br>
+          작은 공간에 합리적
+        </div>
+        <div class="product-price">16,000원/장</div>
+      </div>
+
+      <div style="margin-top:14px;padding:12px;background:var(--info-light);border-radius:10px;font-size:11px;color:var(--info);line-height:1.6">
+        💡 <strong>공동구매 혜택</strong><br>
+        같은 단지 이웃과 함께 시공 시 장당 500원 할인!
+      </div>
+    </div>
+
+    <div class="nav-btns">
+      <button class="btn btn-back" id="btnBack2">← 이전</button>
+      <button class="btn btn-primary btn-next" id="btnNext2">다음 · 견적 확인 →</button>
+    </div>
+  </div>
+
+  <!-- Step 3 · 견적 결과 -->
+  <div class="step-section" id="step3">
+
+    <div class="result-card">
+      <div class="result-label">예상 시공 금액</div>
+      <div class="result-price" id="resultPrice">0원</div>
+      <div class="result-discount" id="resultDiscount"></div>
+
+      <div class="result-detail">
+        <div class="result-row">
+          <span class="label">📍 아파트</span>
+          <span class="value" id="resultApt">-</span>
+        </div>
+        <div class="result-row">
+          <span class="label">📐 평수</span>
+          <span class="value" id="resultPyeong">-</span>
+        </div>
+        <div class="result-row">
+          <span class="label">🏠 시공 공간</span>
+          <span class="value" id="resultSpaces">-</span>
+        </div>
+        <div class="result-row">
+          <span class="label">🎯 제품</span>
+          <span class="value" id="resultProduct">-</span>
+        </div>
+        <div class="result-row">
+          <span class="label">📦 예상 매트 수량</span>
+          <span class="value" id="resultMats">-</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fff3e0;border:1px solid #ffe0b2;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:#e65100;line-height:1.6">
+      ⚠️ 위 견적은 <strong>예상 금액</strong>입니다<br>
+      실측 후 정확한 금액이 확정됩니다
+    </div>
+
+    <button class="btn btn-kakao btn-large" id="btnKakao">
+      💬 이 견적으로 카카오톡 상담하기
+    </button>
+
+    <button class="btn btn-secondary mt-1" id="btnRestart">
+      🔄 다시 견적내기
+    </button>
+
+    <div id="refInfo" style="text-align:center;margin-top:14px;font-size:11px;color:var(--text-tertiary)"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
+
+// 평균 계산 상수
+const MATS_PER_PYEONG = {
+  '거실': 2.2,
+  '복도': 1.0,
+  '주방': 1.5,
+  '침실': 2.0,
+  '전체': 3.5
+};
+const UNIT_PRICE = 16000;
+const GROUP_DISCOUNT = 500;
+
+// URL 파라미터
+const params = new URLSearchParams(window.location.search);
+const ref = params.get('ref') || '';
+const phone = params.get('phone') || '';
+const name = params.get('name') || '';
+
+// 상태
+const state = {
+  apartment: '',
+  pyeong: 0,
+  spaces: [],
+  product: '',
+  matCount: 0,
+  total: 0,
+  totalDiscounted: 0
+};
+
+// 시공팀 이름 매핑
+const TEAM_MAP = {
+  'sj':'승재', 'sw':'세욱', 'jh':'준형', 'yc':'윤철',
+  'mw':'민우', 'hs':'형석', 'sj2':'선재', 'kj':'경준', 'hj':'현진', 'jm':'재문'
+};
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function goStep(n) {
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step${n}`).classList.add('active');
+
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    dot.classList.remove('active','done');
+    if (i < n) dot.classList.add('done');
+    else if (i === n) dot.classList.add('active');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Step 1 · 평수 선택
+document.querySelectorAll('#chipPyeong .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#chipPyeong .chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+
+    const val = chip.dataset.val;
+    const customInput = document.getElementById('fPyeongCustom');
+    if (val === 'custom') {
+      customInput.classList.remove('hidden');
+      customInput.focus();
+      state.pyeong = 0;
+    } else {
+      customInput.classList.add('hidden');
+      customInput.value = '';
+      state.pyeong = parseInt(val);
+    }
+  });
+});
+
+document.getElementById('fPyeongCustom').addEventListener('input', e => {
+  state.pyeong = parseInt(e.target.value) || 0;
+});
+
+// Step 1 · 공간 선택 (복수)
+document.querySelectorAll('#chipSpaces .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const val = chip.dataset.val;
+    if (val === '전체') {
+      document.querySelectorAll('#chipSpaces .chip').forEach(c => {
+        if (c.dataset.val !== '전체') c.classList.remove('selected');
+      });
+      chip.classList.toggle('selected');
+    } else {
+      document.querySelector('#chipSpaces .chip[data-val="전체"]').classList.remove('selected');
+      chip.classList.toggle('selected');
+    }
+  });
+});
+
+// Step 1 → Step 2
+document.getElementById('btnNext1').addEventListener('click', () => {
+  const apt = document.getElementById('fApartment').value.trim();
+  if (!apt) { showToast('⚠️ 아파트 이름을 입력해주세요', 'error'); return; }
+  if (!state.pyeong || state.pyeong < 1) { showToast('⚠️ 평수를 선택해주세요', 'error'); return; }
+
+  const selectedSpaces = Array.from(document.querySelectorAll('#chipSpaces .chip.selected')).map(c => c.dataset.val);
+  if (selectedSpaces.length === 0) { showToast('⚠️ 시공 공간을 선택해주세요', 'error'); return; }
+
+  state.apartment = apt;
+  state.spaces = selectedSpaces;
+  goStep(2);
+});
+
+// Step 2 · 제품 선택
+document.querySelectorAll('.product-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.product = card.dataset.product;
+  });
+});
+
+// 기본 추천 = 22T
+document.getElementById('prod22T').classList.add('selected');
+state.product = '22T';
+
+// Step 2 · 이전
+document.getElementById('btnBack2').addEventListener('click', () => goStep(1));
+
+// Step 2 → Step 3 · 견적 계산
+document.getElementById('btnNext2').addEventListener('click', () => {
+  if (!state.product) { showToast('⚠️ 제품을 선택해주세요', 'error'); return; }
+
+  // 매트 수량 계산 (평수 × 공간별 상수의 합)
+  let matCount = 0;
+  if (state.spaces.includes('전체')) {
+    matCount = Math.round(state.pyeong * MATS_PER_PYEONG['전체']);
+  } else {
+    state.spaces.forEach(sp => {
+      matCount += Math.round(state.pyeong * MATS_PER_PYEONG[sp] / state.spaces.length * 1.5);
+    });
+  }
+  if (matCount < 10) matCount = 10;
+
+  state.matCount = matCount;
+  state.total = matCount * UNIT_PRICE;
+  state.totalDiscounted = matCount * (UNIT_PRICE - GROUP_DISCOUNT);
+
+  // 결과 렌더링
+  const productName = state.product === '22T' ? '1000매트 22T (일반형)' :
+                      state.product === '17T' ? '1000매트 17T (반려견 전용)' : '500매트 (소형)';
+
+  document.getElementById('resultPrice').textContent = state.total.toLocaleString() + '원';
+  document.getElementById('resultDiscount').textContent = 
+    `공동구매 시 ${state.totalDiscounted.toLocaleString()}원 (${(state.total - state.totalDiscounted).toLocaleString()}원 ↓)`;
+  document.getElementById('resultApt').textContent = state.apartment;
+  document.getElementById('resultPyeong').textContent = state.pyeong + '평';
+  document.getElementById('resultSpaces').textContent = state.spaces.join(' · ');
+  document.getElementById('resultProduct').textContent = productName;
+  document.getElementById('resultMats').textContent = state.matCount + '장';
+
+  // 추천 정보 표시
+  if (ref && TEAM_MAP[ref]) {
+    document.getElementById('refInfo').textContent = `${TEAM_MAP[ref]} 시공팀 추천 · 상담 시 언급해주세요`;
+  }
+
+  goStep(3);
+
+  // 서버에 견적 저장 (백그라운드)
+  saveQuote();
+});
+
+async function saveQuote() {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'submitQuote',
+        name: name,
+        phone: phone,
+        apartment: state.apartment,
+        pyeong: state.pyeong,
+        spaces: state.spaces,
+        product: state.product,
+        mat_count: state.matCount,
+        estimate_total: state.total,
+        estimate_discounted: state.totalDiscounted,
+        ref: ref
+      })
+    });
+  } catch (e) {
+    console.error('submitQuote failed', e);
+  }
+}
+
+// Step 3 · 카톡 상담
+document.getElementById('btnKakao').addEventListener('click', () => {
+  showToast('✅ 카카오톡 상담으로 이동합니다', 'success');
+  setTimeout(() => {
+    window.location.href = KAKAO_URL;
+  }, 600);
+});
+
+// Step 3 · 다시
+document.getElementById('btnRestart').addEventListener('click', () => {
+  if (!confirm('견적을 처음부터 다시 작성하시겠어요?')) return;
+  window.location.reload();
+});
+</script>
+</body>
+</html>
