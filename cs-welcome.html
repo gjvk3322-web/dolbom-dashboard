@@ -182,7 +182,11 @@
       </button>
     </div>
 
-    <div style="text-align:center;margin-top:20px;padding-bottom:40px;font-size:11px;color:var(--text-tertiary);">
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text-tertiary);">
+      정보 입력 후 원하시는 방법을 선택하세요
+    </div>
+
+    <div style="text-align:center;margin-top:10px;padding-bottom:40px;font-size:11px;color:var(--text-tertiary);">
       상담은 평일 오전 9시~오후 6시 진행됩니다
     </div>
 
@@ -200,6 +204,7 @@ const KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
 const params = new URLSearchParams(window.location.search);
 const ref = params.get('ref') || '';
 const contentId = params.get('content') || '';
+const nextDest = params.get('next') || 'quote'; // quote | kakao · 기본은 quote
 
 // 시공팀 정보 매핑 (임시 · 추후 API 호출로 대체)
 const TEAM_MAP = {
@@ -297,8 +302,9 @@ async function handleNext(nextStep) {
   if (nextStep === 'quote') {
     showToast('✅ 맞춤견적 페이지로 이동합니다', 'success');
     setTimeout(() => {
-      // 기존 quote.html 사용 · ch 파라미터로 추천인 추적
-      window.location.href = `./quote.html?ch=${ref}`;
+      // 기존 quote.html · ch(추천인) + phone(자동 채움) + name(참고용)
+      const qs = `ch=${encodeURIComponent(ref)}&phone=${encodeURIComponent(data.phone)}&name=${encodeURIComponent(data.name)}`;
+      window.location.href = `./quote.html?${qs}`;
     }, 600);
   } else if (nextStep === 'kakao') {
     showToast('✅ 카카오톡 상담으로 이동합니다', 'success');

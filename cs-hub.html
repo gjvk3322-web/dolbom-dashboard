@@ -372,16 +372,16 @@ function init() {
 function handleClick(type) {
   switch (type) {
     case 'quote':
-      // 셀프 견적 · 기존 quote.html 직접 이동 (ch 파라미터로 추천인 추적)
-      window.location.href = `./quote.html?ch=${teamId}`;
+      // 셀프 견적도 cs-welcome 거쳐서 휴대폰 번호 수집 후 quote.html로
+      window.location.href = `./cs-welcome.html?ref=${teamId}&next=quote`;
       break;
     case 'kakao':
       // 카톡 상담 · 정보 수집 후 카톡 연결
-      window.location.href = `./cs-welcome.html?ref=${teamId}`;
+      window.location.href = `./cs-welcome.html?ref=${teamId}&next=kakao`;
       break;
     case 'sample':
       // 샘플 신청은 정보 수집 후 카톡 상담으로 유도 (진성 고객 필터링)
-      window.location.href = `./cs-welcome.html?ref=${teamId}`;
+      window.location.href = `./cs-welcome.html?ref=${teamId}&next=kakao`;
       break;
   }
 }
