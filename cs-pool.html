@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>콘텐츠 풀 · 돌봄매트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-deep: #2E7D32;
+    --green-dark: #1B5E20;
+    --green-light: #4CAF50;
+    --green-soft: #E8F5E9;
+    --ivory: #F7F3EC;
+    --charcoal: #1A1816;
+    --gray-900: #212121;
+    --gray-700: #616161;
+    --gray-500: #9E9E9E;
+    --gray-300: #E0E0E0;
+    --gray-100: #F5F5F5;
+    --gold: #D9A44A;
+    --red-soft: #E53935;
+    --blue-soft: #1976D2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--ivory);
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    color: var(--charcoal);
+    min-height: 100vh;
+  }
+
+  /* ─── 헤더 ─── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .header-subtitle {
+    font-size: 13px;
+    color: var(--gray-700);
+    margin-top: 2px;
+  }
+  .user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--green-soft);
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green-deep);
+    cursor: pointer;
+  }
+
+  /* ─── 필터 탭 ─── */
+  .filter-tabs {
+    position: sticky;
+    top: 64px;
+    z-index: 99;
+    background: white;
+    padding: 12px 20px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--gray-300);
+  }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: var(--gray-100);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-700);
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-tab.active {
+    background: var(--charcoal);
+    color: white;
+  }
+  .filter-tab .count {
+    background: rgba(255,255,255,0.25);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+  .filter-tab:not(.active) .count {
+    background: var(--gray-300);
+  }
+
+  /* ─── 리스트 그리드 · PC 3열, 모바일 1열 ─── */
+  .content-list {
+    padding: 16px 20px 100px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 700px) {
+    .content-list {
+      grid-template-columns: repeat(2, 1fr);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  }
+  @media (min-width: 1024px) {
+    .content-list {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* ─── 카드 ─── */
+  .content-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    border: 1px solid var(--gray-300);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .content-card.status-available { border-left: 4px solid var(--green-light); }
+  .content-card.status-inuse { border-left: 4px solid var(--blue-soft); opacity: 0.85; }
+  .content-card.status-done { border-left: 4px solid var(--gray-500); opacity: 0.55; }
+  .content-card.status-pending { border-left: 4px solid var(--gold); }
+
+  .thumbnail {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/10;
+    background: linear-gradient(135deg, #E8F5E9 0%, #F4EFE8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .thumbnail-placeholder {
+    font-size: 48px;
+    opacity: 0.4;
+  }
+  .status-pill {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+  }
+  .status-pill.available { background: var(--green-light); }
+  .status-pill.inuse { background: var(--blue-soft); }
+  .status-pill.done { background: var(--gray-500); }
+  .status-pill.pending { background: var(--gold); }
+
+  .card-info {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+  .card-meta {
+    font-size: 13px;
+    color: var(--gray-700);
+    margin-bottom: 10px;
+  }
+  .card-meta span:not(:first-child)::before {
+    content: '·';
+    margin: 0 6px;
+    color: var(--gray-500);
+  }
+  .card-price {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .card-price-amount {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--green-deep);
+  }
+  .card-price-extra {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--gold);
+    color: white;
+    border-radius: 6px;
+    font-weight: 700;
+  }
+
+  .inuse-notice,
+  .done-notice {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .inuse-notice {
+    background: #E3F2FD;
+    color: var(--blue-soft);
+  }
+  .done-notice {
+    background: var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+  }
+  .btn {
+    flex: 1;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--green-deep); color: white; }
+  .btn-secondary { background: var(--gray-100); color: var(--charcoal); }
+  .btn-complete { background: var(--charcoal); color: white; }
+  .btn-disabled { background: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
+
+  /* ─── 성과 배지 (완료 콘텐츠) ─── */
+  .perf-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 11px;
+  }
+  .perf-pill {
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    font-weight: 600;
+  }
+  .perf-pill.hit { background: var(--blue-soft); color: white; }
+
+  /* ─── 모달 ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    justify-content: center;
+    align-items: flex-end;
+  }
+  .modal-overlay.show { display: flex; }
+  @media (min-width: 768px) {
+    .modal-overlay.show { align-items: center; }
+  }
+
+  .modal {
+    background: var(--ivory);
+    width: 100%;
+    max-width: 560px;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (min-width: 768px) {
+    .modal { border-radius: 20px; max-height: 85vh; }
+  }
+
+  .modal-header {
+    padding: 18px 20px;
+    background: white;
+    border-bottom: 1px solid var(--gray-300);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-title { font-size: 17px; font-weight: 800; }
+  .modal-close {
+    width: 32px; height: 32px;
+    background: var(--gray-100);
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .phrase-section {
+    margin-bottom: 22px;
+  }
+  .phrase-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gray-700);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .phrase-label .desc {
+    font-weight: 400;
+    color: var(--gray-500);
+    margin-left: auto;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .phrase-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .phrase-option {
+    padding: 11px 13px;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.4;
+    font-family: inherit;
+    transition: all 0.1s;
+  }
+  .phrase-option.selected {
+    background: var(--green-soft);
+    border-color: var(--green-deep);
+    color: var(--green-dark);
+    font-weight: 600;
+  }
+  .phrase-refresh {
+    margin-top: 6px;
+    padding: 9px;
+    background: transparent;
+    border: 1.5px dashed var(--gray-500);
+    border-radius: 10px;
+    color: var(--gray-700);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    background: white;
+    border-top: 1px solid var(--gray-300);
+    display: flex;
+    gap: 10px;
+  }
+
+  /* ─── 상태 ─── */
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--gray-500);
+  }
+  .empty-state .emoji { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state h3 { font-size: 15px; color: var(--gray-700); margin-bottom: 4px; }
+  .empty-state p { font-size: 12px; }
+
+  .loading-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--gray-500);
+  }
+
+  /* ─── 토스트 ─── */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--charcoal);
+    color: white;
+    padding: 11px 18px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 300;
+    display: none;
+    max-width: 90%;
+    text-align: center;
+  }
+  .toast.show { display: block; }
+  .toast.error { background: var(--red-soft); }
+  .toast.success { background: var(--green-deep); }
+
+  /* ─── 로그인 화면 ─── */
+  .login-screen {
+    display: none;
+    padding: 60px 30px;
+    text-align: center;
+  }
+  .login-screen.show { display: block; }
+  .login-screen h2 { font-size: 24px; margin-bottom: 12px; }
+  .login-screen p { color: var(--gray-700); margin-bottom: 30px; }
+  .login-workers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  @media (min-width: 600px) {
+    .login-workers { grid-template-columns: repeat(4, 1fr); }
+  }
+  .login-worker {
+    padding: 14px 10px;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .login-worker:hover { border-color: var(--green-deep); }
+</style>
+</head>
+
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-screen" id="loginScreen">
+  <h2>🎬 콘텐츠 풀</h2>
+  <p>본인을 선택해주세요</p>
+  <div class="login-workers" id="loginWorkers"></div>
+</div>
+
+<!-- 메인 화면 -->
+<div id="mainScreen" style="display:none">
+  <div class="header">
+    <div>
+      <div class="header-title">🎬 콘텐츠 풀</div>
+      <div class="header-subtitle">오늘 업로드할 영상 골라보세요</div>
+    </div>
+    <div class="user-badge" onclick="logout()">👤 <span id="currentUser">준형</span> ▾</div>
+  </div>
+
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="available" onclick="filterContent('available', this)">
+      🟢 사용가능 <span class="count" id="count-available">0</span>
+    </button>
+    <button class="filter-tab" data-filter="inuse" onclick="filterContent('inuse', this)">
+      🔵 사용중 <span class="count" id="count-inuse">0</span>
+    </button>
+    <button class="filter-tab" data-filter="done" onclick="filterContent('done', this)">
+      🔴 완료 <span class="count" id="count-done">0</span>
+    </button>
+    <button class="filter-tab" data-filter="all" onclick="filterContent('all', this)">
+      전체 <span class="count" id="count-all">0</span>
+    </button>
+  </div>
+
+  <div class="content-list" id="contentList">
+    <div class="loading-state">
+      <div>⏳ 콘텐츠 불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 모달 -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">영상 사용하기</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="confirmUse()">📥 사용하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 완료 처리 모달 -->
+<div class="modal-overlay" id="completeModal" onclick="if(event.target===this) closeCompleteModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">완료 처리</div>
+      <button class="modal-close" onclick="closeCompleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:10px 0 20px">
+        <p style="margin-bottom:14px;font-size:14px;color:var(--gray-700)">인스타 업로드 완료하셨나요?</p>
+        <label style="display:block;font-size:12px;font-weight:700;color:var(--gray-700);margin-bottom:6px">업로드 URL (선택)</label>
+        <input type="text" id="uploadLinkInput" placeholder="https://www.instagram.com/p/..." 
+               style="width:100%;padding:10px 12px;border:1.5px solid var(--gray-300);border-radius:10px;font-size:13px;font-family:inherit">
+        <p style="margin-top:10px;font-size:12px;color:var(--gray-500)">
+          ⚠️ 완료 후에는 다른 시공팀이 이 영상을 사용할 수 없습니다
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCompleteModal()">취소</button>
+      <button class="btn btn-complete" onclick="confirmComplete()">✅ 완료 처리</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ⭐ Apps Script 배포 URL
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+// ⭐ 시공팀 14명 (나중에 팀설정 시트에서 자동 로드 가능)
+const WORKERS = [
+  { name: '준형', region: '부산' },
+  { name: '세욱', region: '부산' },
+  { name: '승재', region: '부산' },
+  { name: '윤철', region: '부산' },
+  { name: '민우', region: '경기' },
+  { name: '현진', region: '경기' },
+  { name: '선재', region: '경기' },
+  { name: '재문', region: '경기' },
+  { name: '형석', region: '경기' },
+  { name: '경준', region: '경기' }
+];
+
+let currentWorker = localStorage.getItem('cs_pool_worker') || '';
+let allContents = [];
+let currentFilter = 'available';
+let currentCard = null;
+let selectedPhrases = {};
+
+// ═══ 초기화 ═══
+function init() {
+  if (!currentWorker) {
+    showLogin();
+  } else {
+    showMain();
+    loadContents();
+  }
+}
+
+// ═══ 로그인 ═══
+function showLogin() {
+  document.getElementById('loginScreen').classList.add('show');
+  document.getElementById('mainScreen').style.display = 'none';
+  
+  const grid = document.getElementById('loginWorkers');
+  grid.innerHTML = WORKERS.map(w => 
+    `<button class="login-worker" onclick="login('${w.name}')">${w.name}<br><span style="font-size:11px;color:#999;font-weight:400">${w.region}</span></button>`
+  ).join('');
+}
+
+function login(name) {
+  currentWorker = name;
+  localStorage.setItem('cs_pool_worker', name);
+  document.getElementById('loginScreen').classList.remove('show');
+  showMain();
+  loadContents();
+}
+
+function logout() {
+  if (!confirm('로그아웃 하시겠어요?')) return;
+  localStorage.removeItem('cs_pool_worker');
+  currentWorker = '';
+  showLogin();
+}
+
+function showMain() {
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('currentUser').textContent = currentWorker;
+}
+
+// ═══ 콘텐츠 로드 ═══
+async function loadContents() {
+  try {
+    const res = await fetch(`${API_URL}?type=contentList&status=all&worker=${encodeURIComponent(currentWorker)}`);
+    const data = await res.json();
+    
+    if (data.success) {
+      allContents = data.contents || [];
+      updateCounts();
+      renderContents();
+    } else {
+      showToast('❌ 로딩 실패: ' + (data.error || ''), 'error');
+    }
+  } catch (e) {
+    showToast('❌ 네트워크 오류', 'error');
+    console.error(e);
+  }
+}
+
+// ═══ 카운트 업데이트 ═══
+function updateCounts() {
+  const counts = { available: 0, inuse: 0, done: 0, pending: 0 };
+  allContents.forEach(c => {
+    if (c.status === '사용가능') counts.available++;
+    else if (c.status === '사용중') counts.inuse++;
+    else if (c.status === '완료') counts.done++;
+    else if (c.status === '승인대기') counts.pending++;
+  });
+  document.getElementById('count-available').textContent = counts.available;
+  document.getElementById('count-inuse').textContent = counts.inuse;
+  document.getElementById('count-done').textContent = counts.done;
+  document.getElementById('count-all').textContent = allContents.length;
+}
+
+// ═══ 렌더 ═══
+function renderContents() {
+  const list = document.getElementById('contentList');
+  let filtered = allContents;
+  
+  if (currentFilter === 'available') filtered = allContents.filter(c => c.status === '사용가능');
+  else if (currentFilter === 'inuse') filtered = allContents.filter(c => c.status === '사용중');
+  else if (currentFilter === 'done') filtered = allContents.filter(c => c.status === '완료');
+  
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">📭</div>
+        <h3>콘텐츠가 없어요</h3>
+        <p>다른 탭을 확인해보세요</p>
+      </div>
+    `;
+    return;
+  }
+  
+  list.innerHTML = filtered.map(c => {
+    const statusClass = c.status === '사용가능' ? 'status-available' : 
+                        c.status === '사용중' ? 'status-inuse' :
+                        c.status === '완료' ? 'status-done' : 'status-pending';
+    const pillClass = c.status === '사용가능' ? 'available' : 
+                      c.status === '사용중' ? 'inuse' :
+                      c.status === '완료' ? 'done' : 'pending';
+    
+    let action = '';
+    if (c.status === '사용가능') {
+      action = `
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="previewVideo('${c.contentId}')">▶ 미리보기</button>
+          <button class="btn btn-primary" onclick="openUseModal('${c.contentId}')">📥 사용</button>
+        </div>
+      `;
+    } else if (c.status === '사용중') {
+      const isMine = c.user === currentWorker;
+      if (isMine) {
+        action = `
+          <div class="inuse-notice">🔵 본인 사용중</div>
+          <div class="btn-group">
+            <button class="btn btn-secondary" onclick="previewVideo('${c.contentId}')">▶ 다시보기</button>
+            <button class="btn btn-complete" onclick="openCompleteModal('${c.contentId}')">✅ 완료</button>
+          </div>
+        `;
+      } else {
+        action = `
+          <div class="inuse-notice">🔵 ${c.user || '누군가'} 사용중</div>
+          <button class="btn btn-disabled" disabled>다른 팀이 사용중</button>
+        `;
+      }
+    } else if (c.status === '완료') {
+      let perfHtml = '';
+      if (c.views > 0) {
+        const hitClass = c.views >= 10000 ? 'hit' : '';
+        perfHtml = `
+          <div class="perf-row">
+            <span class="perf-pill ${hitClass}">👁 ${formatNum(c.views)}</span>
+            <span class="perf-pill">❤ ${formatNum(c.likes)}</span>
+            <span class="perf-pill">💬 ${formatNum(c.comments)}</span>
+          </div>
+        `;
+      }
+      action = `
+        ${perfHtml}
+        <div class="done-notice">✅ ${c.user || '?'} · ${c.completedAt || ''}</div>
+        <button class="btn btn-secondary" onclick="previewVideo('${c.contentId}')">▶ 미리보기</button>
+      `;
+    } else {
+      action = `
+        <div class="inuse-notice" style="background:#FFF3E0;color:#E65100">⏳ 승인 대기중</div>
+      `;
+    }
+    
+    const amountMan = Math.floor((c.amount || 0) / 10000);
+    const statusLabel = {
+      '사용가능': '🟢 사용가능',
+      '사용중': '🔵 사용중',
+      '완료': '🔴 완료',
+      '승인대기': '⏳ 대기',
+      '반려': '❌ 반려'
+    }[c.status] || c.status;
+    
+    return `
+      <div class="content-card ${statusClass}">
+        <div class="thumbnail">
+          ${c.thumbUrl ? `<img src="${c.thumbUrl}" onerror="this.parentElement.innerHTML='<div class=thumbnail-placeholder>🎬</div>'">` : '<div class="thumbnail-placeholder">🎬</div>'}
+          <span class="status-pill ${pillClass}">${statusLabel}</span>
+        </div>
+        <div class="card-info">
+          <div class="card-title">${c.apt || '미상'}</div>
+          <div class="card-meta">
+            <span>📏 ${c.py || '?'}</span>
+            <span>🎨 ${c.color || '?'}</span>
+          </div>
+          <div class="card-price">
+            <span class="card-price-amount">${amountMan}만원</span>
+          </div>
+          ${action}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function formatNum(n) {
+  if (n >= 10000) return (n / 10000).toFixed(1) + '만';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n;
+}
+
+// ═══ 필터 ═══
+function filterContent(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderContents();
+}
+
+// ═══ 미리보기 ═══
+function previewVideo(id) {
+  const c = allContents.find(c => c.contentId === id);
+  if (c && c.videoUrl) {
+    window.open(c.videoUrl, '_blank');
+  } else {
+    showToast('영상 URL이 아직 없어요');
+  }
+}
+
+// ═══ 사용하기 모달 ═══
+function openUseModal(id) {
+  const card = allContents.find(c => c.contentId === id);
+  if (!card) return;
+  currentCard = card;
+  
+  const phrases = card.phrases || {};
+  const categories = [
+    { key: 'start', label: '시작', emoji: '🎬', desc: '첫 3초' },
+    { key: 'story', label: '스토리', emoji: '📖', desc: '감성' },
+    { key: 'price', label: '가격', emoji: '💰', desc: '핵심' },
+    { key: 'benefit', label: '혜택', emoji: '🎁', desc: '할인' },
+    { key: 'cta', label: 'CTA', emoji: '👉', desc: '행동' }
+  ];
+  
+  selectedPhrases = { start: 0, story: 0, price: 0, benefit: 0, cta: 0 };
+  
+  const amountMan = Math.floor((card.amount || 0) / 10000);
+  
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div style="background:var(--green-soft);padding:12px 14px;border-radius:12px;margin-bottom:20px">
+      <div style="font-size:15px;font-weight:700;color:var(--green-dark)">${card.apt}</div>
+      <div style="font-size:12px;color:var(--gray-700);margin-top:2px">
+        ${card.py} · ${card.color} · ${amountMan}만원
+      </div>
+    </div>
+    ${categories.map(cat => {
+      const opts = (phrases[cat.key] || []).slice(0, 5);
+      if (opts.length === 0) return '';
+      return `
+      <div class="phrase-section" data-category="${cat.key}">
+        <div class="phrase-label">
+          ${cat.emoji} ${cat.label}
+          <span class="desc">${cat.desc}</span>
+        </div>
+        <div class="phrase-options">
+          ${opts.map((p, i) => `
+            <button class="phrase-option ${i === 0 ? 'selected' : ''}" 
+                    onclick="selectPhrase('${cat.key}', ${i}, this)">
+              ${escapeHTML(p)}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;}).join('')}
+  `;
+  
+  document.getElementById('modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function escapeHTML(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function selectPhrase(category, idx, btn) {
+  const section = btn.closest('.phrase-section');
+  section.querySelectorAll('.phrase-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedPhrases[category] = idx;
+}
+
+// ═══ 사용하기 확정 ═══
+async function confirmUse() {
+  if (!currentCard) return;
+  
+  showToast('⏳ 처리 중...');
+  
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        type: 'contentClaim',
+        contentId: currentCard.contentId,
+        worker: currentWorker
+      })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('✅ 다운로드 후 인스타 업로드하세요', 'success');
+      closeModal();
+      
+      // 영상 URL 열기
+      if (data.videoUrl) {
+        window.open(data.videoUrl, '_blank');
+      }
+      
+      // 리스트 새로고침
+      loadContents();
+    } else {
+      showToast('❌ ' + (data.error || '실패'), 'error');
+    }
+  } catch (e) {
+    showToast('❌ 네트워크 오류', 'error');
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  document.body.style.overflow = '';
+  currentCard = null;
+}
+
+// ═══ 완료 처리 ═══
+let completeContentId = null;
+function openCompleteModal(id) {
+  completeContentId = id;
+  document.getElementById('uploadLinkInput').value = '';
+  document.getElementById('completeModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompleteModal() {
+  document.getElementById('completeModal').classList.remove('show');
+  document.body.style.overflow = '';
+  completeContentId = null;
+}
+
+async function confirmComplete() {
+  if (!completeContentId) return;
+  const uploadLink = document.getElementById('uploadLinkInput').value.trim();
+  
+  showToast('⏳ 처리 중...');
+  
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        type: 'contentComplete',
+        contentId: completeContentId,
+        worker: currentWorker,
+        selectedPhrases: selectedPhrases,
+        uploadLink: uploadLink
+      })
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      showToast('🎉 완료 처리되었습니다', 'success');
+      closeCompleteModal();
+      loadContents();
+    } else {
+      showToast('❌ ' + (data.error || '실패'), 'error');
+    }
+  } catch (e) {
+    showToast('❌ 네트워크 오류', 'error');
+  }
+}
+
+// ═══ 토스트 ═══
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// 초기 실행
+init();
+</script>
+
+</body>
+</html>
