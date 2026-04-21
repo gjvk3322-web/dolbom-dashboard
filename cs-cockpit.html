@@ -602,45 +602,44 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
     <div class="stat-row">
       <div class="stat-col">
-        <div class="stat-label">오늘</div>
-        <div class="stat-val">4<span class="u">건</span></div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">이번 주</div>
-        <div class="stat-val">50<span class="u">건</span></div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">이번 달</div>
+        <div class="stat-label">이번 달 (4월)</div>
         <div class="stat-val">136<span class="u">건</span></div>
-        <div class="stat-sub">일평균 9.1건</div>
+        <div class="stat-sub"><span class="trend up">▲ 15%</span> 전월 대비</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">지난 달 (3월)</div>
+        <div class="stat-val md">118<span class="u">건</span></div>
+        <div class="stat-sub"><span class="trend up">▲ 20%</span> 전월 대비</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">지지난달 (2월)</div>
+        <div class="stat-val md">98<span class="u">건</span></div>
+        <div class="stat-sub"><span class="trend up">▲ 13%</span> 전월 대비</div>
       </div>
     </div>
 
-    <!-- 일별 바차트 (최근 14일) -->
+    <!-- 월별 바차트 (최근 6개월) -->
     <div style="margin-top:18px">
-      <div class="stat-label">최근 14일 일별 접수</div>
-      <div class="barchart">
-        <div class="bar" style="height:19%" title="4/8 · 3건"></div>
-        <div class="bar" style="height:56%" title="4/9 · 9건"></div>
-        <div class="bar" style="height:88%" title="4/10 · 14건"></div>
-        <div class="bar" style="height:19%" title="4/11 · 3건"></div>
-        <div class="bar" style="height:81%" title="4/12 · 13건"></div>
-        <div class="bar" style="height:69%" title="4/13 · 11건"></div>
-        <div class="bar" style="height:100%" title="4/14 · 16건"></div>
-        <div class="bar" style="height:81%" title="4/15 · 13건"></div>
-        <div class="bar" style="height:56%" title="4/16 · 9건"></div>
-        <div class="bar" style="height:31%" title="4/17 · 5건"></div>
-        <div class="bar" style="height:25%" title="4/18 · 4건"></div>
-        <div class="bar" style="height:38%" title="4/19 · 6건"></div>
-        <div class="bar" style="height:69%" title="4/20 · 11건"></div>
-        <div class="bar today" style="height:25%" title="4/21 · 4건"></div>
+      <div class="stat-label">최근 6개월 월별 접수</div>
+      <div class="barchart" style="height:90px">
+        <div class="bar" style="height:48%" title="11월 · 65건"></div>
+        <div class="bar" style="height:53%" title="12월 · 72건"></div>
+        <div class="bar" style="height:64%" title="1월 · 87건"></div>
+        <div class="bar" style="height:72%" title="2월 · 98건"></div>
+        <div class="bar" style="height:87%" title="3월 · 118건"></div>
+        <div class="bar today" style="height:100%" title="4월 · 136건"></div>
       </div>
       <div class="bar-labels">
-        <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span>
+        <span>11월 <b style="color:var(--soft)">65</b></span>
+        <span>12월 <b style="color:var(--soft)">72</b></span>
+        <span>1월 <b style="color:var(--soft)">87</b></span>
+        <span>2월 <b style="color:var(--soft)">98</b></span>
+        <span>3월 <b style="color:var(--soft)">118</b></span>
+        <span style="color:var(--text);font-weight:700">4월 <b>136</b></span>
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+    <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
       <!-- 시공목적 TOP -->
       <div>
         <div class="stat-label" style="margin-bottom:8px">시공목적 TOP</div>
@@ -666,36 +665,70 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         </div>
       </div>
 
-      <!-- 유입경로 (자동분류) -->
+      <!-- 🔥 유입경로별 시공 전환율 (KPI 핵심) -->
       <div>
-        <div class="stat-label" style="margin-bottom:8px">유입경로 (자동분류)</div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">네이버 검색</span><span class="rowbar-val">64 · <b>47%</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill green" style="width:47%"></div></div>
+        <div class="stat-label" style="margin-bottom:8px; display:flex; align-items:center; gap:6px">
+          🎯 유입경로별 시공 전환율
+          <span class="badge bg-purple" style="font-size:9.5px; padding:1.5px 6px">최근 3개월</span>
         </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">지인 추천</span><span class="rowbar-val">21 · <b>15%</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill green" style="width:15%"></div></div>
-        </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">맘카페</span><span class="rowbar-val">15 · <b>11%</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill green" style="width:11%"></div></div>
-        </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">블로그</span><span class="rowbar-val">13 · <b>10%</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill green" style="width:10%"></div></div>
-        </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">기타 (미분류)</span><span class="rowbar-val">18 · <b>13%</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill" style="background:var(--muted); width:13%; opacity:0.5"></div></div>
-        </div>
+        <table class="tbl" style="font-size:12px">
+          <thead>
+            <tr>
+              <th>채널</th>
+              <th class="num">샘플→시공</th>
+              <th class="num">전환율</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="rank-me">
+              <td>🥇 지인추천</td>
+              <td class="num">45/63</td>
+              <td class="num"><span class="badge bg-green">71%</span></td>
+            </tr>
+            <tr>
+              <td>🔁 재시공</td>
+              <td class="num">9/10</td>
+              <td class="num"><span class="badge bg-green">90%</span></td>
+            </tr>
+            <tr>
+              <td>맘카페</td>
+              <td class="num">24/45</td>
+              <td class="num"><span class="badge bg-blue">53%</span></td>
+            </tr>
+            <tr>
+              <td>블로그</td>
+              <td class="num">18/39</td>
+              <td class="num"><span class="badge bg-blue">46%</span></td>
+            </tr>
+            <tr>
+              <td>네이버 검색</td>
+              <td class="num">75/192</td>
+              <td class="num"><span class="badge bg-gold">39%</span></td>
+            </tr>
+            <tr>
+              <td>인스타</td>
+              <td class="num">3/9</td>
+              <td class="num"><span class="badge bg-gold">33%</span></td>
+            </tr>
+            <tr style="opacity:0.75">
+              <td>기타/미분류</td>
+              <td class="num">12/54</td>
+              <td class="num"><span class="badge bg-red">22%</span></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+    </div>
+
+    <div style="margin-top:12px; padding:10px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
+      <b>🔔 KPI 인사이트:</b> <b>지인추천(71%)·재시공(90%)</b>이 전환율 최상위 → 추천 프로그램 예산 증액 고려.
+      <b>네이버검색</b>은 샘플 192건으로 채널 1위지만 전환율 39% → 랜딩페이지 개선 시 영향력 가장 큼.
     </div>
 
     <div class="chip-row">
       <span class="chip new">🆕 AI검색 <b>1건</b></span>
-      <span class="chip">🔁 재시공 <b>1건</b></span>
       <span class="chip">📱 인스타 <b>3건</b></span>
+      <span class="chip">🥕 당근마켓 <b>2건</b></span>
     </div>
   </div>
 
@@ -902,21 +935,21 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div class="stat-row" style="margin-bottom:16px">
       <div class="stat-col">
         <div class="stat-label">TOP 10 진입 키워드</div>
-        <div class="stat-val md" style="color:var(--green-dk)">8<span class="u">개</span></div>
-        <div class="stat-sub">전체 14개 중 57%</div>
+        <div class="stat-val md" style="color:var(--green-dk)">12<span class="u">개</span></div>
+        <div class="stat-sub">전체 13개 중 92%</div>
       </div>
       <div class="stat-col">
-        <div class="stat-label">이번주 순위 상승</div>
-        <div class="stat-val md" style="color:var(--green-dk)">▲ 5<span class="u">개</span></div>
+        <div class="stat-label">이번 달 순위 상승</div>
+        <div class="stat-val md" style="color:var(--green-dk)">▲ 7<span class="u">개</span></div>
       </div>
       <div class="stat-col">
-        <div class="stat-label">순위 하락</div>
+        <div class="stat-label">이번 달 순위 하락</div>
         <div class="stat-val md" style="color:var(--red-dk)">▼ 2<span class="u">개</span></div>
       </div>
       <div class="stat-col">
         <div class="stat-label">평균 순위</div>
-        <div class="stat-val md">7.4<span class="u">위</span></div>
-        <div class="stat-sub">지난주 대비 ▲ 1.2</div>
+        <div class="stat-val md">5.2<span class="u">위</span></div>
+        <div class="stat-sub">지난달 대비 ▲ 1.4</div>
       </div>
     </div>
 
@@ -940,15 +973,51 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             <th style="text-align:center">하늘</th>
             <th style="text-align:center">블루<br>돌핀</th>
             <th style="text-align:center">두리</th>
-            <th style="text-align:center">변화</th>
+            <th style="text-align:center">월 변화</th>
           </tr>
         </thead>
         <tbody>
-          <!-- 층간소음 -->
-          <tr><td style="font-weight:700" colspan="16" class="bg-gray" style="background:var(--warm); padding:6px 10px; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--soft)">🔊 층간소음 시공 (4)</td></tr>
-          <tr class="rank-me">
-            <td>층간소음매트 시공</td><td class="num">2,340</td>
-            <td style="text-align:center"><span class="rank-dot me">3</span></td>
+          <!-- 검색량 내림차순 · 브랜드 제외 · 13개 키워드 -->
+
+          <!-- 1. 매트 시공 (4,550) - 가장 큰 시장 -->
+          <tr><td>매트 시공</td><td class="num">4,550</td>
+            <td style="text-align:center"><span class="rank-dot me">9</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">14</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">20</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲3</span></td>
+          </tr>
+
+          <!-- 2. 아파트 층간소음 (3,120) - 10위권 밖, 개선 필요 -->
+          <tr><td>아파트 층간소음</td><td class="num">3,120</td>
+            <td style="text-align:center"><span class="rank-dot me">18</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend down">▼1</span></td>
+          </tr>
+
+          <!-- 3. 층간소음매트 시공 (2,340) -->
+          <tr class="rank-me"><td>층간소음매트 시공</td><td class="num">2,340</td>
+            <td style="text-align:center"><span class="rank-dot me r3">3</span></td>
             <td style="text-align:center"><span class="rank-dot r1">1</span></td>
             <td style="text-align:center"><span class="rank-dot">5</span></td>
             <td style="text-align:center"><span class="rank-dot">12</span></td>
@@ -963,8 +1032,27 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="trend up">▲2</span></td>
           </tr>
-          <tr>
-            <td>층간소음방지매트 시공</td><td class="num">1,820</td>
+
+          <!-- 4. 시공매트 (2,100) -->
+          <tr class="rank-me"><td>시공매트</td><td class="num">2,100</td>
+            <td style="text-align:center"><span class="rank-dot me r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲2</span></td>
+          </tr>
+
+          <!-- 5. 층간소음방지매트 시공 (1,820) -->
+          <tr><td>층간소음방지매트 시공</td><td class="num">1,820</td>
             <td style="text-align:center"><span class="rank-dot me">5</span></td>
             <td style="text-align:center"><span class="rank-dot r3">3</span></td>
             <td style="text-align:center"><span class="rank-dot r2">2</span></td>
@@ -980,8 +1068,63 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="trend flat">━</span></td>
           </tr>
-          <tr>
-            <td>층간소음 시공</td><td class="num">890</td>
+
+          <!-- 6. 거실매트 시공 (1,560) ★ 우리 2위 -->
+          <tr class="rank-me"><td>거실매트 시공</td><td class="num">1,560</td>
+            <td style="text-align:center"><span class="rank-dot me r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲1</span></td>
+          </tr>
+
+          <!-- 7. 반려견매트 시공 (1,200) -->
+          <tr><td>반려견매트 시공</td><td class="num">1,200</td>
+            <td style="text-align:center"><span class="rank-dot me">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="trend up">▲3</span></td>
+          </tr>
+
+          <!-- 8. 바닥매트 시공 (980) -->
+          <tr><td>바닥매트 시공</td><td class="num">980</td>
+            <td style="text-align:center"><span class="rank-dot me">4</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">6</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 9. 층간소음 시공 (890) -->
+          <tr><td>층간소음 시공</td><td class="num">890</td>
             <td style="text-align:center"><span class="rank-dot me">7</span></td>
             <td style="text-align:center"><span class="rank-dot r1">1</span></td>
             <td style="text-align:center"><span class="rank-dot">4</span></td>
@@ -997,13 +1140,10 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="trend up">▲4</span></td>
           </tr>
-          <tr>
-            <td>아파트 층간소음</td><td class="num">3,120</td>
-            <td style="text-align:center"><span class="rank-dot">18</span></td>
-            <td style="text-align:center"><span class="rank-dot">11</span></td>
-            <td style="text-align:center"><span class="rank-dot">7</span></td>
-            <td style="text-align:center"><span class="rank-dot">-</span></td>
-            <td style="text-align:center"><span class="rank-dot">5</span></td>
+
+          <!-- 10. 애견매트 시공 (780) -->
+          <tr><td>애견매트 시공</td><td class="num">780</td>
+            <td style="text-align:center"><span class="rank-dot me">6</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
@@ -1012,15 +1152,16 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
             <td style="text-align:center"><span class="trend down">▼1</span></td>
           </tr>
-          <!-- 거실/주방/복도 -->
-          <tr><td style="font-weight:700" colspan="16" class="bg-gray" style="background:var(--warm); padding:6px 10px; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--soft)">🏠 거실/주방/복도 시공 (5)</td></tr>
-          <tr class="rank-me">
-            <td>거실매트 시공</td><td class="num">1,560</td>
-            <td style="text-align:center"><span class="rank-dot me">2</span></td>
-            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
-            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+
+          <!-- 11. 강아지매트 시공 (520) -->
+          <tr class="rank-me"><td>강아지매트 시공</td><td class="num">520</td>
+            <td style="text-align:center"><span class="rank-dot me r3">3</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">7</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
@@ -1031,27 +1172,57 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
             <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 12. TPU매트 시공 (410) ★ 우리 1위 -->
+          <tr class="rank-me"><td>TPU매트 시공</td><td class="num">410</td>
+            <td style="text-align:center"><span class="rank-dot me r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">4</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 13. 강아지장판시공 (340) ★ 우리 2위 -->
+          <tr class="rank-me"><td>강아지장판시공</td><td class="num">340</td>
+            <td style="text-align:center"><span class="rank-dot me r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">4</span></td>
             <td style="text-align:center"><span class="trend up">▲1</span></td>
           </tr>
-          <tr><td>바닥매트 시공</td><td class="num">980</td><td style="text-align:center"><span class="rank-dot me">4</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">6</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="trend flat">━</span></td></tr>
-          <tr><td>매트 시공</td><td class="num">4,550</td><td style="text-align:center"><span class="rank-dot me">9</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="rank-dot">5</span></td><td style="text-align:center"><span class="rank-dot">11</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot r3">3</span></td><td style="text-align:center"><span class="rank-dot">14</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">20</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="trend up">▲3</span></td></tr>
-          <tr><td>TPU매트 시공</td><td class="num">410</td><td style="text-align:center"><span class="rank-dot me r1">1</span></td><td style="text-align:center"><span class="rank-dot">4</span></td><td style="text-align:center"><span class="rank-dot r3">3</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="trend flat">━</span></td></tr>
-          <tr><td>시공매트</td><td class="num">2,100</td><td style="text-align:center"><span class="rank-dot me r3">3</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot">5</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">7</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="trend up">▲2</span></td></tr>
-          <!-- 반려동물 -->
-          <tr><td style="font-weight:700" colspan="16" class="bg-gray" style="background:var(--warm); padding:6px 10px; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--soft)">🐕 반려동물 시공 (4)</td></tr>
-          <tr><td>반려견매트 시공</td><td class="num">1,200</td><td style="text-align:center"><span class="rank-dot me">5</span></td><td style="text-align:center"><span class="rank-dot">11</span></td><td style="text-align:center"><span class="rank-dot r3">3</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="trend up">▲3</span></td></tr>
-          <tr><td>애견매트 시공</td><td class="num">780</td><td style="text-align:center"><span class="rank-dot me">6</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="trend down">▼1</span></td></tr>
-          <tr><td>강아지매트 시공</td><td class="num">520</td><td style="text-align:center"><span class="rank-dot me r3">3</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">7</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot r2">2</span></td><td style="text-align:center"><span class="trend flat">━</span></td></tr>
-          <tr><td>강아지장판시공</td><td class="num">340</td><td style="text-align:center"><span class="rank-dot me r2">2</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot r1">1</span></td><td style="text-align:center"><span class="rank-dot">4</span></td><td style="text-align:center"><span class="trend up">▲1</span></td></tr>
-          <!-- 브랜드 -->
-          <tr><td style="font-weight:700" colspan="16" class="bg-gray" style="background:var(--warm); padding:6px 10px; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--soft)">💎 브랜드 (1)</td></tr>
-          <tr class="rank-me"><td>돌봄매트</td><td class="num">6,800</td><td style="text-align:center"><span class="rank-dot me r1">1</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="rank-dot">-</span></td><td style="text-align:center"><span class="trend flat">━</span></td></tr>
         </tbody>
       </table>
     </div>
 
-    <div style="margin-top:12px; padding:10px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk)">
-      <b>🔔 인사이트 예시:</b> "층간소음 시공" 순위 ▲4 상승 · "강아지장판시공" 월 검색량 +20% ↑ · "블루돌핀매트"가 반려동물 카테고리 4개 중 3개에서 1위 점령 → 반려동물 전용 콘텐츠 강화 필요
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
+      <div style="padding:12px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
+        <b>🔔 KPI 인사이트:</b> <b>"매트 시공"</b> (검색 1위·월 4,550) 9위 → TOP 3 진입 시 유입 영향 가장 큼. <b>"아파트 층간소음"</b> (3,120) 18위로 유일한 10위권 밖 → 콘텐츠 우선 투자 필요.
+      </div>
+      <div style="padding:12px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11.5px; color:var(--text); line-height:1.55">
+        <b>💎 브랜드 파워:</b> "돌봄매트" 월 검색량 <b style="color:var(--accent-dk)">6,800</b>회 (네이버 자사 1위 고정) · 전월 대비 <span class="trend up">▲ 12%</span> → 브랜드 인지도 꾸준히 상승 중
+      </div>
     </div>
   </div>
 </div>
@@ -1140,8 +1311,16 @@ function submitPhone(){
      // → 부산/경기 AS,실측 제외한 매출 합계
    }
    async function loadSampleStats(){
-     // 샘플접수 시트에서 일별·월별 집계
+     // 샘플접수 시트에서 월별 집계 (최근 6개월)
      // + 유입경로 내부 자동분류 (classifyChannel)
+   }
+   async function loadConversionRate(){
+     // 🔥 NEW: 휴대폰번호 기반 샘플→시공 전환율
+     // 1. 샘플접수 시트의 연락처 + 유입경로 로드
+     // 2. 시공스케줄(부산+경기) 시트의 연락처 매칭
+     // 3. 유입경로별 그룹핑: (샘플건수, 시공전환건수, 전환율, 평균매출)
+     // 4. 결과를 '전환율통계' 시트에 매일 새벽 캐싱 (AWS cron)
+     // 매칭 규칙: 전화번호 뒤 8자리로 정규화 후 JOIN
    }
    async function loadStockSummary(){
      // STOCK_URL에 {action:'getStock', team:'부산'} POST
