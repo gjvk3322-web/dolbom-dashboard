@@ -340,7 +340,7 @@ body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;backgr
         </div>
         <div class="gs-field">
           <label class="gs-label">제품 라인업</label>
-          <textarea class="gs-textarea" id="gs_products" placeholder="예: 1000mm 22T(메인), 1000mm 17T(펫), 500mm 22T"></textarea>
+          <textarea class="gs-textarea" id="gs_products" placeholder="예: 1000mm 22T(메인), 1000mm 18T(펫), 500mm 22T"></textarea>
         </div>
         <div class="gs-field">
           <label class="gs-label">시공 지역</label>
@@ -555,7 +555,7 @@ const MK='marketing_v5';
 const DEFAULT_GS={
   business:'TPU 바닥매트 전문 시공. 6,700건 시공 완료, 창업 6년, 직원 14명 (부산/경남/대구 + 경기/서울)',
   strength:'어린이집 80곳 시공, 경찰서 어린이보호구역 5곳, 5성급 호텔 키즈룸, 본사 직원 14명 직접 시공 (외주 X), 빠른 AS',
-  products:'1000mm 22T (메인 상품), 1000mm 17T (펫 전용), 500mm 22T',
+  products:'1000mm 22T (메인 상품), 1000mm 18T (펫 전용), 500mm 22T',
   regions:'부산/경남/대구, 경기/서울/인천',
   pricing:'30평대 거실+복도+주방 시공 기준 150~250만원 (고객의 80%). 40평+ 대형 평수 or 전체 시공 시 400~600만원 (1% 미만). 동일 품질, 평수/범위에 따른 가격 차이',
   goals:'월 샘플신청 증가, 예약 전환율 향상, SNS 팔로워 성장, 브랜드 인지도 확대',
@@ -588,14 +588,14 @@ const DEFAULT_PERSONAS=[
   // ⭐ Tier 1 - 핵심
   {id:'p1',emoji:'👩‍👧',name:'신축엄마 수진',label:'33세, 신축 34평 입주 맘',tier:1,category:'baby',purpose:'아이안전,층간소음,신축입주',channel:'맘카페',budget:'200~250만원',detail:'신축 34평, 거실+복도+주방 전체 시공 희망. 아랫집 민원 걱정, 무독성 인증 중요. 맘스홀릭 활동. 엄마들 후기 결정적.',order:1},
   {id:'p2',emoji:'👨‍👩‍👧‍👦',name:'이사맘 지영',label:'36세, 초등 2명, 이사',tier:1,category:'baby',purpose:'이사,아이안전,층간소음',channel:'네이버 검색',budget:'180~230만원',detail:'구축→신축 이사, 30평대. 거실+복도 주로. 가성비+인테리어 매치. 시공 후 사진, 가격 비교 중시.',order:2},
-  {id:'p3',emoji:'🏢',name:'층간소음 미정',label:'32세, 아기 3~5세, 민원 받음',tier:1,category:'baby',purpose:'층간소음',channel:'네이버 검색',budget:'150~200만원',detail:'구축 아파트 25~30평, 거실+주방만 부분 시공 검토. 두께(17T/22T) 고민, 소음 저감 데이터 중요.',order:3},
+  {id:'p3',emoji:'🏢',name:'층간소음 미정',label:'32세, 아기 3~5세, 민원 받음',tier:1,category:'baby',purpose:'층간소음',channel:'네이버 검색',budget:'150~200만원',detail:'구축 아파트 25~30평, 거실+주방만 부분 시공 검토. 두께(18T/22T) 고민, 소음 저감 데이터 중요.',order:3},
   {id:'p21',emoji:'🏫',name:'어린이집 원장 선영',label:'45~55세, B2B',tier:1,category:'b2b',purpose:'영아반안전,층간소음,평가인증',channel:'지인(원장)/네이버',budget:'300~500만원',detail:'교실 2~3개 or 전체. KC/친환경 인증 필수, 세금계산서 필요. 주말/방학 시공. 80곳 레퍼런스가 최강 무기.',order:4},
   // 🆕 신생아/조리원 신규 페르소나 (Tier 1)
   {id:'p24',emoji:'🍼',name:'조리원맘 리나',label:'30세, 산후조리원 재원 중',tier:1,category:'baby',purpose:'신생아안전,출산직후,무독성',channel:'조리원/산모톡방',budget:'200~280만원',detail:'산후조리원 2주 재원 중, 퇴소 전 시공 완료 희망. 신생아 침대/바운서 놓을 거실+안방 우선. VOC·KC 인증 필수, 냄새 민감. 조리원 내 엄마들 정보 공유 활발.',order:5},
   // ⭐⭐ Tier 2 - 주요
   {id:'p4',emoji:'🤰',name:'예비맘 소연',label:'31세, 출산 3개월 전',tier:2,category:'baby',purpose:'출산예정,아이안전',channel:'맘카페',budget:'180~250만원',detail:'신축 30평 전후, 전체 시공 희망. KC 인증 필수, 출산 전 시공 타이밍 중요. 남편과 상의.',order:6},
   {id:'p5',emoji:'🏠',name:'새집 입주 현서',label:'32세, 신혼/첫자녀, 40평',tier:2,category:'baby',purpose:'신축입주,인테리어',channel:'블로그/인스타',budget:'280~400만원',detail:'신축 40평+, 전체 시공. 인테리어 톤앤매너 중요, 틈새 벌어짐 마감 퀄리티 중시. 대형 평수로 가격 높음.',order:7},
-  {id:'p6',emoji:'🐕',name:'반려인 현우',label:'38세, 대형견, 30평',tier:2,category:'pet',purpose:'반려견',channel:'인스타/유튜브',budget:'200~280만원',detail:'아파트 30평, 거실+복도 시공. 17T 펫 라인업 관심. 슬개골 예방, 미끄럼방지, 배변 청소, 스크래치.',order:8},
+  {id:'p6',emoji:'🐕',name:'반려인 현우',label:'38세, 대형견, 30평',tier:2,category:'pet',purpose:'반려견',channel:'인스타/유튜브',budget:'200~280만원',detail:'아파트 30평, 거실+복도 시공. 18T 펫 라인업 관심. 슬개골 예방, 미끄럼방지, 배변 청소, 스크래치.',order:8},
   {id:'p7',emoji:'🤝',name:'지인추천 영미',label:'35세, 아이 2명',tier:2,category:'baby',purpose:'아이안전,층간소음',channel:'지인추천',budget:'200~250만원',detail:'이미 거의 결정. 색상/옵션만 고민. 빠른 시공+추천 캐시백. 친구와 비슷한 평수/범위.',order:9},
   {id:'p8',emoji:'📦',name:'이사철 서연',label:'35~40세, 전체 시공',tier:2,category:'baby',purpose:'이사',channel:'검색+블로그',budget:'300~450만원',detail:'30~40평 이사, 거실+복도+주방+방 전체. 여러 브랜드 치밀 비교, 블로그 의존도 높음.',order:10},
   {id:'p22',emoji:'🎪',name:'입주박람회 수빈',label:'30~40세, 입주 3~6개월 전',tier:2,category:'baby',purpose:'신축입주,아이안전,층간소음',channel:'입주박람회',budget:'200~280만원',detail:'신축 30~40평, 박람회 특가 관심. 현장 체험, 부부 동반. 박람회 계약 시 할인 기대.',order:11},
@@ -607,7 +607,7 @@ const DEFAULT_PERSONAS=[
   // ⭐ Tier 3 - 틈새
   {id:'p9',emoji:'💰',name:'가성비 진경',label:'30~35세, 넓은 평수 부담',tier:3,category:'other',purpose:'부분시공,층간소음',channel:'맘카페(핫딜)',budget:'120~170만원',detail:'30평대에서 거실만 or 거실+복도만 부분 시공. 웰컴쿠폰, 공동구매 할인 적극 활용.',order:15},
   {id:'p10',emoji:'👨‍👦',name:'육아대디 재현',label:'33세 아빠, 아기 걸음마',tier:3,category:'baby',purpose:'아이안전',channel:'네이버 검색',budget:'180~230만원',detail:'30평대, 거실+복도 중심. 가장 푹신한 매트(22T) 선호. 샘플 직접 밟아보고 결정.',order:16},
-  {id:'p11',emoji:'🐕‍🦺',name:'펫앤베이비 진아',label:'34세, 아이+반려견',tier:3,category:'both',purpose:'아이안전,반려견,층간소음',channel:'검색+SNS',budget:'220~300만원',detail:'30~35평, 거실+복도+주방 전체 시공. 다목적 내구성. 17T+22T 혼합 고려 가능.',order:17},
+  {id:'p11',emoji:'🐕‍🦺',name:'펫앤베이비 진아',label:'34세, 아이+반려견',tier:3,category:'both',purpose:'아이안전,반려견,층간소음',channel:'검색+SNS',budget:'220~300만원',detail:'30~35평, 거실+복도+주방 전체 시공. 다목적 내구성. 18T+22T 혼합 고려 가능.',order:17},
   {id:'p12',emoji:'🏘️',name:'커뮤니티 주도 예진',label:'32~36세, 대단지 입주민',tier:3,category:'baby',purpose:'신축입주,공동구매',channel:'입주민 단톡/카페',budget:'200~280만원',detail:'30~40평, 본인 시공 후 이웃 공동구매 주도 가능(앰배서더). VIP 잠재, 추천 프로그램 활용.',order:18},
   {id:'p13',emoji:'🔁',name:'재시공 은주',label:'40대, 5년 전 고객',tier:3,category:'other',purpose:'재시공,확장',channel:'기존 고객',budget:'150~300만원',detail:'5년 전 시공 부분 교체 or 추가 시공(방, 다른 집). 브랜드 신뢰 있음. 단골 할인+빠른 답변.',order:19},
   {id:'p14',emoji:'📝',name:'검색맘 민지',label:'30세, 아이 7개월',tier:3,category:'baby',purpose:'아이안전',channel:'블로그',budget:'180~250만원',detail:'30평 아파트, 거실+주방 중심. 내돈내산 후기 선호. 비포·애프터 사진 중요.',order:20},
@@ -1752,7 +1752,7 @@ TPU 바닥매트 브랜드 "돌봄매트"를 위해 **${typeIntro}**.
 - **의사결정자**: 아이와 반려견을 동시에 키우는 3040 부모
 - **핵심 고민**: 아이 안전 + 반려견 건강 + 위생(배변·토·음식 쏟기) + 층간소음 동시 해결
 - **핵심 차별점**: 다목적 내구성, 청소 용이성, 두꺼운 쿠셔닝
-- **신뢰 요소**: 두 가지 모두 커버하는 실제 가정 사례, 17T+22T 혼합 시공 레퍼런스`,
+- **신뢰 요소**: 두 가지 모두 커버하는 실제 가정 사례, 18T+22T 혼합 시공 레퍼런스`,
       b2b:`### 🎯 카테고리 가이드 (B2B - 기관)
 - **의사결정자**: 원장/원장 사모/시설장, 재단 이사장 (결정권자가 복수)
 - **핵심 요구**: KC/친환경 인증, 보건소·평가원 점검 통과, 세금계산서, 견적서, 시공 일정 유연성(방학/주말)

@@ -97,7 +97,7 @@ const TY=['센터','사이드','코너','10T'];
 const PR=[
   {id:'500',name:'500매트',badge:'22T',bpb:12,colors:['모던','마블','코튼']},
   {id:'1000_22',name:'1000매트',badge:'22T',bpb:4,colors:['모던','베이지']},
-  {id:'1000_17',name:'1000매트',badge:'17T',bpb:6,colors:['모던','베이지']}
+  {id:'1000_17',name:'1000매트',badge:'18T',bpb:6,colors:['모던','베이지']}
 ];
 let team=null,loc=null,tab='summary';
 let fbInvData={},fbInRef=null;
@@ -297,7 +297,7 @@ async function renderSummary(){
   // ===== 📊 현재 재고 (메인 카드) =====
   const cr=sd&&!sd.error?sd.calcResult||{}:{};
   const surveyDate=sd&&!sd.error?sd.lastSurveyDate||'':'';
-  const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_17':'1000매트 17T'};
+  const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_17':'1000매트 18T'};
   const prodOrder=['500','1000_22','1000_17'];
   
   if(surveyDate&&Object.keys(cr).length>0){
@@ -325,7 +325,7 @@ async function renderSummary(){
     h+=`<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">`;
     prodOrder.forEach(pid=>{
       const pt=prodTotals[pid]||{sheets:0,pallets:0};
-      const label=pid==='500'?'500매트':pid==='1000_22'?'1000 22T':'1000 17T';
+      const label=pid==='500'?'500매트':pid==='1000_22'?'1000 22T':'1000 18T';
       const mult=pid==='500'?1:4;
       const houses=Math.round(pt.sheets*mult/145*10)/10;
       const color=pt.sheets<0?'var(--red)':'var(--accent)';
@@ -453,7 +453,7 @@ async function renderSummary(){
     if(ld.lossByProduct&&ld.lossByProduct.length>0){
       h+=`<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px">`;
       h+=`<div style="font-weight:700;font-size:11px;margin-bottom:8px">📊 제품·색상별 로스 분석</div>`;
-      const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트17T'};
+      const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트18T'};
       const colorDot={'모던':'#5e9eff','마블':'#c792ea','코튼':'#50c878','베이지':'#e6c875'};
       // 로스 큰 순 정렬 후 최대값 찾기
       const maxAbs=Math.max(...ld.lossByProduct.map(p=>Math.abs(p.loss)),1);
