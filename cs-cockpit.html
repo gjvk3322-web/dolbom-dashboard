@@ -603,8 +603,8 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
       <div class="stat-label" style="margin-bottom:6px">재고 기준</div>
       <div style="font-size:11.5px; color:var(--soft); line-height:1.5" id="stockBaseInfo">
-        최근 재고조사 + 입고 합산 - 시공 차감<br>
-        <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650">전체 재고 보기 →</a>
+        stock.html과 동일 계산 (실사 + 입고 - 시공)<br>
+        <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650">📦 전체 재고 보기 →</a>
       </div>
     </div>
   </div>
@@ -1207,7 +1207,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
 <!-- ═══ 푸터 ═══ -->
 <div class="footer">
-  돌봄매트 조종실 · v0.5.2 · 입주아파트 실데이터 복원 · <span id="updatedAt">2026-04-22 00:00</span>
+  돌봄매트 조종실 · v0.5.3 · 재고 stock.html 구조 호환 · <span id="updatedAt">2026-04-22 00:30</span>
 </div>
 
 </div><!-- /.container -->
@@ -1672,40 +1672,86 @@ async function loadStockSummary(){
     const el = document.getElementById('stockRows');
     if(!el) return;
     
-    function teamTotal(items){
-      if(!items || !items.length) return 0;
-      return items.reduce((s, it) => s + (parseInt(it.current) || 0), 0);
+    // stock.html과 동일한 로직: calcResult의 모든 제품 calculated 합계
+    function teamTotalFromCalc(d){
+      if(!d || d.error || !d.calcResult) return null;
+      let total = 0;
+      Object.values(d.calcResult).forEach(v => {
+        total += (parseInt(v.calculated) || 0);
+      });
+      return total;
     }
     
-    const bsTotal = teamTotal(bsJson.items);
-    const ggTotal = teamTotal(ggJson.items);
+    // Fallback: 예전 items 배열 방식 (구버전 Apps Script 호환)
+    function teamTotalFromItems(d){
+      if(!d || !d.items || !d.items.length) return null;
+      return d.items.reduce((s, it) => s + (parseInt(it.current) || 0), 0);
+    }
     
-    // 재고조사 데이터가 아예 없으면 별도 안내
-    if(bsTotal === 0 && ggTotal === 0){
+    const bsTotal = teamTotalFromCalc(bsJson) ?? teamTotalFromItems(bsJson) ?? 0;
+    const ggTotal = teamTotalFromCalc(ggJson) ?? teamTotalFromItems(ggJson) ?? 0;
+    
+    const bsFuture = (bsJson && bsJson.futureTotal) || 0;
+    const ggFuture = (ggJson && ggJson.futureTotal) || 0;
+    const bsSurvey = (bsJson && bsJson.lastSurveyDate) || '';
+    const ggSurvey = (ggJson && ggJson.lastSurveyDate) || '';
+    
+    // 데이터 연결 실패 (Apps Script 오류)
+    if(bsJson?.error && ggJson?.error){
+      el.innerHTML = `<div style="padding:14px; background:var(--red-bg); border-radius:var(--radius-sm); color:var(--red-dk); font-size:11.5px; text-align:center; line-height:1.6">
+        ⚠️ Apps Script getStock 오류<br>
+        <span style="font-size:10.5px; opacity:0.85">${bsJson.error}</span>
+      </div>`;
+      return;
+    }
+    
+    // 재고조사 데이터 자체가 없음
+    if(bsTotal === 0 && ggTotal === 0 && !bsSurvey && !ggSurvey){
       el.innerHTML = `<div style="padding:16px 14px; background:var(--gold-bg); border-radius:var(--radius-sm); text-align:center">
         <div style="font-size:12.5px; font-weight:650; color:var(--gold-dk); margin-bottom:6px">⚠️ 재고조사 데이터 없음</div>
         <div style="font-size:11px; color:var(--gold-dk); line-height:1.5">
-          '재고조사(부산)' / '재고조사(경기)' 시트가 비어있어요.<br>
-          <a href="inventory.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650; display:inline-block; margin-top:4px">📝 재고조사 시작하기 →</a>
+          수요일 재고조사가 아직 없어요.<br>
+          <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650; display:inline-block; margin-top:4px">📝 stock.html에서 재고조사 →</a>
         </div>
       </div>`;
       return;
     }
     
+    function statusBadge(total){
+      if(total > 2000) return {badge:'bg-green', label:'정상', bg:'var(--warm)', color:''};
+      if(total > 500)  return {badge:'bg-gold',  label:'주의', bg:'var(--gold-bg)', color:'var(--gold-dk)'};
+      return {badge:'bg-red', label:'부족', bg:'var(--red-bg)', color:'var(--red-dk)'};
+    }
+    
+    function formatDate(d){
+      if(!d) return '';
+      const parts = d.split('-');
+      return parts.length === 3 ? `${parts[1]}/${parts[2]} 실사` : d;
+    }
+    
+    const bsSt = statusBadge(bsTotal);
+    const ggSt = statusBadge(ggTotal);
+    const bsRemaining = bsTotal - bsFuture;
+    const ggRemaining = ggTotal - ggFuture;
+    
     el.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:${bsTotal > 500 ? 'var(--warm)' : 'var(--red-bg)'}; border-radius:var(--radius-sm)">
-        <div>
-          <div style="font-size:12px; font-weight:700">부산 창고</div>
-          <div style="font-size:10.5px; color:var(--soft); margin-top:2px">${bsTotal.toLocaleString()}장</div>
+      <div style="padding:12px 14px; background:${bsSt.bg}; border-radius:var(--radius-sm)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+          <div style="font-size:12px; font-weight:700; ${bsSt.color ? 'color:'+bsSt.color : ''}">부산 창고</div>
+          <span class="badge ${bsSt.badge}">${bsSt.label}</span>
         </div>
-        <span class="badge ${bsTotal > 500 ? 'bg-green' : 'bg-red'}">${bsTotal > 500 ? '정상' : '주의'}</span>
+        <div style="font-size:18px; font-weight:800; letter-spacing:-0.02em; ${bsSt.color ? 'color:'+bsSt.color : ''}">${bsTotal.toLocaleString()}<span style="font-size:11px; font-weight:500; color:var(--muted); margin-left:3px">장</span></div>
+        ${bsFuture > 0 ? `<div style="font-size:10.5px; color:var(--soft); margin-top:3px">예정 시공 <b>-${bsFuture.toLocaleString()}</b> → 잔량 <b style="color:${bsRemaining>500?'var(--green-dk)':'var(--red-dk)'}">${bsRemaining.toLocaleString()}장</b></div>` : ''}
+        ${bsSurvey ? `<div style="font-size:10.5px; color:var(--muted); margin-top:3px">📅 ${formatDate(bsSurvey)} 기준</div>` : ''}
       </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:${ggTotal > 500 ? 'var(--warm)' : 'var(--red-bg)'}; border-radius:var(--radius-sm)">
-        <div>
-          <div style="font-size:12px; font-weight:700; ${ggTotal <= 500 ? 'color:var(--red-dk)' : ''}">경기 창고</div>
-          <div style="font-size:10.5px; color:${ggTotal <= 500 ? 'var(--red-dk)' : 'var(--soft)'}; margin-top:2px">${ggTotal.toLocaleString()}장${ggTotal <= 500 ? ' · 재고 부족' : ''}</div>
+      <div style="padding:12px 14px; background:${ggSt.bg}; border-radius:var(--radius-sm)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+          <div style="font-size:12px; font-weight:700; ${ggSt.color ? 'color:'+ggSt.color : ''}">경기 창고</div>
+          <span class="badge ${ggSt.badge}">${ggSt.label}</span>
         </div>
-        <span class="badge ${ggTotal > 500 ? 'bg-green' : 'bg-red'}">${ggTotal > 500 ? '정상' : '주의'}</span>
+        <div style="font-size:18px; font-weight:800; letter-spacing:-0.02em; ${ggSt.color ? 'color:'+ggSt.color : ''}">${ggTotal.toLocaleString()}<span style="font-size:11px; font-weight:500; color:var(--muted); margin-left:3px">장</span></div>
+        ${ggFuture > 0 ? `<div style="font-size:10.5px; color:var(--soft); margin-top:3px">예정 시공 <b>-${ggFuture.toLocaleString()}</b> → 잔량 <b style="color:${ggRemaining>500?'var(--green-dk)':'var(--red-dk)'}">${ggRemaining.toLocaleString()}장</b></div>` : ''}
+        ${ggSurvey ? `<div style="font-size:10.5px; color:var(--muted); margin-top:3px">📅 ${formatDate(ggSurvey)} 기준</div>` : ''}
       </div>
     `;
   } catch(e){
