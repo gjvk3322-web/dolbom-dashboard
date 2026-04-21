@@ -487,8 +487,8 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   </div>
   <div class="scorecard">
     <div class="scorecard-label">이번달 시공</div>
-    <div class="scorecard-value">125<span class="scorecard-unit">건</span></div>
-    <div class="scorecard-sub">부산 55 · 경기 70 (AS/실측 제외)</div>
+    <div class="scorecard-value" id="kpiInstalls">116<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub">부산 48 · 경기 68 (AS/실측 제외)</div>
   </div>
   <div class="scorecard">
     <div class="scorecard-label">이번달 샘플 접수</div>
@@ -523,17 +523,17 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <div class="stat-col">
         <div class="stat-label">부산팀</div>
         <div class="stat-val">4,258<span class="u">만원</span></div>
-        <div class="stat-sub">55건 · 건당 77.4만</div>
+        <div class="stat-sub">48건 · 건당 88.7만</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">경기팀</div>
         <div class="stat-val">5,161<span class="u">만원</span></div>
-        <div class="stat-sub">70건 · 건당 73.7만</div>
+        <div class="stat-sub">68건 · 건당 75.9만</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">합계</div>
         <div class="stat-val" style="color:var(--accent-dk)">9,419<span class="u">만원</span></div>
-        <div class="stat-sub">125건 · 전월 대비 <span class="trend up">▲ 8%</span></div>
+        <div class="stat-sub">116건 · 건당 <b>81.2만</b></div>
       </div>
     </div>
 
@@ -541,7 +541,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <div>
         <div class="stat-label" style="margin-bottom:8px">구분별</div>
         <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">일반시공</span><span class="rowbar-val">114건 · <b>9,250만</b></span></div>
+          <div class="rowbar-top"><span class="rowbar-name">일반시공</span><span class="rowbar-val">105건 · <b>9,250만</b></span></div>
           <div class="rowbar-track"><div class="rowbar-fill" style="width:98%"></div></div>
         </div>
         <div class="rowbar">
@@ -552,18 +552,25 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <div>
         <div class="stat-label" style="margin-bottom:8px">제품별 (장수 기반)</div>
         <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">모던50</span><span class="rowbar-val"><b>87건</b> (70%)</span></div>
+          <div class="rowbar-top"><span class="rowbar-name">모던50</span><span class="rowbar-val"><b>81건</b> (70%)</span></div>
           <div class="rowbar-track"><div class="rowbar-fill" style="width:70%"></div></div>
         </div>
         <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">마블50</span><span class="rowbar-val"><b>32건</b> (26%)</span></div>
+          <div class="rowbar-top"><span class="rowbar-name">마블50</span><span class="rowbar-val"><b>30건</b> (26%)</span></div>
           <div class="rowbar-track"><div class="rowbar-fill purple" style="width:26%"></div></div>
         </div>
         <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">코튼50</span><span class="rowbar-val"><b>7건</b> (4%)</span></div>
+          <div class="rowbar-top"><span class="rowbar-name">코튼50</span><span class="rowbar-val"><b>5건</b> (4%)</span></div>
           <div class="rowbar-track"><div class="rowbar-fill green" style="width:4%"></div></div>
         </div>
       </div>
+    </div>
+
+    <!-- 🔥 예약 116건 분해 (80% 직접 예약 인사이트) -->
+    <div style="margin-top:14px; padding:11px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.6">
+      <b>💡 예약 116건 채널 분해:</b>
+      샘플 경유 <b>23건</b> (20%) · <b>직접 예약 93건 (80%)</b> ★
+      → 지인추천·재시공·입소문이 진짜 주력 채널. 샘플 마케팅은 신규 유입 통로.
     </div>
 
     <div class="links-row">
@@ -621,22 +628,22 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div class="stat-row">
       <div class="stat-col">
         <div class="stat-label">이번 달 (4월)</div>
-        <div class="stat-val">136<span class="u">샘플</span></div>
-        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)">125</b>건 · <span class="trend up">▲ 15%</span></div>
+        <div class="stat-val" id="sampleThisMonth">136<span class="u">샘플</span></div>
+        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)" id="reservedThisMonth">116</b>건 · 시공 5건</div>
       </div>
       <div class="stat-col">
-        <div class="stat-label">지난 달 (3월)</div>
-        <div class="stat-val md">118<span class="u">샘플</span></div>
-        <div class="stat-sub" style="margin-top:4px">예약 <b>88</b>건 · 시공 102건</div>
+        <div class="stat-label">샘플 → 예약 전환</div>
+        <div class="stat-val md" style="color:var(--green-dk)">17<span class="u">%</span></div>
+        <div class="stat-sub" style="margin-top:4px">23/136 (직접예약 제외)</div>
       </div>
       <div class="stat-col">
-        <div class="stat-label">지지난달 (2월)</div>
-        <div class="stat-val md">98<span class="u">샘플</span></div>
-        <div class="stat-sub" style="margin-top:4px">예약 <b>65</b>건 · 시공 89건</div>
+        <div class="stat-label">샘플 → 시공 전환</div>
+        <div class="stat-val md" style="color:var(--gold-dk)">3.7<span class="u">%</span></div>
+        <div class="stat-sub" style="margin-top:4px">5/136 · 리드타임 영향</div>
       </div>
     </div>
 
-    <!-- 월별 바차트 · 샘플 vs 예약 겹침 -->
+    <!-- 월별 바차트 · 실데이터 (4월부터) -->
     <div style="margin-top:18px">
       <div style="display:flex; justify-content:space-between; align-items:center">
         <div class="stat-label">최근 6개월 · 샘플 vs 예약</div>
@@ -645,42 +652,26 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
           <div class="bar-legend-item"><span class="bar-legend-dot reserved"></span>예약 완료</div>
         </div>
       </div>
-      <div class="barchart" style="height:90px">
-        <!-- 11월 샘플 65 / 예약 32 (49%) -->
-        <div class="bar" style="height:48%" title="11월 · 샘플 65 / 예약 32">
-          <div class="bar-inner" style="height:49.2%"></div>
-        </div>
-        <!-- 12월 72 / 40 (55.6%) -->
-        <div class="bar" style="height:53%" title="12월 · 샘플 72 / 예약 40">
-          <div class="bar-inner" style="height:55.6%"></div>
-        </div>
-        <!-- 1월 87 / 52 (59.8%) -->
-        <div class="bar" style="height:64%" title="1월 · 샘플 87 / 예약 52">
-          <div class="bar-inner" style="height:59.8%"></div>
-        </div>
-        <!-- 2월 98 / 65 (66.3%) -->
-        <div class="bar" style="height:72%" title="2월 · 샘플 98 / 예약 65">
-          <div class="bar-inner" style="height:66.3%"></div>
-        </div>
-        <!-- 3월 118 / 88 (74.6%) -->
-        <div class="bar" style="height:87%" title="3월 · 샘플 118 / 예약 88">
-          <div class="bar-inner" style="height:74.6%"></div>
-        </div>
-        <!-- 4월 136 / 125 (91.9%) ★ -->
-        <div class="bar today" style="height:100%" title="4월 · 샘플 136 / 예약 125">
-          <div class="bar-inner" style="height:91.9%"></div>
+      <div class="barchart" id="monthlyBars" style="height:90px">
+        <div class="bar" style="height:3%" title="11월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="12월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="1월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="2월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="3월 · 데이터 없음"></div>
+        <div class="bar today" style="height:100%" title="4월 · 샘플 136 / 예약 116">
+          <div class="bar-inner" style="height:85.3%"></div>
         </div>
       </div>
       <div class="bar-labels">
-        <span>11월 <b style="color:var(--soft)">65/32</b></span>
-        <span>12월 <b style="color:var(--soft)">72/40</b></span>
-        <span>1월 <b style="color:var(--soft)">87/52</b></span>
-        <span>2월 <b style="color:var(--soft)">98/65</b></span>
-        <span>3월 <b style="color:var(--soft)">118/88</b></span>
-        <span style="color:var(--text);font-weight:700">4월 <b>136/125</b></span>
+        <span style="color:var(--muted)">11월 <b>-</b></span>
+        <span style="color:var(--muted)">12월 <b>-</b></span>
+        <span style="color:var(--muted)">1월 <b>-</b></span>
+        <span style="color:var(--muted)">2월 <b>-</b></span>
+        <span style="color:var(--muted)">3월 <b>-</b></span>
+        <span style="color:var(--text);font-weight:700">4월 <b>136/116</b></span>
       </div>
-      <div style="margin-top:6px; font-size:10.5px; color:var(--soft); text-align:right">
-        📈 샘플 → 예약 전환율: 4월 <b style="color:var(--accent-dk)">91.9%</b> · 전월 74.6% 대비 <span class="trend up">▲ 17.3%p</span>
+      <div style="margin-top:6px; padding:8px 12px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); text-align:center">
+        ℹ️ 시스템 전환 · <b style="color:var(--text)">2026년 4월부터 데이터 수집 시작</b> · 5월부터 전월 대비 추세 가능
       </div>
     </div>
 
@@ -710,11 +701,12 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         </div>
       </div>
 
-      <!-- 🔥 유입경로별 전환 퍼널 (실제 데이터) -->
+      <!-- 🔥 유입경로별 전환 퍼널 (실데이터 · JS로 자동 갱신) -->
       <div>
         <div class="stat-label" style="margin-bottom:8px; display:flex; align-items:center; gap:6px">
           🎯 유입경로별 시공 전환율
-          <span class="badge bg-purple" style="font-size:9.5px; padding:1.5px 6px">실제 · 최근 3개월</span>
+          <span class="badge bg-purple" style="font-size:9.5px; padding:1.5px 6px">실시간 연동</span>
+          <span id="conversionUpdated" style="font-size:9.5px; color:var(--muted); margin-left:auto"></span>
         </div>
         <table class="tbl" style="font-size:11.5px">
           <thead>
@@ -726,64 +718,22 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
               <th class="num">평균매출</th>
             </tr>
           </thead>
-          <tbody>
-            <tr class="rank-me">
-              <td>🥇 지인추천</td>
-              <td class="num">28</td>
-              <td class="num" style="color:var(--accent-dk)">8</td>
-              <td class="num"><span class="badge bg-green">6 · 21%</span></td>
-              <td class="num">57만</td>
-            </tr>
-            <tr>
-              <td>맘카페</td>
-              <td class="num">16</td>
-              <td class="num" style="color:var(--accent-dk)">5</td>
-              <td class="num"><span class="badge bg-blue">3 · 19%</span></td>
-              <td class="num" style="color:var(--muted)">예정</td>
-            </tr>
-            <tr>
-              <td>네이버검색</td>
-              <td class="num">61</td>
-              <td class="num" style="color:var(--accent-dk)">15</td>
-              <td class="num"><span class="badge bg-blue">11 · 18%</span></td>
-              <td class="num">32만</td>
-            </tr>
-            <tr>
-              <td>기타</td>
-              <td class="num">18</td>
-              <td class="num" style="color:var(--accent-dk)">3</td>
-              <td class="num"><span class="badge bg-gold">2 · 11%</span></td>
-              <td class="num" style="color:var(--muted)">예정</td>
-            </tr>
-            <tr>
-              <td>💎 블로그</td>
-              <td class="num">10</td>
-              <td class="num" style="color:var(--accent-dk)">2</td>
-              <td class="num"><span class="badge bg-gold">1 · 10%</span></td>
-              <td class="num" style="color:var(--green-dk); font-weight:800">165만</td>
-            </tr>
-            <tr style="opacity:0.65">
-              <td>인스타</td>
-              <td class="num">2</td>
-              <td class="num">0</td>
-              <td class="num"><span class="badge bg-gray">0 · 0%</span></td>
-              <td class="num">-</td>
-            </tr>
-            <tr style="opacity:0.65">
-              <td>재시공</td>
-              <td class="num">1</td>
-              <td class="num">1</td>
-              <td class="num"><span class="badge bg-gray">0 · 0%</span></td>
-              <td class="num">-</td>
-            </tr>
+          <tbody id="conversionTbody">
+            <tr><td>💎 블로그</td><td class="num">10</td><td class="num" style="color:var(--accent-dk)">1</td><td class="num"><span class="badge bg-blue">1 · 10.0%</span></td><td class="num" style="color:var(--green-dk); font-weight:800">165만</td></tr>
+            <tr class="rank-me"><td>🥇 지인추천</td><td class="num">28</td><td class="num" style="color:var(--accent-dk)">6</td><td class="num"><span class="badge bg-gold">2 · 7.1%</span></td><td class="num">172만</td></tr>
+            <tr><td>🔍 네이버검색</td><td class="num">61</td><td class="num" style="color:var(--accent-dk)">11</td><td class="num"><span class="badge bg-gold">2 · 3.3%</span></td><td class="num">177만</td></tr>
+            <tr><td>❓ 기타</td><td class="num">18</td><td class="num" style="color:var(--accent-dk)">2</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num" style="color:var(--muted)">예정</td></tr>
+            <tr><td>👩 맘카페</td><td class="num">16</td><td class="num" style="color:var(--accent-dk)">3</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num" style="color:var(--muted)">예정</td></tr>
+            <tr style="opacity:0.65"><td>📱 인스타</td><td class="num">2</td><td class="num">0</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num">-</td></tr>
+            <tr style="opacity:0.65"><td>🔁 재시공</td><td class="num">1</td><td class="num">0</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num">-</td></tr>
           </tbody>
           <tfoot>
             <tr style="background:var(--warm); font-weight:700">
               <td style="font-size:10.5px">합계</td>
-              <td class="num">136</td>
-              <td class="num" style="color:var(--accent-dk)">34</td>
-              <td class="num"><span class="badge bg-text">23 · 16.9%</span></td>
-              <td class="num">82만</td>
+              <td class="num" id="totalSample">136</td>
+              <td class="num" style="color:var(--accent-dk)" id="totalReserved">23</td>
+              <td class="num"><span class="badge bg-text" id="totalInstalled">5 · 3.7%</span></td>
+              <td class="num" id="totalAvg">174만</td>
             </tr>
           </tfoot>
         </table>
@@ -793,11 +743,11 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
       <div style="padding:12px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.55">
         <b>💎 건당 매출 1위 · 블로그</b><br>
-        평균매출 <b>165만원</b> (타 채널의 3~5배) → 고평수·프리미엄 고객 유입 채널. <b>건수는 적어도 ROI 최강</b>, 블로그 콘텐츠 투자 가치 검증됨.
+        평균매출 <b>165만원</b> → 고평수·프리미엄 고객 유입 채널. 샘플 10건으로 표본 작지만 시사점 뚜렷, 블로그 콘텐츠 투자 가치 검증 중.
       </div>
       <div style="padding:12px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
-        <b>🎯 유입 1위 · 네이버 검색</b><br>
-        샘플 <b>61건</b> (최다) 중 시공 11건. 전환율 18%를 <b>25%로만 올려도 월 +4건 시공</b> 증가. 랜딩페이지 개선 최대 기회.
+        <b>⏱ 샘플 → 시공 3.7% 낮은 이유</b><br>
+        4월 샘플 고객 대부분 아직 리드타임 내 (5~6월 시공 예정). 이전 데이터 없어 기존 고객 매칭 불가. <b>5월 말 재측정 필요</b>.
       </div>
     </div>
 
@@ -1354,17 +1304,119 @@ function updateTime(){
 updateTime();
 setInterval(updateTime, 60000);
 
-// ═══ 새로고침 (TODO: 실제 API 호출로 교체) ═══
+// ═══ 새로고침 (실제 API 호출) ═══
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+// 유입경로 이모지 매핑
+function getChannelIcon(ch){
+  const m = {
+    '지인추천':'🥇', '블로그':'💎', '맘카페':'👩', '네이버검색':'🔍',
+    '인스타':'📱', '재시공':'🔁', '기타':'❓', '당근마켓':'🥕', 'AI검색':'🆕'
+  };
+  return m[ch] || '•';
+}
+
+// 전환율 badge 색상
+function getRateBadge(rate){
+  if(rate >= 20) return 'bg-green';
+  if(rate >= 10) return 'bg-blue';
+  if(rate >= 5)  return 'bg-gold';
+  return 'bg-gray';
+}
+
+// 유입경로 전환율 로드
+async function loadConversionStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=conversionStats`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+    
+    // 시공 건수 내림차순, 동률이면 시공률 내림차순
+    json.data.sort((a,b) => (b.installed - a.installed) || (b.installRate - a.installRate) || (b.sample - a.sample));
+    
+    const tbody = document.getElementById('conversionTbody');
+    if(!tbody) return;
+    
+    tbody.innerHTML = json.data.map(row => {
+      const icon = getChannelIcon(row.channel);
+      const badge = getRateBadge(row.installRate);
+      const avgRev = row.avgRevenue > 0 ? `${Math.round(row.avgRevenue/10000)}만` : '<span style="color:var(--muted)">예정</span>';
+      const rowClass = row.installed === 0 && row.sample <= 2 ? ' style="opacity:0.65"' : (icon === '🥇' || icon === '💎' ? ' class="rank-me"' : '');
+      return `<tr${rowClass}>
+        <td>${icon} ${row.channel}</td>
+        <td class="num">${row.sample}</td>
+        <td class="num" style="color:var(--accent-dk)">${row.reserved}</td>
+        <td class="num"><span class="badge ${badge}">${row.installed} · ${row.installRate}%</span></td>
+        <td class="num"${row.avgRevenue >= 1500000 ? ' style="color:var(--green-dk); font-weight:800"' : ''}>${avgRev}</td>
+      </tr>`;
+    }).join('');
+    
+    // 합계 업데이트
+    const tot = json.data.reduce((a,r) => ({
+      s: a.s + r.sample, r: a.r + r.reserved, i: a.i + r.installed,
+      rev: a.rev + (r.avgRevenue * r.installed)
+    }), {s:0, r:0, i:0, rev:0});
+    const totRate = tot.s > 0 ? (tot.i/tot.s*100).toFixed(1) : 0;
+    const totAvg = tot.i > 0 ? Math.round(tot.rev/tot.i/10000) : 0;
+    
+    document.getElementById('totalSample').textContent = tot.s;
+    document.getElementById('totalReserved').textContent = tot.r;
+    document.getElementById('totalInstalled').textContent = `${tot.i} · ${totRate}%`;
+    document.getElementById('totalAvg').textContent = totAvg > 0 ? `${totAvg}만` : '-';
+    
+    if(json.updatedAt){
+      const dt = new Date(json.updatedAt);
+      const h = String(dt.getHours()).padStart(2,'0');
+      const mn = String(dt.getMinutes()).padStart(2,'0');
+      const el = document.getElementById('conversionUpdated');
+      if(el) el.textContent = `· ${dt.getMonth()+1}/${dt.getDate()} ${h}:${mn} 갱신`;
+    }
+  } catch(e){
+    console.error('전환율 로드 실패:', e);
+  }
+}
+
+// 월별 퍼널 로드
+async function loadMonthlyFunnel(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=monthlyFunnel`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+    
+    const maxVal = Math.max(...json.data.map(m => m.sample), 1);
+    const barsEl = document.getElementById('monthlyBars');
+    if(!barsEl) return;
+    
+    barsEl.innerHTML = json.data.map((m, idx) => {
+      const isLast = idx === json.data.length - 1;
+      const sampleH = m.sample > 0 ? Math.max(3, m.sample/maxVal*100) : 3;
+      const reservedH = m.sample > 0 ? (m.reserved/m.sample*100) : 0;
+      const title = m.sample > 0 ? `${m.month} · 샘플 ${m.sample} / 예약 ${m.reserved}` : `${m.month} · 데이터 없음`;
+      const inner = m.sample > 0 ? `<div class="bar-inner" style="height:${reservedH.toFixed(1)}%"></div>` : '';
+      return `<div class="bar${isLast && m.sample > 0 ? ' today' : ''}" style="height:${sampleH.toFixed(1)}%" title="${title}">${inner}</div>`;
+    }).join('');
+  } catch(e){
+    console.error('월별퍼널 로드 실패:', e);
+  }
+}
+
 function refreshAll(){
   const btn = document.querySelector('.nav-refresh');
   btn.style.opacity = '0.6';
   btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>불러오는 중…';
-  setTimeout(()=>{
+  
+  Promise.all([loadConversionStats(), loadMonthlyFunnel()]).finally(() => {
     btn.style.opacity = '1';
     btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>새로고침';
     updateTime();
-  }, 800);
+  });
 }
+
+// 페이지 로드 시 자동 fetch
+window.addEventListener('DOMContentLoaded', () => {
+  loadConversionStats();
+  loadMonthlyFunnel();
+});
 
 // ═══ 상담폰 입력 (TODO: Apps Script 연결) ═══
 function submitPhone(){
