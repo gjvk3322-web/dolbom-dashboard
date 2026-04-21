@@ -249,10 +249,15 @@ async function renderSummary(){
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
 
-  // 제품별 실사 원본 (접기/펼치기)
+  // 제품별 실사 원본 (기본 펼침 · v2 · 사이즈별 합계 + 장수 툴팁)
+  const _dowArr=['일','월','화','수','목','금','토'];
+  const _dParts=(invDataDate||dateKey).split('-');
+  const _dateLabel=_dParts.length===3
+    ?`${parseInt(_dParts[1])}/${parseInt(_dParts[2])}(${_dowArr[new Date(invDataDate||dateKey).getDay()]})`
+    :(invDataDate||'');
   h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-  h+=`<div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('surveyDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📦 실사 원본 (위치별 박스 수)</span><span style="font-size:12px;color:var(--dim)"><span class="arrow">▸</span></span></div>`;
-  h+=`<div id="surveyDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
+  h+=`<div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('surveyDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📦 ${_dateLabel} 제출 재고 총합 <span style="color:var(--dim);font-weight:500;font-size:11px">(색상·사이즈별)</span></span><span style="font-size:12px;color:var(--dim)"><span class="arrow">▾</span></span></div>`;
+  h+=`<div id="surveyDetail" style="display:block;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
@@ -260,8 +265,16 @@ async function renderSummary(){
     h+=`<div class="g">`;
     if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}박스</b></span>`});h+=`</div>`}
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
+    // 색상별 행 · 툴팁으로 박스→장수 변환 표시
+    const _sizeSums={};TY.forEach(t=>_sizeSums[t]=0);
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}">${v}</div>`});h+=`</div>`});h+=`</div>`});
+      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;_sizeSums[t]+=v;h+=`<div class="rv ${v===0?'zero':''}" title="${v}박스 = ${v*p.bpb}장">${v}</div>`});h+=`</div>`});
+    // 🆕 사이즈별 합계 행
+    h+=`<div class="g-row" style="border-top:1px dashed var(--border);margin-top:4px;padding-top:4px">`;
+    h+=`<div class="cl" style="font-weight:700;color:var(--accent)">합계</div>`;
+    TY.forEach(t=>{const s=_sizeSums[t]||0;h+=`<div class="rv" style="font-weight:700;color:${s>0?'var(--accent)':'var(--dim)'}" title="${s}박스 = ${s*p.bpb}장">${s}</div>`});
+    h+=`</div>`;
+    h+=`</div>`});
   h+=`</div></div>`;
 
   const om=fbInvData[fk('사무실')]?.memo;
