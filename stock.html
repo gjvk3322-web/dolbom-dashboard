@@ -97,7 +97,7 @@ const TY=['센터','사이드','코너','10T'];
 const PR=[
   {id:'500',name:'500매트',badge:'22T',bpb:12,colors:['모던','마블','코튼']},
   {id:'1000_22',name:'1000매트',badge:'22T',bpb:4,colors:['모던','베이지']},
-  {id:'1000_17',name:'1000매트',badge:'18T',bpb:6,colors:['모던','베이지']}
+  {id:'1000_18',name:'1000매트',badge:'18T',bpb:6,colors:['모던','베이지']}
 ];
 let team=null,loc=null,tab='summary';
 let fbInvData={},fbInRef=null;
@@ -215,7 +215,7 @@ function renderIncoming(){
 const STD={
   '500':{25:{센터:9,사이드:1,코너:1,'10T':0},30:{센터:10,사이드:2,코너:1,'10T':0},35:{센터:12,사이드:2,코너:1,'10T':0}},
   '1000_22':{25:{센터:7,사이드:1,코너:1,'10T':0},30:{센터:8,사이드:1,코너:1,'10T':0},35:{센터:9,사이드:1,코너:1,'10T':0}},
-  '1000_17':{25:{센터:5,사이드:1,코너:1,'10T':0},30:{센터:6,사이드:1,코너:1,'10T':0},35:{센터:6,사이드:1,코너:1,'10T':0}}
+  '1000_18':{25:{센터:5,사이드:1,코너:1,'10T':0},30:{센터:6,사이드:1,코너:1,'10T':0},35:{센터:6,사이드:1,코너:1,'10T':0}}
 };
 let stockCache=null;
 
@@ -285,7 +285,7 @@ async function renderSummary(){
   PR.forEach(p=>{p.colors.forEach(c=>{let s=0;TY.forEach(t=>{s+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb});if(s>0)prodColorStock[p.id+'_'+c]=s})});
   const prodColorFuture={};
   if(sd&&sd.futureList)sd.futureList.forEach(j=>{
-    const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
+    const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_18');
     const c=j.color||'미정';const key=pid+'_'+c;
     if(!prodColorFuture[key])prodColorFuture[key]={n:0,s:0};prodColorFuture[key].n++;prodColorFuture[key].s+=j.expected;
   });
@@ -297,8 +297,8 @@ async function renderSummary(){
   // ===== 📊 현재 재고 (메인 카드) =====
   const cr=sd&&!sd.error?sd.calcResult||{}:{};
   const surveyDate=sd&&!sd.error?sd.lastSurveyDate||'':'';
-  const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_17':'1000매트 18T'};
-  const prodOrder=['500','1000_22','1000_17'];
+  const prodNames={'500':'500매트 22T','1000_22':'1000매트 22T','1000_18':'1000매트 18T'};
+  const prodOrder=['500','1000_22','1000_18'];
   
   if(surveyDate&&Object.keys(cr).length>0){
     // 계산 재고 총합
@@ -306,8 +306,8 @@ async function renderSummary(){
     Object.values(cr).forEach(d=>{calcTotal+=d.calculated});
     const sdp=surveyDate.split('-');
     
-    const spp={'500':288,'1000_22':72,'1000_17':93};
-    const prodColors={'500':['모던','마블','코튼'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
+    const spp={'500':288,'1000_22':72,'1000_18':93};
+    const prodColors={'500':['모던','마블','코튼'],'1000_22':['모던','베이지'],'1000_18':['모던','베이지']};
     // 제품별/색상별 소계 계산
     const prodTotals={};
     const prodColorCalc={};
@@ -453,7 +453,7 @@ async function renderSummary(){
     if(ld.lossByProduct&&ld.lossByProduct.length>0){
       h+=`<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px">`;
       h+=`<div style="font-weight:700;font-size:11px;margin-bottom:8px">📊 제품·색상별 로스 분석</div>`;
-      const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트18T'};
+      const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_18':'1000매트18T'};
       const colorDot={'모던':'#5e9eff','마블':'#c792ea','코튼':'#50c878','베이지':'#e6c875'};
       // 로스 큰 순 정렬 후 최대값 찾기
       const maxAbs=Math.max(...ld.lossByProduct.map(p=>Math.abs(p.loss)),1);
@@ -519,8 +519,8 @@ let orderInputs={};  // 발주서 입력 데이터 유지용
 let orderMonth=new Date().getMonth()+1;  // 발주서 월
 let orderYear=new Date().getFullYear();
 const ORDER_CL={'모던':'#9ca3af','마블':'#3b82f6','베이지':'#d4a574'};
-const ORDER_COLORS={'500':['마블','모던'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
-const ORDER_SHAPES={'500':['센터','사이드','코너','10T'],'1000_22':['센터','사이드','코너','10T'],'1000_17':['센터','사이드','코너']};
+const ORDER_COLORS={'500':['마블','모던'],'1000_22':['모던','베이지'],'1000_18':['모던','베이지']};
+const ORDER_SHAPES={'500':['센터','사이드','코너','10T'],'1000_22':['센터','사이드','코너','10T'],'1000_18':['센터','사이드','코너']};
 
 function initDefaultDeliveries(){
   if(deliveries.length>0)return;
@@ -660,8 +660,8 @@ function renderOrder(){
   h+=`</div>`;
 
   // 제품별 행 (코튼 제외)
-  const palletLabel={'500':'24박스 기준','1000_22':'16박스 기준','1000_17':'18박스 기준'};
-  const bppMap={'500':24,'1000_22':18,'1000_17':15};
+  const palletLabel={'500':'24박스 기준','1000_22':'16박스 기준','1000_18':'18박스 기준'};
+  const bppMap={'500':24,'1000_22':18,'1000_18':15};
   const allRows=[];
   PR.forEach(p=>{
     const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
@@ -740,7 +740,7 @@ function removeDelivery(id){
 }
 
 function calcMonthlyOrder(){
-  const bppMap={'500':24,'1000_22':18,'1000_17':15};
+  const bppMap={'500':24,'1000_22':18,'1000_18':15};
   let grandTotal=0;
 
   deliveries.forEach(d=>{
