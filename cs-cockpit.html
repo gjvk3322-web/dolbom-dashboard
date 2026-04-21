@@ -204,17 +204,35 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   height:72px; margin:12px 0 6px;
 }
 .bar{
-  flex:1; background:var(--accent); opacity:0.72;
+  flex:1; background:var(--accent); opacity:0.35;
   border-radius:3px 3px 0 0; min-height:3px;
   transition:opacity 0.2s; position:relative; cursor:default;
 }
-.bar:hover{opacity:1}
-.bar.today{background:var(--text); opacity:1}
+.bar:hover{opacity:0.5}
+.bar-inner{
+  position:absolute; bottom:0; left:0; right:0;
+  background:var(--accent); opacity:1;
+  border-radius:3px 3px 0 0;
+}
+.bar:hover .bar-inner{background:var(--accent-dk)}
+.bar.today .bar-inner{background:var(--text)}
 .bar-labels{
   display:flex; gap:3px; font-size:9px; color:var(--muted);
   font-variant-numeric:tabular-nums;
 }
 .bar-labels span{flex:1; text-align:center}
+
+/* ═══ 바 차트 범례 ═══ */
+.bar-legend{
+  display:flex; gap:14px; font-size:10.5px;
+  color:var(--soft); margin-top:4px; justify-content:flex-end;
+}
+.bar-legend-item{display:flex; align-items:center; gap:5px}
+.bar-legend-dot{
+  width:9px; height:9px; border-radius:2px;
+}
+.bar-legend-dot.sample{background:var(--accent); opacity:0.35}
+.bar-legend-dot.reserved{background:var(--accent)}
 
 /* ═══ 가로 바 (비율) ═══ */
 .rowbar{margin:9px 0}
@@ -603,43 +621,70 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div class="stat-row">
       <div class="stat-col">
         <div class="stat-label">이번 달 (4월)</div>
-        <div class="stat-val">136<span class="u">건</span></div>
-        <div class="stat-sub"><span class="trend up">▲ 15%</span> 전월 대비</div>
+        <div class="stat-val">136<span class="u">샘플</span></div>
+        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)">125</b>건 · <span class="trend up">▲ 15%</span></div>
       </div>
       <div class="stat-col">
         <div class="stat-label">지난 달 (3월)</div>
-        <div class="stat-val md">118<span class="u">건</span></div>
-        <div class="stat-sub"><span class="trend up">▲ 20%</span> 전월 대비</div>
+        <div class="stat-val md">118<span class="u">샘플</span></div>
+        <div class="stat-sub" style="margin-top:4px">예약 <b>88</b>건 · 시공 102건</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">지지난달 (2월)</div>
-        <div class="stat-val md">98<span class="u">건</span></div>
-        <div class="stat-sub"><span class="trend up">▲ 13%</span> 전월 대비</div>
+        <div class="stat-val md">98<span class="u">샘플</span></div>
+        <div class="stat-sub" style="margin-top:4px">예약 <b>65</b>건 · 시공 89건</div>
       </div>
     </div>
 
-    <!-- 월별 바차트 (최근 6개월) -->
+    <!-- 월별 바차트 · 샘플 vs 예약 겹침 -->
     <div style="margin-top:18px">
-      <div class="stat-label">최근 6개월 월별 접수</div>
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div class="stat-label">최근 6개월 · 샘플 vs 예약</div>
+        <div class="bar-legend">
+          <div class="bar-legend-item"><span class="bar-legend-dot sample"></span>샘플 접수</div>
+          <div class="bar-legend-item"><span class="bar-legend-dot reserved"></span>예약 완료</div>
+        </div>
+      </div>
       <div class="barchart" style="height:90px">
-        <div class="bar" style="height:48%" title="11월 · 65건"></div>
-        <div class="bar" style="height:53%" title="12월 · 72건"></div>
-        <div class="bar" style="height:64%" title="1월 · 87건"></div>
-        <div class="bar" style="height:72%" title="2월 · 98건"></div>
-        <div class="bar" style="height:87%" title="3월 · 118건"></div>
-        <div class="bar today" style="height:100%" title="4월 · 136건"></div>
+        <!-- 11월 샘플 65 / 예약 32 (49%) -->
+        <div class="bar" style="height:48%" title="11월 · 샘플 65 / 예약 32">
+          <div class="bar-inner" style="height:49.2%"></div>
+        </div>
+        <!-- 12월 72 / 40 (55.6%) -->
+        <div class="bar" style="height:53%" title="12월 · 샘플 72 / 예약 40">
+          <div class="bar-inner" style="height:55.6%"></div>
+        </div>
+        <!-- 1월 87 / 52 (59.8%) -->
+        <div class="bar" style="height:64%" title="1월 · 샘플 87 / 예약 52">
+          <div class="bar-inner" style="height:59.8%"></div>
+        </div>
+        <!-- 2월 98 / 65 (66.3%) -->
+        <div class="bar" style="height:72%" title="2월 · 샘플 98 / 예약 65">
+          <div class="bar-inner" style="height:66.3%"></div>
+        </div>
+        <!-- 3월 118 / 88 (74.6%) -->
+        <div class="bar" style="height:87%" title="3월 · 샘플 118 / 예약 88">
+          <div class="bar-inner" style="height:74.6%"></div>
+        </div>
+        <!-- 4월 136 / 125 (91.9%) ★ -->
+        <div class="bar today" style="height:100%" title="4월 · 샘플 136 / 예약 125">
+          <div class="bar-inner" style="height:91.9%"></div>
+        </div>
       </div>
       <div class="bar-labels">
-        <span>11월 <b style="color:var(--soft)">65</b></span>
-        <span>12월 <b style="color:var(--soft)">72</b></span>
-        <span>1월 <b style="color:var(--soft)">87</b></span>
-        <span>2월 <b style="color:var(--soft)">98</b></span>
-        <span>3월 <b style="color:var(--soft)">118</b></span>
-        <span style="color:var(--text);font-weight:700">4월 <b>136</b></span>
+        <span>11월 <b style="color:var(--soft)">65/32</b></span>
+        <span>12월 <b style="color:var(--soft)">72/40</b></span>
+        <span>1월 <b style="color:var(--soft)">87/52</b></span>
+        <span>2월 <b style="color:var(--soft)">98/65</b></span>
+        <span>3월 <b style="color:var(--soft)">118/88</b></span>
+        <span style="color:var(--text);font-weight:700">4월 <b>136/125</b></span>
+      </div>
+      <div style="margin-top:6px; font-size:10.5px; color:var(--soft); text-align:right">
+        📈 샘플 → 예약 전환율: 4월 <b style="color:var(--accent-dk)">91.9%</b> · 전월 74.6% 대비 <span class="trend up">▲ 17.3%p</span>
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+    <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
       <!-- 시공목적 TOP -->
       <div>
         <div class="stat-label" style="margin-bottom:8px">시공목적 TOP</div>
@@ -665,69 +710,100 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         </div>
       </div>
 
-      <!-- 🔥 유입경로별 시공 전환율 (KPI 핵심) -->
+      <!-- 🔥 유입경로별 전환 퍼널 (실제 데이터) -->
       <div>
         <div class="stat-label" style="margin-bottom:8px; display:flex; align-items:center; gap:6px">
           🎯 유입경로별 시공 전환율
-          <span class="badge bg-purple" style="font-size:9.5px; padding:1.5px 6px">최근 3개월</span>
+          <span class="badge bg-purple" style="font-size:9.5px; padding:1.5px 6px">실제 · 최근 3개월</span>
         </div>
-        <table class="tbl" style="font-size:12px">
+        <table class="tbl" style="font-size:11.5px">
           <thead>
             <tr>
               <th>채널</th>
-              <th class="num">샘플→시공</th>
-              <th class="num">전환율</th>
+              <th class="num">샘플</th>
+              <th class="num">예약</th>
+              <th class="num">시공</th>
+              <th class="num">평균매출</th>
             </tr>
           </thead>
           <tbody>
             <tr class="rank-me">
               <td>🥇 지인추천</td>
-              <td class="num">45/63</td>
-              <td class="num"><span class="badge bg-green">71%</span></td>
-            </tr>
-            <tr>
-              <td>🔁 재시공</td>
-              <td class="num">9/10</td>
-              <td class="num"><span class="badge bg-green">90%</span></td>
+              <td class="num">28</td>
+              <td class="num" style="color:var(--accent-dk)">8</td>
+              <td class="num"><span class="badge bg-green">6 · 21%</span></td>
+              <td class="num">57만</td>
             </tr>
             <tr>
               <td>맘카페</td>
-              <td class="num">24/45</td>
-              <td class="num"><span class="badge bg-blue">53%</span></td>
+              <td class="num">16</td>
+              <td class="num" style="color:var(--accent-dk)">5</td>
+              <td class="num"><span class="badge bg-blue">3 · 19%</span></td>
+              <td class="num" style="color:var(--muted)">예정</td>
             </tr>
             <tr>
-              <td>블로그</td>
-              <td class="num">18/39</td>
-              <td class="num"><span class="badge bg-blue">46%</span></td>
+              <td>네이버검색</td>
+              <td class="num">61</td>
+              <td class="num" style="color:var(--accent-dk)">15</td>
+              <td class="num"><span class="badge bg-blue">11 · 18%</span></td>
+              <td class="num">32만</td>
             </tr>
             <tr>
-              <td>네이버 검색</td>
-              <td class="num">75/192</td>
-              <td class="num"><span class="badge bg-gold">39%</span></td>
+              <td>기타</td>
+              <td class="num">18</td>
+              <td class="num" style="color:var(--accent-dk)">3</td>
+              <td class="num"><span class="badge bg-gold">2 · 11%</span></td>
+              <td class="num" style="color:var(--muted)">예정</td>
             </tr>
             <tr>
+              <td>💎 블로그</td>
+              <td class="num">10</td>
+              <td class="num" style="color:var(--accent-dk)">2</td>
+              <td class="num"><span class="badge bg-gold">1 · 10%</span></td>
+              <td class="num" style="color:var(--green-dk); font-weight:800">165만</td>
+            </tr>
+            <tr style="opacity:0.65">
               <td>인스타</td>
-              <td class="num">3/9</td>
-              <td class="num"><span class="badge bg-gold">33%</span></td>
+              <td class="num">2</td>
+              <td class="num">0</td>
+              <td class="num"><span class="badge bg-gray">0 · 0%</span></td>
+              <td class="num">-</td>
             </tr>
-            <tr style="opacity:0.75">
-              <td>기타/미분류</td>
-              <td class="num">12/54</td>
-              <td class="num"><span class="badge bg-red">22%</span></td>
+            <tr style="opacity:0.65">
+              <td>재시공</td>
+              <td class="num">1</td>
+              <td class="num">1</td>
+              <td class="num"><span class="badge bg-gray">0 · 0%</span></td>
+              <td class="num">-</td>
             </tr>
           </tbody>
+          <tfoot>
+            <tr style="background:var(--warm); font-weight:700">
+              <td style="font-size:10.5px">합계</td>
+              <td class="num">136</td>
+              <td class="num" style="color:var(--accent-dk)">34</td>
+              <td class="num"><span class="badge bg-text">23 · 16.9%</span></td>
+              <td class="num">82만</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
 
-    <div style="margin-top:12px; padding:10px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
-      <b>🔔 KPI 인사이트:</b> <b>지인추천(71%)·재시공(90%)</b>이 전환율 최상위 → 추천 프로그램 예산 증액 고려.
-      <b>네이버검색</b>은 샘플 192건으로 채널 1위지만 전환율 39% → 랜딩페이지 개선 시 영향력 가장 큼.
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
+      <div style="padding:12px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.55">
+        <b>💎 건당 매출 1위 · 블로그</b><br>
+        평균매출 <b>165만원</b> (타 채널의 3~5배) → 고평수·프리미엄 고객 유입 채널. <b>건수는 적어도 ROI 최강</b>, 블로그 콘텐츠 투자 가치 검증됨.
+      </div>
+      <div style="padding:12px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
+        <b>🎯 유입 1위 · 네이버 검색</b><br>
+        샘플 <b>61건</b> (최다) 중 시공 11건. 전환율 18%를 <b>25%로만 올려도 월 +4건 시공</b> 증가. 랜딩페이지 개선 최대 기회.
+      </div>
     </div>
 
     <div class="chip-row">
       <span class="chip new">🆕 AI검색 <b>1건</b></span>
-      <span class="chip">📱 인스타 <b>3건</b></span>
+      <span class="chip">📱 인스타 <b>2건</b></span>
       <span class="chip">🥕 당근마켓 <b>2건</b></span>
     </div>
   </div>
