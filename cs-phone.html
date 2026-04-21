@@ -12,6 +12,8 @@
   --text:#2C2925; --soft:#6B655E; --muted:#908B84; --line:#EBE8E1;
   --accent:#8BB5C0; --accent-bg:#F1F7F9; --accent-dk:#3A6670;
   --green:#89B493; --green-bg:#E8F3EC; --green-dk:#3F7249;
+  --gold:#C4A878; --gold-bg:#F9F3E5; --gold-dk:#7A5E2E;
+  --red:#C87F7D; --red-bg:#F8EBEB; --red-dk:#8A3D3C;
   --shadow-sm:0 1px 3px rgba(44,41,37,0.04),0 2px 8px rgba(44,41,37,0.03);
   --shadow-md:0 4px 16px rgba(44,41,37,0.06);
   --radius:16px; --radius-sm:10px;
@@ -31,7 +33,6 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
 
-/* 상단 네비 */
 .topnav{
   background:rgba(250,250,247,0.88);
   backdrop-filter:saturate(180%) blur(14px);
@@ -52,10 +53,8 @@ input[type=number]{-moz-appearance:textfield}
 .nav-title .label{color:var(--soft); font-weight:500; margin-left:6px}
 .nav-meta{font-size:11.5px; color:var(--soft); font-variant-numeric:tabular-nums}
 
-/* 컨테이너 */
 .container{max-width:480px; margin:0 auto; padding:20px}
 
-/* 오늘의 입력 · 메인 카드 */
 .today-card{
   background:var(--card);
   border:1px solid var(--line);
@@ -87,13 +86,22 @@ input[type=number]{-moz-appearance:textfield}
 }
 .already-saved.show{display:block}
 
-/* 입력 필드 */
 .field{margin-top:18px}
 .field-label{
-  display:block; font-size:11px; font-weight:700;
-  letter-spacing:0.05em; text-transform:uppercase;
-  color:var(--muted); margin-bottom:8px;
+  font-size:11.5px; font-weight:700; color:var(--soft);
+  margin-bottom:8px; display:flex; align-items:center; gap:6px;
 }
+.field-label .icon{font-size:14px}
+.field-label .tag{
+  font-size:9.5px; font-weight:650;
+  background:var(--warm); color:var(--muted);
+  padding:2px 7px; border-radius:100px;
+  margin-left:auto;
+}
+.field-label .tag.good{background:var(--green-bg); color:var(--green-dk)}
+.field-label .tag.warn{background:var(--gold-bg); color:var(--gold-dk)}
+.field-label .tag.hot{background:var(--red-bg); color:var(--red-dk)}
+
 .num-input{
   width:100%; padding:22px 20px;
   border:2px solid var(--line); background:#fff;
@@ -110,6 +118,20 @@ input[type=number]{-moz-appearance:textfield}
   box-shadow:0 0 0 4px rgba(139,181,192,0.15);
 }
 .num-input::placeholder{color:var(--muted); font-weight:600; font-size:24px}
+.num-input.missed{border-color:#E8C8C7}
+.num-input.missed:focus{border-color:var(--red); background:var(--red-bg); box-shadow:0 0 0 4px rgba(200,127,125,0.15)}
+.num-input.callback{border-color:#D0E2D4}
+.num-input.callback:focus{border-color:var(--green); background:var(--green-bg); box-shadow:0 0 0 4px rgba(137,180,147,0.15)}
+
+.callback-rate{
+  display:none; margin-top:8px; padding:7px 14px;
+  background:var(--green-bg); color:var(--green-dk);
+  border-radius:100px; font-size:11.5px; font-weight:650;
+  text-align:center; font-variant-numeric:tabular-nums;
+}
+.callback-rate.show{display:block}
+.callback-rate.warn{background:var(--gold-bg); color:var(--gold-dk)}
+.callback-rate.danger{background:var(--red-bg); color:var(--red-dk)}
 
 .memo-input{
   width:100%; padding:14px 16px;
@@ -121,7 +143,6 @@ input[type=number]{-moz-appearance:textfield}
 }
 .memo-input:focus{outline:none; border-color:var(--accent); background:var(--accent-bg)}
 
-/* 제출 버튼 */
 .submit-btn{
   width:100%; margin-top:20px;
   padding:17px; border:none; border-radius:var(--radius-sm);
@@ -134,7 +155,6 @@ input[type=number]{-moz-appearance:textfield}
 .submit-btn:disabled{background:var(--muted); cursor:not-allowed; transform:none}
 .submit-btn.success{background:var(--green-dk); color:#fff}
 
-/* 요약 카드 */
 .summary-card{
   background:var(--card);
   border:1px solid var(--line);
@@ -165,8 +185,8 @@ input[type=number]{-moz-appearance:textfield}
 .sc-col .val .u{font-size:12px; font-weight:600; color:var(--muted); margin-left:2px}
 .sc-col .sub{font-size:10.5px; color:var(--soft); margin-top:3px}
 .val-green{color:var(--green-dk)}
+.val-red{color:var(--red-dk)}
 
-/* 최근 7일 바 */
 .chart-card{
   background:var(--card);
   border:1px solid var(--line);
@@ -185,10 +205,11 @@ input[type=number]{-moz-appearance:textfield}
 }
 .bar7-inner{
   position:absolute; bottom:0; left:0; right:0;
-  background:var(--accent);
+  background:var(--red);
   border-radius:4px 4px 0 0;
 }
-.bar7.today-b .bar7-inner{background:var(--text)}
+.bar7.today-b{opacity:0.55}
+.bar7.today-b .bar7-inner{background:var(--red-dk)}
 .bar7-labels{
   display:flex; gap:6px; font-size:10px; color:var(--muted);
   font-variant-numeric:tabular-nums;
@@ -196,7 +217,6 @@ input[type=number]{-moz-appearance:textfield}
 .bar7-labels span{flex:1; text-align:center; line-height:1.4}
 .bar7-labels .today-lbl{color:var(--text); font-weight:700}
 
-/* 토스트 */
 .toast{
   position:fixed; bottom:30px; left:50%;
   transform:translateX(-50%) translateY(100px);
@@ -206,12 +226,12 @@ input[type=number]{-moz-appearance:textfield}
   box-shadow:var(--shadow-md);
   opacity:0; transition:all 0.3s var(--ease);
   z-index:200; pointer-events:none;
+  max-width:90vw; text-align:center;
 }
 .toast.show{transform:translateX(-50%) translateY(0); opacity:1}
 .toast.success{background:var(--green-dk)}
-.toast.error{background:#C87F7D}
+.toast.error{background:var(--red-dk)}
 
-/* 로드 애니메이션 */
 @keyframes fadeUp{
   from{opacity:0; transform:translateY(10px)}
   to{opacity:1; transform:translateY(0)}
@@ -226,7 +246,6 @@ input[type=number]{-moz-appearance:textfield}
 </head>
 <body>
 
-<!-- 상단 네비 -->
 <nav class="topnav">
   <div class="nav-brand">
     <div class="nav-logo">돌</div>
@@ -239,30 +258,47 @@ input[type=number]{-moz-appearance:textfield}
 
 <div class="container">
 
-<!-- 🎯 오늘의 입력 카드 -->
 <div class="today-card">
   <div class="today-head">
-    <div class="today-title"><span class="emoji">📞</span>오늘 상담 전화</div>
+    <div class="today-title"><span class="emoji">📞</span>오늘 상담 현황</div>
     <div class="today-date" id="todayDate">4월 21일 화</div>
   </div>
   <div class="already-saved" id="alreadySaved">
-    ✓ 오늘 이미 입력했어요 · 수정해서 다시 제출하면 덮어써집니다
+    ✓ 오늘 이미 입력함 · 수정해서 다시 제출하면 덮어써집니다
   </div>
 
   <div class="field">
-    <label class="field-label">받은 전화 (건)</label>
+    <label class="field-label">
+      <span class="icon">📞</span>받은 전화 (응답 성공)
+      <span class="tag good">상담 시작</span>
+    </label>
     <input type="number" inputmode="numeric" class="num-input"
            id="received" placeholder="0" min="0" max="999">
   </div>
 
   <div class="field">
-    <label class="field-label">계약 연결 (건)</label>
-    <input type="number" inputmode="numeric" class="num-input"
-           id="contracted" placeholder="0" min="0" max="999">
+    <label class="field-label">
+      <span class="icon">📵</span>놓친 전화 (부재중)
+      <span class="tag hot">콜백 대상</span>
+    </label>
+    <input type="number" inputmode="numeric" class="num-input missed"
+           id="missed" placeholder="0" min="0" max="999">
   </div>
 
   <div class="field">
-    <label class="field-label">메모 (선택)</label>
+    <label class="field-label">
+      <span class="icon">🔄</span>콜백 완료 (놓친 전화 → 다시 건 수)
+      <span class="tag good">핵심 지표</span>
+    </label>
+    <input type="number" inputmode="numeric" class="num-input callback"
+           id="callback" placeholder="0" min="0" max="999">
+    <div class="callback-rate" id="callbackRate">콜백률 0%</div>
+  </div>
+
+  <div class="field">
+    <label class="field-label">
+      <span class="icon">💬</span>메모 (선택)
+    </label>
     <textarea class="memo-input" id="memo" rows="2"
               placeholder="특이사항이 있으면 적어주세요"></textarea>
   </div>
@@ -272,29 +308,27 @@ input[type=number]{-moz-appearance:textfield}
   </button>
 </div>
 
-<!-- 📊 이번 달 누적 -->
 <div class="summary-card">
   <div class="sc-head">📊 이번 달 누적 <span id="thisMonthLabel" style="color:var(--muted); font-weight:500; margin-left:auto">4월</span></div>
   <div class="sc-stats">
     <div class="sc-col">
-      <div class="lbl">전화</div>
+      <div class="lbl">받은 전화</div>
       <div class="val" id="monthReceived">—<span class="u">건</span></div>
       <div class="sub" id="monthDays">영업일 —</div>
     </div>
     <div class="sc-col">
-      <div class="lbl">계약 연결</div>
-      <div class="val val-green" id="monthContracted">—<span class="u">건</span></div>
-      <div class="sub" id="monthRate">—</div>
+      <div class="lbl">놓친 전화</div>
+      <div class="val val-red" id="monthMissed">—<span class="u">건</span></div>
+      <div class="sub" id="monthMissedAvg">일평균 —</div>
     </div>
     <div class="sc-col">
-      <div class="lbl">일 평균</div>
-      <div class="val" id="monthAvg">—<span class="u">건</span></div>
-      <div class="sub">전화 기준</div>
+      <div class="lbl">콜백률</div>
+      <div class="val val-green" id="monthCallbackRate">—<span class="u">%</span></div>
+      <div class="sub" id="monthCallback">—/—</div>
     </div>
   </div>
 </div>
 
-<!-- 📈 최근 7일 -->
 <div class="chart-card">
   <div class="sc-head">📈 최근 7일 전화 추이</div>
   <div class="barchart7" id="bar7">
@@ -310,21 +344,19 @@ input[type=number]{-moz-appearance:textfield}
     <span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span class="today-lbl">오늘</span>
   </div>
   <div style="margin-top:10px; font-size:11px; color:var(--muted); text-align:center">
-    <span style="display:inline-block; width:9px; height:9px; background:var(--accent); opacity:0.35; border-radius:2px; vertical-align:middle; margin-right:4px"></span>전화 받음
+    <span style="display:inline-block; width:9px; height:9px; background:var(--accent); opacity:0.35; border-radius:2px; vertical-align:middle; margin-right:4px"></span>받은 + 놓친
     <span style="margin:0 8px">·</span>
-    <span style="display:inline-block; width:9px; height:9px; background:var(--accent); border-radius:2px; vertical-align:middle; margin-right:4px"></span>계약 연결
+    <span style="display:inline-block; width:9px; height:9px; background:var(--red); border-radius:2px; vertical-align:middle; margin-right:4px"></span>놓친 전화
   </div>
 </div>
 
-</div><!-- /.container -->
+</div>
 
-<!-- 토스트 -->
 <div class="toast" id="toast">저장 완료!</div>
 
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 
-// ═══ 시계 & 날짜 ═══
 function updateTime(){
   const d = new Date();
   const days = ['日','月','火','水','木','金','土'];
@@ -338,40 +370,58 @@ function updateTime(){
 updateTime();
 setInterval(updateTime, 30000);
 
-// ═══ 토스트 ═══
 function toast(msg, type){
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = 'toast show' + (type ? ' ' + type : '');
-  setTimeout(() => el.classList.remove('show'), 2500);
+  setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// ═══ 통계 로드 ═══
+function updateCallbackHint(){
+  const missed = parseInt(document.getElementById('missed').value) || 0;
+  const callback = parseInt(document.getElementById('callback').value) || 0;
+  const el = document.getElementById('callbackRate');
+  if(missed === 0){
+    el.classList.remove('show');
+    return;
+  }
+  const rate = Math.min(100, Math.round(callback/missed*100));
+  el.classList.add('show');
+  el.classList.remove('warn', 'danger');
+  if(rate >= 80) el.textContent = `👍 콜백률 ${rate}% · 좋아요!`;
+  else if(rate >= 50){ el.textContent = `콜백률 ${rate}% · 조금 더`; el.classList.add('warn'); }
+  else { el.textContent = `콜백률 ${rate}% · 놓친 고객 돌려받아야 해요`; el.classList.add('danger'); }
+}
+
+document.getElementById('missed').addEventListener('input', updateCallbackHint);
+document.getElementById('callback').addEventListener('input', updateCallbackHint);
+
 async function loadStats(){
   try{
     const res = await fetch(`${APPS_SCRIPT_URL}?type=phoneStats`);
     const json = await res.json();
     if(!json.success) return;
     
-    // 오늘 이미 입력한 값 표시
-    if(json.today && (json.today.received > 0 || json.today.contracted > 0 || json.today.memo)){
+    if(json.today && (json.today.received > 0 || json.today.missed > 0 || json.today.callback > 0 || json.today.memo)){
       document.getElementById('received').value = json.today.received || '';
-      document.getElementById('contracted').value = json.today.contracted || '';
+      document.getElementById('missed').value = json.today.missed || '';
+      document.getElementById('callback').value = json.today.callback || '';
       document.getElementById('memo').value = json.today.memo || '';
       document.getElementById('alreadySaved').classList.add('show');
+      updateCallbackHint();
     }
     
-    // 이번 달 누적
-    const m = json.month || {received:0, contracted:0, days:0};
+    const m = json.month || {received:0, missed:0, callback:0, days:0};
     document.getElementById('monthReceived').innerHTML = m.received + '<span class="u">건</span>';
-    document.getElementById('monthContracted').innerHTML = m.contracted + '<span class="u">건</span>';
+    document.getElementById('monthMissed').innerHTML = m.missed + '<span class="u">건</span>';
     document.getElementById('monthDays').textContent = `영업일 ${m.days}일`;
-    const rate = m.received > 0 ? (m.contracted/m.received*100).toFixed(1) : 0;
-    document.getElementById('monthRate').textContent = `전환율 ${rate}%`;
-    const avg = m.days > 0 ? Math.round(m.received/m.days) : 0;
-    document.getElementById('monthAvg').innerHTML = avg + '<span class="u">건</span>';
+    const missAvg = m.days > 0 ? (m.missed/m.days).toFixed(1) : '-';
+    document.getElementById('monthMissedAvg').textContent = `일평균 ${missAvg}건`;
     
-    // 최근 7일 바차트
+    const cbRate = m.missed > 0 ? Math.round(m.callback/m.missed*100) : 0;
+    document.getElementById('monthCallbackRate').innerHTML = cbRate + '<span class="u">%</span>';
+    document.getElementById('monthCallback').textContent = `${m.callback}/${m.missed}`;
+    
     if(json.last7 && json.last7.length > 0){
       renderBar7(json.last7);
     }
@@ -380,9 +430,8 @@ async function loadStats(){
   }
 }
 
-// ═══ 7일 바차트 렌더링 ═══
 function renderBar7(data){
-  const maxVal = Math.max(...data.map(d => d.received), 1);
+  const maxVal = Math.max(...data.map(d => (d.received||0) + (d.missed||0)), 1);
   const bars = document.querySelectorAll('#bar7 .bar7');
   const labels = document.getElementById('bar7Labels');
   
@@ -390,33 +439,34 @@ function renderBar7(data){
   data.forEach((d, idx) => {
     const bar = bars[idx];
     if(!bar) return;
-    const h = Math.max(10, (d.received/maxVal)*100);
-    const innerH = d.received > 0 ? (d.contracted/d.received*100) : 0;
+    const total = (d.received||0) + (d.missed||0);
+    const h = Math.max(10, (total/maxVal)*100);
+    const missedH = total > 0 ? ((d.missed||0)/total*100) : 0;
     bar.style.height = h + '%';
-    bar.querySelector('.bar7-inner').style.height = innerH + '%';
-    bar.title = `${d.date} · 전화 ${d.received} · 계약 ${d.contracted}`;
+    bar.querySelector('.bar7-inner').style.height = missedH + '%';
+    bar.title = `${d.date} · 받은 ${d.received||0} · 놓친 ${d.missed||0} · 콜백 ${d.callback||0}`;
     
     const isToday = idx === data.length - 1;
     const cls = isToday ? 'today-lbl' : '';
-    labelHTML += `<span class="${cls}">${isToday ? '오늘' : d.date}<br><b>${d.received}</b></span>`;
+    labelHTML += `<span class="${cls}">${isToday ? '오늘' : d.date}<br><b>${total}</b></span>`;
   });
   labels.innerHTML = labelHTML;
 }
 
-// ═══ 제출 ═══
 async function submitPhone(){
   const received = parseInt(document.getElementById('received').value) || 0;
-  const contracted = parseInt(document.getElementById('contracted').value) || 0;
+  const missed = parseInt(document.getElementById('missed').value) || 0;
+  const callback = parseInt(document.getElementById('callback').value) || 0;
   const memo = document.getElementById('memo').value.trim();
   
-  if(received === 0 && contracted === 0 && !memo){
-    toast('받은 전화 건수를 입력해주세요', 'error');
+  if(received === 0 && missed === 0 && callback === 0 && !memo){
+    toast('받은 전화 또는 놓친 전화를 입력해주세요', 'error');
     document.getElementById('received').focus();
     return;
   }
   
-  if(contracted > received){
-    toast('계약이 전화보다 많을 수 없어요', 'error');
+  if(callback > missed){
+    toast('콜백 완료는 놓친 전화보다 많을 수 없어요', 'error');
     return;
   }
   
@@ -431,14 +481,17 @@ async function submitPhone(){
       body: JSON.stringify({
         type: 'phoneLog',
         received: received,
-        contracted: contracted,
+        missed: missed,
+        callback: callback,
         memo: memo
       })
     });
     
     const txt = await res.text();
     let json = {};
-    try { json = JSON.parse(txt); } catch(e) { json = {success: txt.indexOf('ok') >= 0 || txt.indexOf('success') >= 0}; }
+    try { json = JSON.parse(txt); } catch(e) { 
+      json = {success: txt.toLowerCase().indexOf('ok') >= 0 || txt.toLowerCase().indexOf('success') >= 0}; 
+    }
     
     if(json.success !== false){
       btn.textContent = '✓ 저장 완료';
@@ -450,7 +503,7 @@ async function submitPhone(){
         btn.textContent = '오늘 상담 등록';
         btn.classList.remove('success');
         btn.disabled = false;
-        loadStats(); // 통계 다시 로드
+        loadStats();
       }, 1500);
     } else {
       throw new Error(json.error || '저장 실패');
@@ -463,7 +516,6 @@ async function submitPhone(){
   }
 }
 
-// 페이지 로드 시 통계 자동 로드
 window.addEventListener('DOMContentLoaded', loadStats);
 </script>
 

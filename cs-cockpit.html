@@ -483,7 +483,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   <div class="scorecard">
     <div class="scorecard-label">이번달 매출</div>
     <div class="scorecard-value">9,419<span class="scorecard-unit">만원</span></div>
-    <div class="scorecard-sub"><span class="trend up">▲ 8.2%</span> · 전월 대비</div>
+    <div class="scorecard-sub" style="color:var(--soft)">📅 2026년 4월 · 첫 달 수집</div>
   </div>
   <div class="scorecard">
     <div class="scorecard-label">이번달 시공</div>
@@ -493,13 +493,18 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   <div class="scorecard">
     <div class="scorecard-label">이번달 샘플 접수</div>
     <div class="scorecard-value">136<span class="scorecard-unit">건</span></div>
-    <div class="scorecard-sub">오늘 <b>4건</b> · 일평균 9.1건</div>
+    <div class="scorecard-sub">일평균 <b>9.1건</b> · 피크 16건(4/14)</div>
   </div>
   <div class="scorecard">
     <div class="scorecard-label">오늘 상담 전화</div>
-    <div class="scorecard-value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
-    <div class="scorecard-sub">상담사 입력 대기 중</div>
+    <div class="scorecard-value" id="kpiPhoneReceived" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpiPhoneSub">상담사 입력 대기 중</div>
   </div>
+</div>
+
+<!-- 이번달 콜백률 경보 배지 (놓친 전화 있을 때만 표시) -->
+<div id="callbackAlert" style="display:none; margin:12px 0 0; padding:10px 16px; background:var(--gold-bg); border-radius:var(--radius-sm); font-size:12px; color:var(--gold-dk); text-align:center; font-weight:650">
+  <span id="callbackAlertText">📵 이번달 놓친 전화 분석 중…</span>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -1266,15 +1271,19 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <button class="section-more">GA4 열기 →</button>
     </div>
 
-    <!-- TODO: 대장님이 Looker Studio 만든 후 iframe 코드 여기 삽입 -->
-    <div class="ph" id="lookerPlaceholder">
-      <div class="ph-icon">📊</div>
-      <div class="ph-title">Looker Studio iframe 자리</div>
-      <div class="ph-sub">
-        대장님이 lookerstudio.google.com 에서 대시보드 만든 후<br>
-        공유 → 삽입 → <code>&lt;iframe&gt;</code> 코드 복사 주시면 여기에 심습니다.<br>
-        <small style="opacity:0.7">(오늘 방문자·카톡클릭·유입채널·전환율 자동 표시)</small>
-      </div>
+    <!-- ✅ Looker Studio iframe 심음 · 2026-04-21 -->
+    <div class="looker-wrap" style="position:relative; width:100%; padding-top:75%; overflow:hidden; border-radius:var(--radius-sm); background:var(--warm); border:1px solid var(--line)">
+      <iframe
+        src="https://datastudio.google.com/embed/reporting/cf0cbaf8-7f84-46ac-9ac8-b64c11754974/page/dMrvF"
+        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0"
+        frameborder="0" allowfullscreen
+        sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        title="돌봄매트 홈페이지 GA4 대시보드">
+      </iframe>
+    </div>
+    <div style="margin-top:10px; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; align-items:center">
+      <span>🔄 자동 갱신 · Looker Studio</span>
+      <a href="https://lookerstudio.google.com/reporting/cf0cbaf8-7f84-46ac-9ac8-b64c11754974" target="_blank" style="color:var(--accent-dk); text-decoration:none; font-weight:650">전체화면 열기 →</a>
     </div>
 
   </div>
@@ -1282,7 +1291,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
 <!-- ═══ 푸터 ═══ -->
 <div class="footer">
-  돌봄매트 조종실 · v0.1 draft · 마지막 업데이트 <span id="updatedAt">2026-04-21 18:00</span>
+  돌봄매트 조종실 · v0.4 · 실데이터 연동 완료 · 마지막 업데이트 <span id="updatedAt">2026-04-21 20:00</span>
 </div>
 
 </div><!-- /.container -->
@@ -1400,12 +1409,72 @@ async function loadMonthlyFunnel(){
   }
 }
 
+// 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
+async function loadPhoneStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=phoneStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    
+    const today = json.today || {received:0, missed:0, callback:0};
+    const month = json.month || {received:0, missed:0, callback:0, days:0};
+    
+    const kpiVal = document.getElementById('kpiPhoneReceived');
+    const kpiSub = document.getElementById('kpiPhoneSub');
+    if(!kpiVal || !kpiSub) return;
+    
+    const todayTotal = (today.received || 0) + (today.missed || 0);
+    
+    if(todayTotal > 0){
+      kpiVal.style.color = '';
+      kpiVal.innerHTML = todayTotal + '<span class="scorecard-unit">건</span>';
+      const missedPct = todayTotal > 0 ? Math.round((today.missed||0)/todayTotal*100) : 0;
+      if(today.missed > 0){
+        kpiSub.innerHTML = `받은 <b>${today.received}</b> · 놓친 <b style="color:var(--red-dk)">${today.missed}</b> · 콜백 ${today.callback||0}`;
+      } else {
+        kpiSub.innerHTML = `받은 <b>${today.received}건</b> · 놓친 없음 🎉`;
+      }
+    } else {
+      kpiVal.style.color = 'var(--muted)';
+      kpiVal.innerHTML = '—<span class="scorecard-unit">건</span>';
+      kpiSub.innerHTML = month.days > 0 
+        ? `이번달 받은 <b>${month.received}건</b> · 놓친 ${month.missed||0}건` 
+        : '상담사 입력 대기 중';
+    }
+    
+    // 콜백률 경보 배지 (이번달 놓친 전화가 있을 때만)
+    const alertEl = document.getElementById('callbackAlert');
+    const alertText = document.getElementById('callbackAlertText');
+    if(alertEl && month.missed > 0){
+      const cbRate = Math.round((month.callback||0)/month.missed*100);
+      alertEl.style.display = 'block';
+      alertEl.style.background = 'var(--gold-bg)';
+      alertEl.style.color = 'var(--gold-dk)';
+      if(cbRate >= 80){
+        alertEl.style.background = 'var(--green-bg)';
+        alertEl.style.color = 'var(--green-dk)';
+        alertText.innerHTML = `👍 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건 회수 · 잘하고 있어요!`;
+      } else if(cbRate >= 50){
+        alertText.innerHTML = `⚡ 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건만 회수 · 개선 여지 있음`;
+      } else {
+        alertEl.style.background = 'var(--red-bg)';
+        alertEl.style.color = 'var(--red-dk)';
+        alertText.innerHTML = `🚨 이번달 콜백률 <b>${cbRate}%</b> · 놓친 고객 ${month.missed - (month.callback||0)}명 회수 안 됨 · <b>매출 기회 손실!</b>`;
+      }
+    } else if(alertEl) {
+      alertEl.style.display = 'none';
+    }
+  } catch(e){
+    console.error('상담폰 로드 실패:', e);
+  }
+}
+
 function refreshAll(){
   const btn = document.querySelector('.nav-refresh');
   btn.style.opacity = '0.6';
   btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>불러오는 중…';
   
-  Promise.all([loadConversionStats(), loadMonthlyFunnel()]).finally(() => {
+  Promise.all([loadConversionStats(), loadMonthlyFunnel(), loadPhoneStats()]).finally(() => {
     btn.style.opacity = '1';
     btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>새로고침';
     updateTime();
@@ -1416,6 +1485,7 @@ function refreshAll(){
 window.addEventListener('DOMContentLoaded', () => {
   loadConversionStats();
   loadMonthlyFunnel();
+  loadPhoneStats();
 });
 
 // ═══ 상담폰 입력 (TODO: Apps Script 연결) ═══
