@@ -477,23 +477,30 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     상단 스코어카드 4장 · 오늘/이번 달 한눈
+     상단 스코어카드 · 오늘 ↔ 이번달 토글 (v0.5 실데이터)
      ═══════════════════════════════════════════════════════════ -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px">
+  <div style="display:flex; gap:6px; background:var(--warm); padding:4px; border-radius:10px">
+    <button class="period-btn active" data-period="today" onclick="switchPeriod('today')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:var(--text); color:#fff; transition:all 0.2s">오늘</button>
+    <button class="period-btn" data-period="month" onclick="switchPeriod('month')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:transparent; color:var(--soft); transition:all 0.2s">이번달</button>
+  </div>
+  <div style="font-size:11px; color:var(--muted)" id="periodHint">📅 오늘 <span id="todayDateStr">4/21</span> 기준</div>
+</div>
 <div class="scorecards">
   <div class="scorecard">
-    <div class="scorecard-label">이번달 매출</div>
-    <div class="scorecard-value">9,419<span class="scorecard-unit">만원</span></div>
-    <div class="scorecard-sub" style="color:var(--soft)">📅 2026년 4월 · 첫 달 수집</div>
+    <div class="scorecard-label" id="kpi1Label">오늘 매출</div>
+    <div class="scorecard-value" id="kpi1Value" style="color:var(--muted)">—<span class="scorecard-unit">만원</span></div>
+    <div class="scorecard-sub" id="kpi1Sub">데이터 로드 중…</div>
   </div>
   <div class="scorecard">
-    <div class="scorecard-label">이번달 시공</div>
-    <div class="scorecard-value" id="kpiInstalls">116<span class="scorecard-unit">건</span></div>
-    <div class="scorecard-sub">부산 48 · 경기 68 (AS/실측 제외)</div>
+    <div class="scorecard-label" id="kpi2Label">오늘 시공</div>
+    <div class="scorecard-value" id="kpi2Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpi2Sub">데이터 로드 중…</div>
   </div>
   <div class="scorecard">
-    <div class="scorecard-label">이번달 샘플 접수</div>
-    <div class="scorecard-value">136<span class="scorecard-unit">건</span></div>
-    <div class="scorecard-sub">일평균 <b>9.1건</b> · 피크 16건(4/14)</div>
+    <div class="scorecard-label" id="kpi3Label">오늘 샘플 접수</div>
+    <div class="scorecard-value" id="kpi3Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpi3Sub">데이터 로드 중…</div>
   </div>
   <div class="scorecard">
     <div class="scorecard-label">오늘 상담 전화</div>
@@ -520,99 +527,75 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   <!-- 🟣 영역 4 · 매출 요약 (AS/실측 제외) -->
   <div class="section col-8">
     <div class="section-head">
-      <div class="section-title"><span class="section-icon icon-purple">💰</span>매출 요약 <span class="badge bg-gray">4월</span></div>
-      <button class="section-more">상세 →</button>
+      <div class="section-title"><span class="section-icon icon-purple">💰</span>매출 요약 <span class="badge bg-gray" id="revMonthBadge">4월</span></div>
+      <button class="section-more" onclick="loadMonthStats()">🔄 새로고침</button>
     </div>
 
     <div class="stat-row">
       <div class="stat-col">
         <div class="stat-label">부산팀</div>
-        <div class="stat-val">4,258<span class="u">만원</span></div>
-        <div class="stat-sub">48건 · 건당 88.7만</div>
+        <div class="stat-val" id="revBusan">—<span class="u">만원</span></div>
+        <div class="stat-sub" id="revBusanSub">데이터 로드 중</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">경기팀</div>
-        <div class="stat-val">5,161<span class="u">만원</span></div>
-        <div class="stat-sub">68건 · 건당 75.9만</div>
+        <div class="stat-val" id="revGyeonggi">—<span class="u">만원</span></div>
+        <div class="stat-sub" id="revGyeonggiSub">데이터 로드 중</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">합계</div>
-        <div class="stat-val" style="color:var(--accent-dk)">9,419<span class="u">만원</span></div>
-        <div class="stat-sub">116건 · 건당 <b>81.2만</b></div>
+        <div class="stat-val" style="color:var(--accent-dk)" id="revTotal">—<span class="u">만원</span></div>
+        <div class="stat-sub" id="revTotalSub">데이터 로드 중</div>
       </div>
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line)">
       <div>
         <div class="stat-label" style="margin-bottom:8px">구분별</div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">일반시공</span><span class="rowbar-val">105건 · <b>9,250만</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill" style="width:98%"></div></div>
-        </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">이전설치</span><span class="rowbar-val">11건 · <b>169만</b></span></div>
-          <div class="rowbar-track"><div class="rowbar-fill gold" style="width:2%"></div></div>
+        <div id="categoryRows">
+          <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
         </div>
       </div>
       <div>
-        <div class="stat-label" style="margin-bottom:8px">제품별 (장수 기반)</div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">모던50</span><span class="rowbar-val"><b>81건</b> (70%)</span></div>
-          <div class="rowbar-track"><div class="rowbar-fill" style="width:70%"></div></div>
-        </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">마블50</span><span class="rowbar-val"><b>30건</b> (26%)</span></div>
-          <div class="rowbar-track"><div class="rowbar-fill purple" style="width:26%"></div></div>
-        </div>
-        <div class="rowbar">
-          <div class="rowbar-top"><span class="rowbar-name">코튼50</span><span class="rowbar-val"><b>5건</b> (4%)</span></div>
-          <div class="rowbar-track"><div class="rowbar-fill green" style="width:4%"></div></div>
+        <div class="stat-label" style="margin-bottom:8px">제품별 <span style="color:var(--muted); font-weight:500">(장수 기반)</span></div>
+        <div id="productRows">
+          <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
         </div>
       </div>
     </div>
 
-    <!-- 🔥 예약 116건 분해 (80% 직접 예약 인사이트) -->
-    <div style="margin-top:14px; padding:11px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.6">
-      <b>💡 예약 116건 채널 분해:</b>
-      샘플 경유 <b>23건</b> (20%) · <b>직접 예약 93건 (80%)</b> ★
-      → 지인추천·재시공·입소문이 진짜 주력 채널. 샘플 마케팅은 신규 유입 통로.
+    <!-- 🔥 예약 채널 분해 (실데이터 연동) -->
+    <div id="channelBreakdown" style="margin-top:14px; padding:11px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.6; display:none">
+      <b>💡 예약 <span id="cbTotal">0</span>건 채널 분해:</b>
+      샘플 경유 <b><span id="cbViaSample">0</span>건</b> (<span id="cbViaSampleRate">0</span>%) ·
+      <b>직접 예약 <span id="cbDirect">0</span>건 (<span id="cbDirectRate">0</span>%)</b> ★
+      → 지인추천·재시공·입소문이 진짜 주력 채널
     </div>
 
     <div class="links-row">
-      <a class="link-chip">📊 월간마진분석 시트</a>
-      <a class="link-chip">📋 시공스케줄 부산</a>
-      <a class="link-chip">📋 시공스케줄 경기</a>
+      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ" target="_blank">📊 월간마진분석</a>
+      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit#gid=144225567" target="_blank">📋 시공스케줄 부산</a>
+      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit#gid=1995986285" target="_blank">📋 시공스케줄 경기</a>
     </div>
   </div>
 
-  <!-- 🟡 영역 5 · 재고 요약 (stock.html API 재활용) -->
+  <!-- 🟡 영역 5 · 재고 요약 (실데이터 · getStock API) -->
   <div class="section col-4">
     <div class="section-head">
       <div class="section-title"><span class="section-icon icon-gold">📦</span>재고 현황</div>
-      <button class="section-more" onclick="location.href='stock.html'">전체 →</button>
+      <button class="section-more" onclick="loadStockSummary()">🔄</button>
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:10px">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--warm); border-radius:var(--radius-sm)">
-        <div>
-          <div style="font-size:12px; font-weight:700">부산 창고</div>
-          <div style="font-size:10.5px; color:var(--soft); margin-top:2px">3,816장</div>
-        </div>
-        <span class="badge bg-green">정상</span>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:var(--red-bg); border-radius:var(--radius-sm)">
-        <div>
-          <div style="font-size:12px; font-weight:700; color:var(--red-dk)">경기 창고</div>
-          <div style="font-size:10.5px; color:var(--red-dk); margin-top:2px">1,432장 · 1주 이하</div>
-        </div>
-        <span class="badge bg-red">주의</span>
-      </div>
+    <div id="stockRows" style="display:flex; flex-direction:column; gap:10px">
+      <div style="padding:14px; text-align:center; color:var(--muted); font-size:11.5px">재고 데이터 로드 중…</div>
     </div>
 
     <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
-      <div class="stat-label" style="margin-bottom:6px">다음 발주 예상일</div>
-      <div style="font-size:15px; font-weight:700">4월 25일 (금)</div>
-      <div class="stat-sub" style="margin-top:2px">경기팀 모던50 센터 32파레트 예정</div>
+      <div class="stat-label" style="margin-bottom:6px">재고 기준</div>
+      <div style="font-size:11.5px; color:var(--soft); line-height:1.5" id="stockBaseInfo">
+        최근 재고조사 + 입고 합산 - 시공 차감<br>
+        <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650">전체 재고 보기 →</a>
+      </div>
     </div>
   </div>
 
@@ -763,60 +746,43 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     </div>
   </div>
 
-  <!-- 🟠 영역 6 · 후기이벤트 + 알림톡 현황 -->
+  <!-- 🟠 영역 6 · 후기이벤트 + 알림톡 현황 (실데이터) -->
   <div class="section col-5">
     <div class="section-head">
       <div class="section-title"><span class="section-icon icon-green">💬</span>후기 & 알림톡</div>
-      <button class="section-more">전체 →</button>
+      <button class="section-more" onclick="loadReviewStats()">🔄 새로고침</button>
     </div>
 
     <div class="stat-row">
       <div class="stat-col">
         <div class="stat-label">이번달 후기 참여</div>
-        <div class="stat-val md">23<span class="u">명</span></div>
-        <div class="stat-sub">지급완료 18명</div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">평균 작성 소요일</div>
-        <div class="stat-val md">8.3<span class="u">일</span></div>
-        <div class="stat-sub">시공 → 리뷰</div>
+        <div class="stat-val md" id="reviewParticipants">—<span class="u">명</span></div>
+        <div class="stat-sub" id="reviewPaid">지급완료 —명</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">월 지출</div>
-        <div class="stat-val md">182<span class="u">만</span></div>
-        <div class="stat-sub">예산 91%</div>
+        <div class="stat-val md" id="reviewSpend">—<span class="u">만</span></div>
+        <div class="stat-sub" id="reviewBudget">예산 —%</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">전월 누적</div>
+        <div class="stat-val md" style="color:var(--muted)">—<span class="u">명</span></div>
+        <div class="stat-sub">추후 연동</div>
       </div>
     </div>
 
     <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line)">
-      <div class="stat-label" style="margin-bottom:8px">미션별 달성률</div>
-      <div class="rowbar">
-        <div class="rowbar-top"><span class="rowbar-name">🥇 계약 후기</span><span class="rowbar-val"><b>82%</b></span></div>
-        <div class="rowbar-track"><div class="rowbar-fill green" style="width:82%"></div></div>
-      </div>
-      <div class="rowbar">
-        <div class="rowbar-top"><span class="rowbar-name">📱 인스타 팔로우</span><span class="rowbar-val"><b>65%</b></span></div>
-        <div class="rowbar-track"><div class="rowbar-fill" style="width:65%"></div></div>
-      </div>
-      <div class="rowbar">
-        <div class="rowbar-top"><span class="rowbar-name">💬 카톡방 참여</span><span class="rowbar-val"><b>58%</b></span></div>
-        <div class="rowbar-track"><div class="rowbar-fill" style="width:58%"></div></div>
-      </div>
-      <div class="rowbar">
-        <div class="rowbar-top"><span class="rowbar-name">✍️ 첫날 후기</span><span class="rowbar-val"><b>52%</b></span></div>
-        <div class="rowbar-track"><div class="rowbar-fill gold" style="width:52%"></div></div>
-      </div>
-      <div class="rowbar">
-        <div class="rowbar-top"><span class="rowbar-name">📅 한달 후기</span><span class="rowbar-val"><b>12%</b></span></div>
-        <div class="rowbar-track"><div class="rowbar-fill red" style="width:12%"></div></div>
+      <div class="stat-label" style="margin-bottom:8px">미션별 달성률 <span style="color:var(--muted); font-weight:500">(이번달 참여자 기준)</span></div>
+      <div id="missionRows">
+        <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
       </div>
     </div>
 
     <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center">
       <div>
-        <div class="stat-label">알림톡 (어제 · 오늘)</div>
+        <div class="stat-label">알림톡 (오늘 · 내일)</div>
         <div style="font-size:13.5px; font-weight:650; margin-top:4px">
-          발송 <b style="color:var(--accent-dk)">23</b> · 예정 <b>18</b>
+          발송 <b style="color:var(--accent-dk)" id="alimSent">—</b> · 예정 <b id="alimScheduled">—</b>
         </div>
       </div>
       <span class="badge bg-green">AWS 9시 자동</span>
@@ -828,13 +794,13 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 <!-- ═══ 영역 레이블 · 2줄 ═══ -->
 <div class="area-label">MARKETING · 마케팅 & 유입</div>
 
-<!-- ┌────────────────────────────────────────────────────────┐
-     │ 영역 7 입주아파트 (col-8)  │ 상담폰 입력 (col-4)        │
-     └────────────────────────────────────────────────────────┘ -->
-<div class="grid">
+<!-- 🗑️ 입주아파트 파이프라인 섹션 · v0.5에서 숨김 처리
+     이유: 실데이터 연동 안 됨 (placeholder 67개 아파트 데이터)
+     추후 '입주아파트' 시트 데이터 쌓이면 복원 예정 -->
+<div class="grid" style="display:none">
 
   <!-- 🟦 영역 7 · 입주아파트 파이프라인 -->
-  <div class="section col-8">
+  <div class="section col-12">
     <div class="section-head">
       <div class="section-title"><span class="section-icon icon-blue">🏢</span>입주아파트 파이프라인</div>
       <button class="section-more">전체 →</button>
@@ -912,50 +878,16 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     </div>
   </div>
 
-  <!-- 📞 상담폰 입력 (cs-phone.html과 별개, 대시보드에도 간단 표시) -->
-  <div class="section col-4">
-    <div class="section-head">
-      <div class="section-title"><span class="section-icon icon-red">📞</span>상담폰 입력</div>
-    </div>
-
-    <div class="phone-form">
-      <div class="phone-row">
-        <div style="flex:1">
-          <label class="phone-input-lbl">받은 전화</label>
-          <input type="number" class="phone-input" placeholder="0" id="phoneReceived">
-        </div>
-        <div style="flex:1">
-          <label class="phone-input-lbl">계약 연결</label>
-          <input type="number" class="phone-input" placeholder="0" id="phoneContracted">
-        </div>
-      </div>
-      <button class="phone-btn" onclick="submitPhone()">오늘 상담 등록</button>
-    </div>
-
-    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
-      <div class="stat-label">이번 달 누적</div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px">
-        <div>
-          <div style="font-size:19px; font-weight:800">342<span class="u" style="font-size:11px">건</span></div>
-          <div style="font-size:10.5px; color:var(--soft)">총 전화</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:19px; font-weight:800; color:var(--green-dk)">87<span class="u" style="font-size:11px">건</span></div>
-          <div style="font-size:10.5px; color:var(--soft)">계약 (25%)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
-<!-- ═══ 영역 레이블 · 3줄 ═══ -->
-<div class="area-label">COMPETITION · 경쟁사 & 키워드 노출</div>
+<!-- 🗑️ 상담폰 입력 섹션 제거 (v0.5) · cs-phone.html에서 이미 입력 -->
+<!-- 🗑️ 키워드 노출 순위 섹션 제거 (v0.5) · 네이버 API 연동 전까지 숨김 -->
 
-<!-- ┌────────────────────────────────────────────────────────┐
-     │ 영역 8 · 경쟁사 키워드 순위 (col-12)                   │
-     └────────────────────────────────────────────────────────┘ -->
-<div class="grid">
+<!-- 🗑️ 키워드 노출 순위 섹션 · v0.5 숨김 처리
+     이유: 네이버 블로그 API 미연동 (전부 placeholder 데이터)
+     추후 네이버 검색 API 연결되면 복원 예정 -->
+<div class="area-label" style="display:none">COMPETITION · 경쟁사 & 키워드 노출</div>
+<div class="grid" style="display:none">
   <div class="section col-12">
     <div class="section-head">
       <div class="section-title"><span class="section-icon icon-purple">🎯</span>대표 키워드 노출 순위 <span class="badge bg-gray">네이버 블로그 · 일 1회 자동 수집</span></div>
@@ -1291,7 +1223,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
 <!-- ═══ 푸터 ═══ -->
 <div class="footer">
-  돌봄매트 조종실 · v0.4 · 실데이터 연동 완료 · 마지막 업데이트 <span id="updatedAt">2026-04-21 20:00</span>
+  돌봄매트 조종실 · v0.5 · 실데이터 전면 연동 · 마지막 업데이트 <span id="updatedAt">2026-04-21 22:00</span>
 </div>
 
 </div><!-- /.container -->
@@ -1474,28 +1406,377 @@ function refreshAll(){
   btn.style.opacity = '0.6';
   btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>불러오는 중…';
   
-  Promise.all([loadConversionStats(), loadMonthlyFunnel(), loadPhoneStats()]).finally(() => {
+  Promise.all([
+    loadTodayStats(),
+    loadMonthStats(),
+    loadStockSummary(),
+    loadReviewStats(),
+    loadAlimtalkStats(),
+    loadConversionStats(),
+    loadMonthlyFunnel(),
+    loadPhoneStats()
+  ]).finally(() => {
     btn.style.opacity = '1';
     btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>새로고침';
     updateTime();
   });
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 v0.5 · 오늘 ↔ 이번달 토글 + 실데이터 연동
+// ═══════════════════════════════════════════════════════════════
+
+let cachedTodayData = null;
+let cachedMonthData = null;
+let currentPeriod = 'today';
+
+function switchPeriod(period){
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    if(btn.dataset.period === period){
+      btn.style.background = 'var(--text)';
+      btn.style.color = '#fff';
+      btn.classList.add('active');
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--soft)';
+      btn.classList.remove('active');
+    }
+  });
+  renderKPIs();
+}
+
+function renderKPIs(){
+  const isToday = currentPeriod === 'today';
+  const data = isToday ? cachedTodayData : cachedMonthData;
+  
+  document.getElementById('kpi1Label').textContent = isToday ? '오늘 매출' : '이번달 매출';
+  document.getElementById('kpi2Label').textContent = isToday ? '오늘 시공' : '이번달 시공';
+  document.getElementById('kpi3Label').textContent = isToday ? '오늘 샘플 접수' : '이번달 샘플 접수';
+  
+  const now = new Date();
+  document.getElementById('todayDateStr').textContent = `${now.getMonth()+1}/${now.getDate()}`;
+  document.getElementById('periodHint').innerHTML = isToday 
+    ? `📅 오늘 <span>${now.getMonth()+1}/${now.getDate()}</span> 기준` 
+    : `📅 ${now.getMonth()+1}월 (${cachedMonthData?.daysPassed || '-'}일차)`;
+  
+  if(!data){
+    ['kpi1Value','kpi2Value','kpi3Value'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.color = 'var(--muted)';
+      const unit = el.querySelector('.scorecard-unit').outerHTML;
+      el.innerHTML = '—' + unit;
+    });
+    return;
+  }
+  
+  // KPI 1 · 매출
+  const rev = isToday ? data.revenue.total : data.data.revenue.total;
+  const revMan = Math.round(rev/10000);
+  const kpi1 = document.getElementById('kpi1Value');
+  kpi1.style.color = '';
+  kpi1.innerHTML = revMan.toLocaleString() + '<span class="scorecard-unit">만원</span>';
+  
+  if(isToday){
+    const b = Math.round(data.revenue.busan/10000);
+    const g = Math.round(data.revenue.gyeonggi/10000);
+    document.getElementById('kpi1Sub').innerHTML = rev > 0 
+      ? `부산 <b>${b.toLocaleString()}</b> · 경기 <b>${g.toLocaleString()}</b>` 
+      : '오늘 아직 시공 없음';
+  } else {
+    const b = Math.round(data.data.revenue.busan/10000);
+    const g = Math.round(data.data.revenue.gyeonggi/10000);
+    const avgMan = Math.round(data.data.revenue.avgPerJob/10000);
+    document.getElementById('kpi1Sub').innerHTML = `부산 ${b.toLocaleString()} · 경기 ${g.toLocaleString()} · 건당 ${avgMan}만`;
+  }
+  
+  // KPI 2 · 시공
+  const inst = isToday ? data.installs : data.data.installs;
+  const kpi2 = document.getElementById('kpi2Value');
+  kpi2.style.color = '';
+  kpi2.innerHTML = inst.total + '<span class="scorecard-unit">건</span>';
+  document.getElementById('kpi2Sub').innerHTML = `부산 ${inst.busan} · 경기 ${inst.gyeonggi} (AS/실측 제외)`;
+  
+  // KPI 3 · 샘플
+  const samples = isToday ? data.samples : data.data.samples;
+  const kpi3 = document.getElementById('kpi3Value');
+  kpi3.style.color = '';
+  kpi3.innerHTML = samples + '<span class="scorecard-unit">건</span>';
+  if(isToday){
+    document.getElementById('kpi3Sub').innerHTML = data.tomorrowInstalls 
+      ? `내일 시공 예정 <b>${data.tomorrowInstalls}건</b>` 
+      : '오늘 접수 건수';
+  } else {
+    const peak = data.data.peakSampleDay;
+    document.getElementById('kpi3Sub').innerHTML = `일평균 <b>${data.data.sampleAvgPerDay}건</b>${peak.count > 0 ? ` · 피크 ${peak.count}건(${peak.date.substring(5).replace('-','/')})` : ''}`;
+  }
+}
+
+
+async function loadTodayStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=todayStats`);
+    const json = await res.json();
+    if(json.success){
+      cachedTodayData = json;
+      if(currentPeriod === 'today') renderKPIs();
+    }
+  } catch(e){
+    console.error('todayStats 로드 실패:', e);
+  }
+}
+
+
+async function loadMonthStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=monthStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    cachedMonthData = json;
+    if(currentPeriod === 'month') renderKPIs();
+    
+    // 매출 요약 섹션 업데이트
+    const data = json.data;
+    const busanMan = Math.round(data.revenue.busan/10000);
+    const ggMan = Math.round(data.revenue.gyeonggi/10000);
+    const totalMan = Math.round(data.revenue.total/10000);
+    const avgB = data.installs.busan > 0 ? Math.round(data.revenue.busan/data.installs.busan/10000) : 0;
+    const avgG = data.installs.gyeonggi > 0 ? Math.round(data.revenue.gyeonggi/data.installs.gyeonggi/10000) : 0;
+    const avgT = data.installs.total > 0 ? Math.round(data.revenue.total/data.installs.total/10000) : 0;
+    
+    document.getElementById('revBusan').innerHTML = busanMan.toLocaleString() + '<span class="u">만원</span>';
+    document.getElementById('revGyeonggi').innerHTML = ggMan.toLocaleString() + '<span class="u">만원</span>';
+    document.getElementById('revTotal').innerHTML = totalMan.toLocaleString() + '<span class="u">만원</span>';
+    document.getElementById('revBusanSub').textContent = `${data.installs.busan}건 · 건당 ${avgB}만`;
+    document.getElementById('revGyeonggiSub').textContent = `${data.installs.gyeonggi}건 · 건당 ${avgG}만`;
+    document.getElementById('revTotalSub').innerHTML = `${data.installs.total}건 · 건당 <b>${avgT}만</b>`;
+    document.getElementById('revMonthBadge').textContent = parseInt(json.month.substring(5)) + '월';
+    
+    // 구분별 렌더
+    const catEl = document.getElementById('categoryRows');
+    const c = data.bucketByCategory;
+    const cTotal = c.normal.amount + c.reinstall.amount;
+    const normalPct = cTotal > 0 ? Math.round(c.normal.amount/cTotal*100) : 0;
+    const reinstallPct = cTotal > 0 ? Math.round(c.reinstall.amount/cTotal*100) : 0;
+    catEl.innerHTML = `
+      <div class="rowbar">
+        <div class="rowbar-top"><span class="rowbar-name">일반시공</span><span class="rowbar-val">${c.normal.count}건 · <b>${Math.round(c.normal.amount/10000).toLocaleString()}만</b></span></div>
+        <div class="rowbar-track"><div class="rowbar-fill" style="width:${normalPct}%"></div></div>
+      </div>
+      <div class="rowbar">
+        <div class="rowbar-top"><span class="rowbar-name">이전설치</span><span class="rowbar-val">${c.reinstall.count}건 · <b>${Math.round(c.reinstall.amount/10000).toLocaleString()}만</b></span></div>
+        <div class="rowbar-track"><div class="rowbar-fill gold" style="width:${reinstallPct}%"></div></div>
+      </div>`;
+    
+    // 제품별 렌더 (6종 · 수량 0이면 숨김)
+    const pEl = document.getElementById('productRows');
+    const products = data.bucketByProduct;
+    const nameMap = {
+      '모던50': {label:'모던50', cls:''},
+      '마블50': {label:'마블50', cls:'purple'},
+      '코튼50': {label:'코튼50', cls:'green'},
+      '모던1m17': {label:'모던 1M 17T', cls:'gold'},
+      '모던1m22': {label:'모던 1M 22T', cls:''},
+      '베이지1m17': {label:'베이지 1M 17T', cls:'purple'},
+      '베이지1m22': {label:'베이지 1M 22T', cls:'green'}
+    };
+    const pTotal = Object.values(products).reduce((s,v) => s+v, 0);
+    const pHtml = Object.keys(products)
+      .filter(k => products[k] > 0)
+      .sort((a,b) => products[b] - products[a])
+      .map(k => {
+        const cnt = products[k];
+        const pct = pTotal > 0 ? Math.round(cnt/pTotal*100) : 0;
+        const nm = nameMap[k];
+        return `<div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">${nm.label}</span><span class="rowbar-val"><b>${cnt}장</b> (${pct}%)</span></div>
+          <div class="rowbar-track"><div class="rowbar-fill ${nm.cls}" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+    pEl.innerHTML = pHtml || '<div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">이번달 판매 기록 없음</div>';
+    
+    // 채널 분해
+    const cb = data.channelBreakdown;
+    if(cb.total > 0){
+      document.getElementById('channelBreakdown').style.display = 'block';
+      document.getElementById('cbTotal').textContent = cb.total;
+      document.getElementById('cbViaSample').textContent = cb.viaSample;
+      document.getElementById('cbViaSampleRate').textContent = Math.round(cb.viaSample/cb.total*100);
+      document.getElementById('cbDirect').textContent = cb.direct;
+      document.getElementById('cbDirectRate').textContent = Math.round(cb.direct/cb.total*100);
+    }
+  } catch(e){
+    console.error('monthStats 로드 실패:', e);
+  }
+}
+
+
+async function loadStockSummary(){
+  try{
+    const [bsRes, ggRes] = await Promise.all([
+      fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'getStock', team:'부산'})}),
+      fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'getStock', team:'경기'})})
+    ]);
+    const bsJson = await bsRes.json();
+    const ggJson = await ggRes.json();
+    
+    const el = document.getElementById('stockRows');
+    if(!el) return;
+    
+    function teamTotal(items){
+      if(!items || !items.length) return 0;
+      return items.reduce((s, it) => s + (parseInt(it.current) || 0), 0);
+    }
+    
+    const bsTotal = teamTotal(bsJson.items);
+    const ggTotal = teamTotal(ggJson.items);
+    
+    el.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:${bsTotal > 500 ? 'var(--warm)' : 'var(--red-bg)'}; border-radius:var(--radius-sm)">
+        <div>
+          <div style="font-size:12px; font-weight:700">부산 창고</div>
+          <div style="font-size:10.5px; color:var(--soft); margin-top:2px">${bsTotal.toLocaleString()}장</div>
+        </div>
+        <span class="badge ${bsTotal > 500 ? 'bg-green' : 'bg-red'}">${bsTotal > 500 ? '정상' : '주의'}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:${ggTotal > 500 ? 'var(--warm)' : 'var(--red-bg)'}; border-radius:var(--radius-sm)">
+        <div>
+          <div style="font-size:12px; font-weight:700; ${ggTotal <= 500 ? 'color:var(--red-dk)' : ''}">경기 창고</div>
+          <div style="font-size:10.5px; color:${ggTotal <= 500 ? 'var(--red-dk)' : 'var(--soft)'}; margin-top:2px">${ggTotal.toLocaleString()}장${ggTotal <= 500 ? ' · 재고 부족' : ''}</div>
+        </div>
+        <span class="badge ${ggTotal > 500 ? 'bg-green' : 'bg-red'}">${ggTotal > 500 ? '정상' : '주의'}</span>
+      </div>
+    `;
+  } catch(e){
+    console.error('재고 로드 실패:', e);
+    const el = document.getElementById('stockRows');
+    if(el) el.innerHTML = '<div style="padding:12px; text-align:center; color:var(--red-dk); font-size:11.5px">재고 데이터 로드 실패<br><a href="stock.html" style="color:var(--accent-dk); font-weight:650">stock.html에서 확인 →</a></div>';
+  }
+}
+
+
+async function loadReviewStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=reviewStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    
+    document.getElementById('reviewParticipants').innerHTML = json.participants + '<span class="u">명</span>';
+    document.getElementById('reviewPaid').textContent = `지급완료 ${json.paid}명`;
+    document.getElementById('reviewSpend').innerHTML = Math.round(json.monthlySpend/10000) + '<span class="u">만</span>';
+    document.getElementById('reviewBudget').textContent = `예산 ${json.budgetRate}%`;
+    
+    const missions = json.missions || {};
+    const cnts = json.missionCount || {};
+    const lines = [
+      {key:'contract', icon:'🥇', name:'계약 후기', cls:'green'},
+      {key:'instagram', icon:'📱', name:'인스타 팔로우', cls:''},
+      {key:'chatroom', icon:'💬', name:'카톡방 참여', cls:''},
+      {key:'review1', icon:'✍️', name:'첫날 후기', cls:'gold'},
+      {key:'review2', icon:'📸', name:'한달 후기', cls:'red'}
+    ];
+    
+    const html = lines.map(l => {
+      const pct = missions[l.key] || 0;
+      const cnt = cnts[l.key] || 0;
+      return `<div class="rowbar">
+        <div class="rowbar-top"><span class="rowbar-name">${l.icon} ${l.name}</span><span class="rowbar-val">${cnt}명 · <b>${pct}%</b></span></div>
+        <div class="rowbar-track"><div class="rowbar-fill ${l.cls}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+    
+    document.getElementById('missionRows').innerHTML = html || '<div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">이번달 참여자 없음</div>';
+  } catch(e){
+    console.error('reviewStats 로드 실패:', e);
+  }
+}
+
+
+async function loadAlimtalkStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=alimtalkStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    document.getElementById('alimSent').textContent = json.sentToday;
+    document.getElementById('alimScheduled').textContent = json.scheduledTomorrow;
+  } catch(e){
+    console.error('alimtalkStats 로드 실패:', e);
+  }
+}
+
+
+// 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
+async function loadPhoneStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=phoneStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    
+    const today = json.today || {received:0, missed:0, callback:0};
+    const month = json.month || {received:0, missed:0, callback:0, days:0};
+    
+    const kpiVal = document.getElementById('kpiPhoneReceived');
+    const kpiSub = document.getElementById('kpiPhoneSub');
+    if(!kpiVal || !kpiSub) return;
+    
+    const todayTotal = (today.received || 0) + (today.missed || 0);
+    
+    if(todayTotal > 0){
+      kpiVal.style.color = '';
+      kpiVal.innerHTML = todayTotal + '<span class="scorecard-unit">건</span>';
+      if(today.missed > 0){
+        kpiSub.innerHTML = `받은 <b>${today.received}</b> · 놓친 <b style="color:var(--red-dk)">${today.missed}</b> · 콜백 ${today.callback||0}`;
+      } else {
+        kpiSub.innerHTML = `받은 <b>${today.received}건</b> · 놓친 없음 🎉`;
+      }
+    } else {
+      kpiVal.style.color = 'var(--muted)';
+      kpiVal.innerHTML = '—<span class="scorecard-unit">건</span>';
+      kpiSub.innerHTML = month.days > 0 
+        ? `이번달 받은 <b>${month.received}건</b> · 놓친 ${month.missed||0}건` 
+        : '상담사 입력 대기 중';
+    }
+    
+    // 콜백률 경보 배지
+    const alertEl = document.getElementById('callbackAlert');
+    const alertText = document.getElementById('callbackAlertText');
+    if(alertEl && month.missed > 0){
+      const cbRate = Math.round((month.callback||0)/month.missed*100);
+      alertEl.style.display = 'block';
+      alertEl.style.background = 'var(--gold-bg)';
+      alertEl.style.color = 'var(--gold-dk)';
+      if(cbRate >= 80){
+        alertEl.style.background = 'var(--green-bg)';
+        alertEl.style.color = 'var(--green-dk)';
+        alertText.innerHTML = `👍 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건 회수 · 잘하고 있어요!`;
+      } else if(cbRate >= 50){
+        alertText.innerHTML = `⚡ 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건만 회수 · 개선 여지 있음`;
+      } else {
+        alertEl.style.background = 'var(--red-bg)';
+        alertEl.style.color = 'var(--red-dk)';
+        alertText.innerHTML = `🚨 이번달 콜백률 <b>${cbRate}%</b> · 놓친 고객 ${month.missed - (month.callback||0)}명 회수 안 됨 · <b>매출 기회 손실!</b>`;
+      }
+    } else if(alertEl) {
+      alertEl.style.display = 'none';
+    }
+  } catch(e){
+    console.error('상담폰 로드 실패:', e);
+  }
+}
+
+
 // 페이지 로드 시 자동 fetch
 window.addEventListener('DOMContentLoaded', () => {
+  loadTodayStats();
+  loadMonthStats();
+  loadStockSummary();
+  loadReviewStats();
+  loadAlimtalkStats();
   loadConversionStats();
   loadMonthlyFunnel();
   loadPhoneStats();
 });
-
-// ═══ 상담폰 입력 (TODO: Apps Script 연결) ═══
-function submitPhone(){
-  const rec = document.getElementById('phoneReceived').value;
-  const con = document.getElementById('phoneContracted').value;
-  if(!rec){ alert('받은 전화 건수를 입력해주세요'); return; }
-  // TODO: fetch(APPS_SCRIPT_URL, {method:'POST', body:JSON.stringify({type:'phoneLog', ...})});
-  alert(`오늘 상담 등록\n받은 전화: ${rec}건\n계약 연결: ${con||0}건\n\n(실제 저장 연동은 Phase 2에서 진행)`);
-}
 
 /* ═══════════════════════════════════════════════════════════
    📌 TODO (Phase 2에서 실제 데이터 연결)
