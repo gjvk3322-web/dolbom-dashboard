@@ -477,16 +477,21 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     상단 스코어카드 · 오늘 ↔ 이번달 토글 (v0.5 실데이터)
+     상단 스코어카드 · 오늘 ↔ 월별 토글 + 월 선택 드롭다운 (v0.5.1)
      ═══════════════════════════════════════════════════════════ -->
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px">
-  <div style="display:flex; gap:6px; background:var(--warm); padding:4px; border-radius:10px">
-    <button class="period-btn active" data-period="today" onclick="switchPeriod('today')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:var(--text); color:#fff; transition:all 0.2s">오늘</button>
-    <button class="period-btn" data-period="month" onclick="switchPeriod('month')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:transparent; color:var(--soft); transition:all 0.2s">이번달</button>
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:10px">
+  <div style="display:flex; gap:6px; align-items:center">
+    <div style="display:flex; gap:6px; background:var(--warm); padding:4px; border-radius:10px">
+      <button class="period-btn active" data-period="today" onclick="switchPeriod('today')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:var(--text); color:#fff; transition:all 0.2s">오늘</button>
+      <button class="period-btn" data-period="month" onclick="switchPeriod('month')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:transparent; color:var(--soft); transition:all 0.2s">월별</button>
+    </div>
+    <select id="monthSelect" onchange="onMonthChange()" style="padding:7px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:12.5px; font-weight:600; cursor:pointer; color:var(--text); font-family:inherit; display:none">
+      <!-- 자동 생성됨 -->
+    </select>
   </div>
   <div style="font-size:11px; color:var(--muted)" id="periodHint">📅 오늘 <span id="todayDateStr">4/21</span> 기준</div>
 </div>
-<div class="scorecards">
+<div class="scorecards" style="grid-template-columns:repeat(5,1fr); gap:12px">
   <div class="scorecard">
     <div class="scorecard-label" id="kpi1Label">오늘 매출</div>
     <div class="scorecard-value" id="kpi1Value" style="color:var(--muted)">—<span class="scorecard-unit">만원</span></div>
@@ -498,9 +503,14 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div class="scorecard-sub" id="kpi2Sub">데이터 로드 중…</div>
   </div>
   <div class="scorecard">
-    <div class="scorecard-label" id="kpi3Label">오늘 샘플 접수</div>
+    <div class="scorecard-label" id="kpi3Label">오늘 예약 접수</div>
     <div class="scorecard-value" id="kpi3Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
-    <div class="scorecard-sub" id="kpi3Sub">데이터 로드 중…</div>
+    <div class="scorecard-sub" id="kpi3Sub">reservation.html 유입</div>
+  </div>
+  <div class="scorecard">
+    <div class="scorecard-label" id="kpi4Label">오늘 샘플 접수</div>
+    <div class="scorecard-value" id="kpi4Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpi4Sub">데이터 로드 중…</div>
   </div>
   <div class="scorecard">
     <div class="scorecard-label">오늘 상담 전화</div>
@@ -794,68 +804,42 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 <!-- ═══ 영역 레이블 · 2줄 ═══ -->
 <div class="area-label">MARKETING · 마케팅 & 유입</div>
 
-<!-- 🗑️ 입주아파트 파이프라인 섹션 · v0.5에서 숨김 처리
-     이유: 실데이터 연동 안 됨 (placeholder 67개 아파트 데이터)
-     추후 '입주아파트' 시트 데이터 쌓이면 복원 예정 -->
-<div class="grid" style="display:none">
+<!-- ✅ 입주아파트 파이프라인 · v0.5.2 실데이터 연동 · 2026-04-21 -->
+<div class="grid">
 
   <!-- 🟦 영역 7 · 입주아파트 파이프라인 -->
   <div class="section col-12">
     <div class="section-head">
-      <div class="section-title"><span class="section-icon icon-blue">🏢</span>입주아파트 파이프라인</div>
-      <button class="section-more">전체 →</button>
+      <div class="section-title"><span class="section-icon icon-blue">🏢</span>입주아파트 파이프라인 <span class="badge bg-gray" id="aptBadge">실데이터 로드 중…</span></div>
+      <button class="section-more" onclick="loadAptPipeline()">🔄 새로고침</button>
     </div>
 
     <div class="stat-row">
       <div class="stat-col">
         <div class="stat-label">총 타겟 아파트</div>
-        <div class="stat-val">67<span class="u">개</span></div>
-        <div class="stat-sub">74,541 세대</div>
+        <div class="stat-val" id="aptTotal">—<span class="u">개</span></div>
+        <div class="stat-sub" id="aptTotalSub">로드 중…</div>
       </div>
       <div class="stat-col">
-        <div class="stat-label">6월 입주 임박</div>
-        <div class="stat-val" style="color:var(--red-dk)">14<span class="u">개</span></div>
-        <div class="stat-sub">블로그·맘카페 선점 필요</div>
+        <div class="stat-label">입주 임박 (0~2개월)</div>
+        <div class="stat-val" style="color:var(--red-dk)" id="aptImminent">—<span class="u">개</span></div>
+        <div class="stat-sub" id="aptImminentSub">블로그·맘카페 선점 필요</div>
       </div>
       <div class="stat-col">
-        <div class="stat-label">콘텐츠 업로드 완료</div>
-        <div class="stat-val" style="color:var(--gold-dk)">0<span class="u">개</span></div>
-        <div class="stat-sub">🚨 모두 미착수</div>
+        <div class="stat-label">블로그 업로드 완료</div>
+        <div class="stat-val" style="color:var(--green-dk)" id="aptBlog">—<span class="u">개</span></div>
+        <div class="stat-sub" id="aptChannelSub">맘카페·당근·메타 집계</div>
       </div>
     </div>
 
-    <!-- 지역별 타일 -->
-    <div class="region-grid">
-      <div class="region-tile hot">
-        <div class="region-name">경기</div>
-        <div class="region-count">34</div>
-        <div class="region-sub">40,180세대</div>
-      </div>
-      <div class="region-tile">
-        <div class="region-name">인천</div>
-        <div class="region-count">14</div>
-        <div class="region-sub">15,620세대</div>
-      </div>
-      <div class="region-tile">
-        <div class="region-name">부산</div>
-        <div class="region-count">12</div>
-        <div class="region-sub">12,450세대</div>
-      </div>
-      <div class="region-tile">
-        <div class="region-name">서울</div>
-        <div class="region-count">4</div>
-        <div class="region-sub">4,190세대</div>
-      </div>
-      <div class="region-tile">
-        <div class="region-name">충북</div>
-        <div class="region-count">3</div>
-        <div class="region-sub">2,101세대</div>
-      </div>
+    <!-- 지역별 타일 (동적 생성) -->
+    <div class="region-grid" id="aptRegionGrid">
+      <div style="grid-column:1/-1; padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">지역별 데이터 로드 중…</div>
     </div>
 
-    <!-- 6월 임박 TOP 5 -->
+    <!-- 입주 임박 TOP 10 -->
     <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
-      <div class="stat-label" style="margin-bottom:8px">6월 입주 TOP (채널 체크)</div>
+      <div class="stat-label" style="margin-bottom:8px">입주 임박 TOP <span style="color:var(--muted); font-weight:500">(0~2개월 내)</span></div>
       <div class="tbl-wrap">
         <table class="tbl">
           <thead>
@@ -863,15 +847,15 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
               <th>아파트</th>
               <th>지역</th>
               <th class="num">세대수</th>
+              <th>입주월</th>
               <th style="text-align:center">블로그</th>
               <th style="text-align:center">맘카페</th>
               <th style="text-align:center">당근</th>
+              <th style="text-align:center">메타</th>
             </tr>
           </thead>
-          <tbody>
-            <tr><td>인덕원 퍼스비엘</td><td>경기 의왕</td><td class="num">2,180</td><td style="text-align:center"><span class="badge bg-gray">-</span></td><td style="text-align:center"><span class="badge bg-gray">-</span></td><td style="text-align:center"><span class="badge bg-gray">-</span></td></tr>
-            <tr><td>드파인 광안</td><td>부산 수영구</td><td class="num">1,233</td><td style="text-align:center"><span class="badge bg-gray">-</span></td><td style="text-align:center"><span class="badge bg-gray">-</span></td><td style="text-align:center"><span class="badge bg-gray">-</span></td></tr>
-            <tr><td>롯데캐슬 인피니엘</td><td>부산 남구</td><td class="num">715</td><td style="text-align:center"><span class="badge bg-gray">-</span></td><td style="text-align:center"><span class="badge bg-gray">-</span></td><td style="text-align:center"><span class="badge bg-gray">-</span></td></tr>
+          <tbody id="aptImminentTable">
+            <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:14px; font-size:11.5px">로드 중…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1223,7 +1207,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
 <!-- ═══ 푸터 ═══ -->
 <div class="footer">
-  돌봄매트 조종실 · v0.5 · 실데이터 전면 연동 · 마지막 업데이트 <span id="updatedAt">2026-04-21 22:00</span>
+  돌봄매트 조종실 · v0.5.2 · 입주아파트 실데이터 복원 · <span id="updatedAt">2026-04-22 00:00</span>
 </div>
 
 </div><!-- /.container -->
@@ -1412,6 +1396,7 @@ function refreshAll(){
     loadStockSummary(),
     loadReviewStats(),
     loadAlimtalkStats(),
+    loadAptPipeline(),
     loadConversionStats(),
     loadMonthlyFunnel(),
     loadPhoneStats()
@@ -1424,12 +1409,29 @@ function refreshAll(){
 
 
 // ═══════════════════════════════════════════════════════════════
-// 🆕 v0.5 · 오늘 ↔ 이번달 토글 + 실데이터 연동
+// 🆕 v0.5.1 · KPI 5개 + 월 선택 드롭다운 + 토글 버그 수정
 // ═══════════════════════════════════════════════════════════════
 
 let cachedTodayData = null;
 let cachedMonthData = null;
 let currentPeriod = 'today';
+let selectedMonth = null; // YYYY-MM 또는 null (=이번달)
+
+function initMonthSelect(){
+  const sel = document.getElementById('monthSelect');
+  if(!sel) return;
+  const now = new Date();
+  let html = '';
+  // 최근 12개월
+  for(let i = 0; i < 12; i++){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = i === 0 ? `${d.getMonth()+1}월 (이번달)` : `${d.getFullYear()}년 ${d.getMonth()+1}월`;
+    html += `<option value="${ym}">${label}</option>`;
+  }
+  sel.innerHTML = html;
+  selectedMonth = sel.value;
+}
 
 function switchPeriod(period){
   currentPeriod = period;
@@ -1444,72 +1446,115 @@ function switchPeriod(period){
       btn.classList.remove('active');
     }
   });
+  
+  const sel = document.getElementById('monthSelect');
+  if(sel) sel.style.display = period === 'month' ? 'inline-block' : 'none';
+  
+  // 월별 선택 시 해당 월 데이터 로드 (캐시 없으면)
+  if(period === 'month') {
+    loadMonthStats(selectedMonth);
+  }
+  
   renderKPIs();
+}
+
+function onMonthChange(){
+  const sel = document.getElementById('monthSelect');
+  selectedMonth = sel.value;
+  cachedMonthData = null; // 캐시 무효화
+  loadMonthStats(selectedMonth).then(() => renderKPIs());
 }
 
 function renderKPIs(){
   const isToday = currentPeriod === 'today';
   const data = isToday ? cachedTodayData : cachedMonthData;
   
-  document.getElementById('kpi1Label').textContent = isToday ? '오늘 매출' : '이번달 매출';
-  document.getElementById('kpi2Label').textContent = isToday ? '오늘 시공' : '이번달 시공';
-  document.getElementById('kpi3Label').textContent = isToday ? '오늘 샘플 접수' : '이번달 샘플 접수';
+  // 라벨
+  document.getElementById('kpi1Label').textContent = isToday ? '오늘 매출' : '월 매출';
+  document.getElementById('kpi2Label').textContent = isToday ? '오늘 시공' : '월 시공';
+  document.getElementById('kpi3Label').textContent = isToday ? '오늘 예약 접수' : '월 예약 접수';
+  document.getElementById('kpi4Label').textContent = isToday ? '오늘 샘플 접수' : '월 샘플 접수';
   
   const now = new Date();
-  document.getElementById('todayDateStr').textContent = `${now.getMonth()+1}/${now.getDate()}`;
-  document.getElementById('periodHint').innerHTML = isToday 
-    ? `📅 오늘 <span>${now.getMonth()+1}/${now.getDate()}</span> 기준` 
-    : `📅 ${now.getMonth()+1}월 (${cachedMonthData?.daysPassed || '-'}일차)`;
+  const hint = document.getElementById('periodHint');
+  if(isToday){
+    document.getElementById('todayDateStr').textContent = `${now.getMonth()+1}/${now.getDate()}`;
+    hint.innerHTML = `📅 오늘 <span>${now.getMonth()+1}/${now.getDate()}</span> 기준`;
+  } else if(cachedMonthData) {
+    const m = cachedMonthData.month;
+    const monthNum = parseInt(m.substring(5, 7));
+    const yrNum = parseInt(m.substring(0, 4));
+    const label = cachedMonthData.isCurrentMonth 
+      ? `📅 ${monthNum}월 (이번달 · ${cachedMonthData.daysPassed}일차)` 
+      : `📅 ${yrNum}년 ${monthNum}월 (완결 · ${cachedMonthData.daysPassed}일)`;
+    hint.innerHTML = label;
+  } else {
+    hint.innerHTML = `📅 월 선택 중…`;
+  }
   
   if(!data){
-    ['kpi1Value','kpi2Value','kpi3Value'].forEach(id => {
+    ['kpi1Value','kpi2Value','kpi3Value','kpi4Value'].forEach(id => {
       const el = document.getElementById(id);
+      if(!el) return;
       el.style.color = 'var(--muted)';
-      const unit = el.querySelector('.scorecard-unit').outerHTML;
+      const unitEl = el.querySelector('.scorecard-unit');
+      const unit = unitEl ? unitEl.outerHTML : '';
       el.innerHTML = '—' + unit;
     });
     return;
   }
   
+  const rev = isToday ? data.revenue : data.data.revenue;
+  const inst = isToday ? data.installs : data.data.installs;
+  const reserv = isToday ? data.reservations : data.data.reservations;
+  const samples = isToday ? data.samples : data.data.samples;
+  
   // KPI 1 · 매출
-  const rev = isToday ? data.revenue.total : data.data.revenue.total;
-  const revMan = Math.round(rev/10000);
+  const revMan = Math.round(rev.total/10000);
   const kpi1 = document.getElementById('kpi1Value');
   kpi1.style.color = '';
   kpi1.innerHTML = revMan.toLocaleString() + '<span class="scorecard-unit">만원</span>';
-  
+  const bMan = Math.round(rev.busan/10000);
+  const gMan = Math.round(rev.gyeonggi/10000);
   if(isToday){
-    const b = Math.round(data.revenue.busan/10000);
-    const g = Math.round(data.revenue.gyeonggi/10000);
-    document.getElementById('kpi1Sub').innerHTML = rev > 0 
-      ? `부산 <b>${b.toLocaleString()}</b> · 경기 <b>${g.toLocaleString()}</b>` 
+    document.getElementById('kpi1Sub').innerHTML = rev.total > 0 
+      ? `부산 <b>${bMan.toLocaleString()}</b> · 경기 <b>${gMan.toLocaleString()}</b>` 
       : '오늘 아직 시공 없음';
   } else {
-    const b = Math.round(data.data.revenue.busan/10000);
-    const g = Math.round(data.data.revenue.gyeonggi/10000);
-    const avgMan = Math.round(data.data.revenue.avgPerJob/10000);
-    document.getElementById('kpi1Sub').innerHTML = `부산 ${b.toLocaleString()} · 경기 ${g.toLocaleString()} · 건당 ${avgMan}만`;
+    const avgMan = Math.round((data.data.revenue.avgPerJob || 0)/10000);
+    document.getElementById('kpi1Sub').innerHTML = `부산 ${bMan.toLocaleString()} · 경기 ${gMan.toLocaleString()} · 건당 ${avgMan}만`;
   }
   
   // KPI 2 · 시공
-  const inst = isToday ? data.installs : data.data.installs;
   const kpi2 = document.getElementById('kpi2Value');
   kpi2.style.color = '';
   kpi2.innerHTML = inst.total + '<span class="scorecard-unit">건</span>';
   document.getElementById('kpi2Sub').innerHTML = `부산 ${inst.busan} · 경기 ${inst.gyeonggi} (AS/실측 제외)`;
   
-  // KPI 3 · 샘플
-  const samples = isToday ? data.samples : data.data.samples;
+  // KPI 3 · 예약 접수 (신규)
   const kpi3 = document.getElementById('kpi3Value');
   kpi3.style.color = '';
-  kpi3.innerHTML = samples + '<span class="scorecard-unit">건</span>';
+  kpi3.innerHTML = (reserv || 0) + '<span class="scorecard-unit">건</span>';
   if(isToday){
     document.getElementById('kpi3Sub').innerHTML = data.tomorrowInstalls 
       ? `내일 시공 예정 <b>${data.tomorrowInstalls}건</b>` 
-      : '오늘 접수 건수';
+      : 'reservation.html 유입';
+  } else {
+    const convRate = samples > 0 ? Math.round((reserv||0)/samples*100) : 0;
+    document.getElementById('kpi3Sub').innerHTML = samples > 0 
+      ? `샘플→예약 전환 ${convRate}%` 
+      : '월별 누적 예약';
+  }
+  
+  // KPI 4 · 샘플
+  const kpi4 = document.getElementById('kpi4Value');
+  kpi4.style.color = '';
+  kpi4.innerHTML = samples + '<span class="scorecard-unit">건</span>';
+  if(isToday){
+    document.getElementById('kpi4Sub').textContent = '오늘 샘플 접수';
   } else {
     const peak = data.data.peakSampleDay;
-    document.getElementById('kpi3Sub').innerHTML = `일평균 <b>${data.data.sampleAvgPerDay}건</b>${peak.count > 0 ? ` · 피크 ${peak.count}건(${peak.date.substring(5).replace('-','/')})` : ''}`;
+    document.getElementById('kpi4Sub').innerHTML = `일평균 <b>${data.data.sampleAvgPerDay}건</b>${peak.count > 0 ? ` · 피크 ${peak.count}건(${peak.date.substring(5).replace('-','/')})` : ''}`;
   }
 }
 
@@ -1528,15 +1573,21 @@ async function loadTodayStats(){
 }
 
 
-async function loadMonthStats(){
+async function loadMonthStats(month){
   try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?type=monthStats`);
+    const url = month 
+      ? `${APPS_SCRIPT_URL}?type=monthStats&month=${encodeURIComponent(month)}`
+      : `${APPS_SCRIPT_URL}?type=monthStats`;
+    const res = await fetch(url);
     const json = await res.json();
-    if(!json.success) return;
+    if(!json.success) {
+      console.error('monthStats 실패:', json.error);
+      return;
+    }
     cachedMonthData = json;
     if(currentPeriod === 'month') renderKPIs();
     
-    // 매출 요약 섹션 업데이트
+    // 매출 요약 섹션은 항상 "이번달" 또는 선택월로 업데이트
     const data = json.data;
     const busanMan = Math.round(data.revenue.busan/10000);
     const ggMan = Math.round(data.revenue.gyeonggi/10000);
@@ -1553,7 +1604,6 @@ async function loadMonthStats(){
     document.getElementById('revTotalSub').innerHTML = `${data.installs.total}건 · 건당 <b>${avgT}만</b>`;
     document.getElementById('revMonthBadge').textContent = parseInt(json.month.substring(5)) + '월';
     
-    // 구분별 렌더
     const catEl = document.getElementById('categoryRows');
     const c = data.bucketByCategory;
     const cTotal = c.normal.amount + c.reinstall.amount;
@@ -1569,7 +1619,6 @@ async function loadMonthStats(){
         <div class="rowbar-track"><div class="rowbar-fill gold" style="width:${reinstallPct}%"></div></div>
       </div>`;
     
-    // 제품별 렌더 (6종 · 수량 0이면 숨김)
     const pEl = document.getElementById('productRows');
     const products = data.bucketByProduct;
     const nameMap = {
@@ -1594,9 +1643,8 @@ async function loadMonthStats(){
           <div class="rowbar-track"><div class="rowbar-fill ${nm.cls}" style="width:${pct}%"></div></div>
         </div>`;
       }).join('');
-    pEl.innerHTML = pHtml || '<div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">이번달 판매 기록 없음</div>';
+    pEl.innerHTML = pHtml || '<div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">해당 월 판매 기록 없음</div>';
     
-    // 채널 분해
     const cb = data.channelBreakdown;
     if(cb.total > 0){
       document.getElementById('channelBreakdown').style.display = 'block';
@@ -1631,6 +1679,18 @@ async function loadStockSummary(){
     
     const bsTotal = teamTotal(bsJson.items);
     const ggTotal = teamTotal(ggJson.items);
+    
+    // 재고조사 데이터가 아예 없으면 별도 안내
+    if(bsTotal === 0 && ggTotal === 0){
+      el.innerHTML = `<div style="padding:16px 14px; background:var(--gold-bg); border-radius:var(--radius-sm); text-align:center">
+        <div style="font-size:12.5px; font-weight:650; color:var(--gold-dk); margin-bottom:6px">⚠️ 재고조사 데이터 없음</div>
+        <div style="font-size:11px; color:var(--gold-dk); line-height:1.5">
+          '재고조사(부산)' / '재고조사(경기)' 시트가 비어있어요.<br>
+          <a href="inventory.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650; display:inline-block; margin-top:4px">📝 재고조사 시작하기 →</a>
+        </div>
+      </div>`;
+      return;
+    }
     
     el.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:${bsTotal > 500 ? 'var(--warm)' : 'var(--red-bg)'}; border-radius:var(--radius-sm)">
@@ -1706,6 +1766,109 @@ async function loadAlimtalkStats(){
 }
 
 
+// 🆕 입주아파트 파이프라인 로드 (v0.5.2)
+async function loadAptPipeline(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=aptPipeline`);
+    const json = await res.json();
+    
+    const badge = document.getElementById('aptBadge');
+    
+    if(!json.success){
+      badge.textContent = '시트 없음';
+      badge.style.background = 'var(--red-bg)';
+      badge.style.color = 'var(--red-dk)';
+      document.getElementById('aptTotal').innerHTML = '0<span class="u">개</span>';
+      document.getElementById('aptTotalSub').textContent = json.hint || '입주아파트 시트를 확인하세요';
+      return;
+    }
+    
+    if(json.total === 0){
+      badge.textContent = '데이터 없음';
+      document.getElementById('aptTotal').innerHTML = '0<span class="u">개</span>';
+      document.getElementById('aptTotalSub').textContent = '입주아파트 시트에 아파트 추가 필요';
+      return;
+    }
+    
+    badge.textContent = '실데이터';
+    badge.style.background = 'var(--green-bg)';
+    badge.style.color = 'var(--green-dk)';
+    
+    // 상단 3개 요약
+    document.getElementById('aptTotal').innerHTML = json.total.toLocaleString() + '<span class="u">개</span>';
+    document.getElementById('aptTotalSub').textContent = json.totalUnits.toLocaleString() + ' 세대';
+    
+    document.getElementById('aptImminent').innerHTML = (json.imminent.length || 0) + '<span class="u">개</span>';
+    if(json.imminent.length === 0){
+      document.getElementById('aptImminentSub').textContent = '2개월 내 입주 없음';
+    } else {
+      document.getElementById('aptImminentSub').textContent = '블로그·맘카페 선점 필요';
+    }
+    
+    document.getElementById('aptBlog').innerHTML = (json.summary.blog || 0) + '<span class="u">개</span>';
+    document.getElementById('aptChannelSub').innerHTML = 
+      `맘카페 ${json.summary.cafe || 0} · 당근 ${json.summary.daang || 0} · 메타 ${json.summary.meta || 0}`;
+    
+    // 지역별 타일
+    const regionEl = document.getElementById('aptRegionGrid');
+    if(json.byRegion && json.byRegion.length > 0){
+      const maxCount = Math.max(...json.byRegion.map(r => r.count));
+      regionEl.innerHTML = json.byRegion.slice(0, 5).map(r => {
+        const isHot = r.count === maxCount;
+        return `<div class="region-tile${isHot ? ' hot' : ''}">
+          <div class="region-name">${r.name}</div>
+          <div class="region-count">${r.count}</div>
+          <div class="region-sub">${r.units.toLocaleString()}세대</div>
+        </div>`;
+      }).join('');
+    } else {
+      regionEl.innerHTML = '<div style="grid-column:1/-1; padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">지역 데이터 없음</div>';
+    }
+    
+    // 입주 임박 TOP 10 테이블
+    const tbodyEl = document.getElementById('aptImminentTable');
+    if(json.imminent.length === 0){
+      tbodyEl.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:14px; font-size:11.5px">임박 아파트 없음 · 상단 메뉴에서 전체 리스트 확인</td></tr>';
+    } else {
+      function channelBadge(val){
+        if(!val || val === '-') return '<span class="badge bg-gray">-</span>';
+        if(val.indexOf('완료') >= 0 || val === '✓' || val === 'O') 
+          return '<span class="badge bg-green">완료</span>';
+        if(val.indexOf('진행') >= 0 || val === '△') 
+          return '<span class="badge bg-gold">진행</span>';
+        if(val.indexOf('예정') >= 0) 
+          return '<span class="badge bg-accent">예정</span>';
+        return `<span class="badge bg-gray">${val.substring(0,4)}</span>`;
+      }
+      tbodyEl.innerHTML = json.imminent.map(it => {
+        const monthsText = it.monthsUntil === 0 ? '이번달' 
+          : it.monthsUntil === 1 ? '다음달' 
+          : it.monthsUntil + '개월';
+        return `<tr>
+          <td><b>${it.apt}</b></td>
+          <td>${it.region}</td>
+          <td class="num">${it.units.toLocaleString()}</td>
+          <td>${it.month || '-'} <span style="color:var(--muted); font-size:10.5px">(${monthsText})</span></td>
+          <td style="text-align:center">${channelBadge(it.blog)}</td>
+          <td style="text-align:center">${channelBadge(it.cafe)}</td>
+          <td style="text-align:center">${channelBadge(it.daang)}</td>
+          <td style="text-align:center">${channelBadge(it.meta)}</td>
+        </tr>`;
+      }).join('');
+    }
+    
+  } catch(e){
+    console.error('aptPipeline 로드 실패:', e);
+    const badge = document.getElementById('aptBadge');
+    if(badge){
+      badge.textContent = '로드 실패';
+      badge.style.background = 'var(--red-bg)';
+      badge.style.color = 'var(--red-dk)';
+    }
+  }
+}
+
+
 // 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
 async function loadPhoneStats(){
   try{
@@ -1768,11 +1931,13 @@ async function loadPhoneStats(){
 
 // 페이지 로드 시 자동 fetch
 window.addEventListener('DOMContentLoaded', () => {
+  initMonthSelect();
   loadTodayStats();
   loadMonthStats();
   loadStockSummary();
   loadReviewStats();
   loadAlimtalkStats();
+  loadAptPipeline();      // 🆕 입주아파트 실데이터
   loadConversionStats();
   loadMonthlyFunnel();
   loadPhoneStats();
