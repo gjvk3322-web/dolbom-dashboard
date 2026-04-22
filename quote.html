@@ -12,15 +12,15 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{overflow-x:hidden}
 body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;color:#1a1a1a;overflow-x:hidden;width:100%}
-.header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.header{padding:16px 20px;display:flex;align-items:center;justify-content:center}
 .header-left{display:flex;align-items:center;gap:8px}
 .header-logo{font-size:11px;letter-spacing:3px;color:#999;font-weight:500}
 .header-dot{width:4px;height:4px;border-radius:50%;background:#2E7D32}
 .header-sub{font-size:11px;color:#bbb}
 .container{max-width:460px;margin:0 auto;padding:0 16px 16px;overflow-x:hidden}
 .compare-section{background:#fff;border-radius:20px;padding:24px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}
-.compare-title{font-size:22px;font-weight:900;color:#1a1a1a;line-height:1.4;margin-bottom:4px}
-.compare-sub{font-size:13px;color:#999;margin-bottom:16px}
+.compare-title{font-size:22px;font-weight:900;color:#1a1a1a;line-height:1.4;margin-bottom:4px;text-align:center}
+.compare-sub{font-size:13px;color:#999;margin-bottom:16px;text-align:center}
 .size-btns{display:flex;gap:6px;margin-bottom:16px;justify-content:center;flex-wrap:wrap}
 .size-btn{padding:8px 14px;border:1.5px solid #e0ddd6;border-radius:20px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;color:#999;transition:all .2s}
 .size-btn.active{background:#666;color:#fff;border-color:#666}
@@ -202,7 +202,6 @@ if(new URLSearchParams(window.location.search).get('embed')==='1'){
   if(ba)ba.style.gridTemplateColumns='1fr';
 }
 </script>
-<div style="text-align:center;margin-bottom:40px"><span onclick="resetForm()" style="font-size:13px;color:#999;cursor:pointer;text-decoration:underline">새 견적 만들기</span></div>
 </div>
 <div class="toast" id="toast"></div>
 <div class="copy-overlay" id="copyOverlay" onclick="closeCopyOverlay(event)"><div class="copy-modal"><div class="copy-check">✅</div><div class="copy-title">체감가가 복사되었습니다!</div><div style="display:flex;gap:6px;margin:12px 0;text-align:center"><div style="flex:1;padding:8px 6px;background:#E8F5E9;border-radius:8px;border:1.5px solid #2E7D32"><div style="font-size:10px;font-weight:700;color:#2E7D32">STEP 1</div><div style="font-size:11px;font-weight:600;color:#1a1a1a;margin-top:2px">✅ 복사 완료</div></div><div style="display:flex;align-items:center;color:#ccc;font-size:14px">→</div><div style="flex:1;padding:8px 6px;background:#FFF8E1;border-radius:8px;border:1.5px solid #FDD835"><div style="font-size:10px;font-weight:700;color:#F9A825">STEP 2</div><div style="font-size:11px;font-weight:600;color:#1a1a1a;margin-top:2px">💬 카톡에 붙여넣기</div></div></div><div class="copy-feature"><div class="copy-feature-title">🌬️ 돌봄매트만의 공기순환통로</div><video id="airVideo" autoplay muted loop playsinline style="width:100%;border-radius:10px;margin:10px 0"><source src="air_channel.mp4" type="video/mp4"><source src="air_channel.mov" type="video/quicktime"></video><div style="font-size:12px;color:#666;line-height:1.6;text-align:left">매트 하단 <strong style="color:#2E7D32">공기순환통로</strong>로 습기 배출 →<br><strong style="color:#2E7D32">곰팡이 걱정 제로!</strong> 6,700가정이 검증했습니다</div></div><div id="kakaoRefNote" style="display:none;font-size:11px;color:#999;text-align:center;margin-top:8px">* 추천인 정보가 체감가에 포함되어 있습니다</div><div style="display:flex;gap:8px;margin-top:8px"><button class="copy-close" onclick="closeCopyOverlay()" style="flex:1">확인</button><a onclick="openKakaoChat()" style="flex:1;display:flex;align-items:center;justify-content:center;padding:14px;background:#FEE500;border-radius:12px;text-decoration:none;font-size:13px;font-weight:700;color:#3C1E1E;cursor:pointer;white-space:nowrap" id="overlayChatBtn">카톡 열기 →</a></div></div></div>
