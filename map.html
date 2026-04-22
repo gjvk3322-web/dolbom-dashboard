@@ -37,7 +37,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
   </div>
   <div class="stat" onclick="moveToKinder()" style="cursor:pointer">
     <div class="stat-num" style="color:#E5A100">80개+</div>
-    <div class="stat-label" id="kinderBtn">어린이집 시공</div>
+    <div class="stat-label" id="kinderBtn">국공립 어린이집</div>
   </div>
   <div class="stat" onclick="findMyLocation()" style="cursor:pointer;background:#E8F5E9">
     <div class="stat-num" style="font-size:16px">📍</div>
@@ -81,7 +81,7 @@ function moveToKinder() {
   var btn = document.getElementById('kinderBtn');
   btn.textContent = '전환 중...';
   document.getElementById('mapFrame').src = KINDER_MAP + '&z=7';
-  setTimeout(function() { btn.textContent = '어린이집 시공'; }, 2000);
+  setTimeout(function() { btn.textContent = '국공립 어린이집'; }, 2000);
 }
 
 function findMyLocation() {
