@@ -378,8 +378,10 @@ function saveQuoteImage(){
     trackReferral(qty,total);
     savedCanvasDataUrl=canvas.toDataURL('image/png');
     if(isEmbed){
-      // embed 모드: 부모에게 이미지 데이터 전송 (부모가 자기 모달에 표시)
-      try{window.parent.postMessage({type:'quoteImageReady',dataUrl:savedCanvasDataUrl},'*')}catch(e){}
+      // embed 모드: 부모에게 이미지 + 텍스트 전송 (부모가 자기 모달에 표시)
+      var quoteText='';
+      try{quoteText=buildQuoteText()}catch(e){}
+      try{window.parent.postMessage({type:'quoteImageReady',dataUrl:savedCanvasDataUrl,quoteText:quoteText},'*')}catch(e){}
     } else {
       // 단독 페이지: 로딩 스피너 숨기고 이미지 표시
       document.getElementById('imgLoading').style.display='none';
@@ -409,16 +411,28 @@ function fallbackDownload(){
 }
 function resaveQuoteImage(){
   if(!savedCanvasDataUrl){showToast('견적서가 없습니다');return}
+  // 이미지 저장과 함께 견적 텍스트도 클립보드에 복사
+  var quoteText='';
+  try{quoteText=buildQuoteText()}catch(e){}
+  if(quoteText){
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(quoteText).catch(function(){
+        var ta=document.createElement('textarea');ta.value=quoteText;ta.style.cssText='position:fixed;left:-9999px;top:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);
+      });
+    } else {
+      var ta=document.createElement('textarea');ta.value=quoteText;ta.style.cssText='position:fixed;left:-9999px;top:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);
+    }
+  }
   if(/Android|iPhone|iPad/i.test(navigator.userAgent)){
     fetch(savedCanvasDataUrl).then(function(r){return r.blob()}).then(function(blob){
       var file=new File([blob],'돌봄매트_견적서.png',{type:'image/png'});
       if(navigator.canShare&&navigator.canShare({files:[file]})){
         navigator.share({files:[file],title:'돌봄매트 견적서'}).then(function(){
-          showToast('✅ 저장 완료!');
-        }).catch(function(){fallbackDownload();showToast('✅ 저장 완료!')});
-      }else{fallbackDownload();showToast('✅ 저장 완료!')}
-    }).catch(function(){fallbackDownload();showToast('✅ 저장 완료!')});
-  }else{fallbackDownload();showToast('✅ 저장 완료!')}
+          showToast('✅ 저장 완료! 텍스트도 복사됐어요');
+        }).catch(function(){fallbackDownload();showToast('✅ 저장 완료! 텍스트도 복사됐어요')});
+      }else{fallbackDownload();showToast('✅ 저장 완료! 텍스트도 복사됐어요')}
+    }).catch(function(){fallbackDownload();showToast('✅ 저장 완료! 텍스트도 복사됐어요')});
+  }else{fallbackDownload();showToast('✅ 저장 완료! 텍스트도 복사됐어요')}
 }
 function copyAndOpenKakao(){
   var quoteText=buildQuoteText();
