@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 시공 사례</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:#f5f3ee}
+.top{text-align:center;padding:20px 16px 12px}
+.top-num{font-size:42px;font-weight:900;color:#1a1a1a;line-height:1.1}
+.top-label{font-size:13px;color:#888;margin-top:2px}
+.top-badge{display:inline-block;margin-top:8px;background:#2E7D32;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
+.stats{display:flex;gap:6px;padding:0 16px 12px;max-width:460px;margin:0 auto}
+.stat{flex:1;background:#fff;border-radius:10px;padding:10px 6px;text-align:center}
+.stat-num{font-size:13px;font-weight:700;color:#2E7D32}
+.stat-label{font-size:10px;color:#999;margin-top:1px}
+.stat.active{background:#E8F5E9;border:1.5px solid #81C784}
+.map-wrap{margin:0 8px;border-radius:12px;overflow:hidden;position:relative}
+.map-wrap iframe{width:100%;height:calc(100vh - 230px);border:none;display:block}
+.map-hint{text-align:center;padding:8px 12px;font-size:10px;color:#888;background:#fff;line-height:1.5;word-break:keep-all}
+.cta{padding:10px 16px 30px;max-width:460px;margin:0 auto}
+.cta-btn{display:block;width:100%;padding:14px;background:#FAE100;color:#3C1E1E;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="top-num">6,700+</div>
+  <div class="top-label">시공 완료 현장</div>
+  <div class="top-badge">대리점이 아닌 본사 직접 시공</div>
+</div>
+<div class="stats">
+  <div class="stat" onclick="moveToHotel()" style="cursor:pointer">
+    <div class="stat-num" style="color:#2E7D32">5성급 호텔</div>
+    <div class="stat-label" id="hotelBtn">키즈룸 시공</div>
+  </div>
+  <div class="stat" onclick="moveToKinder()" style="cursor:pointer">
+    <div class="stat-num" style="color:#E5A100">80개+</div>
+    <div class="stat-label" id="kinderBtn">어린이집 시공</div>
+  </div>
+  <div class="stat" onclick="findMyLocation()" style="cursor:pointer;background:#E8F5E9">
+    <div class="stat-num" style="font-size:16px">📍</div>
+    <div class="stat-label" style="color:#2E7D32;font-weight:500" id="locBtn">내 위치로 이동</div>
+  </div>
+</div>
+<div class="map-wrap">
+  <iframe id="mapFrame" src="https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1" allowfullscreen loading="lazy"></iframe>
+  <div class="map-hint">🏠 = 돌봄매트 시공 완료 현장 | 마커를 눌러 시공 정보를 확인하세요</div>
+</div>
+<div class="cta" id="ctaBox">
+  <a href="https://pf.kakao.com/_UMyBK/chat" class="cta-btn">💬 카카오톡 상담하기</a>
+</div>
+<script>
+if(new URLSearchParams(window.location.search).get('embed')==='1'){
+  var c=document.getElementById('ctaBox');if(c)c.style.display='none';
+}
+var BASE_MAP = 'https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
+var KINDER_MAP = 'https://www.google.com/maps/d/embed?mid=1tESvkcaYjerdKkkaJJnn6mPtqJtKkjw&ehbc=2E312F&noprof=1';
+
+function moveMap(lat, lng, zoom) {
+  document.getElementById('mapFrame').src = BASE_MAP + '&ll=' + lat + ',' + lng + '&z=' + zoom;
+}
+
+function clearActive() {
+  document.querySelectorAll('.stat').forEach(function(s) { s.classList.remove('active'); });
+}
+
+function moveToHotel() {
+  clearActive();
+  event.currentTarget.classList.add('active');
+  var btn = document.getElementById('hotelBtn');
+  btn.textContent = '이동 중...';
+  document.getElementById('mapFrame').src = BASE_MAP + '&ll=35.1594,129.1653&z=18';
+  setTimeout(function() { btn.textContent = '키즈룸 시공'; }, 2000);
+}
+
+function moveToKinder() {
+  clearActive();
+  event.currentTarget.classList.add('active');
+  var btn = document.getElementById('kinderBtn');
+  btn.textContent = '전환 중...';
+  document.getElementById('mapFrame').src = KINDER_MAP + '&z=7';
+  setTimeout(function() { btn.textContent = '어린이집 시공'; }, 2000);
+}
+
+function findMyLocation() {
+  clearActive();
+  event.currentTarget.classList.add('active');
+  var btn = document.getElementById('locBtn');
+  btn.textContent = '찾는 중...';
+  if (!navigator.geolocation) {
+    btn.textContent = '위치 지원 안됨';
+    setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    moveMap(pos.coords.latitude, pos.coords.longitude, 14);
+    btn.textContent = '내 위치 완료!';
+    setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
+  }, function(err) {
+    btn.textContent = '위치 허용해주세요';
+    setTimeout(function() { btn.textContent = '내 위치로 이동'; }, 3000);
+  }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+}
+</script>
+</body>
+</html>
