@@ -331,12 +331,18 @@ function saveQuoteImage(){
   if(!selectedProduct){showToast('제품을 먼저 선택해주세요');return}
   var qty=parseInt(document.getElementById('qtyInput').value)||0;
   if(qty<=0){showToast('수량을 먼저 계산해주세요');return}
-  // 토스트 대신 모달 즉시 열고 로딩 스피너 표시
-  document.getElementById('imgPreview').src='';
-  document.getElementById('imgPreview').style.display='none';
-  document.getElementById('imgLoading').style.display='flex';
-  document.getElementById('imgOverlay').classList.add('show');
-  document.body.style.overflow='hidden';
+  var isEmbed=document.body.classList.contains('embedded')&&window.parent!==window;
+  if(isEmbed){
+    // embed 모드: 부모에게 로딩 시작 알림 (부모가 자기 모달 띄움)
+    try{window.parent.postMessage({type:'quoteImageLoading'},'*')}catch(e){}
+  } else {
+    // 단독 페이지: 자기 모달 열고 로딩 스피너 표시
+    document.getElementById('imgPreview').src='';
+    document.getElementById('imgPreview').style.display='none';
+    document.getElementById('imgLoading').style.display='flex';
+    document.getElementById('imgOverlay').classList.add('show');
+    document.body.style.overflow='hidden';
+  }
   var price=selectedProduct.price,matCost=price*qty,is1000=selectedProduct.key.startsWith('mat1000');
   var sizeLabel=is1000?'1m '+selectedProduct.thickness:'500 '+selectedProduct.thickness;
   var threshold=is1000?INSTALL_THRESHOLD_1000:INSTALL_THRESHOLD_500;
@@ -371,14 +377,23 @@ function saveQuoteImage(){
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
     trackReferral(qty,total);
     savedCanvasDataUrl=canvas.toDataURL('image/png');
-    // 로딩 스피너 숨기고 생성된 이미지 표시
-    document.getElementById('imgLoading').style.display='none';
-    document.getElementById('imgPreview').src=savedCanvasDataUrl;
-    document.getElementById('imgPreview').style.display='block';
+    if(isEmbed){
+      // embed 모드: 부모에게 이미지 데이터 전송 (부모가 자기 모달에 표시)
+      try{window.parent.postMessage({type:'quoteImageReady',dataUrl:savedCanvasDataUrl},'*')}catch(e){}
+    } else {
+      // 단독 페이지: 로딩 스피너 숨기고 이미지 표시
+      document.getElementById('imgLoading').style.display='none';
+      document.getElementById('imgPreview').src=savedCanvasDataUrl;
+      document.getElementById('imgPreview').style.display='block';
+    }
   }).catch(function(){
-    document.getElementById('imgLoading').style.display='none';
-    document.getElementById('imgOverlay').classList.remove('show');
-    document.body.style.overflow='';
+    if(isEmbed){
+      try{window.parent.postMessage({type:'quoteImageError'},'*')}catch(e){}
+    } else {
+      document.getElementById('imgLoading').style.display='none';
+      document.getElementById('imgOverlay').classList.remove('show');
+      document.body.style.overflow='';
+    }
     showToast('⚠️ 생성 실패 - 스크린샷을 이용해주세요');
   });
 }
