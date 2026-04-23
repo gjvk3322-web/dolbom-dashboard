@@ -129,7 +129,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#F4F8F9;color:#1a1a1a;min-
       </div>
       <div onclick="moveToKinder()" style="flex:1;background:#f8f8f5;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer" class="map-stat">
         <div style="font-size:13px;font-weight:700;color:#E5A100">80개+</div>
-        <div style="font-size:10px;color:#999;margin-top:1px" id="kinderBtn">어린이집 시공</div>
+        <div style="font-size:10px;color:#999;margin-top:1px" id="kinderBtn">국공립 어린이집</div>
       </div>
       <div onclick="findMyLocation()" style="flex:1;background:#EDF4F5;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer" class="map-stat">
         <div style="font-size:16px">📍</div>
@@ -144,7 +144,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#F4F8F9;color:#1a1a1a;min-
 var BASE_MAP='https://www.google.com/maps/d/embed?mid=1aSuBB0-c6trd7imjcyXyy0TBfZs7Gg4&ehbc=2E312F&noprof=1';
 var KINDER_MAP='https://www.google.com/maps/d/embed?mid=1tESvkcaYjerdKkkaJJnn6mPtqJtKkjw&ehbc=2E312F&noprof=1';
 function moveToHotel(){var b=document.getElementById('hotelBtn');b.textContent='이동 중...';document.getElementById('mapFrame').src=BASE_MAP+'&ll=35.1601338,129.1646875&z=17';setTimeout(function(){b.textContent='키즈룸 시공'},2000)}
-function moveToKinder(){var b=document.getElementById('kinderBtn');b.textContent='전환 중...';document.getElementById('mapFrame').src=KINDER_MAP+'&z=7';setTimeout(function(){b.textContent='어린이집 시공'},2000)}
+function moveToKinder(){var b=document.getElementById('kinderBtn');b.textContent='전환 중...';document.getElementById('mapFrame').src=KINDER_MAP+'&z=7';setTimeout(function(){b.textContent='국공립 어린이집'},2000)}
 function findMyLocation(){var b=document.getElementById('locBtn');b.textContent='찾는 중...';if(!navigator.geolocation){b.textContent='위치 지원 안됨';setTimeout(function(){b.textContent='내 위치로 이동'},3000);return}navigator.geolocation.getCurrentPosition(function(p){document.getElementById('mapFrame').src=BASE_MAP+'&ll='+p.coords.latitude+','+p.coords.longitude+'&z=14';b.textContent='내 위치 완료!';setTimeout(function(){b.textContent='내 위치로 이동'},3000)},function(){b.textContent='위치 허용해주세요';setTimeout(function(){b.textContent='내 위치로 이동'},3000)},{enableHighAccuracy:false,timeout:8000,maximumAge:300000})}
 </script>
 
