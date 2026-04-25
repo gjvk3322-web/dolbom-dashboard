@@ -1,0 +1,2905 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- 검색엔진 노출 차단 (자동 추가) -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="naverbot" content="noindex, nofollow">
+    <meta name="yeti" content="noindex, nofollow">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>돌봄매트 경기 스케줄러</title>
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="manifest" href="./manifest-gg.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="돌봄매트">
+<meta name="theme-color" content="#1a1a2e">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#191a20;--card:#21222c;--card2:#282a36;--border:rgba(255,255,255,.05);--text:#f2f2f7;--dim:#8e8e93;--sub:#aeaeb2;--blue:#5AC8FA;--green:#30D158;--red:#FF453A;--yellow:#FFD60A;--pink:#FF6482;--purple:#BF5AF2;--orange:#FF9F0A;--cyan:#64D2FF;--lime:#a3e635;--rose:#FF6482;--teal:#40E0D0;--font:'Noto Sans KR',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);max-width:600px;margin:0 auto;padding-bottom:80px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html{overflow-x:hidden;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%}
+.hd{padding:20px 16px 12px;padding-top:max(32px, env(safe-area-inset-top));position:sticky;top:0;z-index:100;background:var(--bg)}
+.hd h1{font-size:18px;font-weight:900;letter-spacing:-.3px}.hd-sub{font-size:11px;color:var(--dim);margin-top:4px}
+.nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);z-index:100;max-width:600px;margin:0 auto;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.nav a{flex:1;padding:8px 4px 12px;text-align:center;font-size:10px;font-weight:600;color:var(--dim);text-decoration:none;border-top:2px solid transparent;transition:color .15s}
+.nav a.on{color:var(--text);border-top-color:var(--text)}
+.nav a span{display:block;font-size:18px;margin-bottom:2px}
+.pane{display:none;padding:8px 16px 20px}.pane.on{display:block}
+
+/* Emp Badge */
+.emp-badge{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.emp-badge:active{transform:scale(.92)}
+
+/* Day Card - 토스 스타일 */
+.daycard{background:var(--card);border-radius:16px;margin-bottom:12px;overflow:hidden;border:none}
+.daycard-hd{display:flex;align-items:center;padding:16px 18px 12px;gap:8px;flex-wrap:wrap}
+.daycard-date{font-size:18px;font-weight:900;letter-spacing:-.5px}.daycard-dow{font-size:12px;font-weight:700}
+.dow-mon{color:#fff}.dow-tue{color:#fff}.dow-wed{color:#fff}.dow-thu{color:#fff}.dow-fri{color:#fff}.dow-sat{color:var(--blue)}.dow-sun{color:var(--red)}
+.daycard-off{padding:6px 18px;font-size:11px;color:#fff;font-weight:500;opacity:.7}
+.daycard-body{padding:4px 14px 14px}
+
+/* Team Job Block - 토스 카드 */
+.tjob{background:var(--card2);border-radius:14px;padding:14px 16px;margin:6px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.tjob:active{background:rgba(255,255,255,.04);transform:scale(.99)}
+.tjob-team{display:inline-block;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:6px}
+.tjob-time{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;flex-shrink:0}
+.tjob-time.am{background:rgba(255,214,10,.1);color:var(--yellow)}.tjob-time.pm{background:rgba(191,90,242,.1);color:var(--purple)}.tjob-time.measure{background:rgba(52,211,153,.15);color:var(--green)}
+.mat{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700}
+.mat-marble{background:rgba(90,200,250,.12);color:var(--blue)}.mat-cotton{background:rgba(48,209,88,.12);color:var(--green)}.mat-modern{background:rgba(255,69,58,.12);color:var(--red)}.mat-beige{background:rgba(255,214,10,.12);color:var(--yellow)}
+.new-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(255,69,58,.15);color:var(--red);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Unassigned */
+.ujob{background:var(--card2);border:1px dashed rgba(255,214,10,.2);border-radius:14px;padding:14px 16px;margin:6px 0}
+.ujob-title{font-size:11px;color:var(--yellow);font-weight:700;margin-bottom:8px}
+
+/* Team Setup */
+.tcard{background:var(--card);border-radius:16px;padding:18px;margin-bottom:12px;border:none}
+.tcard h3{font-size:15px;font-weight:800;margin-bottom:14px}
+.tslot{min-height:50px;background:var(--card2);border-radius:12px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.tmem{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.tmem .x{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer}
+.pool{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.pool-mem{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.pool-mem:active{transform:scale(.95)}
+
+/* Drag & Drop */
+.drag-ghost{position:fixed;z-index:500;pointer-events:none;opacity:.9;transform:scale(1.08);filter:brightness(1.2)}
+.drag-over{outline:2px dashed var(--blue);outline-offset:-2px;background:rgba(90,200,250,.08)!important}
+.drag-src{opacity:.3;transform:scale(.9)}
+.tslot.drag-over,.pool.drag-over{outline:2px dashed var(--blue);outline-offset:-2px;background:rgba(90,200,250,.08)!important}
+
+/* Buttons */
+.btn{display:block;width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin:8px 0;transition:transform .1s}
+.btn:active{transform:scale(.98)}
+.btn-blue{background:var(--blue);color:#000}.btn-green{background:var(--green);color:#000}.btn-red{background:rgba(255,69,58,.12);color:var(--red)}
+
+/* Fair */
+.fcard{background:var(--card);border-radius:16px;padding:18px;margin-bottom:12px;border:none}
+.frow{display:flex;align-items:center;gap:10px;margin:8px 0}
+.fname{min-width:44px;font-size:12px;font-weight:700}
+.fbar{flex:1;height:22px;background:var(--card2);border-radius:8px;overflow:hidden}
+.ffill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;min-width:20px}
+.fval{min-width:50px;text-align:right;font-size:11px;font-family:monospace;color:var(--dim)}
+.sec{font-size:14px;font-weight:800;margin-bottom:10px;letter-spacing:-.2px}
+
+/* Toast */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:14px;font-size:13px;font-weight:700;z-index:999;display:none;white-space:nowrap;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.toast-ok{background:rgba(48,209,88,.9);color:#000}.toast-copy{background:rgba(90,200,250,.9);color:#000}
+
+/* Colors */
+.tc0{background:var(--blue);color:#000}.tc1{background:var(--green);color:#000}.tc2{background:var(--yellow);color:#000}.tc3{background:var(--pink);color:#fff}.tc4{background:var(--purple);color:#fff}.tc5{background:var(--orange);color:#000}.tc6{background:var(--cyan);color:#000}.tc7{background:var(--lime);color:#000}.tc8{background:var(--rose);color:#fff}.tc9{background:var(--teal);color:#000}
+.tl0{background:rgba(90,200,250,.12);color:var(--blue)}.tl1{background:rgba(48,209,88,.12);color:var(--green)}.tl2{background:rgba(255,214,10,.12);color:var(--yellow)}.tl3{background:rgba(255,100,130,.12);color:var(--pink)}.tl4{background:rgba(191,90,242,.12);color:var(--purple)}.tl5{background:rgba(255,159,10,.12);color:var(--orange)}.tl6{background:rgba(100,210,255,.12);color:var(--cyan)}.tl7{background:rgba(163,230,53,.12);color:var(--lime)}.tl8{background:rgba(255,100,130,.12);color:var(--rose)}.tl9{background:rgba(64,224,208,.12);color:var(--teal)}
+
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row input{flex:1;padding:12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:12px;font-size:14px;font-family:var(--font);outline:none}
+
+/* 캘린더 */
+.cal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.cal-overlay.show{display:flex}
+.cal-sheet{background:var(--card);border-radius:24px 24px 0 0;max-width:500px;width:100%;padding:24px 18px 34px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.cal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.cal-hd h3{font-size:17px;font-weight:900}
+.cal-close{width:32px;height:32px;border-radius:50%;background:var(--card2);border:none;color:var(--dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-dow{font-size:10px;color:var(--dim);font-weight:700;padding:4px 0}
+.cal-day{padding:8px 0;border-radius:10px;font-size:13px;font-weight:500;color:var(--text)}
+.cal-day.off{background:rgba(255,69,58,.15);color:var(--red);font-weight:900}
+.cal-day.work{background:rgba(48,209,88,.08);color:var(--green)}
+.cal-day.today{border:2px solid var(--blue)}
+.cal-day.empty{color:transparent}
+.cal-day.sun{color:var(--red)}
+.cal-legend{display:flex;gap:16px;justify-content:center;margin-top:14px;font-size:11px;color:var(--dim)}
+.cal-legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.cal-legend .lg-off::before{background:rgba(248,113,113,.3)}
+.cal-legend .lg-work::before{background:rgba(52,211,153,.2)}
+.emp-badge{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative;user-select:none}
+.emp-badge::after{content:'📅';font-size:8px;position:absolute;top:-2px;right:-2px}
+
+/* 출발확인 */
+.confirm-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.confirm-overlay.show{display:flex}
+.confirm-box{background:var(--card);border-radius:20px;max-width:400px;width:100%;padding:24px;animation:popIn .2s ease}
+@keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.confirm-title{font-size:18px;font-weight:900;text-align:center;margin-bottom:16px}
+.confirm-item{padding:12px;background:var(--card2);border-radius:12px;margin-bottom:8px}
+.confirm-label{font-size:10px;color:var(--dim);font-weight:700;margin-bottom:4px}
+.confirm-value{font-size:15px;font-weight:700}
+.confirm-btn{display:block;width:100%;padding:16px;border-radius:14px;font-size:16px;font-weight:900;border:none;cursor:pointer;font-family:var(--font);text-align:center;margin-top:16px}
+.confirm-ok{background:var(--green);color:#000}
+.confirm-cancel{background:var(--card2);color:var(--dim);margin-top:8px}
+.confirmed-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)}
+.depart-btn{padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(251,191,36,.2);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3);animation:pulseBtn 2s infinite}
+@keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.3)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+
+/* 월간 캘린더 */
+.mc-hd{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:14px}
+.mc-hd h2{font-size:17px;font-weight:900;min-width:120px;text-align:center}
+.mc-arrow{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mc-arrow:active{background:var(--card2);transform:scale(.95)}
+.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mc-dow{text-align:center;font-size:10px;font-weight:700;color:var(--dim);padding:6px 0}
+.mc-dow.sun{color:var(--red)}.mc-dow.sat{color:var(--blue)}
+.mc-cell{background:var(--card);border-radius:10px;min-height:80px;padding:4px;overflow:hidden;cursor:pointer;transition:background .15s;border:1px solid transparent;position:relative}
+.mc-cell:active{background:var(--card2)}
+.mc-cell.today{border:1.5px solid var(--blue)}
+.mc-cell.has-job{background:rgba(48,209,88,.06)}
+.mc-cell.mc-cell-off{background:rgba(255,69,58,.06)}
+.mc-cell.empty{background:transparent;min-height:0;cursor:default}
+.mc-cell.mc-sat{background:rgba(90,200,250,.06)}
+.mc-cell.mc-sun{background:rgba(255,69,58,.06)}
+.mc-cell.mc-holiday{background:rgba(255,69,58,.06)}
+.mc-date{font-size:12px;font-weight:700;padding:2px 4px;margin-bottom:2px}
+.mc-date.sun{color:var(--red)}.mc-date.sat{color:var(--blue)}
+.mc-badge{display:inline-block;padding:1px 4px;border-radius:4px;font-size:8px;font-weight:700;margin:1px 0}
+.mc-badge.am{background:rgba(90,200,250,.15);color:var(--blue)}
+.mc-badge.pm{background:rgba(191,90,242,.15);color:var(--purple)}
+.mc-badge.as-b{background:rgba(255,69,58,.1);color:var(--red)}
+.mc-off{font-size:8px;font-weight:600;line-height:1.3;margin-top:1px}
+.mc-legend{display:flex;gap:12px;justify-content:center;margin-top:12px;font-size:11px;color:var(--dim);flex-wrap:wrap}
+.mc-legend span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.mc-legend .lg-job::before{background:rgba(48,209,88,.3)}
+.mc-legend .lg-am::before{background:rgba(90,200,250,.4)}
+.mc-legend .lg-pm::before{background:rgba(191,90,242,.4)}
+.mc-legend .lg-off2::before{background:rgba(255,69,58,.4)}
+.mc-summary{background:var(--card);border-radius:14px;padding:14px;margin-top:12px}
+.mc-summary-title{font-size:13px;font-weight:800;margin-bottom:10px}
+.mc-emp-row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.mc-emp-name{font-size:11px;font-weight:700;min-width:32px}
+.mc-emp-bar{flex:1;height:16px;background:var(--card2);border-radius:6px;overflow:hidden;display:flex}
+.mc-emp-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+.mc-emp-num{font-size:10px;color:var(--dim);min-width:140px;text-align:right;font-family:monospace;white-space:nowrap}
+
+/* 당번 모드 */
+.admin-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--font)}
+.admin-btn.off{background:var(--card2);color:var(--dim)}
+.admin-btn.on{background:rgba(48,209,88,.2);color:var(--green);border:1px solid rgba(48,209,88,.3)}
+.pin-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.pin-overlay.show{display:flex}
+.pin-box{background:var(--card);border-radius:20px;max-width:300px;width:100%;padding:28px 24px;text-align:center;animation:popIn .2s ease}
+.pin-box h3{font-size:16px;font-weight:900;margin-bottom:6px}
+.pin-box p{font-size:12px;color:var(--dim);margin-bottom:18px}
+.pin-input{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+.pin-input input{width:44px;height:52px;border-radius:12px;border:2px solid var(--border);background:var(--card2);color:var(--text);font-size:22px;font-weight:900;text-align:center;font-family:var(--font);caret-color:var(--green)}
+.pin-input input:focus{outline:none;border-color:var(--green)}
+.pin-error{font-size:12px;color:var(--red);margin-bottom:12px;display:none}
+.admin-bar{display:none;background:rgba(48,209,88,.1);border-bottom:1px solid rgba(48,209,88,.2);padding:8px 16px;font-size:12px;color:var(--green);text-align:center;font-weight:600}
+.admin-bar.show{display:block}
+</style>
+</head>
+<body>
+<script>
+// 부산 열면 부산으로 기억
+localStorage.setItem('dolbom_region','gg');
+</script>
+
+<div class="hd">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden">
+            <span onclick="localStorage.removeItem('dolbom_region');location.href='./app.html'" style="font-size:18px;cursor:pointer;opacity:.5;flex-shrink:0">🏠</span>
+            <h1 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">돌봄매트 경기 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <button class="admin-btn off" id="adminToggle" onclick="toggleAdmin()">🔑</button>
+            <div style="display:flex;background:var(--card2);border-radius:10px;padding:2px;gap:2px;white-space:nowrap">
+                <span onclick="localStorage.setItem('dolbom_region','bs');location.href='./scheduler.html'" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;color:var(--dim);cursor:pointer">부산</span>
+                <span style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;background:var(--blue);color:#000;cursor:default">경기</span>
+            </div>
+        </div>
+    </div>
+    <div class="hd-sub" id="sub">로딩 중...</div>
+</div>
+
+<div class="admin-bar" id="adminBar">🔑 당번 모드 활성 · 배정 수정 가능 <span onclick="adminOff()" style="margin-left:8px;cursor:pointer;opacity:.6">해제</span></div>
+
+<div id="updateBar" style="display:none;background:linear-gradient(135deg,#5b8def,#34d399);padding:10px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:#fff" onclick="location.reload(true)">🔄 새 버전이 있어요! 터치하면 업데이트</div>
+
+<div class="pin-overlay" id="pinOverlay" onclick="if(event.target===this)closePin()">
+<div class="pin-box">
+<h3>🔑 당번 모드</h3>
+<p>배정 수정 권한을 활성화합니다</p>
+<div class="pin-input" id="pinInputs">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+<input type="tel" maxlength="1" inputmode="numeric" autocomplete="off">
+</div>
+<div class="pin-error" id="pinError">PIN이 올바르지 않습니다</div>
+<button onclick="closePin()" style="padding:10px 24px;border-radius:10px;background:var(--card2);color:var(--dim);border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">취소</button>
+</div>
+</div>
+
+<div id="donghoBar" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,191,36,.1));border-bottom:1px solid rgba(251,191,36,.3);padding:12px 16px;font-size:14px;color:var(--yellow);text-align:center;position:sticky;top:48px;z-index:99"></div>
+
+<div class="pane on" id="p-sched"><div id="schedView"></div></div>
+<div class="pane" id="p-month"><div id="monthView"></div></div>
+<div class="pane" id="p-team"><div id="teamView"></div></div>
+<div class="pane" id="p-fair"><div id="fairView"></div></div>
+<div class="pane" id="p-car"><div id="carView"></div></div>
+
+<nav class="nav">
+    <a class="on" onclick="sw('sched')" href="#"><span>📋</span>스케줄</a>
+    <a onclick="sw('month')" href="#"><span>📅</span>월간</a>
+    <a onclick="sw('team')" href="#"><span>👥</span>팀설정</a>
+    <a onclick="sw('car')" href="#"><span>🚗</span>차량</a>
+    <a onclick="sw('fair')" href="#"><span>⚖️</span>공정성</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
+<div class="confirm-box">
+<div class="confirm-title">🚗 출발 확인</div>
+<div id="confirmBody"></div>
+<button class="confirm-btn confirm-ok" id="confirmOkBtn" onclick="doConfirm()">✅ 자재 확인 완료 · 출발!</button>
+<button class="confirm-btn confirm-cancel" onclick="closeConfirm()">취소</button>
+</div>
+</div>
+
+<div class="cal-overlay" id="calOverlay" onclick="if(event.target===this)closeCal()">
+<div class="cal-sheet">
+<div class="cal-hd"><h3 id="calTitle"></h3><button class="cal-close" onclick="closeCal()">✕</button></div>
+<div id="calMonthNav" style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:12px">
+<span id="calPrev" onclick="calMove(-1)" style="font-size:18px;cursor:pointer;padding:4px 12px;color:var(--dim)">‹</span>
+<span id="calMonth" style="font-size:14px;font-weight:700"></span>
+<span id="calNext" onclick="calMove(1)" style="font-size:18px;cursor:pointer;padding:4px 12px;color:var(--dim)">›</span>
+</div>
+<div class="cal-grid" id="calGrid"></div>
+<div class="cal-legend"><span class="lg-off">휴무</span><span class="lg-work">시공</span></div>
+<div id="calSummary" style="text-align:center;margin-top:12px;font-size:12px;color:var(--dim)"></div>
+</div>
+</div>
+
+<div id="reportOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:999;overflow-y:auto;overflow-x:hidden;padding:16px;padding-top:max(16px, env(safe-area-inset-top))">
+<div style="max-width:400px;margin:0 auto">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<h3 style="font-size:15px;font-weight:900">📋 시공보고서</h3>
+<button onclick="closeReport()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:14px;cursor:pointer;font-family:var(--font)">✕ 닫기</button>
+</div>
+<div id="reportForm"></div>
+<div id="customerToast" style="display:none;margin-top:8px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow)"></div>
+<div id="submitToast" style="display:none;margin-top:4px;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green)"></div>
+<div id="reportSubmitBtn" style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;gap:8px">
+<button onclick="saveReportData()" style="flex:2;padding:12px;border-radius:10px;background:var(--yellow);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font);white-space:nowrap">① 보고서 저장</button>
+<button onclick="openKatalk(currentChatUrl,currentChannelName)" style="flex:1;padding:12px 6px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:12px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font);white-space:nowrap">② 채널</button>
+<button onclick="copyCustomerMsg()" style="flex:1;padding:12px 6px;border-radius:10px;background:rgba(251,191,36,.15);color:var(--yellow);font-weight:900;font-size:12px;border:1px solid rgba(251,191,36,.3);cursor:pointer;font-family:var(--font);white-space:nowrap">③ 고객안내</button>
+</div>
+<div style="display:flex;gap:8px">
+<button onclick="submitReport()" style="flex:2;padding:12px;border-radius:10px;background:var(--green);color:#000;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font);white-space:nowrap">④ 보고서 제출</button>
+<button onclick="window.open('https://t.me/+wGa7HFAwtk02NGI1','_blank')" style="flex:1;padding:12px 6px;border-radius:10px;background:rgba(52,163,235,.15);color:var(--blue);font-weight:900;font-size:12px;border:1px solid rgba(52,163,235,.3);cursor:pointer;font-family:var(--font);white-space:nowrap">⑤ 텔레</button>
+<button onclick="closeReport()" style="flex:1;padding:12px 6px;border-radius:10px;background:var(--card2);color:var(--dim);font-weight:900;font-size:12px;border:1px solid var(--border);cursor:pointer;font-family:var(--font);white-space:nowrap">✕ 닫기</button>
+</div>
+</div>
+</div>
+</div>
+
+<div id="asReportOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:999;overflow-y:auto;overflow-x:hidden;padding:16px;padding-top:max(16px, env(safe-area-inset-top))">
+<div style="max-width:400px;margin:0 auto">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<h3 style="font-size:15px;font-weight:900">🔧 AS 보고서</h3>
+<button onclick="closeAsReport()" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:14px;cursor:pointer;font-family:var(--font)">✕ 닫기</button>
+</div>
+<div id="asReportForm"></div>
+<div id="asReportSubmitBtn" style="margin-top:10px;display:flex;gap:8px">
+<button onclick="saveAsReportDraft()" style="flex:1;padding:12px;border-radius:10px;background:var(--card2);color:var(--text);font-weight:700;font-size:13px;border:1px solid var(--border);cursor:pointer;font-family:var(--font)">💾 임시저장</button>
+<button onclick="submitAsReport()" style="flex:2;padding:12px;border-radius:10px;background:var(--red);color:#fff;font-weight:900;font-size:13px;border:none;cursor:pointer;font-family:var(--font)">🔧 AS 보고서 제출</button>
+</div>
+<div id="asReportResult" style="display:none;margin-top:10px">
+<div style="background:var(--card2);border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;line-height:1.6" id="asReportText"></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button onclick="copyAsReport()" style="flex:1;padding:10px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">📋 복사</button>
+<button onclick="window.open('https://invite.kakao.com/tc/nYMtGOOJ9L','_blank')" style="flex:1;padding:10px;border-radius:8px;background:rgba(251,191,36,.2);color:var(--yellow);font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:var(--font)">💬 카톡방 열기</button>
+</div>
+</div>
+</div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+// ===== Config =====
+const VER='2026.04.03.35';
+const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
+const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
+let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
+const CSV_TEAM_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735';
+const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const OFF_B={lat:37.3159,lng:126.8233};
+const OFF_A={lat:37.3159,lng:126.8233};
+const SOUTH=['서울','강남','강서','강북','강동','송파','마포','영등포','용산','종로','성동','광진','동작','관악','서초','은평','노원','도봉','성북','중랑','구로','금천','양천','동대문','중구','경기','안산','수원','성남','용인','화성','평택','안양','시흥','김포','파주','고양','부천','광명','군포','의왕','과천','하남','광주','이천','여주','양평','가평','인천','부평','남동','연수','미추홀','계양'];
+const DOW=['일','월','화','수','목','금','토'];
+const DOW_CLS=['dow-sun','dow-mon','dow-tue','dow-wed','dow-thu','dow-fri','dow-sat'];
+
+// ===== Firebase =====
+firebase.initializeApp({databaseURL:FB_URL});
+const db=firebase.database();
+
+let E=['민우','현진','선재','재문','형석','경준'];
+let teams=[];
+let A={};
+let CF={};  // 출발확인
+let DIST={};  // 거리 캐시 {주소: km}
+let SKIP=new Set(); // 수동 취소된 건 (자동배정 제외)
+let LOCK=new Set(); // 배정 확정(잠금)된 건 (자동배정 변경 불가)
+let LOCK_REASONS={}; // 잠금 사유 {jobId: '사유'}
+let J=[];
+let prevJobIds=new Set();
+let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
+
+// Firebase 실시간 리스너 (배치 렌더링으로 깜빡임 방지)
+let isAssigning=false;
+let lastManualEdit=0; // 수동 배정 후 60초간 자동배정 차단
+let syncStatus='idle'; // idle|syncing|success|error
+function getSyncBadge(){return syncStatus==='syncing'?'<span style="font-size:9px;color:#FFB300;margin-left:4px">🟡저장중</span>':syncStatus==='success'?'<span style="font-size:9px;color:#4CAF50;margin-left:4px">🟢저장</span>':syncStatus==='error'?'<span style="font-size:9px;color:#e53935;margin-left:4px;cursor:pointer" onclick="syncToSheet()">🔴실패</span>':''}
+
+// ===== 당번 모드 (PIN 잠금) =====
+const ADMIN_PIN='1123';
+let isAdmin=false;
+(function(){
+  const saved=localStorage.getItem('dolbom_admin');
+  if(saved){
+    const ts=parseInt(saved);
+    if(Date.now()-ts<7*24*60*60*1000){isAdmin=true}
+    else{localStorage.removeItem('dolbom_admin')}
+  }
+})();
+function toggleAdmin(){
+  if(isAdmin){adminOff();return}
+  document.getElementById('pinOverlay').classList.add('show');
+  const inputs=document.querySelectorAll('#pinInputs input');
+  inputs.forEach(inp=>{inp.value=''});
+  inputs[0].focus();
+  document.getElementById('pinError').style.display='none';
+}
+function closePin(){document.getElementById('pinOverlay').classList.remove('show')}
+function adminOn(){
+  isAdmin=true;
+  localStorage.setItem('dolbom_admin',Date.now().toString());
+  document.getElementById('adminToggle').className='admin-btn on';
+  document.getElementById('adminToggle').textContent='🔓';
+  document.getElementById('adminBar').classList.add('show');
+  closePin();
+  toast('🔑 당번 모드 활성화!','ok');
+  renderAll();
+}
+function adminOff(){
+  isAdmin=false;
+  localStorage.removeItem('dolbom_admin');
+  document.getElementById('adminToggle').className='admin-btn off';
+  document.getElementById('adminToggle').textContent='🔑';
+  document.getElementById('adminBar').classList.remove('show');
+  toast('당번 모드 해제됨','ok');
+  renderAll();
+}
+function requireAdmin(msg){
+  if(isAdmin)return true;
+  toast('🔒 당번 모드에서만 가능합니다','error');
+  return false;
+}
+// PIN 입력 자동 포커스
+document.addEventListener('DOMContentLoaded',function(){
+  const inputs=document.querySelectorAll('#pinInputs input');
+  inputs.forEach((inp,i)=>{
+    inp.addEventListener('input',function(){
+      if(this.value.length===1&&i<3)inputs[i+1].focus();
+      if(i===3&&this.value.length===1){
+        const pin=Array.from(inputs).map(x=>x.value).join('');
+        if(pin===ADMIN_PIN){adminOn()}
+        else{document.getElementById('pinError').style.display='block';inputs.forEach(x=>x.value='');inputs[0].focus()}
+      }
+    });
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Backspace'&&!this.value&&i>0)inputs[i-1].focus();
+    });
+  });
+  // 초기 상태 반영
+  if(isAdmin){
+    document.getElementById('adminToggle').className='admin-btn on';
+    document.getElementById('adminToggle').textContent='🔓';
+    document.getElementById('adminBar').classList.add('show');
+  }
+});
+let lastAHash='';
+function aHash(obj){return JSON.stringify(obj||{})}
+let fbLoaded={a:false,lock:false,skip:false};
+let currentTab='sched';
+let fbPending=false;
+function fbRender(){
+  if(fbPending||isAssigning)return;
+  fbPending=true;
+  setTimeout(()=>{fbPending=false;if(currentTab==='month')renderMonth();
+renderAll()},300);
+}
+db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
+db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
+db.ref('gg_assignments').on('value',snap=>{
+  if(isAssigning)return;
+  const v=snap.val()||{};
+  const h=aHash(v);
+  if(h===lastAHash)return;
+  lastAHash=h;
+  A=v;fbLoaded.a=true;fbRender()
+});
+db.ref('gg_confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
+db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
+// 좌표 캐시를 Firebase에서 로드 → 모든 기기가 같은 좌표 공유
+let _dcTimer=null;function saveDCtoFB(){clearTimeout(_dcTimer);_dcTimer=setTimeout(()=>{db.ref('gg_geocode_cache').set(JSON.stringify(DC))},3000)}
+db.ref('gg_geocode_cache').once('value',snap=>{const v=snap.val();let fbCount=0;if(v){try{const obj=JSON.parse(v);Object.keys(obj).forEach(k=>{if(!DC[k]){DC[k]=obj[k]};fbCount++});localStorage.setItem('s4_dc',JSON.stringify(DC))}catch(e){}}if(Object.keys(DC).length>fbCount){console.log('📍 로컬 캐시가 더 큼 → Firebase 업로드 ('+Object.keys(DC).length+'개)');saveDCtoFB()}});
+db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
+db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))SKIP=new Set(Object.keys(v));else if(Array.isArray(v))SKIP=new Set(v);else SKIP=new Set();fbLoaded.skip=true;});
+db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v)){LOCK=new Set(Object.keys(v));LOCK_REASONS={};Object.keys(v).forEach(k=>{if(typeof v[k]==='string')LOCK_REASONS[k]=v[k]})}else if(Array.isArray(v)){LOCK=new Set(v);LOCK_REASONS={}}else{LOCK=new Set();LOCK_REASONS={}}fbLoaded.lock=true;fbRender()});
+
+let VEHICLES={}; // {준형: "804서 6771", ...}
+db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
+
+function fbSave(key,val){db.ref(key).set(val)}
+function saveLock(){const o={};LOCK.forEach(id=>o[id]=LOCK_REASONS[id]||true);db.ref('gg_lockedJobs').set(Object.keys(o).length?o:null)}
+function saveSkip(){const o={};SKIP.forEach(id=>o[id]=true);db.ref('gg_skipJobs').set(Object.keys(o).length?o:null)}
+
+// 배정 결과를 구글시트에 역기록
+let sheetSyncTimer=null;
+function syncToSheet(){if(!isAdmin)return;
+if(sheetSyncTimer)clearTimeout(sheetSyncTimer);
+sheetSyncTimer=setTimeout(()=>{
+  const data=[];
+  J.forEach(j=>{
+    if(j.offOnly)return;
+    if(!j.addr||!j.addr.trim())return;
+    if(!j.date||!j.time)return;
+    const crew=A[j.id];
+    if(!crew||!crew.length)return;
+    // 사수/부사수 분리: 팀설정에서 첫번째=사수, 나머지=부사수
+    let sasu='',busasu='';
+    if(crew.length===1){
+      sasu=crew[0];
+    }else{
+      // 팀에서 순서 확인
+      let teamOrder=null;
+      if(teams.length){teamOrder=teams.find(t=>crew.every(c=>t.includes(c)))}
+      if(teamOrder){
+        // 팀 순서대로: 첫번째=사수
+        const ordered=teamOrder.filter(m=>crew.includes(m)).sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
+        sasu=ordered[0]||crew[0];
+        // 나머지 전부 부사수 (3명 이상 대응)
+        const rest=crew.filter(e=>e!==sasu);
+        busasu=rest.join(',');
+      }else{
+        // 다른 팀 조합: 입사일 기준 정렬
+        const sorted=[...crew].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
+        sasu=sorted[0];
+        busasu=sorted.slice(1).join(',');
+      }
+    }
+    const parts=j.id.split('_');
+    const rowIdx=parseInt(parts[parts.length-1])+1;
+    if(isNaN(rowIdx)||rowIdx<2)return;
+    const autoVehicle=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||'';
+    const finalVehicle=(LOCK.has(j.id)&&j.vehicle)?j.vehicle:autoVehicle;
+    j.vehicle=finalVehicle;// 로컬도 동기화
+    data.push({row:rowIdx,sasu,busasu,vehicle:finalVehicle,date:j.date,address:j.addr,phone:j.phone||'',time:j.time});
+  });
+  if(!data.length)return;
+  // Apps Script로 전송
+  syncStatus='syncing';renderAll();
+  console.log('[sheet-sync] 전송 데이터:',data.slice(0,3),'...총',data.length+'건');
+  fetch(SHEET_REPORT_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'updateAssignments',data,gid:'1995986285'})
+  }).then(r=>r.text()).then(t=>{
+    console.log('[sheet-sync] 응답:',t);
+    syncStatus=t.includes('OK')?'success':'error';renderAll();
+    if(syncStatus==='success')setTimeout(()=>{syncStatus='idle';renderAll()},3000);
+  }).catch(e=>{console.log('[sheet-sync] error:',e);syncStatus='error';renderAll();});
+},2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
+}
+
+
+// ===== 팀설정 시트 자동 동기화 =====
+function syncTeamsToSheet(){
+  if(!isAdmin)return;
+  const teamData=[];
+  teams.forEach((t,i)=>{t.forEach((name,j)=>{teamData.push({region:'경기',teamNum:i+1,name:name,rank:j===0?'사수':'부사수'});});});
+  fetch(SHEET_REPORT_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'updateTeamConfig',data:teamData})
+  }).then(()=>console.log('[team-sync] OK:',teamData.length+'명'))
+  .catch(e=>console.log('[team-sync] error:',e));
+}
+
+// 제품명 → CSS 클래스 매핑
+function matCls(t){if(t.includes('마블'))return'marble';if(t.includes('코튼'))return'cotton';if(t.includes('베이지'))return'beige';return'modern'}
+
+// ===== Distance (Google Geocoding API) =====
+async function geo(addr){
+if(DC[addr])return DC[addr];
+try{const r=await fetch('https://maps.googleapis.com/maps/api/geocode/json?address='+encodeURIComponent(addr)+'&key=AIzaSyAEz2OXudxNoTTn2ueFKWm7KGSnwDW83mw&language=ko');
+const d=await r.json();if(d.results&&d.results[0]){const l=d.results[0].geometry.location;DC[addr]={lat:l.lat,lng:l.lng};localStorage.setItem('s4_dc',JSON.stringify(DC));saveDCtoFB();return DC[addr]}}catch(e){}
+return null}
+
+function hav(a1,n1,a2,n2){const R=6371,x=(a2-a1)*Math.PI/180,y=(n2-n1)*Math.PI/180,z=Math.sin(x/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z))}
+
+function getOffice(addr){return SOUTH.some(r=>addr.includes(r))?OFF_B:OFF_A}
+
+async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng)*2)}
+
+// 하루 경로 기반 이동거리: 사무실 → 시공1 → 시공2 → ... → 사무실
+function calcRouteKm(jobs){
+  if(!jobs.length)return 0;
+  const tOrd={'오전':0,'오후':1,'as':2,'AS':2,'실측':3};
+  const sorted=[...jobs].sort((a,b)=>(tOrd[a.time]||9)-(tOrd[b.time]||9));
+  const office=getOffice(sorted[0].addr||'');
+  const coords=sorted.map(j=>j.addr?DC[j.addr]:null).filter(Boolean);
+  if(!coords.length)return 0;
+  let total=0,prev=office;
+  for(const c of coords){total+=hav(prev.lat,prev.lng,c.lat,c.lng);prev=c}
+  total+=hav(prev.lat,prev.lng,office.lat,office.lng);
+  return Math.round(total);
+}
+
+// 직원별 날짜별 경로 거리 합산 헬퍼
+function calcEmpRouteTotals(jobList){
+  const dateJobs={};
+  jobList.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>{
+    const k=e+'|'+j.date;
+    if(!dateJobs[k])dateJobs[k]=[];
+    dateJobs[k].push(j);
+  })});
+  const totals={};
+  Object.entries(dateJobs).forEach(([k,jobs])=>{
+    const emp=k.split('|')[0];
+    if(!totals[emp])totals[emp]=0;
+    totals[emp]+=calcRouteKm(jobs);
+  });
+  return totals;
+}
+
+// ===== CSV Parse (새 시트 구조) =====
+// A:시간 B:시공일 C:주소 D:연락처 E:신축여부 F:평수 G:시공범위 H:제품 I:수량 J:사수 K:부사수 L:차량번호 M:결제방법 N:판매금액 O:결제상태 P:추천인 Q:유입경로 R:카톡URL S:채널명
+let OFFS={}; // {date: Set(이름)} 휴무 데이터
+let DUTY={}; // {date: {이름: 사유}} 예비군/교육 등 (배정제외 but 근무 카운트)
+let hireDate={}; // {이름: '2024-01-15'} 입사일
+function hdSort(a,b){return(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999')}
+// 팀설정 CSV 파싱 (입사일 추출)
+// A:지역 B:팀번호 C:이름 D:직급 E:색상코드 F:연락처 G:입사일
+function parseTeamConfigCSV(text){
+const lines=text.split('\n');hireDate={};
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[2])continue;
+const name=r[2].trim();
+const hd=(r[6]||'').trim();
+if(name&&hd)hireDate[name]=hd;
+}}
+
+function parseCSV(text){
+const lines=text.split('\n');J=[];
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[2])continue;
+if(!r[0]||!r[0].trim())continue; // 시간 없으면 스킵
+const mat=[];if(r[8]&&r[9]&&parseInt(r[9])>0){mat.push({t:r[8].trim(),q:parseInt(r[9])})}
+else if(r[8]){mat.push({t:r[8].trim(),q:1})}
+let ds=r[2];
+if(ds.length===8)ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+if(ds.includes('T'))ds=ds.substring(0,10);
+// 날짜 형식 보정 (구글시트 Date → YYYY-MM-DD)
+if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
+  const parts=ds.split('-');
+  ds=parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
+}
+const id=ds+'_'+r[0]+'_'+i;
+const doff=[]; // 휴무는 OFFS에서 가져옴
+if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
+J.push({id,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim()})}}
+
+// 휴무 CSV 파싱 (A:날짜 B:요일 C~L:이름1~이름10)
+function parseOffCSV(text){
+const lines=text.split('\n');
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[0])continue;
+let ds=r[0].trim();
+if(ds.includes('T'))ds=ds.substring(0,10);
+// YYYYMMDD → YYYY-MM-DD
+if(ds.match(/^\d{8}$/))ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+// YYYY-M-D → YYYY-MM-DD
+if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
+  const parts=ds.split('-');
+  ds=parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
+}
+if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue; // 유효한 날짜만
+// C~L열 (r[2]~r[11]) 모든 이름 읽기
+for(let ci=2;ci<=11;ci++){
+  if(!r[ci]||!r[ci].trim())continue;
+  const raw=r[ci].trim();
+  // 예비군:이름, 교육:이름, 출장:이름 등 접두어 처리
+  const prefixMatch=raw.match(/^(예비군|교육|출장|훈련):(.+)$/);
+  if(prefixMatch){
+    const reason=prefixMatch[1];
+    const name=matchEmpName(prefixMatch[2]);
+    if(name){
+      if(!OFFS[ds])OFFS[ds]=new Set();
+      OFFS[ds].add(name); // 배정에서는 제외
+      if(!DUTY[ds])DUTY[ds]={};
+      DUTY[ds][name]=reason; // 근무로 카운트
+    }
+  }else{
+    const name=matchEmpName(raw);
+    if(name){
+      if(!OFFS[ds])OFFS[ds]=new Set();
+      OFFS[ds].add(name);
+    }
+  }
+}
+}}
+
+// 시트 이름 → 직원 짧은 이름 매칭 (이준형→준형, 윤철→윤철)
+function matchEmpName(sheetName){
+if(!sheetName)return null;
+const n=sheetName.trim();
+// 정확히 일치
+if(E.includes(n))return n;
+// 3글자 이상이면 성 제거 후 매칭
+if(n.length>=3){const short=n.slice(1);if(E.includes(short))return short;}
+// 직원 이름이 시트 이름에 포함
+const found=E.find(e=>n.includes(e));
+if(found)return found;
+return null;
+}
+
+// 배정은 Firebase가 유일한 소스 (시트 J/K열은 Apps Script로 역방향 기록)
+
+// ===== Auto Assign =====
+async function autoAssign(){
+isAssigning=true;
+toast('⏳ 자동 배정 중...','ok');
+const _snapA=JSON.parse(JSON.stringify(A));
+
+// 거리 계산
+for(const j of J){if(j.addr&&!j.offOnly&&!j.dist){j.dist=await calcDist(j.addr)}}
+
+const bd={};J.filter(j=>!j.offOnly).forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
+const empDist={};E.forEach(e=>empDist[e]=0);
+
+// 기존 배정 거리 반영 (경로 기반: 사무실→시공1→시공2→...→사무실)
+const routeTotals=calcEmpRouteTotals(J.filter(j=>!j.offOnly));
+E.forEach(e=>{empDist[e]=routeTotals[e]||0});
+
+// ===== 공정성 점수 계산 (이번 달 누적) =====
+const fairScore={};
+const now2=new Date();const curY=now2.getFullYear(),curM=now2.getMonth();
+const monthJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===curY&&new Date(j.date).getMonth()===curM);
+E.forEach(e=>{fairScore[e]={workDays:new Set(),double:0,km:0,days:{}}});
+monthJobs.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(!fairScore[e])return;
+  fairScore[e].workDays.add(j.date);
+  if(j.time!=='as'&&j.time!=='AS'&&j.time!=='실측'){if(!fairScore[e].days[j.date])fairScore[e].days[j.date]=0;fairScore[e].days[j.date]++}
+})});
+// 경로 기반 km 계산
+const fairRouteTotals=calcEmpRouteTotals(monthJobs);
+E.forEach(e=>{fairScore[e].km=fairRouteTotals[e]||0});
+E.forEach(e=>{fairScore[e].double=Object.values(fairScore[e].days).filter(c=>c>=2).length;fairScore[e].wd=fairScore[e].workDays.size});
+// 평균 계산 (편차 기반 점수: 평균보다 많으면 +, 적으면 -)
+const avgWd=E.reduce((s,e)=>s+fairScore[e].wd,0)/Math.max(E.length,1);
+const avgDb=E.reduce((s,e)=>s+fairScore[e].double,0)/Math.max(E.length,1);
+const avgKm=E.reduce((s,e)=>s+fairScore[e].km,0)/Math.max(E.length,1);
+// 팀 공정성 점수: 평균 대비 초과분 × 가중치 (높을수록 배정 후순위)
+function teamFairPenalty(members){
+  let total=0;
+  members.forEach(m=>{if(!fairScore[m])return;
+    total+=(fairScore[m].wd-avgWd)*3;     // 근무일 1일 초과 = 3점
+    total+=(fairScore[m].double-avgDb)*8;  // 두탕 1회 초과 = 8점 (인센티브 기회 균등 배분)
+    total+=((fairScore[m].km-avgKm)/20);   // 이동거리 20km 초과 = 1점
+  });
+  return total/Math.max(members.length,1);
+}
+
+// 팀 그룹 생성 함수
+function makeGroups(pool,jobCnt){
+  if(teams.length){
+    const avTeams=teams.map((t,i)=>({idx:i,members:t.filter(m=>pool.includes(m))})).filter(t=>t.members.length>0);
+    const grouped=avTeams.map(t=>t.members);
+    const inTeam=new Set();grouped.forEach(g=>g.forEach(m=>inTeam.add(m)));
+    const orphans=pool.filter(m=>!inTeam.has(m));
+    const fullTeams=grouped.filter(g=>g.length>=2).map(g=>g.sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999')));
+    const soloTeam=grouped.filter(g=>g.length===1).map(g=>g[0]);
+    const allSingles=[...soloTeam,...orphans].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
+    const paired=[];
+    for(let i=0;i<allSingles.length;i+=2){
+      if(i+1<allSingles.length)paired.push([allSingles[i],allSingles[i+1]]);
+    }
+    return [...fullTeams,...paired];
+  }
+  const sorted=[...pool];
+  const groups=[];
+  for(let i=0;i<sorted.length;i+=2){
+    if(i+1<sorted.length)groups.push([sorted[i],sorted[i+1]]);
+  }
+  return groups;
+}
+
+// ===== 월간 팀별 누적 이동거리 (경로 기반) =====
+const crossDateKm={};
+E.forEach(e=>{crossDateKm[e]=fairRouteTotals[e]||0});
+function teamCrossKm(members){
+  let t=0;members.forEach(m=>{t+=crossDateKm[m]||0});return t/Math.max(members.length,1);
+}
+// ===== 배정 중 누적 건수 (날짜 간 공정성 유지) =====
+const crossDateCnt={};
+E.forEach(e=>{crossDateCnt[e]=fairScore[e]?fairScore[e].wd:0});
+function teamFairSort(a,b){
+  const sa=a.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(a.team.length,1);
+  const sb=b.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(b.team.length,1);
+  return sa-sb;
+}
+function bumpCnt(members,date){members.forEach(m=>{if(!crossDateCnt._d)crossDateCnt._d={};if(!crossDateCnt._d[m])crossDateCnt._d[m]=new Set();if(!crossDateCnt._d[m].has(date)){crossDateCnt._d[m]=crossDateCnt._d[m]||new Set();crossDateCnt._d[m].add(date);crossDateCnt[m]=(crossDateCnt[m]||0)+1}})}
+
+for(const date of Object.keys(bd).sort()){
+// 4일 뒤부터만 전체 자동배정 (오늘~3일 후는 확정된 배정 보호)
+const cutoff=new Date();cutoff.setDate(cutoff.getDate()+4);
+const cutoffStr=cutoff.toISOString().slice(0,10);
+
+if(date<cutoffStr){
+  // 보호 기간: 기존 2인 유지, 1인→2인 보완, 미배정→신규 (SKIP 제외, 공평 분배)
+  const dj2=bd[date];
+  const ao2=new Set();
+  if(OFFS[date])OFFS[date].forEach(n=>ao2.add(n));
+  J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao2.add(n)));
+  const avail2=E.filter(e=>!ao2.has(e));
+  if(!avail2.length){continue}
+  
+  const am2=dj2.filter(j=>(j.time.startsWith('오전')||j.time.includes('2:'))&&j.addr&&j.addr.trim());
+  const pm2=dj2.filter(j=>(j.time.startsWith('오후')||j.time==='as'||j.time==='AS'||j.time==='실측')&&j.addr&&j.addr.trim());
+  const amUsed=new Set();
+  am2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>amUsed.add(e))});
+  
+  // ── 오전 처리 ──
+  am2.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
+    const sasu=A[j.id][0];
+    if(teams.length){
+      const myTeam=teams.find(t=>t.includes(sasu));
+      if(myTeam){
+        const partner=myTeam.find(m=>m!==sasu&&avail2.includes(m)&&!amUsed.has(m));
+        if(partner){A[j.id]=[sasu,partner].sort(hdSort);amUsed.add(partner);return}
+      }
+    }
+    const free=avail2.filter(e=>!amUsed.has(e)&&e!==sasu);
+    if(free.length){A[j.id]=[sasu,free[0]].sort(hdSort);amUsed.add(free[0])}
+  });
+  const amEmpty2=am2.filter(j=>!A[j.id]&&!SKIP.has(j.id)&&!LOCK.has(j.id));
+  if(amEmpty2.length){
+    const amFree2=avail2.filter(e=>!amUsed.has(e));
+    const amG2=makeGroups(amFree2,amEmpty2.length);
+    let gi2=0;
+    amEmpty2.forEach(j=>{
+      if(gi2<amG2.length){
+        A[j.id]=[...amG2[gi2]].sort(hdSort);
+        amG2[gi2].forEach(e=>amUsed.add(e));
+        gi2++;
+      }
+    });
+  }
+  
+  // ── 오후 처리 (지역 매칭 + 공평 분배) ──
+  const pmUsed=new Set();
+  pm2.forEach(j=>{if(A[j.id])A[j.id].forEach(e=>pmUsed.add(e))});
+  
+  pm2.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&A[j.id]&&A[j.id].length===1).forEach(j=>{
+    const sasu=A[j.id][0];
+    if(teams.length){
+      const myTeam=teams.find(t=>t.includes(sasu));
+      if(myTeam){
+        const partner=myTeam.find(m=>m!==sasu&&avail2.includes(m)&&!pmUsed.has(m));
+        if(partner){A[j.id]=[sasu,partner].sort(hdSort);pmUsed.add(partner);return}
+      }
+    }
+    const free=avail2.filter(e=>!pmUsed.has(e)&&e!==sasu);
+    if(free.length){A[j.id]=[sasu,free[0]].sort(hdSort);pmUsed.add(free[0])}
+  });
+  
+  const pmEmpty2=pm2.filter(j=>!A[j.id]&&!SKIP.has(j.id)&&!LOCK.has(j.id));
+  if(pmEmpty2.length){
+    // 오전 팀 목록 (마지막 시공 주소 + GPS 좌표 + 건수 추적)
+    const amTeamInfo=[];
+    am2.forEach(j=>{if(A[j.id]&&A[j.id].length>=2){
+      const key=[...A[j.id]].sort().join('+');
+      const existing=amTeamInfo.find(t=>t.key===key);
+      if(!existing){amTeamInfo.push({key,team:[...A[j.id]],lastAddr:j.addr||'',lastGeo:null,pmCount:0})}
+      else{existing.lastAddr=j.addr||''} // 마지막 오전 주소 갱신
+    }});
+    // 기존 오후 배정 건수 반영
+    pm2.forEach(j=>{if(A[j.id]){
+      const key=[...A[j.id]].sort().join('+');
+      const t=amTeamInfo.find(ti=>ti.key===key);
+      if(t)t.pmCount++;
+    }});
+
+    // GPS 좌표 미리 계산 (오전 팀 마지막 위치 + 오후 건 위치)
+    for(const ti of amTeamInfo){
+      if(ti.lastAddr)ti.lastGeo=await geo(ti.lastAddr);
+    }
+    for(const j of pmEmpty2){
+      if(j.addr&&!j._geo)j._geo=await geo(j.addr);
+    }
+
+    pmEmpty2.forEach(j=>{
+      if(A[j.id])return;
+      const pmGeo=j._geo;
+
+      // 1순위: 당일 0건인 대기팀 (출근했는데 놀고 있는 팀)
+      const allAssigned=new Set();
+      [...am2,...pm2].forEach(jj=>{if(A[jj.id])A[jj.id].forEach(e=>allAssigned.add(e))});
+      const idlePeople=avail2.filter(e=>!allAssigned.has(e)&&!pmUsed.has(e));
+      const idleTeams=makeGroups(idlePeople,1);
+      if(idleTeams.length){
+        // 대기팀 중 GPS 가장 가까운 팀 (사무실에서 출발)
+        let bestIdle=idleTeams[0];
+        if(pmGeo&&idleTeams.length>1){
+          let minD=9999;
+          for(const it of idleTeams){
+            const d=hav(OFF_B.lat,OFF_B.lng,pmGeo.lat,pmGeo.lng);
+            if(d<minD){minD=d;bestIdle=it}
+          }
+        }
+        A[j.id]=[...bestIdle].sort(hdSort);
+        bestIdle.forEach(e=>{pmUsed.add(e);crossDateKm[e]+=(j.dist||0)});
+        return;
+      }
+
+      // 2순위: 오전팀 중 GPS 가장 가까운 팀
+      const availTeams=amTeamInfo.filter(t=>t.team.every(m=>!pmUsed.has(m)));
+      if(availTeams.length){
+        availTeams.forEach(t=>{
+          t._dist=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
+        });
+        availTeams.sort((a,b)=>{
+          const scoreA=a._dist+(a.pmCount*15);
+          const scoreB=b._dist+(b.pmCount*15);
+          return scoreA-scoreB;
+        });
+        const best=availTeams[0];
+        A[j.id]=[...best.team].sort(hdSort);
+        best.team.forEach(e=>{pmUsed.add(e);crossDateKm[e]+=(j.dist||0)});
+        best.pmCount++;
+        return;
+      }
+      // 3순위 : 두탕 (pmUsed 무시하고 오전팀 재사용)
+      if(!A[j.id]&&amTeamInfo.length){
+        amTeamInfo.forEach(t=>{
+          t._dist2=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
+        });
+        amTeamInfo.sort((a,b)=>a._dist2-b._dist2);
+        A[j.id]=[...amTeamInfo[0].team].sort(hdSort);
+        amTeamInfo[0].pmCount++;
+        return;
+      }
+      // 4순위 : 남는 사람
+      const freeP=avail2.filter(e=>!pmUsed.has(e));
+      const gP=makeGroups(freeP,1);
+      if(gP.length){
+        A[j.id]=[...gP[0]].sort(hdSort);
+        gP[0].forEach(e=>pmUsed.add(e));
+      }
+    });
+  }
+  continue;
+}
+
+const dj=bd[date];
+const ao=new Set();
+if(OFFS[date])OFFS[date].forEach(n=>ao.add(n));
+J.filter(jj=>jj.date===date).forEach(jj=>jj.doff.forEach(n=>ao.add(n)));
+const avail=E.filter(e=>!ao.has(e));
+if(!avail.length)continue;
+
+// 배정 대상 건 (주소 있고, SKIP 아니고, 미배정 또는 1인)
+const allJobs=dj.filter(j=>j.addr&&j.addr.trim());
+const needWork=allJobs.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||A[j.id].length===1));
+if(!needWork.length)continue;
+
+// 팀 생성
+const dayTeams=makeGroups(avail,needWork.length);
+if(!dayTeams.length)continue;
+
+// 기존 2인 배정은 유지 (해당 팀의 건수에 반영)
+const teamLoad={};
+dayTeams.forEach(g=>{const k=[...g].sort().join('+');teamLoad[k]={team:[...g],count:0,cities:[]}});
+allJobs.forEach(j=>{if(A[j.id]&&A[j.id].length>=2){
+  const k=[...A[j.id]].sort().join('+');
+  if(teamLoad[k]){teamLoad[k].count++;teamLoad[k].cities.push((j.addr||'').slice(0,2))}
+}});
+
+// 1인→2인 보완
+needWork.filter(j=>A[j.id]&&A[j.id].length===1).forEach(j=>{
+  const sasu=A[j.id][0];
+  if(teams.length){
+    const myTeam=teams.find(t=>t.includes(sasu));
+    if(myTeam){
+      const partner=myTeam.find(m=>m!==sasu&&avail.includes(m));
+      if(partner){A[j.id]=[sasu,partner].sort(hdSort);return}
+    }
+  }
+  const myGroup=dayTeams.find(g=>g.includes(sasu));
+  if(myGroup){const partner=myGroup.find(m=>m!==sasu);if(partner)A[j.id]=[sasu,partner].sort(hdSort)}
+});
+
+// 미배정 건 GPS 거리 기반 배정
+const unassigned=needWork.filter(j=>!A[j.id]);
+if(unassigned.length){
+  // 각 팀의 마지막 배정 주소 GPS 좌표 계산
+  for(const k of Object.keys(teamLoad)){
+    const tl=teamLoad[k];
+    const lastJob=allJobs.filter(j=>A[j.id]&&[...A[j.id]].sort().join('+')===k).pop();
+    tl.lastGeo=lastJob?await geo(lastJob.addr):null;
+  }
+  // 미배정 건 GPS 좌표 미리 계산
+  for(const j of unassigned){if(j.addr&&!j._geo)j._geo=await geo(j.addr)}
+
+  // 오전/오후 분리: 오전 먼저 → 오후는 오전 위치 기반
+  const amUn=unassigned.filter(j=>j.time.startsWith('오전')||j.time.includes('2:'));
+  const pmUn=unassigned.filter(j=>j.time.startsWith('오후')||j.time==='as'||j.time==='AS'||j.time==='실측');
+
+  // 오전 배정: 건수 균등 + 누적 공정성
+  amUn.forEach(j=>{
+    if(A[j.id])return;
+    const allTeamsSorted=Object.values(teamLoad).sort((a,b)=>{
+      if(a.count!==b.count)return a.count-b.count;
+      return teamFairSort(a,b);
+    });
+    if(allTeamsSorted.length){
+      const best=allTeamsSorted[0];
+      A[j.id]=[...best.team].sort(hdSort);
+      best.count++;
+      bumpCnt(best.team,date);
+      if(j._geo)best.lastGeo=j._geo;
+    }
+  });
+
+  // 오후 배정: 0건 팀 우선 + GPS 거리
+  pmUn.forEach(j=>{
+    if(A[j.id])return;
+    const pmGeo=j._geo;
+    const allTeamsSorted=Object.values(teamLoad);
+
+    if(allTeamsSorted.length&&pmGeo){
+      allTeamsSorted.forEach(t=>{
+        // 0건 팀은 사무실에서 출발
+        const fromGeo=t.lastGeo||OFF_B;
+        t._dist=hav(fromGeo.lat,fromGeo.lng,pmGeo.lat,pmGeo.lng);
+      });
+      // 0건 팀 우선 (count*15) + GPS 거리 + 누적 공정성
+      allTeamsSorted.sort((a,b)=>{
+        const cntA=a.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(a.team.length,1);
+        const cntB=b.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(b.team.length,1);
+        const scoreA=a._dist+(a.count*15)+cntA*5;
+        const scoreB=b._dist+(b.count*15)+cntB*5;
+        return scoreA-scoreB;
+      });
+      const best=allTeamsSorted[0];
+      A[j.id]=[...best.team].sort(hdSort);
+      best.count++;
+      bumpCnt(best.team,date);
+      // 월간 누적 갱신
+      best.team.forEach(e=>{crossDateKm[e]+=(j.dist||0)});
+      // 이 팀의 마지막 위치를 오후 건으로 갱신 (다음 오후 건 거리 계산에 반영)
+      if(pmGeo)best.lastGeo=pmGeo;
+    }else{
+      // GPS 없으면 건수 + 누적 공정성
+      const fairTeam=Object.values(teamLoad).sort((a,b)=>{
+        if(a.count!==b.count)return a.count-b.count;
+        return teamFairSort(a,b);
+      })[0];
+      if(fairTeam){
+        A[j.id]=[...fairTeam.team].sort(hdSort);
+        fairTeam.count++;
+        bumpCnt(fairTeam.team,date);
+      }
+    }
+  });
+}}
+
+
+fbSave('gg_prevJobIds',J.map(j=>j.id));
+// 변경된 건만 개별 저장 (다른 사용자 배정 덮어쓰기 방지)
+const _changes={};
+Object.keys(A).forEach(k=>{if(JSON.stringify(A[k])!==JSON.stringify(_snapA[k]))_changes[k]=A[k]});
+Object.keys(_snapA).forEach(k=>{if(!A[k])_changes[k]=null});
+if(Object.keys(_changes).length)db.ref('gg_assignments').update(_changes);
+lastAHash=aHash(A);syncToSheet();
+//console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
+toast('✅ 자동 배정 완료!','ok');
+renderAll();
+setTimeout(()=>{isAssigning=false},3000); // syncToSheet 디바운스(2초) 완료까지 보호
+}
+
+function resetAssign(){if(!requireAdmin())return;if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('gg_assignments',{});lastAHash=aHash(A);toast('초기화됨','ok');renderAll()}
+
+// 수동 배정 (직원 1명)
+function ma(jobId,emp){
+if(!requireAdmin())return;
+const cur=A[jobId];
+if(cur&&cur.includes(emp)){
+A[jobId]=cur.filter(e=>e!==emp);
+if(A[jobId].length===0)delete A[jobId];
+}else if(cur){
+A[jobId]=[...cur,emp].sort(hdSort);
+}else{
+A[jobId]=[emp];
+}
+// 수동 배정하면 SKIP 해제
+if(SKIP.has(jobId)){SKIP.delete(jobId);saveSkip()}
+db.ref('gg_assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
+lastManualEdit=Date.now();
+isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
+toast('✅ 배정 업데이트','ok');renderAll()}
+
+// 배정 취소 (자동배정 제외 처리)
+function unassign(jobId){
+if(!requireAdmin())return;
+delete A[jobId];
+SKIP.add(jobId);
+saveSkip();
+db.ref('gg_assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
+// 재배정 방지: 2초간 자동배정 차단
+isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
+toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
+
+// 배정 확정(잠금) — 자동배정이 건드리지 않음
+function lockJob(jobId){
+if(!A[jobId]||A[jobId].length<2){toast('2인 배정 후 확정 가능','ok');return}
+const reason=prompt('🔒 잠금 사유를 입력해주세요\n(예: 오전만 작업, 개인 일정 등)');
+if(reason===null)return; // 취소
+LOCK.add(jobId);
+if(reason.trim())LOCK_REASONS[jobId]=reason.trim();
+saveLock();
+isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
+toast('🔒 배정 확정!','ok');renderAll()}
+
+function unlockJob(jobId){
+const reason=LOCK_REASONS[jobId];
+if(reason&&!confirm('🔒 잠금 사유: '+reason+'\n\n정말 해제하시겠습니까?'))return;
+LOCK.delete(jobId);
+delete LOCK_REASONS[jobId];
+saveLock();
+toast('🔓 확정 해제','ok');renderAll()}
+
+// ===== 시공보고서 =====
+let currentChatUrl='';
+let reportJobId='';let currentChannelName='';
+const PRICE_MAP={'마블50':16000,'코튼50':16000,'모던50':16000,'모던1m18':64500,'모던1m22':76500,'베이지1m18':64500,'베이지1m22':76500};
+
+function formatFee(el){
+const v=el.value;
+if(v.toUpperCase()==='X'||v==='')return;
+const num=parseInt(v.replace(/[^0-9]/g,''))||0;
+if(num>0)el.value=num.toLocaleString();
+}
+
+function calcReport(){
+const color=document.getElementById('rColor').value;
+const qty=parseInt(document.getElementById('rQty').value)||0;
+const checks=document.querySelectorAll('.rDiscount:checked');
+let coupon=0;checks.forEach(c=>coupon+=parseInt(c.value)||0);const extraD=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;coupon+=extraD;
+const isGonggu=document.getElementById('rGonggu').value==='O';
+const unitPrice=PRICE_MAP[color]||0;
+let total=qty*unitPrice-coupon;
+if(isGonggu) total=total-(qty*500);
+const installFee=document.getElementById('rInstallFee').value;
+const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
+total+=fee;
+document.getElementById('rPrice').value=total>0?total.toLocaleString()+'원':'0원';
+const paid=parseInt((document.getElementById('rPaid').value||'0').replace(/[^0-9]/g,''))||0;
+document.getElementById('rUnpaid').value=(total-paid>0?(total-paid).toLocaleString()+'원':'0원');
+}
+
+function openReport(jobId){
+reportJobId=jobId;const _rj=J.find(jj=>jj.id===jobId)||{};currentChannelName=_rj.channelName||'';currentChatUrl=_rj.chatUrl||'';
+const j=J.find(x=>x.id===jobId);if(!j)return;
+const team=(A[jobId]||[]).join('');
+const addr=j.addr||'';
+const region=addr.slice(0,2);
+const apt=addr;
+const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
+const unit=unitMatch?unitMatch[1]:'';
+
+const colorVal=j.mat.length?j.mat[0].t:'';
+const colorOpts=['마블50','코튼50','모던50','모던1m18','모던1m22','베이지1m18','베이지1m22','미정'];
+const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
+const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
+const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
+const autoS='background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:6px;padding:5px 8px;color:var(--green);font-size:11px;font-family:var(--font);font-weight:600';
+const lA='color:var(--dim);font-size:10px';
+const lE='color:var(--blue);font-size:10px;font-weight:600';
+const lG='color:var(--green);font-size:10px;font-weight:600';
+
+const html=`
+<div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;gap:10px"><span>⬛ 자동</span><span style="color:var(--blue)">🔵 입력</span><span style="color:var(--green)">🟢 자동계산</span></div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
+<span style="${lA}">1. 시공일자</span><input id="rDate" value="${j.date}" style="${aS}" readonly>
+<span style="${lE}">2. 추천인</span><input id="rRef" value="없음" style="${eS}">
+<span style="${lA}">3. 시공팀원</span><input id="rTeam" value="${team}" style="${aS}" readonly>
+<span style="${lA}">4. 지역</span><input id="rRegion" value="${region}" style="${aS}" readonly>
+<span style="${lA}">5. 아파트명</span><input id="rApt" value="${apt}" style="${aS}" readonly>
+<span style="${lA}">6. 동호수</span><input id="rUnit" value="${unit}" style="${aS}" readonly>
+<span style="${lA}">7. 연락처</span><input id="rPhone" value="${j.phone}" style="${aS}" readonly>
+<span style="${lA}">8. 평수</span><input id="rPy" value="${j.py}평" style="${aS}" readonly>
+<span style="${lE}">9. 색상</span><select id="rColor" style="${eS}" onchange="calcReport()">${colorSelect}</select>
+<span style="${lE}">10. 시공범위</span><input id="rScope" value="${j.scope}" style="${eS}">
+<span style="${lE}">11. 신축여부</span><select id="rNew" style="${eS}"><option>구축</option><option>신축</option></select>
+</div>
+<div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
+<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatFee(this);calcReport()">
+<span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option></select>
+<span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" id="rExtraDiscountChk" onchange="document.getElementById('rExtraDiscount').style.display=this.checked?'block':'none';if(!this.checked){document.getElementById('rExtraDiscount').value='';};calcReport()">추가할인</label><input id="rExtraDiscount" type="text" inputmode="numeric" placeholder="금액 입력" style="display:none;${eS};width:90px;font-size:10px" oninput="formatFee(this);calcReport()"></div>
+<span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
+<span style="${lE}">16. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}" oninput="calcReport()">
+<span style="${lG}">17. 판매비용</span><input id="rPrice" value="0원" style="${autoS}" readonly>
+<span style="${lE}">18. 결제금액</span><input id="rPaid" inputmode="numeric" style="${eS}" oninput="formatFee(this);calcReport()" placeholder="실제 받은 금액">
+<span style="${lG}">19. 미결제금액</span><input id="rUnpaid" value="0원" style="${autoS}" readonly>
+<span style="${lE}">20. 현금영수증</span><select id="rReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
+<span style="${lE}">21. 특이사항</span><textarea id="rNote" rows="2" style="${eS};resize:vertical"></textarea>
+</div>`;
+document.getElementById('reportForm').innerHTML=html;
+document.getElementById('reportForm').style.display='block';
+document.getElementById('reportSubmitBtn').style.display='block';
+document.getElementById('customerToast').style.display='none';
+document.getElementById('submitToast').style.display='none';
+document.getElementById('reportOverlay').style.display='block';
+calcReport();
+// 이전 저장 데이터 불러오기
+db.ref('reports/'+jobId).once('value').then(snap=>{
+const d=snap.val();if(!d)return;
+if(d.ref)document.getElementById('rRef').value=d.ref;
+if(d.color){const sel=document.getElementById('rColor');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.color)sel.selectedIndex=i;}}
+if(d.scope)document.getElementById('rScope').value=d.scope;
+if(d.isNew){const sel=document.getElementById('rNew');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.isNew)sel.selectedIndex=i;}}
+if(d.installFee)document.getElementById('rInstallFee').value=d.installFee;
+if(d.gonggu){const sel=document.getElementById('rGonggu');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.gonggu)sel.selectedIndex=i;}}
+if(d.couponNames&&d.couponNames!=='없음'){const names=d.couponNames.split('+');document.querySelectorAll('.rDiscount').forEach(c=>{if(names.includes(c.dataset.name))c.checked=true;});const extraMatch=names.find(n=>n.startsWith('추가'));if(extraMatch){document.getElementById('rExtraDiscountChk').checked=true;document.getElementById('rExtraDiscount').style.display='block';document.getElementById('rExtraDiscount').value=extraMatch.replace('추가','');}}
+if(d.pay){const sel=document.getElementById('rPay');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.pay)sel.selectedIndex=i;}}
+if(d.qty)document.getElementById('rQty').value=d.qty;
+if(d.paid)document.getElementById('rPaid').value=d.paid;
+if(d.receipt){const sel=document.getElementById('rReceipt');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.receipt)sel.selectedIndex=i;}}
+if(d.note)document.getElementById('rNote').value=d.note;
+calcReport();
+}).catch(()=>{})}
+
+function closeReport(){document.getElementById('reportOverlay').style.display='none'}
+
+function saveReportData(){
+const g=id=>(document.getElementById(id)||{}).value||'';
+const discountChecks=document.querySelectorAll('.rDiscount:checked');
+let discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
+let discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+const _ed3=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_ed3>0){discountStr+=(discountStr==='없음'?'':'+')+('추가'+_ed3.toLocaleString());discountTotal+=_ed3;}
+const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:discountTotal.toString(),couponNames:discountStr,pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
+if(typeof reportJobId!=='undefined'&&reportJobId){
+  fbSave('reports/'+reportJobId,reportData);
+  if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
+    const jobParts=reportJobId.split('_');
+    const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
+    const _rjob=J.find(jj=>jj.id===reportJobId)||{};
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'경기',row:sheetRow,date:_rjob.date||'',address:_rjob.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{});
+  }
+}
+showCustomerToast('✅ 시공보고서 저장 완료!');
+}
+
+function copyCustomerMsg(){
+const g=id=>(document.getElementById(id)||{}).value||'';
+const phone=g('rPhone');
+const color=g('rColor');
+const qty=parseInt(g('rQty'))||0;
+const checks=document.querySelectorAll('.rDiscount:checked');
+let couponVal=0;const couponNames=[];
+checks.forEach(c=>{couponVal+=parseInt(c.value)||0;couponNames.push(c.dataset.name);});const _edCalc=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_edCalc>0){couponVal+=_edCalc;couponNames.push('추가'+_edCalc.toLocaleString());}
+const isGonggu=g('rGonggu')==='O';
+const unitPrice=PRICE_MAP[color]||0;
+const unpaid=g('rUnpaid');
+const hasUnpaid=unpaid&&unpaid!=='0원'&&unpaid!=='0';
+
+// 계산 내역 만들기
+let calcLines=[];
+const baseTotal=qty*unitPrice;
+calcLines.push(`${color} ${unitPrice.toLocaleString()}원 × ${qty}장 = ${baseTotal.toLocaleString()}원`);
+if(couponVal>0){
+calcLines.push(`할인적용(${couponNames.join('+')}) -${couponVal.toLocaleString()}원`);
+}
+let afterCoupon=baseTotal-couponVal;
+if(isGonggu){
+const discount=qty*500;
+calcLines.push(`공동구매 장당 500원 할인 -${discount.toLocaleString()}원`);
+afterCoupon=afterCoupon-discount;
+}
+const installFee=g('rInstallFee');
+if(installFee&&installFee!=='X'&&installFee!=='x'&&installFee!=='0'){
+const fee=parseInt(installFee.replace(/[^0-9]/g,''))||0;
+if(fee>0){calcLines.push(`시공비 +${fee.toLocaleString()}원`);afterCoupon+=fee;}
+}
+calcLines.push(`──────────`);
+calcLines.push(`최종 금액: ${afterCoupon.toLocaleString()}원`);
+calcLines.push(`* 디지털온누리상품권 사용시 앱에서 추가 할인됩니다.`);
+
+let msg=`안녕하세요, 고객님 😊
+돌봄매트 시공이 완료되었습니다!
+
+📋 시공 수량 및 금액
+${calcLines.join('\n')}
+
+📋 확인사항
+1. 영수증 (현금영수증/카드결제)
+* 온누리 사용시 자동으로 현금영수증 처리됩니다.
+2. 작업 전·후 사진
+
+🎁 리뷰 이벤트 (최대 11만원 캐시백!)
+https://m.site.naver.com/1zAHw
+
+🎟️ 지인쿠폰 사용방법
+http://dolbommat.notion.site`;
+
+if(hasUnpaid){
+msg+=`
+
+💰 잔금 ${unpaid} 결제 후 내역 보내주세요!
+예약금 받으실 계좌번호 주시면 저녁에 입금드리겠습니다.`;
+} else {
+msg+=`
+
+예약금 받으실 계좌번호 주시면 저녁에 입금드리겠습니다.`;
+}
+
+if(phone){
+msg+=`
+
+📋 리뷰 이벤트 정산 받기
+https://my.dolbommat.com/review-event.html?phone=${phone.replace(/-/g,'')}`;
+}
+
+msg+=`
+
+감사합니다. 돌봄매트 드림 💌`;
+
+try{
+navigator.clipboard.writeText(msg).then(()=>showCustomerToast('📋 고객안내 메시지 복사 완료!')).catch(()=>{
+const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+showCustomerToast('📋 고객안내 메시지 복사 완료!');
+});
+}catch(e){showCustomerToast('📋 고객안내 메시지 복사 완료!');}
+}
+
+function submitReport(){
+const g=id=>document.getElementById(id).value;
+const txt=`📋 시공보고서
+1. 시공일자 : ${g('rDate')}
+2. 추천인 : ${g('rRef')}
+3. 시공팀원 : ${g('rTeam')}
+4. 지역 : ${g('rRegion')}
+5. 아파트명 : ${g('rApt')}
+6. 동호수 : ${g('rUnit')}
+7. 연락처 : ${g('rPhone')}
+8. 평수 : ${g('rPy')}
+9. 색상 : ${g('rColor')}
+10. 시공범위 : ${g('rScope')}
+11. 신축여부 : ${g('rNew')}
+── 결제 정보 ──
+12. 시공비 : ${g('rInstallFee')}
+13. 공동구매 : ${g('rGonggu')}
+14. 할인적용 : ${(()=>{const c=document.querySelectorAll('.rDiscount:checked');let r=c.length?Array.from(c).map(x=>x.dataset.name).join('+'):'없음';const _ed=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_ed>0)r+=(r==='없음'?'':'+')+('추가'+_ed.toLocaleString());return r})()}
+15. 결제방법 : ${g('rPay')}
+16. 판매갯수 : ${g('rQty')}
+17. 판매비용 : ${g('rPrice')}
+18. 결제금액 : ${g('rPaid')}
+19. 미결제금액 : ${g('rUnpaid')}
+20. 현금영수증 : ${g('rReceipt')}
+21. 특이사항 : ${g('rNote')}`;
+
+const discountChecks=document.querySelectorAll('.rDiscount:checked');
+let discountStr=discountChecks.length?Array.from(discountChecks).map(x=>x.dataset.name).join('+'):'없음';
+let discountTotal=Array.from(discountChecks).reduce((s,c)=>s+(parseInt(c.value)||0),0);
+const _ed3=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_ed3>0){discountStr+=(discountStr==='없음'?'':'+')+('추가'+_ed3.toLocaleString());discountTotal+=_ed3;}
+const reportData={date:g('rDate'),ref:g('rRef'),team:g('rTeam'),region:g('rRegion'),apt:g('rApt'),unit:g('rUnit'),phone:g('rPhone'),py:g('rPy'),color:g('rColor'),scope:g('rScope'),isNew:g('rNew'),installFee:g('rInstallFee'),gonggu:g('rGonggu'),coupon:discountTotal.toString(),couponNames:discountStr,pay:g('rPay'),qty:parseInt(g('rQty'))||0,price:g('rPrice'),paid:g('rPaid'),unpaid:g('rUnpaid'),receipt:g('rReceipt'),note:g('rNote'),submittedAt:new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})};
+fbSave('reports/'+reportJobId,reportData);
+
+// 시공스케줄 시트의 해당 행에 직접 업데이트
+if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
+const jobParts=reportJobId.split('_');
+const sheetRow=parseInt(jobParts[jobParts.length-1])+1;
+const _rjob2=J.find(jj=>jj.id===reportJobId)||{};
+fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'경기',row:sheetRow,date:_rjob2.date||'',address:_rjob2.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{})}
+
+// 시공보고서 텍스트 복사
+try{navigator.clipboard.writeText(txt).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);})}catch(e){}
+
+showSubmitToast('✅ 보고서 제출 및 복사 완료!');
+}
+
+function showCustomerToast(msg){
+const el=document.getElementById('customerToast');
+el.textContent=msg;
+el.style.display='block';
+}
+function showSubmitToast(msg){
+const el=document.getElementById('submitToast');
+el.textContent=msg;
+el.style.display='block';
+}
+
+function copyReport(){
+const txt=document.getElementById('reportText').textContent;
+navigator.clipboard.writeText(txt).then(()=>{
+toast('📋 복사 완료! 카톡방에 붙여넣기','ok');
+event.target.textContent='✅ 복사됨!';
+setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
+
+// ===== AS 보고서 =====
+let asReportJobId='';
+
+function calcAsReport(){
+const color=document.getElementById('arColor').value;
+const qtySelect=document.getElementById('arQty').value;
+let qty=0;
+if(qtySelect==='기타'){qty=parseInt(document.getElementById('arQtyCustom').value)||0;}
+else if(qtySelect!=='자투리사용'){qty=parseInt(qtySelect)||0;}
+const unitPrice=PRICE_MAP[color]||0;
+let total=qty*unitPrice;
+const installFee=document.getElementById('arInstallFee').value;
+const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
+total+=fee;
+document.getElementById('arSalePrice').value=total>0?total.toLocaleString()+'원':'0원';
+const paid=parseInt((document.getElementById('arPaid').value||'0').replace(/[^0-9]/g,''))||0;
+document.getElementById('arUnpaid').value=(total-paid>0?(total-paid).toLocaleString()+'원':'0원');
+}
+
+function formatAsReportFee(el){
+const v=el.value;
+if(v.toUpperCase()==='X'||v==='')return;
+const num=parseInt(v.replace(/[^0-9]/g,''))||0;
+if(num>0)el.value=num.toLocaleString();
+}
+
+function openAsReport(jobId){
+asReportJobId=jobId;
+const j=J.find(x=>x.id===jobId);if(!j)return;
+const team=(A[jobId]||[]).join('');
+const addr=j.addr||'';
+const region=addr.slice(0,2);
+const apt=addr;
+const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
+const unit=unitMatch?unitMatch[1]:'';
+
+const colorVal=j.mat.length?j.mat[0].t:'';
+const colorOpts=['마블50','코튼50','모던50','모던1m18','모던1m22','베이지1m18','베이지1m22','미정'];
+const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
+
+const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
+const eS='background:rgba(255,69,58,.06);border:1px solid rgba(255,69,58,.25);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
+const autoS='background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:6px;padding:5px 8px;color:var(--green);font-size:11px;font-family:var(--font);font-weight:600';
+const lA='color:var(--dim);font-size:10px';
+const lE='color:var(--red);font-size:10px;font-weight:600';
+const lG='color:var(--green);font-size:10px;font-weight:600';
+
+const empOpts=E.map(e=>`<option>${e}</option>`).join('');
+
+const html=`
+<div style="font-size:9px;color:var(--dim);margin-bottom:3px;display:flex;gap:10px"><span>⬛ 자동</span><span style="color:var(--red)">🔴 입력</span><span style="color:var(--green)">🟢 자동계산</span></div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
+<span style="${lA}">1. 시공일자</span><input id="arDate" value="${j.date}" style="${aS}" readonly>
+<span style="${lA}">2. AS팀원</span><input id="arTeam" value="${team}" style="${aS}" readonly>
+<span style="${lA}">3. 지역</span><input id="arRegion" value="${region}" style="${aS}" readonly>
+<span style="${lA}">4. 아파트명</span><input id="arApt" value="${apt}" style="${aS}" readonly>
+<span style="${lA}">5. 동호수</span><input id="arUnit" value="${unit}" style="${aS}" readonly>
+<span style="${lA}">6. 연락처</span><input id="arPhone" value="${j.phone}" style="${aS}" readonly>
+<span style="${lA}">7. 평수</span><input id="arPy" value="${j.py}평" style="${aS}" readonly>
+<span style="${lE}">8. 이전작업자1</span><select id="arPrev1" style="${eS}"><option value="">선택</option>${empOpts}</select>
+<span style="${lE}">9. 이전작업자2</span><select id="arPrev2" style="${eS}"><option value="">선택</option>${empOpts}</select>
+<span style="${lE}">10. 색상</span><select id="arColor" style="${eS}" onchange="calcAsReport()">${colorSelect}</select>
+<span style="${lE}">11. 시공범위</span><input id="arScope" value="" style="${eS}" placeholder="시공범위 입력">
+<span style="${lE}">12. 내용</span><textarea id="arContent" rows="2" style="${eS};resize:vertical"></textarea>
+<span style="${lE}">13. 조치</span><textarea id="arAction" rows="2" style="${eS};resize:vertical"></textarea>
+</div>
+<div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
+<div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
+<span style="${lE}">14. 시공비</span><input id="arInstallFee" value="" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatAsReportFee(this);calcAsReport()">
+<span style="${lE}">15. 들어간 장수</span><div style="display:flex;gap:4px;align-items:center"><select id="arQty" style="${eS};flex:1" onchange="if(this.value==='기타'){document.getElementById('arQtyCustom').style.display='block';document.getElementById('arQtyCustom').focus();}else{document.getElementById('arQtyCustom').style.display='none';document.getElementById('arQtyCustom').value='';}calcAsReport()"><option>자투리사용</option><option>1장</option><option>2장</option><option>3장</option><option>4장</option><option>5장</option><option>기타</option></select><input id="arQtyCustom" type="number" min="6" placeholder="장수" style="${eS};display:none;width:70px" inputmode="numeric" oninput="calcAsReport()"></div>
+<span style="${lE}">16. 결제방법</span><select id="arPay" style="${eS}" onchange="calcAsReport()"><option>무료</option><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option></select>
+<span style="${lG}">17. 판매비용</span><input id="arSalePrice" value="0원" style="${autoS}" readonly>
+<span style="${lE}">18. 결제금액</span><input id="arPaid" inputmode="numeric" style="${eS}" oninput="formatAsReportFee(this);calcAsReport()" placeholder="실제 받은 금액">
+<span style="${lG}">19. 미결제금액</span><input id="arUnpaid" value="0원" style="${autoS}" readonly>
+<span style="${lE}">20. 현금영수증</span><select id="arReceipt" style="${eS}"><option>해당없음</option><option>완료</option></select>
+<span style="${lE}">21. 특이사항</span><textarea id="arNote" rows="2" style="${eS};resize:vertical"></textarea>
+</div>`;
+document.getElementById('asReportForm').innerHTML=html;
+document.getElementById('asReportForm').style.display='block';
+document.getElementById('asReportResult').style.display='none';
+document.getElementById('asReportSubmitBtn').style.display='block';
+document.getElementById('asReportOverlay').style.display='block';
+calcAsReport();
+db.ref('asReports/'+jobId).once('value').then(snap=>{
+const d=snap.val();if(!d)return;
+if(d.color){const sel=document.getElementById('arColor');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.color)sel.selectedIndex=i;}}
+if(d.scope)document.getElementById('arScope').value=d.scope;
+if(d.prevWorker){const pw=d.prevWorker.split(', ');if(pw[0]){const sel=document.getElementById('arPrev1');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[0])sel.selectedIndex=i;}}if(pw[1]){const sel=document.getElementById('arPrev2');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[1])sel.selectedIndex=i;}}}
+if(d.content)document.getElementById('arContent').value=d.content;
+if(d.action)document.getElementById('arAction').value=d.action;
+if(d.installFee)document.getElementById('arInstallFee').value=d.installFee;
+if(d.qty){const qv=d.qty;const sel=document.getElementById('arQty');let matched=false;for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===qv){sel.selectedIndex=i;matched=true;}}if(!matched&&qv.includes('장')){sel.value='기타';document.getElementById('arQtyCustom').style.display='block';document.getElementById('arQtyCustom').value=parseInt(qv)||'';}}
+if(d.pay){const sel=document.getElementById('arPay');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.pay)sel.selectedIndex=i;}}
+if(d.receipt){const sel=document.getElementById('arReceipt');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.receipt)sel.selectedIndex=i;}}
+if(d.note)document.getElementById('arNote').value=d.note;
+if(d.paid)document.getElementById('arPaid').value=d.paid;
+calcAsReport();
+}).catch(()=>{loadAsReportDraft(jobId)})}
+
+function closeAsReport(){document.getElementById('asReportOverlay').style.display='none'}
+
+function saveAsReportDraft(){
+const g=id=>{const el=document.getElementById(id);return el?el.value:''};
+const draft={jobId:asReportJobId,arPrev1:g('arPrev1'),arPrev2:g('arPrev2'),arColor:g('arColor'),arScope:g('arScope'),arContent:g('arContent'),arAction:g('arAction'),arInstallFee:g('arInstallFee'),arQty:g('arQty'),arQtyCustom:g('arQtyCustom'),arPay:g('arPay'),arPaid:g('arPaid'),arReceipt:g('arReceipt'),arNote:g('arNote'),savedAt:new Date().toISOString()};
+localStorage.setItem('asReportDraft_'+asReportJobId,JSON.stringify(draft));
+toast('💾 임시저장 완료!','ok')}
+
+function loadAsReportDraft(jobId){
+try{const d=JSON.parse(localStorage.getItem('asReportDraft_'+jobId));if(!d)return;
+setTimeout(()=>{
+const s=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v};
+s('arPrev1',d.arPrev1);s('arPrev2',d.arPrev2);s('arColor',d.arColor);s('arScope',d.arScope);s('arContent',d.arContent);s('arAction',d.arAction);s('arInstallFee',d.arInstallFee);s('arQty',d.arQty);s('arPay',d.arPay);s('arPaid',d.arPaid);s('arReceipt',d.arReceipt);s('arNote',d.arNote);
+if(d.arQty==='기타'){document.getElementById('arQtyCustom').style.display='block';s('arQtyCustom',d.arQtyCustom);}
+calcAsReport();
+toast('📋 임시저장 불러옴','ok');
+},50);}catch(e){}}
+
+function clearAsReportDraft(jobId){localStorage.removeItem('asReportDraft_'+jobId)}
+
+function submitAsReport(){
+const g=id=>document.getElementById(id).value;
+const prev=[g('arPrev1'),g('arPrev2')].filter(Boolean).join(', ');
+const qtyVal=g('arQty')==='기타'?(g('arQtyCustom')+'장'):g('arQty');
+const txt=`🔧 AS 보고서
+1. 시공일자 : ${g('arDate')}
+2. AS팀원 : ${g('arTeam')}
+3. 지역 : ${g('arRegion')}
+4. 아파트명 : ${g('arApt')}
+5. 동호수 : ${g('arUnit')}
+6. 연락처 : ${g('arPhone')}
+7. 평수 : ${g('arPy')}
+8. 이전 작업자 : ${prev}
+9. 색상 : ${g('arColor')}
+10. 시공범위 : ${g('arScope')}
+11. 내용 : ${g('arContent')}
+12. 조치 : ${g('arAction')}
+── 결제 정보 ──
+13. 시공비 : ${g('arInstallFee')}
+14. 들어간 장수 : ${qtyVal}
+15. 결제방법 : ${g('arPay')}
+16. 판매비용 : ${g('arSalePrice')}
+17. 결제금액 : ${g('arPaid')||'0'}
+18. 미결제금액 : ${g('arUnpaid')}
+19. 현금영수증 : ${g('arReceipt')}
+20. 특이사항 : ${g('arNote')}`;
+
+const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion'),apt:g('arApt'),unit:g('arUnit'),phone:g('arPhone'),py:g('arPy'),prevWorker:prev,color:g('arColor'),scope:g('arScope'),content:g('arContent'),action:g('arAction'),installFee:g('arInstallFee'),qty:qtyVal,salePrice:g('arSalePrice'),pay:g('arPay'),paid:g('arPaid')||'0',unpaid:g('arUnpaid'),receipt:g('arReceipt'),note:g('arNote'),submittedAt:new Date().toISOString()};
+fbSave('asReports/'+asReportJobId,reportData);
+
+if(SHEET_REPORT_URL){
+fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...reportData,jobId:asReportJobId})}).catch(()=>{})}
+
+document.getElementById('asReportText').textContent=txt;
+document.getElementById('asReportResult').style.display='block';
+clearAsReportDraft(asReportJobId);
+alert('🔧 AS 보고서 제출 완료!\n\n수정이 필요하면 위에서 수정 후 다시 제출하세요.');
+toast('🔧 AS 보고서 제출 완료!','ok')}
+
+function copyAsReport(){
+const txt=document.getElementById('asReportText').textContent;
+navigator.clipboard.writeText(txt).then(()=>{
+toast('📋 복사 완료!','ok');
+event.target.textContent='✅ 복사됨!';
+setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
+
+// ===== 후기이벤트 메시지 복사 =====
+function copyReviewMsg(phone){
+  const cleanPhone=phone.replace(/-/g,'').replace(/ /g,'').trim();
+  const unpaid=prompt('미결제 금액을 입력하세요 (없으면 0)','0');
+  if(unpaid===null)return;
+  const unpaidNum=parseInt(unpaid)||0;
+  const reviewUrl='https://my.dolbommat.com/review-event.html?phone='+cleanPhone;
+  const referralUrl='http://dolbommat.notion.site';
+  const naverReview='https://m.site.naver.com/1zAHw';
+  let txt=`안녕하세요, 고객님 😊
+돌봄매트 시공이 완료되었습니다!
+
+📋 확인사항
+1. 시공 수량 및 금액 (계산기)
+2. 영수증 (현금영수증/카드결제)
+* 온누리 사용시 자동으로 현금영수증 처리됩니다.
+3. 작업 전·후 사진
+
+🎁 리뷰 이벤트 (최대 11만원 캐시백!)
+${naverReview}
+🎟️ 지인쿠폰 사용방법
+${referralUrl}
+`;
+  if(unpaidNum>0){
+    txt+=`💰 잔금 ${unpaidNum.toLocaleString()}원 결제 후 내역 보내주세요!
+예약금 받으실 계좌번호 주시면 저녁에 입금드리겠습니다.
+`;
+  }
+  txt+=`📋 리뷰 이벤트 정산 받기
+${reviewUrl}
+
+감사합니다. 돌봄매트 드림 💌`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    toast('📋 후기 메시지 복사 완료! 카톡방에 붙여넣기','ok');
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=txt;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('📋 후기 메시지 복사 완료! 카톡방에 붙여넣기','ok');
+  });
+}
+
+// ===== 네이버 네비 열기 =====
+function openKatalk(chatUrl,channelName){
+if(channelName){
+navigator.clipboard.writeText(channelName).then(()=>toast('📋 채팅방명 복사됨: '+channelName,'ok')).catch(()=>toast('복사 실패'));
+} else {
+toast('⚠️ 채널명 없음 — 시트 S열에 입력해주세요');
+}
+if(chatUrl){window.open(chatUrl,'_blank')}
+else{window.open('https://business.kakao.com/_UMyBK/chats?t_src=business_partnercenter&t_ch=lnb','_blank')}
+}
+
+function openNavi(addr){
+// 동/호수 추출
+const dongHo=addr.match(/\d+동\s*\d*호?|\d+호/g);
+const dongHoText=dongHo?dongHo.join(' '):'';
+
+// 네비용 주소: 동/호수 제거
+const naviAddr=addr.replace(/\s*\d+동\s*\d*호?\s*/g,'').replace(/\s*\d+호\s*/g,'').trim();
+const msg=dongHoText?
+'🧭 네비 열기\n\n📍 '+naviAddr+'\n🏢 '+dongHoText+'\n\n이 주소로 이동하시겠습니까?':
+'🧭 네비 열기\n\n📍 '+naviAddr+'\n\n이 주소로 이동하시겠습니까?';
+if(!confirm(msg))return;
+
+// 주소 클립보드 복사 (네비 앱 실패해도 붙여넣기 가능)
+try{navigator.clipboard.writeText(naviAddr).catch(()=>{});}catch(e){}
+toast('📋 주소 복사됨! 네비 앱을 여는 중...','ok');
+
+// 동/호수 있으면 알림 띄우기
+if(dongHoText){
+// 1) 웹 알림 (네비 앱에서도 보임)
+if('Notification' in window){
+if(Notification.permission==='granted'){
+new Notification('🏢 도착하면 확인하세요',{body:naviAddr+' '+dongHoText,icon:'./icon-192.png',tag:'dongho',requireInteraction:true});
+}else if(Notification.permission!=='denied'){
+Notification.requestPermission().then(p=>{
+if(p==='granted')new Notification('🏢 도착하면 확인하세요',{body:naviAddr+' '+dongHoText,icon:'./icon-192.png',tag:'dongho',requireInteraction:true})})}}
+
+// 2) 화면 상단 고정 배너 (앱 돌아왔을 때 보임)
+const bar=document.getElementById('donghoBar');
+bar.innerHTML='🏢 <b>'+dongHoText+'</b> · '+naviAddr+' <span style="margin-left:8px;opacity:.6" onclick="event.stopPropagation();this.parentElement.style.display=\'none\'">✕</span>';
+bar.style.display='block';
+}
+
+const encoded=encodeURIComponent(naviAddr);
+const webUrl='https://map.naver.com/v5/search/'+encoded;
+const isAndroid=/Android/i.test(navigator.userAgent);
+
+if(isAndroid){
+  // 안드로이드 공통: intent → 실패 시 1.5초 후 웹 폴백 (삼성/크롬/PWA 모두 대응)
+  const intentUrl='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
+  const start=Date.now();
+  location.href=intentUrl;
+  setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500);
+}else{
+  // iOS
+  const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
+  const start=Date.now();
+  location.href=appUrl;
+  setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500);
+}
+}
+
+function copyAddr(addr){
+navigator.clipboard.writeText(addr).then(()=>{toast('📋 주소 복사됨!','copy')}).catch(()=>{
+const ta=document.createElement('textarea');ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+toast('📋 주소 복사됨!','copy')})}
+
+// ===== Render Schedule =====
+function renderSched(){
+const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
+const jobDates=Object.keys(bd).sort();
+const today=new Date();const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+
+// 휴무자 사전 정리 (렌더링용 로컬 복사본 - A 원본은 수정하지 않음!)
+const dateOffs={};
+// OFFS 데이터에서 휴무자 수집
+Object.keys(OFFS).forEach(d=>{if(!dateOffs[d])dateOffs[d]=new Set();OFFS[d].forEach(n=>dateOffs[d].add(n))});
+// 기존 doff에서도 수집 (호환성)
+J.forEach(j=>{if(j.doff.length){if(!dateOffs[j.date])dateOffs[j.date]=new Set();j.doff.forEach(n=>dateOffs[j.date].add(n))}});
+// 렌더링용 배정 복사본 (휴무자 제외된 버전)
+const RA={};
+Object.keys(A).forEach(k=>{
+  const jobDate=k.split('_')[0];
+  const offs=dateOffs[jobDate];
+  if(offs&&offs.size){
+    const filtered=A[k].filter(e=>!offs.has(e));
+    if(filtered.length)RA[k]=filtered;
+  }else{
+    RA[k]=A[k];
+  }
+});
+
+// 첫날~마지막날 사이 모든 날짜 생성
+function getAllDates(start,end){
+const dates=[];const cur=new Date(start);const last=new Date(end);
+while(cur<=last){dates.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0'));cur.setDate(cur.getDate()+1)}
+return dates}
+
+const firstDate=jobDates.length?jobDates[0]:todayStr;
+const lastDate=jobDates.length?jobDates[jobDates.length-1]:todayStr;
+// 오늘~마지막날 (과거 포함하려면 firstDate부터)
+const allDatesRange=getAllDates(firstDate,lastDate);
+const futureDates=allDatesRange.filter(d=>d>=todayStr);
+const pastDates=allDatesRange.filter(d=>d<todayStr);
+
+// 직원 색상 범례
+let html='';
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+
+// 최신화 + 재배정 버튼 (작게)
+html+=`<div style="display:flex;gap:6px;margin-bottom:10px">
+<div id="refreshBtn" onclick="doRefresh()" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;font-size:11px;font-weight:600;color:var(--text)">🔄 최신화</div>
+<div onclick="reAssign()" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;font-size:11px;font-weight:600;color:var(--yellow)">🤖 재배정</div>
+</div>`;
+
+if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
+
+function renderDayCards(dates,dimmed){
+return dates.map(date=>{
+const jobs=bd[date]||[];const realJobs=jobs.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());const d=new Date(date);const di=d.getDay();const dn=DOW[di];
+const isToday=date===todayStr;
+const holiday=isHoliday(date);
+const isSun=di===0;const isSat=di===6;const isRedDay=isSun||!!holiday;
+const dateBorderColor=isRedDay?'var(--red)':isSat?'var(--blue)':isToday?'var(--blue)':'var(--border)';
+const dateBorderWidth=isRedDay||isSat||isToday?'2px':'1px';
+const dateColor=isRedDay?'var(--red)':isSat?'var(--blue)':'var(--text)';
+
+// 휴무 표시 (OFFS + doff 합산)
+const offs=new Set();
+if(OFFS[date])OFFS[date].forEach(n=>offs.add(n));
+jobs.forEach(j=>j.doff.forEach(n=>offs.add(n)));
+const offHtml=offs.size?'<span style="font-size:11px;font-weight:500;opacity:.6">· 휴무 : '+[...offs].join(' ')+'</span>':'';
+
+if(!realJobs.length){
+const onDuty=E.filter(e=>!offs.has(e));
+const ecl2=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const dutyHtml=onDuty.length&&!isSun?'<div style="padding:4px 8px;font-size:11px;color:var(--dim)">👷 출근: '+onDuty.map(e=>{const ei=E.indexOf(e);return '<span style="font-weight:700;color:'+ecl2[ei%10]+'">'+e+'</span>'}).join(' · ')+'</div>':'';
+return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${holiday?'<span style="font-size:10px;color:var(--red);margin-left:4px">🔴 '+holiday+'</span>':''}${offHtml}</div>
+<div class="daycard-body">${isSun?'<div style="color:var(--dim);font-size:13px;padding:8px">🔴 일요일</div>':'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'+dutyHtml}</div></div>`}
+
+// 팀별 그룹
+const tm={};const un=[];
+realJobs.forEach(j=>{const t=RA[j.id];if(t&&t.length){const k=[...t].sort().join('+');if(!tm[k])tm[k]={team:t.slice().sort((a,b)=>{const ti=teams.findIndex(tt=>tt.includes(a)&&tt.includes(b));if(ti>=0)return teams[ti].indexOf(a)-teams[ti].indexOf(b);return 0}),jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
+
+// 팀설정 순번으로 정렬 (일관된 표시 순서)
+const tmArr=Object.values(tm).sort((a,b)=>{
+const ai=teams.findIndex(t=>a.team.some(m=>t.includes(m)));
+const bi=teams.findIndex(t=>b.team.some(m=>t.includes(m)));
+return (ai===-1?99:ai)-(bi===-1?99:bi);
+});
+
+let body=tmArr.map(tg=>{
+const ti=teams.findIndex(t=>t.some(m=>tg.team.includes(m)));
+const hasNew=tg.jobs.some(j=>j.isNew);
+const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
+
+// 오전 → 오후 → as 순서로 정렬
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2,'실측':3};
+const sorted=[...tg.jobs].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
+
+const jobRows=sorted.map(j=>{
+const isAm=j.time.startsWith('오전')||j.time.includes('2:');
+const isAs=j.time==='as'||j.time==='AS';
+const isMeasure=j.time==='실측';
+const isMove=(j.category||'').includes('이전설치');
+const timeCls=isMeasure?'measure':isAs?'pm':isAm?'am':'pm';
+const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
+const safeAddr=j.addr.replace(/'/g,"\\'");
+const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
+const safeChName=j.channelName?(j.channelName+'').replace(/'/g,"\\'"):'';
+const curTeam=RA[j.id]||[];
+const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const editBtns=E.map((e,ei)=>{
+const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[ei%10];
+return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
+
+return `<div style="padding:6px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isMeasure?'실측':isAs?'AS':isAm?'오전':'오후'}</span>
+<span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
+${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
+</div>
+${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}${isMove?'<span>·</span><span style="color:var(--yellow);font-weight:700">이전설치</span>':''}</div>`:''}
+<div style="display:flex;align-items:center;gap:3px;margin-top:2px">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
+<span onclick="event.stopPropagation();openKatalk('${safeChatUrl}','${safeChName}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">${safeChName?'📋카톡':'카톡'}</span>
+${j.time==='as'||j.time==='AS'?
+`<span onclick="event.stopPropagation();openAsReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,69,58,.12);color:var(--red);cursor:pointer;border:1px solid rgba(255,69,58,.25)">AS보고</span>`:
+isMeasure?
+`<span onclick="event.stopPropagation();window.open('https://my.dolbommat.com/quote.html','_blank')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">📐실측</span>`:
+`<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
+<span style="margin-left:auto;display:flex;gap:3px">
+${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>${LOCK_REASONS[j.id]?`<span style="font-size:9px;color:var(--green);opacity:.8;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${LOCK_REASONS[j.id]}">${LOCK_REASONS[j.id]}</span>`:''}`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
+<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
+<span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
+</span>
+</div>
+<div id="edit_${j.id}" style="display:none;margin-top:3px;flex-wrap:wrap;gap:2px">${editBtns}</div>
+</div>`}).join('');
+
+return `<div class="tjob">
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${E.indexOf(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:autoV;const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+${jobRows}</div>`}).join('');
+
+if(un.length){
+const dayOffSet=new Set();jobs.forEach(jj=>jj.doff.forEach(n=>dayOffSet.add(n)));
+const timeOrder={'오전':0,'오전(이전설치)':0,'오후':1,'오후(이전설치)':1,'as':2,'AS':2,'실측':3};
+const sortedUn=[...un].sort((a,b)=>(timeOrder[a.time]??1)-(timeOrder[b.time]??1));
+
+body+=`<div class="ujob"><div class="ujob-title">⚠️ 미배정 ${sortedUn.length}건</div>`;
+body+=sortedUn.map((j,idx)=>{
+const isAm=j.time.startsWith('오전')||j.time.includes('2:');
+const isAs=j.time==='as'||j.time==='AS';
+const isMeasure=j.time==='실측';
+const isMove=(j.category||'').includes('이전설치');
+const timeCls=isMeasure?'measure':isAs?'pm':isAm?'am':'pm';
+const safeAddr=j.addr.replace(/'/g,"\\'");
+const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kakao.com/_UMyBK/chats';
+const safeChName2=j.channelName?(j.channelName+'').replace(/'/g,"\\'"):'';
+const mats=j.mat.map(m=>`<span class="mat mat-${matCls(m.t)}">${m.t}</span>`).join('');
+const empBtns=E.map((e,ei)=>{
+const isOff=dayOffSet.has(e);
+const ecols=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const ec=ecols[ei%10];
+return `<button style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;border:2px solid ${ec};background:${ec}22;color:${isOff?'var(--red)':ec};cursor:pointer;font-family:var(--font);margin:1px;${isOff?'opacity:.3;text-decoration:line-through;pointer-events:none':''}" onclick="ma('${j.id}','${e}')">${e}</button>`}).join('');
+return `<div style="padding:6px 0;${idx>0?'border-top:1px solid var(--border);':''}">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
+<span class="tjob-time ${timeCls}" style="font-size:10px;flex-shrink:0;padding:2px 6px">${isMeasure?'실측':isAs?'AS':isAm?'오전':'오후'}</span>
+<span style="font-size:12px;font-weight:500;flex:1;word-break:keep-all">${j.addr||'📍 주소 미입력'}</span>
+${j.isNew?'<span class="new-badge" style="font-size:8px;padding:1px 4px;flex-shrink:0">NEW</span>':''}
+</div>
+${j.py||j.scope||mats?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--dim);margin-left:38px;margin-bottom:2px">${j.py?'<span>'+j.py+'평</span>':''}${j.py&&j.scope?'<span>·</span>':''}${j.scope?'<span>'+j.scope+'</span>':''}${mats?(j.py||j.scope?'<span>·</span>':'')+mats:''}${isMove?'<span>·</span><span style="color:var(--yellow);font-weight:700">이전설치</span>':''}</div>`:''}
+<div style="display:flex;align-items:center;gap:3px;margin-left:38px;margin-bottom:3px">
+<span onclick="event.stopPropagation();openNavi('${safeAddr}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(52,211,153,.15);color:var(--green);cursor:pointer;border:1px solid rgba(52,211,153,.3)">네비</span>
+<span onclick="event.stopPropagation();openKatalk('${safeChatUrl}','${safeChName2}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(251,191,36,.15);color:var(--yellow);cursor:pointer;border:1px solid rgba(251,191,36,.3)">${safeChName2?'📋카톡':'카톡'}</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:2px">${empBtns}</div>
+</div>`}).join('');
+body+=`</div>`}
+
+return `<div class="daycard" style="${dimmed?'opacity:.5':''}border:${dateBorderWidth} solid ${dateBorderColor}">
+<div class="daycard-hd"><span class="daycard-date" style="color:${dateColor}">${date.slice(2).replace(/-/g,'')}${isToday?' (오늘)':''}</span><span class="daycard-dow ${DOW_CLS[di]}">${dn}</span>${holiday?'<span style="font-size:10px;color:var(--red);margin-left:4px">🔴 '+holiday+'</span>':''}${offHtml}</div>
+${(()=>{
+// 출근했는데 배정 못 받은 직원 표시
+const assigned=new Set();
+realJobs.forEach(j=>{const t=RA[j.id];if(t)t.forEach(e=>assigned.add(e))});
+const idle=E.filter(e=>!offs.has(e)&&!assigned.has(e));
+if(!idle.length||!realJobs.length)return '';
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳ 대기: '+idle.map(e=>{const ei=E.indexOf(e);return '<span style="font-weight:700;color:'+ecl[ei%10]+'">'+e+'</span>'}).join(' · ')+'</div>'
+})()}<div class="daycard-body">${body||'<div style="color:var(--dim);font-size:13px;padding:8px">시공 없음</div>'}</div></div>`}).join('')}
+
+html+=renderDayCards(futureDates,false);
+if(pastDates.length){
+html+=`<div style="margin:16px 0;text-align:center"><button onclick="document.getElementById('pastDays').style.display=document.getElementById('pastDays').style.display==='none'?'block':'none'" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
+html+=`<div id="pastDays" style="display:none">${renderDayCards(pastDates,true)}</div>`};
+
+document.getElementById('schedView').innerHTML=html}
+
+// ===== Render Team =====
+function renderTeam(){
+const colors=['tc0','tc1','tc2','tc3','tc4','tc5','tc6','tc7','tc8','tc9'];
+let html='<div class="sec">👥 이번 달 팀 구성</div>';
+html+='<p style="font-size:12px;color:var(--dim);margin-bottom:14px">직원을 길게 눌러 드래그하면 팀을 이동할 수 있어요</p>';
+
+if(teams.length){
+html+=teams.map((t,i)=>{
+const members=t.map((m,mi)=>{
+const ci=E.indexOf(m);
+const role=mi===0?'<span style="font-size:9px;color:var(--dim);margin-left:2px">사수</span>':'<span style="font-size:9px;color:var(--dim);margin-left:2px">부사수</span>';
+return `<span class="tmem ${colors[ci%10]}" data-name="${m}" data-from="team" data-ti="${i}">${m}${role}<span class="x" onclick="event.stopPropagation();rmMem(${i},'${m}')">×</span></span>`
+}).join('');
+return `<div class="tcard"><h3 style="display:flex;justify-content:space-between">${i+1}팀<span style="font-size:12px;font-weight:400;color:var(--red);cursor:pointer" onclick="delTeam(${i})">삭제</span></h3><div class="tslot" data-drop="team" data-ti="${i}">${members||'<span style="color:var(--dim);font-size:13px">여기로 드래그</span>'}</div></div>`}).join('')}
+
+const assigned=new Set();teams.forEach(t=>t.forEach(m=>assigned.add(m)));
+const unassigned=E.filter(e=>!assigned.has(e));
+html+=`<div class="tcard"><h3>미배정 직원</h3><div class="pool" data-drop="pool">${unassigned.length?unassigned.map(e=>{
+const ci=E.indexOf(e);
+return `<span class="pool-mem tl${ci%10}" data-name="${e}" data-from="pool" style="border-color:${['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'][ci%10]}">${e}</span>`}).join(''):'<span style="color:var(--dim);font-size:13px">모든 직원이 팀에 배정됨</span>'}</div></div>`;
+
+html+=`<button class="btn btn-blue" onclick="addTeam()">+ 새 팀 추가</button>`;
+
+// 직원 관리
+html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${E.map(e=>`<span style="padding:8px 14px;background:var(--card2);border-radius:8px;font-size:13px;display:inline-flex;align-items:center;gap:6px">${e}<span style="color:var(--red);cursor:pointer" onclick="delEmp('${e}')">×</span></span>`).join('')}</div>
+<div class="add-row"><input id="ne" placeholder="새 직원 이름"><button class="btn btn-blue" style="width:auto;padding:12px 24px;margin:0" onclick="addEmp()">추가</button></div></div>`;
+
+document.getElementById('teamView').innerHTML=html;
+initDnD();}
+
+function addTeam(){teams.push([]);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('gg_employees',E);renderTeam();toast(v+' 추가!','ok')}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('gg_employees',E);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+
+// 드래그앤드롭으로 팀 이동 처리
+function moveMember(name,fromType,fromTi,toType,toTi){
+// 원래 위치에서 제거
+if(fromType==='team'&&fromTi!==undefined){
+  teams[fromTi]=teams[fromTi].filter(m=>m!==name);
+}
+// 새 위치에 추가
+if(toType==='team'&&toTi!==undefined){
+  if(!teams[toTi].includes(name))teams[toTi].push(name);
+}
+// pool로 이동 = 어디에도 추가 안 함 (제거만)
+fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet();
+toast('✅ '+name+' 이동 완료','ok');
+}
+
+// ===== 터치 드래그앤드롭 시스템 =====
+let dndState=null;
+function initDnD(){
+const members=document.querySelectorAll('.tmem[data-name],.pool-mem[data-name]');
+members.forEach(el=>{
+  el.addEventListener('touchstart',dndTouchStart,{passive:false});
+  el.addEventListener('mousedown',dndMouseDown);
+});
+}
+
+function dndTouchStart(e){
+const el=e.currentTarget;
+const name=el.dataset.name;
+if(!name)return;
+// 길게 누르기 감지 (200ms)
+const timer=setTimeout(()=>{
+  e.preventDefault();
+  startDrag(el,e.touches[0].clientX,e.touches[0].clientY);
+},200);
+el._dndTimer=timer;
+el._dndMoved=false;
+el.addEventListener('touchmove',function onM(ev){
+  if(!dndState){
+    // 아직 드래그 시작 안 됐으면 타이머 취소 (스크롤 허용)
+    const dx=Math.abs(ev.touches[0].clientX-(e.touches[0]?.clientX||0));
+    const dy=Math.abs(ev.touches[0].clientY-(e.touches[0]?.clientY||0));
+    if(dx>5||dy>5){clearTimeout(timer);el.removeEventListener('touchmove',onM)}
+    return;
+  }
+  ev.preventDefault();
+  moveDrag(ev.touches[0].clientX,ev.touches[0].clientY);
+},{passive:false});
+el.addEventListener('touchend',function onE(ev){
+  clearTimeout(timer);
+  if(dndState)endDrag(ev.changedTouches[0].clientX,ev.changedTouches[0].clientY);
+  el.removeEventListener('touchend',onE);
+},{once:true});
+el.addEventListener('touchcancel',function(){clearTimeout(timer);cancelDrag()},{once:true});
+}
+
+function dndMouseDown(e){
+const el=e.currentTarget;
+if(e.target.classList.contains('x'))return; // X 버튼은 무시
+const name=el.dataset.name;
+if(!name)return;
+e.preventDefault();
+startDrag(el,e.clientX,e.clientY);
+function onM(ev){ev.preventDefault();moveDrag(ev.clientX,ev.clientY)}
+function onU(ev){endDrag(ev.clientX,ev.clientY);document.removeEventListener('mousemove',onM);document.removeEventListener('mouseup',onU)}
+document.addEventListener('mousemove',onM);
+document.addEventListener('mouseup',onU);
+}
+
+function startDrag(el,x,y){
+if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return}
+const rect=el.getBoundingClientRect();
+const ghost=el.cloneNode(true);
+ghost.className=el.className+' drag-ghost';
+ghost.style.width=rect.width+'px';
+ghost.style.left=(x-rect.width/2)+'px';
+ghost.style.top=(y-rect.height/2)+'px';
+document.body.appendChild(ghost);
+el.classList.add('drag-src');
+dndState={name:el.dataset.name,fromType:el.dataset.from,fromTi:el.dataset.ti!==undefined?parseInt(el.dataset.ti):undefined,ghost,srcEl:el};
+}
+
+function moveDrag(x,y){
+if(!dndState)return;
+dndState.ghost.style.left=(x-dndState.ghost.offsetWidth/2)+'px';
+dndState.ghost.style.top=(y-dndState.ghost.offsetHeight/2)+'px';
+// 드롭 대상 하이라이트
+document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+const target=document.elementFromPoint(x,y);
+if(target){
+  const drop=target.closest('[data-drop]');
+  if(drop)drop.classList.add('drag-over');
+}
+}
+
+function endDrag(x,y){
+if(!dndState)return;
+document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+const target=document.elementFromPoint(x,y);
+if(target){
+  const drop=target.closest('[data-drop]');
+  if(drop){
+    const toType=drop.dataset.drop;
+    const toTi=drop.dataset.ti!==undefined?parseInt(drop.dataset.ti):undefined;
+    // 같은 자리가 아니면 이동
+    if(toType!==dndState.fromType||toTi!==dndState.fromTi){
+      moveMember(dndState.name,dndState.fromType,dndState.fromTi,toType,toTi);
+    }
+  }
+}
+cancelDrag();
+}
+
+function cancelDrag(){
+if(!dndState)return;
+if(dndState.ghost&&dndState.ghost.parentNode)dndState.ghost.remove();
+if(dndState.srcEl)dndState.srcEl.classList.remove('drag-src');
+dndState=null;
+}
+
+// ===== Render Fair =====
+function renderFair(){
+const cl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const monthStr=mYear+'년 '+(mMonth+1)+'월';
+
+// 선택한 달 시공 건 필터
+const mj=J.filter(j=>!j.offOnly&&new Date(j.date).getFullYear()===mYear&&new Date(j.date).getMonth()===mMonth);
+
+// 직원별 집계
+const es={};E.forEach(e=>es[e]={double:0,as:0,km:0,days:{},workDates:new Set()});
+
+mj.forEach(j=>{const t=A[j.id];if(t)t.forEach(e=>{if(es[e]){
+// 근무일 추적
+es[e].workDates.add(j.date);
+// AS 건수 (별도)
+if(j.time==='as'||j.time==='AS'||j.time==='실측'){if(j.time==='as'||j.time==='AS')es[e].as++}
+else{
+// 시공(오전/오후)만 날짜별 추적 (두탕 계산용)
+if(!es[e].days[j.date])es[e].days[j.date]=0;
+es[e].days[j.date]++}
+}})});
+
+// 경로 기반 이동거리: 사무실→시공1→시공2→...→사무실 (하루 단위)
+const fairTabRoutes=calcEmpRouteTotals(mj);
+E.forEach(e=>{es[e].km=fairTabRoutes[e]||0});
+
+// 두탕 = 같은 날 시공(오전+오후) 2건 이상 (AS 미포함)
+E.forEach(e=>{es[e].double=Object.values(es[e].days).filter(c=>c>=2).length});
+
+// 일 평균 km 계산
+E.forEach(e=>{const wd=es[e].workDates.size;es[e].avgKm=wd>0?Math.round(es[e].km/wd):0;es[e].workDays=wd});
+
+// 입사일 기준 정렬 (고참→막내)
+const sE=[...E].sort(hdSort);
+
+// 최대값 (바 차트 비율용)
+const maxDouble=Math.max(...E.map(e=>es[e].double),1);
+const maxAs=Math.max(...E.map(e=>es[e].as),1);
+
+let html=`<div style="text-align:center;padding:12px;margin-bottom:12px;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:16px"><span onclick="fairMove(-1)" style="cursor:pointer;font-size:20px;color:var(--dim);padding:4px 8px">◀</span>📊 ${monthStr} 실적<span onclick="fairMove(1)" style="cursor:pointer;font-size:20px;color:var(--dim);padding:4px 8px">▶</span></div>`;
+
+// ========== 🏆 두탕 순위 (TOP 카드) ==========
+const dbRanked=[...sE].sort((a,b)=>es[a].double-es[b].double);
+const dbAvg=E.reduce((s,e)=>s+es[e].double,0)/Math.max(E.length,1);
+const dbMax2=Math.max(...E.map(e=>es[e].double),1);
+const medals=['🥇','🥈','🥉'];
+html+=`<div class="fcard" style="background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(251,191,36,0.02));border:1px solid rgba(251,191,36,0.2)">`;
+html+=`<div class="sec">🏆 이번달 두탕 순위 <span style="font-size:11px;font-weight:400;color:var(--dim)">(적게 간 순 = 다음 배정 우선)</span></div>`;
+html+=dbRanked.map((e,i)=>{
+  const v=es[e].double;
+  const diff=Math.round((v-dbAvg)*10)/10;
+  const w=Math.round(v/dbMax2*100);
+  const medal=i<3?medals[i]:'  ';
+  const ci=E.indexOf(e);
+  const isFirst=i===0;
+  const diffStr=diff>0?`+${diff}회 과다`:(diff<0?`${diff}회 부족`:'평균');
+  const diffColor=diff>0?'#ef4444':(diff<0?'var(--green)':'var(--dim)');
+  return `<div class="frow" style="${isFirst?'background:rgba(251,191,36,0.1);border-radius:6px;padding:4px 6px':''}">
+    <span style="font-size:14px;width:20px;display:inline-block;text-align:center;flex-shrink:0">${medal}</span>
+    <span class="fname">${e}</span>
+    <div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[ci%10]}">${v}</div></div>
+    <span class="fval" style="min-width:100px;text-align:right">${v}일 ${isFirst?'<span style="font-size:10px;font-weight:800;color:#f59e0b">⭐</span>':`<span style="font-size:10px;color:${diffColor}">${diffStr}</span>`}</span>
+  </div>`;
+}).join('');
+html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--dim);text-align:center">
+  평균 ${Math.round(dbAvg*10)/10}회 · 편차 ${Math.max(...E.map(e=>es[e].double))-Math.min(...E.map(e=>es[e].double))}회
+</div>`;
+html+=`</div>`;
+
+// ========== 📐 공정성 점수 설명 카드 ==========
+const fairAvgWd=E.reduce((s,e)=>s+es[e].workDays,0)/Math.max(E.length,1);
+const fairAvgDb=E.reduce((s,e)=>s+es[e].double,0)/Math.max(E.length,1);
+const fairAvgKm=E.reduce((s,e)=>s+es[e].km,0)/Math.max(E.length,1);
+const personalScores={};
+E.forEach(e=>{
+  const dbDiff=es[e].double-fairAvgDb;
+  const wdDiff=es[e].workDays-fairAvgWd;
+  const kmDiff=es[e].km-fairAvgKm;
+  const score=Math.round((dbDiff*8+wdDiff*3+kmDiff/20)*10)/10;
+  personalScores[e]={dbDiff:Math.round(dbDiff*10)/10,wdDiff:Math.round(wdDiff*10)/10,kmDiff:Math.round(kmDiff),score:score};
+});
+const scoreSorted=[...E].sort((a,b)=>personalScores[a].score-personalScores[b].score);
+
+html+=`<div class="fcard" style="background:linear-gradient(135deg,rgba(59,130,246,0.05),rgba(59,130,246,0.01));border:1px solid rgba(59,130,246,0.15)">`;
+html+=`<div class="sec">📐 종합 공정성 점수 <span style="font-size:11px;font-weight:400;color:var(--dim)">(점수 낮을수록 다음 배정 우선)</span></div>`;
+
+// 테이블 헤더
+html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px">
+  <tr style="border-bottom:1px solid var(--border);color:var(--dim);font-size:10px">
+    <th style="text-align:left;padding:6px 4px">이름</th>
+    <th style="text-align:center;padding:6px 4px">두탕</th>
+    <th style="text-align:center;padding:6px 4px">근무일</th>
+    <th style="text-align:center;padding:6px 4px">이동km</th>
+    <th style="text-align:right;padding:6px 4px">점수</th>
+  </tr>`;
+html+=scoreSorted.map((e,i)=>{
+  const p=personalScores[e];
+  const ci=E.indexOf(e);
+  const isFirst=i===0;
+  const isLast=i===scoreSorted.length-1;
+  const scoreColor=p.score<-2?'var(--green)':(p.score>5?'#ef4444':'var(--text)');
+  const sign=(n,dec=1)=>n>0?`+${n.toFixed(dec)}`:n.toFixed(dec);
+  return `<tr style="border-bottom:1px solid var(--border);${isFirst?'background:rgba(52,211,153,0.08)':''}${isLast?'background:rgba(239,68,68,0.05)':''}">
+    <td style="padding:8px 4px;font-weight:700;color:${cl[ci%10]}">${e}${isFirst?' 🏆':''}${isLast?' ⚠️':''}</td>
+    <td style="text-align:center;padding:8px 4px;font-size:11px;color:${p.dbDiff>0?'#ef4444':(p.dbDiff<0?'var(--green)':'var(--dim)')}">${sign(p.dbDiff)}</td>
+    <td style="text-align:center;padding:8px 4px;font-size:11px;color:${p.wdDiff>0?'#ef4444':(p.wdDiff<0?'var(--green)':'var(--dim)')}">${sign(p.wdDiff)}</td>
+    <td style="text-align:center;padding:8px 4px;font-size:11px;color:${p.kmDiff>0?'#ef4444':(p.kmDiff<0?'var(--green)':'var(--dim)')}">${sign(p.kmDiff,0)}</td>
+    <td style="text-align:right;padding:8px 4px;font-weight:800;color:${scoreColor}">${sign(p.score)}</td>
+  </tr>`;
+}).join('');
+html+=`</table></div>`;
+
+// 계산식 설명 박스
+html+=`<div style="background:var(--card2);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;line-height:1.7">
+  <div style="font-weight:700;color:var(--text);margin-bottom:6px">🔢 계산식</div>
+  <div style="color:var(--dim)">
+    점수 = <span style="color:#f59e0b">두탕 초과 × 8</span>
+    + <span style="color:var(--blue)">근무일 초과 × 3</span>
+    + <span style="color:var(--green)">이동거리 초과 ÷ 20</span>
+  </div>
+  <div style="margin-top:6px;color:var(--dim)">
+    <b style="color:var(--text)">"초과"란?</b> 전체 평균과의 차이<br>
+    예) 이달 평균 두탕 ${Math.round(fairAvgDb*10)/10}회 → 내가 ${Math.round(fairAvgDb*10)/10+2}회면 "+2회 초과"
+  </div>
+  <div style="margin-top:6px;color:var(--dim)">
+    <b style="color:var(--text)">왜 두탕이 가장 큰가요?</b> 인센티브 기회 균등 배분을 위해 가중치 8 (근무일은 3)
+  </div>
+  <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);color:var(--dim)">
+    <b style="color:var(--green)">🟢 음수(-)</b>: 평균보다 적게 받음 → 다음 배정 우선<br>
+    <b style="color:#ef4444">🔴 양수(+)</b>: 평균보다 많이 받음 → 다음 배정 후순위
+  </div>
+</div>`;
+html+=`</div>`;
+
+// 두탕 횟수
+html+=`<div class="fcard"><div class="sec">🔥 두탕 (오전+오후 시공, 인센티브 💰)</div>`;
+html+=sE.map((e,i)=>{
+const v=es[e].double;const w=Math.round(v/maxDouble*100);
+return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[i%10]}">${v}</div></div><span class="fval">${v}일</span></div>`}).join('');
+html+=`</div>`;
+
+// AS 건수
+html+=`<div class="fcard"><div class="sec">🔧 AS 건수</div>`;
+html+=sE.map((e,i)=>{
+const v=es[e].as;const w=Math.round(v/maxAs*100);
+return `<div class="frow"><span class="fname">${e}</span><div class="fbar"><div class="ffill" style="width:${v?Math.max(w,10):0}%;background:${cl[i%10]}">${v}</div></div><span class="fval">${v}건</span></div>`}).join('');
+html+=`</div>`;
+
+// 이동거리 (총거리 + 일평균 겹친 막대)
+const totalAddrs=new Set(mj.map(j=>j.addr).filter(Boolean));
+const calcAddrs=[...totalAddrs].filter(a=>DIST[a.replace(/[.#$/\[\]]/g,'_')]!==undefined);
+const maxTotalKm=Math.max(...E.map(e=>es[e].km),1);
+html+=`<div class="fcard"><div class="sec">🚗 이동거리 <span style="font-size:11px;font-weight:400;color:var(--dim)">(${calcAddrs.length}/${totalAddrs.size} 주소 계산됨)</span></div>`;
+const hasKm=E.some(e=>es[e].km>0);
+if(hasKm){
+html+=sE.map((e,i)=>{
+const s=es[e];
+const wTotal=Math.round(s.km/maxTotalKm*100);
+const wAvg=s.km>0?Math.round(s.avgKm/maxTotalKm*s.workDays/1*100):0;
+return `<div style="margin:10px 0">
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px">
+<span class="fname">${e}</span>
+<span style="font-size:11px;color:var(--dim)">${s.workDays}일 근무</span>
+<span style="font-size:13px;font-weight:900;color:${cl[i%10]};margin-left:auto">${s.avgKm}km/일</span>
+</div>
+<div style="position:relative;height:24px;background:var(--card2);border-radius:8px;overflow:hidden">
+<div style="position:absolute;height:100%;width:${Math.max(Math.round(s.avgKm/(Math.max(...E.map(e2=>es[e2].avgKm),1))*100),5)}%;background:${cl[i%10]};border-radius:8px"></div>
+</div>
+</div>`}).join('');
+html+=`<div style="font-size:10px;color:var(--dim);margin-top:8px;text-align:center">일평균은 근무일 기준이라 연차·휴무와 무관해요</div>`}
+else{html+=`<div style="color:var(--dim);font-size:12px;padding:8px">주소 거리 계산 중... 잠시 후 새로고침 해주세요</div>`}
+html+=`</div>`;
+
+// 요약 테이블
+html+=`<div class="fcard"><div class="sec">📋 요약</div>`;
+html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+<tr style="border-bottom:1px solid var(--border)">
+<th style="text-align:left;padding:8px 4px;color:var(--dim);font-size:11px">이름</th>
+<th style="text-align:center;padding:8px 4px;color:var(--dim);font-size:11px">근무</th>
+<th style="text-align:center;padding:8px 4px;color:var(--dim);font-size:11px">두탕</th>
+<th style="text-align:center;padding:8px 4px;color:var(--dim);font-size:11px">AS</th>
+<th style="text-align:right;padding:8px 4px;color:var(--dim);font-size:11px">평균km</th>
+</tr>`;
+html+=sE.map((e,i)=>{const s=es[e];
+return `<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:10px 4px;font-weight:700;color:${cl[i%10]}">${e}</td>
+<td style="text-align:center;padding:10px 4px;font-weight:700">${s.workDays}일</td>
+<td style="text-align:center;padding:10px 4px;font-weight:700">${s.double}일</td>
+<td style="text-align:center;padding:10px 4px;font-weight:700">${s.as}건</td>
+<td style="text-align:right;padding:10px 4px;font-weight:700">${s.avgKm}km</td>
+</tr>`}).join('');
+html+=`</table></div></div>`;
+
+// 배정 우선순위 (공정성 점수 시각화)
+const fScores={};
+const aWd=E.reduce((s,e)=>s+es[e].workDays,0)/Math.max(E.length,1);
+const aDb=E.reduce((s,e)=>s+es[e].double,0)/Math.max(E.length,1);
+const aKm2=E.reduce((s,e)=>s+es[e].km,0)/Math.max(E.length,1);
+E.forEach(e=>{
+  fScores[e]=Math.round(((es[e].workDays-aWd)*3+(es[e].double-aDb)*8+((es[e].km-aKm2)/20))*10)/10;
+});
+const sortedByPriority=[...E].sort((a,b)=>fScores[a]-fScores[b]);
+const minFS=Math.min(...E.map(e=>fScores[e]));
+const maxFS=Math.max(...E.map(e=>fScores[e]),1);
+const fsRange=Math.max(maxFS-minFS,1);
+
+html+=`<div class="fcard"><div class="sec">🎯 다음 배정 우선순위</div>`;
+html+=`<p style="font-size:11px;color:var(--dim);margin-bottom:12px">점수가 낮을수록 다음 배정에서 우선 (근무일·두탕·거리 기준)</p>`;
+html+=sortedByPriority.map((e,rank)=>{
+  const ci=E.indexOf(e);
+  const score=fScores[e];
+  const w=Math.round(((score-minFS)/fsRange)*100);
+  const isFirst=rank===0;
+  const badge=isFirst?'<span style="font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(48,209,88,.15);color:var(--green);font-weight:700;margin-left:6px">우선</span>':'';
+  return `<div class="frow">
+  <span class="fname" style="color:${cl[ci%10]}">${rank+1}. ${e}${badge}</span>
+  <div class="fbar"><div class="ffill" style="width:${Math.max(w,5)}%;background:${score<=0?'var(--green)':'var(--yellow)'}">${score>0?'+':''}${score}</div></div>
+  <span class="fval">${score>0?'+':''}${score}점</span>
+  </div>`}).join('');
+html+=`<div style="font-size:10px;color:var(--dim);margin-top:10px;text-align:center">자동배정 시 이 순위가 거리·건수와 함께 반영돼요</div>`;
+html+=`</div>`;
+
+document.getElementById('fairView').innerHTML=html}
+
+// ===== 차량배정 =====
+function renderCars(){
+const el=document.getElementById('carView');
+if(!el)return;
+const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const plates=Object.keys(VEHICLES);
+
+let html=`<div style="padding:8px 0">
+<div style="font-size:16px;font-weight:800;margin-bottom:4px">🚗 차량 배정</div>
+<div style="font-size:12px;color:var(--dim);margin-bottom:16px">차량별 탑승 직원을 배정하면 알림톡에 차량번호가 자동 포함돼요</div>`;
+
+// 등록된 차량 목록
+plates.forEach((plate,i)=>{
+  const driver=VEHICLES[plate]||'';
+  const di=E.indexOf(driver);
+  const ec=di>=0?empColors[di%10]:'var(--dim)';
+  const opts=E.map(n=>`<option value="${n}"${n===driver?' selected':''}>${n}</option>`).join('');
+  html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;background:var(--card2);border-radius:10px;border-left:3px solid ${ec}">
+    <span style="font-weight:700;font-size:14px;min-width:90px;color:var(--text)">${plate}</span>
+    <select id="drv_${i}" onchange="updateDriver(${i})" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+      <option value="">미배정</option>${opts}
+    </select>
+    <button onclick="deleteCar(${i})" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--red);font-size:12px;cursor:pointer;font-family:var(--font)">삭제</button>
+  </div>`;
+});
+
+// 새 차량 추가
+html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-top:12px;background:var(--card2);border-radius:10px;border:1.5px dashed var(--border)">
+  <input id="newPlate" placeholder="차량번호 입력" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text)">
+  <button onclick="addCar()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">+ 추가</button>
+</div>`;
+
+// 현황 요약
+const assigned=plates.filter(p=>VEHICLES[p]);
+const noDriver=plates.filter(p=>!VEHICLES[p]);
+const noCarDrivers=E.filter(n=>!plates.some(p=>VEHICLES[p]===n));
+html+=`<div style="margin-top:16px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--border)">
+<div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 현황</div>`;
+if(assigned.length) html+=assigned.map(p=>`<div style="font-size:12px;padding:3px 0">✅ ${p} → <span style="font-weight:600">${VEHICLES[p]}</span></div>`).join('');
+if(noCarDrivers.length) html+=`<div style="margin-top:6px">`+noCarDrivers.map(n=>`<div style="font-size:12px;padding:3px 0;color:var(--red)">❌ ${n}: 차량 미배정</div>`).join('')+`</div>`;
+html+=`</div></div>`;
+
+el.innerHTML=html;
+}
+
+function addCar(){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return;}
+  const plate=document.getElementById('newPlate').value.trim();
+  if(!plate){toast('차량번호를 입력하세요','ok');return;}
+  if(VEHICLES[plate]!==undefined){toast('이미 등록된 차량이에요','ok');return;}
+  const next={...VEHICLES};
+  next[plate]='';
+  fbSave('gg_vehicles',next);
+  toast(plate+' 추가!','ok');
+}
+
+function updateDriver(idx){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');renderCars();return;}
+  const plates=Object.keys(VEHICLES);
+  const plate=plates[idx];
+  const driver=document.getElementById('drv_'+idx).value;
+  const next={...VEHICLES};
+  next[plate]=driver;
+  fbSave('gg_vehicles',next);
+  syncToSheet();renderSched();
+  toast(plate+' → '+(driver||'미배정'),'ok');
+}
+
+function quickVehicle(sasu,plate,rows){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return;}
+  if(rows&&rows.length){
+    // 잠긴 건 체크
+    var lockedRows=[];
+    rows.forEach(function(r){var job=J.find(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1===r});if(job&&LOCK.has(job.id))lockedRows.push(r)});
+    if(lockedRows.length>0){toast('🔒 잠긴 건이 포함되어 변경 불가','error');return;}
+    console.log('[vehicle] rows:',rows,'plate:',plate,'sasu:',sasu);
+    var vData=rows.map(function(r){var job=J.find(function(j){var p=j.id.split('_');return parseInt(p[p.length-1])+1===r});return{row:r,vehicle:plate,date:job?job.date:'',address:job?job.addr:'',phone:job?job.phone:''}});
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:vData,gid:'1995986285'})}).then(r=>r.text()).then(t=>console.log('[vehicle] 응답:',t)).catch(e=>console.log('[vehicle] error:',e));
+    J.forEach(function(j){var p=j.id.split('_');var ri=parseInt(p[p.length-1])+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
+    renderSched();
+    toast('🚗 '+sasu+' → '+(plate||'미배정')+' (해당 날짜만)','ok');
+    return;
+  }
+  const next={...VEHICLES};
+  Object.keys(next).forEach(function(p){if(next[p]===sasu)next[p]=''});
+  if(plate)next[plate]=sasu;
+  fbSave('gg_vehicles',next);
+  syncToSheet();renderSched();renderCars();
+  toast('🚗 '+sasu+' → '+(plate||'미배정'),'ok');
+}
+
+function deleteCar(idx){
+  if(!isAdmin){toast('🔒 당번 모드에서만 가능합니다','error');return;}
+  const plates=Object.keys(VEHICLES);
+  const plate=plates[idx];
+  const next={...VEHICLES};
+  delete next[plate];
+  fbSave('gg_vehicles',Object.keys(next).length?next:null);
+  toast(plate+' 삭제됨','ok');
+}
+
+// ===== Nav =====
+function sw(n){
+currentTab=n;
+document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
+document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+document.getElementById('p-'+n).classList.add('on');
+const tabs=['sched','month','team','car','fair'];
+document.querySelectorAll('.nav a')[tabs.indexOf(n)].classList.add('on');
+if(n==='month')renderMonth();
+renderAll()}
+
+let renderTimer=null;
+function renderAll(){
+if(renderTimer)clearTimeout(renderTimer);
+renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair();renderCars()},150);
+}
+
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+
+// ===== 직원 캘린더 =====
+let calEmp='',calYear=0,calMonth=0;
+
+function openCal(emp){
+monthEmp=emp;
+sw('month');
+}
+function closeCal(){document.getElementById('calOverlay').classList.remove('show')}
+function calMove(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCal()}
+
+function renderCal(){
+const ei=E.indexOf(calEmp);
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const ec=ecl[ei%10];
+document.getElementById('calTitle').innerHTML=`<span style="color:${ec}">${calEmp}</span> 근무 캘린더`;
+document.getElementById('calMonth').textContent=calYear+'년 '+(calMonth+1)+'월';
+
+// 이 달의 휴무일 + 시공일 계산
+const offDays=new Set();const workDays=new Set();
+
+// 날짜별 휴무자를 모든 행에서 수집
+const dateOffsMap={};
+J.forEach(j=>{if(j.doff.length){if(!dateOffsMap[j.date])dateOffsMap[j.date]=new Set();j.doff.forEach(n=>dateOffsMap[j.date].add(n))}});
+
+// 이번 달 날짜 순회
+Object.entries(dateOffsMap).forEach(([date,offs])=>{
+const jd=new Date(date);
+if(jd.getFullYear()===calYear&&jd.getMonth()===calMonth){
+if(offs.has(calEmp))offDays.add(jd.getDate())}});
+
+// OFFS에서 직접 휴무 데이터 확인 (예약 없는 날도 포함)
+Object.entries(OFFS).forEach(([date,offs])=>{
+const jd=new Date(date);
+if(jd.getFullYear()===calYear&&jd.getMonth()===calMonth){
+if(offs.has(calEmp))offDays.add(jd.getDate())}});
+
+// 시공일 (배정된 날)
+J.forEach(j=>{
+const jd=new Date(j.date);
+if(jd.getFullYear()===calYear&&jd.getMonth()===calMonth){
+const t=A[j.id];
+if(t&&t.includes(calEmp)){workDays.add(jd.getDate())}}});
+
+const today=new Date();
+const todayD=(today.getFullYear()===calYear&&today.getMonth()===calMonth)?today.getDate():-1;
+
+const first=new Date(calYear,calMonth,1);
+const lastDay=new Date(calYear,calMonth+1,0).getDate();
+const startDow=first.getDay();
+
+let grid='';
+['일','월','화','수','목','금','토'].forEach((d,i)=>{
+grid+=`<div class="cal-dow" style="${i===0?'color:var(--red)':i===6?'color:var(--blue)':''}">${d}</div>`});
+
+for(let i=0;i<startDow;i++) grid+=`<div class="cal-day empty">·</div>`;
+for(let d=1;d<=lastDay;d++){
+const dow=(startDow+d-1)%7;
+const isOff=offDays.has(d);
+const isWork=workDays.has(d);
+const isToday=d===todayD;
+const isSun=dow===0;
+let cls='cal-day';
+if(isOff) cls+=' off';
+else if(isWork) cls+=' work';
+if(isToday) cls+=' today';
+if(isSun&&!isOff) cls+=' sun';
+grid+=`<div class="${cls}">${d}</div>`}
+
+document.getElementById('calGrid').innerHTML=grid;
+document.getElementById('calSummary').textContent=
+`시공 ${workDays.size}일 · 휴무 ${offDays.size}일 · 근무일 ${lastDay-offDays.size}일`;
+}
+
+// 길게 누르기 핸들러
+let lpTimer=null;
+function empDown(emp){lpTimer=setTimeout(()=>{openCal(emp);lpTimer='fired'},300)}
+function empUp(e){if(lpTimer==='fired'){e.preventDefault()}clearTimeout(lpTimer);lpTimer=null}
+
+// ===== 월간 캘린더 =====
+// 대한민국 공휴일 (2025-2027)
+const KR_HOLIDAYS={
+'2025-01-01':'신정','2025-01-28':'설날','2025-01-29':'설날','2025-01-30':'설날',
+'2025-03-01':'삼일절','2025-05-05':'어린이날','2025-05-06':'대체공휴일',
+'2025-06-06':'현충일','2025-08-15':'광복절',
+'2025-10-05':'추석','2025-10-06':'추석','2025-10-07':'추석','2025-10-08':'대체공휴일',
+'2025-10-03':'개천절','2025-10-09':'한글날','2025-12-25':'성탄절',
+'2026-01-01':'신정','2026-02-16':'설날','2026-02-17':'설날','2026-02-18':'설날',
+'2026-03-01':'삼일절','2026-03-02':'대체공휴일',
+'2026-05-05':'어린이날','2026-05-24':'석가탄신일',
+'2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일',
+'2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석',
+'2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절',
+'2027-01-01':'신정','2027-02-06':'설날','2027-02-07':'설날','2027-02-08':'설날',
+'2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'석가탄신일',
+'2027-06-06':'현충일','2027-08-15':'광복절','2027-08-16':'대체공휴일',
+'2027-10-03':'개천절','2027-10-09':'한글날',
+'2027-10-14':'추석','2027-10-15':'추석','2027-10-16':'추석','2027-12-25':'성탄절'
+};
+function isHoliday(ds){return KR_HOLIDAYS[ds]||null}
+function getMonthHolidays(y,m){
+const ym=y+'-'+String(m+1).padStart(2,'0');
+const result=[];
+Object.keys(KR_HOLIDAYS).forEach(d=>{if(d.startsWith(ym))result.push({date:parseInt(d.split('-')[2]),name:KR_HOLIDAYS[d]})});
+return result;
+}
+
+let mYear,mMonth,monthEmp=null;
+(function(){const n=new Date();mYear=n.getFullYear();mMonth=n.getMonth()})();
+function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth();renderFair()}
+function fairMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderFair();renderMonth()}
+function mSelectEmp(name){monthEmp=(monthEmp===name)?null:name;renderMonth()}
+
+function renderMonth(){
+const v=document.getElementById('monthView');if(!v)return;
+const ecl=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+const lastDay=new Date(mYear,mMonth+1,0).getDate();
+const startDow=new Date(mYear,mMonth,1).getDay();
+const today=new Date();
+const todayD=(today.getFullYear()===mYear&&today.getMonth()===mMonth)?today.getDate():-1;
+const ym=mYear+'-'+String(mMonth+1).padStart(2,'0');
+
+// 날짜별 데이터 수집
+const dayData={};
+for(let d=1;d<=lastDay;d++){
+const ds=ym+'-'+String(d).padStart(2,'0');
+dayData[d]={am:0,pm:0,as:0,move:0,offs:new Set(),duty:{},jobs:[]};
+if(OFFS[ds])OFFS[ds].forEach(n=>dayData[d].offs.add(n));
+if(DUTY[ds])Object.assign(dayData[d].duty,DUTY[ds]);
+}
+J.forEach(j=>{
+const jd=new Date(j.date);
+if(jd.getFullYear()!==mYear||jd.getMonth()!==mMonth)return;
+const d=jd.getDate();if(!dayData[d])return;
+if(j.time.startsWith('오전'))dayData[d].am++;
+if(j.time.startsWith('오후'))dayData[d].pm++;
+if(j.time==='AS')dayData[d].as++;
+if((j.category||'').includes('이전설치'))dayData[d].move++;
+dayData[d].jobs.push(j);
+if(j.doff)j.doff.forEach(n=>dayData[d].offs.add(n));
+});
+
+// 직원별 통계 (공통)
+const empStats={};
+E.forEach(e=>{empStats[e]={work:0,off:0,duty:0,am:0,pm:0,dutang:0,as:0,silcheuk:0}});
+for(let d=1;d<=lastDay;d++){
+const dd=dayData[d];
+dd.offs.forEach(n=>{if(empStats[n]){
+  if(dd.duty[n])empStats[n].duty++; // 예비군/교육 = 근무 카운트
+  else empStats[n].off++; // 일반 휴무
+}});
+const dayEmps=new Set();const dayEmpSlots={};
+dd.jobs.forEach(j=>{
+const crew=A[j.id];if(!crew)return;
+crew.forEach(e=>{
+  dayEmps.add(e);
+  if(!dayEmpSlots[e])dayEmpSlots[e]=new Set();
+  if(j.time==='as'||j.time==='AS')dayEmpSlots[e].add('as');
+  else if(j.time==='실측')dayEmpSlots[e].add('silcheuk');
+  else dayEmpSlots[e].add(j.time.startsWith('오전')?'am':'pm');
+});
+});
+dayEmps.forEach(e=>{
+if(!empStats[e])return;empStats[e].work++;
+const slots=dayEmpSlots[e];
+if(slots){
+  if(slots.has('am'))empStats[e].am++;
+  if(slots.has('pm'))empStats[e].pm++;
+  if(slots.has('am')&&slots.has('pm'))empStats[e].dutang++;
+  if(slots.has('as'))empStats[e].as++;
+  if(slots.has('silcheuk'))empStats[e].silcheuk++;
+}
+});
+}
+
+// ── 직원 뱃지 바 ──
+let badges=`<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">`;
+badges+=`<span onclick="mSelectEmp(null)" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;${!monthEmp?'background:var(--text);color:var(--bg)':'background:var(--card2);color:var(--dim)'}">전체</span>`;
+E.forEach((e,ei)=>{
+const sel=monthEmp===e;
+const c=ecl[ei%10];
+badges+=`<span onclick="mSelectEmp('${e}')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;${sel?'background:'+c+';color:#000':'background:var(--card2);color:var(--dim)'}">${e}</span>`;
+});
+badges+=`</div>`;
+
+let grid='',calTitle='',calSub='';
+const dowNames=['일','월','화','수','목','금','토'];
+
+if(!monthEmp){
+// ── 전체 팀 월간 보기 ──
+let totalAm=0,totalPm=0,totalAs=0;
+for(let d=1;d<=lastDay;d++){totalAm+=dayData[d].am;totalPm+=dayData[d].pm;totalAs+=dayData[d].as}
+calTitle=`${mYear}년 ${mMonth+1}월`;
+calSub=`예약 ${totalAm+totalPm}건 (오전${totalAm} 오후${totalPm}) · AS ${totalAs}건`;
+
+dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
+for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+const mHolidays=getMonthHolidays(mYear,mMonth);
+for(let d=1;d<=lastDay;d++){
+const dd=dayData[d];const dow=(startDow+d-1)%7;const hasJob=dd.am+dd.pm+dd.as>0;const isToday=d===todayD;
+const hol=mHolidays.find(h=>h.date===d);
+let cls='mc-cell';
+if(hasJob)cls+=' has-job';
+if(dow===0||hol)cls+=' mc-sun';
+else if(dow===6)cls+=' mc-sat';
+if(isToday)cls+=' today';
+let inner=`<div class="mc-date ${dow===0||hol?'sun':dow===6?'sat':''}">${d}</div>`;
+if(hol)inner+=`<div style="font-size:7px;color:var(--red);font-weight:600">${hol.name}</div>`;
+if(dd.am)inner+=`<div class="mc-badge am">AM ${dd.am}</div> `;
+if(dd.pm)inner+=`<div class="mc-badge pm">PM ${dd.pm}</div> `;
+if(dd.as)inner+=`<div class="mc-badge as-b">AS ${dd.as}</div>`;
+if(dd.move)inner+=`<div style="font-size:8px;color:var(--yellow);font-weight:700;margin-top:1px">이전 ${dd.move}</div>`;
+if(dd.offs.size){
+const names=[...dd.offs].map(n=>{
+const isDuty=dd.duty[n];
+return `<span style="color:${ecl[E.indexOf(n)%10]}">${isDuty?'🪖':''}\u200B${n}</span>`;
+}).join(' ');
+inner+=`<div class="mc-off">${names}</div>`;
+}
+grid+=`<div class="${cls}">${inner}</div>`;
+}
+
+// 직원별 요약 바
+let sumHtml=`<div class="mc-summary"><div class="mc-summary-title">📊 ${mMonth+1}월 직원별 현황</div>`;
+E.forEach((e,ei)=>{
+const s=empStats[e];const workPct=Math.round(s.work/lastDay*100);const offPct=Math.round(s.off/lastDay*100);const c=ecl[ei%10];
+sumHtml+=`<div class="mc-emp-row" onclick="mSelectEmp('${e}')" style="cursor:pointer"><div class="mc-emp-name" style="color:${c}">${e}</div><div class="mc-emp-bar"><div class="mc-emp-seg" style="width:${workPct}%;background:rgba(48,209,88,.25);color:var(--green)">${s.work>0?s.work+'일':''}</div><div class="mc-emp-seg" style="width:${offPct}%;background:rgba(255,69,58,.2);color:var(--red)">${s.off>0?s.off:''}</div></div><div class="mc-emp-num"><span style="color:var(--blue)">AM${s.am}</span> <span style="color:var(--pink)">PM${s.pm}</span>${s.as?' <span style="color:var(--yellow)">AS'+s.as+'</span>':''}${s.silcheuk?' <span style="color:var(--purple)">실측'+s.silcheuk+'</span>':''} <span style="color:var(--red)">휴${s.off}</span></div></div>`;
+});
+sumHtml+=`</div>`;
+
+v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2>${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
+${badges}
+<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
+<div class="mc-grid">${grid}</div>
+<div class="mc-legend"><span class="lg-job">예약</span><span class="lg-am">오전</span><span class="lg-pm">오후</span><span class="lg-off2">휴무</span></div>
+${sumHtml}`;
+
+}else{
+// ── 개인 직원 캘린더 ──
+const ei=E.indexOf(monthEmp);
+const ec=ecl[ei%10];
+const s=empStats[monthEmp];
+const offDays=new Set();const workDays=new Set();const dutangDays=new Set();const dutyDays=new Set();
+const daySlotsMap={}; // {일: Set('am','pm','as','silcheuk')}
+
+for(let d=1;d<=lastDay;d++){
+if(dayData[d].offs.has(monthEmp)){
+  if(dayData[d].duty[monthEmp])dutyDays.add(d);
+  else offDays.add(d);
+}
+const daySlots=new Set();
+dayData[d].jobs.forEach(j=>{
+  const crew=A[j.id];if(!crew||!crew.includes(monthEmp))return;
+  if(j.time==='as'||j.time==='AS')daySlots.add('as');
+  else if(j.time==='실측')daySlots.add('silcheuk');
+  else daySlots.add(j.time.startsWith('오전')?'am':'pm');
+});
+daySlotsMap[d]=daySlots;
+if(daySlots.size)workDays.add(d);
+if(daySlots.has('am')&&daySlots.has('pm'))dutangDays.add(d);
+}
+
+// 이번 달 토·일·공휴일 수 계산
+const mHolidays2=getMonthHolidays(mYear,mMonth);
+let calendarOffs=0;
+const offDates=new Set();
+for(let d=1;d<=lastDay;d++){
+const dow=(startDow+d-1)%7;
+if(dow===0||dow===6)offDates.add(d); // 토·일
+}
+mHolidays2.forEach(h=>{offDates.add(h.date)}); // 공휴일 (중복 자동 제거)
+const avgOff=offDates.size;
+
+calTitle=`${monthEmp}의 ${mMonth+1}월`;
+calSub=`AM ${s.am} · PM ${s.pm}${s.as?' · AS '+s.as:''}${s.silcheuk?' · 실측 '+s.silcheuk:''} · 🔥두탕 ${s.dutang}${s.duty?' · 🪖 '+s.duty+'일':''}`;
+
+dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
+for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
+for(let d=1;d<=lastDay;d++){
+const dow=(startDow+d-1)%7;const isOff=offDays.has(d);const isDuty=dutyDays.has(d);const isWork=workDays.has(d);const isDutang=dutangDays.has(d);const isToday=d===todayD;
+const hol=mHolidays2.find(h=>h.date===d);
+let cls='mc-cell';
+if(isOff)cls+=' mc-cell-off';
+else if(dow===0||hol)cls+=' mc-sun';
+else if(dow===6)cls+=' mc-sat';
+if(isToday)cls+=' today';
+let inner=`<div class="mc-date ${dow===0||hol?'sun':dow===6?'sat':''}">${d}</div>`;
+if(hol&&!isWork&&!isDuty&&!isOff)inner+=`<div style="font-size:7px;color:var(--red);font-weight:600">${hol.name}</div>`;
+if(isDutang){
+  // 두탕 = AM+PM 둘 다 (인센티브!) → 강조 표시
+  inner+=`<div style="font-size:8px;font-weight:800;color:var(--green)">🔥AM+PM</div>`;
+}else if(isWork){
+  // 개별 타임 표시
+  const daySlots=daySlotsMap[d]||new Set();
+  const labels=[];
+  if(daySlots.has('am'))labels.push('<span style="color:var(--blue)">AM</span>');
+  if(daySlots.has('pm'))labels.push('<span style="color:var(--pink)">PM</span>');
+  if(daySlots.has('as'))labels.push('<span style="color:var(--yellow)">AS</span>');
+  if(daySlots.has('silcheuk'))labels.push('<span style="color:var(--purple)">실측</span>');
+  inner+=`<div style="font-size:9px;font-weight:700">${labels.join(' ')}</div>`;
+}
+if(isDuty){const reason=dayData[d].duty[monthEmp];inner+=`<div style="font-size:9px;color:var(--yellow);font-weight:700;margin-top:2px">🪖 ${reason}</div>`}
+else if(isOff){inner+=`<div style="position:absolute;top:3px;right:5px;font-size:8px;color:${ec};font-weight:700">${monthEmp}</div>`;inner+=`<div style="font-size:14px;font-weight:900;color:#EF9F27;opacity:.5;text-align:center;margin-top:6px">휴무</div>`}
+grid+=`<div class="${cls}">${inner}</div>`;
+}
+
+// 휴무 요약
+const offSummary=`<div style="background:var(--card);border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:center;gap:40px;text-align:center">
+<div><div style="font-size:20px;font-weight:900;color:var(--dim)">${avgOff}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">이번 달 휴일</div></div>
+<div><div style="font-size:20px;font-weight:900;color:${s.off>avgOff?'var(--red)':s.off<avgOff?'var(--green)':'var(--text)'}">${s.off}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">나의 휴무</div></div>
+</div>`;
+
+v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2 style="color:${ec}">${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
+${badges}
+<div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
+<div class="mc-grid">${grid}</div>
+<div class="mc-legend"><span style="color:var(--blue)">AM</span><span style="color:var(--pink)">PM</span><span style="color:var(--yellow)">AS</span><span style="color:var(--purple)">실측</span><span style="color:var(--green)">🔥AM+PM(두탕)</span><span class="lg-off2">휴무</span></div>
+${offSummary}`;
+}
+}
+
+// ===== Init =====
+async function init(){
+document.getElementById('sub').textContent='구글시트 불러오는 중...';
+try{
+// 휴무 데이터 먼저 로딩
+OFFS={};
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
+
+const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
+try{const tR=await fetch(CSV_TEAM_URL+'&_='+Date.now());const tText=await tR.text();parseTeamConfigCSV(tText)}catch(e){}
+lastCSVHash=text.length+'-'+text.slice(0,200);
+
+// 새 일정 감지
+J.forEach(j=>{if(!prevJobIds.has(j.id))j.isNew=true});
+
+// 휴무자 자동 제거 - 같은 날짜의 모든 휴무자를 모아서 그 날짜 전체 배정에서 제거
+let changed=false;
+const dateOffs={};
+J.forEach(j=>{if(j.doff.length){if(!dateOffs[j.date])dateOffs[j.date]=new Set();j.doff.forEach(n=>dateOffs[j.date].add(n))}});
+J.forEach(j=>{
+const offs=dateOffs[j.date];
+if(A[j.id]&&offs&&offs.size){
+const before=A[j.id].length;
+A[j.id]=A[j.id].filter(e=>!offs.has(e));
+if(A[j.id].length===0)delete A[j.id];
+if(A[j.id]&&A[j.id].length!==before)changed=true;
+if(!A[j.id])changed=true}});
+if(changed){const _ch={};J.forEach(j=>{const offs=dateOffs[j.date];if(offs&&offs.size){_ch[j.id]=A[j.id]||null}});if(Object.keys(_ch).length)db.ref('gg_assignments').update(_ch);lastAHash=aHash(A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
+
+// 1인 배정 자동 수정 + 주소 없는 건 배정 제거
+const realJ=J.filter(j=>!j.offOnly);
+let badAssign=false;
+const _badCh={};
+realJ.forEach(j=>{
+// 주소 없는 건은 배정 제거
+if(A[j.id]&&(!j.addr||!j.addr.trim())){_badCh[j.id]=null;delete A[j.id];badAssign=true}
+// 1인 배정은 제거 → 대기로 (단, 시트에서 사수/부사수가 지정된 건은 유지)
+if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){_badCh[j.id]=null;delete A[j.id];badAssign=true}
+});
+if(badAssign){if(Object.keys(_badCh).length)db.ref('gg_assignments').update(_badCh);lastAHash=aHash(A)}
+
+// Firebase LOCK/SKIP 로드 대기 (최대 5초)
+if(!fbLoaded.lock||!fbLoaded.skip||!fbLoaded.a){
+await new Promise(r=>{const c=setInterval(()=>{if(fbLoaded.lock&&fbLoaded.skip&&fbLoaded.a){clearInterval(c);r()}},100);setTimeout(()=>{clearInterval(c);r()},5000)})}
+
+// 미배정 건 또는 1인 배정(사수만, 부사수 필요)이 있으면 자동 배정 실행
+const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
+const needAssignCnt=assignableJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
+if(needAssignCnt>0&&isAdmin){await autoAssign()}
+
+const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+const curM=new Date().getMonth()+1;
+const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()&&(j.time.startsWith('오전')||j.time.startsWith('오후'))});
+const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&(j.time==='as'||j.time==='AS')});
+document.getElementById('sub').textContent=curM+'월 '+monthJobs.length+'건 · AS '+monthAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
+}catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
+renderAll()}
+
+init();
+
+// 백그라운드 거리 계산 (init 완료 후 조용히 실행)
+setTimeout(async()=>{
+let updated=false;
+for(const j of J){
+if(!j.addr||j.offOnly)continue;
+// Firebase 키 안전하게 변환
+const key=j.addr.replace(/[.#$/\[\]]/g,'_');
+if(DIST[key]!==undefined)continue;
+const d=await calcDist(j.addr);
+if(d>0){DIST[key]=d;updated=true}
+}
+if(updated)fbSave('gg_distances',DIST);
+},3000);
+
+// 버전 표시
+document.getElementById('verTag').textContent='v'+VER;
+
+// 알림 권한 요청 (처음 한 번만)
+if('Notification' in window&&Notification.permission==='default'){
+Notification.requestPermission()}
+
+// 구글시트 갱신 함수 (자동 + 수동 공용)
+let lastCSVHash='';
+let lastCSVRowCount=0;
+async function refreshSheet(showToast){
+try{
+const sub=document.getElementById('sub');
+if(showToast)sub.textContent='🔄 갱신 중...';
+
+// 휴무 데이터 먼저 갱신
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};parseOffCSV(offText)}catch(e){}}
+
+const r=await fetch(CSV_URL+'&_='+Date.now());
+const text=await r.text();
+
+// 변경 감지 (행 수 변화 = 새 예약 추가일 때만 자동배정)
+const newHash=text.length+'-'+text.slice(0,200);
+const newRowCount=text.split('\n').length;
+const oldRowCount=lastCSVRowCount||0;
+const isNewReservation=newRowCount>oldRowCount&&oldRowCount>0;
+lastCSVHash=newHash;
+lastCSVRowCount=newRowCount;
+
+parseCSV(text);
+
+// 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
+if(isNewReservation&&(Date.now()-lastManualEdit>60000)){
+const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
+const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
+if(unCnt>0&&isAdmin)await autoAssign()}
+
+const now=new Date();const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+const curM2=new Date().getMonth()+1;
+const mJobs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&j.addr&&j.addr.trim()&&(j.time.startsWith('오전')||j.time.startsWith('오후')));
+const mAs=J.filter(j=>!j.offOnly&&new Date(j.date).getMonth()+1===curM2&&(j.time==='as'||j.time==='AS'));
+sub.textContent=curM2+'월 '+mJobs.length+'건 · AS '+mAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
+renderAll();
+if(isNewReservation)toast('📋 새 예약 감지! 자동 배정 완료','ok');
+else if(showToast)toast('✅ 최신 상태예요','ok');
+}catch(e){if(showToast)toast('⚠️ 연결 실패','ok')}}
+
+function manualRefresh(){refreshSheet(true)}
+
+async function reAssign(){
+if(!requireAdmin())return;
+const hasLock=LOCK.size>0;
+const msg=hasLock?'모든 배정을 초기화하고 다시 배정할까요?\n\n🔒 확정된 '+LOCK.size+'건은 유지됩니다.\n(전부 초기화하려면 확정을 먼저 해제하세요)':'모든 배정을 초기화하고 다시 배정할까요?';
+if(!confirm(msg))return;
+// 확정된 건은 유지, 나머지만 초기화
+const lockedA={};
+LOCK.forEach(id=>{if(A[id])lockedA[id]=A[id]});
+A=lockedA;
+SKIP=new Set();db.ref('gg_skipJobs').set(null);
+toast('⏳ 재배정 중...','ok');
+await autoAssign();
+toast('✅ 재배정 완료!','ok');
+}
+
+async function doRefresh(){
+const btn=document.getElementById('refreshBtn');
+if(btn){btn.textContent='⏳ 갱신중...';btn.style.opacity='.6';btn.style.pointerEvents='none'}
+await refreshSheet(false);
+// 잠기지 않은 건들의 차량을 사수 기준으로 정리
+J.forEach(j=>{
+  if(j.offOnly||LOCK.has(j.id))return;
+  const crew=A[j.id];if(!crew||!crew.length)return;
+  const sa=crew.sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'))[0];
+  const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';
+  if(autoV)j.vehicle=autoV;
+});
+renderAll();
+if(isAdmin)syncToSheet();
+if(btn){btn.textContent='✅ 갱신됨';btn.style.opacity='1';btn.style.pointerEvents='auto';setTimeout(()=>{btn.textContent='🔄 최신화'},2000)}
+toast('✅ 최신 상태로 갱신됨!','ok')}
+
+// ===== 출발 확인 시스템 =====
+let pendingConfirmId='';
+
+async function startConfirm(jobId){
+// 1단계: 엑셀에서 최신 데이터 강제 불러오기
+document.getElementById('confirmBody').innerHTML='<div style="text-align:center;padding:20px;color:var(--dim)">🔄 최신 데이터 확인 중...</div>';
+document.getElementById('confirmOkBtn').style.display='none';
+document.getElementById('confirmOverlay').classList.add('show');
+
+try{
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};parseOffCSV(offText)}catch(e){}}
+const r=await fetch(CSV_URL+'&_='+Date.now());
+const text=await r.text();
+parseCSV(text);
+renderAll();
+}catch(e){}
+
+// 2단계: 해당 시공 건 최신 정보 표시
+const job=J.find(j=>j.id===jobId);
+if(!job){closeConfirm();toast('시공 건을 찾을 수 없어요','ok');return}
+
+const team=A[jobId]||[];
+const matsHtml=job.mat.length?job.mat.map(m=>{
+const cls=matCls(m.t);
+return `<span class="mat mat-${cls}" style="font-size:14px;padding:4px 12px">${m.t}</span>`}).join(' '):'<span style="color:var(--dim)">자재 정보 없음</span>';
+
+document.getElementById('confirmBody').innerHTML=`
+<div class="confirm-item">
+<div class="confirm-label">📍 주소</div>
+<div class="confirm-value">${job.addr}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">🔨 시공 범위</div>
+<div class="confirm-value">${job.scope||'-'}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">🎨 자재 · 색상</div>
+<div class="confirm-value" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${matsHtml}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">⏰ 시간</div>
+<div class="confirm-value">${job.time}</div>
+</div>
+<div class="confirm-item">
+<div class="confirm-label">👷 배정 팀원</div>
+<div class="confirm-value">${team.join(', ')||'미배정'}</div>
+</div>
+<div style="text-align:center;margin-top:12px;padding:10px;background:rgba(251,191,36,.1);border-radius:10px;border:1px solid rgba(251,191,36,.2)">
+<div style="font-size:12px;font-weight:700;color:var(--yellow)">⚠️ 위 자재가 맞는지 꼭 확인하세요!</div>
+<div style="font-size:11px;color:var(--dim);margin-top:4px">방금 엑셀에서 최신 데이터를 불러왔어요</div>
+</div>`;
+
+document.getElementById('confirmOkBtn').style.display='block';
+pendingConfirmId=jobId;
+}
+
+function doConfirm(){
+if(!pendingConfirmId)return;
+const job=J.find(j=>j.id===pendingConfirmId);
+const now=new Date();
+const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+const team=A[pendingConfirmId]||[];
+// 자재 정보 해시 저장 (나중에 변경 감지용)
+const matHash=job?job.mat.map(m=>m.t+m.q).join(','):'';
+CF[pendingConfirmId]={who:team.join('+'),time:hm,ts:Date.now(),matHash};
+fbSave('gg_confirms',CF);
+closeConfirm();
+toast('✅ 출발 확인 완료!','ok');
+renderAll();
+}
+
+function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('show');pendingConfirmId=''}
+
+// 1분마다 구글시트 자동 갱신
+setInterval(()=>refreshSheet(false),180*1000);
+
+// 5분마다 새 버전 체크
+setInterval(()=>{
+fetch(location.href+'?_='+Date.now()).then(r=>r.text()).then(html=>{
+const m=html.match(/const VER='([^']+)'/);
+if(m&&m[1]!==VER)document.getElementById('updateBar').style.display='block'
+}).catch(()=>{})
+},5*60*1000);
+
+// PWA 앱 복귀 시 sticky 헤더 재계산
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    setTimeout(()=>{window.scrollBy(0,1);window.scrollBy(0,-1)},100);
+  }
+});
+</script>
+</body>
+</html>

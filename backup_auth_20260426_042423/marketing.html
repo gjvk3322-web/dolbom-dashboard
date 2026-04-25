@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- 검색엔진 노출 차단 (자동 추가) -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="naverbot" content="noindex, nofollow">
+    <meta name="yeti" content="noindex, nofollow">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>돌봄매트 마케팅</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;background:#f7f7f5;color:#1a1a1a;min-height:100vh;padding:20px}
+.wrap{max-width:1600px;margin:0 auto}
+
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #1a1a1a}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-logo{width:42px;height:42px;background:#1a1a1a;color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.header .sub{font-size:11px;color:#666;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:10px;font-size:11px;color:#666}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#10b981}
+.sync-dot.offline{background:#ef4444}
+.header-action{padding:6px 12px;background:#fff;border:1px solid #e5e5e0;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:#666}
+.header-action:hover{border-color:#1a1a1a;color:#1a1a1a}
+
+.section{background:#fff;border:1px solid #e5e5e0;border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.02)}
+.sec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.sec-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:7px}
+.sec-desc{font-size:11px;color:#888;margin-top:2px}
+.sec-actions{display:flex;gap:6px;align-items:center}
+
+.btn{padding:7px 13px;border:1px solid #1a1a1a;border-radius:7px;background:#1a1a1a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn:hover{opacity:.85}
+.btn.secondary{background:#fff;color:#1a1a1a}
+.btn.secondary:hover{background:#f0f0ed}
+.btn.small{padding:4px 10px;font-size:11px}
+.btn.danger{background:#fff;color:#ef4444;border-color:#fecaca}
+.btn.danger:hover{background:#fef2f2}
+.btn.ghost{background:transparent;border-color:#e5e5e0;color:#666}
+.btn.ghost:hover{border-color:#1a1a1a;color:#1a1a1a}
+.btn.purple{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border:none;color:#fff}
+.btn.purple:hover{opacity:.9;transform:translateY(-1px)}
+
+/* Global settings - purple theme */
+.gs-section{background:linear-gradient(135deg,#faf5ff 0%,#f3e8ff 100%);border:1.5px solid #c4b5fd}
+.gs-title{color:#5b21b6}
+.gs-collapse{cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.gs-arrow{font-size:14px;color:#7c3aed;transition:transform .2s}
+.gs-collapse.open .gs-arrow{transform:rotate(180deg)}
+.gs-content{display:none;margin-top:14px;animation:slideDown .2s ease}
+.gs-content.show{display:block}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.gs-subsection{background:#fff;border:1px solid #ddd6fe;border-radius:10px;padding:14px;margin-bottom:10px}
+.gs-sub-title{font-size:12px;font-weight:700;color:#5b21b6;margin-bottom:8px;display:flex;align-items:center;gap:6px;justify-content:space-between}
+.gs-sub-desc{font-size:10px;color:#888;font-weight:400}
+
+.gs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gs-field{display:flex;flex-direction:column}
+.gs-field.wide{grid-column:1/-1}
+.gs-label{font-size:10px;font-weight:700;color:#5b21b6;margin-bottom:4px}
+.gs-input,.gs-textarea{padding:8px 10px;border:1px solid #ddd6fe;border-radius:6px;font-size:12px;font-family:inherit;background:#fff;width:100%}
+.gs-input:focus,.gs-textarea:focus{outline:none;border-color:#7c3aed}
+.gs-textarea{min-height:55px;resize:vertical}
+
+/* Competitor/Benchmark rows */
+.row-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.comp-row{display:grid;grid-template-columns:120px 110px 1fr 28px;gap:6px;align-items:center}
+.bench-row{display:grid;grid-template-columns:130px 110px 1fr 28px;gap:6px;align-items:center}
+.comp-row input,.bench-row input{padding:6px 9px;border:1px solid #ddd6fe;border-radius:6px;font-size:11px;font-family:inherit;background:#fff}
+.del-row{background:transparent;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:0}
+.del-row:hover{color:#ef4444}
+.add-row-btn{padding:6px 10px;border:1px dashed #c4b5fd;border-radius:6px;background:#fff;font-size:11px;color:#7c3aed;cursor:pointer;font-family:inherit;font-weight:600;align-self:flex-start}
+.add-row-btn:hover{background:#ede9fe}
+
+/* 🚀 이번 주 추천 액션 카드 */
+.recommend-section{background:linear-gradient(135deg,#fff7ed 0%,#fed7aa 100%);border:1.5px solid #fb923c}
+.recommend-section .sec-title{color:#9a3412}
+.recommend-section .sec-desc{color:#c2410c}
+.recommend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.recommend-card{background:#fff;border:1.5px solid #fed7aa;border-radius:12px;padding:14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.recommend-card:hover{border-color:#ea580c;transform:translateY(-2px);box-shadow:0 6px 16px rgba(234,88,12,.15)}
+.recommend-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,#fb923c,#ea580c)}
+.rec-priority{position:absolute;top:10px;right:10px;font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;background:#fb923c;color:#fff}
+.rec-priority.hot{background:#dc2626}
+.rec-combo{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-left:8px}
+.rec-emoji{font-size:22px}
+.rec-arrow{font-size:12px;color:#fb923c;margin:0 2px}
+.rec-pf-icon{font-size:16px}
+.rec-name{font-size:13px;font-weight:700;margin-bottom:3px;padding-left:8px;color:#1a1a1a}
+.rec-reason{font-size:11px;color:#78350f;padding-left:8px;line-height:1.5;margin-bottom:10px}
+.rec-cta{display:flex;gap:4px;padding-left:8px;flex-wrap:wrap}
+.rec-cta-chip{font-size:10px;padding:3px 9px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:12px;font-weight:600}
+.recommend-empty{grid-column:1/-1;text-align:center;padding:30px;color:#78350f;font-size:12px;background:#fff;border-radius:10px}
+
+/* Persona section */
+.filter-label{font-size:10px;font-weight:700;color:#999;margin:4px 0 6px;letter-spacing:.5px}
+.filter-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.fchip{padding:5px 11px;background:#fff;border:1px solid #e5e5e0;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;color:#666;transition:all .15s}
+.fchip:hover{border-color:#1a1a1a;color:#1a1a1a}
+.fchip.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+/* 카테고리 필터 전용 컬러 */
+.fchip.cat-active-baby{background:#fce7f3;color:#9f1239;border-color:#fbcfe8}
+.fchip.cat-active-pet{background:#dbeafe;color:#1e3a8a;border-color:#bfdbfe}
+.fchip.cat-active-both{background:#f3e8ff;color:#6b21a8;border-color:#e9d5ff}
+.fchip.cat-active-b2b{background:#dcfce7;color:#14532d;border-color:#bbf7d0}
+.fchip.cat-active-other{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
+
+/* 페르소나 카드 카테고리 배지 (tier 옆) */
+.persona-cat-badge{font-size:9px;padding:2px 7px;border-radius:7px;font-weight:700;white-space:nowrap}
+.cat-baby{background:#fce7f3;color:#9f1239}
+.cat-pet{background:#dbeafe;color:#1e3a8a}
+.cat-both{background:#f3e8ff;color:#6b21a8}
+.cat-b2b{background:#dcfce7;color:#14532d}
+.cat-other{background:#f3f4f6;color:#374151}
+.persona-badges{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.persona{background:#fafaf8;border:1.5px solid #e5e5e0;border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;position:relative}
+.persona:hover{border-color:#1a1a1a;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.05)}
+.persona.active{border-color:#1a1a1a;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.persona-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:6px}
+.persona-emoji{font-size:20px}
+.persona-tier{font-size:9px;padding:2px 6px;border-radius:7px;font-weight:700}
+.tier-1{background:#fef3c7;color:#92400e}
+.tier-2{background:#dbeafe;color:#1e40af}
+.tier-3{background:#f3e8ff;color:#6b21a8}
+.tier-4{background:#dcfce7;color:#14532d}
+.persona-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.persona-label{font-size:10px;color:#666;margin-bottom:7px;line-height:1.4}
+.persona-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px}
+.tag{font-size:9px;padding:2px 6px;background:#fff;border:1px solid #e5e5e0;border-radius:5px;color:#555}
+.tag.purpose{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+.tag.channel{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
+.tag.budget{background:#fef9c3;color:#854d0e;border-color:#fde68a}
+.persona-meta{font-size:10px;color:#888;line-height:1.5;max-height:60px;overflow:hidden}
+.persona-actions-row{display:none;gap:4px;margin-top:7px;padding-top:7px;border-top:1px dashed #e5e5e0}
+.persona.active .persona-actions-row{display:flex}
+
+/* Workspace - Split layout */
+.workspace{display:grid;grid-template-columns:240px 1fr;gap:16px;min-height:600px}
+
+.persona-info-card{background:linear-gradient(135deg,#fff3cd 0%,#fef3c7 100%);border:1.5px solid #fcd34d;border-radius:12px;padding:14px;margin-bottom:10px;display:none;position:relative}
+.persona-info-card.show{display:block}
+.persona-info-card.placeholder{display:block;background:#fafaf8;border:1.5px dashed #d0d0c8;color:#888}
+.persona-info-card.placeholder .pic-placeholder{text-align:center;padding:8px;font-size:11px;line-height:1.5}
+.pic-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pic-emoji{font-size:26px}
+.pic-name-block{flex:1;min-width:0}
+.pic-name{font-size:14px;font-weight:800;color:#713f12}
+.pic-label{font-size:10px;color:#92400e;margin-top:2px}
+.pic-tier{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:700;background:#fbbf24;color:#78350f}
+.pic-tags{display:flex;flex-wrap:wrap;gap:3px;margin:7px 0}
+.pic-tag{font-size:9px;padding:2px 6px;background:#fff;border:1px solid #fcd34d;border-radius:5px;color:#92400e;font-weight:600}
+.pic-detail{font-size:10px;color:#78350f;line-height:1.5;background:rgba(255,255,255,.5);padding:7px 9px;border-radius:6px;margin-top:6px}
+
+.platform-list{background:#fafaf8;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px;position:sticky;top:20px}
+.platform-list-title{font-size:11px;font-weight:700;color:#666;padding:8px 10px 6px;letter-spacing:.5px}
+.platform-group-header{font-size:10px;font-weight:700;color:#999;padding:8px 10px 4px;margin-top:6px;letter-spacing:1px;display:flex;align-items:center;gap:5px;border-top:1px dashed #e5e5e0}
+.platform-group-header:first-of-type{margin-top:0;border-top:none}
+
+/* 오프라인 섹션 묶음 - 회색 배경 */
+.platform-group-offline{background:#f0f0ed;border-radius:10px;padding:6px;margin-top:10px}
+.platform-group-offline .platform-group-header{border-top:none;color:#666;padding-top:4px}
+.platform-group-offline .pitem:not(.active){background:#fafaf8}
+.platform-group-offline .pitem:not(.active):hover{background:#fff}
+.pitem-wrap{position:relative}
+.pitem{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#555;transition:all .15s;background:transparent;border:none;font-family:inherit;text-align:left;width:100%}
+.pitem:hover{background:#fff;color:#1a1a1a}
+.pitem.active{background:#1a1a1a;color:#fff}
+.pitem-icon{font-size:15px;flex-shrink:0}
+.pitem-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pitem-count{font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.2);font-weight:700}
+.pitem:not(.active) .pitem-count{background:#e5e5e0;color:#666}
+.pitem-has-settings{width:6px;height:6px;border-radius:50%;background:#10b981;flex-shrink:0}
+
+/* Item controls (appear on hover) */
+.pitem-controls{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:none;gap:2px;background:rgba(255,255,255,.95);padding:2px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.pitem-wrap:hover .pitem-controls{display:flex}
+.pitem.active ~ .pitem-controls{background:rgba(255,255,255,.2)}
+.ctrl-btn{width:22px;height:22px;border:none;background:#fff;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#555;font-family:inherit;padding:0}
+.ctrl-btn:hover{background:#f0f0ed;color:#1a1a1a}
+.ctrl-btn:disabled{opacity:.3;cursor:not-allowed}
+.ctrl-btn.move-group{background:#fef3c7;color:#92400e}
+.ctrl-btn.move-group:hover{background:#fde68a}
+
+.platform-add{padding:10px 12px;border:1px dashed #c0c0b8;border-radius:8px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#888;margin-top:4px}
+.platform-add:hover{border-style:solid;color:#1a1a1a;border-color:#1a1a1a}
+
+.workspace-main{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:20px;min-height:600px}
+.ws-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0f0ed}
+.ws-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ws-actions{display:flex;gap:6px}
+.ws-persona-tag{font-size:11px;color:#666;background:#fffaeb;border:1px solid #fcd34d;border-radius:8px;padding:4px 10px}
+
+/* Platform settings (inside workspace) */
+.pf-settings{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.pf-settings-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;cursor:pointer}
+.pf-settings-title{font-size:12px;font-weight:700;color:#166534;display:flex;align-items:center;gap:6px}
+.pf-settings-arrow{font-size:11px;color:#15803d;transition:transform .2s}
+.pf-settings-header.open .pf-settings-arrow{transform:rotate(180deg)}
+.pf-settings-content{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #bbf7d0}
+.pf-settings-content.show{display:block}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pf-field{display:flex;flex-direction:column}
+.pf-field.wide{grid-column:1/-1}
+.pf-label{font-size:10px;font-weight:700;color:#166534;margin-bottom:4px}
+.pf-input,.pf-textarea{padding:8px 10px;border:1px solid #bbf7d0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff}
+.pf-input:focus,.pf-textarea:focus{outline:none;border-color:#15803d}
+.pf-textarea{min-height:50px;resize:vertical}
+
+.ws-section{margin-bottom:18px}
+.ws-section-title{font-size:12px;font-weight:700;color:#444;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.ws-strategy{font-size:12px;color:#555;background:#fffef0;border-left:3px solid #eab308;padding:11px 14px;border-radius:0 8px 8px 0;line-height:1.7;min-height:50px}
+.ws-strategy-edit{width:100%;font-size:12px;background:#fffef0;border:1px solid #eab308;border-radius:8px;padding:11px 14px;font-family:inherit;line-height:1.7;resize:vertical;min-height:80px}
+
+.platform-memo{width:100%;min-height:500px;padding:16px 18px;border:1px solid #e5e5e0;border-radius:10px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.8;background:#fffef9}
+.platform-memo:focus{outline:none;border-color:#1a1a1a;box-shadow:0 0 0 2px rgba(26,26,26,.05)}
+.memo-save-info{font-size:10px;color:#888;font-weight:400}
+
+/* AI Prompt buttons */
+.ai-type-selector{background:linear-gradient(135deg,#faf5ff 0%,#f3e8ff 100%);border:1.5px solid #c4b5fd;border-radius:10px;padding:12px 14px;margin-top:16px;margin-bottom:10px}
+.ai-type-label{display:block;font-size:11px;font-weight:700;color:#5b21b6;margin-bottom:7px;letter-spacing:.3px}
+.ai-type-select{width:100%;padding:10px 12px;border:1px solid #ddd6fe;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;background:#fff;color:#1a1a1a;cursor:pointer}
+.ai-type-select:focus{outline:none;border-color:#7c3aed}
+.ai-type-hint{font-size:11px;color:#6b21a8;margin-top:8px;padding:7px 10px;background:rgba(255,255,255,.6);border-radius:6px;line-height:1.5}
+.ai-buttons{display:flex;gap:10px;margin-top:10px}
+.ai-prompt-btn{flex:1;padding:16px 18px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(99,102,241,.2)}
+.ai-prompt-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(99,102,241,.35)}
+.ai-prompt-btn:active{transform:translateY(0)}
+.ai-preview-btn{padding:16px 22px;background:#fff;border:1.5px solid #8b5cf6;border-radius:10px;color:#7c3aed;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px}
+.ai-preview-btn:hover{background:#f5f3ff;transform:translateY(-1px)}
+
+.platform-empty{text-align:center;padding:60px 20px;color:#999;font-size:13px}
+
+/* Form box */
+.form-box{background:#fafaf8;border:2px dashed #c0c0b8;border-radius:10px;padding:12px;margin-top:10px}
+.form-box input,.form-box select,.form-box textarea{width:100%;padding:8px 11px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;margin-bottom:6px;font-family:inherit;background:#fff}
+.form-box .row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.form-box textarea{resize:vertical;min-height:50px}
+.form-box .form-title{font-size:12px;font-weight:700;margin-bottom:9px}
+.form-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
+
+/* Modal */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;justify-content:center;align-items:center;padding:20px}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.modal-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;font-size:11px;font-family:'Monaco',monospace;line-height:1.7;white-space:pre-wrap;max-height:500px;overflow-y:auto;color:#334155}
+
+/* Emoji picker */
+.emoji-picker-label{font-size:11px;font-weight:600;color:#666;margin:6px 0 6px}
+.emoji-picker{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:10px;background:#fafaf8;border:1px solid #e5e5e0;border-radius:8px;padding:8px;max-height:180px;overflow-y:auto}
+.emoji-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#fff;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .1s;font-family:inherit}
+.emoji-btn:hover{background:#f3e8ff;border-color:#c4b5fd;transform:scale(1.15)}
+.emoji-btn.selected{background:#ede9fe;border-color:#7c3aed;box-shadow:0 0 0 2px rgba(124,58,237,.2)}
+.emoji-category{grid-column:1/-1;font-size:10px;color:#999;font-weight:700;padding:4px 2px 2px;letter-spacing:.5px;text-transform:uppercase}
+.emoji-input-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.emoji-input-row .selected-preview{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:24px;background:#fff;border:1.5px solid #e5e5e0;border-radius:8px;flex-shrink:0}
+.emoji-input-row input{flex:1}
+@media(max-width:640px){
+  .emoji-picker{grid-template-columns:repeat(8,1fr)}
+}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:#fff;padding:11px 22px;border-radius:10px;font-size:12px;font-weight:600;z-index:200;transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.empty{text-align:center;padding:40px 20px;color:#999;grid-column:1/-1}
+.empty-emoji{font-size:36px;margin-bottom:8px;opacity:.5}
+.empty-text{font-size:12px;margin-bottom:10px}
+
+@media(max-width:900px){
+  .workspace{grid-template-columns:1fr}
+  .platform-list{position:static;flex-direction:row;flex-wrap:wrap}
+  .pitem{flex:1;min-width:120px}
+  .gs-grid,.pf-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .persona-grid{grid-template-columns:1fr}
+  .header h1{font-size:18px}
+}
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">D</div>
+    <div>
+      <h1>🎯 돌봄매트 마케팅</h1>
+      <div class="sub">페르소나 · 플랫폼 · AI 프롬프트 자동 생성</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="header-action" onclick="resetData()">🔄 기본값 리셋</button>
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncText">연결됨</span>
+  </div>
+</div>
+
+<!-- 🚀 이번 주 추천 액션 (대장님 마케팅 우선순위 자동 계산) -->
+<div class="section recommend-section" id="recommendSection">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">🚀 이번 주 우선순위 (자동 추천)</div>
+      <div class="sec-desc" id="recommendDesc">Tier 1 페르소나와 아직 공략 안 한 플랫폼을 추천합니다. 카드를 누르면 바로 작업 시작!</div>
+    </div>
+    <div class="sec-actions">
+      <button class="btn secondary small" onclick="refreshRecommendations()">🔄 새로고침</button>
+    </div>
+  </div>
+  <div class="recommend-grid" id="recommendGrid"></div>
+</div>
+
+<!-- 🟣 전체 설정 (접기/펼치기) -->
+<div class="section gs-section">
+  <div class="gs-collapse" id="gsCollapse" onclick="toggleGS()">
+    <div>
+      <div class="sec-title gs-title">⚙️ 전체 설정 (모든 AI 프롬프트에 자동 포함)</div>
+      <div class="sec-desc" style="color:#7c3aed">회사 정보, 경쟁사, 벤치마킹, 브랜드 톤, 제약조건 · <span id="gsStatus">미설정</span></div>
+    </div>
+    <div class="gs-arrow">▼</div>
+  </div>
+  
+  <div class="gs-content" id="gsContent">
+    <!-- 회사 정보 -->
+    <div class="gs-subsection">
+      <div class="gs-sub-title">🏢 회사 정보</div>
+      <div class="gs-grid">
+        <div class="gs-field wide">
+          <label class="gs-label">사업 요약</label>
+          <textarea class="gs-textarea" id="gs_business" placeholder="예: TPU 바닥매트 전문 시공. 6,700건 시공 완료, 창업 6년, 직원 14명"></textarea>
+        </div>
+        <div class="gs-field wide">
+          <label class="gs-label">핵심 강점/차별화</label>
+          <textarea class="gs-textarea" id="gs_strength" placeholder="예: 어린이집 80곳 시공, 경찰서 어린이보호구역 5곳, 5성급 호텔 키즈룸, 본사 직원 직접 시공"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">제품 라인업</label>
+          <textarea class="gs-textarea" id="gs_products" placeholder="예: 1000mm 22T(메인), 1000mm 18T(펫), 500mm 22T"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">시공 지역</label>
+          <textarea class="gs-textarea" id="gs_regions" placeholder="예: 부산/경남/대구, 경기/서울"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">가격대</label>
+          <textarea class="gs-textarea" id="gs_pricing" placeholder="예: 30평대 시공 기준 150~250만원 (80%), 대형/전체시공 400~600만원 (1%)"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">3개월 목표 (KPI)</label>
+          <textarea class="gs-textarea" id="gs_goals" placeholder="예: 월 샘플신청 300→500건, 예약전환율 20%, 인스타 팔로워 3000→5000"></textarea>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 경쟁사 -->
+    <div class="gs-subsection">
+      <div class="gs-sub-title">
+        <span>🥊 경쟁사 <span class="gs-sub-desc">실제 시장에서 경쟁하는 브랜드</span></span>
+      </div>
+      <div class="row-list" id="competitorList"></div>
+      <button class="add-row-btn" onclick="addCompetitor()">+ 경쟁사 추가</button>
+    </div>
+    
+    <!-- 벤치마킹 -->
+    <div class="gs-subsection">
+      <div class="gs-sub-title">
+        <span>🎨 벤치마킹 <span class="gs-sub-desc">다른 분야에서 배우고 싶은 브랜드</span></span>
+      </div>
+      <div class="row-list" id="benchmarkList"></div>
+      <button class="add-row-btn" onclick="addBenchmark()">+ 벤치마킹 추가</button>
+    </div>
+    
+    <!-- 브랜드 톤 & 제약 -->
+    <div class="gs-subsection">
+      <div class="gs-sub-title">🎯 브랜드 톤 & 제약 조건</div>
+      <div class="gs-grid">
+        <div class="gs-field">
+          <label class="gs-label">원하는 브랜드 톤/느낌</label>
+          <textarea class="gs-textarea" id="gs_tone" placeholder="예: 전문가 + 친근함, 안전 강조, 과장 없음, 신뢰감"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">금지어/피할 표현</label>
+          <textarea class="gs-textarea" id="gs_avoid" placeholder="예: '최고', 'No.1' (광고법), '100% 안전' (과장)"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">자주 쓰는 표현/키워드</label>
+          <textarea class="gs-textarea" id="gs_keywords" placeholder="예: 내 아이처럼, 믿고 맡기는, 14명 전문팀, 6,700건 시공"></textarea>
+        </div>
+        <div class="gs-field">
+          <label class="gs-label">제약 (인력/시간/예산)</label>
+          <textarea class="gs-textarea" id="gs_constraints" placeholder="예: 콘텐츠 제작 주 5시간, 월 광고비 100만원, 촬영 장비 아이폰+짐벌"></textarea>
+        </div>
+      </div>
+    </div>
+    
+    <div style="text-align:right;margin-top:10px">
+      <button class="btn purple" onclick="saveGS()">💾 전체 설정 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Section 1: Personas -->
+<div class="section">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title" id="personaSecTitle">👥 페르소나</div>
+      <div class="sec-desc">페르소나를 선택하면 아래 작업공간에서 해당 타겟 전략을 세울 수 있어요</div>
+    </div>
+    <div class="sec-actions">
+      <button class="btn secondary small" onclick="showAllPersonas()">전체 보기</button>
+      <button class="btn small" onclick="toggleForm('personaForm')">+ 페르소나</button>
+    </div>
+  </div>
+  
+  <!-- 🎯 카테고리 필터 (타겟 분류) -->
+  <div class="filter-label">🎯 타겟 분류</div>
+  <div class="filter-chips" id="categoryFilterChips"></div>
+  
+  <!-- ⭐ Tier 필터 -->
+  <div class="filter-label">⭐ Tier</div>
+  <div class="filter-chips" id="personaFilterChips"></div>
+  
+  <div class="persona-grid" id="personaGrid"></div>
+  
+  <div class="form-box" id="personaForm" style="display:none">
+    <div class="form-title">새 페르소나</div>
+    
+    <div class="emoji-picker-label">🎨 이모지 선택</div>
+    <div class="emoji-input-row">
+      <div class="selected-preview" id="pEmojiPreview">👤</div>
+      <input type="text" id="pEmoji" placeholder="직접 입력 (예: 👩‍👧)" maxlength="4" value="👤" oninput="syncPEmojiPreview()" style="padding:8px 11px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">
+      <input type="text" id="pName" placeholder="이름 (예: 신축엄마 수진)" style="flex:1;padding:8px 11px;border:1px solid #e5e5e0;border-radius:6px;font-size:12px;font-family:inherit;background:#fff">
+    </div>
+    <div class="emoji-picker" id="personaEmojiPicker" style="max-height:140px;margin-bottom:10px"></div>
+    
+    <input type="text" id="pLabel" placeholder="한줄 설명">
+    <div class="row">
+      <select id="pTier">
+        <option value="1">Tier 1 (핵심 ⭐⭐⭐)</option>
+        <option value="2">Tier 2 (주요 ⭐⭐)</option>
+        <option value="3" selected>Tier 3 (틈새 ⭐)</option>
+        <option value="4">Tier 4 (신규/실험)</option>
+      </select>
+      <select id="pCategory">
+        <option value="baby">👶 아이 타겟</option>
+        <option value="pet">🐕 반려견 타겟</option>
+        <option value="both">👶🐕 아이+반려견</option>
+        <option value="b2b">🏢 B2B (기관)</option>
+        <option value="other">📌 기타/공용</option>
+      </select>
+    </div>
+    <div class="row">
+      <input type="text" id="pPurpose" placeholder="시공목적 (쉼표로)">
+      <input type="text" id="pChannel" placeholder="주 유입경로">
+    </div>
+    <input type="text" id="pBudget" placeholder="예산 (예: 200~250만원)">
+    <textarea id="pDetail" placeholder="상세: 평수/시공범위, 고민, 결정요인"></textarea>
+    <div class="form-actions">
+      <button class="btn secondary small" onclick="toggleForm('personaForm')">취소</button>
+      <button class="btn small" onclick="savePersona()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Section 2: Workspace -->
+<div class="section">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">📱 플랫폼별 전략 작성</div>
+      <div class="sec-desc" id="wsFilterDesc">플랫폼을 선택하면 오른쪽에서 전략/메모/AI 프롬프트를 작성할 수 있어요</div>
+    </div>
+  </div>
+  
+  <div class="workspace">
+    <div>
+      <div class="persona-info-card" id="personaInfoCard"></div>
+      <div class="platform-list">
+        <div class="platform-list-title">📱 플랫폼</div>
+        <div id="platformList"></div>
+        <button class="platform-add" onclick="openPlatformModal()">+ 플랫폼 추가</button>
+      </div>
+    </div>
+    
+    <div class="workspace-main" id="workspaceMain">
+      <div class="platform-empty">← 왼쪽에서 플랫폼을 선택하세요</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Platform add modal -->
+<div class="modal" id="platformModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">새 플랫폼 추가</div>
+    
+    <div class="emoji-picker-label">📛 이름</div>
+    <input type="text" id="newPlatformName" placeholder="예: 유튜브, 틱톡, 네이버카페" style="width:100%;padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit;margin-bottom:12px">
+    
+    <div class="emoji-picker-label">📂 분류</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <label style="flex:1;padding:10px;border:1.5px solid #e5e5e0;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px" id="groupOnlineLabel">
+        <input type="radio" name="newPlatformGroup" value="online" checked style="margin:0" onchange="updateGroupSelection()">
+        🌐 온라인
+      </label>
+      <label style="flex:1;padding:10px;border:1.5px solid #e5e5e0;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px" id="groupOfflineLabel">
+        <input type="radio" name="newPlatformGroup" value="offline" style="margin:0" onchange="updateGroupSelection()">
+        🏢 오프라인
+      </label>
+    </div>
+    
+    <div class="emoji-picker-label">🎨 아이콘 선택 (또는 직접 입력)</div>
+    <div class="emoji-input-row">
+      <div class="selected-preview" id="emojiPreview">📌</div>
+      <input type="text" id="newPlatformIcon" placeholder="직접 입력 (예: 🎬)" maxlength="4" value="📌" oninput="syncEmojiPreview()" style="padding:10px;border:1px solid #e5e5e0;border-radius:7px;font-size:13px;font-family:inherit">
+    </div>
+    <div class="emoji-picker" id="emojiPicker"></div>
+    
+    <div style="display:flex;gap:6px;justify-content:flex-end">
+      <button class="btn secondary small" onclick="closePlatformModal()">취소</button>
+      <button class="btn small" onclick="savePlatform()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt preview modal -->
+<div class="modal" id="promptModal">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span>🤖 AI 프롬프트 미리보기</span>
+      <button class="btn secondary small" onclick="closePromptModal()">✕ 닫기</button>
+    </div>
+    <div class="modal-preview" id="promptPreview"></div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:14px">
+      <button class="btn secondary small" onclick="closePromptModal()">닫기</button>
+      <button class="btn purple" onclick="copyFromPreview()">📋 복사하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig={apiKey:"AIzaSyAjVerxCunFEIvkNfCOTDnedbO5YRVOma4",databaseURL:"https://dolbomnote-be438-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"dolbomnote-be438"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const MK='marketing_v5';
+
+// === 기본 전체 설정 ===
+const DEFAULT_GS={
+  business:'TPU 바닥매트 전문 시공. 6,700건 시공 완료, 창업 6년, 직원 14명 (부산/경남/대구 + 경기/서울)',
+  strength:'어린이집 80곳 시공, 경찰서 어린이보호구역 5곳, 5성급 호텔 키즈룸, 본사 직원 14명 직접 시공 (외주 X), 빠른 AS',
+  products:'1000mm 22T (메인 상품), 1000mm 18T (펫 전용), 500mm 22T',
+  regions:'부산/경남/대구, 경기/서울/인천',
+  pricing:'30평대 거실+복도+주방 시공 기준 150~250만원 (고객의 80%). 40평+ 대형 평수 or 전체 시공 시 400~600만원 (1% 미만). 동일 품질, 평수/범위에 따른 가격 차이',
+  goals:'월 샘플신청 증가, 예약 전환율 향상, SNS 팔로워 성장, 브랜드 인지도 확대',
+  tone:'전문가 + 친근함. 안전/무독성 강조. 과장 없음. 14명 전문팀의 신뢰감. 내 아이처럼 시공한다는 진심',
+  avoid:'"최고", "No.1" 등 최상급 표현 (표시광고법). "100% 안전" 같은 단정적 표현. 경쟁사 직접 비방',
+  keywords:'내 아이처럼, 믿고 맡기는, 14명 전문팀, 6,700건 시공 경험, 어린이집 80곳 선택, 직영 시공',
+  constraints:'콘텐츠 제작 가용 시간 제한, 월 광고비 한정, 주 3~5회 콘텐츠 발행 목표'
+};
+
+const DEFAULT_COMPETITORS=[
+  {id:'c1',name:'쿠키매트',tier:'메인 경쟁',note:'가장 다양한 라인업 (디노/누리/루나/디노130). 200~360만원대. 사이즈 다양화로 가격 진입장벽 낮춤'},
+  {id:'c2',name:'까사플로아',tier:'메인 경쟁',note:'200만원대 중저가. 600x600 주력'},
+  {id:'c3',name:'라라매트',tier:'메인 경쟁',note:'600x600, 1200x1200 다양한 사이즈. 중가~중고가. 가격 경쟁력'},
+  {id:'c4',name:'토리매트',tier:'메인 경쟁',note:'700x700, 800x800, 1000x1000 라인업. 중가 포지션'},
+  {id:'c5',name:'띠아모매트',tier:'메인 경쟁',note:'1000x1000 22T 주력. 중고가 포지션'},
+  {id:'c6',name:'니치039',tier:'메인 경쟁',note:'1200x1200 주력. 중고가. 큰 사이즈 선호층 타겟'},
+  {id:'c7',name:'블루돌핀',tier:'메인 경쟁',note:'다양한 사이즈+두께. 컬러기념 출시가 이벤트. 중고가'},
+  {id:'c8',name:'소리잠매트',tier:'메인 경쟁',note:'이름에서 층간소음 강조. 1000x1000 22T. 층간소음 고객 집중 공략'}
+];
+
+const DEFAULT_BENCHMARKS=[
+  {id:'b1',name:'오늘의집',field:'인테리어 커머스',note:'유저 커뮤니티 기반 신뢰 구축, 실제 사용자 사진 콘텐츠화, 검색 최적화'},
+  {id:'b2',name:'Casper',field:'매트리스',note:'100일 무료 체험 정책, 온라인 다이렉트 판매, 감성적 브랜딩으로 프리미엄 정착'},
+  {id:'b3',name:'Dyson',field:'가전',note:'기술 스토리텔링, 제품 구조/원리 시각화, 고가 정당화 콘텐츠'},
+  {id:'b4',name:'Apple',field:'IT',note:'단순한 제품 소개 영상, 감성 영상, 스토리 중심의 광고'}
+];
+
+// === Personas (타겟 카테고리 분리: baby/pet/both/b2b/other) ===
+const DEFAULT_PERSONAS=[
+  // ⭐ Tier 1 - 핵심
+  {id:'p1',emoji:'👩‍👧',name:'신축엄마 수진',label:'33세, 신축 34평 입주 맘',tier:1,category:'baby',purpose:'아이안전,층간소음,신축입주',channel:'맘카페',budget:'200~250만원',detail:'신축 34평, 거실+복도+주방 전체 시공 희망. 아랫집 민원 걱정, 무독성 인증 중요. 맘스홀릭 활동. 엄마들 후기 결정적.',order:1},
+  {id:'p2',emoji:'👨‍👩‍👧‍👦',name:'이사맘 지영',label:'36세, 초등 2명, 이사',tier:1,category:'baby',purpose:'이사,아이안전,층간소음',channel:'네이버 검색',budget:'180~230만원',detail:'구축→신축 이사, 30평대. 거실+복도 주로. 가성비+인테리어 매치. 시공 후 사진, 가격 비교 중시.',order:2},
+  {id:'p3',emoji:'🏢',name:'층간소음 미정',label:'32세, 아기 3~5세, 민원 받음',tier:1,category:'baby',purpose:'층간소음',channel:'네이버 검색',budget:'150~200만원',detail:'구축 아파트 25~30평, 거실+주방만 부분 시공 검토. 두께(18T/22T) 고민, 소음 저감 데이터 중요.',order:3},
+  {id:'p21',emoji:'🏫',name:'어린이집 원장 선영',label:'45~55세, B2B',tier:1,category:'b2b',purpose:'영아반안전,층간소음,평가인증',channel:'지인(원장)/네이버',budget:'300~500만원',detail:'교실 2~3개 or 전체. KC/친환경 인증 필수, 세금계산서 필요. 주말/방학 시공. 80곳 레퍼런스가 최강 무기.',order:4},
+  // 🆕 신생아/조리원 신규 페르소나 (Tier 1)
+  {id:'p24',emoji:'🍼',name:'조리원맘 리나',label:'30세, 산후조리원 재원 중',tier:1,category:'baby',purpose:'신생아안전,출산직후,무독성',channel:'조리원/산모톡방',budget:'200~280만원',detail:'산후조리원 2주 재원 중, 퇴소 전 시공 완료 희망. 신생아 침대/바운서 놓을 거실+안방 우선. VOC·KC 인증 필수, 냄새 민감. 조리원 내 엄마들 정보 공유 활발.',order:5},
+  // ⭐⭐ Tier 2 - 주요
+  {id:'p4',emoji:'🤰',name:'예비맘 소연',label:'31세, 출산 3개월 전',tier:2,category:'baby',purpose:'출산예정,아이안전',channel:'맘카페',budget:'180~250만원',detail:'신축 30평 전후, 전체 시공 희망. KC 인증 필수, 출산 전 시공 타이밍 중요. 남편과 상의.',order:6},
+  {id:'p5',emoji:'🏠',name:'새집 입주 현서',label:'32세, 신혼/첫자녀, 40평',tier:2,category:'baby',purpose:'신축입주,인테리어',channel:'블로그/인스타',budget:'280~400만원',detail:'신축 40평+, 전체 시공. 인테리어 톤앤매너 중요, 틈새 벌어짐 마감 퀄리티 중시. 대형 평수로 가격 높음.',order:7},
+  {id:'p6',emoji:'🐕',name:'반려인 현우',label:'38세, 대형견, 30평',tier:2,category:'pet',purpose:'반려견',channel:'인스타/유튜브',budget:'200~280만원',detail:'아파트 30평, 거실+복도 시공. 18T 펫 라인업 관심. 슬개골 예방, 미끄럼방지, 배변 청소, 스크래치.',order:8},
+  {id:'p7',emoji:'🤝',name:'지인추천 영미',label:'35세, 아이 2명',tier:2,category:'baby',purpose:'아이안전,층간소음',channel:'지인추천',budget:'200~250만원',detail:'이미 거의 결정. 색상/옵션만 고민. 빠른 시공+추천 캐시백. 친구와 비슷한 평수/범위.',order:9},
+  {id:'p8',emoji:'📦',name:'이사철 서연',label:'35~40세, 전체 시공',tier:2,category:'baby',purpose:'이사',channel:'검색+블로그',budget:'300~450만원',detail:'30~40평 이사, 거실+복도+주방+방 전체. 여러 브랜드 치밀 비교, 블로그 의존도 높음.',order:10},
+  {id:'p22',emoji:'🎪',name:'입주박람회 수빈',label:'30~40세, 입주 3~6개월 전',tier:2,category:'baby',purpose:'신축입주,아이안전,층간소음',channel:'입주박람회',budget:'200~280만원',detail:'신축 30~40평, 박람회 특가 관심. 현장 체험, 부부 동반. 박람회 계약 시 할인 기대.',order:11},
+  {id:'p23',emoji:'👶',name:'베이비페어 하영',label:'28~35세, 임신 or 1세 엄마',tier:2,category:'baby',purpose:'출산예정,아이안전',channel:'베이비페어',budget:'200~270만원',detail:'남편 동반, KC/무독성 인증 필수. 코엑스/킨텍스. 육아용품과 함께 검토.',order:12},
+  // 🆕 신생아 신규 페르소나 (Tier 2)
+  {id:'p25',emoji:'🤱',name:'산후맘 예린',label:'29세, 출산 1~3개월',tier:2,category:'baby',purpose:'신생아안전,출산직후,층간소음',channel:'맘카페/산후도우미',budget:'180~240만원',detail:'출산 후 집 복귀, 아기 뒤집기/옹알이 시작. 바닥 냉기, 먼지 쌓임 걱정. 100일 잔치 사진 배경도 고려. 산후도우미와 대화 중 매트 필요성 인지.',order:13},
+  // 🆕 산후조리원 B2B 신규 페르소나 (Tier 2)
+  {id:'p26',emoji:'🏨',name:'조리원 원장 민영',label:'40~55세, B2B 산후조리원',tier:2,category:'b2b',purpose:'신생아실,산모실,시설평가',channel:'업계지인/박람회',budget:'500~1500만원',detail:'산모실/신생아실/수유실 전체 시공. VOC·친환경 인증 필수(보건소 점검), 항균 중요. 원장 간 소개가 핵심. 재시공 주기 5~7년, 입소자 후기 직결.',order:14},
+  // ⭐ Tier 3 - 틈새
+  {id:'p9',emoji:'💰',name:'가성비 진경',label:'30~35세, 넓은 평수 부담',tier:3,category:'other',purpose:'부분시공,층간소음',channel:'맘카페(핫딜)',budget:'120~170만원',detail:'30평대에서 거실만 or 거실+복도만 부분 시공. 웰컴쿠폰, 공동구매 할인 적극 활용.',order:15},
+  {id:'p10',emoji:'👨‍👦',name:'육아대디 재현',label:'33세 아빠, 아기 걸음마',tier:3,category:'baby',purpose:'아이안전',channel:'네이버 검색',budget:'180~230만원',detail:'30평대, 거실+복도 중심. 가장 푹신한 매트(22T) 선호. 샘플 직접 밟아보고 결정.',order:16},
+  {id:'p11',emoji:'🐕‍🦺',name:'펫앤베이비 진아',label:'34세, 아이+반려견',tier:3,category:'both',purpose:'아이안전,반려견,층간소음',channel:'검색+SNS',budget:'220~300만원',detail:'30~35평, 거실+복도+주방 전체 시공. 다목적 내구성. 18T+22T 혼합 고려 가능.',order:17},
+  {id:'p12',emoji:'🏘️',name:'커뮤니티 주도 예진',label:'32~36세, 대단지 입주민',tier:3,category:'baby',purpose:'신축입주,공동구매',channel:'입주민 단톡/카페',budget:'200~280만원',detail:'30~40평, 본인 시공 후 이웃 공동구매 주도 가능(앰배서더). VIP 잠재, 추천 프로그램 활용.',order:18},
+  {id:'p13',emoji:'🔁',name:'재시공 은주',label:'40대, 5년 전 고객',tier:3,category:'other',purpose:'재시공,확장',channel:'기존 고객',budget:'150~300만원',detail:'5년 전 시공 부분 교체 or 추가 시공(방, 다른 집). 브랜드 신뢰 있음. 단골 할인+빠른 답변.',order:19},
+  {id:'p14',emoji:'📝',name:'검색맘 민지',label:'30세, 아이 7개월',tier:3,category:'baby',purpose:'아이안전',channel:'블로그',budget:'180~250만원',detail:'30평 아파트, 거실+주방 중심. 내돈내산 후기 선호. 비포·애프터 사진 중요.',order:20},
+  {id:'p15',emoji:'👵',name:'시니어 숙자',label:'55세+, 손주 방문',tier:3,category:'baby',purpose:'아이안전,층간소음',channel:'지인/가족',budget:'150~220만원',detail:'30평대 구축, 거실만 or 거실+복도. 깔끔함+합리적 가격. 딸/며느리 의견 따름.',order:21},
+  // Tier 4 - 신규/실험
+  {id:'p16',emoji:'🔲',name:'부분시공 혜원',label:'35세, 거실만/거실+복도',tier:4,category:'other',purpose:'부분시공',channel:'네이버 검색',budget:'100~170만원',detail:'30평대, 거실만(8~10평) or 거실+복도만 시공. 어디까지 깔아야 효과 있는지 고민.',order:22},
+  {id:'p17',emoji:'🏙️',name:'자취족 수연',label:'25~32세, 원룸/투룸',tier:4,category:'other',purpose:'층간소음,인테리어',channel:'인스타/네이버',budget:'80~150만원',detail:'15~25평 원룸/투룸. 소형 평수라 가격 낮음. 이사 시 재활용 고려. 작은 공간 부분 시공.',order:23},
+  {id:'p18',emoji:'🗺️',name:'광역권 정민',label:'30~40세, 부산/경기 외',tier:4,category:'other',purpose:'지역시공',channel:'네이버 검색',budget:'200~300만원',detail:'시공 가능 지역 외. 출장비 포함. 지역 시공 가능 여부 확인 우선.',order:24},
+  {id:'p19',emoji:'💎',name:'대형평수 서영',label:'40대, 40~69평 대형 아파트',tier:4,category:'other',purpose:'대형평수,전체시공',channel:'블로그/매거진',budget:'400~600만원',detail:'40~69평 대형. 거실+복도+주방+방 전체 시공으로 가격 상승. 강남/판교/해운대. 고급 마감 중시.',order:25},
+  {id:'p20',emoji:'🔧',name:'AS 수요자 태훈',label:'30~40세, 기존 고객',tier:4,category:'other',purpose:'AS',channel:'기존 고객',budget:'5~30만원',detail:'부분 AS(벌어짐/훼손). 빠른 방문, 무상/유상 기준 명확. 단가는 낮으나 만족도 중요.',order:26}
+];
+
+// 카테고리 메타데이터
+const CATEGORY_META={
+  all: {label:'전체', icon:'🎯'},
+  baby: {label:'아이', icon:'👶'},
+  pet: {label:'반려견', icon:'🐕'},
+  both: {label:'아이+반려견', icon:'👶🐕'},
+  b2b: {label:'B2B', icon:'🏢'},
+  other: {label:'기타', icon:'📌'}
+};
+
+const DEFAULT_PLATFORMS=[
+  // 🔍 검색/포털 (5)
+  {id:'pf_naver',name:'네이버 검색광고',icon:'🎯',group:'online',order:1,settings:{notes:'이미 운영 중. bid_manager_v2.py로 673개 키워드 시간대별 입찰 자동화. adRelevanceScore 4/10 개선 중.'}},
+  {id:'pf_naver_shop',name:'네이버 쇼핑검색광고',icon:'🛍️',group:'online',order:2,settings:{notes:'"층간소음매트", "유아매트", "애견매트" 쇼핑탭 상위 노출. 스마트스토어 연계 필수. 랭킹 알고리즘이 리뷰수·판매량 중시.'}},
+  {id:'pf_naver_place',name:'네이버 플레이스 광고',icon:'📍',group:'online',order:3,settings:{notes:'사상구 엄궁 매장 지역 노출. "매트시공", "바닥매트 시공업체" 검색 시 지도에 뜸. 플레이스 등록/리뷰 관리 선행.'}},
+  {id:'pf_naver_gfa',name:'네이버 GFA (리타게팅)',icon:'🔄',group:'online',order:4,settings:{notes:'홈페이지/검색 방문자 추적 → 재노출. 픽셀 설치 필요. 샘플신청 미완료 고객 리타게팅에 최적.'}},
+  {id:'pf_google',name:'구글 검색광고',icon:'🔍',group:'online',order:5,settings:{notes:'네이버 대비 경쟁 적고 CPC 저렴. 30~40대 맘 구글 검색 비중 증가 중. 유튜브/GDN 디스플레이와 연계.'}},
+  
+  // 💬 메신저/SNS (8)
+  {id:'pf_kakao_biz',name:'카카오톡 비즈보드',icon:'📢',group:'online',order:6,settings:{notes:'카톡 최상단 배너. 도달률 압도적. CPM 높지만 맘 타겟 정교. 카카오모먼트 계정 필요.'}},
+  {id:'pf_kakao',name:'카카오채널',icon:'💛',group:'online',order:7,settings:{notes:'기존 고객 상담/AS/알림톡 핵심 채널. 알림톡 템플릿 KA01TP260320062958424mxw8jvjD7ro(AM)/KA01TP260320063056710yPKtNC72BmC(PM) 운영 중.'}},
+  {id:'pf_insta',name:'인스타그램',icon:'📸',group:'online',order:8,settings:{notes:'비포/애프터 릴스 핵심. 주 3회 목표. 시공 영상 + 시공팀 루틴 + 고객 후기 리포스트. 쓰레드 연동 필수.'}},
+  {id:'pf_threads',name:'쓰레드',icon:'🧵',group:'online',order:9,settings:{accountStatus:'인스타 계정 @dolbommat 연동만 하면 즉시 시작 가능',keywords:'#층간소음 #육아맘일상 #애견육아 #아파트인테리어 #신축아파트',success:'(텍스트 공감형) "오늘 아이가 뛰어서 아랫집 쪽지 받았어요...😭" 같은 일상 고민 → 자연스러운 솔루션 암시가 먹힘',fail:'과도한 판매 목적 포스팅, 긴 링크, 해시태그 10개 이상 폭탄',notes:'🆕 대장님 블루오션! 경쟁사(쿠키매트/까사플로아 등) 대부분 미운영. 주 3~5회, 사진+짧은 글(2~3줄). 알고리즘이 팔로워 적어도 관대. 5분이면 포스팅 1개 작성 가능.'}},
+  {id:'pf_youtube',name:'유튜브',icon:'🎬',group:'online',order:10,settings:{notes:'시공 Before/After 영상, 14명 팀 소개, 고객 후기 인터뷰. 쇼츠로 확장. 한 번 만들면 오래가는 SEO 자산.'}},
+  {id:'pf_youtube_ppl',name:'유튜브 육아채널 PPL',icon:'🎥',group:'online',order:11,settings:{notes:'하정훈TV, 베싸TV, 육아맘 브이로거 협찬. 전문가 신뢰도 차용. 1건당 300~1500만원, 단 ROI 좋음.'}},
+  {id:'pf_facebook',name:'페이스북 광고',icon:'👍',group:'online',order:12,settings:{notes:'맘 타겟 정교한 머신러닝. 인스타와 메타 계정 통합. 관심사 타게팅(육아/인테리어/반려견).'}},
+  {id:'pf_band',name:'네이버 밴드 광고',icon:'🎵',group:'online',order:13,settings:{notes:'40~50대 중장년층 밀집. 어린이집 원장님 타겟 B2B에 특히 유효. 지역 커뮤니티 노출.'}},
+  {id:'pf_tiktok',name:'틱톡 광고',icon:'🎶',group:'online',order:14,settings:{notes:'2030 젊은 부모 테스트용. 소액(일 1~3만원) 부터. 해시태그 챌린지보다는 일상 감성 영상이 효율 좋음.'}},
+  
+  // 🏘️ 커뮤니티/로컬 (4)
+  {id:'pf_cafe',name:'맘카페 (공동구매)',icon:'💬',group:'online',order:15,settings:{notes:'최우선! 부산/경기 대형 맘카페 3곳 우선 컨택. 공동구매 할인 + 지역 배너. "엄마들끼리 사는 것" 구조로 전환.'}},
+  {id:'pf_danggn',name:'당근마켓',icon:'🥕',group:'online',order:16,settings:{notes:'사상구/경기 비즈프로필 + 지역광고. 동네 인증 고객 대상. 저렴한 CPC. "우리 동네 시공업체" 포지셔닝.'}},
+  {id:'pf_hogang',name:'호갱노노 / 아실',icon:'🏠',group:'online',order:17,settings:{notes:'신축 입주 예정자 커뮤니티. 단지별 입주민 단톡방 침투. 신축 시공 비중 높은 돌봄매트에 딱.'}},
+  {id:'pf_jikbang',name:'직방 / 다방',icon:'🏘️',group:'online',order:18,settings:{notes:'이사철(2~3월, 8~9월) 집중 타겟. "이사 전 필수 체크리스트" 콘텐츠 협업.'}},
+  
+  // 🛒 커머스 (5)
+  {id:'pf_ohouse',name:'오늘의집',icon:'🛋️',group:'online',order:19,settings:{accountStatus:'미입점 상태 (등록 필요)',notes:'⭐ 아직 안 하셨다면 1순위! 입점 신청 → 승인 2~3주. 인테리어 집들이 콘텐츠에 매트 자연 노출. 실제 사용자 사진이 검색 알고리즘 상위 노출 핵심.'}},
+  {id:'pf_coupang',name:'쿠팡 광고',icon:'📦',group:'online',order:20,settings:{notes:'매트 카테고리 경쟁 치열. 로켓배송 가능 여부가 핵심. 아이템위너 확보 필수. 광고는 상품 검색광고부터.'}},
+  {id:'pf_smartstore',name:'스마트스토어 + 라방',icon:'🛒',group:'online',order:21,settings:{notes:'네이버 쇼핑검색과 연결. 쇼핑라이브로 시공 시연 방송. 샘플 무료배송 이벤트가 전환율 높음.'}},
+  {id:'pf_mall',name:'종합몰 (11번가/G마켓)',icon:'🏪',group:'online',order:22,settings:{notes:'40대+ 여전히 활발. 특가 이벤트 유입. 위메프/티몬 포함 묶어서 관리.'}},
+  {id:'pf_blog_event',name:'네이버 블로그 체험단',icon:'✍️',group:'online',order:23,settings:{notes:'레뷰, 디너의여왕 등록. 월 5~10건 체험단 돌리기. SEO 누적 자산이 복리로 쌓임. 체험단 1건당 5~15만원.'}},
+  
+  // 📝 콘텐츠/인플루언서 (3)
+  {id:'pf_blog',name:'블로그 (공식운영)',icon:'📝',group:'online',order:24,settings:{notes:'돌봄매트 공식 블로그 (네이버/티스토리). 시공 사례·팁·FAQ 누적. 한 번 작성 시 SEO 반영까지 2~4주.'}},
+  {id:'pf_insta_influ',name:'인스타 인플루언서 협찬',icon:'⭐',group:'online',order:25,settings:{notes:'나노(1만~)/마이크로(10만~) 육아맘 계정. 1건 30~200만원. 실거주 집 시공 사례로 제작. 가성비 최고.'}},
+  
+  // 👶 육아 특화 (3)
+  {id:'pf_momq',name:'맘큐/맘스다이어리 앱',icon:'👶',group:'online',order:26,settings:{notes:'임산부~영유아 부모 집중 앱. 푸시 광고 + 배너. 조리원맘 타겟에 최적. 이벤트 참여형 광고 효율 좋음.'}},
+  {id:'pf_kidsmom',name:'키즈맘/아이러브맘',icon:'🧸',group:'online',order:27,settings:{notes:'육아 전문 커뮤니티. 트래픽 작지만 순도 높음. 전문가 칼럼형 콘텐츠가 잘 먹힘.'}},
+  {id:'pf_pet',name:'펫프렌즈/어바웃펫',icon:'🐾',group:'online',order:28,settings:{notes:'애견매트 전용 타겟. 대형견 슬개골 보호 스토리. 반려인 현우 페르소나 집중 공략.'}},
+  
+  // 🏢 오프라인 (3)
+  {id:'pf_fair',name:'박람회/페어 (입주+베이비)',icon:'🎪',group:'offline',order:29,settings:{notes:'코베·베페·서울베이비키즈 + 입주박람회. 샘플 체험 + QR 코드로 온라인 유입. 박람회 특가 10~15% 할인.'}},
+  {id:'pf_b2b',name:'B2B 영업 (기관)',icon:'🏢',group:'offline',order:30,settings:{notes:'어린이집·조리원·호텔. 원장 소개가 최강 채널. 어린이집 80곳 레퍼런스 활용. 세금계산서·KC인증 필수.'}},
+  {id:'pf_gov',name:'나라장터/학교장터',icon:'🏛️',group:'offline',order:31,settings:{accountStatus:'등록 필요 (공공 입찰 자격)',notes:'공공 어린이집/유치원 입찰. KC인증 있으시니 진입 가능. 등록 절차 복잡하지만 한 번 등록하면 안정적 수주.'}}
+];
+
+let gs={...DEFAULT_GS},competitors=[],benchmarks=[];
+let personas=[],platforms=[],memos={};
+let selectedPersonaId=null,selectedPlatformId=null,editingPersonaId=null,tierFilter='all',categoryFilter='all';
+let editingStrategy=false,lastGeneratedPrompt='';  // editingStrategy deprecated
+
+
+function syncOnline(on){const dot=document.getElementById('syncDot'),txt=document.getElementById('syncText');if(on){dot.classList.remove('offline');txt.textContent='연결됨'}else{dot.classList.add('offline');txt.textContent='연결 안됨'}}
+function arrToObj(arr){const o={};arr.forEach(x=>{o[x.id]=x});return o}
+function saveToFB(key,val){
+  db.ref(MK+'/'+key).set(val).catch(e=>{console.error(e);syncOnline(false)});
+  // localStorage에도 즉시 백업
+  setTimeout(saveToLS,100);
+}
+
+function resetData(){
+  if(!confirm('전체 설정 + 페르소나 + 플랫폼을 기본값으로 복원할까요?\n(메모는 유지)'))return;
+  gs={...DEFAULT_GS};
+  competitors=[...DEFAULT_COMPETITORS];
+  benchmarks=[...DEFAULT_BENCHMARKS];
+  personas=[...DEFAULT_PERSONAS];
+  platforms=[...DEFAULT_PLATFORMS];
+  saveToFB('gs',gs);
+  saveToFB('competitors',arrToObj(competitors));
+  saveToFB('benchmarks',arrToObj(benchmarks));
+  saveToFB('personas',arrToObj(personas));
+  saveToFB('platforms',arrToObj(platforms));
+  renderAll();
+  toast('✅ 기본 데이터 복원됨');
+}
+
+// localStorage backup keys
+const LS_KEY='dolbom_marketing_v5_backup';
+
+function saveToLS(){
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify({
+      gs,competitors,benchmarks,personas,platforms,memos,
+      _saved:Date.now()
+    }));
+  }catch(e){console.error('LS save failed',e)}
+}
+
+function loadFromLS(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch(e){return null}
+}
+
+// === Tier → order 순으로 정렬 (중요한 페르소나가 위로) ===
+function sortPersonas(){
+  personas.sort((a,b)=>((a.tier||3)-(b.tier||3))||((a.order||0)-(b.order||0)));
+}
+function sortPlatforms(){
+  platforms.sort((a,b)=>(a.order||0)-(b.order||0));
+}
+
+// === 마이그레이션: 카테고리 채우기 + 신규 DEFAULT 페르소나 자동 추가 ===
+function migratePersonaCategories(){
+  let changed=false;
+  
+  // 1) 기존 페르소나에 category 없으면 채우기
+  personas.forEach(p=>{
+    if(!p.category){
+      const def=DEFAULT_PERSONAS.find(d=>d.id===p.id);
+      p.category=(def&&def.category)||'other';
+      changed=true;
+    }
+  });
+  
+  // 2) DEFAULT_PERSONAS에 새로 추가된 페르소나 자동 병합 (Firebase에 없는 것들)
+  const existingIds=new Set(personas.map(p=>p.id));
+  DEFAULT_PERSONAS.forEach(def=>{
+    if(!existingIds.has(def.id)){
+      personas.push({...def});
+      changed=true;
+      console.log('✨ 신규 페르소나 자동 추가:',def.name);
+    }
+  });
+  
+  if(changed){
+    sortPersonas();
+    saveToFB('personas',arrToObj(personas));
+    console.log('페르소나 마이그레이션 완료 - 총',personas.length,'개');
+  }
+}
+
+// === 플랫폼 마이그레이션: 기존 메모/설정 보존 + 신규 DEFAULT 플랫폼만 자동 추가 ===
+function migratePlatforms(){
+  let changed=false;
+  const existingIds=new Set(platforms.map(p=>p.id));
+  DEFAULT_PLATFORMS.forEach(def=>{
+    if(!existingIds.has(def.id)){
+      // 기존 최대 order 뒤에 붙이기 (기존 플랫폼 순서 보존)
+      const maxOrder=platforms.reduce((m,p)=>Math.max(m,p.order||0),0);
+      const newPf={...def,order:maxOrder+(def.order||1)};
+      platforms.push(newPf);
+      changed=true;
+      console.log('🚀 신규 플랫폼 자동 추가:',def.name);
+    }
+  });
+  if(changed){
+    sortPlatforms();
+    saveToFB('platforms',arrToObj(platforms));
+    console.log('플랫폼 마이그레이션 완료 - 총',platforms.length,'개');
+  }
+}
+
+function loadAll(){
+  // 1단계: localStorage에서 즉시 복원 (빠른 표시)
+  const ls=loadFromLS();
+  if(ls){
+    gs={...DEFAULT_GS,...(ls.gs||{})};
+    competitors=ls.competitors&&ls.competitors.length>0?ls.competitors:[...DEFAULT_COMPETITORS];
+    benchmarks=ls.benchmarks&&ls.benchmarks.length>0?ls.benchmarks:[...DEFAULT_BENCHMARKS];
+    personas=ls.personas&&ls.personas.length>0?ls.personas:[...DEFAULT_PERSONAS];
+    platforms=ls.platforms&&ls.platforms.length>0?ls.platforms:[...DEFAULT_PLATFORMS];
+    memos=ls.memos||{};
+  } else {
+    // 처음 방문
+    gs={...DEFAULT_GS};
+    competitors=[...DEFAULT_COMPETITORS];
+    benchmarks=[...DEFAULT_BENCHMARKS];
+    personas=[...DEFAULT_PERSONAS];
+    platforms=[...DEFAULT_PLATFORMS];
+    memos={};
+  }
+  sortPersonas();
+  sortPlatforms();
+  migratePersonaCategories();
+  migratePlatforms();
+  sortPersonas(); // 새 페르소나 추가 후 재정렬
+  sortPlatforms();
+  renderAll();
+  
+  // 2단계: Firebase에서 최신 데이터 받기
+  db.ref(MK).once('value').then(snap=>{
+    const d=snap.val()||{};
+    let hasAnyData=false;
+    
+    if(d.gs&&Object.keys(d.gs).length>0){gs={...DEFAULT_GS,...d.gs};hasAnyData=true}
+    if(d.competitors&&Object.keys(d.competitors).length>0){competitors=Object.values(d.competitors);hasAnyData=true}
+    if(d.benchmarks&&Object.keys(d.benchmarks).length>0){benchmarks=Object.values(d.benchmarks);hasAnyData=true}
+    if(d.personas&&Object.keys(d.personas).length>0){personas=Object.values(d.personas);hasAnyData=true}
+    if(d.platforms&&Object.keys(d.platforms).length>0){platforms=Object.values(d.platforms);hasAnyData=true}
+    if(d.memos)memos=d.memos;
+    
+    // Firebase에 데이터 없으면 → 현재 기본값을 Firebase에 저장
+    if(!hasAnyData){
+      console.log('Firebase empty, uploading defaults');
+      saveToFB('gs',gs);
+      saveToFB('competitors',arrToObj(competitors));
+      saveToFB('benchmarks',arrToObj(benchmarks));
+      saveToFB('personas',arrToObj(personas));
+      saveToFB('platforms',arrToObj(platforms));
+    }
+    
+    sortPersonas();
+    sortPlatforms();
+    migratePersonaCategories();
+    migratePlatforms();
+    sortPersonas();
+    sortPlatforms();
+    saveToLS();
+    renderAll();
+    syncOnline(true);
+  }).catch(e=>{syncOnline(false);console.error('Firebase load failed',e)});
+  
+  // 3단계: 실시간 업데이트 (다른 기기에서 변경 시)
+  db.ref(MK).on('value',snap=>{
+    const d=snap.val();
+    if(!d)return;
+    let changed=false;
+    
+    // 안전하게: 비어있지 않을 때만 덮어쓰기
+    if(d.gs&&Object.keys(d.gs).length>0){gs={...DEFAULT_GS,...d.gs};changed=true}
+    if(d.competitors&&Object.keys(d.competitors).length>0){competitors=Object.values(d.competitors);changed=true}
+    if(d.benchmarks&&Object.keys(d.benchmarks).length>0){benchmarks=Object.values(d.benchmarks);changed=true}
+    if(d.personas&&Object.keys(d.personas).length>0){personas=Object.values(d.personas);sortPersonas();changed=true}
+    if(d.platforms&&Object.keys(d.platforms).length>0){platforms=Object.values(d.platforms);sortPlatforms();changed=true}
+    if(d.memos){memos=d.memos;changed=true}
+    
+    if(changed){
+      saveToLS();
+      renderAll();
+    }
+  });
+}
+
+// === Global settings ===
+function toggleGS(){
+  const c=document.getElementById('gsContent');
+  const h=document.getElementById('gsCollapse');
+  const open=c.classList.toggle('show');
+  h.classList.toggle('open',open);
+  if(open)populateGS();
+}
+
+function populateGS(){
+  ['business','strength','products','regions','pricing','goals','tone','avoid','keywords','constraints'].forEach(k=>{
+    const el=document.getElementById('gs_'+k);
+    if(el)el.value=gs[k]||'';
+  });
+  renderCompetitors();
+  renderBenchmarks();
+}
+
+function saveGS(){
+  ['business','strength','products','regions','pricing','goals','tone','avoid','keywords','constraints'].forEach(k=>{
+    const el=document.getElementById('gs_'+k);
+    if(el)gs[k]=el.value.trim();
+  });
+  saveToFB('gs',gs);
+  saveToFB('competitors',arrToObj(competitors));
+  saveToFB('benchmarks',arrToObj(benchmarks));
+  updateGSStatus();
+  toast('✅ 전체 설정 저장 완료');
+}
+
+function updateGSStatus(){
+  const filled=Object.values(gs).filter(v=>v&&v.trim()).length;
+  const total=10;
+  const el=document.getElementById('gsStatus');
+  if(el)el.textContent=`${filled}/${total} 항목 · 경쟁사 ${competitors.length} · 벤치마킹 ${benchmarks.length}`;
+}
+
+function renderCompetitors(){
+  const list=document.getElementById('competitorList');
+  if(!list)return;
+  list.innerHTML=competitors.map(c=>`
+    <div class="comp-row">
+      <input type="text" value="${c.name||''}" placeholder="브랜드명" onchange="updateCompetitor('${c.id}','name',this.value)">
+      <input type="text" value="${c.tier||''}" placeholder="티어" onchange="updateCompetitor('${c.id}','tier',this.value)">
+      <input type="text" value="${c.note||''}" placeholder="특징/강점/가격대" onchange="updateCompetitor('${c.id}','note',this.value)">
+      <button class="del-row" onclick="deleteCompetitor('${c.id}')">✕</button>
+    </div>`).join('');
+}
+
+function addCompetitor(){
+  competitors.push({id:'c_'+Date.now(),name:'',tier:'메인 경쟁',note:''});
+  renderCompetitors();
+}
+
+function updateCompetitor(id,field,val){
+  const c=competitors.find(x=>x.id===id);if(c){c[field]=val;saveToFB('competitors',arrToObj(competitors));updateGSStatus()}
+}
+
+function deleteCompetitor(id){
+  competitors=competitors.filter(x=>x.id!==id);
+  renderCompetitors();
+  saveToFB('competitors',arrToObj(competitors));
+  updateGSStatus();
+}
+
+function renderBenchmarks(){
+  const list=document.getElementById('benchmarkList');
+  if(!list)return;
+  list.innerHTML=benchmarks.map(b=>`
+    <div class="bench-row">
+      <input type="text" value="${b.name||''}" placeholder="브랜드명" onchange="updateBenchmark('${b.id}','name',this.value)">
+      <input type="text" value="${b.field||''}" placeholder="분야/업종" onchange="updateBenchmark('${b.id}','field',this.value)">
+      <input type="text" value="${b.note||''}" placeholder="배울 점/인사이트" onchange="updateBenchmark('${b.id}','note',this.value)">
+      <button class="del-row" onclick="deleteBenchmark('${b.id}')">✕</button>
+    </div>`).join('');
+}
+
+function addBenchmark(){
+  benchmarks.push({id:'b_'+Date.now(),name:'',field:'',note:''});
+  renderBenchmarks();
+}
+
+function updateBenchmark(id,field,val){
+  const b=benchmarks.find(x=>x.id===id);if(b){b[field]=val;saveToFB('benchmarks',arrToObj(benchmarks));updateGSStatus()}
+}
+
+function deleteBenchmark(id){
+  benchmarks=benchmarks.filter(x=>x.id!==id);
+  renderBenchmarks();
+  saveToFB('benchmarks',arrToObj(benchmarks));
+  updateGSStatus();
+}
+
+// === Persona ===
+function personaCardHTML(p){
+  const active=selectedPersonaId===p.id;
+  const cat=p.category||'other';
+  const catMeta=CATEGORY_META[cat]||CATEGORY_META.other;
+  return `<div class="persona ${active?'active':''}" onclick="selectPersona('${p.id}')">
+    <div class="persona-header">
+      <span class="persona-emoji">${p.emoji||'👤'}</span>
+      <div class="persona-badges">
+        <span class="persona-cat-badge cat-${cat}">${catMeta.icon} ${catMeta.label}</span>
+        <span class="persona-tier tier-${p.tier||3}">T${p.tier||3}</span>
+      </div>
+    </div>
+    <div class="persona-name">${p.name}</div>
+    <div class="persona-label">${p.label||''}</div>
+    <div class="persona-tags">
+      ${(p.purpose||'').split(',').map(x=>x.trim()).filter(x=>x).map(x=>`<span class="tag purpose">${x}</span>`).join('')}
+      ${p.channel?`<span class="tag channel">${p.channel}</span>`:''}
+      ${p.budget?`<span class="tag budget">💰 ${p.budget}</span>`:''}
+    </div>
+    ${p.detail?`<div class="persona-meta">${p.detail}</div>`:''}
+    <div class="persona-actions-row">
+      <button class="btn secondary small" onclick="event.stopPropagation();editPersona('${p.id}')">수정</button>
+      <button class="btn danger small" onclick="event.stopPropagation();deletePersona('${p.id}')">삭제</button>
+    </div>
+  </div>`;
+}
+
+function renderPersonas(){
+  // 동적 섹션 타이틀
+  const titleEl=document.getElementById('personaSecTitle');
+  if(titleEl)titleEl.textContent=`👥 페르소나 (${personas.length}개)`;
+  
+  // 카테고리 필터 chips
+  const categories=[
+    {v:'all',l:'🎯 전체'},
+    {v:'baby',l:'👶 아이'},
+    {v:'pet',l:'🐕 반려견'},
+    {v:'both',l:'👶🐕 아이+반려견'},
+    {v:'b2b',l:'🏢 B2B'},
+    {v:'other',l:'📌 기타'}
+  ];
+  document.getElementById('categoryFilterChips').innerHTML=categories.map(c=>{
+    const count=c.v==='all'?personas.length:personas.filter(p=>(p.category||'other')===c.v).length;
+    const isActive=categoryFilter===c.v;
+    const activeClass=isActive?(c.v==='all'?'active':`active cat-active-${c.v}`):'';
+    return `<div class="fchip ${activeClass}" onclick="setCategoryFilter('${c.v}')">${c.l} (${count})</div>`;
+  }).join('');
+  
+  // Tier 필터 chips (현재 카테고리 필터 적용 후 집계)
+  const catFiltered=categoryFilter==='all'?personas:personas.filter(p=>(p.category||'other')===categoryFilter);
+  const tiers=[{v:'all',l:'전체'},{v:1,l:'핵심 ⭐⭐⭐'},{v:2,l:'주요 ⭐⭐'},{v:3,l:'틈새 ⭐'},{v:4,l:'신규/실험'}];
+  document.getElementById('personaFilterChips').innerHTML=tiers.map(t=>{
+    const count=t.v==='all'?catFiltered.length:catFiltered.filter(p=>p.tier===t.v).length;
+    return `<div class="fchip ${tierFilter===t.v?'active':''}" onclick="setTierFilter('${t.v}')">${t.l} (${count})</div>`;
+  }).join('');
+  
+  // 최종 필터링
+  let filtered=catFiltered;
+  if(tierFilter!=='all')filtered=filtered.filter(p=>p.tier===parseInt(tierFilter));
+  
+  const grid=document.getElementById('personaGrid');
+  if(filtered.length===0){grid.innerHTML='<div class="empty"><div class="empty-emoji">👥</div><div class="empty-text">해당 조건의 페르소나가 없어요</div><button class="btn secondary small" onclick="resetFilters()">필터 초기화</button></div>';return}
+  grid.innerHTML=filtered.map(p=>personaCardHTML(p)).join('');
+}
+
+function setTierFilter(v){tierFilter=v==='all'?'all':parseInt(v);renderPersonas()}
+function setCategoryFilter(v){categoryFilter=v;tierFilter='all';renderPersonas()}
+function resetFilters(){categoryFilter='all';tierFilter='all';renderPersonas()}
+
+function selectPersona(id){
+  selectedPersonaId=selectedPersonaId===id?null:id;
+  if(selectedPersonaId&&!selectedPlatformId&&platforms.length>0)selectedPlatformId=platforms[0].id;
+  renderAll();
+  if(selectedPersonaId)setTimeout(()=>document.querySelector('.workspace').scrollIntoView({behavior:'smooth',block:'start'}),200);
+}
+
+function showAllPersonas(){selectedPersonaId=null;renderAll()}
+
+function toggleForm(id){
+  const f=document.getElementById(id);
+  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='block'&&id==='personaForm'){
+    editingPersonaId=null;
+    clearPersonaForm();
+    renderPersonaEmojiPicker();
+  }
+}
+
+function clearPersonaForm(){
+  ['pEmoji','pName','pLabel','pPurpose','pChannel','pBudget','pDetail'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pTier').value='3';
+  document.getElementById('pCategory').value='baby';
+  document.getElementById('pEmoji').value='👤';
+  document.getElementById('pEmojiPreview').textContent='👤';
+}
+
+function renderPersonaEmojiPicker(){
+  const picker=document.getElementById('personaEmojiPicker');
+  if(!picker)return;
+  // 페르소나용 카테고리는 사람/가족/직업 중심
+  const PERSONA_EMOJIS={
+    '👥 기본/가족':['👤','👥','👶','👧','👦','👩','👨','🧑','👩‍👧','👨‍👧','👩‍👦','👨‍👦','👩‍👧‍👦','👨‍👧‍👦','👪','🧑‍🤝‍🧑','🤱','🤰','👩‍🍼','👨‍🍼'],
+    '👔 직업/역할':['🏢','🏫','👩‍🏫','👨‍🏫','👩‍💼','👨‍💼','👮','👷','🧑‍🎓','👑','🎓','💼','🧑‍🔧','🧑‍⚕️','👩‍⚕️','👨‍⚕️','🧑‍🍳','🎨','🎤','📷'],
+    '🐾 반려동물':['🐕','🐶','🐩','🦮','🐕‍🦺','🐱','🐈','🐈‍⬛','🐰','🐹','🐭','🦜','🐠','🐟','🐢','🦎','🐍','🐾','🦴','🎾'],
+    '🏠 상황/특성':['🏠','🏡','🏘️','🏢','🏫','🏗️','🔨','🏅','🎪','🎁','💎','💰','💵','📦','🚚','🚗','🗺️','📍','⭐','✨'],
+    '😊 감정/성격':['😊','😎','🤓','🧐','😌','🥰','😍','💕','💖','🌟','🔥','💪','🙏','🎯','💡','🎨','🎵','📚','🧠','👑']
+  };
+  let html='';
+  for(const [category,emojis] of Object.entries(PERSONA_EMOJIS)){
+    html+=`<div class="emoji-category">${category}</div>`;
+    emojis.forEach(emoji=>{
+      html+=`<button type="button" class="emoji-btn" onclick="selectPersonaEmoji('${emoji}')" title="${emoji}">${emoji}</button>`;
+    });
+  }
+  picker.innerHTML=html;
+  // 현재 선택된 이모지 하이라이트
+  const current=document.getElementById('pEmoji').value||'👤';
+  setTimeout(()=>{
+    document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>{
+      if(b.textContent===current)b.classList.add('selected');
+    });
+  },50);
+}
+
+function selectPersonaEmoji(emoji){
+  document.getElementById('pEmoji').value=emoji;
+  document.getElementById('pEmojiPreview').textContent=emoji;
+  document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>{
+    if(b.textContent===emoji)b.classList.add('selected');
+  });
+}
+
+function syncPEmojiPreview(){
+  const val=document.getElementById('pEmoji').value.trim()||'👤';
+  document.getElementById('pEmojiPreview').textContent=val;
+  document.querySelectorAll('#personaEmojiPicker .emoji-btn').forEach(b=>{
+    b.classList.toggle('selected',b.textContent===val);
+  });
+}
+
+function editPersona(id){
+  const p=personas.find(x=>x.id===id);if(!p)return;
+  editingPersonaId=id;
+  document.getElementById('pEmoji').value=p.emoji||'👤';
+  document.getElementById('pEmojiPreview').textContent=p.emoji||'👤';
+  document.getElementById('pName').value=p.name||'';
+  document.getElementById('pLabel').value=p.label||'';
+  document.getElementById('pTier').value=p.tier||3;
+  document.getElementById('pCategory').value=p.category||'other';
+  document.getElementById('pPurpose').value=p.purpose||'';
+  document.getElementById('pChannel').value=p.channel||'';
+  document.getElementById('pBudget').value=p.budget||'';
+  document.getElementById('pDetail').value=p.detail||'';
+  document.getElementById('personaForm').style.display='block';
+  renderPersonaEmojiPicker();
+  document.getElementById('personaForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function savePersona(){const name=document.getElementById('pName').value.trim();if(!name){toast('⚠️ 이름을 입력하세요');return}const data={id:editingPersonaId||('p_'+Date.now()),emoji:document.getElementById('pEmoji').value.trim()||'👤',name,label:document.getElementById('pLabel').value.trim(),tier:parseInt(document.getElementById('pTier').value),category:document.getElementById('pCategory').value,purpose:document.getElementById('pPurpose').value.trim(),channel:document.getElementById('pChannel').value.trim(),budget:document.getElementById('pBudget').value.trim(),detail:document.getElementById('pDetail').value.trim(),order:editingPersonaId?personas.find(x=>x.id===editingPersonaId).order:personas.length+1};if(editingPersonaId){const idx=personas.findIndex(x=>x.id===editingPersonaId);personas[idx]=data}else personas.push(data);sortPersonas();saveToFB('personas',arrToObj(personas));toggleForm('personaForm');renderAll();toast('✅ 저장 완료 (Tier 순으로 자동 정렬)')}
+
+function deletePersona(id){if(!confirm('삭제할까요?'))return;personas=personas.filter(x=>x.id!==id);if(selectedPersonaId===id)selectedPersonaId=null;saveToFB('personas',arrToObj(personas));renderAll();toast('🗑️ 삭제됨')}
+
+// === Persona Info Card ===
+function renderPersonaInfo(){
+  const card=document.getElementById('personaInfoCard');
+  if(!selectedPersonaId){
+    card.classList.remove('show');
+    card.classList.add('placeholder');
+    card.innerHTML='<div class="pic-placeholder">💡 위에서 페르소나를 선택하면<br>여기에 정보가 표시됩니다</div>';
+    return;
+  }
+  const p=personas.find(x=>x.id===selectedPersonaId);
+  if(!p){card.classList.remove('show');return}
+  card.classList.remove('placeholder');
+  card.classList.add('show');
+  card.innerHTML=`
+    <div class="pic-header">
+      <span class="pic-emoji">${p.emoji||'👤'}</span>
+      <div class="pic-name-block">
+        <div class="pic-name">${p.name}</div>
+        <div class="pic-label">${p.label||''}</div>
+      </div>
+      <span class="pic-tier">T${p.tier||3}</span>
+    </div>
+    <div class="pic-tags">
+      ${(p.purpose||'').split(',').map(x=>x.trim()).filter(x=>x).map(x=>`<span class="pic-tag">🎯 ${x}</span>`).join('')}
+      ${p.channel?`<span class="pic-tag">📍 ${p.channel}</span>`:''}
+      ${p.budget?`<span class="pic-tag">💰 ${p.budget}</span>`:''}
+    </div>
+    ${p.detail?`<div class="pic-detail">${p.detail}</div>`:''}
+  `;
+}
+
+// === Platform list ===
+function hasPlatformSettings(pf){
+  const s=pf.settings||{};
+  return Object.values(s).some(v=>v&&v.trim());
+}
+
+function renderPlatformList(){
+  const list=document.getElementById('platformList');
+  
+  // 그룹별로 분리
+  const onlinePfs=platforms.filter(p=>(p.group||'online')==='online').sort((a,b)=>(a.order||0)-(b.order||0));
+  const offlinePfs=platforms.filter(p=>p.group==='offline').sort((a,b)=>(a.order||0)-(b.order||0));
+  
+  let html='';
+  
+  // 온라인 섹션 (배경 없음)
+  html+='<div class="platform-group-header">🌐 온라인 ('+onlinePfs.length+')</div>';
+  if(onlinePfs.length===0){
+    html+='<div style="font-size:10px;color:#bbb;padding:6px 12px">플랫폼이 없어요</div>';
+  } else {
+    onlinePfs.forEach((pf,idx)=>{
+      html+=buildPlatformItemHTML(pf,idx,onlinePfs.length);
+    });
+  }
+  
+  // 오프라인 섹션 (회색 배경으로 감싸기)
+  html+='<div class="platform-group-offline">';
+  html+='<div class="platform-group-header">🏢 오프라인 ('+offlinePfs.length+')</div>';
+  if(offlinePfs.length===0){
+    html+='<div style="font-size:10px;color:#bbb;padding:6px 12px">플랫폼이 없어요</div>';
+  } else {
+    offlinePfs.forEach((pf,idx)=>{
+      html+=buildPlatformItemHTML(pf,idx,offlinePfs.length);
+    });
+  }
+  html+='</div>';
+  
+  list.innerHTML=html;
+}
+
+function buildPlatformItemHTML(pf,idx,total){
+  const isFirst=idx===0;
+  const isLast=idx===total-1;
+  const group=pf.group||'online';
+  const otherGroup=group==='online'?'offline':'online';
+  const otherGroupLabel=group==='online'?'🏢':'🌐';
+  const otherGroupTitle=group==='online'?'오프라인으로 이동':'온라인으로 이동';
+  
+  return `<div class="pitem-wrap">
+    <button class="pitem ${selectedPlatformId===pf.id?'active':''}" onclick="selectPlatform('${pf.id}')">
+      <span class="pitem-icon">${pf.icon}</span>
+      <span class="pitem-name">${pf.name}</span>
+      ${hasPlatformSettings(pf)?'<span class="pitem-has-settings" title="설정됨"></span>':''}
+    </button>
+    <div class="pitem-controls">
+      <button class="ctrl-btn" onclick="movePlatform('${pf.id}','up')" ${isFirst?'disabled':''} title="위로">▲</button>
+      <button class="ctrl-btn" onclick="movePlatform('${pf.id}','down')" ${isLast?'disabled':''} title="아래로">▼</button>
+      <button class="ctrl-btn move-group" onclick="movePlatformGroup('${pf.id}')" title="${otherGroupTitle}">${otherGroupLabel}</button>
+    </div>
+  </div>`;
+}
+
+function movePlatform(id,direction){
+  const pf=platforms.find(p=>p.id===id);
+  if(!pf)return;
+  const group=pf.group||'online';
+  const groupPfs=platforms.filter(p=>(p.group||'online')===group).sort((a,b)=>(a.order||0)-(b.order||0));
+  const currentIdx=groupPfs.findIndex(p=>p.id===id);
+  if(currentIdx===-1)return;
+  
+  const targetIdx=direction==='up'?currentIdx-1:currentIdx+1;
+  if(targetIdx<0||targetIdx>=groupPfs.length)return;
+  
+  // order 값 swap
+  const currentOrder=groupPfs[currentIdx].order;
+  const targetOrder=groupPfs[targetIdx].order;
+  groupPfs[currentIdx].order=targetOrder;
+  groupPfs[targetIdx].order=currentOrder;
+  
+  saveToFB('platforms',arrToObj(platforms));
+  renderAll();
+}
+
+function movePlatformGroup(id){
+  const pf=platforms.find(p=>p.id===id);
+  if(!pf)return;
+  const newGroup=(pf.group||'online')==='online'?'offline':'online';
+  pf.group=newGroup;
+  // 새 그룹의 마지막 순서로
+  const targetGroupPfs=platforms.filter(p=>(p.group||'online')===newGroup);
+  const maxOrder=targetGroupPfs.length>0?Math.max(...targetGroupPfs.map(p=>p.order||0)):0;
+  pf.order=maxOrder+1;
+  saveToFB('platforms',arrToObj(platforms));
+  renderAll();
+  toast(`✅ ${newGroup==='online'?'온라인':'오프라인'}으로 이동됨`);
+}
+
+function selectPlatform(id){selectedPlatformId=id;renderAll()}
+
+// === Workspace ===
+function renderWorkspace(){
+  const ws=document.getElementById('workspaceMain');
+  const pf=platforms.find(p=>p.id===selectedPlatformId);
+  if(!pf){ws.innerHTML='<div class="platform-empty">← 왼쪽에서 플랫폼을 선택하세요</div>';return}
+  
+  const selectedPersona=selectedPersonaId?personas.find(p=>p.id===selectedPersonaId):null;
+  const memoKey=(selectedPersonaId||'all')+'_'+pf.id;
+  const memoValue=memos[memoKey]||'';
+  const s=pf.settings||{};
+  const settingsFilled=Object.values(s).filter(v=>v&&v.trim()).length;
+  
+  let html=`<div class="ws-header">
+    <div class="ws-title">
+      ${pf.icon} ${pf.name}
+      ${selectedPersona?`<span class="ws-persona-tag">🎯 ${selectedPersona.emoji} ${selectedPersona.name}</span>`:''}
+    </div>
+    <div class="ws-actions">
+      <button class="btn ghost small" onclick="deletePlatform('${pf.id}')">플랫폼 삭제</button>
+    </div>
+  </div>`;
+  
+  // 플랫폼별 설정 (접기)
+  html+=`<div class="pf-settings">
+    <div class="pf-settings-header ${s._open?'open':''}" onclick="togglePFSettings()">
+      <div class="pf-settings-title">
+        🟢 ${pf.name} 플랫폼 설정 <span style="color:#888;font-weight:400">(${settingsFilled}개 항목 설정됨)</span>
+      </div>
+      <span class="pf-settings-arrow">▼</span>
+    </div>
+    <div class="pf-settings-content ${s._open?'show':''}" id="pfSettingsContent">
+      <div class="pf-grid">
+        <div class="pf-field">
+          <label class="pf-label">현재 계정/채널 상태</label>
+          <textarea class="pf-textarea" id="pf_accountStatus" placeholder="예: 팔로워 2,500명, 월 평균 DM 50건">${s.accountStatus||''}</textarea>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">주요 해시태그/키워드</label>
+          <textarea class="pf-textarea" id="pf_keywords" placeholder="예: #강아지매트 #아기매트 #층간소음 #시공후기">${s.keywords||''}</textarea>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">잘됐던 콘텐츠</label>
+          <textarea class="pf-textarea" id="pf_success" placeholder="예: 강아지 미끄럼 시연 릴스 조회 15만">${s.success||''}</textarea>
+        </div>
+        <div class="pf-field">
+          <label class="pf-label">별로였던 콘텐츠</label>
+          <textarea class="pf-textarea" id="pf_fail" placeholder="예: 제품 스펙 설명 피드 좋아요 20개">${s.fail||''}</textarea>
+        </div>
+        <div class="pf-field wide">
+          <label class="pf-label">이 플랫폼만의 특이사항/제약</label>
+          <textarea class="pf-textarea" id="pf_notes" placeholder="예: 릴스 편집 시간 부족, 광고 집행 미경험">${s.notes||''}</textarea>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <button class="btn small" onclick="savePFSettings()">💾 플랫폼 설정 저장</button>
+      </div>
+    </div>
+  </div>`;
+  
+  // 메모
+  html+=`<div class="ws-section">
+    <div class="ws-section-title">
+      <span>📝 ${selectedPersona?selectedPersona.emoji+' '+selectedPersona.name:'전체'} × ${pf.icon} ${pf.name} 메모</span>
+      <span class="memo-save-info" id="memoSaveInfo_${memoKey}">자동 저장</span>
+    </div>
+    <textarea class="platform-memo" id="memoArea_${memoKey}" data-memokey="${memoKey}" placeholder="자유롭게 메모하세요. 아이디어, 생각, 정리되지 않은 메모도 OK.&#10;&#10;이 내용은 아래 'AI 프롬프트' 버튼 누르면 자동으로 전체 설정 + 페르소나 + 플랫폼 설정과 합쳐져서 복사됩니다.">${memoValue}</textarea>
+    
+    <div class="ai-type-selector">
+      <label class="ai-type-label">🎯 AI에게 뭘 요청할까요?</label>
+      <select id="aiPromptType" class="ai-type-select" onchange="onAIPromptTypeChange()">
+        <option value="strategy">📋 종합 마케팅 전략 (기본)</option>
+        <option value="blog">📝 블로그 글 1편 (네이버 SEO 최적화)</option>
+        <option value="reels">🎬 인스타 릴스 아이디어 5개 (훅+대본)</option>
+        <option value="adcopy">🎯 네이버 검색광고 카피 5세트 (제목+설명)</option>
+        <option value="dm">💬 카톡/DM 상담 응대 스크립트</option>
+        <option value="calendar">📅 4주 콘텐츠 캘린더 (주간 실행 계획)</option>
+        <option value="hook">✨ 썸네일 훅 문구 20개 (후킹 전문)</option>
+        <option value="b2b">🏢 B2B 영업 제안서 초안</option>
+      </select>
+      <div class="ai-type-hint" id="aiTypeHint">💡 페르소나의 전체 공략 전략 + 콘텐츠 기획 + 4주 캘린더를 한 번에 뽑습니다.</div>
+    </div>
+    
+    <div class="ai-buttons">
+      <button class="ai-prompt-btn" onclick="copyAIPrompt()">
+        🤖 AI 프롬프트 복사 (제미나이/클로드용)
+      </button>
+      <button class="ai-preview-btn" onclick="previewAIPrompt()">
+        👁️ 미리보기
+      </button>
+    </div>
+  </div>`;
+  
+  ws.innerHTML=html;
+  
+  // 메모 자동 저장
+  const ma=document.getElementById('memoArea_'+memoKey);
+  if(ma){
+    ma.addEventListener('input',()=>{
+      const info=document.getElementById('memoSaveInfo_'+memoKey);
+      if(info)info.textContent='저장 중...';
+      clearTimeout(window._memoTimers);
+      window._memoTimers=setTimeout(()=>{
+        memos[memoKey]=ma.value;
+        saveToFB('memos',memos);
+        if(info)info.textContent='✅ 저장됨 '+new Date().toLocaleTimeString('ko-KR');
+      },800);
+    });
+  }
+}
+
+function togglePFSettings(){
+  const pf=platforms.find(p=>p.id===selectedPlatformId);
+  if(!pf)return;
+  if(!pf.settings)pf.settings={};
+  pf.settings._open=!pf.settings._open;
+  renderWorkspace();
+}
+
+function savePFSettings(){
+  const pf=platforms.find(p=>p.id===selectedPlatformId);
+  if(!pf)return;
+  if(!pf.settings)pf.settings={};
+  ['accountStatus','keywords','success','fail','notes'].forEach(k=>{
+    const el=document.getElementById('pf_'+k);
+    if(el)pf.settings[k]=el.value.trim();
+  });
+  saveToFB('platforms',arrToObj(platforms));
+  renderAll();
+  toast('✅ 플랫폼 설정 저장됨');
+}
+
+// === Platform add/delete ===
+const EMOJI_CATEGORIES={
+  '📱 플랫폼/SNS':['📱','📸','🎬','📹','📺','🎥','📷','🎵','🎶','🎤','🎙️','🎧','📻','🎞️','📼','🖥️','💻','⌨️','🖱️','📞'],
+  '💬 소통/메시지':['💬','💭','🗨️','📢','📣','📯','🔔','🔕','📧','📨','📩','📮','📪','💌','📝','✉️','📤','📥','📨','📤'],
+  '🔍 검색/광고':['🔍','🔎','🎯','📊','📈','📉','📌','📍','🔖','🏷️','💯','✨','⭐','🌟','💫','🆕','🆒','🆓','🔥','💥'],
+  '🏢 비즈니스':['🏢','🏬','🏪','🏫','🏭','🏛️','🏘️','🏗️','🏛️','🏦','🛍️','🛒','💼','📁','📂','🗂️','📋','📃','📄','📑'],
+  '👥 사람/고객':['👤','👥','👶','👧','👦','👩','👨','👩‍👧','👨‍👧','👩‍👦','👨‍👦','👩‍👧‍👦','👪','🧑‍🤝‍🧑','🤝','👋','💪','🙌','👍','❤️'],
+  '🎪 이벤트/행사':['🎪','🎭','🎨','🎢','🎡','🎠','🎗️','🎟️','🎫','🎖️','🏆','🏅','🥇','🥈','🥉','🎉','🎊','🎁','🎀','🎆'],
+  '🏠 집/공간':['🏠','🏡','🏘️','🏚️','🛋️','🛏️','🚪','🪑','🚿','🛁','🌡️','🔨','🧰','⚒️','🛠️','🔧','🪛','🧹','🧼','🧽'],
+  '🐾 반려/아기':['🐶','🐕','🐩','🦮','🐕‍🦺','🐱','🐈','🐈‍⬛','🐰','🐹','🐭','🍼','🧸','👶','🏀','⚽','🎲','🧩','🎨','🖍️'],
+  '💰 금융/가격':['💰','💵','💴','💶','💷','💸','💳','💎','🪙','⚖️','🧾','🔖','🏷️','💹','📊','📈','📉','💲','💱','🤑'],
+  '✅ 상태/감정':['✅','☑️','✔️','❌','⭕','⚠️','❗','❓','💡','🚀','⚡','🎯','🔔','📣','💯','🔥','✨','⏰','📅','🗓️']
+};
+
+function renderEmojiPicker(){
+  const picker=document.getElementById('emojiPicker');
+  if(!picker)return;
+  let html='';
+  for(const [category,emojis] of Object.entries(EMOJI_CATEGORIES)){
+    html+=`<div class="emoji-category">${category}</div>`;
+    emojis.forEach(emoji=>{
+      html+=`<button type="button" class="emoji-btn" onclick="selectEmoji('${emoji}')" title="${emoji}">${emoji}</button>`;
+    });
+  }
+  picker.innerHTML=html;
+}
+
+function selectEmoji(emoji){
+  document.getElementById('newPlatformIcon').value=emoji;
+  document.getElementById('emojiPreview').textContent=emoji;
+  // Highlight selected
+  document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.emoji-btn').forEach(b=>{
+    if(b.textContent===emoji)b.classList.add('selected');
+  });
+}
+
+function syncEmojiPreview(){
+  const val=document.getElementById('newPlatformIcon').value.trim()||'📌';
+  document.getElementById('emojiPreview').textContent=val;
+  document.querySelectorAll('.emoji-btn').forEach(b=>{
+    b.classList.toggle('selected',b.textContent===val);
+  });
+}
+
+function updateGroupSelection(){
+  const online=document.querySelector('input[name="newPlatformGroup"][value="online"]');
+  const offline=document.querySelector('input[name="newPlatformGroup"][value="offline"]');
+  document.getElementById('groupOnlineLabel').style.borderColor=online.checked?'#1a1a1a':'#e5e5e0';
+  document.getElementById('groupOnlineLabel').style.background=online.checked?'#f0f0ed':'#fff';
+  document.getElementById('groupOfflineLabel').style.borderColor=offline.checked?'#1a1a1a':'#e5e5e0';
+  document.getElementById('groupOfflineLabel').style.background=offline.checked?'#f0f0ed':'#fff';
+}
+
+function openPlatformModal(){
+  document.getElementById('newPlatformName').value='';
+  document.getElementById('newPlatformIcon').value='📌';
+  document.getElementById('emojiPreview').textContent='📌';
+  // 온라인 기본 선택
+  document.querySelector('input[name="newPlatformGroup"][value="online"]').checked=true;
+  updateGroupSelection();
+  renderEmojiPicker();
+  document.getElementById('platformModal').classList.add('show');
+}
+function closePlatformModal(){document.getElementById('platformModal').classList.remove('show')}
+function savePlatform(){
+  const name=document.getElementById('newPlatformName').value.trim();
+  const icon=document.getElementById('newPlatformIcon').value.trim()||'📌';
+  const group=document.querySelector('input[name="newPlatformGroup"]:checked').value;
+  if(!name){toast('⚠️ 이름을 입력하세요');return}
+  // 같은 그룹 내 최대 order + 1
+  const groupPfs=platforms.filter(p=>(p.group||'online')===group);
+  const maxOrder=groupPfs.length>0?Math.max(...groupPfs.map(p=>p.order||0)):0;
+  const data={id:'pf_'+Date.now(),name,icon,group,settings:{},order:maxOrder+1};
+  platforms.push(data);
+  saveToFB('platforms',arrToObj(platforms));
+  selectedPlatformId=data.id;
+  closePlatformModal();
+  renderAll();
+  toast('✅ 플랫폼 추가됨');
+}
+function deletePlatform(id){if(!confirm('이 플랫폼을 삭제할까요?'))return;platforms=platforms.filter(p=>p.id!==id);saveToFB('platforms',arrToObj(platforms));selectedPlatformId=platforms.length>0?platforms[0].id:null;renderAll();toast('🗑️ 삭제됨')}
+
+// === AI Prompt Generation ===
+// === AI 프롬프트 유형별 요청 템플릿 ===
+const AI_PROMPT_TYPES={
+  strategy:{
+    hint:'💡 페르소나의 전체 공략 전략 + 콘텐츠 기획 + 4주 캘린더를 한 번에 뽑습니다.',
+    task:`## 🙏 요청사항 (종합 마케팅 전략)
+
+1. **타겟 분석** (400자 이상): 이 페르소나를 이 플랫폼에서 어떻게 공략해야 효과적일지. 특히 타겟 카테고리(아이/반려견/B2B)의 구매 의사결정 경로를 추적
+2. **콘텐츠 기획 10개 이상**: 각 콘텐츠마다
+   - 제목/훅 (처음 3초 대사 또는 이미지)
+   - 키메시지 1문장
+   - 촬영/제작 방법 (구체적으로)
+   - 해시태그/검색 키워드
+3. **4주 콘텐츠 캘린더**: 주 단위 게시 일정 + 요일
+4. **경쟁사 대비 차별화** 3가지 포인트 (실제 경쟁사 이름 언급)
+5. **벤치마킹 적용**: 위 벤치마킹 브랜드의 인사이트를 우리 플랫폼에 어떻게 적용할지
+6. **주의할 점**: 광고법, 역풍 가능성 등
+7. **우선순위 + 예상 비용/시간 + 기대 효과** (표로)`
+  },
+  blog:{
+    hint:'💡 네이버 SEO 상위노출에 최적화된 블로그 글 1편(2000자 이상)을 뽑습니다.',
+    task:`## 🙏 요청사항 (네이버 블로그 글 1편, SEO 최적화)
+
+다음 구성으로 **완성된 블로그 글 1편** (본문 2000자 이상)을 작성하세요:
+
+1. **제목 3개 후보** (각 25자 이내, 핵심 키워드 앞쪽 배치)
+2. **메타 설명** (150자 이내, 클릭 유발)
+3. **본문 구성**:
+   - 도입 (페르소나가 공감할 고민/상황)
+   - 문제 정의 + 검색해서 들어온 의도 반영
+   - 해결책 (돌봄매트 강점 자연스럽게 녹임, 직접 광고처럼 안 보이게)
+   - 실제 시공 사례/후기 (구체적 평수, 범위, 비포/애프터 묘사)
+   - CTA (샘플 신청, 카톡 상담)
+4. **필수 키워드** 5~10개 (본문에 자연스럽게 3회 이상 반복)
+5. **이미지 배치 가이드** (어느 문단에 어떤 사진을 넣을지)
+6. **해시태그** 15개 (3~5개는 지역 태그)
+
+⚠️ 과장 최상급 표현 금지, 실제 쓰듯 자연스럽게.`
+  },
+  reels:{
+    hint:'💡 인스타그램/릴스/틱톡용 영상 아이디어 5개 (훅+대본+촬영법)를 뽑습니다.',
+    task:`## 🙏 요청사항 (인스타 릴스/쇼츠 아이디어 5개)
+
+15~30초 릴스 **5개** 각각에 대해:
+
+| 항목 | 설명 |
+|------|------|
+| 제목/테마 | 한 줄 |
+| 훅 (0~3초) | 구체적 대사 + 화면 구성 (큰따옴표로 실제 대사) |
+| 전개 (4~20초) | 샷 리스트 형태로 (cut1, cut2…) |
+| 마무리 (21~30초) | CTA 대사 + 자막 문구 |
+| 자막/텍스트 오버레이 | 각 컷마다 들어갈 큰 글씨 |
+| BGM 추천 | 장르 + 분위기 (최신 트렌드 고려) |
+| 캡션 | 150자 이내, 이모지 자연스럽게 |
+| 해시태그 | 20개 |
+
+5개 아이디어는 서로 포맷/톤이 달라야 함:
+- 1개: 비포/애프터 트랜지션
+- 1개: POV 스타일 (페르소나 관점)
+- 1개: 정보/팩트 전달형
+- 1개: 감성/스토리텔링
+- 1개: 트렌드 활용 (현재 바이럴 템플릿 접목)`
+  },
+  adcopy:{
+    hint:'💡 네이버/구글 검색광고용 제목+설명 카피 5세트를 뽑습니다. 바로 광고관리자에 넣으세요.',
+    task:`## 🙏 요청사항 (네이버/구글 검색광고 카피 5세트)
+
+**5개의 광고 세트**, 각 세트는:
+- **제목 1** (15자 이내, 핵심 키워드 앞)
+- **제목 2** (15자 이내, 보조 메시지)
+- **설명** (45자 이내, 혜택/CTA)
+- **표시 URL 경로** (예: /샘플신청)
+- **타겟 키워드** (이 카피가 노출될 검색어 5개)
+- **예상 CTR** 판단 근거 1줄
+
+5세트는 각기 다른 각도:
+1. 혜택 강조 (할인/샘플 무료)
+2. 신뢰 강조 (시공 건수/레퍼런스)
+3. 고민 해결 (층간소음/안전)
+4. 긴급성 (입주 전/출산 전 타이밍)
+5. 지역 특화 (부산/경기)
+
+⚠️ 표시광고법 위반 표현 금지 ("최고", "1위", "100% 안전" 등)`
+  },
+  dm:{
+    hint:'💡 카카오톡 채널/인스타DM 상담 응대 스크립트를 시나리오별로 만듭니다.',
+    task:`## 🙏 요청사항 (카톡/DM 상담 응대 스크립트)
+
+다음 시나리오별로 **실제 사용 가능한 답변 스크립트**를 작성하세요:
+
+**시나리오 1**: 고객 첫 문의 "견적이 궁금해요"
+**시나리오 2**: 가격 부담 "좀 비싼 것 같은데요"
+**시나리오 3**: 경쟁사 비교 "○○매트랑 뭐가 달라요?"
+**시나리오 4**: 결정 미루기 "좀 더 알아볼게요"
+**시나리오 5**: 시공 일정 문의 "언제 가능해요?"
+**시나리오 6**: AS/클레임 대응 "시공 후 문제가…"
+
+각 시나리오마다:
+- **대장님/상담사 답변 스크립트** (2~3문단, 이 페르소나 특성 반영)
+- **첨부할 자료** (사진/영상/링크 추천)
+- **다음 스텝 유도** (샘플 신청 / 방문 예약 / 전화)
+- **피해야 할 말** 2가지
+
+✅ 반말/존댓말, 이모지 사용 정도는 페르소나에 맞춰서`
+  },
+  calendar:{
+    hint:'💡 다음 4주 동안 이 플랫폼에서 뭘, 언제, 어떻게 할지 상세 캘린더를 뽑습니다.',
+    task:`## 🙏 요청사항 (4주 실행 캘린더)
+
+주 3~5회 콘텐츠 게시를 기준으로, 향후 **4주간의 실행 캘린더**를 만드세요:
+
+| 주차 | 테마 | 월 | 수 | 금 | 일 |
+|------|------|-----|-----|-----|-----|
+| 1주차 | ... | 콘텐츠명 | ... | ... | ... |
+
+각 콘텐츠 셀마다:
+- 콘텐츠명/형식
+- 핵심 메시지 1줄
+- 제작 소요 시간 (분 단위)
+- 필요 준비물/촬영 장소
+
+**주차 테마**는 점진적으로 깊어지게:
+- 1주차: 인지 (페르소나 후킹, 존재 알리기)
+- 2주차: 관심 (정보/교육)
+- 3주차: 신뢰 (레퍼런스/후기)
+- 4주차: 전환 (샘플 신청/상담)
+
+마지막에 **이번 달 KPI 목표** 3개 (정량 수치)와 **주간 체크 포인트**를 추가하세요.`
+  },
+  hook:{
+    hint:'💡 썸네일/제목/오프닝에 바로 쓸 수 있는 훅 문구 20개를 뽑습니다.',
+    task:`## 🙏 요청사항 (훅 문구 20개)
+
+이 페르소나가 스크롤을 멈추게 만드는 **훅 문구 20개**를 만드세요.
+
+20개를 4가지 유형으로 5개씩 분류:
+
+**1. 질문형 (5개)**: "○○ 아세요?" 구조
+**2. 충격/반전형 (5개)**: "의외로 ○○", "사실은 ○○"
+**3. 혜택/결과형 (5개)**: "○○하면 ○○됩니다"
+**4. 공감/스토리형 (5개)**: "저도 그랬어요 ○○"
+
+각 문구마다:
+- 훅 문구 (15자 이내, 썸네일용)
+- 긴 버전 (30자 이내, 본문 오프닝용)
+- 어떤 콘텐츠에 어울리는지 (릴스/블로그/광고)
+
+⚠️ 과장 금지, 진솔한 톤. 클릭베이트식 거짓말 금지.`
+  },
+  b2b:{
+    hint:'💡 B2B (어린이집/조리원/호텔) 대상 영업 제안서 초안 + 이메일/전화 스크립트를 만듭니다.',
+    task:`## 🙏 요청사항 (B2B 영업 제안서 + 스크립트)
+
+**1. 제안서 목차** (1페이지 분량)
+- 표지 문구
+- 기관이 겪는 문제 정의 (페르소나 기준)
+- 돌봄매트 솔루션
+- 적용 시 기대 효과
+- 레퍼런스 (어린이집 80곳 활용)
+- 인증/서류 (KC, VOC 등)
+- 견적/일정 프레임
+- 담당자 연락처 CTA
+
+**2. 콜드 이메일** 1건 (200자 이내)
+- 제목 (이 기관 담당자가 열어볼 제목)
+- 본문
+- CTA (방문 상담 요청)
+
+**3. 전화 상담 스크립트** (첫 1분)
+- 오프닝 (15초)
+- 핵심 가치 제안 (20초)
+- 질문 유도 (15초)
+- 다음 스텝 제안 (10초)
+
+**4. 반대 응대** 3가지 + 답변 스크립트
+
+⚠️ 공공기관 대상이면 나라장터/학교장터 등록 언급, 세금계산서/현금영수증 가능 명시`
+  }
+};
+
+function buildAIPrompt(){
+  const pf=platforms.find(p=>p.id===selectedPlatformId);
+  if(!pf)return null;
+  const persona=selectedPersonaId?personas.find(p=>p.id===selectedPersonaId):null;
+  const memoKey=(selectedPersonaId||'all')+'_'+pf.id;
+  const memoValue=memos[memoKey]||'';
+  const s=pf.settings||{};
+  const promptType=document.getElementById('aiPromptType')?document.getElementById('aiPromptType').value:'strategy';
+  const typeConfig=AI_PROMPT_TYPES[promptType]||AI_PROMPT_TYPES.strategy;
+  
+  // 유형별 인트로
+  const typeIntro={
+    strategy:'종합 마케팅 전략을 세워주세요',
+    blog:'네이버 SEO에 최적화된 블로그 글 1편을 작성해주세요',
+    reels:'인스타 릴스/쇼츠 아이디어 5개를 기획해주세요',
+    adcopy:'네이버/구글 검색광고 카피 5세트를 만들어주세요',
+    dm:'카카오톡/DM 상담 응대 스크립트를 작성해주세요',
+    calendar:'향후 4주간의 콘텐츠 실행 캘린더를 만들어주세요',
+    hook:'스크롤을 멈추게 하는 훅 문구 20개를 만들어주세요',
+    b2b:'B2B 영업 제안서와 접근 스크립트를 작성해주세요'
+  }[promptType];
+  
+  let prompt=`# 돌봄매트 마케팅 요청
+
+당신은 10년차 B2C/B2B 마케터이자 SNS 바이럴 전문가입니다.
+TPU 바닥매트 브랜드 "돌봄매트"를 위해 **${typeIntro}**.
+실제 대행사가 제출할 수준의 구체적이고 실행 가능한 결과물을 제시하세요.
+
+---
+
+## 📊 회사 기본 정보
+- 사업: ${gs.business||'(미입력)'}
+- 핵심 강점: ${gs.strength||'(미입력)'}
+- 제품 라인업: ${gs.products||'(미입력)'}
+- 시공 지역: ${gs.regions||'(미입력)'}
+- 가격대: ${gs.pricing||'(미입력)'}
+- 3개월 목표: ${gs.goals||'(미입력)'}
+
+## 🎨 브랜드 톤 & 제약
+- 원하는 톤: ${gs.tone||'(미입력)'}
+- 금지어: ${gs.avoid||'(미입력)'}
+- 자주 쓰는 표현: ${gs.keywords||'(미입력)'}
+- 제약 조건: ${gs.constraints||'(미입력)'}
+
+`;
+
+  // 경쟁사
+  if(competitors.length>0){
+    prompt+=`## 🥊 실제 시장 경쟁사\n`;
+    competitors.forEach(c=>{
+      if(c.name)prompt+=`- **${c.name}** (${c.tier||'경쟁'}): ${c.note||''}\n`;
+    });
+    prompt+=`\n`;
+  }
+  
+  // 벤치마킹
+  if(benchmarks.length>0){
+    prompt+=`## 🎯 다른 분야 벤치마킹 (참고할 브랜드)\n`;
+    benchmarks.forEach(b=>{
+      if(b.name)prompt+=`- **${b.name}** (${b.field||''}): ${b.note||''}\n`;
+    });
+    prompt+=`\n`;
+  }
+
+  prompt+=`---
+
+## 🎯 타겟 플랫폼: ${pf.icon} ${pf.name}
+- 유형: ${pf.group==='offline'?'오프라인':'온라인'}
+
+`;
+
+  // 플랫폼 설정
+  const settingsFilled=Object.entries(s).filter(([k,v])=>k!=='_open'&&v&&v.trim()).length;
+  if(settingsFilled>0){
+    prompt+=`### 현재 플랫폼 상태\n`;
+    if(s.accountStatus)prompt+=`- **계정/채널 현황**: ${s.accountStatus}\n`;
+    if(s.keywords)prompt+=`- **주요 키워드/해시태그**: ${s.keywords}\n`;
+    if(s.success)prompt+=`- **잘됐던 콘텐츠**: ${s.success}\n`;
+    if(s.fail)prompt+=`- **별로였던 콘텐츠**: ${s.fail}\n`;
+    if(s.notes)prompt+=`- **특이사항/제약**: ${s.notes}\n`;
+    prompt+=`\n`;
+  }
+
+  // 페르소나 (🆕 카테고리 반영!)
+  if(persona){
+    const cat=persona.category||'other';
+    const catMeta=CATEGORY_META[cat]||CATEGORY_META.other;
+    const catGuide={
+      baby:`### 🎯 카테고리 가이드 (아이 타겟)
+- **의사결정자**: 주로 엄마. 아빠·양가 부모 영향 있음
+- **핵심 불안**: 무독성/유해물질, 질식·미끄러짐 사고, 층간소음 민원
+- **신뢰 요소**: KC 인증, VOC 시험성적서, 실제 육아맘 후기, 비포/애프터 사진
+- **주의**: 의학적 단정 표현 금지(아토피 치료, 아이 발달 보장 등). "도움이 될 수 있다" 수준
+- **선호 채널 추가 팁**: 맘카페 공동구매, 인스타 육아맘 계정, 블로그 체험단 후기`,
+      pet:`### 🎯 카테고리 가이드 (반려견 타겟)
+- **의사결정자**: 반려인 본인, 20~40대 1인가구 또는 부부
+- **핵심 불안**: 슬개골 탈구, 미끄럼 사고, 배변 청소, 스크래치 내구성, 소음 민원
+- **신뢰 요소**: 실제 대형견/소형견 생활 영상, 수의사 코멘트(단정 표현은 피하되 참고 문구 OK), 스크래치 테스트
+- **주의**: 수의학적 단정 금지(관절 질환 예방/치료 확정). "슬개골 부담을 줄이는 데 도움" 정도
+- **선호 채널 추가 팁**: 펫 유튜버 PPL, 펫프렌즈/어바웃펫 광고, 인스타 #반려견일상`,
+      both:`### 🎯 카테고리 가이드 (아이+반려견 복합)
+- **의사결정자**: 아이와 반려견을 동시에 키우는 3040 부모
+- **핵심 고민**: 아이 안전 + 반려견 건강 + 위생(배변·토·음식 쏟기) + 층간소음 동시 해결
+- **핵심 차별점**: 다목적 내구성, 청소 용이성, 두꺼운 쿠셔닝
+- **신뢰 요소**: 두 가지 모두 커버하는 실제 가정 사례, 18T+22T 혼합 시공 레퍼런스`,
+      b2b:`### 🎯 카테고리 가이드 (B2B - 기관)
+- **의사결정자**: 원장/원장 사모/시설장, 재단 이사장 (결정권자가 복수)
+- **핵심 요구**: KC/친환경 인증, 보건소·평가원 점검 통과, 세금계산서, 견적서, 시공 일정 유연성(방학/주말)
+- **신뢰 요소**: 동종 기관 레퍼런스(어린이집 80곳), 기존 원장 소개, 시공 전후 사진·시험성적서
+- **구매 경로**: 박람회, 원장 카페·단톡방, 나라장터/학교장터, 전화 직접 상담
+- **주의**: B2C 톤 금지. 공식 제안서, 세금계산서, 입찰 언어 사용`,
+      other:`### 🎯 카테고리 가이드 (기타/공용)
+- 다양한 고객층이 혼재. 페르소나 상세 특징을 우선 따르세요.
+- 가성비/부분시공/AS 등 특수 목적이 뚜렷하면 그 목적에 맞춰 소구점 조정`
+    }[cat];
+    
+    prompt+=`## 👤 타겟 페르소나
+**${persona.emoji} ${persona.name}** (${persona.label||''})
+- **타겟 분류**: ${catMeta.icon} ${catMeta.label}
+- **Tier**: ${persona.tier||3} ${persona.tier===1?'(핵심 ⭐⭐⭐)':persona.tier===2?'(주요 ⭐⭐)':persona.tier===3?'(틈새 ⭐)':'(신규/실험)'}
+- **시공 목적**: ${persona.purpose||'-'}
+- **주 유입경로**: ${persona.channel||'-'}
+- **예산**: ${persona.budget||'-'}
+- **상세 특징**: ${persona.detail||'-'}
+
+${catGuide}
+
+`;
+  } else {
+    prompt+=`## 👤 타겟 페르소나
+전체 고객 대상 (특정 페르소나 아님 - 공통 메시지로 접근)
+
+`;
+  }
+
+  // 메모
+  if(memoValue){
+    prompt+=`## 📝 대장님 메모/아이디어
+${memoValue}
+
+`;
+  }
+
+  prompt+=`---
+
+${typeConfig.task}
+
+### ⚠️ 답변 형식 (공통)
+- 실제 실행 가능한 구체적 수준 (막연한 조언 금지)
+- 실제 대사/예시는 큰따옴표로
+- 표와 목록 활용
+- 한국어로
+- 숫자/기간/비용은 구체적으로
+
+### 🚫 이런 답변은 피해주세요
+- "좋은 콘텐츠를 만드세요" 같은 일반론
+- 실행 불가능한 큰 예산 전략 (대장님 제약 조건 무시)
+- 페르소나와 무관한 트렌디한 내용
+- 금지어 사용 (${gs.avoid||'최상급 표현'})
+- 카테고리에 안 맞는 톤 (예: B2B인데 이모지 남발)
+`;
+
+  return prompt;
+}
+
+// === AI 유형 변경 시 힌트 업데이트 ===
+function onAIPromptTypeChange(){
+  const type=document.getElementById('aiPromptType').value;
+  const hintEl=document.getElementById('aiTypeHint');
+  if(hintEl&&AI_PROMPT_TYPES[type])hintEl.textContent=AI_PROMPT_TYPES[type].hint;
+}
+
+function copyAIPrompt(){
+  const pf=platforms.find(p=>p.id===selectedPlatformId);
+  if(!pf){toast('⚠️ 플랫폼을 선택하세요');return}
+  const prompt=buildAIPrompt();
+  if(!prompt)return;
+  lastGeneratedPrompt=prompt;
+  
+  navigator.clipboard.writeText(prompt).then(()=>{
+    toast('✅ AI 프롬프트 복사됨! 제미나이/클로드에 붙여넣으세요');
+  }).catch(err=>{
+    const ta=document.createElement('textarea');
+    ta.value=prompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('✅ 복사됨!');
+  });
+}
+
+function previewAIPrompt(){
+  const pf=platforms.find(p=>p.id===selectedPlatformId);
+  if(!pf){toast('⚠️ 플랫폼을 선택하세요');return}
+  const prompt=buildAIPrompt();
+  if(!prompt)return;
+  lastGeneratedPrompt=prompt;
+  document.getElementById('promptPreview').textContent=prompt;
+  document.getElementById('promptModal').classList.add('show');
+}
+
+function closePromptModal(){document.getElementById('promptModal').classList.remove('show')}
+
+function copyFromPreview(){
+  navigator.clipboard.writeText(lastGeneratedPrompt).then(()=>{
+    toast('✅ 복사됨! 제미나이/클로드에 붙여넣으세요');
+    closePromptModal();
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=lastGeneratedPrompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('✅ 복사됨!');
+    closePromptModal();
+  });
+}
+
+// === 🚀 이번 주 우선순위 추천 카드 ===
+function getMemoLengthForCombo(personaId,platformId){
+  const memoKey=(personaId||'all')+'_'+platformId;
+  return (memos[memoKey]||'').trim().length;
+}
+
+function hasPlatformSettingsFilled(pf){
+  const s=pf.settings||{};
+  return Object.entries(s).filter(([k,v])=>k!=='_open'&&v&&v.trim()).length>0;
+}
+
+function generateRecommendations(){
+  // 우선순위 로직:
+  // 1) Tier 1 페르소나 × 온라인 플랫폼 조합 중 메모 없거나 30자 미만인 것 → HOT
+  // 2) Tier 2 페르소나 × 주요 플랫폼 조합 중 메모 없는 것 → 일반 추천
+  // 3) 플랫폼 설정도 비어있는 조합에 보너스
+  // 4) 🆕 블루오션 플랫폼(쓰레드, 오늘의집 등) 보너스
+  // 최대 6개 추천
+  
+  // 블루오션 플랫폼 (경쟁사 미운영 or 선점 기회)
+  const blueOceanPfIds=new Set(['pf_threads','pf_ohouse','pf_gov']);
+  
+  const recs=[];
+  const tier1=personas.filter(p=>p.tier===1);
+  const tier2=personas.filter(p=>p.tier===2);
+  const onlinePfs=platforms.filter(p=>(p.group||'online')==='online').slice(0,10);
+  const allPfs=[...onlinePfs,...platforms.filter(p=>p.group==='offline')];
+  
+  // 1단계: Tier 1 × 온라인 플랫폼 (HOT)
+  tier1.forEach(p=>{
+    onlinePfs.forEach(pf=>{
+      const memoLen=getMemoLengthForCombo(p.id,pf.id);
+      if(memoLen<30){
+        const isBlueOcean=blueOceanPfIds.has(pf.id);
+        recs.push({
+          persona:p, platform:pf,
+          priority:'hot',
+          reason: isBlueOcean ? '🌊 블루오션 플랫폼 (경쟁사 미운영, 선점 기회!)' : (memoLen===0?'아직 메모/전략이 없어요':'메모가 너무 짧아요 (보강 필요)'),
+          score: 100 - (memoLen*2) - (hasPlatformSettingsFilled(pf)?0:10) + (isBlueOcean?25:0)
+        });
+      }
+    });
+  });
+  
+  // 2단계: Tier 2 × 플랫폼
+  tier2.forEach(p=>{
+    allPfs.slice(0,6).forEach(pf=>{
+      const memoLen=getMemoLengthForCombo(p.id,pf.id);
+      if(memoLen===0){
+        const isBlueOcean=blueOceanPfIds.has(pf.id);
+        recs.push({
+          persona:p, platform:pf,
+          priority:'normal',
+          reason: isBlueOcean ? '🌊 블루오션 플랫폼' : '아직 공략 전략이 없어요',
+          score: 50 - (hasPlatformSettingsFilled(pf)?0:5) + (isBlueOcean?20:0)
+        });
+      }
+    });
+  });
+  
+  // 점수 순 정렬 후 상위 6개
+  recs.sort((a,b)=>b.score-a.score);
+  return recs.slice(0,6);
+}
+
+function renderRecommendations(){
+  const grid=document.getElementById('recommendGrid');
+  const desc=document.getElementById('recommendDesc');
+  if(!grid)return;
+  
+  // 페르소나/플랫폼이 아직 로드 안 됐으면 대기
+  if(personas.length===0||platforms.length===0){
+    grid.innerHTML='<div class="recommend-empty">데이터 로딩 중...</div>';
+    return;
+  }
+  
+  const recs=generateRecommendations();
+  
+  if(recs.length===0){
+    grid.innerHTML=`<div class="recommend-empty">
+      🎉 모든 핵심 페르소나×플랫폼 조합에 메모가 있네요! 훌륭합니다.<br>
+      <span style="color:#c2410c;font-weight:600">이제 AI 프롬프트로 실제 콘텐츠를 뽑아보세요.</span>
+    </div>`;
+    if(desc)desc.textContent='핵심 조합이 모두 채워졌어요! 이제 실행 단계입니다.';
+    return;
+  }
+  
+  if(desc)desc.textContent=`Tier 1 페르소나와 아직 공략 안 한 플랫폼 ${recs.length}개 추천. 카드를 누르면 바로 작업 시작!`;
+  
+  grid.innerHTML=recs.map((r,idx)=>{
+    const cat=r.persona.category||'other';
+    const catMeta=CATEGORY_META[cat]||CATEGORY_META.other;
+    const priorityLabel=r.priority==='hot'?'🔥 HOT':`#${idx+1}`;
+    const priorityClass=r.priority==='hot'?'hot':'';
+    return `<div class="recommend-card" onclick="startRecommendation('${r.persona.id}','${r.platform.id}')">
+      <span class="rec-priority ${priorityClass}">${priorityLabel}</span>
+      <div class="rec-combo">
+        <span class="rec-emoji">${r.persona.emoji||'👤'}</span>
+        <span class="rec-arrow">×</span>
+        <span class="rec-pf-icon">${r.platform.icon||'📌'}</span>
+      </div>
+      <div class="rec-name">${r.persona.name} × ${r.platform.name}</div>
+      <div class="rec-reason">${catMeta.icon} ${catMeta.label} · ${r.reason}</div>
+      <div class="rec-cta">
+        <span class="rec-cta-chip">👆 누르면 바로 시작</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startRecommendation(personaId,platformId){
+  selectedPersonaId=personaId;
+  selectedPlatformId=platformId;
+  renderAll();
+  setTimeout(()=>{
+    const ws=document.querySelector('.workspace');
+    if(ws)ws.scrollIntoView({behavior:'smooth',block:'start'});
+  },200);
+  toast('✅ 작업 공간으로 이동했습니다!');
+}
+
+function refreshRecommendations(){
+  renderRecommendations();
+  toast('🔄 추천 새로고침 완료');
+}
+
+// === Render all ===
+function renderAll(){
+  renderPersonas();
+  renderPersonaInfo();
+  renderPlatformList();
+  renderWorkspace();
+  renderRecommendations();
+  updateGSStatus();
+  const sp=selectedPersonaId?personas.find(p=>p.id===selectedPersonaId):null;
+  document.getElementById('wsFilterDesc').innerHTML=sp?`🎯 <b>${sp.emoji} ${sp.name}</b> 대상 작업 중 · <a href="#" onclick="showAllPersonas();return false" style="color:#1a1a1a">전체 보기</a>`:'플랫폼을 선택하면 오른쪽에서 전략/메모/AI 프롬프트를 작성할 수 있어요';
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+loadAll();
+</script>
+
+</body>
+</html>

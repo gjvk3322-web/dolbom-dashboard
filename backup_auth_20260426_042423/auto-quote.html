@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- 검색엔진 노출 차단 (자동 추가) -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="naverbot" content="noindex, nofollow">
+    <meta name="yeti" content="noindex, nofollow">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>돌봄매트 자동 견적</title>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FAFAF7;--card:#FFFFFF;--border:#E8E5DE;
+  --text:#1A1A18;--sub:#8A8780;--accent:#3D6B4F;--accent-light:#EBF3EE;
+  --warm:#F5F0E8;--gold:#C4953A;--gold-light:#FFF8EC;
+  --danger:#D44;--radius:14px;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+.header{background:linear-gradient(135deg,#2D5A3F 0%,#3D6B4F 50%,#4A7D5E 100%);color:#fff;padding:32px 20px 28px;text-align:center;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:rgba(255,255,255,.06);border-radius:50%}
+.header-logo{font-size:11px;letter-spacing:4px;opacity:.7;margin-bottom:8px}
+.header h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.header p{font-size:13px;opacity:.8;font-weight:300}
+
+.container{max-width:480px;margin:0 auto;padding:16px}
+
+.card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:12px;border:1px solid var(--border);position:relative}
+.card-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title .icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+
+.step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;margin-right:6px}
+
+/* 주소 검색 */
+.addr-box{display:flex;gap:8px}
+.addr-input{flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:#F8F8F6;cursor:pointer;transition:.2s}
+.addr-input:focus{outline:none;border-color:var(--accent);background:#fff}
+.addr-input::placeholder{color:#bbb}
+.addr-btn{padding:12px 18px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.15s}
+.addr-btn:active{transform:scale(.96)}
+
+.addr-detail{margin-top:10px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;width:100%;background:#fff}
+.addr-detail::placeholder{color:#ccc}
+
+/* 면적 결과 */
+.area-result{background:var(--accent-light);border-radius:12px;padding:16px;margin-top:14px;display:none}
+.area-result.show{display:block;animation:fadeUp .4s ease}
+.area-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+.area-label{font-size:13px;color:var(--sub)}
+.area-value{font-size:15px;font-weight:700;color:var(--accent)}
+.area-big{font-size:28px;font-weight:800;color:var(--accent);text-align:center;margin:8px 0}
+.area-sub{font-size:12px;color:var(--sub);text-align:center}
+
+/* 로딩 */
+.loading{display:none;text-align:center;padding:20px}
+.loading.show{display:block}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+.loading-text{font-size:13px;color:var(--sub)}
+
+/* 제품 선택 */
+.product-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.product-card{border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:.2s;background:#fff}
+.product-card:hover{border-color:var(--accent);background:var(--accent-light)}
+.product-card.active{border-color:var(--accent);background:var(--accent-light);box-shadow:0 0 0 3px rgba(61,107,79,.15)}
+.product-name{font-size:12px;font-weight:700;margin-bottom:4px}
+.product-spec{font-size:10px;color:var(--sub);margin-bottom:6px}
+.product-price{font-size:14px;font-weight:800;color:var(--accent)}
+.product-unit{font-size:10px;color:var(--sub)}
+
+/* 견적 결과 */
+.quote-result{background:linear-gradient(135deg,#2D5A3F,#3D6B4F);border-radius:var(--radius);padding:24px 20px;color:#fff;margin-top:12px;display:none;animation:fadeUp .5s ease}
+.quote-result.show{display:block}
+.quote-header{text-align:center;margin-bottom:16px}
+.quote-header h3{font-size:14px;font-weight:500;opacity:.8;margin-bottom:4px}
+.quote-total{font-size:36px;font-weight:800;letter-spacing:-1px}
+.quote-total .won{font-size:18px;font-weight:500}
+.quote-divider{height:1px;background:rgba(255,255,255,.2);margin:14px 0}
+.quote-line{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;opacity:.85}
+.quote-line.strong{opacity:1;font-weight:600;font-size:14px}
+.quote-note{font-size:11px;opacity:.6;margin-top:12px;line-height:1.6;text-align:center}
+
+.quote-actions{display:flex;gap:8px;margin-top:14px}
+.quote-action-btn{flex:1;padding:13px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.quote-action-btn:active{transform:scale(.96)}
+.quote-action-btn.primary{background:#fff;color:var(--accent)}
+.quote-action-btn.secondary{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
+
+/* 수동 입력 */
+.manual-toggle{text-align:center;margin-top:10px}
+.manual-link{font-size:12px;color:var(--sub);cursor:pointer;text-decoration:underline}
+.manual-area{display:none;margin-top:10px}
+.manual-area.show{display:flex;gap:8px;align-items:center}
+.manual-input{width:80px;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;text-align:center;font-family:inherit}
+.manual-label{font-size:13px;color:var(--sub)}
+.manual-btn{padding:10px 14px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* 에러 */
+.error-box{background:#FFF0F0;border:1px solid #FFCCC;border-radius:10px;padding:12px 14px;margin-top:12px;display:none}
+.error-box.show{display:block;animation:fadeUp .3s ease}
+.error-text{font-size:13px;color:var(--danger);line-height:1.5}
+
+/* 토스트 */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:30px;font-size:13px;font-weight:500;z-index:999;transition:.3s;opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* 안내 배너 */
+.info-banner{background:var(--gold-light);border:1px solid #E8D5A8;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
+.info-banner .emoji{font-size:20px;flex-shrink:0}
+.info-banner .text{font-size:12px;color:#8B6914;line-height:1.6}
+.info-banner .text strong{color:#6B4F0A}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">D O L B O M &nbsp; M A T</div>
+  <h1>1초 자동 견적</h1>
+  <p>주소만 입력하면 예상 비용을 바로 알려드려요</p>
+</div>
+
+<div class="container">
+
+  <div class="info-banner">
+    <div class="emoji">💡</div>
+    <div class="text"><strong>아파트 주소</strong>를 검색하면 전용면적을 자동으로 조회해서 예상 견적을 바로 보여드려요!</div>
+  </div>
+
+  <!-- Step 1: 주소 검색 -->
+  <div class="card">
+    <div class="card-title"><span class="step">1</span> 주소 검색</div>
+    <div class="addr-box">
+      <input type="text" class="addr-input" id="addrInput" placeholder="아파트 주소를 검색하세요" readonly onclick="searchAddress()">
+      <button class="addr-btn" onclick="searchAddress()">🔍 검색</button>
+    </div>
+    <input type="text" class="addr-detail" id="addrDetail" placeholder="상세주소 (동/호수) 예: 101동 1502호" style="display:none">
+
+    <div class="loading" id="areaLoading">
+      <div class="spinner"></div>
+      <div class="loading-text">면적 정보를 조회하고 있어요...</div>
+    </div>
+
+    <div class="area-result" id="areaResult">
+      <div class="area-sub" id="aptName"></div>
+      <div class="area-big" id="areaDisplay"></div>
+      <div class="area-sub">전용면적 기준</div>
+      <div style="margin-top:10px">
+        <div class="area-row">
+          <span class="area-label">전용면적</span>
+          <span class="area-value" id="areaSqm"></span>
+        </div>
+        <div class="area-row">
+          <span class="area-label">예상 매트 장수</span>
+          <span class="area-value" id="areaSheets"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="areaError">
+      <div class="error-text" id="areaErrorText"></div>
+    </div>
+
+    <div class="manual-toggle" id="manualToggle" style="display:none">
+      <span class="manual-link" onclick="toggleManual()">평수를 직접 입력할게요</span>
+    </div>
+    <div class="manual-area" id="manualArea">
+      <input type="number" class="manual-input" id="manualPyeong" placeholder="34">
+      <span class="manual-label">평</span>
+      <button class="manual-btn" onclick="applyManual()">적용</button>
+    </div>
+  </div>
+
+  <!-- Step 2: 제품 선택 -->
+  <div class="card" id="productCard" style="opacity:.5;pointer-events:none">
+    <div class="card-title"><span class="step">2</span> 제품 선택</div>
+    <div class="product-grid">
+      <div class="product-card" onclick="selectProduct(0)">
+        <div class="product-name">500매트</div>
+        <div class="product-spec">22T · 500mm</div>
+        <div class="product-price">16,000<span class="product-unit">원/장</span></div>
+      </div>
+      <div class="product-card" onclick="selectProduct(1)">
+        <div class="product-name">1000매트</div>
+        <div class="product-spec">18T · 1,000mm</div>
+        <div class="product-price">21,000<span class="product-unit">원/장</span></div>
+      </div>
+      <div class="product-card" onclick="selectProduct(2)">
+        <div class="product-name">1000매트</div>
+        <div class="product-spec">22T · 1,000mm</div>
+        <div class="product-price">26,000<span class="product-unit">원/장</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 견적 결과 -->
+  <div class="quote-result" id="quoteResult">
+    <div class="quote-header">
+      <h3>예상 견적</h3>
+      <div class="quote-total" id="quoteTotal">0<span class="won">원</span></div>
+    </div>
+    <div class="quote-divider"></div>
+    <div class="quote-line" id="qLineProduct"></div>
+    <div class="quote-line" id="qLineQty"></div>
+    <div class="quote-line" id="qLineMat"></div>
+    <div class="quote-line" id="qLineInstall" style="display:none"></div>
+    <div class="quote-divider"></div>
+    <div class="quote-line strong" id="qLineTotal"></div>
+    <div class="quote-note">
+      * 아파트 구조에 따라 수량 차이가 있을 수 있습니다<br>
+      * 실제 시공 후 수량에 맞춰 결제됩니다
+    </div>
+    <div class="quote-actions">
+      <button class="quote-action-btn primary" onclick="copyQuote()">📋 견적서 복사</button>
+      <button class="quote-action-btn secondary" onclick="openKakao()">💬 상담하기</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 설정 =====
+var KAKAO_REST_KEY = 'ec66e2d1679323ded4d66c96f157ba70';
+var BUILDING_API_KEY = 'a28dfeed33fdc773461c881574199b0b17c40e1a97b44d53e135d0b64dadffe1';
+var BUILDING_ENDPOINT = 'https://apis.data.go.kr/1613000/BldRgstHubService';
+
+var PRODUCTS = [
+  { name: '500매트 22T', width: 500, thickness: 22, price: 16000, sheetArea: 0.5 * 0.5 },
+  { name: '1000매트 18T', width: 1000, thickness: 18, price: 21000, sheetArea: 1.0 * 0.5 },
+  { name: '1000매트 22T', width: 1000, thickness: 22, price: 26000, sheetArea: 1.0 * 0.5 }
+];
+
+var INSTALL_FEE = 100000;
+var INSTALL_THRESHOLD_500 = 60;
+var INSTALL_THRESHOLD_1000 = 40;
+
+// ===== 상태 =====
+var selectedAddr = null;
+var selectedArea = null; // ㎡
+var selectedPyeong = null;
+var selectedSheets = null;
+var selectedProductIdx = null;
+
+// ===== 주소 검색 (카카오) =====
+function searchAddress() {
+  new daum.Postcode({
+    oncomplete: function(data) {
+      var addr = data.roadAddress || data.jibunAddress;
+      document.getElementById('addrInput').value = addr;
+      document.getElementById('addrDetail').style.display = 'block';
+      
+      selectedAddr = {
+        address: addr,
+        zonecode: data.zonecode,
+        bcode: data.bcode,          // 법정동코드 10자리
+        buildingName: data.buildingName,
+        apartment: data.apartment,   // Y/N
+        sigunguCode: data.bcode.substring(0, 5),
+        bjdongCode: data.bcode.substring(5, 10),
+        jibunAddress: data.jibunAddress
+      };
+
+      // 아파트면 면적 조회
+      if (data.apartment === 'Y' || data.buildingName) {
+        lookupArea(selectedAddr);
+      } else {
+        showManualInput('일반 주택은 평수를 직접 입력해주세요.');
+      }
+    }
+  }).open();
+}
+
+// ===== 건축물대장 면적 조회 =====
+function lookupArea(addr) {
+  var loading = document.getElementById('areaLoading');
+  var result = document.getElementById('areaResult');
+  var error = document.getElementById('areaError');
+  
+  loading.classList.add('show');
+  result.classList.remove('show');
+  error.classList.remove('show');
+
+  // 지번주소에서 번/지 추출
+  var bunJi = extractBunJi(addr.jibunAddress);
+
+  var url = BUILDING_ENDPOINT + '/getBrExposPubuseAreaInfo'
+    + '?serviceKey=' + BUILDING_API_KEY
+    + '&sigunguCd=' + addr.sigunguCode
+    + '&bjdongCd=' + addr.bjdongCode
+    + '&bun=' + bunJi.bun
+    + '&ji=' + bunJi.ji
+    + '&_type=json'
+    + '&numOfRows=100';
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      loading.classList.remove('show');
+      
+      var items = [];
+      try {
+        items = data.response.body.items.item;
+        if (!Array.isArray(items)) items = [items];
+      } catch(e) {
+        // 전유공용면적 조회 실패 시 표제부로 시도
+        lookupAreaFallback(addr);
+        return;
+      }
+
+      // 전유부에서 전용면적 추출 (중복 제거)
+      var areaSet = {};
+      items.forEach(function(item) {
+        if (item.exposPubuseGbCdNm === '전유' && item.mainAtchGbCdNm === '주건축물') {
+          var area = parseFloat(item.area);
+          if (area > 10 && area < 300) {
+            var key = Math.round(area);
+            areaSet[key] = area;
+          }
+        }
+      });
+
+      var areas = Object.values(areaSet).sort(function(a,b){return a-b;});
+      
+      if (areas.length === 0) {
+        lookupAreaFallback(addr);
+        return;
+      }
+
+      if (areas.length === 1) {
+        applyArea(areas[0], addr.buildingName);
+      } else {
+        // 여러 평형이 있으면 선택하게
+        showAreaSelector(areas, addr.buildingName);
+      }
+    })
+    .catch(function(err) {
+      loading.classList.remove('show');
+      console.error('API Error:', err);
+      showManualInput('면적 조회에 실패했어요. 평수를 직접 입력해주세요.');
+    });
+}
+
+// 표제부 조회 (폴백)
+function lookupAreaFallback(addr) {
+  var bunJi = extractBunJi(addr.jibunAddress);
+  
+  var url = BUILDING_ENDPOINT + '/getBrTitleInfo'
+    + '?serviceKey=' + BUILDING_API_KEY
+    + '&sigunguCd=' + addr.sigunguCode
+    + '&bjdongCd=' + addr.bjdongCode
+    + '&bun=' + bunJi.bun
+    + '&ji=' + bunJi.ji
+    + '&_type=json'
+    + '&numOfRows=50';
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var items = [];
+      try {
+        items = data.response.body.items.item;
+        if (!Array.isArray(items)) items = [items];
+      } catch(e) {
+        showManualInput('이 주소의 면적 정보를 찾을 수 없어요. 평수를 직접 입력해주세요.');
+        return;
+      }
+
+      // 세대수가 있는 아파트 동 찾기
+      var hhldCnt = 0;
+      var totArea = 0;
+      items.forEach(function(item) {
+        if (item.totArea && parseFloat(item.totArea) > 0) {
+          totArea = parseFloat(item.totArea);
+        }
+        if (item.hhldCnt) hhldCnt += parseInt(item.hhldCnt);
+      });
+
+      if (hhldCnt > 0 && totArea > 0) {
+        var avgArea = totArea / hhldCnt;
+        if (avgArea > 10 && avgArea < 300) {
+          applyArea(avgArea, addr.buildingName);
+          return;
+        }
+      }
+      showManualInput('면적 정보를 찾을 수 없어요. 평수를 직접 입력해주세요.');
+    })
+    .catch(function() {
+      showManualInput('조회에 실패했어요. 평수를 직접 입력해주세요.');
+    });
+}
+
+// 지번에서 번/지 추출
+function extractBunJi(jibunAddr) {
+  var result = { bun: '0', ji: '0' };
+  if (!jibunAddr) return result;
+  
+  // "서울 강남구 역삼동 123-45" → 123, 45
+  var match = jibunAddr.match(/(\d+)-?(\d*)\s*$/);
+  if (match) {
+    result.bun = match[1].padStart(4, '0');
+    result.ji = (match[2] || '0').padStart(4, '0');
+  }
+  return result;
+}
+
+// 면적 적용
+function applyArea(areaSqm, aptName) {
+  selectedArea = areaSqm;
+  selectedPyeong = Math.round(areaSqm / 3.3058);
+  
+  // 제품별 예상 장수 (기본 1000매트 기준)
+  var sheets1000 = Math.ceil(areaSqm / PRODUCTS[1].sheetArea * 1.08); // 8% 여유
+  var sheets500 = Math.ceil(areaSqm / PRODUCTS[0].sheetArea * 1.08);
+  selectedSheets = sheets1000;
+
+  document.getElementById('aptName').textContent = aptName || '아파트';
+  document.getElementById('areaDisplay').textContent = selectedPyeong + '평';
+  document.getElementById('areaSqm').textContent = areaSqm.toFixed(2) + '㎡';
+  document.getElementById('areaSheets').textContent = '약 ' + sheets1000 + '장 (1000mm 기준)';
+  
+  document.getElementById('areaResult').classList.add('show');
+  document.getElementById('areaError').classList.remove('show');
+  document.getElementById('manualToggle').style.display = 'block';
+  
+  enableProductSelection();
+}
+
+// 여러 평형 선택
+function showAreaSelector(areas, aptName) {
+  var loading = document.getElementById('areaLoading');
+  loading.classList.remove('show');
+  
+  var result = document.getElementById('areaResult');
+  result.classList.add('show');
+  
+  document.getElementById('aptName').textContent = aptName || '아파트';
+  document.getElementById('areaDisplay').textContent = '평형을 선택해주세요';
+  document.getElementById('areaSqm').textContent = '';
+  document.getElementById('areaSheets').textContent = '';
+
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">';
+  areas.forEach(function(a) {
+    var py = Math.round(a / 3.3058);
+    html += '<button onclick="applyArea(' + a + ',\'' + (aptName||'아파트').replace(/'/g,"\\'") + '\')" '
+      + 'style="padding:10px 16px;border:2px solid #3D6B4F;border-radius:10px;background:#fff;color:#3D6B4F;'
+      + 'font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">'
+      + py + '평 <span style="font-size:11px;font-weight:400">(' + a.toFixed(1) + '㎡)</span></button>';
+  });
+  html += '</div>';
+  
+  document.getElementById('areaSheets').parentElement.innerHTML += html;
+  document.getElementById('manualToggle').style.display = 'block';
+}
+
+// 수동 입력
+function showManualInput(msg) {
+  document.getElementById('areaLoading').classList.remove('show');
+  document.getElementById('areaError').classList.add('show');
+  document.getElementById('areaErrorText').textContent = msg;
+  document.getElementById('manualToggle').style.display = 'block';
+  toggleManual();
+}
+
+function toggleManual() {
+  var el = document.getElementById('manualArea');
+  el.classList.toggle('show');
+}
+
+function applyManual() {
+  var py = parseInt(document.getElementById('manualPyeong').value);
+  if (!py || py < 5 || py > 100) {
+    showToast('5~100 사이 평수를 입력해주세요');
+    return;
+  }
+  var sqm = py * 3.3058;
+  applyArea(sqm, selectedAddr ? selectedAddr.buildingName : '');
+}
+
+// 제품 선택 활성화
+function enableProductSelection() {
+  var card = document.getElementById('productCard');
+  card.style.opacity = '1';
+  card.style.pointerEvents = 'auto';
+}
+
+// 제품 선택
+function selectProduct(idx) {
+  selectedProductIdx = idx;
+  
+  document.querySelectorAll('.product-card').forEach(function(c, i) {
+    c.classList.toggle('active', i === idx);
+  });
+
+  calculateQuote();
+}
+
+// 견적 계산
+function calculateQuote() {
+  if (selectedProductIdx === null || !selectedArea) return;
+
+  var product = PRODUCTS[selectedProductIdx];
+  var sheets = Math.ceil(selectedArea / product.sheetArea * 1.08);
+  var matCost = sheets * product.price;
+  
+  // 소량 시공비
+  var threshold = product.width === 500 ? INSTALL_THRESHOLD_500 : INSTALL_THRESHOLD_1000;
+  var installFee = sheets <= threshold ? INSTALL_FEE : 0;
+  var total = matCost + installFee;
+
+  // 표시
+  document.getElementById('qLineProduct').innerHTML = '<span>' + product.name + '</span><span>' + product.price.toLocaleString() + '원/장</span>';
+  document.getElementById('qLineQty').innerHTML = '<span>예상 수량</span><span>' + sheets + '장</span>';
+  document.getElementById('qLineMat').innerHTML = '<span>매트 비용</span><span>' + matCost.toLocaleString() + '원</span>';
+  
+  if (installFee > 0) {
+    document.getElementById('qLineInstall').style.display = 'flex';
+    document.getElementById('qLineInstall').innerHTML = '<span>시공비 (소량 추가)</span><span>' + installFee.toLocaleString() + '원</span>';
+  } else {
+    document.getElementById('qLineInstall').style.display = 'none';
+  }
+
+  document.getElementById('qLineTotal').innerHTML = '<span>예상 총 견적</span><span>' + total.toLocaleString() + '원</span>';
+  document.getElementById('quoteTotal').innerHTML = total.toLocaleString() + '<span class="won">원</span>';
+
+  document.getElementById('quoteResult').classList.add('show');
+  
+  // 스크롤
+  setTimeout(function() {
+    document.getElementById('quoteResult').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
+}
+
+// 견적서 복사
+function copyQuote() {
+  if (selectedProductIdx === null) return;
+  var product = PRODUCTS[selectedProductIdx];
+  var sheets = Math.ceil(selectedArea / product.sheetArea * 1.08);
+  var matCost = sheets * product.price;
+  var threshold = product.width === 500 ? INSTALL_THRESHOLD_500 : INSTALL_THRESHOLD_1000;
+  var installFee = sheets <= threshold ? INSTALL_FEE : 0;
+  var total = matCost + installFee;
+
+  var addr = document.getElementById('addrInput').value;
+  var detail = document.getElementById('addrDetail').value;
+
+  var text = '🏠 돌봄매트 견적서\n';
+  text += '━━━━━━━━━━━━━━\n\n';
+  text += '📍 ' + addr + (detail ? ' ' + detail : '') + '\n';
+  text += '📐 전용면적: ' + selectedArea.toFixed(1) + '㎡ (' + selectedPyeong + '평)\n\n';
+  text += '📦 ' + product.name + '\n';
+  text += '   ' + product.price.toLocaleString() + '원 × ' + sheets + '장 = ' + matCost.toLocaleString() + '원\n';
+  if (installFee > 0) text += '🔧 시공비: ' + installFee.toLocaleString() + '원\n';
+  text += '\n━━━━━━━━━━━━━━\n';
+  text += '💰 예상 견적: ' + total.toLocaleString() + '원\n';
+  text += '━━━━━━━━━━━━━━\n\n';
+  text += '* 구조에 따라 수량 차이가 있을 수 있습니다\n';
+  text += '* 실제 시공 후 수량에 맞춰 결제됩니다\n\n';
+  text += '💬 상담원에게 이 견적서를 붙여넣기 해주세요!\n';
+  text += 'https://pf.kakao.com/_UMyBK/chat';
+
+  navigator.clipboard.writeText(text).then(function() {
+    showToast('견적서가 복사되었습니다! 카톡에 붙여넣기 하세요');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('견적서가 복사되었습니다!');
+  });
+}
+
+function openKakao() {
+  window.open('https://pf.kakao.com/_UMyBK/chat', '_blank');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+</script>
+</body>
+</html>

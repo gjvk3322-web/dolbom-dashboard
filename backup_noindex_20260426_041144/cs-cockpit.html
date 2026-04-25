@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
+<meta name="theme-color" content="#FAFAF7">
+<title>돌봄매트 · 조종실</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAFAF7; --warm:#F0EDE6; --card:#FFFFFF;
+  --text:#2C2925; --soft:#6B655E; --muted:#908B84; --line:#EBE8E1;
+  --accent:#8BB5C0; --accent-bg:#F1F7F9; --accent-dk:#3A6670;
+  --gold:#D4A08A; --gold-bg:#FDF6F0; --gold-dk:#8A5A3E;
+  --green:#89B493; --green-bg:#E8F3EC; --green-dk:#3F7249;
+  --red:#C87F7D; --red-bg:#FEF4F3; --red-dk:#8B3A38;
+  --purple:#A89EBD; --purple-bg:#F4F1F7; --purple-dk:#5A4E70;
+  --shadow-sm:0 1px 3px rgba(44,41,37,0.04),0 2px 8px rgba(44,41,37,0.03);
+  --shadow-md:0 4px 16px rgba(44,41,37,0.06);
+  --radius:16px; --radius-sm:10px;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg); color:var(--text);
+  letter-spacing:-0.01em; line-height:1.55;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  padding-bottom:80px; min-height:100vh;
+}
+button,input,select{font-family:inherit;letter-spacing:-0.01em}
+::-webkit-scrollbar{width:0;height:0}
+
+/* ═══ 상단 네비게이션 ═══ */
+.topnav{
+  position:sticky; top:0; z-index:100;
+  background:rgba(250,250,247,0.82);
+  backdrop-filter:saturate(180%) blur(14px);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  border-bottom:1px solid var(--line);
+  padding:13px 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.nav-brand{display:flex; align-items:center; gap:10px}
+.nav-logo{
+  width:30px; height:30px; border-radius:9px;
+  background:linear-gradient(135deg,var(--text),#4A4440);
+  display:flex; align-items:center; justify-content:center;
+  color:white; font-size:14px; font-weight:800; letter-spacing:-0.04em;
+}
+.nav-title{font-size:15px; font-weight:750; letter-spacing:-0.025em}
+.nav-title .dot{color:var(--muted); margin:0 6px; font-weight:400}
+.nav-title .label{color:var(--soft); font-weight:500}
+.nav-meta{display:flex; align-items:center; gap:12px; font-size:12px; color:var(--soft)}
+.nav-time{font-variant-numeric:tabular-nums}
+.nav-refresh{
+  background:var(--text); color:#fff; border:none;
+  border-radius:100px; padding:7px 13px 7px 10px;
+  font-size:12px; font-weight:650;
+  cursor:pointer; transition:all 0.2s var(--ease);
+  display:inline-flex; align-items:center; gap:5px;
+}
+.nav-refresh:hover{transform:translateY(-1px); box-shadow:0 4px 12px rgba(44,41,37,0.14)}
+.nav-refresh:active{transform:scale(0.97)}
+.nav-refresh svg{width:12px; height:12px}
+
+/* ═══ 컨테이너 ═══ */
+.container{max-width:1400px; margin:0 auto; padding:24px}
+
+/* ═══ 섹션 제목 (H2) ═══ */
+.area-label{
+  font-size:10.5px; font-weight:680; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--muted);
+  margin:28px 0 10px 4px;
+}
+
+/* ═══ 경보 배너 ═══ */
+.alerts{display:flex; flex-direction:column; gap:8px; margin-bottom:22px}
+.alert{
+  display:flex; align-items:center; gap:12px;
+  padding:13px 18px; border-radius:var(--radius-sm);
+  font-size:13.5px; font-weight:500;
+  border-left:3px solid;
+}
+.alert .emoji{font-size:15px; line-height:1}
+.alert .tag{
+  font-size:10px; font-weight:780; letter-spacing:0.06em; text-transform:uppercase;
+  padding:3px 7px; border-radius:5px; margin-right:2px;
+}
+.alert-red{background:var(--red-bg); color:var(--red-dk); border-color:var(--red)}
+.alert-red .tag{background:rgba(200,127,125,0.18); color:var(--red-dk)}
+.alert-gold{background:var(--gold-bg); color:var(--gold-dk); border-color:var(--gold)}
+.alert-gold .tag{background:rgba(212,160,138,0.22); color:var(--gold-dk)}
+.alert-blue{background:var(--accent-bg); color:var(--accent-dk); border-color:var(--accent)}
+.alert-blue .tag{background:rgba(139,181,192,0.22); color:var(--accent-dk)}
+.alert-action{
+  margin-left:auto; font-size:11px; font-weight:700;
+  padding:5px 11px; border-radius:100px; cursor:pointer;
+  background:rgba(0,0,0,0.05); color:inherit; border:none;
+  transition:all 0.2s;
+}
+.alert-action:hover{background:rgba(0,0,0,0.1)}
+
+/* ═══ 상단 스코어카드 4장 ═══ */
+.scorecards{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
+  margin-bottom:24px;
+}
+.scorecard{
+  background:var(--card); border:1px solid var(--line);
+  border-radius:var(--radius); padding:20px 22px;
+  box-shadow:var(--shadow-sm);
+  position:relative; overflow:hidden;
+}
+.scorecard::before{
+  content:''; position:absolute; inset:0 auto 0 0;
+  width:3px; background:var(--accent);
+  opacity:0;
+}
+.scorecard-label{
+  font-size:10.5px; font-weight:650; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:7px;
+}
+.scorecard-value{
+  font-size:30px; font-weight:800; letter-spacing:-0.035em;
+  line-height:1.05;
+  font-variant-numeric:tabular-nums;
+}
+.scorecard-unit{font-size:14px; font-weight:650; color:var(--muted); margin-left:2px}
+.scorecard-sub{
+  font-size:11.5px; color:var(--soft); margin-top:6px;
+  display:flex; align-items:center; gap:5px;
+}
+.trend{font-weight:700}
+.trend.up{color:var(--green-dk)}
+.trend.down{color:var(--red-dk)}
+.trend.flat{color:var(--soft)}
+
+/* ═══ 그리드 ═══ */
+.grid{
+  display:grid; grid-template-columns:repeat(12,1fr);
+  gap:18px; margin-bottom:18px;
+}
+.col-4{grid-column:span 4}
+.col-5{grid-column:span 5}
+.col-6{grid-column:span 6}
+.col-7{grid-column:span 7}
+.col-8{grid-column:span 8}
+.col-12{grid-column:span 12}
+
+/* ═══ 섹션 카드 ═══ */
+.section{
+  background:var(--card); border:1px solid var(--line);
+  border-radius:var(--radius); padding:22px 24px 24px;
+  box-shadow:var(--shadow-sm);
+  position:relative;
+}
+.section-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--line);
+}
+.section-head.no-border{border-bottom:none; padding-bottom:0}
+.section-title{
+  font-size:14.5px; font-weight:730; letter-spacing:-0.02em;
+  display:flex; align-items:center; gap:9px;
+}
+.section-icon{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:7px;
+  font-size:13px;
+}
+.icon-red{background:var(--red-bg); color:var(--red-dk)}
+.icon-gold{background:var(--gold-bg); color:var(--gold-dk)}
+.icon-blue{background:var(--accent-bg); color:var(--accent-dk)}
+.icon-green{background:var(--green-bg); color:var(--green-dk)}
+.icon-purple{background:var(--purple-bg); color:var(--purple-dk)}
+.section-more{
+  font-size:11.5px; color:var(--soft); cursor:pointer;
+  display:inline-flex; align-items:center; gap:3px;
+  transition:color 0.2s; border:none; background:none; padding:4px 6px; border-radius:6px;
+}
+.section-more:hover{color:var(--text); background:var(--warm)}
+
+/* ═══ 공통 통계 행 ═══ */
+.stat-row{display:flex; gap:28px; padding:4px 0}
+.stat-col{flex:1; min-width:0}
+.stat-label{
+  font-size:10.5px; font-weight:650; letter-spacing:0.04em;
+  color:var(--muted); margin-bottom:5px; text-transform:uppercase;
+}
+.stat-val{
+  font-size:22px; font-weight:800; letter-spacing:-0.025em;
+  font-variant-numeric:tabular-nums; line-height:1.1;
+}
+.stat-val.md{font-size:18px}
+.stat-val.sm{font-size:14px; font-weight:700}
+.stat-val .u{font-size:12px; font-weight:600; color:var(--muted); margin-left:2px}
+.stat-sub{font-size:11px; color:var(--soft); margin-top:4px}
+
+/* ═══ 바 차트 (일별) ═══ */
+.barchart{
+  display:flex; align-items:flex-end; gap:3px;
+  height:72px; margin:12px 0 6px;
+}
+.bar{
+  flex:1; background:var(--accent); opacity:0.35;
+  border-radius:3px 3px 0 0; min-height:3px;
+  transition:opacity 0.2s; position:relative; cursor:default;
+}
+.bar:hover{opacity:0.5}
+.bar-inner{
+  position:absolute; bottom:0; left:0; right:0;
+  background:var(--accent); opacity:1;
+  border-radius:3px 3px 0 0;
+}
+.bar:hover .bar-inner{background:var(--accent-dk)}
+.bar.today .bar-inner{background:var(--text)}
+.bar-labels{
+  display:flex; gap:3px; font-size:9px; color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.bar-labels span{flex:1; text-align:center}
+
+/* ═══ 바 차트 범례 ═══ */
+.bar-legend{
+  display:flex; gap:14px; font-size:10.5px;
+  color:var(--soft); margin-top:4px; justify-content:flex-end;
+}
+.bar-legend-item{display:flex; align-items:center; gap:5px}
+.bar-legend-dot{
+  width:9px; height:9px; border-radius:2px;
+}
+.bar-legend-dot.sample{background:var(--accent); opacity:0.35}
+.bar-legend-dot.reserved{background:var(--accent)}
+
+/* ═══ 가로 바 (비율) ═══ */
+.rowbar{margin:9px 0}
+.rowbar-top{
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-size:12px; margin-bottom:4px;
+}
+.rowbar-name{font-weight:600; color:var(--text)}
+.rowbar-val{
+  color:var(--soft); font-variant-numeric:tabular-nums;
+  font-size:11.5px;
+}
+.rowbar-val b{color:var(--text); font-weight:700}
+.rowbar-track{height:6px; background:var(--warm); border-radius:100px; overflow:hidden}
+.rowbar-fill{height:100%; background:var(--accent); border-radius:100px; transition:width 0.6s var(--ease)}
+.rowbar-fill.gold{background:var(--gold)}
+.rowbar-fill.green{background:var(--green)}
+.rowbar-fill.purple{background:var(--purple)}
+.rowbar-fill.red{background:var(--red)}
+
+/* ═══ 테이블 ═══ */
+.tbl-wrap{overflow-x:auto; margin:0 -24px; padding:0 24px}
+.tbl{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px}
+.tbl th{
+  font-size:10px; font-weight:680; letter-spacing:0.05em;
+  text-transform:uppercase; color:var(--muted);
+  text-align:left; padding:8px 10px;
+  border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:var(--card);
+}
+.tbl th.num{text-align:right}
+.tbl td{
+  padding:9px 10px; border-bottom:1px solid var(--line);
+  vertical-align:middle;
+}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .num{text-align:right; font-variant-numeric:tabular-nums; font-weight:650}
+.tbl .rank-me{background:linear-gradient(90deg,var(--accent-bg),rgba(241,247,249,0.3));}
+.tbl .rank-me td{font-weight:700; color:var(--accent-dk)}
+.tbl .rank-me td:first-child{border-left:3px solid var(--accent); padding-left:7px}
+.rank-dot{
+  display:inline-block; width:22px; height:22px; border-radius:50%;
+  background:var(--warm); color:var(--soft);
+  font-size:10.5px; font-weight:750; line-height:22px; text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.rank-dot.r1{background:#FBECDB; color:#8A5A1E}
+.rank-dot.r2{background:#EEE9E1; color:#5A4E3A}
+.rank-dot.r3{background:#F3E3D7; color:#8A5A3A}
+.rank-dot.me{background:var(--accent); color:#fff}
+
+/* ═══ 뱃지 ═══ */
+.badge{
+  display:inline-flex; align-items:center; gap:3px;
+  padding:2.5px 7px; border-radius:100px;
+  font-size:10.5px; font-weight:720; white-space:nowrap;
+}
+.bg-green{background:var(--green-bg); color:var(--green-dk)}
+.bg-red{background:var(--red-bg); color:var(--red-dk)}
+.bg-gold{background:var(--gold-bg); color:var(--gold-dk)}
+.bg-blue{background:var(--accent-bg); color:var(--accent-dk)}
+.bg-gray{background:#F5F4F1; color:var(--soft)}
+.bg-purple{background:var(--purple-bg); color:var(--purple-dk)}
+.bg-text{background:var(--text); color:white}
+
+/* ═══ 자동분류 태그 (유입경로) ═══ */
+.chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+.chip{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 10px; border-radius:100px;
+  background:var(--warm); font-size:11.5px; font-weight:600;
+  color:var(--text);
+}
+.chip b{font-weight:700; color:var(--text); font-variant-numeric:tabular-nums}
+.chip.new{background:var(--accent-bg); color:var(--accent-dk)}
+
+/* ═══ iframe placeholder ═══ */
+.ph{
+  background:
+    radial-gradient(circle at 20% 20%, rgba(139,181,192,0.08), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(212,160,138,0.06), transparent 50%),
+    linear-gradient(180deg, #F8F8F5, #F0EDE6);
+  border:2px dashed #D8D3CB;
+  border-radius:var(--radius-sm);
+  padding:50px 20px; text-align:center;
+}
+.ph-icon{
+  width:48px; height:48px; margin:0 auto 12px;
+  background:rgba(255,255,255,0.7); border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px;
+}
+.ph-title{font-size:14px; font-weight:720; color:var(--soft); margin-bottom:6px; letter-spacing:-0.02em}
+.ph-sub{font-size:12px; color:var(--muted); line-height:1.65; max-width:360px; margin:0 auto}
+.ph code{
+  background:rgba(0,0,0,0.05); padding:1px 5px; border-radius:4px;
+  font-size:11px; font-family:ui-monospace,monospace;
+}
+
+/* ═══ 지역 맵 (입주아파트) ═══ */
+.region-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:12px}
+.region-tile{
+  padding:12px 10px; border-radius:var(--radius-sm);
+  background:var(--warm);
+  text-align:center;
+}
+.region-name{font-size:11px; font-weight:700; color:var(--soft); margin-bottom:4px}
+.region-count{
+  font-size:20px; font-weight:800; letter-spacing:-0.02em;
+  font-variant-numeric:tabular-nums;
+}
+.region-sub{font-size:10px; color:var(--muted); margin-top:2px}
+.region-grid .region-tile.hot{background:var(--accent-bg)}
+.region-grid .region-tile.hot .region-count{color:var(--accent-dk)}
+
+/* ═══ 상담폰 입력 ═══ */
+.phone-form{margin-top:12px}
+.phone-row{display:flex; gap:10px; margin-bottom:10px}
+.phone-input{
+  flex:1; padding:11px 14px;
+  border:1px solid var(--line); background:#fff;
+  border-radius:var(--radius-sm); font-size:14px;
+  color:var(--text); font-variant-numeric:tabular-nums;
+}
+.phone-input:focus{outline:none; border-color:var(--accent); background:var(--accent-bg)}
+.phone-input-lbl{
+  display:block; font-size:10.5px; font-weight:650;
+  color:var(--muted); letter-spacing:0.04em;
+  text-transform:uppercase; margin-bottom:5px;
+}
+.phone-btn{
+  width:100%; padding:13px; border:none; border-radius:var(--radius-sm);
+  background:var(--text); color:#fff; font-size:14px; font-weight:700;
+  cursor:pointer; transition:all 0.2s;
+}
+.phone-btn:hover{background:#000}
+.phone-btn:active{transform:scale(0.98)}
+
+/* ═══ 미니 메뉴 링크 ═══ */
+.links-row{
+  display:flex; flex-wrap:wrap; gap:8px;
+  padding-top:12px; margin-top:8px;
+  border-top:1px solid var(--line);
+}
+.link-chip{
+  font-size:11px; font-weight:600; color:var(--soft);
+  padding:6px 11px; border:1px solid var(--line);
+  border-radius:100px; text-decoration:none;
+  transition:all 0.2s; cursor:pointer; background:#fff;
+}
+.link-chip:hover{background:var(--warm); color:var(--text); border-color:var(--muted)}
+
+/* ═══ 하단 푸터 ═══ */
+.footer{
+  text-align:center; margin-top:40px; padding:24px;
+  font-size:11px; color:var(--muted);
+}
+
+/* ═══ 반응형 ═══ */
+@media (max-width:1100px){
+  .col-5,.col-6,.col-7,.col-8,.col-4{grid-column:span 12}
+  .scorecards{grid-template-columns:repeat(2,1fr)}
+  .region-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:680px){
+  .container{padding:18px 14px}
+  .section{padding:18px 16px 20px}
+  .nav-title{font-size:14px}
+  .nav-title .label{display:none}
+  .nav-meta .nav-time{display:none}
+  .scorecards{gap:10px}
+  .scorecard{padding:16px 15px}
+  .scorecard-value{font-size:24px}
+  .stat-row{gap:14px}
+  .stat-val{font-size:18px}
+  .region-grid{grid-template-columns:repeat(2,1fr)}
+  .tbl{font-size:11.5px}
+  .tbl th,.tbl td{padding:7px 8px}
+  .alert{font-size:12.5px; padding:11px 14px}
+  .area-label{margin:22px 0 8px 2px}
+}
+
+/* ═══ 로드 애니메이션 ═══ */
+@keyframes fadeUp{
+  from{opacity:0; transform:translateY(6px)}
+  to{opacity:1; transform:translateY(0)}
+}
+.scorecard,.section,.alert{animation:fadeUp 0.5s var(--ease) backwards}
+.scorecard:nth-child(1){animation-delay:0.05s}
+.scorecard:nth-child(2){animation-delay:0.1s}
+.scorecard:nth-child(3){animation-delay:0.15s}
+.scorecard:nth-child(4){animation-delay:0.2s}
+.grid:nth-of-type(1) .section{animation-delay:0.25s}
+.grid:nth-of-type(2) .section{animation-delay:0.3s}
+.grid:nth-of-type(3) .section{animation-delay:0.35s}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     상단 네비게이션
+     ═══════════════════════════════════════════════════════════ -->
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="nav-logo">돌</div>
+    <div class="nav-title">
+      돌봄매트<span class="dot">·</span><span class="label">조종실</span>
+    </div>
+  </div>
+  <div class="nav-meta">
+    <span class="nav-time" id="navTime">2026-04-21 火  18:00</span>
+    <button class="nav-refresh" onclick="refreshAll()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>
+      새로고침
+    </button>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════
+     🔴 영역 1 · 경보 배너 (상시 감시)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="alerts" id="alerts">
+  <div class="alert alert-red">
+    <span class="emoji">🚨</span>
+    <span class="tag">재고</span>
+    <span><b>경기 1000매트 22T</b> 재고 1주 이하 — 발주 검토 필요</span>
+    <button class="alert-action" onclick="location.href='stock.html'">재고 보기 →</button>
+  </div>
+  <div class="alert alert-gold">
+    <span class="emoji">⚠️</span>
+    <span class="tag">리뷰</span>
+    <span>시공 후 30일 경과, 후기 미작성 고객 <b>7명</b></span>
+    <button class="alert-action" onclick="alert('알림톡 발송 기능 준비 중')">알림톡 발송</button>
+  </div>
+  <div class="alert alert-blue">
+    <span class="emoji">💰</span>
+    <span class="tag">온누리</span>
+    <span>온누리상품권 누적 <b>28.3억</b> · 30억 cap까지 1.7억 남음</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     상단 스코어카드 · 오늘 ↔ 월별 토글 + 월 선택 드롭다운 (v0.5.1)
+     ═══════════════════════════════════════════════════════════ -->
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:10px">
+  <div style="display:flex; gap:6px; align-items:center">
+    <div style="display:flex; gap:6px; background:var(--warm); padding:4px; border-radius:10px">
+      <button class="period-btn active" data-period="today" onclick="switchPeriod('today')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:var(--text); color:#fff; transition:all 0.2s">오늘</button>
+      <button class="period-btn" data-period="month" onclick="switchPeriod('month')" style="padding:7px 16px; border:none; border-radius:7px; font-size:12.5px; font-weight:650; cursor:pointer; background:transparent; color:var(--soft); transition:all 0.2s">월별</button>
+    </div>
+    <select id="monthSelect" onchange="onMonthChange()" style="padding:7px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:12.5px; font-weight:600; cursor:pointer; color:var(--text); font-family:inherit; display:none">
+      <!-- 자동 생성됨 -->
+    </select>
+  </div>
+  <div style="font-size:11px; color:var(--muted)" id="periodHint">📅 오늘 <span id="todayDateStr">4/21</span> 기준</div>
+</div>
+<div class="scorecards" style="grid-template-columns:repeat(5,1fr); gap:12px">
+  <div class="scorecard">
+    <div class="scorecard-label" id="kpi1Label">오늘 매출</div>
+    <div class="scorecard-value" id="kpi1Value" style="color:var(--muted)">—<span class="scorecard-unit">만원</span></div>
+    <div class="scorecard-sub" id="kpi1Sub">데이터 로드 중…</div>
+  </div>
+  <div class="scorecard">
+    <div class="scorecard-label" id="kpi2Label">오늘 시공</div>
+    <div class="scorecard-value" id="kpi2Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpi2Sub">데이터 로드 중…</div>
+  </div>
+  <div class="scorecard">
+    <div class="scorecard-label" id="kpi3Label">오늘 예약 접수</div>
+    <div class="scorecard-value" id="kpi3Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpi3Sub">reservation.html 유입</div>
+  </div>
+  <div class="scorecard">
+    <div class="scorecard-label" id="kpi4Label">오늘 샘플 접수</div>
+    <div class="scorecard-value" id="kpi4Value" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpi4Sub">데이터 로드 중…</div>
+  </div>
+  <div class="scorecard">
+    <div class="scorecard-label">오늘 상담 전화</div>
+    <div class="scorecard-value" id="kpiPhoneReceived" style="color:var(--muted)">—<span class="scorecard-unit">건</span></div>
+    <div class="scorecard-sub" id="kpiPhoneSub">상담사 입력 대기 중</div>
+  </div>
+</div>
+
+<!-- 이번달 콜백률 경보 배지 (놓친 전화 있을 때만 표시) -->
+<div id="callbackAlert" style="display:none; margin:12px 0 0; padding:10px 16px; background:var(--gold-bg); border-radius:var(--radius-sm); font-size:12px; color:var(--gold-dk); text-align:center; font-weight:650">
+  <span id="callbackAlertText">📵 이번달 놓친 전화 분석 중…</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     영역 레이블 · 1줄
+     ═══════════════════════════════════════════════════════════ -->
+<div class="area-label">EXECUTION · 실행 현황</div>
+
+<!-- ┌────────────────────────────────────────────────────────┐
+     │ 영역 4 매출요약 (col-8) │ 영역 5 재고 (col-4)           │
+     └────────────────────────────────────────────────────────┘ -->
+<div class="grid">
+
+  <!-- 🟣 영역 4 · 매출 요약 (AS/실측 제외) -->
+  <div class="section col-8">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-purple">💰</span>매출 요약 <span class="badge bg-gray" id="revMonthBadge">4월</span></div>
+      <button class="section-more" onclick="loadMonthStats()">🔄 새로고침</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-col">
+        <div class="stat-label">부산팀</div>
+        <div class="stat-val" id="revBusan">—<span class="u">만원</span></div>
+        <div class="stat-sub" id="revBusanSub">데이터 로드 중</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">경기팀</div>
+        <div class="stat-val" id="revGyeonggi">—<span class="u">만원</span></div>
+        <div class="stat-sub" id="revGyeonggiSub">데이터 로드 중</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">합계</div>
+        <div class="stat-val" style="color:var(--accent-dk)" id="revTotal">—<span class="u">만원</span></div>
+        <div class="stat-sub" id="revTotalSub">데이터 로드 중</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line)">
+      <div>
+        <div class="stat-label" style="margin-bottom:8px">구분별</div>
+        <div id="categoryRows">
+          <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
+        </div>
+      </div>
+      <div>
+        <div class="stat-label" style="margin-bottom:8px">제품별 <span style="color:var(--muted); font-weight:500">(장수 기반)</span></div>
+        <div id="productRows">
+          <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔥 예약 채널 분해 (실데이터 연동) -->
+    <div id="channelBreakdown" style="margin-top:14px; padding:11px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.6; display:none">
+      <b>💡 예약 <span id="cbTotal">0</span>건 채널 분해:</b>
+      샘플 경유 <b><span id="cbViaSample">0</span>건</b> (<span id="cbViaSampleRate">0</span>%) ·
+      <b>직접 예약 <span id="cbDirect">0</span>건 (<span id="cbDirectRate">0</span>%)</b> ★
+      → 지인추천·재시공·입소문이 진짜 주력 채널
+    </div>
+
+    <div class="links-row">
+      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ" target="_blank">📊 월간마진분석</a>
+      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit#gid=144225567" target="_blank">📋 시공스케줄 부산</a>
+      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit#gid=1995986285" target="_blank">📋 시공스케줄 경기</a>
+    </div>
+  </div>
+
+  <!-- 🟡 영역 5 · 재고 요약 (실데이터 · getStock API) -->
+  <div class="section col-4">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-gold">📦</span>재고 현황</div>
+      <button class="section-more" onclick="loadStockSummary()">🔄</button>
+    </div>
+
+    <div id="stockRows" style="display:flex; flex-direction:column; gap:10px">
+      <div style="padding:14px; text-align:center; color:var(--muted); font-size:11.5px">재고 데이터 로드 중…</div>
+    </div>
+
+    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
+      <div class="stat-label" style="margin-bottom:6px">재고 기준</div>
+      <div style="font-size:11.5px; color:var(--soft); line-height:1.5" id="stockBaseInfo">
+        stock.html과 동일 계산 (실사 + 입고 - 시공)<br>
+        <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650">📦 전체 재고 보기 →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ┌────────────────────────────────────────────────────────┐
+     │ 영역 3 샘플(col-7) │ 영역 6 후기+알림톡 (col-5)        │
+     └────────────────────────────────────────────────────────┘ -->
+<div class="grid">
+
+  <!-- 🔵 영역 3 · 샘플접수 일/월 추적 + 시공목적 + 유입경로 자동분류 -->
+  <div class="section col-7">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-blue">📦</span>샘플접수 현황</div>
+      <button class="section-more">전체 →</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-col">
+        <div class="stat-label">이번 달 (4월)</div>
+        <div class="stat-val" id="sampleThisMonth">136<span class="u">샘플</span></div>
+        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)" id="reservedThisMonth">116</b>건 · 시공 5건</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">샘플 → 예약 전환</div>
+        <div class="stat-val md" style="color:var(--green-dk)">17<span class="u">%</span></div>
+        <div class="stat-sub" style="margin-top:4px">23/136 (직접예약 제외)</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">샘플 → 시공 전환</div>
+        <div class="stat-val md" style="color:var(--gold-dk)">3.7<span class="u">%</span></div>
+        <div class="stat-sub" style="margin-top:4px">5/136 · 리드타임 영향</div>
+      </div>
+    </div>
+
+    <!-- 월별 바차트 · 실데이터 (4월부터) -->
+    <div style="margin-top:18px">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <div class="stat-label">최근 6개월 · 샘플 vs 예약</div>
+        <div class="bar-legend">
+          <div class="bar-legend-item"><span class="bar-legend-dot sample"></span>샘플 접수</div>
+          <div class="bar-legend-item"><span class="bar-legend-dot reserved"></span>예약 완료</div>
+        </div>
+      </div>
+      <div class="barchart" id="monthlyBars" style="height:90px">
+        <div class="bar" style="height:3%" title="11월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="12월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="1월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="2월 · 데이터 없음"></div>
+        <div class="bar" style="height:3%" title="3월 · 데이터 없음"></div>
+        <div class="bar today" style="height:100%" title="4월 · 샘플 136 / 예약 116">
+          <div class="bar-inner" style="height:85.3%"></div>
+        </div>
+      </div>
+      <div class="bar-labels">
+        <span style="color:var(--muted)">11월 <b>-</b></span>
+        <span style="color:var(--muted)">12월 <b>-</b></span>
+        <span style="color:var(--muted)">1월 <b>-</b></span>
+        <span style="color:var(--muted)">2월 <b>-</b></span>
+        <span style="color:var(--muted)">3월 <b>-</b></span>
+        <span style="color:var(--text);font-weight:700">4월 <b>136/116</b></span>
+      </div>
+      <div style="margin-top:6px; padding:8px 12px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); text-align:center">
+        ℹ️ 시스템 전환 · <b style="color:var(--text)">2026년 4월부터 데이터 수집 시작</b> · 5월부터 전월 대비 추세 가능
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+      <!-- 시공목적 TOP -->
+      <div>
+        <div class="stat-label" style="margin-bottom:8px">시공목적 TOP</div>
+        <div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">아이 안전</span><span class="rowbar-val">69 · <b>36%</b></span></div>
+          <div class="rowbar-track"><div class="rowbar-fill" style="width:36%"></div></div>
+        </div>
+        <div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">층간소음</span><span class="rowbar-val">44 · <b>23%</b></span></div>
+          <div class="rowbar-track"><div class="rowbar-fill" style="width:23%"></div></div>
+        </div>
+        <div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">이사</span><span class="rowbar-val">35 · <b>18%</b></span></div>
+          <div class="rowbar-track"><div class="rowbar-fill" style="width:18%"></div></div>
+        </div>
+        <div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">반려견</span><span class="rowbar-val">24 · <b>12%</b></span></div>
+          <div class="rowbar-track"><div class="rowbar-fill" style="width:12%"></div></div>
+        </div>
+        <div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">출산예정</span><span class="rowbar-val">11 · <b>6%</b></span></div>
+          <div class="rowbar-track"><div class="rowbar-fill" style="width:6%"></div></div>
+        </div>
+      </div>
+
+      <!-- 🔥 유입경로별 전환 퍼널 (실데이터 · JS로 자동 갱신) -->
+      <div>
+        <div class="stat-label" style="margin-bottom:8px; display:flex; align-items:center; gap:6px">
+          🎯 유입경로별 시공 전환율
+          <span class="badge bg-purple" style="font-size:9.5px; padding:1.5px 6px">실시간 연동</span>
+          <span id="conversionUpdated" style="font-size:9.5px; color:var(--muted); margin-left:auto"></span>
+        </div>
+        <table class="tbl" style="font-size:11.5px">
+          <thead>
+            <tr>
+              <th>채널</th>
+              <th class="num">샘플</th>
+              <th class="num">예약</th>
+              <th class="num">시공</th>
+              <th class="num">평균매출</th>
+            </tr>
+          </thead>
+          <tbody id="conversionTbody">
+            <tr><td>💎 블로그</td><td class="num">10</td><td class="num" style="color:var(--accent-dk)">1</td><td class="num"><span class="badge bg-blue">1 · 10.0%</span></td><td class="num" style="color:var(--green-dk); font-weight:800">165만</td></tr>
+            <tr class="rank-me"><td>🥇 지인추천</td><td class="num">28</td><td class="num" style="color:var(--accent-dk)">6</td><td class="num"><span class="badge bg-gold">2 · 7.1%</span></td><td class="num">172만</td></tr>
+            <tr><td>🔍 네이버검색</td><td class="num">61</td><td class="num" style="color:var(--accent-dk)">11</td><td class="num"><span class="badge bg-gold">2 · 3.3%</span></td><td class="num">177만</td></tr>
+            <tr><td>❓ 기타</td><td class="num">18</td><td class="num" style="color:var(--accent-dk)">2</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num" style="color:var(--muted)">예정</td></tr>
+            <tr><td>👩 맘카페</td><td class="num">16</td><td class="num" style="color:var(--accent-dk)">3</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num" style="color:var(--muted)">예정</td></tr>
+            <tr style="opacity:0.65"><td>📱 인스타</td><td class="num">2</td><td class="num">0</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num">-</td></tr>
+            <tr style="opacity:0.65"><td>🔁 재시공</td><td class="num">1</td><td class="num">0</td><td class="num"><span class="badge bg-gray">0 · 0%</span></td><td class="num">-</td></tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--warm); font-weight:700">
+              <td style="font-size:10.5px">합계</td>
+              <td class="num" id="totalSample">136</td>
+              <td class="num" style="color:var(--accent-dk)" id="totalReserved">23</td>
+              <td class="num"><span class="badge bg-text" id="totalInstalled">5 · 3.7%</span></td>
+              <td class="num" id="totalAvg">174만</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
+      <div style="padding:12px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.55">
+        <b>💎 건당 매출 1위 · 블로그</b><br>
+        평균매출 <b>165만원</b> → 고평수·프리미엄 고객 유입 채널. 샘플 10건으로 표본 작지만 시사점 뚜렷, 블로그 콘텐츠 투자 가치 검증 중.
+      </div>
+      <div style="padding:12px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
+        <b>⏱ 샘플 → 시공 3.7% 낮은 이유</b><br>
+        4월 샘플 고객 대부분 아직 리드타임 내 (5~6월 시공 예정). 이전 데이터 없어 기존 고객 매칭 불가. <b>5월 말 재측정 필요</b>.
+      </div>
+    </div>
+
+    <div class="chip-row">
+      <span class="chip new">🆕 AI검색 <b>1건</b></span>
+      <span class="chip">📱 인스타 <b>2건</b></span>
+      <span class="chip">🥕 당근마켓 <b>2건</b></span>
+    </div>
+  </div>
+
+  <!-- 🟠 영역 6 · 후기이벤트 + 알림톡 현황 (실데이터) -->
+  <div class="section col-5">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-green">💬</span>후기 & 알림톡</div>
+      <button class="section-more" onclick="loadReviewStats()">🔄 새로고침</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-col">
+        <div class="stat-label">이번달 후기 참여</div>
+        <div class="stat-val md" id="reviewParticipants">—<span class="u">명</span></div>
+        <div class="stat-sub" id="reviewPaid">지급완료 —명</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">월 지출</div>
+        <div class="stat-val md" id="reviewSpend">—<span class="u">만</span></div>
+        <div class="stat-sub" id="reviewBudget">예산 —%</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">전월 누적</div>
+        <div class="stat-val md" style="color:var(--muted)">—<span class="u">명</span></div>
+        <div class="stat-sub">추후 연동</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line)">
+      <div class="stat-label" style="margin-bottom:8px">미션별 달성률 <span style="color:var(--muted); font-weight:500">(이번달 참여자 기준)</span></div>
+      <div id="missionRows">
+        <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center">
+      <div>
+        <div class="stat-label">알림톡 (오늘 · 내일)</div>
+        <div style="font-size:13.5px; font-weight:650; margin-top:4px">
+          발송 <b style="color:var(--accent-dk)" id="alimSent">—</b> · 예정 <b id="alimScheduled">—</b>
+        </div>
+      </div>
+      <span class="badge bg-green">AWS 9시 자동</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ 영역 레이블 · 2줄 ═══ -->
+<div class="area-label">MARKETING · 마케팅 & 유입</div>
+
+<!-- ✅ 입주아파트 파이프라인 · v0.5.2 실데이터 연동 · 2026-04-21 -->
+<div class="grid">
+
+  <!-- 🟦 영역 7 · 입주아파트 파이프라인 -->
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-blue">🏢</span>입주아파트 파이프라인 <span class="badge bg-gray" id="aptBadge">실데이터 로드 중…</span></div>
+      <button class="section-more" onclick="loadAptPipeline()">🔄 새로고침</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-col">
+        <div class="stat-label">총 타겟 아파트</div>
+        <div class="stat-val" id="aptTotal">—<span class="u">개</span></div>
+        <div class="stat-sub" id="aptTotalSub">로드 중…</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">입주 임박 (0~2개월)</div>
+        <div class="stat-val" style="color:var(--red-dk)" id="aptImminent">—<span class="u">개</span></div>
+        <div class="stat-sub" id="aptImminentSub">블로그·맘카페 선점 필요</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">블로그 업로드 완료</div>
+        <div class="stat-val" style="color:var(--green-dk)" id="aptBlog">—<span class="u">개</span></div>
+        <div class="stat-sub" id="aptChannelSub">맘카페·당근·메타 집계</div>
+      </div>
+    </div>
+
+    <!-- 지역별 타일 (동적 생성) -->
+    <div class="region-grid" id="aptRegionGrid">
+      <div style="grid-column:1/-1; padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">지역별 데이터 로드 중…</div>
+    </div>
+
+    <!-- 입주 임박 TOP 10 -->
+    <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+      <div class="stat-label" style="margin-bottom:8px">입주 임박 TOP <span style="color:var(--muted); font-weight:500">(0~2개월 내)</span></div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>아파트</th>
+              <th>지역</th>
+              <th class="num">세대수</th>
+              <th>입주월</th>
+              <th style="text-align:center">블로그</th>
+              <th style="text-align:center">맘카페</th>
+              <th style="text-align:center">당근</th>
+              <th style="text-align:center">메타</th>
+            </tr>
+          </thead>
+          <tbody id="aptImminentTable">
+            <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:14px; font-size:11.5px">로드 중…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 🗑️ 상담폰 입력 섹션 제거 (v0.5) · cs-phone.html에서 이미 입력 -->
+<!-- 🗑️ 키워드 노출 순위 섹션 제거 (v0.5) · 네이버 API 연동 전까지 숨김 -->
+
+<!-- 🗑️ 키워드 노출 순위 섹션 · v0.5 숨김 처리
+     이유: 네이버 블로그 API 미연동 (전부 placeholder 데이터)
+     추후 네이버 검색 API 연결되면 복원 예정 -->
+<div class="area-label" style="display:none">COMPETITION · 경쟁사 & 키워드 노출</div>
+<div class="grid" style="display:none">
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-purple">🎯</span>대표 키워드 노출 순위 <span class="badge bg-gray">네이버 블로그 · 일 1회 자동 수집</span></div>
+      <button class="section-more">전체 13개사 비교 →</button>
+    </div>
+
+    <!-- 우리 포지션 요약 -->
+    <div class="stat-row" style="margin-bottom:16px">
+      <div class="stat-col">
+        <div class="stat-label">TOP 10 진입 키워드</div>
+        <div class="stat-val md" style="color:var(--green-dk)">12<span class="u">개</span></div>
+        <div class="stat-sub">전체 13개 중 92%</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">이번 달 순위 상승</div>
+        <div class="stat-val md" style="color:var(--green-dk)">▲ 7<span class="u">개</span></div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">이번 달 순위 하락</div>
+        <div class="stat-val md" style="color:var(--red-dk)">▼ 2<span class="u">개</span></div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-label">평균 순위</div>
+        <div class="stat-val md">5.2<span class="u">위</span></div>
+        <div class="stat-sub">지난달 대비 ▲ 1.4</div>
+      </div>
+    </div>
+
+    <!-- 키워드 × 경쟁사 순위 테이블 -->
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="min-width:180px">키워드</th>
+            <th class="num" style="width:40px">월 검색량</th>
+            <th style="text-align:center; width:60px; background:var(--accent-bg)">🏠 돌봄<br>매트</th>
+            <th style="text-align:center">띠아모</th>
+            <th style="text-align:center">니치039</th>
+            <th style="text-align:center">쿠키</th>
+            <th style="text-align:center">봄봄</th>
+            <th style="text-align:center">보들</th>
+            <th style="text-align:center">소리잠</th>
+            <th style="text-align:center">까사<br>플로아</th>
+            <th style="text-align:center">아이<br>콩콩</th>
+            <th style="text-align:center">토리</th>
+            <th style="text-align:center">하늘</th>
+            <th style="text-align:center">블루<br>돌핀</th>
+            <th style="text-align:center">두리</th>
+            <th style="text-align:center">월 변화</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 검색량 내림차순 · 브랜드 제외 · 13개 키워드 -->
+
+          <!-- 1. 매트 시공 (4,550) - 가장 큰 시장 -->
+          <tr><td>매트 시공</td><td class="num">4,550</td>
+            <td style="text-align:center"><span class="rank-dot me">9</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">14</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">20</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲3</span></td>
+          </tr>
+
+          <!-- 2. 아파트 층간소음 (3,120) - 10위권 밖, 개선 필요 -->
+          <tr><td>아파트 층간소음</td><td class="num">3,120</td>
+            <td style="text-align:center"><span class="rank-dot me">18</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend down">▼1</span></td>
+          </tr>
+
+          <!-- 3. 층간소음매트 시공 (2,340) -->
+          <tr class="rank-me"><td>층간소음매트 시공</td><td class="num">2,340</td>
+            <td style="text-align:center"><span class="rank-dot me r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">12</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">9</span></td>
+            <td style="text-align:center"><span class="rank-dot">15</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">18</span></td>
+            <td style="text-align:center"><span class="rank-dot">22</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲2</span></td>
+          </tr>
+
+          <!-- 4. 시공매트 (2,100) -->
+          <tr class="rank-me"><td>시공매트</td><td class="num">2,100</td>
+            <td style="text-align:center"><span class="rank-dot me r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲2</span></td>
+          </tr>
+
+          <!-- 5. 층간소음방지매트 시공 (1,820) -->
+          <tr><td>층간소음방지매트 시공</td><td class="num">1,820</td>
+            <td style="text-align:center"><span class="rank-dot me">5</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">8</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">14</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">19</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 6. 거실매트 시공 (1,560) ★ 우리 2위 -->
+          <tr class="rank-me"><td>거실매트 시공</td><td class="num">1,560</td>
+            <td style="text-align:center"><span class="rank-dot me r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲1</span></td>
+          </tr>
+
+          <!-- 7. 반려견매트 시공 (1,200) -->
+          <tr><td>반려견매트 시공</td><td class="num">1,200</td>
+            <td style="text-align:center"><span class="rank-dot me">5</span></td>
+            <td style="text-align:center"><span class="rank-dot">11</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="trend up">▲3</span></td>
+          </tr>
+
+          <!-- 8. 바닥매트 시공 (980) -->
+          <tr><td>바닥매트 시공</td><td class="num">980</td>
+            <td style="text-align:center"><span class="rank-dot me">4</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">6</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 9. 층간소음 시공 (890) -->
+          <tr><td>층간소음 시공</td><td class="num">890</td>
+            <td style="text-align:center"><span class="rank-dot me">7</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">4</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">10</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend up">▲4</span></td>
+          </tr>
+
+          <!-- 10. 애견매트 시공 (780) -->
+          <tr><td>애견매트 시공</td><td class="num">780</td>
+            <td style="text-align:center"><span class="rank-dot me">6</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="trend down">▼1</span></td>
+          </tr>
+
+          <!-- 11. 강아지매트 시공 (520) -->
+          <tr class="rank-me"><td>강아지매트 시공</td><td class="num">520</td>
+            <td style="text-align:center"><span class="rank-dot me r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">7</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 12. TPU매트 시공 (410) ★ 우리 1위 -->
+          <tr class="rank-me"><td>TPU매트 시공</td><td class="num">410</td>
+            <td style="text-align:center"><span class="rank-dot me r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">4</span></td>
+            <td style="text-align:center"><span class="rank-dot r3">3</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="trend flat">━</span></td>
+          </tr>
+
+          <!-- 13. 강아지장판시공 (340) ★ 우리 2위 -->
+          <tr class="rank-me"><td>강아지장판시공</td><td class="num">340</td>
+            <td style="text-align:center"><span class="rank-dot me r2">2</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot">-</span></td>
+            <td style="text-align:center"><span class="rank-dot r1">1</span></td>
+            <td style="text-align:center"><span class="rank-dot">4</span></td>
+            <td style="text-align:center"><span class="trend up">▲1</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
+      <div style="padding:12px 14px; background:var(--accent-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--accent-dk); line-height:1.55">
+        <b>🔔 KPI 인사이트:</b> <b>"매트 시공"</b> (검색 1위·월 4,550) 9위 → TOP 3 진입 시 유입 영향 가장 큼. <b>"아파트 층간소음"</b> (3,120) 18위로 유일한 10위권 밖 → 콘텐츠 우선 투자 필요.
+      </div>
+      <div style="padding:12px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11.5px; color:var(--text); line-height:1.55">
+        <b>💎 브랜드 파워:</b> "돌봄매트" 월 검색량 <b style="color:var(--accent-dk)">6,800</b>회 (네이버 자사 1위 고정) · 전월 대비 <span class="trend up">▲ 12%</span> → 브랜드 인지도 꾸준히 상승 중
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 영역 레이블 · 4줄 ═══ -->
+<div class="area-label">EXTERNAL · 외부 데이터 연동</div>
+
+<!-- ┌────────────────────────────────────────────────────────┐
+     │ 영역 2 · Looker Studio iframe (col-12)                 │
+     └────────────────────────────────────────────────────────┘ -->
+<div class="grid">
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title"><span class="section-icon icon-green">📈</span>홈페이지 GA4 <span class="badge bg-gray">Looker Studio</span></div>
+      <button class="section-more">GA4 열기 →</button>
+    </div>
+
+    <!-- ✅ Looker Studio iframe 심음 · 2026-04-21 -->
+    <div class="looker-wrap" style="position:relative; width:100%; padding-top:75%; overflow:hidden; border-radius:var(--radius-sm); background:var(--warm); border:1px solid var(--line)">
+      <iframe
+        src="https://datastudio.google.com/embed/reporting/cf0cbaf8-7f84-46ac-9ac8-b64c11754974/page/dMrvF"
+        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0"
+        frameborder="0" allowfullscreen
+        sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        title="돌봄매트 홈페이지 GA4 대시보드">
+      </iframe>
+    </div>
+    <div style="margin-top:10px; font-size:11px; color:var(--muted); display:flex; justify-content:space-between; align-items:center">
+      <span>🔄 자동 갱신 · Looker Studio</span>
+      <a href="https://lookerstudio.google.com/reporting/cf0cbaf8-7f84-46ac-9ac8-b64c11754974" target="_blank" style="color:var(--accent-dk); text-decoration:none; font-weight:650">전체화면 열기 →</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ 푸터 ═══ -->
+<div class="footer">
+  돌봄매트 조종실 · v0.5.3 · 재고 stock.html 구조 호환 · <span id="updatedAt">2026-04-22 00:30</span>
+</div>
+
+</div><!-- /.container -->
+
+<script>
+// ═══ 시계 갱신 ═══
+function updateTime(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  const days = ['日','月','火','水','木','金','土'];
+  const dow = days[d.getDay()];
+  document.getElementById('navTime').textContent = `${y}-${m}-${dd} ${dow}  ${hh}:${mm}`;
+  document.getElementById('updatedAt').textContent = `${y}-${m}-${dd} ${hh}:${mm}`;
+}
+updateTime();
+setInterval(updateTime, 60000);
+
+// ═══ 새로고침 (실제 API 호출) ═══
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+// 유입경로 이모지 매핑
+function getChannelIcon(ch){
+  const m = {
+    '지인추천':'🥇', '블로그':'💎', '맘카페':'👩', '네이버검색':'🔍',
+    '인스타':'📱', '재시공':'🔁', '기타':'❓', '당근마켓':'🥕', 'AI검색':'🆕'
+  };
+  return m[ch] || '•';
+}
+
+// 전환율 badge 색상
+function getRateBadge(rate){
+  if(rate >= 20) return 'bg-green';
+  if(rate >= 10) return 'bg-blue';
+  if(rate >= 5)  return 'bg-gold';
+  return 'bg-gray';
+}
+
+// 유입경로 전환율 로드
+async function loadConversionStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=conversionStats`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+    
+    // 시공 건수 내림차순, 동률이면 시공률 내림차순
+    json.data.sort((a,b) => (b.installed - a.installed) || (b.installRate - a.installRate) || (b.sample - a.sample));
+    
+    const tbody = document.getElementById('conversionTbody');
+    if(!tbody) return;
+    
+    tbody.innerHTML = json.data.map(row => {
+      const icon = getChannelIcon(row.channel);
+      const badge = getRateBadge(row.installRate);
+      const avgRev = row.avgRevenue > 0 ? `${Math.round(row.avgRevenue/10000)}만` : '<span style="color:var(--muted)">예정</span>';
+      const rowClass = row.installed === 0 && row.sample <= 2 ? ' style="opacity:0.65"' : (icon === '🥇' || icon === '💎' ? ' class="rank-me"' : '');
+      return `<tr${rowClass}>
+        <td>${icon} ${row.channel}</td>
+        <td class="num">${row.sample}</td>
+        <td class="num" style="color:var(--accent-dk)">${row.reserved}</td>
+        <td class="num"><span class="badge ${badge}">${row.installed} · ${row.installRate}%</span></td>
+        <td class="num"${row.avgRevenue >= 1500000 ? ' style="color:var(--green-dk); font-weight:800"' : ''}>${avgRev}</td>
+      </tr>`;
+    }).join('');
+    
+    // 합계 업데이트
+    const tot = json.data.reduce((a,r) => ({
+      s: a.s + r.sample, r: a.r + r.reserved, i: a.i + r.installed,
+      rev: a.rev + (r.avgRevenue * r.installed)
+    }), {s:0, r:0, i:0, rev:0});
+    const totRate = tot.s > 0 ? (tot.i/tot.s*100).toFixed(1) : 0;
+    const totAvg = tot.i > 0 ? Math.round(tot.rev/tot.i/10000) : 0;
+    
+    document.getElementById('totalSample').textContent = tot.s;
+    document.getElementById('totalReserved').textContent = tot.r;
+    document.getElementById('totalInstalled').textContent = `${tot.i} · ${totRate}%`;
+    document.getElementById('totalAvg').textContent = totAvg > 0 ? `${totAvg}만` : '-';
+    
+    if(json.updatedAt){
+      const dt = new Date(json.updatedAt);
+      const h = String(dt.getHours()).padStart(2,'0');
+      const mn = String(dt.getMinutes()).padStart(2,'0');
+      const el = document.getElementById('conversionUpdated');
+      if(el) el.textContent = `· ${dt.getMonth()+1}/${dt.getDate()} ${h}:${mn} 갱신`;
+    }
+  } catch(e){
+    console.error('전환율 로드 실패:', e);
+  }
+}
+
+// 월별 퍼널 로드
+async function loadMonthlyFunnel(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=monthlyFunnel`);
+    const json = await res.json();
+    if(!json.success || !json.data) return;
+    
+    const maxVal = Math.max(...json.data.map(m => m.sample), 1);
+    const barsEl = document.getElementById('monthlyBars');
+    if(!barsEl) return;
+    
+    barsEl.innerHTML = json.data.map((m, idx) => {
+      const isLast = idx === json.data.length - 1;
+      const sampleH = m.sample > 0 ? Math.max(3, m.sample/maxVal*100) : 3;
+      const reservedH = m.sample > 0 ? (m.reserved/m.sample*100) : 0;
+      const title = m.sample > 0 ? `${m.month} · 샘플 ${m.sample} / 예약 ${m.reserved}` : `${m.month} · 데이터 없음`;
+      const inner = m.sample > 0 ? `<div class="bar-inner" style="height:${reservedH.toFixed(1)}%"></div>` : '';
+      return `<div class="bar${isLast && m.sample > 0 ? ' today' : ''}" style="height:${sampleH.toFixed(1)}%" title="${title}">${inner}</div>`;
+    }).join('');
+  } catch(e){
+    console.error('월별퍼널 로드 실패:', e);
+  }
+}
+
+// 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
+async function loadPhoneStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=phoneStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    
+    const today = json.today || {received:0, missed:0, callback:0};
+    const month = json.month || {received:0, missed:0, callback:0, days:0};
+    
+    const kpiVal = document.getElementById('kpiPhoneReceived');
+    const kpiSub = document.getElementById('kpiPhoneSub');
+    if(!kpiVal || !kpiSub) return;
+    
+    const todayTotal = (today.received || 0) + (today.missed || 0);
+    
+    if(todayTotal > 0){
+      kpiVal.style.color = '';
+      kpiVal.innerHTML = todayTotal + '<span class="scorecard-unit">건</span>';
+      const missedPct = todayTotal > 0 ? Math.round((today.missed||0)/todayTotal*100) : 0;
+      if(today.missed > 0){
+        kpiSub.innerHTML = `받은 <b>${today.received}</b> · 놓친 <b style="color:var(--red-dk)">${today.missed}</b> · 콜백 ${today.callback||0}`;
+      } else {
+        kpiSub.innerHTML = `받은 <b>${today.received}건</b> · 놓친 없음 🎉`;
+      }
+    } else {
+      kpiVal.style.color = 'var(--muted)';
+      kpiVal.innerHTML = '—<span class="scorecard-unit">건</span>';
+      kpiSub.innerHTML = month.days > 0 
+        ? `이번달 받은 <b>${month.received}건</b> · 놓친 ${month.missed||0}건` 
+        : '상담사 입력 대기 중';
+    }
+    
+    // 콜백률 경보 배지 (이번달 놓친 전화가 있을 때만)
+    const alertEl = document.getElementById('callbackAlert');
+    const alertText = document.getElementById('callbackAlertText');
+    if(alertEl && month.missed > 0){
+      const cbRate = Math.round((month.callback||0)/month.missed*100);
+      alertEl.style.display = 'block';
+      alertEl.style.background = 'var(--gold-bg)';
+      alertEl.style.color = 'var(--gold-dk)';
+      if(cbRate >= 80){
+        alertEl.style.background = 'var(--green-bg)';
+        alertEl.style.color = 'var(--green-dk)';
+        alertText.innerHTML = `👍 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건 회수 · 잘하고 있어요!`;
+      } else if(cbRate >= 50){
+        alertText.innerHTML = `⚡ 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건만 회수 · 개선 여지 있음`;
+      } else {
+        alertEl.style.background = 'var(--red-bg)';
+        alertEl.style.color = 'var(--red-dk)';
+        alertText.innerHTML = `🚨 이번달 콜백률 <b>${cbRate}%</b> · 놓친 고객 ${month.missed - (month.callback||0)}명 회수 안 됨 · <b>매출 기회 손실!</b>`;
+      }
+    } else if(alertEl) {
+      alertEl.style.display = 'none';
+    }
+  } catch(e){
+    console.error('상담폰 로드 실패:', e);
+  }
+}
+
+function refreshAll(){
+  const btn = document.querySelector('.nav-refresh');
+  btn.style.opacity = '0.6';
+  btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>불러오는 중…';
+  
+  Promise.all([
+    loadTodayStats(),
+    loadMonthStats(),
+    loadStockSummary(),
+    loadReviewStats(),
+    loadAlimtalkStats(),
+    loadAptPipeline(),
+    loadConversionStats(),
+    loadMonthlyFunnel(),
+    loadPhoneStats()
+  ]).finally(() => {
+    btn.style.opacity = '1';
+    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 8a5 5 0 1 1-1.5-3.5L13 6M13 3v3h-3"/></svg>새로고침';
+    updateTime();
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 v0.5.1 · KPI 5개 + 월 선택 드롭다운 + 토글 버그 수정
+// ═══════════════════════════════════════════════════════════════
+
+let cachedTodayData = null;
+let cachedMonthData = null;
+let currentPeriod = 'today';
+let selectedMonth = null; // YYYY-MM 또는 null (=이번달)
+
+function initMonthSelect(){
+  const sel = document.getElementById('monthSelect');
+  if(!sel) return;
+  const now = new Date();
+  let html = '';
+  // 최근 12개월
+  for(let i = 0; i < 12; i++){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = i === 0 ? `${d.getMonth()+1}월 (이번달)` : `${d.getFullYear()}년 ${d.getMonth()+1}월`;
+    html += `<option value="${ym}">${label}</option>`;
+  }
+  sel.innerHTML = html;
+  selectedMonth = sel.value;
+}
+
+function switchPeriod(period){
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    if(btn.dataset.period === period){
+      btn.style.background = 'var(--text)';
+      btn.style.color = '#fff';
+      btn.classList.add('active');
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--soft)';
+      btn.classList.remove('active');
+    }
+  });
+  
+  const sel = document.getElementById('monthSelect');
+  if(sel) sel.style.display = period === 'month' ? 'inline-block' : 'none';
+  
+  // 월별 선택 시 해당 월 데이터 로드 (캐시 없으면)
+  if(period === 'month') {
+    loadMonthStats(selectedMonth);
+  }
+  
+  renderKPIs();
+}
+
+function onMonthChange(){
+  const sel = document.getElementById('monthSelect');
+  selectedMonth = sel.value;
+  cachedMonthData = null; // 캐시 무효화
+  loadMonthStats(selectedMonth).then(() => renderKPIs());
+}
+
+function renderKPIs(){
+  const isToday = currentPeriod === 'today';
+  const data = isToday ? cachedTodayData : cachedMonthData;
+  
+  // 라벨
+  document.getElementById('kpi1Label').textContent = isToday ? '오늘 매출' : '월 매출';
+  document.getElementById('kpi2Label').textContent = isToday ? '오늘 시공' : '월 시공';
+  document.getElementById('kpi3Label').textContent = isToday ? '오늘 예약 접수' : '월 예약 접수';
+  document.getElementById('kpi4Label').textContent = isToday ? '오늘 샘플 접수' : '월 샘플 접수';
+  
+  const now = new Date();
+  const hint = document.getElementById('periodHint');
+  if(isToday){
+    document.getElementById('todayDateStr').textContent = `${now.getMonth()+1}/${now.getDate()}`;
+    hint.innerHTML = `📅 오늘 <span>${now.getMonth()+1}/${now.getDate()}</span> 기준`;
+  } else if(cachedMonthData) {
+    const m = cachedMonthData.month;
+    const monthNum = parseInt(m.substring(5, 7));
+    const yrNum = parseInt(m.substring(0, 4));
+    const label = cachedMonthData.isCurrentMonth 
+      ? `📅 ${monthNum}월 (이번달 · ${cachedMonthData.daysPassed}일차)` 
+      : `📅 ${yrNum}년 ${monthNum}월 (완결 · ${cachedMonthData.daysPassed}일)`;
+    hint.innerHTML = label;
+  } else {
+    hint.innerHTML = `📅 월 선택 중…`;
+  }
+  
+  if(!data){
+    ['kpi1Value','kpi2Value','kpi3Value','kpi4Value'].forEach(id => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.style.color = 'var(--muted)';
+      const unitEl = el.querySelector('.scorecard-unit');
+      const unit = unitEl ? unitEl.outerHTML : '';
+      el.innerHTML = '—' + unit;
+    });
+    return;
+  }
+  
+  const rev = isToday ? data.revenue : data.data.revenue;
+  const inst = isToday ? data.installs : data.data.installs;
+  const reserv = isToday ? data.reservations : data.data.reservations;
+  const samples = isToday ? data.samples : data.data.samples;
+  
+  // KPI 1 · 매출
+  const revMan = Math.round(rev.total/10000);
+  const kpi1 = document.getElementById('kpi1Value');
+  kpi1.style.color = '';
+  kpi1.innerHTML = revMan.toLocaleString() + '<span class="scorecard-unit">만원</span>';
+  const bMan = Math.round(rev.busan/10000);
+  const gMan = Math.round(rev.gyeonggi/10000);
+  if(isToday){
+    document.getElementById('kpi1Sub').innerHTML = rev.total > 0 
+      ? `부산 <b>${bMan.toLocaleString()}</b> · 경기 <b>${gMan.toLocaleString()}</b>` 
+      : '오늘 아직 시공 없음';
+  } else {
+    const avgMan = Math.round((data.data.revenue.avgPerJob || 0)/10000);
+    document.getElementById('kpi1Sub').innerHTML = `부산 ${bMan.toLocaleString()} · 경기 ${gMan.toLocaleString()} · 건당 ${avgMan}만`;
+  }
+  
+  // KPI 2 · 시공
+  const kpi2 = document.getElementById('kpi2Value');
+  kpi2.style.color = '';
+  kpi2.innerHTML = inst.total + '<span class="scorecard-unit">건</span>';
+  document.getElementById('kpi2Sub').innerHTML = `부산 ${inst.busan} · 경기 ${inst.gyeonggi} (AS/실측 제외)`;
+  
+  // KPI 3 · 예약 접수 (신규)
+  const kpi3 = document.getElementById('kpi3Value');
+  kpi3.style.color = '';
+  kpi3.innerHTML = (reserv || 0) + '<span class="scorecard-unit">건</span>';
+  if(isToday){
+    document.getElementById('kpi3Sub').innerHTML = data.tomorrowInstalls 
+      ? `내일 시공 예정 <b>${data.tomorrowInstalls}건</b>` 
+      : 'reservation.html 유입';
+  } else {
+    const convRate = samples > 0 ? Math.round((reserv||0)/samples*100) : 0;
+    document.getElementById('kpi3Sub').innerHTML = samples > 0 
+      ? `샘플→예약 전환 ${convRate}%` 
+      : '월별 누적 예약';
+  }
+  
+  // KPI 4 · 샘플
+  const kpi4 = document.getElementById('kpi4Value');
+  kpi4.style.color = '';
+  kpi4.innerHTML = samples + '<span class="scorecard-unit">건</span>';
+  if(isToday){
+    document.getElementById('kpi4Sub').textContent = '오늘 샘플 접수';
+  } else {
+    const peak = data.data.peakSampleDay;
+    document.getElementById('kpi4Sub').innerHTML = `일평균 <b>${data.data.sampleAvgPerDay}건</b>${peak.count > 0 ? ` · 피크 ${peak.count}건(${peak.date.substring(5).replace('-','/')})` : ''}`;
+  }
+}
+
+
+async function loadTodayStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=todayStats`);
+    const json = await res.json();
+    if(json.success){
+      cachedTodayData = json;
+      if(currentPeriod === 'today') renderKPIs();
+    }
+  } catch(e){
+    console.error('todayStats 로드 실패:', e);
+  }
+}
+
+
+async function loadMonthStats(month){
+  try{
+    const url = month 
+      ? `${APPS_SCRIPT_URL}?type=monthStats&month=${encodeURIComponent(month)}`
+      : `${APPS_SCRIPT_URL}?type=monthStats`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if(!json.success) {
+      console.error('monthStats 실패:', json.error);
+      return;
+    }
+    cachedMonthData = json;
+    if(currentPeriod === 'month') renderKPIs();
+    
+    // 매출 요약 섹션은 항상 "이번달" 또는 선택월로 업데이트
+    const data = json.data;
+    const busanMan = Math.round(data.revenue.busan/10000);
+    const ggMan = Math.round(data.revenue.gyeonggi/10000);
+    const totalMan = Math.round(data.revenue.total/10000);
+    const avgB = data.installs.busan > 0 ? Math.round(data.revenue.busan/data.installs.busan/10000) : 0;
+    const avgG = data.installs.gyeonggi > 0 ? Math.round(data.revenue.gyeonggi/data.installs.gyeonggi/10000) : 0;
+    const avgT = data.installs.total > 0 ? Math.round(data.revenue.total/data.installs.total/10000) : 0;
+    
+    document.getElementById('revBusan').innerHTML = busanMan.toLocaleString() + '<span class="u">만원</span>';
+    document.getElementById('revGyeonggi').innerHTML = ggMan.toLocaleString() + '<span class="u">만원</span>';
+    document.getElementById('revTotal').innerHTML = totalMan.toLocaleString() + '<span class="u">만원</span>';
+    document.getElementById('revBusanSub').textContent = `${data.installs.busan}건 · 건당 ${avgB}만`;
+    document.getElementById('revGyeonggiSub').textContent = `${data.installs.gyeonggi}건 · 건당 ${avgG}만`;
+    document.getElementById('revTotalSub').innerHTML = `${data.installs.total}건 · 건당 <b>${avgT}만</b>`;
+    document.getElementById('revMonthBadge').textContent = parseInt(json.month.substring(5)) + '월';
+    
+    const catEl = document.getElementById('categoryRows');
+    const c = data.bucketByCategory;
+    const cTotal = c.normal.amount + c.reinstall.amount;
+    const normalPct = cTotal > 0 ? Math.round(c.normal.amount/cTotal*100) : 0;
+    const reinstallPct = cTotal > 0 ? Math.round(c.reinstall.amount/cTotal*100) : 0;
+    catEl.innerHTML = `
+      <div class="rowbar">
+        <div class="rowbar-top"><span class="rowbar-name">일반시공</span><span class="rowbar-val">${c.normal.count}건 · <b>${Math.round(c.normal.amount/10000).toLocaleString()}만</b></span></div>
+        <div class="rowbar-track"><div class="rowbar-fill" style="width:${normalPct}%"></div></div>
+      </div>
+      <div class="rowbar">
+        <div class="rowbar-top"><span class="rowbar-name">이전설치</span><span class="rowbar-val">${c.reinstall.count}건 · <b>${Math.round(c.reinstall.amount/10000).toLocaleString()}만</b></span></div>
+        <div class="rowbar-track"><div class="rowbar-fill gold" style="width:${reinstallPct}%"></div></div>
+      </div>`;
+    
+    const pEl = document.getElementById('productRows');
+    const products = data.bucketByProduct;
+    const nameMap = {
+      '모던50': {label:'모던50', cls:''},
+      '마블50': {label:'마블50', cls:'purple'},
+      '코튼50': {label:'코튼50', cls:'green'},
+      '모던1m18': {label:'모던 1M 18T', cls:'gold'},
+      '모던1m22': {label:'모던 1M 22T', cls:''},
+      '베이지1m18': {label:'베이지 1M 18T', cls:'purple'},
+      '베이지1m22': {label:'베이지 1M 22T', cls:'green'}
+    };
+    const pTotal = Object.values(products).reduce((s,v) => s+v, 0);
+    const pHtml = Object.keys(products)
+      .filter(k => products[k] > 0)
+      .sort((a,b) => products[b] - products[a])
+      .map(k => {
+        const cnt = products[k];
+        const pct = pTotal > 0 ? Math.round(cnt/pTotal*100) : 0;
+        const nm = nameMap[k];
+        return `<div class="rowbar">
+          <div class="rowbar-top"><span class="rowbar-name">${nm.label}</span><span class="rowbar-val"><b>${cnt}장</b> (${pct}%)</span></div>
+          <div class="rowbar-track"><div class="rowbar-fill ${nm.cls}" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+    pEl.innerHTML = pHtml || '<div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">해당 월 판매 기록 없음</div>';
+    
+    const cb = data.channelBreakdown;
+    if(cb.total > 0){
+      document.getElementById('channelBreakdown').style.display = 'block';
+      document.getElementById('cbTotal').textContent = cb.total;
+      document.getElementById('cbViaSample').textContent = cb.viaSample;
+      document.getElementById('cbViaSampleRate').textContent = Math.round(cb.viaSample/cb.total*100);
+      document.getElementById('cbDirect').textContent = cb.direct;
+      document.getElementById('cbDirectRate').textContent = Math.round(cb.direct/cb.total*100);
+    }
+  } catch(e){
+    console.error('monthStats 로드 실패:', e);
+  }
+}
+
+
+async function loadStockSummary(){
+  try{
+    const [bsRes, ggRes] = await Promise.all([
+      fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'getStock', team:'부산'})}),
+      fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'getStock', team:'경기'})})
+    ]);
+    const bsJson = await bsRes.json();
+    const ggJson = await ggRes.json();
+    
+    const el = document.getElementById('stockRows');
+    if(!el) return;
+    
+    // stock.html과 동일한 로직: calcResult의 모든 제품 calculated 합계
+    function teamTotalFromCalc(d){
+      if(!d || d.error || !d.calcResult) return null;
+      let total = 0;
+      Object.values(d.calcResult).forEach(v => {
+        total += (parseInt(v.calculated) || 0);
+      });
+      return total;
+    }
+    
+    // Fallback: 예전 items 배열 방식 (구버전 Apps Script 호환)
+    function teamTotalFromItems(d){
+      if(!d || !d.items || !d.items.length) return null;
+      return d.items.reduce((s, it) => s + (parseInt(it.current) || 0), 0);
+    }
+    
+    const bsTotal = teamTotalFromCalc(bsJson) ?? teamTotalFromItems(bsJson) ?? 0;
+    const ggTotal = teamTotalFromCalc(ggJson) ?? teamTotalFromItems(ggJson) ?? 0;
+    
+    const bsFuture = (bsJson && bsJson.futureTotal) || 0;
+    const ggFuture = (ggJson && ggJson.futureTotal) || 0;
+    const bsSurvey = (bsJson && bsJson.lastSurveyDate) || '';
+    const ggSurvey = (ggJson && ggJson.lastSurveyDate) || '';
+    
+    // 데이터 연결 실패 (Apps Script 오류)
+    if(bsJson?.error && ggJson?.error){
+      el.innerHTML = `<div style="padding:14px; background:var(--red-bg); border-radius:var(--radius-sm); color:var(--red-dk); font-size:11.5px; text-align:center; line-height:1.6">
+        ⚠️ Apps Script getStock 오류<br>
+        <span style="font-size:10.5px; opacity:0.85">${bsJson.error}</span>
+      </div>`;
+      return;
+    }
+    
+    // 재고조사 데이터 자체가 없음
+    if(bsTotal === 0 && ggTotal === 0 && !bsSurvey && !ggSurvey){
+      el.innerHTML = `<div style="padding:16px 14px; background:var(--gold-bg); border-radius:var(--radius-sm); text-align:center">
+        <div style="font-size:12.5px; font-weight:650; color:var(--gold-dk); margin-bottom:6px">⚠️ 재고조사 데이터 없음</div>
+        <div style="font-size:11px; color:var(--gold-dk); line-height:1.5">
+          수요일 재고조사가 아직 없어요.<br>
+          <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650; display:inline-block; margin-top:4px">📝 stock.html에서 재고조사 →</a>
+        </div>
+      </div>`;
+      return;
+    }
+    
+    function statusBadge(total){
+      if(total > 2000) return {badge:'bg-green', label:'정상', bg:'var(--warm)', color:''};
+      if(total > 500)  return {badge:'bg-gold',  label:'주의', bg:'var(--gold-bg)', color:'var(--gold-dk)'};
+      return {badge:'bg-red', label:'부족', bg:'var(--red-bg)', color:'var(--red-dk)'};
+    }
+    
+    function formatDate(d){
+      if(!d) return '';
+      const parts = d.split('-');
+      return parts.length === 3 ? `${parts[1]}/${parts[2]} 실사` : d;
+    }
+    
+    const bsSt = statusBadge(bsTotal);
+    const ggSt = statusBadge(ggTotal);
+    const bsRemaining = bsTotal - bsFuture;
+    const ggRemaining = ggTotal - ggFuture;
+    
+    el.innerHTML = `
+      <div style="padding:12px 14px; background:${bsSt.bg}; border-radius:var(--radius-sm)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+          <div style="font-size:12px; font-weight:700; ${bsSt.color ? 'color:'+bsSt.color : ''}">부산 창고</div>
+          <span class="badge ${bsSt.badge}">${bsSt.label}</span>
+        </div>
+        <div style="font-size:18px; font-weight:800; letter-spacing:-0.02em; ${bsSt.color ? 'color:'+bsSt.color : ''}">${bsTotal.toLocaleString()}<span style="font-size:11px; font-weight:500; color:var(--muted); margin-left:3px">장</span></div>
+        ${bsFuture > 0 ? `<div style="font-size:10.5px; color:var(--soft); margin-top:3px">예정 시공 <b>-${bsFuture.toLocaleString()}</b> → 잔량 <b style="color:${bsRemaining>500?'var(--green-dk)':'var(--red-dk)'}">${bsRemaining.toLocaleString()}장</b></div>` : ''}
+        ${bsSurvey ? `<div style="font-size:10.5px; color:var(--muted); margin-top:3px">📅 ${formatDate(bsSurvey)} 기준</div>` : ''}
+      </div>
+      <div style="padding:12px 14px; background:${ggSt.bg}; border-radius:var(--radius-sm)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+          <div style="font-size:12px; font-weight:700; ${ggSt.color ? 'color:'+ggSt.color : ''}">경기 창고</div>
+          <span class="badge ${ggSt.badge}">${ggSt.label}</span>
+        </div>
+        <div style="font-size:18px; font-weight:800; letter-spacing:-0.02em; ${ggSt.color ? 'color:'+ggSt.color : ''}">${ggTotal.toLocaleString()}<span style="font-size:11px; font-weight:500; color:var(--muted); margin-left:3px">장</span></div>
+        ${ggFuture > 0 ? `<div style="font-size:10.5px; color:var(--soft); margin-top:3px">예정 시공 <b>-${ggFuture.toLocaleString()}</b> → 잔량 <b style="color:${ggRemaining>500?'var(--green-dk)':'var(--red-dk)'}">${ggRemaining.toLocaleString()}장</b></div>` : ''}
+        ${ggSurvey ? `<div style="font-size:10.5px; color:var(--muted); margin-top:3px">📅 ${formatDate(ggSurvey)} 기준</div>` : ''}
+      </div>
+    `;
+  } catch(e){
+    console.error('재고 로드 실패:', e);
+    const el = document.getElementById('stockRows');
+    if(el) el.innerHTML = '<div style="padding:12px; text-align:center; color:var(--red-dk); font-size:11.5px">재고 데이터 로드 실패<br><a href="stock.html" style="color:var(--accent-dk); font-weight:650">stock.html에서 확인 →</a></div>';
+  }
+}
+
+
+async function loadReviewStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=reviewStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    
+    document.getElementById('reviewParticipants').innerHTML = json.participants + '<span class="u">명</span>';
+    document.getElementById('reviewPaid').textContent = `지급완료 ${json.paid}명`;
+    document.getElementById('reviewSpend').innerHTML = Math.round(json.monthlySpend/10000) + '<span class="u">만</span>';
+    document.getElementById('reviewBudget').textContent = `예산 ${json.budgetRate}%`;
+    
+    const missions = json.missions || {};
+    const cnts = json.missionCount || {};
+    const lines = [
+      {key:'contract', icon:'🥇', name:'계약 후기', cls:'green'},
+      {key:'instagram', icon:'📱', name:'인스타 팔로우', cls:''},
+      {key:'chatroom', icon:'💬', name:'카톡방 참여', cls:''},
+      {key:'review1', icon:'✍️', name:'첫날 후기', cls:'gold'},
+      {key:'review2', icon:'📸', name:'한달 후기', cls:'red'}
+    ];
+    
+    const html = lines.map(l => {
+      const pct = missions[l.key] || 0;
+      const cnt = cnts[l.key] || 0;
+      return `<div class="rowbar">
+        <div class="rowbar-top"><span class="rowbar-name">${l.icon} ${l.name}</span><span class="rowbar-val">${cnt}명 · <b>${pct}%</b></span></div>
+        <div class="rowbar-track"><div class="rowbar-fill ${l.cls}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+    
+    document.getElementById('missionRows').innerHTML = html || '<div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">이번달 참여자 없음</div>';
+  } catch(e){
+    console.error('reviewStats 로드 실패:', e);
+  }
+}
+
+
+async function loadAlimtalkStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=alimtalkStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    document.getElementById('alimSent').textContent = json.sentToday;
+    document.getElementById('alimScheduled').textContent = json.scheduledTomorrow;
+  } catch(e){
+    console.error('alimtalkStats 로드 실패:', e);
+  }
+}
+
+
+// 🆕 입주아파트 파이프라인 로드 (v0.5.2)
+async function loadAptPipeline(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=aptPipeline`);
+    const json = await res.json();
+    
+    const badge = document.getElementById('aptBadge');
+    
+    if(!json.success){
+      badge.textContent = '시트 없음';
+      badge.style.background = 'var(--red-bg)';
+      badge.style.color = 'var(--red-dk)';
+      document.getElementById('aptTotal').innerHTML = '0<span class="u">개</span>';
+      document.getElementById('aptTotalSub').textContent = json.hint || '입주아파트 시트를 확인하세요';
+      return;
+    }
+    
+    if(json.total === 0){
+      badge.textContent = '데이터 없음';
+      document.getElementById('aptTotal').innerHTML = '0<span class="u">개</span>';
+      document.getElementById('aptTotalSub').textContent = '입주아파트 시트에 아파트 추가 필요';
+      return;
+    }
+    
+    badge.textContent = '실데이터';
+    badge.style.background = 'var(--green-bg)';
+    badge.style.color = 'var(--green-dk)';
+    
+    // 상단 3개 요약
+    document.getElementById('aptTotal').innerHTML = json.total.toLocaleString() + '<span class="u">개</span>';
+    document.getElementById('aptTotalSub').textContent = json.totalUnits.toLocaleString() + ' 세대';
+    
+    document.getElementById('aptImminent').innerHTML = (json.imminent.length || 0) + '<span class="u">개</span>';
+    if(json.imminent.length === 0){
+      document.getElementById('aptImminentSub').textContent = '2개월 내 입주 없음';
+    } else {
+      document.getElementById('aptImminentSub').textContent = '블로그·맘카페 선점 필요';
+    }
+    
+    document.getElementById('aptBlog').innerHTML = (json.summary.blog || 0) + '<span class="u">개</span>';
+    document.getElementById('aptChannelSub').innerHTML = 
+      `맘카페 ${json.summary.cafe || 0} · 당근 ${json.summary.daang || 0} · 메타 ${json.summary.meta || 0}`;
+    
+    // 지역별 타일
+    const regionEl = document.getElementById('aptRegionGrid');
+    if(json.byRegion && json.byRegion.length > 0){
+      const maxCount = Math.max(...json.byRegion.map(r => r.count));
+      regionEl.innerHTML = json.byRegion.slice(0, 5).map(r => {
+        const isHot = r.count === maxCount;
+        return `<div class="region-tile${isHot ? ' hot' : ''}">
+          <div class="region-name">${r.name}</div>
+          <div class="region-count">${r.count}</div>
+          <div class="region-sub">${r.units.toLocaleString()}세대</div>
+        </div>`;
+      }).join('');
+    } else {
+      regionEl.innerHTML = '<div style="grid-column:1/-1; padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">지역 데이터 없음</div>';
+    }
+    
+    // 입주 임박 TOP 10 테이블
+    const tbodyEl = document.getElementById('aptImminentTable');
+    if(json.imminent.length === 0){
+      tbodyEl.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:14px; font-size:11.5px">임박 아파트 없음 · 상단 메뉴에서 전체 리스트 확인</td></tr>';
+    } else {
+      function channelBadge(val){
+        if(!val || val === '-') return '<span class="badge bg-gray">-</span>';
+        if(val.indexOf('완료') >= 0 || val === '✓' || val === 'O') 
+          return '<span class="badge bg-green">완료</span>';
+        if(val.indexOf('진행') >= 0 || val === '△') 
+          return '<span class="badge bg-gold">진행</span>';
+        if(val.indexOf('예정') >= 0) 
+          return '<span class="badge bg-accent">예정</span>';
+        return `<span class="badge bg-gray">${val.substring(0,4)}</span>`;
+      }
+      tbodyEl.innerHTML = json.imminent.map(it => {
+        const monthsText = it.monthsUntil === 0 ? '이번달' 
+          : it.monthsUntil === 1 ? '다음달' 
+          : it.monthsUntil + '개월';
+        return `<tr>
+          <td><b>${it.apt}</b></td>
+          <td>${it.region}</td>
+          <td class="num">${it.units.toLocaleString()}</td>
+          <td>${it.month || '-'} <span style="color:var(--muted); font-size:10.5px">(${monthsText})</span></td>
+          <td style="text-align:center">${channelBadge(it.blog)}</td>
+          <td style="text-align:center">${channelBadge(it.cafe)}</td>
+          <td style="text-align:center">${channelBadge(it.daang)}</td>
+          <td style="text-align:center">${channelBadge(it.meta)}</td>
+        </tr>`;
+      }).join('');
+    }
+    
+  } catch(e){
+    console.error('aptPipeline 로드 실패:', e);
+    const badge = document.getElementById('aptBadge');
+    if(badge){
+      badge.textContent = '로드 실패';
+      badge.style.background = 'var(--red-bg)';
+      badge.style.color = 'var(--red-dk)';
+    }
+  }
+}
+
+
+// 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
+async function loadPhoneStats(){
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=phoneStats`);
+    const json = await res.json();
+    if(!json.success) return;
+    
+    const today = json.today || {received:0, missed:0, callback:0};
+    const month = json.month || {received:0, missed:0, callback:0, days:0};
+    
+    const kpiVal = document.getElementById('kpiPhoneReceived');
+    const kpiSub = document.getElementById('kpiPhoneSub');
+    if(!kpiVal || !kpiSub) return;
+    
+    const todayTotal = (today.received || 0) + (today.missed || 0);
+    
+    if(todayTotal > 0){
+      kpiVal.style.color = '';
+      kpiVal.innerHTML = todayTotal + '<span class="scorecard-unit">건</span>';
+      if(today.missed > 0){
+        kpiSub.innerHTML = `받은 <b>${today.received}</b> · 놓친 <b style="color:var(--red-dk)">${today.missed}</b> · 콜백 ${today.callback||0}`;
+      } else {
+        kpiSub.innerHTML = `받은 <b>${today.received}건</b> · 놓친 없음 🎉`;
+      }
+    } else {
+      kpiVal.style.color = 'var(--muted)';
+      kpiVal.innerHTML = '—<span class="scorecard-unit">건</span>';
+      kpiSub.innerHTML = month.days > 0 
+        ? `이번달 받은 <b>${month.received}건</b> · 놓친 ${month.missed||0}건` 
+        : '상담사 입력 대기 중';
+    }
+    
+    // 콜백률 경보 배지
+    const alertEl = document.getElementById('callbackAlert');
+    const alertText = document.getElementById('callbackAlertText');
+    if(alertEl && month.missed > 0){
+      const cbRate = Math.round((month.callback||0)/month.missed*100);
+      alertEl.style.display = 'block';
+      alertEl.style.background = 'var(--gold-bg)';
+      alertEl.style.color = 'var(--gold-dk)';
+      if(cbRate >= 80){
+        alertEl.style.background = 'var(--green-bg)';
+        alertEl.style.color = 'var(--green-dk)';
+        alertText.innerHTML = `👍 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건 회수 · 잘하고 있어요!`;
+      } else if(cbRate >= 50){
+        alertText.innerHTML = `⚡ 이번달 콜백률 <b>${cbRate}%</b> · 놓친 ${month.missed}건 중 ${month.callback}건만 회수 · 개선 여지 있음`;
+      } else {
+        alertEl.style.background = 'var(--red-bg)';
+        alertEl.style.color = 'var(--red-dk)';
+        alertText.innerHTML = `🚨 이번달 콜백률 <b>${cbRate}%</b> · 놓친 고객 ${month.missed - (month.callback||0)}명 회수 안 됨 · <b>매출 기회 손실!</b>`;
+      }
+    } else if(alertEl) {
+      alertEl.style.display = 'none';
+    }
+  } catch(e){
+    console.error('상담폰 로드 실패:', e);
+  }
+}
+
+
+// 페이지 로드 시 자동 fetch
+window.addEventListener('DOMContentLoaded', () => {
+  initMonthSelect();
+  loadTodayStats();
+  loadMonthStats();
+  loadStockSummary();
+  loadReviewStats();
+  loadAlimtalkStats();
+  loadAptPipeline();      // 🆕 입주아파트 실데이터
+  loadConversionStats();
+  loadMonthlyFunnel();
+  loadPhoneStats();
+});
+
+/* ═══════════════════════════════════════════════════════════
+   📌 TODO (Phase 2에서 실제 데이터 연결)
+   ═══════════════════════════════════════════════════════════
+   
+   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/.../exec';
+   const STOCK_URL = 'https://script.google.com/macros/s/AKfycbwo33.../exec';
+   
+   async function loadRevenueSummary(){
+     // getRevenueSummary 엔드포인트 (Code.gs에 추가)
+     // → 부산/경기 AS,실측 제외한 매출 합계
+   }
+   async function loadSampleStats(){
+     // 샘플접수 시트에서 월별 집계 (최근 6개월)
+     // + 유입경로 내부 자동분류 (classifyChannel)
+   }
+   async function loadConversionRate(){
+     // 🔥 NEW: 휴대폰번호 기반 샘플→시공 전환율
+     // 1. 샘플접수 시트의 연락처 + 유입경로 로드
+     // 2. 시공스케줄(부산+경기) 시트의 연락처 매칭
+     // 3. 유입경로별 그룹핑: (샘플건수, 시공전환건수, 전환율, 평균매출)
+     // 4. 결과를 '전환율통계' 시트에 매일 새벽 캐싱 (AWS cron)
+     // 매칭 규칙: 전화번호 뒤 8자리로 정규화 후 JOIN
+   }
+   async function loadStockSummary(){
+     // STOCK_URL에 {action:'getStock', team:'부산'} POST
+   }
+   async function loadReviewStats(){
+     // 후기이벤트 시트 집계
+   }
+   async function loadAptPipeline(){
+     // 입주아파트 시트 (67개 → 블로그/맘카페/당근 체크)
+   }
+   async function loadKeywordRank(){
+     // 네이버 블로그 검색 API 결과 저장된 '키워드순위' 시트 조회
+     // (AWS cron으로 매일 새벽 수집)
+   }
+   async function loadAlertConditions(){
+     // 여러 시트 조합해서 경보 조건 계산
+   }
+   
+   ═══════════════════════════════════════════════════════════ */
+</script>
+
+</body>
+</html>

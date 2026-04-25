@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 · 환영합니다</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./cs-common.css">
+<style>
+.welcome-hero {
+  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 40%, #43A047 100%);
+  padding: 40px 20px 28px;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 280px;
+  height: 280px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+
+.team-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.welcome-hero h1 {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.welcome-hero .team-name {
+  color: var(--accent);
+}
+
+.welcome-hero p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  position: relative;
+  line-height: 1.6;
+}
+
+.trust-row {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
+  position: relative;
+}
+
+.trust-item {
+  text-align: center;
+}
+
+.trust-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.trust-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.75);
+  margin-top: 2px;
+}
+
+.next-btns {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.err-msg {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #c62828;
+  padding: 14px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: center;
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<div id="errorBox" class="err-msg hidden">
+  추천 링크 정보를 찾을 수 없습니다.<br>
+  <a href="javascript:history.back()" style="color:#c62828;text-decoration:underline;">이전 페이지로</a>
+</div>
+
+<div id="mainContent" class="hidden">
+
+  <div class="welcome-hero">
+    <div class="team-badge">
+      🎉 <span id="refBadgeTeam">승재</span> 시공팀 소개
+    </div>
+    <h1>
+      <span class="team-name" id="heroTeamName">승재</span> 시공팀의<br>
+      소개로 오셨나요?
+    </h1>
+    <p>간단히 정보만 남겨주시면<br>맞춤 상담이 시작됩니다</p>
+    <div class="trust-row">
+      <div class="trust-item">
+        <div class="trust-num">6주년</div>
+        <div class="trust-label">시공 경험</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-num">6,700건</div>
+        <div class="trust-label">시공 완료</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-num">98%</div>
+        <div class="trust-label">고객 만족</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="card fade-up">
+      <div class="card-title">
+        <span class="icon">📋</span> 고객 정보
+      </div>
+
+      <div class="fg">
+        <label>이름 <span class="req">*</span></label>
+        <input type="text" id="fName" placeholder="성함을 입력해주세요" />
+      </div>
+
+      <div class="fg">
+        <label>휴대폰 번호 <span class="req">*</span></label>
+        <input type="tel" id="fPhone" placeholder="- 없이 숫자만 입력" inputmode="numeric" maxlength="11" />
+        <div class="hint">시공 완료까지 연락을 위해 필요합니다</div>
+      </div>
+    </div>
+
+    <div class="card fade-up fade-up-2">
+      <div class="card-title">
+        <span class="icon">🔒</span> 개인정보 수집 동의
+      </div>
+      <div class="consent">
+        <div class="consent-body">
+          <strong>수집 항목:</strong> 이름, 연락처<br>
+          <strong>수집 목적:</strong> 시공 관련 상담 및 정보 제공<br>
+          <strong>보유 기간:</strong> 수집일로부터 1년<br><br>
+          동의를 거부하실 수 있으며, 거부 시 상담 진행이 불가합니다.
+        </div>
+        <label class="consent-check">
+          <input type="checkbox" id="fConsent">
+          <div class="cbox"></div>
+          <span class="clabel">개인정보 수집 및 이용에 동의합니다.</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="next-btns fade-up fade-up-3">
+      <button class="btn btn-large btn-success" id="btnQuote">
+        📋 셀프 맞춤견적 받기
+      </button>
+      <button class="btn btn-kakao" id="btnKakao">
+        💬 카카오톡으로 상담하기
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text-tertiary);">
+      정보 입력 후 원하시는 방법을 선택하세요
+    </div>
+
+    <div style="text-align:center;margin-top:10px;padding-bottom:40px;font-size:11px;color:var(--text-tertiary);">
+      상담은 평일 오전 9시~오후 6시 진행됩니다
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
+
+// URL 파라미터 파싱
+const params = new URLSearchParams(window.location.search);
+const ref = params.get('ref') || '';
+const contentId = params.get('content') || '';
+const nextDest = params.get('next') || 'quote'; // quote | kakao · 기본은 quote
+
+// 시공팀 정보 매핑 (임시 · 추후 API 호출로 대체)
+const TEAM_MAP = {
+  'sj': { name: '승재', region: '부산' },
+  'sw': { name: '세욱', region: '부산' },
+  'jh': { name: '준형', region: '부산' },
+  'yc': { name: '윤철', region: '부산' },
+  'mw': { name: '민우', region: '경기' },
+  'hs': { name: '형석', region: '경기' },
+  'sj2': { name: '선재', region: '경기' },
+  'kj': { name: '경준', region: '경기' },
+  'hj': { name: '현진', region: '경기' },
+  'jm': { name: '재문', region: '경기' }
+};
+
+// 페이지 초기화
+function init() {
+  if (!ref || !TEAM_MAP[ref]) {
+    document.getElementById('errorBox').classList.remove('hidden');
+    return;
+  }
+
+  const team = TEAM_MAP[ref];
+  document.getElementById('refBadgeTeam').textContent = team.name;
+  document.getElementById('heroTeamName').textContent = team.name;
+  document.getElementById('mainContent').classList.remove('hidden');
+}
+
+// 휴대폰 숫자만 필터
+document.addEventListener('DOMContentLoaded', function() {
+  init();
+
+  const phoneInput = document.getElementById('fPhone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function(e) {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+  }
+
+  document.getElementById('btnQuote').addEventListener('click', () => handleNext('quote'));
+  document.getElementById('btnKakao').addEventListener('click', () => handleNext('kakao'));
+});
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function validate() {
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const consent = document.getElementById('fConsent').checked;
+
+  if (!name) { showToast('⚠️ 이름을 입력해주세요', 'error'); return false; }
+  if (!phone || phone.length < 10 || phone.length > 11) {
+    showToast('⚠️ 휴대폰 번호를 정확히 입력해주세요', 'error');
+    return false;
+  }
+  if (!consent) { showToast('⚠️ 개인정보 수집에 동의해주세요', 'error'); return false; }
+
+  return { name, phone, consent: 'Y' };
+}
+
+async function handleNext(nextStep) {
+  const data = validate();
+  if (!data) return;
+
+  // 버튼 비활성화
+  document.getElementById('btnQuote').disabled = true;
+  document.getElementById('btnKakao').disabled = true;
+
+  try {
+    // API 호출 · 고객 유입 기록
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'trackEntry',
+        name: data.name,
+        phone: data.phone,
+        ref: ref,
+        page: '/cs-welcome',
+        content_id: contentId,
+        consent: data.consent
+      })
+    });
+  } catch (e) {
+    // 실패해도 다음 단계로 진행
+    console.error('trackEntry failed', e);
+  }
+
+  // 다음 단계 라우팅
+  if (nextStep === 'quote') {
+    showToast('✅ 맞춤견적 페이지로 이동합니다', 'success');
+    setTimeout(() => {
+      // 기존 quote.html · ch(추천인) + phone(자동 채움) + name(참고용)
+      const qs = `ch=${encodeURIComponent(ref)}&phone=${encodeURIComponent(data.phone)}&name=${encodeURIComponent(data.name)}`;
+      window.location.href = `./quote.html?${qs}`;
+    }, 600);
+  } else if (nextStep === 'kakao') {
+    showToast('✅ 카카오톡 상담으로 이동합니다', 'success');
+    setTimeout(() => {
+      window.location.href = KAKAO_URL;
+    }, 600);
+  }
+}
+</script>
+</body>
+</html>

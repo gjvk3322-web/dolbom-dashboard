@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>돌봄매트 아이디어 보드</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" rel="stylesheet">
+<style>
+:root{--bg:#09090b;--card:#141416;--border:#262628;--text:#f4f4f5;--dim:#71717a;--accent:#22c55e;--blue:#3b82f6;--red:#ef4444;--orange:#f59e0b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:520px;margin:0 auto;padding:16px 12px 120px}
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hd h1{font-size:18px;font-weight:800}
+.hd .badge{font-size:11px;color:var(--dim);background:var(--card);padding:4px 10px;border-radius:12px}
+
+/* 주제 칩 */
+.topics{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.topic-chip{padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--dim);transition:all .15s}
+.topic-chip.on{background:#1e3a5f;border-color:var(--blue);color:#93c5fd}
+.topic-chip.add{border-style:dashed;color:var(--dim)}
+.topic-chip.add:active{background:var(--bg)}
+
+/* 아이디어 카드 */
+.idea{background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;transition:all .2s}
+.idea.done{opacity:.5}
+.idea.done .idea-text{text-decoration:line-through;color:var(--dim)}
+.idea-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.idea-text{font-size:14px;font-weight:500;line-height:1.5;flex:1;word-break:break-word}
+.idea-check{width:24px;height:24px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:2px}
+.idea-check:active{transform:scale(.9)}
+.idea-check.checked{background:var(--accent);border-color:var(--accent)}
+.idea-check.checked::after{content:'✓';color:#000;font-size:12px;font-weight:900}
+.idea-meta{display:flex;gap:8px;margin-top:8px;font-size:11px;color:var(--dim)}
+.idea-author{background:var(--bg);padding:2px 8px;border-radius:6px;font-weight:600}
+.idea-count{font-size:11px;color:var(--dim);margin-bottom:8px}
+
+/* 댓글 */
+.comments{margin-top:8px;padding-top:8px;border-top:.5px solid var(--border)}
+.comment{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.comment-badge{font-size:10px;font-weight:800;color:var(--accent);background:#143a14;padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px}
+.comment-text{font-size:13px;color:#d4d4d8;line-height:1.5;word-break:break-word}
+.comment-time{font-size:10px;color:var(--dim);margin-left:auto;white-space:nowrap;margin-top:2px}
+.reply-row{display:flex;gap:6px;margin-top:6px}
+.reply-row input{flex:1;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;outline:none}
+.reply-row input:focus{border-color:var(--accent)}
+.reply-row button{padding:8px 12px;background:var(--accent);color:#000;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.reply-row button:active{transform:scale(.97)}
+.reply-toggle{font-size:11px;color:var(--dim);cursor:pointer;margin-top:6px;display:inline-block}
+.reply-toggle:active{color:var(--text)}
+
+/* 입력 */
+.input-area{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,11,.96);backdrop-filter:blur(20px);border-top:.5px solid var(--border);padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.input-row{display:flex;gap:8px;max-width:520px;margin:0 auto}
+.input-row input{flex:1;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.input-row input:focus{border-color:var(--blue)}
+.input-row button{padding:12px 18px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+.input-row button:active{transform:scale(.97);opacity:.9}
+.input-row button:disabled{background:var(--border);color:var(--dim)}
+
+/* 이름 선택 */
+.name-bar{display:flex;gap:6px;margin-bottom:8px;max-width:520px;margin-left:auto;margin-right:auto}
+.name-chip{padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--dim);transition:all .15s}
+.name-chip.on{background:#143a14;border-color:var(--accent);color:var(--accent)}
+
+/* 비어있을 때 */
+.empty{text-align:center;padding:40px;color:var(--dim);font-size:13px;line-height:1.8}
+
+/* 주제 추가 모달 */
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center;padding:20px}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:360px}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:14px}
+.modal input{width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:var(--blue)}
+.modal-btns{display:flex;gap:8px}
+.modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:none}
+.modal-btns .cancel{background:var(--bg);color:var(--dim);border:1px solid var(--border)}
+.modal-btns .confirm{background:var(--blue);color:#fff}
+
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1a3a1a;color:var(--accent);padding:8px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:300;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toastMsg"></div>
+
+<!-- 주제 추가 모달 -->
+<div class="modal-bg" id="topicModal">
+  <div class="modal">
+    <h3>📌 새 주제 추가</h3>
+    <input type="text" id="newTopicInput" placeholder="주제명 (예: 스케줄러)" />
+    <input type="url" id="newTopicUrl" placeholder="링크 주소 (예: https://my.dolbommat.com/scheduler.html)" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:12px" />
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeTopicModal()">취소</button>
+      <button class="confirm" onclick="addTopic()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- 입력 영역 -->
+<div class="input-area">
+  <div class="input-row">
+    <input type="text" id="ideaInput" placeholder="아이디어를 입력하세요" />
+    <button id="ideaBtn" onclick="submitIdea()" disabled>등록</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({databaseURL:'https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app'});
+const db=firebase.database();
+
+const NAMES=['대장님','승재','윤철','세욱','준형','선재','재문','민혁','경철','원석','현우','형규','성범','태형'];
+let selectedName=localStorage.getItem('fb_name')||'';
+let selectedTopic='';
+let topics=[];
+let ideas={};
+let comments={};
+
+function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+// Firebase 리스너
+db.ref('feedback/topics').on('value',snap=>{
+  const d=snap.val()||{};
+  topics=Object.entries(d).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.order||0)-(b.order||0));
+  if(topics.length>0&&!selectedTopic)selectedTopic=topics[0].id;
+  render();
+});
+
+db.ref('feedback/ideas').on('value',snap=>{
+  ideas=snap.val()||{};
+  render();
+});
+
+db.ref('feedback/comments').on('value',snap=>{
+  comments=snap.val()||{};
+  render();
+});
+
+function render(){
+  let h='';
+  h+=`<div class="hd"><h1>💡 아이디어 보드</h1><div class="badge">돌봄매트</div></div>`;
+
+  // 주제 칩
+  h+=`<div class="topics">`;
+  topics.forEach(t=>{
+    const count=Object.values(ideas).filter(i=>i.topic===t.id&&!i.done).length;
+    h+=`<div class="topic-chip ${selectedTopic===t.id?'on':''}" onclick="selectTopic('${t.id}')">${t.name}${count?' ('+count+')':''}</div>`;
+  });
+  h+=`<div class="topic-chip add" onclick="openTopicModal()">+ 주제</div>`;
+  h+=`</div>`;
+
+  // 선택된 주제의 아이디어
+  if(selectedTopic){
+    const currentTopic=topics.find(t=>t.id===selectedTopic);
+    if(currentTopic&&currentTopic.url){
+      h+=`<a href="${currentTopic.url}" target="_blank" style="display:block;padding:10px 14px;background:var(--card);border:.5px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px;color:var(--blue);text-decoration:none;font-weight:600">🔗 ${currentTopic.name} 바로가기 →</a>`;
+    }
+    const topicIdeas=Object.entries(ideas)
+      .filter(([k,v])=>v.topic===selectedTopic)
+      .map(([k,v])=>({id:k,...v}))
+      .sort((a,b)=>{
+        if(a.done&&!b.done)return 1;
+        if(!a.done&&b.done)return -1;
+        return (b.timestamp||0)-(a.timestamp||0);
+      });
+
+    const pending=topicIdeas.filter(i=>!i.done).length;
+    const done=topicIdeas.filter(i=>i.done).length;
+    if(topicIdeas.length)h+=`<div class="idea-count">💬 ${pending}개 진행중${done?' · ✅ '+done+'개 완료':''}</div>`;
+
+    if(topicIdeas.length===0){
+      h+=`<div class="empty">아직 아이디어가 없어요!<br>아래에서 첫 아이디어를 등록해보세요 💡</div>`;
+    } else {
+      topicIdeas.forEach(idea=>{
+        const date=idea.timestamp?new Date(idea.timestamp):null;
+        const dateStr=date?`${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`:'';
+        h+=`<div class="idea ${idea.done?'done':''}">`;
+        h+=`<div class="idea-top">`;
+        h+=`<div class="idea-text">${idea.text}</div>`;
+        h+=`<div class="idea-check ${idea.done?'checked':''}" onclick="toggleDone('${idea.id}',${!idea.done})"></div>`;
+        h+=`</div>`;
+        h+=`<div class="idea-meta"><span>${dateStr}</span></div>`;
+
+        // 댓글 영역
+        const ideaComments=comments[idea.id]?Object.entries(comments[idea.id]).map(([ck,cv])=>({id:ck,...cv})).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0)):[];
+        if(ideaComments.length>0){
+          h+=`<div class="comments">`;
+          ideaComments.forEach(c=>{
+            const cd=c.timestamp?new Date(c.timestamp):null;
+            const cds=cd?`${cd.getMonth()+1}/${cd.getDate()} ${String(cd.getHours()).padStart(2,'0')}:${String(cd.getMinutes()).padStart(2,'0')}`:'';
+            h+=`<div class="comment"><span class="comment-badge">${c.author||'대장님'}</span><span class="comment-text">${c.text}</span><span class="comment-time">${cds}</span></div>`;
+          });
+          h+=`</div>`;
+        }
+
+        // 댓글 입력
+        h+=`<div class="reply-row"><input type="text" id="reply_${idea.id}" placeholder="댓글 입력..." onkeydown="if(event.key==='Enter')submitReply('${idea.id}')"/><button onclick="submitReply('${idea.id}')">등록</button></div>`;
+
+        h+=`</div>`;
+      });
+    }
+  } else {
+    h+=`<div class="empty">"+ 주제" 버튼을 눌러<br>첫 번째 주제를 추가하세요!</div>`;
+  }
+
+  document.getElementById('app').innerHTML=h;
+  updateBtn();
+}
+
+function renderNameBar(){
+  let h='';
+  NAMES.forEach(n=>{
+    h+=`<div class="name-chip ${selectedName===n?'on':''}" onclick="pickName('${n}')">${n}</div>`;
+  });
+  document.getElementById('nameBar').innerHTML=h;
+  updateBtn();
+}
+
+function pickName(n){
+  selectedName=n;
+  localStorage.setItem('fb_name',n);
+  renderNameBar();
+}
+
+function selectTopic(id){
+  selectedTopic=id;
+  render();
+}
+
+function updateBtn(){
+  const input=document.getElementById('ideaInput');
+  const btn=document.getElementById('ideaBtn');
+  btn.disabled=!input.value.trim()||!selectedTopic;
+}
+
+document.getElementById('ideaInput').addEventListener('input',updateBtn);
+document.getElementById('ideaInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('ideaBtn').disabled)submitIdea()});
+
+function submitIdea(){
+  const input=document.getElementById('ideaInput');
+  const text=input.value.trim();
+  if(!text||!selectedTopic)return;
+
+  const id=Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  db.ref('feedback/ideas/'+id).set({
+    text:text,
+    author:'익명',
+    topic:selectedTopic,
+    done:false,
+    timestamp:Date.now()
+  });
+
+  input.value='';
+  updateBtn();
+  toast('✅ 아이디어 등록!');
+}
+
+function toggleDone(id,done){
+  db.ref('feedback/ideas/'+id+'/done').set(done);
+}
+
+function submitReply(ideaId){
+  const input=document.getElementById('reply_'+ideaId);
+  if(!input)return;
+  const text=input.value.trim();
+  if(!text)return;
+  const cid=Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  db.ref('feedback/comments/'+ideaId+'/'+cid).set({
+    text:text,
+    author:'관리자',
+    timestamp:Date.now()
+  });
+  input.value='';
+  toast('댓글 등록!');
+}
+
+// 주제 모달
+function openTopicModal(){
+  document.getElementById('topicModal').style.display='flex';
+  document.getElementById('newTopicInput').value='';
+  document.getElementById('newTopicUrl').value='';
+  document.getElementById('newTopicInput').focus();
+}
+function closeTopicModal(){document.getElementById('topicModal').style.display='none'}
+function addTopic(){
+  const name=document.getElementById('newTopicInput').value.trim();
+  const url=document.getElementById('newTopicUrl').value.trim();
+  if(!name){toast('주제명을 입력하세요');return}
+  const id=Date.now().toString(36);
+  const data={name:name,order:topics.length};
+  if(url)data.url=url;
+  db.ref('feedback/topics/'+id).set(data);
+  selectedTopic=id;
+  closeTopicModal();
+  toast('✅ 주제 추가!');
+}
+document.getElementById('newTopicInput').addEventListener('keydown',e=>{if(e.key==='Enter')addTopic()});
+
+// 기본 주제 없음 - 대장님이 직접 추가
+</script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- 검색엔진 노출 차단 (자동 추가) -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="naverbot" content="noindex, nofollow">
+    <meta name="yeti" content="noindex, nofollow">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>입주아파트 마케팅 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f7f3;--card:#fff;--text:#1a1a1a;--text2:#555;--text3:#999;--border:#e5e5e0;--green:#2E7D32;--green-light:#E8F5E9;--green-dark:#1B5E20;--orange:#F59F00;--orange-light:#FFF8E1;--red:#e53935;--blue:#1565C0;--blue-light:#E3F2FD;--radius:14px;--shadow:0 2px 8px rgba(0,0,0,0.06)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:600px;margin:0 auto;padding-bottom:40px}
+.header{background:linear-gradient(135deg,#2E7D32,#1B5E20);padding:20px;text-align:center}
+.header h1{color:#fff;font-size:17px;font-weight:700}
+.header p{color:rgba(255,255,255,0.7);font-size:11px;margin-top:3px}
+.container{padding:12px 16px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat-box{background:var(--card);border-radius:10px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat-box .num{font-size:20px;font-weight:800}
+.stat-box .label{font-size:9px;color:var(--text3);margin-top:2px}
+.num-total{color:var(--text)}.num-writing{color:var(--blue)}.num-recruiting{color:var(--orange)}.num-done{color:var(--green)}
+
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text3);transition:all .2s}
+.filter-btn.active{background:var(--green-light);border-color:var(--green);color:var(--green)}
+
+.apt-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:10px;box-shadow:var(--shadow);border-left:4px solid var(--border)}
+.apt-card.status-미착수{border-left-color:#BDBDBD}
+.apt-card.status-글작성완료{border-left-color:var(--blue)}
+.apt-card.status-모집중{border-left-color:var(--orange)}
+.apt-card.status-확보완료{border-left-color:var(--green)}
+.apt-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.apt-name{font-size:15px;font-weight:700}
+.apt-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px}
+.badge-미착수{background:#f0f0f0;color:#999}
+.badge-글작성완료{background:var(--blue-light);color:var(--blue)}
+.badge-모집중{background:var(--orange-light);color:#E65100}
+.badge-확보완료{background:var(--green-light);color:var(--green)}
+.apt-info{display:flex;gap:12px;font-size:12px;color:var(--text3);margin-bottom:8px}
+.apt-links{display:flex;gap:6px;flex-wrap:wrap}
+.apt-link{font-size:11px;padding:4px 10px;border-radius:6px;text-decoration:none;font-weight:500;transition:all .2s}
+.link-blog{background:#E3F2FD;color:#1565C0}
+.link-cafe{background:#FFF8E1;color:#E65100}
+.link-daangn{background:#FFF3E0;color:#FF6F00}
+.link-meta{background:#E8EAF6;color:#3949AB}
+.link-group{background:var(--green-light);color:var(--green)}
+.link-none{background:#f5f5f5;color:#ccc}
+.apt-link:hover{opacity:0.8}
+
+.add-btn{width:100%;padding:14px;border:2px dashed var(--green);border-radius:var(--radius);background:transparent;color:var(--green);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;transition:all .2s}
+.add-btn:hover{background:var(--green-light)}
+
+.form-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;justify-content:center;align-items:center;padding:16px}
+.form-overlay.show{display:flex}
+.form-card{background:var(--card);border-radius:16px;padding:24px 20px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto}
+.form-title{font-size:16px;font-weight:800;margin-bottom:14px}
+.fg{margin-bottom:10px}
+.fg label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.fg label .req{color:var(--red)}
+.fg input,.fg select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .2s;background:#fff}
+.fg input:focus,.fg select:focus{border-color:var(--green)}
+.row2{display:flex;gap:8px}
+.row2 .fg{flex:1}
+.form-btns{display:flex;gap:8px;margin-top:14px}
+.form-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.btn-cancel{background:#fff;border:1.5px solid var(--border);color:var(--text2)}
+.btn-save{background:var(--green);border:none;color:#fff}
+
+.sync-bar{text-align:center;font-size:11px;color:var(--text3);padding:8px;margin-bottom:8px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-state .icon{font-size:48px;margin-bottom:10px}
+.empty-state p{font-size:13px;line-height:1.6}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>입주아파트 마케팅 관리</h1>
+  <p>블로그/맘카페/당근/메타 작성 관리</p>
+</div>
+
+<div class="container">
+  <div class="sync-bar" id="syncBar">데이터 로딩 중...</div>
+
+  <div class="stats" id="statsArea">
+    <div class="stat-box"><div class="num num-total" id="sTotal">0</div><div class="label">전체</div></div>
+    <div class="stat-box"><div class="num num-writing" id="sWriting">0</div><div class="label">글작성</div></div>
+    <div class="stat-box"><div class="num num-recruiting" id="sRecruiting">0</div><div class="label">모집중</div></div>
+    <div class="stat-box"><div class="num num-done" id="sDone">0</div><div class="label">확보완료</div></div>
+  </div>
+
+  <div class="filter-row" id="filterRow">
+    <button class="filter-btn active" onclick="setFilter('전체')">전체</button>
+    <button class="filter-btn" onclick="setFilter('미착수')">미착수</button>
+    <button class="filter-btn" onclick="setFilter('글작성완료')">글작성</button>
+    <button class="filter-btn" onclick="setFilter('모집중')">모집중</button>
+    <button class="filter-btn" onclick="setFilter('확보완료')">확보완료</button>
+  </div>
+
+  <button class="add-btn" onclick="openForm()">+ 새 아파트 추가</button>
+
+  <div id="aptList"></div>
+</div>
+
+<!-- 추가/수정 폼 -->
+<div class="form-overlay" id="formOverlay" onclick="if(event.target===this)closeForm()">
+  <div class="form-card">
+    <div class="form-title" id="formTitle">새 아파트 추가</div>
+    <div class="fg"><label>아파트명 <span class="req">*</span></label><input type="text" id="fApt" placeholder="예: 힐스테이트김포한강"></div>
+    <div class="row2">
+      <div class="fg"><label>지역 <span class="req">*</span></label><input type="text" id="fRegion" placeholder="예: 김포"></div>
+      <div class="fg"><label>세대수 <span class="req">*</span></label><input type="number" id="fUnits" placeholder="예: 1200" inputmode="numeric"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>입주예정월</label><input type="month" id="fMonth"></div>
+      <div class="fg"><label>상태</label>
+        <select id="fStatus"><option value="미착수">미착수</option><option value="글작성완료">글작성완료</option><option value="모집중">모집중</option><option value="확보완료">확보완료</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>블로그 URL</label><input type="url" id="fBlog" placeholder="https://blog.naver.com/..."></div>
+    <div class="fg"><label>맘카페 URL</label><input type="url" id="fCafe" placeholder="https://cafe.naver.com/..."></div>
+    <div class="fg"><label>당근마켓 URL</label><input type="url" id="fDaangn" placeholder="https://daangn.com/..."></div>
+    <div class="fg"><label>메타광고 URL</label><input type="url" id="fMeta" placeholder="광고 링크 또는 메모"></div>
+    <div class="fg"><label>메모</label><input type="text" id="fMemo" placeholder="참고사항"></div>
+    <div class="form-btns">
+      <button class="btn-cancel" onclick="closeForm()">취소</button>
+      <button class="btn-save" id="formSaveBtn" onclick="saveApt()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SHEET_ID = '1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+var GID = '1951541918';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+var aptData = [];
+var currentFilter = '전체';
+var editRow = null;
+
+function readSheet(callback) {
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + GID;
+  fetch(url).then(function(r){return r.text()}).then(function(text){
+    var rows = [];
+    var lines = text.split('\n');
+    lines.forEach(function(line,idx){
+      if(!line.trim()) return;
+      var cols = [];
+      var inQuote=false, val='';
+      for(var i=0;i<line.length;i++){
+        var ch=line[i];
+        if(ch==='"'){inQuote=!inQuote;}
+        else if(ch===','&&!inQuote){cols.push(val.trim());val='';}
+        else{val+=ch;}
+      }
+      cols.push(val.trim());
+      rows.push(cols);
+    });
+    callback(rows);
+  }).catch(function(){callback([]);});
+}
+
+function loadData() {
+  document.getElementById('syncBar').textContent = '데이터 로딩 중...';
+  readSheet(function(rows) {
+    aptData = [];
+    for(var i=1;i<rows.length;i++){
+      if(!rows[i][0]) continue;
+      var apt = rows[i][0];
+      var units = parseInt(rows[i][2])||0;
+      var month = rows[i][3]||'';
+      
+      aptData.push({
+        row: i+1,
+        name: apt,
+        region: rows[i][1]||'',
+        units: units,
+        month: month,
+        blog: rows[i][4]||'',
+        cafe: rows[i][5]||'',
+        daangn: rows[i][6]||'',
+        meta: rows[i][7]||'',
+        status: rows[i][8]||'미착수',
+        memo: rows[i][9]||''
+      });
+    }
+    updateStats();
+    renderList();
+    var now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('syncBar').textContent = '마지막 동기화: '+now+' · '+aptData.length+'개 아파트';
+  });
+}
+
+function updateStats(){
+  var total=aptData.length, writing=0, recruiting=0, done=0;
+  aptData.forEach(function(a){
+    if(a.status==='글작성완료') writing++;
+    else if(a.status==='모집중') recruiting++;
+    else if(a.status==='확보완료') done++;
+  });
+  document.getElementById('sTotal').textContent=total;
+  document.getElementById('sWriting').textContent=writing;
+  document.getElementById('sRecruiting').textContent=recruiting;
+  document.getElementById('sDone').textContent=done;
+}
+
+function setFilter(f){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.toggle('active',b.textContent===f||b.textContent===f.replace('완료',''))});
+  // 간단하게 전체 재렌더
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.filter-btn').forEach(function(b){
+    if(f==='전체'&&b.textContent==='전체') b.classList.add('active');
+    else if(b.textContent===f||b.textContent===f.replace('완료','')) b.classList.add('active');
+  });
+  renderList();
+}
+
+function renderList(){
+  var list = document.getElementById('aptList');
+  var filtered = currentFilter==='전체' ? aptData : aptData.filter(function(a){return a.status===currentFilter;});
+
+  if(filtered.length===0){
+    list.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>아파트가 없습니다<br>"+ 새 아파트 추가" 버튼을 눌러주세요</p></div>';
+    return;
+  }
+
+  // 입주예정월 가까운 순 정렬
+  filtered.sort(function(a,b){return (a.month||'9999').localeCompare(b.month||'9999');});
+
+  var html='';
+  filtered.forEach(function(a){
+    var monthLabel = a.month ? a.month.replace('-','년 ')+'월' : '미정';
+    var blogLink = a.blog ? '<a href="'+a.blog+'" target="_blank" class="apt-link link-blog">블로그 ✓</a>' : '<span class="apt-link link-none">블로그 ✗</span>';
+    var cafeLink = a.cafe ? '<a href="'+a.cafe+'" target="_blank" class="apt-link link-cafe">맘카페 ✓</a>' : '<span class="apt-link link-none">맘카페 ✗</span>';
+    var daangnLink = a.daangn ? '<a href="'+a.daangn+'" target="_blank" class="apt-link link-daangn">당근 ✓</a>' : '<span class="apt-link link-none">당근 ✗</span>';
+    var metaLink = a.meta ? '<span class="apt-link link-meta">메타 ✓</span>' : '<span class="apt-link link-none">메타 ✗</span>';
+    
+
+    html+='<div class="apt-card status-'+a.status+'" onclick="openEdit('+aptData.indexOf(a)+')">';
+    html+='<div class="apt-header"><div class="apt-name">'+a.name+'</div><span class="apt-badge badge-'+a.status+'">'+a.status+'</span></div>';
+    html+='<div class="apt-info"><span>📍 '+a.region+'</span><span>🏢 '+a.units+'세대</span><span>📅 '+monthLabel+'</span></div>';
+    html+='<div class="apt-links">'+blogLink+cafeLink+daangnLink+metaLink+'</div>';
+    if(a.memo) html+='<div style="font-size:11px;color:var(--text3);margin-top:6px">💬 '+a.memo+'</div>';
+    html+='</div>';
+  });
+  list.innerHTML=html;
+}
+
+function openForm(){
+  editRow=null;
+  document.getElementById('formTitle').textContent='새 아파트 추가';
+  ['fApt','fRegion','fUnits','fMonth','fBlog','fCafe','fDaangn','fMeta','fMemo'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('fStatus').value='미착수';
+  document.getElementById('formOverlay').classList.add('show');
+}
+
+function openEdit(idx){
+  var a=aptData[idx];
+  editRow=a.row;
+  document.getElementById('formTitle').textContent='아파트 수정';
+  document.getElementById('fApt').value=a.name;
+  document.getElementById('fRegion').value=a.region;
+  document.getElementById('fUnits').value=a.units||'';
+  document.getElementById('fMonth').value=a.month||'';
+  document.getElementById('fBlog').value=a.blog||'';
+  document.getElementById('fCafe').value=a.cafe||'';
+  document.getElementById('fDaangn').value=a.daangn||'';
+  document.getElementById('fMeta').value=a.meta||'';
+  document.getElementById('fStatus').value=a.status||'미착수';
+  document.getElementById('fMemo').value=a.memo||'';
+  document.getElementById('formOverlay').classList.add('show');
+}
+
+function closeForm(){
+  document.getElementById('formOverlay').classList.remove('show');
+}
+
+function saveApt(){
+  var apt=document.getElementById('fApt').value.trim();
+  var region=document.getElementById('fRegion').value.trim();
+  var units=document.getElementById('fUnits').value.trim();
+  if(!apt){showToast('아파트명을 입력해주세요');return;}
+  if(!region){showToast('지역을 입력해주세요');return;}
+  if(!units){showToast('세대수를 입력해주세요');return;}
+
+  var btn=document.getElementById('formSaveBtn');
+  btn.disabled=true;btn.textContent='저장 중...';
+
+  var month=document.getElementById('fMonth').value||'';
+  
+
+  var payload={
+    type:'aptMarketing',
+    action: editRow?'update':'add',
+    row: editRow||null,
+    data:{
+      apt:apt,
+      region:region,
+      units:units,
+      month:month,
+      blog:document.getElementById('fBlog').value.trim(),
+      cafe:document.getElementById('fCafe').value.trim(),
+      daangn:document.getElementById('fDaangn').value.trim(),
+      meta:document.getElementById('fMeta').value.trim(),
+      status:document.getElementById('fStatus').value,
+      memo:document.getElementById('fMemo').value.trim()
+    }
+  };
+
+  fetch(API_URL,{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(function(){
+    closeForm();
+    showToast(editRow?'수정 완료!':'추가 완료!');
+    btn.disabled=false;btn.textContent='저장';
+    setTimeout(loadData,1500);
+  }).catch(function(){
+    showToast('저장 실패');
+    btn.disabled=false;btn.textContent='저장';
+  });
+}
+
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+loadData();
+</script>
+</body>
+</html>

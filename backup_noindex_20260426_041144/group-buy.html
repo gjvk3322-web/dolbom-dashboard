@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 공동구매 공구장 모집</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f8f3;--card:#fff;--text:#1a1a1a;--text2:#555;--text3:#999;--border:#e5e5e0;--green:#2E7D32;--green-light:#E8F5E9;--green-dark:#1B5E20;--gold:#F59F00;--gold-light:#FFF8E1;--radius:16px;--shadow:0 4px 20px rgba(0,0,0,0.06)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:500px;margin:0 auto;overflow-x:hidden}
+
+/* 히어로 */
+.hero{background:linear-gradient(145deg,#1B5E20 0%,#2E7D32 40%,#388E3C 100%);padding:40px 24px 32px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;background:rgba(255,255,255,0.05);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-40%;left:-20%;width:250px;height:250px;background:rgba(255,255,255,0.03);border-radius:50%}
+.hero-badge{display:inline-block;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;padding:5px 14px;font-size:11px;color:rgba(255,255,255,0.9);font-weight:600;margin-bottom:14px;backdrop-filter:blur(4px)}
+.hero-apt{font-size:15px;font-weight:600;color:#A5D6A7;margin-bottom:6px}
+.hero h1{font-size:26px;font-weight:900;color:#fff;line-height:1.35;margin-bottom:8px}
+.hero h1 em{font-style:normal;color:#FDD835}
+.hero-sub{font-size:13px;color:rgba(255,255,255,0.7);line-height:1.6}
+.hero-stats{display:flex;justify-content:center;gap:20px;margin-top:20px}
+.hero-stat{text-align:center}
+.hero-stat .num{font-size:22px;font-weight:800;color:#FDD835}
+.hero-stat .label{font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px}
+
+.container{padding:0 16px 40px}
+
+/* 섹션 공통 */
+.section{margin-top:20px}
+.section-title{font-size:18px;font-weight:800;margin-bottom:4px;line-height:1.4}
+.section-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+
+.card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:14px}
+
+/* 필요성 */
+.need-item{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f0f0eb}
+.need-item:last-child{border-bottom:none}
+.need-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.need-icon.blue{background:#E3F2FD}.need-icon.pink{background:#FCE4EC}.need-icon.amber{background:#FFF8E1}
+.need-text .title{font-size:13px;font-weight:600}
+.need-text .desc{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* 비교표 */
+.compare-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.compare-table th{padding:10px 8px;background:#f8f8f5;font-weight:600;text-align:center;color:var(--text2)}
+.compare-table th:first-child{text-align:left}
+.compare-table th.green{color:var(--green)}
+.compare-table td{padding:10px 8px;border-top:1px solid var(--border);text-align:center}
+.compare-table td:first-child{text-align:left;font-weight:500}
+.compare-table td.gray{color:var(--text3)}
+.compare-table td.green{color:var(--green);font-weight:700}
+.compare-table tr.total{background:var(--green-light)}
+.compare-table tr.total td{font-weight:700;font-size:13px}
+.compare-table tr.total td.green{color:var(--green)}
+
+/* 공구장 혜택 */
+.benefit-card{background:linear-gradient(135deg,#FFF8E1,#FFFDE7);border:1.5px solid #FFE082;border-radius:var(--radius);padding:20px;margin-bottom:14px}
+.benefit-card .title{font-size:16px;font-weight:800;color:#E65100;margin-bottom:12px}
+.benefit-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #FFE082}
+.benefit-row:last-child{border-bottom:none}
+.benefit-row .name{font-size:13px;font-weight:500}
+.benefit-row .val{font-size:14px;font-weight:700;color:#E65100}
+
+/* 수익 시뮬레이터 */
+.sim{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:14px}
+.sim-title{font-size:15px;font-weight:700;margin-bottom:12px}
+.sim-slider-wrap{margin-bottom:16px}
+.sim-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:4px}
+.sim-slider{width:100%;height:6px;-webkit-appearance:none;appearance:none;background:#e0e0e0;border-radius:3px;outline:none}
+.sim-slider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--green);cursor:pointer;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+.sim-result{background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:12px;padding:20px;text-align:center;color:#fff}
+.sim-result .amount{font-size:32px;font-weight:900;color:#FDD835}
+.sim-result .sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px}
+.sim-breakdown{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:11px;color:rgba(255,255,255,0.6)}
+.sim-breakdown span{display:flex;align-items:center;gap:4px}
+
+/* 티어 */
+.tier-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-bottom:6px;font-size:13px;background:#fafaf7}
+.tier-row .emoji{font-size:20px;flex-shrink:0}
+.tier-row .info{flex:1}
+.tier-row .info .name{font-weight:600}
+.tier-row .info .range{font-size:11px;color:var(--text3)}
+.tier-row .reward{font-weight:700;color:var(--green);font-size:14px;white-space:nowrap}
+
+/* 신뢰도 */
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trust-item{background:#f8f8f5;border-radius:10px;padding:14px;text-align:center}
+.trust-item .val{font-size:18px;font-weight:800;color:var(--green)}
+.trust-item .label{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* 공구장 할 일 */
+.step{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f0f0eb}
+.step:last-child{border-bottom:none}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.step-text{flex:1}
+.step-text .title{font-size:13px;font-weight:600}
+.step-text .desc{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* 강조 배너 */
+.highlight-banner{background:linear-gradient(135deg,#2E7D32,#43A047);border-radius:var(--radius);padding:20px;text-align:center;color:#fff;margin-bottom:14px}
+.highlight-banner .big{font-size:16px;font-weight:800;line-height:1.5}
+.highlight-banner .small{font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px}
+
+/* 신청 폼 */
+.form-card{background:var(--card);border-radius:var(--radius);padding:24px 20px;box-shadow:var(--shadow);margin-bottom:14px}
+.form-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.form-sub{font-size:12px;color:var(--text3);margin-bottom:16px}
+.fg{margin-bottom:12px}
+.fg label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.fg label .req{color:#e53935}
+.fg input,.fg select,.fg textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;outline:none;transition:border .2s;background:#fff;color:var(--text);-webkit-appearance:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--green)}
+.fg textarea{resize:none;height:70px}
+.fg .hint{font-size:10px;color:var(--text3);margin-top:3px}
+.row2{display:flex;gap:8px}
+.row2 .fg{flex:1}
+.submit-btn{width:100%;padding:16px;border:none;border-radius:12px;background:var(--green);color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;margin-top:4px}
+.submit-btn:active{transform:scale(0.98);background:var(--green-dark)}
+.submit-note{font-size:11px;color:var(--text3);text-align:center;margin-top:8px}
+
+/* 완료 */
+.done-card{display:none;background:var(--card);border-radius:var(--radius);padding:40px 24px;text-align:center;box-shadow:var(--shadow)}
+.done-card .icon{font-size:56px;margin-bottom:10px}
+.done-card h2{font-size:20px;font-weight:800;color:var(--green)}
+.done-card p{font-size:13px;color:var(--text3);margin-top:8px;line-height:1.6}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;transition:transform .3s ease;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<script>
+var APT_NAME = new URLSearchParams(location.search).get('apt') || '';
+var APT_MONTH = new URLSearchParams(location.search).get('month') || '';
+var APT_UNITS = parseInt(new URLSearchParams(location.search).get('units')) || 0;
+var API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+</script>
+
+<!-- 히어로 -->
+<div class="hero">
+  <div class="hero-badge">공구장 모집중</div>
+  <div class="hero-apt" id="heroApt"></div>
+  <h1>층간소음매트<br><em>공동구매</em> 함께 하실 분!</h1>
+  <div class="hero-sub">공구장이 되면 본인 할인 + 건당 보상까지<br>링크 공유만 하면 끝!</div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">6,700+</div><div class="label">시공 가정</div></div>
+    <div class="hero-stat"><div class="num">80+</div><div class="label">어린이집 설치</div></div>
+    <div class="hero-stat"><div class="num">6년</div><div class="label">전문 시공</div></div>
+  </div>
+</div>
+<script>
+if(APT_NAME){
+  var monthText = APT_MONTH ? APT_MONTH.replace('-','년 ')+'월 입주' : '입주 예정';
+  document.getElementById('heroApt').textContent = APT_NAME + ' ' + monthText;
+} else {
+  document.getElementById('heroApt').textContent = '신축 아파트 입주 예정자분들을 위한';
+}
+</script>
+
+<div class="container">
+
+  <!-- 왜 필요한가 -->
+  <div class="section">
+    <div class="section-title">신축 입주, 매트는 왜 필수일까요?</div>
+    <div class="section-sub">입주 후 가장 많은 민원 1위 = 층간소음</div>
+    <div class="card" style="padding:14px 16px">
+      <div class="need-item">
+        <div class="need-icon blue">👶</div>
+        <div class="need-text"><div class="title">아이가 있는 가정</div><div class="desc">뛰어다니는 아이들의 발소리, 이웃과의 갈등 방지</div></div>
+      </div>
+      <div class="need-item">
+        <div class="need-icon pink">🐕</div>
+        <div class="need-text"><div class="title">반려동물 가정</div><div class="desc">미끄럼 방지 + 소음 감소로 반려동물 관절 보호</div></div>
+      </div>
+      <div class="need-item">
+        <div class="need-icon amber">🏠</div>
+        <div class="need-text"><div class="title">새 아파트 바닥 보호</div><div class="desc">신축 마루 스크래치 방지 + 단열 효과까지</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 입주민 혜택 비교 -->
+  <div class="section">
+    <div class="section-title">공구로 하면 이만큼 저렴해요</div>
+    <div class="section-sub">일반 견적 vs 공동구매 견적 비교 (34평 기준)</div>
+    <div class="card" style="padding:14px">
+      <table class="compare-table">
+        <thead>
+          <tr><th>항목</th><th>일반 고객</th><th class="green">공구 참여</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>추천 할인</td><td class="gray">-</td><td class="green">-30,000원</td></tr>
+          <tr><td>공동구매 3%</td><td class="gray">5인 이상 시</td><td class="green">바로 적용</td></tr>
+          <tr><td>온누리상품권 7%</td><td>중복 가능</td><td class="green">중복 가능</td></tr>
+          <tr><td>계약 후기 쿠폰</td><td>-30,000원</td><td class="green">-30,000원</td></tr>
+          <tr><td>후기 이벤트</td><td>최대 -80,000원</td><td class="green">최대 -80,000원</td></tr>
+          <tr class="total"><td>총 혜택</td><td>최대 -140,000원</td><td class="green">최대 -245,000원</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px">* 250만원 견적 기준 · 공구 참여 시 10만원 이상 추가 혜택</div>
+    </div>
+  </div>
+
+  <!-- 공구장 혜택 -->
+  <div class="section">
+    <div class="section-title">공구장이 되면 받는 혜택</div>
+    <div class="section-sub">링크 공유만 하면 자동으로 쌓여요</div>
+    <div class="benefit-card">
+      <div class="title">💰 공구장 수익 구조</div>
+      <div class="benefit-row"><span class="name">본인 시공 할인</span><span class="val">추천 할인 적용</span></div>
+      <div class="benefit-row"><span class="name">1~10건 달성</span><span class="val">건당 30,000원</span></div>
+      <div class="benefit-row"><span class="name">11~20건 달성</span><span class="val">건당 40,000원</span></div>
+      <div class="benefit-row"><span class="name">21건 이상</span><span class="val">건당 50,000원</span></div>
+    </div>
+  </div>
+
+  <!-- 수익 시뮬레이터 -->
+  <div class="section">
+    <div class="section-title">우리 아파트면 얼마 벌 수 있을까?</div>
+    <div class="section-sub">세대수에 따른 예상 수익을 확인해보세요</div>
+    <div class="sim">
+      <div class="sim-slider-wrap">
+        <div class="sim-label"><span>예상 참여 세대</span><span id="simCount" style="font-weight:700;color:var(--green)">15세대</span></div>
+        <input type="range" class="sim-slider" id="simSlider" min="5" max="50" value="15" step="1" oninput="updateSim()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#ccc;margin-top:2px"><span>5세대</span><span>50세대</span></div>
+      </div>
+      <div class="sim-result">
+        <div style="font-size:12px;color:rgba(255,255,255,0.6)">예상 공구장 수익</div>
+        <div class="amount" id="simAmount">450,000원</div>
+        <div class="sub" id="simSub">15건 × 건당 30,000원</div>
+      </div>
+    </div>
+    <div id="aptUnitsNote" style="display:none;text-align:center;font-size:11px;color:var(--green);font-weight:600;margin-top:-8px;margin-bottom:14px"></div>
+  </div>
+  <script>
+  if(APT_UNITS >= 650){
+    var est = Math.round(APT_UNITS * 0.04);
+    document.getElementById('simSlider').value = est;
+    document.getElementById('aptUnitsNote').style.display = 'block';
+    document.getElementById('aptUnitsNote').textContent = APT_NAME + ' ' + APT_UNITS + '세대 기준, 전환율 4% 예상 시 약 ' + est + '건';
+  }
+  function updateSim(){
+    var n = parseInt(document.getElementById('simSlider').value);
+    document.getElementById('simCount').textContent = n + '세대';
+    var reward = 30000;
+    if(n >= 21) reward = 50000;
+    else if(n >= 11) reward = 40000;
+    var total = 0;
+    for(var i=1;i<=n;i++){
+      if(i>=21) total+=50000;
+      else if(i>=11) total+=40000;
+      else total+=30000;
+    }
+    document.getElementById('simAmount').textContent = total.toLocaleString() + '원';
+    var tierLabel = n>=21?'50,000':(n>=11?'40,000':'30,000');
+    document.getElementById('simSub').textContent = n + '건 달성 시 · 현재 건당 ' + tierLabel + '원';
+  }
+  updateSim();
+  </script>
+
+  <!-- 등급 안내 -->
+  <div class="section">
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">등급별 보상</div>
+      <div class="tier-row" style="background:#FBE9E740"><span class="emoji">🥉</span><div class="info"><div class="name">브론즈</div><div class="range">1~10건</div></div><span class="reward">건당 3만원</span></div>
+      <div class="tier-row" style="background:#ECEFF140"><span class="emoji">🥈</span><div class="info"><div class="name">실버</div><div class="range">11~20건</div></div><span class="reward">건당 4만원</span></div>
+      <div class="tier-row" style="background:#FFF8E140"><span class="emoji">🥇</span><div class="info"><div class="name">골드</div><div class="range">21~49건</div></div><span class="reward">건당 5만원</span></div>
+      <div class="tier-row" style="background:#E8EAF640"><span class="emoji">💎</span><div class="info"><div class="name">다이아</div><div class="range">50건+</div></div><span class="reward">건당 7만원</span></div>
+    </div>
+  </div>
+
+  <!-- 돌봄매트 신뢰도 -->
+  <div class="section">
+    <div class="section-title">돌봄매트는 이런 곳이에요</div>
+    <div class="trust-grid">
+      <div class="trust-item"><div class="val">6,700+</div><div class="label">누적 시공 가정</div></div>
+      <div class="trust-item"><div class="val">6년</div><div class="label">전문 시공 경력</div></div>
+      <div class="trust-item"><div class="val">KC인증</div><div class="label">안전 인증 완료</div></div>
+      <div class="trust-item"><div class="val">80+</div><div class="label">어린이집 설치</div></div>
+    </div>
+    <div class="card" style="margin-top:10px;padding:14px 16px;text-align:center">
+      <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px">1000mm 대형 매트 전문</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6">이음새가 적어 소음 차단 효과가 뛰어나고,<br>공기순환통로로 곰팡이 걱정 없는 프리미엄 매트입니다</div>
+    </div>
+  </div>
+
+  <!-- 공구장이 하는 일 -->
+  <div class="section">
+    <div class="section-title">공구장은 뭘 하나요?</div>
+    <div class="section-sub">어렵지 않아요! 링크 공유가 전부예요</div>
+    <div class="card" style="padding:16px">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><div class="title">공구장 신청</div><div class="desc">아래 폼으로 간단하게 신청</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><div class="title">전용 링크 + 홍보 키트 받기</div><div class="desc">승인 후 카톡방에 바로 올릴 수 있는 이미지와 링크를 드려요</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><div class="title">입주 단톡방/카페에 공유</div><div class="desc">받은 링크와 이미지를 올리기만 하면 끝!</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><div class="title">이웃이 견적 확인 + 예약</div><div class="desc">견적, 상담, 시공 일정은 돌봄매트가 전담합니다</div></div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text"><div class="title">시공 완료 시 보상 지급</div><div class="desc">건당 보상이 자동으로 쌓이고, 월말 정산됩니다</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 강조 배너 -->
+  <div class="highlight-banner">
+    <div class="big">공구장이 직접 할 일은<br>📲 <em style="color:#FDD835">링크 공유</em>뿐이에요!</div>
+    <div class="small">견적, 상담, 시공 스케줄, 결제까지<br>모든 과정은 돌봄매트가 전담합니다</div>
+  </div>
+
+  <!-- 신청 폼 -->
+  <div class="form-card" id="applyForm">
+    <div class="form-title">공구장 신청하기</div>
+    <div class="form-sub">신청 후 1~2영업일 내 승인 안내드려요</div>
+    <div class="row2">
+      <div class="fg"><label>이름 <span class="req">*</span></label><input type="text" id="fName" placeholder="이름"></div>
+      <div class="fg"><label>닉네임 <span class="req">*</span></label><input type="text" id="fNickname" placeholder="닉네임 입력"></div>
+    </div>
+    <div class="fg"><label>연락처 <span class="req">*</span></label><input type="tel" id="fPhone" placeholder="01012345678" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
+    <div class="fg"><label>아파트명 <span class="req">*</span></label><input type="text" id="fApt" placeholder="예: 힐스테이트김포한강"></div>
+    <div class="row2">
+      <div class="fg"><label>입주 예정월</label><input type="month" id="fMonth"></div>
+      <div class="fg"><label>세대수 (대략)</label><input type="number" id="fUnits" placeholder="예: 1200" inputmode="numeric"></div>
+    </div>
+    <div class="fg">
+      <label>활동 채널 (선택)</label>
+      <input type="text" id="fChannel" placeholder="입주 단톡방, 맘카페, 블로그 등">
+      <div class="hint">어디에서 홍보할 수 있는지 알려주시면 맞춤 키트를 보내드려요</div>
+    </div>
+    <div class="fg">
+      <label>추가 메모 (선택)</label>
+      <textarea id="fMemo" placeholder="궁금한 점이 있으시면 자유롭게 적어주세요"></textarea>
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="submitApply()">공구장 신청하기</button>
+    <div class="submit-note">승인 후 전용 링크와 홍보 키트를 보내드립니다</div>
+  </div>
+
+  <!-- 신청 완료 -->
+  <div class="done-card" id="doneCard">
+    <div class="icon">🎉</div>
+    <h2>공구장 신청이 완료되었습니다!</h2>
+    <p>1~2영업일 내 승인 후<br>전용 링크와 홍보 키트를 보내드릴게요.<br><br>궁금한 점은 카카오톡 채널로 문의해주세요!</p>
+    <a href="https://pf.kakao.com/_UMyBK/chat" target="_blank" style="display:inline-block;margin-top:16px;padding:14px 32px;background:#FEE500;border-radius:12px;color:#3C1E1E;font-weight:700;font-size:14px;text-decoration:none">💬 카톡 상담</a>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// 아파트명 자동 채우기
+if(APT_NAME) document.getElementById('fApt').value = APT_NAME;
+if(APT_MONTH) document.getElementById('fMonth').value = APT_MONTH;
+if(APT_UNITS) document.getElementById('fUnits').value = APT_UNITS;
+
+function submitApply(){
+  var name = document.getElementById('fName').value.trim();
+  var nickname = document.getElementById('fNickname').value.trim();
+  var phone = document.getElementById('fPhone').value.trim();
+  var apt = document.getElementById('fApt').value.trim();
+  if(!name){showToast('이름을 입력해주세요');return;}
+  if(!nickname){showToast('닉네임을 입력해주세요');return;}
+  if(!phone){showToast('연락처를 입력해주세요');return;}
+  if(!apt){showToast('아파트명을 입력해주세요');return;}
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='신청 중...';btn.style.background='#999';
+
+  var data = {
+    type:'partnerApply',
+    name:name,
+    nickname:nickname,
+    phone:phone,
+    partnerType:'공구장',
+    sns:document.getElementById('fChannel').value.trim(),
+    memo:'[공구장] 아파트:'+apt+' / 입주:'+(document.getElementById('fMonth').value||'미정')+' / 세대수:'+(document.getElementById('fUnits').value||'미정')+' / '+(document.getElementById('fMemo').value.trim()||''),
+    appliedAt:new Date().toISOString()
+  };
+
+  fetch(API_URL,{
+    method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+  }).then(function(){
+    document.getElementById('applyForm').style.display='none';
+    document.getElementById('doneCard').style.display='block';
+    showToast('공구장 신청이 완료되었습니다!');
+  }).catch(function(){
+    btn.disabled=false;btn.textContent='공구장 신청하기';btn.style.background='#2E7D32';
+    showToast('신청 실패 - 다시 시도해주세요');
+  });
+}
+
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+</script>
+</body>
+</html>

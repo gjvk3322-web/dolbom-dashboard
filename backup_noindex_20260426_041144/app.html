@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="돌봄매트">
+<meta name="theme-color" content="#0b0b12">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>돌봄매트 워크스테이션</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #0b0b12;
+    --card: #151520;
+    --card2: #1c1c2a;
+    --border: rgba(255,255,255,.07);
+    --text: #eaeaf2;
+    --dim: #6e6e88;
+    --blue: #5b8def;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --pink: #f472b6;
+    --purple: #a78bfa;
+    --font: 'Noto Sans KR', -apple-system, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+    font-family: var(--font); background: var(--bg); color: var(--text);
+    min-height: 100vh; max-width: 500px; margin: 0 auto;
+    padding: 0 16px 40px;
+}
+
+/* Header */
+.header {
+    padding: 50px 0 30px;
+    text-align: center;
+}
+.logo {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, var(--blue), var(--green));
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 32px rgba(91,141,239,.3);
+}
+.header h1 {
+    font-size: 22px; font-weight: 900;
+    letter-spacing: -1px;
+}
+.header p {
+    font-size: 12px; color: var(--dim); margin-top: 4px;
+}
+
+/* Tool Cards */
+.tools {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-top: 8px;
+}
+.tool {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-decoration: none; color: var(--text);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .1s, background .15s;
+}
+.tool:active {
+    transform: scale(.97);
+    background: var(--card2);
+}
+.tool-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+}
+.tool-info { flex: 1; }
+.tool-name {
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 4px;
+}
+.tool-desc {
+    font-size: 12px; color: var(--dim);
+    line-height: 1.5;
+}
+.tool-arrow {
+    color: var(--dim); font-size: 18px; flex-shrink: 0;
+}
+.tool-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Color Variants */
+.ic-blue { background: rgba(91,141,239,.15); }
+.ic-green { background: rgba(52,211,153,.15); }
+.ic-yellow { background: rgba(251,191,36,.15); }
+.ic-pink { background: rgba(244,114,182,.15); }
+.ic-purple { background: rgba(167,139,250,.15); }
+.ic-red { background: rgba(248,113,113,.15); }
+
+/* Section */
+.section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 28px 0 12px 4px;
+}
+
+/* Status Bar */
+.status {
+    margin-top: 32px;
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-align: center;
+}
+.status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 6px;
+    animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.status-text {
+    font-size: 12px; color: var(--dim);
+}
+
+/* Install Banner */
+.install-banner {
+    display: none;
+    margin-top: 16px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, rgba(91,141,239,.15), rgba(52,211,153,.15));
+    border: 1px solid rgba(91,141,239,.2);
+    border-radius: 14px;
+    text-align: center;
+    cursor: pointer;
+}
+.install-banner p {
+    font-size: 13px; font-weight: 700; color: var(--blue);
+}
+.install-banner span {
+    font-size: 11px; color: var(--dim);
+    display: block; margin-top: 4px;
+}
+
+/* Footer */
+.footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--dim);
+    padding-bottom: 20px;
+}
+</style>
+</head>
+<body>
+<script>
+// 마지막 사용한 지역이 있으면 바로 스케줄러로 이동
+const rgn=localStorage.getItem('dolbom_region');
+if(rgn==='gg')location.replace('./scheduler-gg.html');
+else if(rgn==='bs')location.replace('./scheduler.html');
+</script>
+
+<div class="header">
+    <div class="logo">🔧</div>
+    <h1>돌봄매트 워크스테이션</h1>
+    <p>업무 도구를 한곳에서</p>
+</div>
+
+<div class="section-label">📋 업무 도구</div>
+<div class="tools">
+    <a class="tool" onclick="location.href=localStorage.getItem('dolbom_region')==='gg'?'./scheduler-gg.html':'./scheduler.html'">
+        <div class="tool-icon ic-blue">📋</div>
+        <div class="tool-info">
+            <div class="tool-name">시공 스케줄러 <span class="tool-badge" style="background:rgba(52,211,153,.15);color:var(--green)">LIVE</span></div>
+            <div class="tool-desc">배정 · 네비 · 공정성 · 팀관리 (부산/경기 전환)</div>
+        </div>
+        <div class="tool-arrow">›</div>
+    </a>
+    
+    <a class="tool" href="./index.html">
+        <div class="tool-icon ic-red">📊</div>
+        <div class="tool-info">
+            <div class="tool-name">경쟁사 대시보드</div>
+            <div class="tool-desc">키워드 수집 · 경쟁사 분석 · AI 전략</div>
+        </div>
+        <div class="tool-arrow">›</div>
+    </a>
+</div>
+
+<div class="section-label">🌐 외부 링크</div>
+<div class="tools">
+    <a class="tool" href="https://gjvk3322-web.github.io/homepage/" target="_blank">
+        <div class="tool-icon ic-green">🏠</div>
+        <div class="tool-info">
+            <div class="tool-name">돌봄매트 홈페이지</div>
+            <div class="tool-desc">고객용 홈페이지 · 견적 문의</div>
+        </div>
+        <div class="tool-arrow">›</div>
+    </a>
+
+    <a class="tool" href="https://open.kakao.com/" target="_blank">
+        <div class="tool-icon ic-yellow">💬</div>
+        <div class="tool-info">
+            <div class="tool-name">카카오톡 채널</div>
+            <div class="tool-desc">고객 상담 · 예약 접수</div>
+        </div>
+        <div class="tool-arrow">›</div>
+    </a>
+</div>
+
+<div class="section-label">🚀 준비 중</div>
+<div class="tools">
+    <div class="tool" style="opacity:.5;pointer-events:none">
+        <div class="tool-icon ic-pink">👶</div>
+        <div class="tool-info">
+            <div class="tool-name">맘카페 스케줄러 <span class="tool-badge" style="background:rgba(248,113,113,.15);color:var(--red)">SOON</span></div>
+            <div class="tool-desc">요일별 카페 링크 · 자동 오픈</div>
+        </div>
+        <div class="tool-arrow">›</div>
+    </div>
+    
+    <div class="tool" style="opacity:.5;pointer-events:none">
+        <div class="tool-icon ic-purple">🤖</div>
+        <div class="tool-info">
+            <div class="tool-name">AI 프롬프트 생성기 <span class="tool-badge" style="background:rgba(248,113,113,.15);color:var(--red)">SOON</span></div>
+            <div class="tool-desc">8가지 업무 카테고리 · 맞춤 프롬프트</div>
+        </div>
+        <div class="tool-arrow">›</div>
+    </div>
+</div>
+
+<div class="status">
+    <span class="status-dot"></span>
+    <span class="status-text" id="statusText">시스템 정상 운영 중</span>
+</div>
+
+<div class="install-banner" id="installBanner" onclick="installApp()">
+    <p>📲 홈 화면에 추가하기</p>
+    <span>앱처럼 바로 열 수 있어요</span>
+</div>
+
+<div class="footer">
+    돌봄매트 워크스테이션 v1.0<br>
+    © 2026 돌봄매트
+</div>
+
+<script>
+// ===== PWA 서비스 워커 등록 =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// ===== 홈 화면 추가 안내 =====
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBanner').style.display = 'block';
+});
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((result) => {
+            if (result.outcome === 'accepted') {
+                document.getElementById('installBanner').style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    } else {
+        // iOS Safari
+        alert('아이폰: 하단 공유 버튼 → "홈 화면에 추가"\n안드로이드: 메뉴(⋮) → "홈 화면에 추가"');
+    }
+}
+
+// iOS에서 PWA로 실행 중이 아니면 설치 안내 표시
+if (navigator.standalone === false || (window.matchMedia && !window.matchMedia('(display-mode: standalone)').matches)) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+        document.getElementById('installBanner').style.display = 'block';
+    }
+}
+
+// ===== 상태 업데이트 =====
+const now = new Date();
+const hm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+document.getElementById('statusText').textContent = '시스템 정상 · ' + hm + ' 기준';
+</script>
+
+</body>
+</html>
