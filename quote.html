@@ -168,6 +168,10 @@ body.embedded .container{padding-bottom:120px}
 .long-press-hint .lph-main{font-size:13px;font-weight:700;color:#5D4037;line-height:1.4}
 .long-press-hint .lph-sub{font-size:11px;color:#7D5935;margin-top:3px}
 .long-press-hint .lph-emoji{font-size:18px;margin-right:2px}
+.long-press-hint{cursor:pointer}
+@keyframes highlightPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,143,0,0)}50%{box-shadow:0 0 0 6px rgba(255,143,0,0.6)}}
+#imgPreview{cursor:pointer;border-radius:8px;transition:box-shadow .3s}
+#imgPreview.highlight{animation:highlightPulse 0.8s ease-in-out 3}
 .toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:rgba(30,30,30,0.95);color:#fff;padding:18px 30px;border-radius:14px;font-size:15px;font-weight:500;z-index:999;transition:opacity 0.25s ease,transform 0.25s ease;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.25);pointer-events:none;max-width:90vw;overflow:hidden;text-overflow:ellipsis;opacity:0;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .copy-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
@@ -448,6 +452,34 @@ function resaveQuoteImage(){
     }).catch(function(){fallbackDownload();showToast('✅ 저장 완료! 텍스트도 복사됐어요')});
   }else{fallbackDownload();showToast('✅ 저장 완료! 텍스트도 복사됐어요')}
 }
+function highlightImageAndCopy(){
+  var img=document.getElementById('imgPreview');
+  if(img){
+    img.scrollIntoView({behavior:'smooth',block:'center'});
+    img.classList.remove('highlight');
+    void img.offsetWidth;
+    img.classList.add('highlight');
+    setTimeout(function(){img.classList.remove('highlight')},2500);
+  }
+  copyQuoteTextOnly();
+}
+function copyQuoteTextOnly(){
+  if(!selectedProduct){return}
+  try{
+    var quoteText=buildQuoteText();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(quoteText).then(function(){
+        showToast('✅ 견적 텍스트 복사 완료! 이미지를 길게 눌러 저장하세요');
+      }).catch(function(){
+        var ta=document.createElement('textarea');ta.value=quoteText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+        showToast('✅ 견적 텍스트 복사 완료! 이미지를 길게 눌러 저장하세요');
+      });
+    }else{
+      var ta=document.createElement('textarea');ta.value=quoteText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+      showToast('✅ 견적 텍스트 복사 완료! 이미지를 길게 눌러 저장하세요');
+    }
+  }catch(e){}
+}
 function copyAndOpenKakao(){
   var quoteText=buildQuoteText();
   navigator.clipboard.writeText(quoteText).then(function(){
@@ -470,11 +502,11 @@ function closeImgOverlay(e){
   <div class="img-modal" onclick="event.stopPropagation()">
     <div class="img-modal-content">
       <div id="imgLoading" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;min-height:320px"><div style="width:48px;height:48px;border:4px solid #E8F5E9;border-top:4px solid #2E7D32;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="margin-top:16px;font-size:14px;color:#666;font-weight:500">📸 견적서 이미지 생성 중...</div><div style="margin-top:4px;font-size:11px;color:#999">잠시만 기다려주세요</div></div>
-      <img id="imgPreview" src="" alt="돌봄매트 견적서" style="margin:0">
+      <img id="imgPreview" src="" alt="돌봄매트 견적서" style="margin:0" onclick="copyQuoteTextOnly()">
     </div>
     <div class="img-modal-bottom">
       <button id="downloadBtn" onclick="resaveQuoteImage()" style="display:none;width:100%;padding:16px 14px;background:#2E7D32;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px;box-shadow:0 2px 8px rgba(46,125,50,0.3)">견적서 다운로드</button>
-      <div id="longPressHint" class="long-press-hint">
+      <div id="longPressHint" class="long-press-hint" onclick="highlightImageAndCopy()">
         <div class="lph-main"><span class="lph-emoji">👆</span> 이미지를 <strong style="color:#E65100">꾸욱 길게</strong> 눌러주세요</div>
         <div class="lph-sub">메뉴가 뜨면 <strong>"사진에 저장"</strong> 또는 <strong>"이미지 저장"</strong> 선택!</div>
       </div>
