@@ -494,14 +494,14 @@ function copyQuoteTextOnly(){
     var quoteText=buildQuoteText();
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(quoteText).then(function(){
-        showToast('✅ 견적 텍스트 복사 완료! 이미지를 길게 눌러 저장하세요');
+        showToast('✅ 견적 텍스트 복사 완료! 견적서를 길게 눌러 저장하세요');
       }).catch(function(){
         var ta=document.createElement('textarea');ta.value=quoteText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-        showToast('✅ 견적 텍스트 복사 완료! 이미지를 길게 눌러 저장하세요');
+        showToast('✅ 견적 텍스트 복사 완료! 견적서를 길게 눌러 저장하세요');
       });
     }else{
       var ta=document.createElement('textarea');ta.value=quoteText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-      showToast('✅ 견적 텍스트 복사 완료! 이미지를 길게 눌러 저장하세요');
+      showToast('✅ 견적 텍스트 복사 완료! 견적서를 길게 눌러 저장하세요');
     }
   }catch(e){}
 }
