@@ -546,18 +546,12 @@ function closeImgOverlay(e){
 (function(){
   if(window.parent===window)return;
   function sendHeight(){
-    var h=Math.max(
-      document.body.scrollHeight,
-      document.body.offsetHeight,
-      document.documentElement.scrollHeight,
-      document.documentElement.offsetHeight
-    );
-    window.parent.postMessage({type:'resize',height:h+50},'*');
+    var h=document.body.scrollHeight;
+    window.parent.postMessage({type:'resize',height:h},'*');
   }
   sendHeight();
   new MutationObserver(sendHeight).observe(document.body,{childList:true,subtree:true,attributes:true});
   window.addEventListener('resize',sendHeight);
-  window.addEventListener('load',function(){sendHeight();setTimeout(sendHeight,500);setTimeout(sendHeight,1500);});
   setInterval(sendHeight,2000);
 })();
 </script>
