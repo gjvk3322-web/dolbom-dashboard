@@ -78,8 +78,22 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .toast.show{transform:translateX(-50%) translateY(0)}
 .copy-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;justify-content:center;align-items:center}
 .copy-overlay.show{display:flex}
-.img-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+.img-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
 .img-overlay.show{display:flex}
+.img-modal{background:#fff;border-radius:20px;max-width:380px;width:100%;text-align:center;animation:modalIn .4s ease;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column}
+.img-modal-content{flex:1;overflow-y:auto;padding:24px 20px 12px}
+.img-modal-bottom{position:sticky;bottom:0;background:#fff;padding:12px 20px 20px;border-top:1px solid #eee;border-radius:0 0 20px 20px}
+.img-modal img{width:100%;border-radius:12px;border:1px solid #e8e8e3;margin:8px 0}
+@media(min-width:768px){
+  .img-overlay{align-items:flex-start;padding:30px 16px}
+  .img-modal{max-width:520px;max-height:calc(100vh - 60px)}
+  .img-modal .save-guide{display:none}
+  .img-modal-content{padding:20px 24px 8px}
+  .img-modal img{max-height:60vh;width:auto;max-width:100%;object-fit:contain}
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes pulseGuide{0%,100%{box-shadow:0 0 0 0 rgba(253,216,53,0.7)}50%{box-shadow:0 0 0 8px rgba(253,216,53,0)}}
+.save-guide{background:#FFF8E1;border:2px solid #FDD835;border-radius:12px;padding:14px;margin-bottom:10px;animation:pulseGuide 2s infinite}
 </style>
 </head>
 <body>
@@ -184,17 +198,24 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div id="captureArea" style="position:fixed;left:-9999px;top:0;width:400px;background:#fff;font-family:'Noto Sans KR',sans-serif;z-index:-1"></div>
 <div class="img-overlay" id="imgOverlay" onclick="if(event.target===this){this.classList.remove('show');document.body.style.overflow=''}">
-  <div style="background:#fff;border-radius:20px;max-width:380px;width:90%;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column" onclick="event.stopPropagation()">
-    <div style="flex:1;overflow-y:auto;padding:24px 20px 12px">
+  <div class="img-modal">
+    <div class="img-modal-content">
       <div style="font-size:18px;font-weight:700;text-align:center;margin-bottom:12px">📋 예약 내용 확인</div>
-      <img id="imgPreview" src="" alt="예약서" style="width:100%;border-radius:12px;border:1px solid #e8e8e3">
+      <img id="imgPreview" src="" alt="예약서">
     </div>
-    <div style="position:sticky;bottom:0;background:#fff;padding:12px 20px 20px;border-top:1px solid #eee;border-radius:0 0 20px 20px">
-      <div style="font-size:11px;color:#4CAF50;font-weight:600;margin-bottom:6px;text-align:center">💬 이미지를 저장하고 카카오톡으로 보내주세요</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button onclick="resaveImage()" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:12px 12px 8px;background:#2E7D32;color:#fff;border:none;border-radius:10px;font-family:inherit;cursor:pointer"><div style="font-size:14px;font-weight:700">📸 이미지 저장</div><div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:2px">갤러리에 저장</div></button>
-        <a onclick="openKakao()" style="flex:1;display:flex;align-items:center;justify-content:center;padding:14px 12px;background:#FEE500;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer">💬 카톡 상담</a>
+    <div class="img-modal-bottom">
+      <!-- PC 전용: 다운로드 녹색 버튼 (모바일에서는 숨김) -->
+      <button id="downloadBtn" onclick="resaveImage()" style="display:none;width:100%;padding:16px 14px;background:#2E7D32;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px;box-shadow:0 2px 8px rgba(46,125,50,0.3)">예약서 다운로드</button>
+
+      <!-- 모바일 전용: 노란 펄스 가이드 박스 (PC에서는 .save-guide CSS로 숨김) -->
+      <div class="save-guide">
+        <div style="font-size:13px;font-weight:700;color:#3C1E1E;margin-bottom:6px">📸 이미지를 꾸욱 길게 눌러주세요</div>
+        <div style="font-size:11.5px;color:#5D4037;line-height:1.6">갤러리에 저장된 후<br>카카오톡으로 전송해주세요!</div>
       </div>
+
+      <!-- 카톡 1버튼 (PC/모바일 통합) -->
+      <a onclick="openKakao()" style="display:flex;align-items:center;justify-content:center;padding:14px 12px;background:#FEE500;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer;width:100%;box-sizing:border-box;margin-bottom:8px">💬 카톡 상담</a>
+
       <div style="font-size:10px;color:#999;text-align:center;margin-bottom:8px">* 텍스트도 자동 복사되어 있어요. 이미지 전송이 어려우면 붙여넣기 해주세요!</div>
       <button onclick="document.getElementById('imgOverlay').classList.remove('show');document.body.style.overflow=''" style="width:100%;padding:11px;background:#f0f0f0;color:#666;border:none;border-radius:10px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer">닫기</button>
     </div>
@@ -249,9 +270,9 @@ function switchTeam(t){
 function isDateClosed(dateStr){return TEAM&&!!CLOSED[TEAM+'_'+dateStr]}
 
 var PRODUCTS=[
-  {name:'1000매트 22T',price:76500,colors:['모던','베이지','미정']},
-  {name:'1000매트 18T',price:64500,colors:['모던','베이지','미정']},
-  {name:'500매트 22T',price:16900,colors:['마블','코튼','모던','미정']}
+  {name:'1000매트 22T',price:76500,colors:['모던','미정']},
+  {name:'1000매트 18T',price:64500,colors:['모던','미정']},
+  {name:'500매트 22T',price:16900,colors:['모던','마블','코튼']}
 ];
 var selectedProduct=-1,selectedColor='',selectedDates=[],dateAny=false,selectedTime='상관없음',selectedScope='',roomCount=0,agreed=false,addrData=null;
 
@@ -392,6 +413,9 @@ function saveBookingImage(){
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
     savedCanvasDataUrl=canvas.toDataURL('image/png');
     document.getElementById('imgPreview').src=savedCanvasDataUrl;
+    // PC(768px 이상)에서만 다운로드 버튼 표시 - 모바일은 길게 누르기로 저장
+    var dlBtn=document.getElementById('downloadBtn');
+    if(dlBtn){dlBtn.style.display=window.innerWidth>=768?'block':'none';}
     document.getElementById('imgOverlay').classList.add('show');
     document.body.style.overflow='hidden';
   }).catch(function(){showToast('⚠️ 이미지 생성 실패 - 텍스트는 복사되었습니다!')});
