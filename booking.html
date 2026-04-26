@@ -93,7 +93,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 }
 @keyframes modalIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 @keyframes pulseGuide{0%,100%{box-shadow:0 0 0 0 rgba(253,216,53,0.7)}50%{box-shadow:0 0 0 8px rgba(253,216,53,0)}}
-.save-guide{background:#FFF8E1;border:2px solid #FDD835;border-radius:12px;padding:14px;margin-bottom:10px;animation:pulseGuide 2s infinite}
+@keyframes highlightPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,143,0,0)}50%{box-shadow:0 0 0 6px rgba(255,143,0,0.6)}}
+.save-guide{background:#FFF8E1;border:2px solid #FDD835;border-radius:12px;padding:14px;margin-bottom:10px;animation:pulseGuide 2s infinite;cursor:pointer}
+#imgPreview{cursor:pointer;transition:box-shadow .3s}
+#imgPreview.highlight{animation:highlightPulse 0.8s ease-in-out 3}
 </style>
 </head>
 <body>
@@ -200,7 +203,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <div class="img-overlay" id="imgOverlay" onclick="if(event.target===this){this.classList.remove('show');document.body.style.overflow=''}">
   <div class="img-modal">
     <div class="img-modal-content">
-      <div style="font-size:18px;font-weight:700;text-align:center;margin-bottom:12px">📋 예약 내용 확인</div>
       <img id="imgPreview" src="" alt="예약서">
     </div>
     <div class="img-modal-bottom">
@@ -208,7 +210,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <button id="downloadBtn" onclick="resaveImage()" style="display:none;width:100%;padding:16px 14px;background:#2E7D32;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px;box-shadow:0 2px 8px rgba(46,125,50,0.3)">예약서 다운로드</button>
 
       <!-- 모바일 전용: 노란 펄스 가이드 박스 (PC에서는 .save-guide CSS로 숨김) -->
-      <div class="save-guide">
+      <div class="save-guide" onclick="highlightImage()">
         <div style="font-size:13px;font-weight:700;color:#3C1E1E;margin-bottom:6px">📸 이미지를 꾸욱 길게 눌러주세요</div>
         <div style="font-size:11.5px;color:#5D4037;line-height:1.6">갤러리에 저장된 후<br>카카오톡으로 전송해주세요!</div>
       </div>
@@ -349,8 +351,14 @@ function copyBooking(){/* legacy */
   var t='돌봄매트 시공 예약\n────────────────\n\n';
   if(REFERRAL_CODE)t+='추천인: '+REFERRAL_CODE+'\n\n';
   
-  t+='■ 고객 정보\n  이름: '+name+'\n  연락처: '+phone+'\n  주소: '+addr+'\n  평수: '+pyung+'평\n';
-  t+='\n■ 시공 정보\n  희망일: '+dateText+'\n  희망시간: '+selectedTime+'\n  제품: '+product.name+'\n  색상: '+selectedColor+'\n  시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'\n';
+  t+='■ 예약 내용\n';
+  t+='  희망일: '+dateText+'\n';
+  t+='  희망시간: '+selectedTime+'\n';
+  t+='  주소: '+addr+'\n';
+  t+='  연락처: '+phone+'\n';
+  t+='  평수: '+pyung+'평\n';
+  t+='  시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'\n';
+  t+='  제품: '+product.name+' / 색상: '+selectedColor+'\n';
   if(memo)t+='  요청사항: '+memo+'\n';
   t+='\n────────────────\n예약 안내사항: '+NOTICE_URL+'\n위 예약 안내사항을 확인하였습니다.\n\n예약 신청합니다 ☺️';
   navigator.clipboard.writeText(t).then(function(){document.getElementById('copyOverlay').classList.add('show')}).catch(function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);document.getElementById('copyOverlay').classList.add('show')});
@@ -371,15 +379,21 @@ function buildBookingImage(){
   var dateText=dateAny?'상관없음 (빠른 날짜)':selectedDates.sort().join(', ');
   var dongHo=(dong?(dong.includes('동')?dong:dong+'동')+' ':'')+(hosu?(hosu.includes('호')?hosu:hosu+'호'):'');
   var addr=addrData?addrData.name+' '+addrData.address+' '+dongHo:'';
-  var h='<div style="padding:20px;background:#fff;font-family:Noto Sans KR,sans-serif">';
-  h+='<div style="text-align:center;padding-bottom:14px;border-bottom:2px solid #2E7D32;margin-bottom:14px"><div style="font-size:20px;font-weight:800;color:#2E7D32">돌봄매트 시공 예약</div></div>';
-  if(REFERRAL_CODE)h+='<div style="padding:8px 12px;background:#E8F5E9;border-radius:8px;font-size:12px;color:#2E7D32;font-weight:600;text-align:center;margin-bottom:12px">🎉 '+REFERRAL_CODE+' 추천 할인 적용</div>';
-  h+='<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:8px">■ 고객 정보</div>';
-  h+='<div style="font-size:12px;color:#333;line-height:2">이름: '+name+'<br>연락처: '+phone+'<br>주소: '+addr+'<br>평수: '+pyung+'평</div></div>';
-  h+='<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:8px">■ 시공 정보</div>';
-  h+='<div style="font-size:12px;color:#333;line-height:2">희망일: '+dateText+'<br>희망시간: '+selectedTime+'<br>제품: '+product.name+'<br>색상: '+selectedColor+'<br>시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'</div></div>';
-  if(memo)h+='<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:4px">■ 요청사항</div><div style="font-size:12px;color:#333">'+memo+'</div></div>';
-  h+='<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee;text-align:center;font-size:10px;color:#bbb">돌봄매트 | dolbommat.com</div>';
+  var h='<div style="padding:24px 20px;background:#fff;font-family:Noto Sans KR,sans-serif">';
+  h+='<div style="text-align:center;padding-bottom:16px;border-bottom:2px solid #2E7D32;margin-bottom:16px"><div style="font-size:22px;font-weight:800;color:#2E7D32">돌봄매트 시공 예약</div><div style="font-size:14px;color:#666;margin-top:6px">'+name+' 고객님</div></div>';
+  if(REFERRAL_CODE)h+='<div style="padding:10px 14px;background:#E8F5E9;border-radius:8px;font-size:13px;color:#2E7D32;font-weight:600;text-align:center;margin-bottom:14px">🎉 '+REFERRAL_CODE+' 추천 할인 적용</div>';
+  h+='<div style="margin-bottom:14px"><div style="font-size:15px;font-weight:700;color:#2E7D32;margin-bottom:10px">■ 예약 내용</div>';
+  h+='<div style="font-size:14px;color:#333;line-height:1.9">';
+  h+='희망일: '+dateText+'<br>';
+  h+='희망시간: '+selectedTime+'<br>';
+  h+='주소: '+addr+'<br>';
+  h+='연락처: '+phone+'<br>';
+  h+='평수: '+pyung+'평<br>';
+  h+='시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'<br>';
+  h+='제품: '+product.name+' / 색상: '+selectedColor;
+  h+='</div></div>';
+  if(memo)h+='<div style="margin-bottom:14px"><div style="font-size:15px;font-weight:700;color:#2E7D32;margin-bottom:6px">■ 요청사항</div><div style="font-size:14px;color:#333;line-height:1.7">'+memo+'</div></div>';
+  h+='<div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#bbb">돌봄매트 | dolbommat.com</div>';
   h+='</div>';
   return h;
 }
@@ -431,6 +445,17 @@ function resaveImage(){
     }).catch(function(){fallbackDL();showToast('✅ 저장 완료!')});
   }else{fallbackDL();showToast('✅ 저장 완료!')}
 }
+// 노란 가이드박스 클릭 시 이미지를 강조 펄스로 알려주는 효과 (quote.html과 동일)
+function highlightImage(){
+  var img=document.getElementById('imgPreview');
+  if(img){
+    img.scrollIntoView({behavior:'smooth',block:'center'});
+    img.classList.remove('highlight');
+    void img.offsetWidth;
+    img.classList.add('highlight');
+    setTimeout(function(){img.classList.remove('highlight')},2500);
+  }
+}
 function fallbackDL(){var a=document.createElement('a');a.href=savedCanvasDataUrl;a.download='돌봄매트_예약서.png';document.body.appendChild(a);a.click();document.body.removeChild(a)}
 function buildBookingText(){
   var name=document.getElementById('name').value.trim(),phone=document.getElementById('phone').value.trim(),dong=document.getElementById('dong').value.trim(),hosu=document.getElementById('hosu').value.trim(),pyung=document.getElementById('pyung').value.trim(),scope=selectedScope||document.getElementById('scopeInput').value.trim(),memo=document.getElementById('memo').value.trim(),product=PRODUCTS[selectedProduct];
@@ -438,11 +463,17 @@ function buildBookingText(){
   var dongStr=dong?(dong.includes('동')?dong:dong+'동'):'';var hosuStr=hosu?(hosu.includes('호')?hosu:hosu+'호'):'';
   var dongHo=(dongStr?dongStr+' ':'')+hosuStr;
   var addr=addrData?addrData.name+'\n  '+addrData.address+'\n  '+dongHo:'';
-  var t='돌봄매트 시공 예약\n────────────────\n\n';
+  var t='돌봄매트 시공 예약\n'+name+' 고객님\n────────────────\n\n';
   if(REFERRAL_CODE)t+='추천인: '+REFERRAL_CODE+'\n\n';
-  
-  t+='■ 고객 정보\n  이름: '+name+'\n  연락처: '+phone+'\n  주소: '+addr+'\n  평수: '+pyung+'평\n';
-  t+='\n■ 시공 정보\n  희망일: '+dateText+'\n  희망시간: '+selectedTime+'\n  제품: '+product.name+'\n  색상: '+selectedColor+'\n  시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'\n';
+
+  t+='■ 예약 내용\n';
+  t+='  희망일: '+dateText+'\n';
+  t+='  희망시간: '+selectedTime+'\n';
+  t+='  주소: '+addr+'\n';
+  t+='  연락처: '+phone+'\n';
+  t+='  평수: '+pyung+'평\n';
+  t+='  시공범위: '+scope+(roomCount>0?' + 방 '+roomCount+'개':'')+'\n';
+  t+='  제품: '+product.name+' / 색상: '+selectedColor+'\n';
   if(memo)t+='  요청사항: '+memo+'\n';
   t+='\n────────────────\n예약 안내사항: https://my.dolbommat.com/notice.html\n위 예약 안내사항을 확인하였습니다.\n\n예약 신청합니다 ☺️';
   return t;
