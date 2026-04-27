@@ -539,8 +539,9 @@ function PuzzleMatLayoutApp() {
                   {matsWithDisplay.map((m) => (
                     <g
                       key={`m-${m.x}-${m.y}`}
-                      onClick={(e) => toggleMatExclude(m, e)}
+                      onClick={mode === "exclude" ? (e) => toggleMatExclude(m, e) : undefined}
                       className={mode === "exclude" ? "mat-clickable" : ""}
+                      style={{ pointerEvents: mode === "exclude" ? "auto" : "none" }}
                     >
                       <rect
                         x={m.x} y={m.y}
@@ -611,7 +612,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.3 · 자유 그리기 + 자동 비교 · 작업 내용은 자동 저장됩니다
+          돌봄매트 시공 도구 v1.3.1 · 매트 위 클릭 통과 버그 수정 · 작업 내용은 자동 저장됩니다
         </div>
       </div>
     </div>
