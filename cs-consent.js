@@ -572,7 +572,9 @@
       var item = CONSENT_ITEMS[i];
       if (!item.required) continue;
       var cb = containerEl.querySelector('.cs-consent-item[data-key="' + item.key + '"] .cs-consent-checkbox');
-      if (!cb || !cb.checked) {
+      // 🆕 컨테이너에 해당 항목이 없으면 (페이지 필터링됨) skip
+      if (!cb) continue;
+      if (!cb.checked) {
         return { ok: false, failed: item.title };
       }
     }
