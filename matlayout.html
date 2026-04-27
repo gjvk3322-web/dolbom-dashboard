@@ -400,7 +400,9 @@ function PuzzleMatLayoutApp() {
     if (!svg) return;
 
     const handleTouchStart = (e) => {
-      if (e.touches.length === 2) {
+      // 두 손가락 이상 닿으면 즉시 "드래그 중" 플래그 ON → 손바닥 보호 효과
+      if (e.touches.length >= 2) {
+        wasDraggingRef.current = true;
         const [t1, t2] = [e.touches[0], e.touches[1]];
         const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
         pinchRef.current = { startDist: dist, startZoom: zoom };
@@ -419,7 +421,13 @@ function PuzzleMatLayoutApp() {
     };
 
     const handleTouchEnd = (e) => {
-      if (e.touches.length < 2) pinchRef.current = null;
+      if (e.touches.length < 2) {
+        pinchRef.current = null;
+        // 모든 손가락이 떨어진 후 약간 시간을 둬서 의도치 않은 클릭 방지
+        if (e.touches.length === 0) {
+          setTimeout(() => { wasDraggingRef.current = false; }, 200);
+        }
+      }
     };
 
     svg.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -553,8 +561,16 @@ function PuzzleMatLayoutApp() {
 
   const handleCanvasClick = (evt) => {
     if (wasDraggingRef.current) return;
-    if (isViewMode) return; // view 모드는 캔버스 클릭으로 점 추가 안 됨
+    if (isViewMode) return;
     if (mode === "idle" || mode === "exclude") return;
+
+    // 손바닥 보호: 터치 이벤트일 때 손바닥이 동시에 닿으면 무시
+    // touches.length가 1보다 크면 손바닥이거나 핀치줌 시도 → 무시
+    if (evt.touches && evt.touches.length > 1) return;
+
+    // 포인터 이벤트가 있으면 펜이 아닌 큰 영역(손바닥)은 무시 (height/width로 판단)
+    if (evt.nativeEvent && evt.nativeEvent.height && evt.nativeEvent.height > 25) return;
+
     const p = getSvgPoint(evt);
     if (mode === "scale") setScalePoints((prev) => (prev.length >= 2 ? [p] : [...prev, p]));
     if (mode === "draw") {
@@ -689,33 +705,6 @@ function PuzzleMatLayoutApp() {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const exportJson = () => {
-    const payload = {
-      version: "0.7",
-      rule: { matSizeMm: 1000, offcutThreshold: OFFCUT_THRESHOLD, pairingThreshold: PAIRING_THRESHOLD },
-      scale: { pxPerMeter },
-      polygon: points,
-      excludedMatKeys,
-      result: {
-        netAreaM2: Number(netAreaM2.toFixed(2)),
-        totalMats, fullMats, cutMats, excludedCount,
-        bigCutsCount, offcutsCount, pairsCount, unpairedOffcutsCount,
-        actualOrderMats, savedMats,
-        estimatedLossRate: Number(lossRate.toFixed(1)),
-        gridOffset: { x: optimized.ox, y: optimized.oy },
-        mats: matsWithDisplay.map(m => ({ ...m, pairNumber: matToPair.get(matKey(m)) || null })),
-        pairs: pairing.pairs.map((p, idx) => ({ pairNumber: idx + 1, mats: [matKey(p.a), matKey(p.b)] })),
-      },
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `mat-layout-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const polygonStr = points.map((p) => `${p.x},${p.y}`).join(" ");
@@ -858,6 +847,15 @@ function PuzzleMatLayoutApp() {
             {/* 전체화면 보기 버튼 */}
             {points.length >= 3 && (
               <>
+                {mode === "idle" ? (
+                  <Button variant="outline" onClick={() => setMode("draw")} className="bg-blue-50 border-blue-300 text-blue-900 hover:bg-blue-100">
+                    편집 모드
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => { setMode("idle"); setSelectedIdx(null); }} className="bg-slate-100 border-slate-400 text-slate-900 hover:bg-slate-200">
+                    잠금
+                  </Button>
+                )}
                 <Button variant="outline" onClick={openViewerTab} className="bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100">
                   전체화면 보기
                 </Button>
@@ -866,8 +864,7 @@ function PuzzleMatLayoutApp() {
                 </Button>
               </>
             )}
-            <Button variant="outline" onClick={exportJson}>결과 저장</Button>
-            <Button variant="outline" onClick={undo}>취소</Button>
+            <Button variant="outline" onClick={undo}>뒤로가기</Button>
             <Button variant="destructive" onClick={resetAll}>초기화</Button>
           </div>
         </div>
@@ -1142,18 +1139,18 @@ function PuzzleMatLayoutApp() {
                 {mode === "scale" && "스케일 모드 — 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
                 {mode === "draw" && (
                   selectedIdx !== null
-                    ? "시공 모드 — 점 선택됨. 드래그하거나 화살표 키 (Shift+화살표 = 10px씩) | Esc 선택해제 | 빈 공간 클릭 = 새 점 추가"
-                    : "시공 모드 — 도면 꼭짓점을 클릭하세요. 이미 찍은 점은 드래그하거나 클릭 후 화살표 키로 미세 조정 가능."
+                    ? "시공 모드 — 점 선택됨. 드래그하거나 화살표 키 (Shift+화살표 = 10px씩) | Esc 선택해제 | 빈 공간 탭 = 새 점 추가 | 다 그리면 우측 상단 \"잠금\" 클릭"
+                    : "시공 모드 — 도면 꼭짓점을 한 손가락으로 탭하세요. (손바닥 닿으면 자동 무시) 다 그리면 우측 상단 \"잠금\"을 누르세요."
                 )}
                 {mode === "exclude" && "제외 모드 — 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
-                {mode === "idle" && "잠금 상태 — 마우스로 드래그하거나 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 \"시공\" 모드 클릭."}
+                {mode === "idle" && "잠금 상태 — 마우스로 드래그하거나 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 우측 상단 \"편집 모드\" 버튼을 누르세요."}
               </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v2.0.1 · 이미지 저장 + 모바일 터치 지원.1
+          돌봄매트 시공 도구 v2.1 · 잠금/편집 토글 + 손바닥 보호
         </div>
       </div>
     </div>
