@@ -5,25 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📐 1m × 1m 퍼즐매트 배치 프로그램</title>
 
-<!-- 검색엔진 노출 차단 -->
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="googlebot" content="noindex, nofollow">
 
-<!-- 글꼴 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css" rel="stylesheet">
-
-<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-
-<!-- React + Babel (CDN) -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <style>
   body { font-family: 'Pretendard Variable', -apple-system, sans-serif; }
-  /* 모바일 더블탭 줌 방지 */
-  svg { touch-action: none; }
+  svg { touch-action: manipulation; }
+  .mat-clickable { cursor: pointer; }
+  .mat-clickable:active { opacity: 0.6; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
 </style>
 </head>
 <body>
@@ -32,15 +31,9 @@
 <script type="text/babel">
 const { useMemo, useRef, useState, useEffect } = React;
 
-// ========================================================
-// 상수
-// ========================================================
-const DEFAULT_SCALE = 80;          // 스케일 보정 전 임시 1m=80px
-const STORAGE_KEY = 'puzzleMatLayout_v1'; // 자동저장 키
+const DEFAULT_SCALE = 80;
+const STORAGE_KEY = 'puzzleMatLayout_v2';
 
-// ========================================================
-// 헬퍼 컴포넌트 (shadcn/ui 대체)
-// ========================================================
 function Button({ children, variant = "default", className = "", ...props }) {
   const v = {
     default: "bg-slate-900 text-white hover:bg-slate-800",
@@ -51,23 +44,16 @@ function Button({ children, variant = "default", className = "", ...props }) {
     <button
       className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${v[variant] || v.default} ${className}`}
       {...props}
-    >
-      {children}
-    </button>
+    >{children}</button>
   );
 }
-
 function Card({ children, className = "" }) {
   return <div className={`rounded-2xl bg-white shadow-sm border border-slate-200 ${className}`}>{children}</div>;
 }
-
 function CardContent({ children, className = "" }) {
   return <div className={className}>{children}</div>;
 }
 
-// ========================================================
-// 기하 헬퍼 함수들 (원본 그대로)
-// ========================================================
 function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
 function polygonArea(points) {
@@ -94,10 +80,8 @@ function pointInPolygon(point, polygon) {
 
 function rectCorners(x, y, size) {
   return [
-    { x, y },
-    { x: x + size, y },
-    { x: x + size, y: y + size },
-    { x, y: y + size },
+    { x, y }, { x: x + size, y },
+    { x: x + size, y: y + size }, { x, y: y + size },
   ];
 }
 
@@ -124,7 +108,7 @@ function expandBbox(b, px) {
   return { minX: b.minX - px, minY: b.minY - px, maxX: b.maxX + px, maxY: b.maxY + px };
 }
 
-function makeLayout(polygon, excluded, matPx, offsetX, offsetY, overcutPx) {
+function makeLayout(polygon, matPx, offsetX, offsetY, overcutPx) {
   if (polygon.length < 3) return [];
   const b = expandBbox(bbox(polygon), overcutPx);
   const startX = Math.floor((b.minX - offsetX) / matPx) * matPx + offsetX - matPx;
@@ -136,27 +120,22 @@ function makeLayout(polygon, excluded, matPx, offsetX, offsetY, overcutPx) {
 
   for (let y = startY; y <= endY; y += matPx) {
     for (let x = startX; x <= endX; x += matPx) {
-      const hitMain = rectIntersectsPolygon(x, y, matPx, polygon);
-      if (!hitMain) continue;
-      const center = { x: x + matPx / 2, y: y + matPx / 2 };
-      const centerInExcluded = excluded.some((ex) => ex.length >= 3 && pointInPolygon(center, ex));
-      const fullyInExcluded = excluded.some((ex) => ex.length >= 3 && rectCorners(x, y, matPx).every((p) => pointInPolygon(p, ex)));
-      if (fullyInExcluded || centerInExcluded) continue;
+      if (!rectIntersectsPolygon(x, y, matPx, polygon)) continue;
       const corners = rectCorners(x, y, matPx);
-      const full = corners.every((p) => pointInPolygon(p, polygon)) && !excluded.some((ex) => pointInPolygon(center, ex));
+      const full = corners.every((p) => pointInPolygon(p, polygon));
       mats.push({ id: id++, x, y, full });
     }
   }
   return mats;
 }
 
-function optimizeLayout(polygon, excluded, matPx, overcutPx, priority) {
+function optimizeLayout(polygon, matPx, overcutPx, priority) {
   let best = null;
   if (polygon.length < 3) return { mats: [], ox: 0, oy: 0, score: 0, cutCount: 0 };
   const step = matPx / 10;
   for (let ox = 0; ox < matPx; ox += step) {
     for (let oy = 0; oy < matPx; oy += step) {
-      const mats = makeLayout(polygon, excluded, matPx, ox, oy, overcutPx);
+      const mats = makeLayout(polygon, matPx, ox, oy, overcutPx);
       const cutCount = mats.filter((m) => !m.full).length;
       const score = priority === "fewMats" ? mats.length * 1000 + cutCount * 50 : mats.length * 1000 + cutCount * 150;
       if (!best || score < best.score) best = { mats, ox, oy, score, cutCount };
@@ -165,16 +144,12 @@ function optimizeLayout(polygon, excluded, matPx, overcutPx, priority) {
   return best || { mats: [], ox: 0, oy: 0, score: 0, cutCount: 0 };
 }
 
-// ========================================================
-// 메인 컴포넌트
-// ========================================================
 function PuzzleMatLayoutApp() {
   const [image, setImage] = useState(null);
-  const [imageDims, setImageDims] = useState({ w: 760, h: 540 }); // 도면 가로세로 비율 보존용
+  const [imageDims, setImageDims] = useState({ w: 760, h: 540 });
   const [mode, setMode] = useState("scale");
   const [points, setPoints] = useState([]);
-  const [excludedZones, setExcludedZones] = useState([]);
-  const [currentExclude, setCurrentExclude] = useState([]);
+  const [excludedMatKeys, setExcludedMatKeys] = useState([]);
   const [scalePoints, setScalePoints] = useState([]);
   const [scaleInputM, setScaleInputM] = useState("2.04");
   const [pxPerMeter, setPxPerMeter] = useState(DEFAULT_SCALE);
@@ -182,19 +157,17 @@ function PuzzleMatLayoutApp() {
   const [priority, setPriority] = useState("fewCuts");
   const [zoom, setZoom] = useState(1);
   const [showNumbers, setShowNumbers] = useState(true);
-  const [restored, setRestored] = useState(false); // 자동복원 알림
+  const [restored, setRestored] = useState(false);
   const svgRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // ─────────────────────────────────────────
-  // 🔄 자동 복원 (페이지 로드 시 1회)
-  // ─────────────────────────────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const d = JSON.parse(raw);
       if (d.points) setPoints(d.points);
-      if (d.excludedZones) setExcludedZones(d.excludedZones);
+      if (d.excludedMatKeys) setExcludedMatKeys(d.excludedMatKeys);
       if (d.pxPerMeter) setPxPerMeter(d.pxPerMeter);
       if (d.overcutCm !== undefined) setOvercutCm(d.overcutCm);
       if (d.priority) setPriority(d.priority);
@@ -202,48 +175,49 @@ function PuzzleMatLayoutApp() {
       if (d.imageDims) setImageDims(d.imageDims);
       setRestored(true);
       setTimeout(() => setRestored(false), 5000);
-    } catch (e) { /* 무시 */ }
+    } catch (e) {}
   }, []);
 
-  // ─────────────────────────────────────────
-  // 💾 자동 저장 (상태 변경 시마다)
-  // ─────────────────────────────────────────
   useEffect(() => {
     try {
-      const data = { points, excludedZones, pxPerMeter, overcutCm, priority, image, imageDims };
+      const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
-      // localStorage 용량 초과 시 이미지 빼고 저장 시도
       try {
-        const data = { points, excludedZones, pxPerMeter, overcutCm, priority, imageDims };
+        const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, imageDims };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch (e2) { /* 포기 */ }
+      } catch (e2) {}
     }
-  }, [points, excludedZones, pxPerMeter, overcutCm, priority, image, imageDims]);
+  }, [points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims]);
 
-  // ─────────────────────────────────────────
-  // 계산 (1m × 1m 매트 = 1㎡ 가정)
-  // ─────────────────────────────────────────
   const matPx = pxPerMeter;
   const overcutPx = (Number(overcutCm) / 100) * pxPerMeter;
   const optimized = useMemo(
-    () => optimizeLayout(points, excludedZones, matPx, overcutPx, priority),
-    [points, excludedZones, matPx, overcutPx, priority]
+    () => optimizeLayout(points, matPx, overcutPx, priority),
+    [points, matPx, overcutPx, priority]
   );
 
-  const areaM2 = polygonArea(points) / (pxPerMeter * pxPerMeter);
-  const excludedM2 = excludedZones.reduce((sum, z) => sum + polygonArea(z) / (pxPerMeter * pxPerMeter), 0);
-  const netAreaM2 = Math.max(0, areaM2 - excludedM2);
-  const totalMats = optimized.mats.length;
-  const fullMats = optimized.mats.filter((m) => m.full).length;
+  const matKey = (m) => `${m.x.toFixed(2)}_${m.y.toFixed(2)}`;
+  const excludedSet = new Set(excludedMatKeys);
+  const isExcluded = (m) => excludedSet.has(matKey(m));
+
+  let displayNum = 0;
+  const matsWithDisplay = optimized.mats.map((m) => {
+    const excluded = isExcluded(m);
+    return { ...m, excluded, displayNumber: excluded ? null : ++displayNum };
+  });
+
+  const visibleMats = matsWithDisplay.filter((m) => !m.excluded);
+  const totalMats = visibleMats.length;
+  const fullMats = visibleMats.filter((m) => m.full).length;
   const cutMats = totalMats - fullMats;
-  // 1m×1m 매트 1장 = 1㎡ 이므로 totalMats 그대로가 총 면적(㎡)
+  const excludedCount = excludedMatKeys.length;
+
+  const areaM2 = polygonArea(points) / (pxPerMeter * pxPerMeter);
+  const netAreaM2 = areaM2;
   const totalMatAreaM2 = totalMats * 1.0;
   const lossRate = totalMats > 0 ? Math.max(0, ((totalMatAreaM2 - netAreaM2) / totalMatAreaM2) * 100) : 0;
 
-  // ─────────────────────────────────────────
-  // 🖼️ 도면 업로드 (가로세로 비율 보존)
-  // ─────────────────────────────────────────
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -261,9 +235,6 @@ function PuzzleMatLayoutApp() {
     reader.readAsDataURL(file);
   };
 
-  // ─────────────────────────────────────────
-  // SVG 좌표 변환
-  // ─────────────────────────────────────────
   const getSvgPoint = (evt) => {
     const svg = svgRef.current;
     const pt = svg.createSVGPoint();
@@ -280,22 +251,25 @@ function PuzzleMatLayoutApp() {
   };
 
   const handleCanvasClick = (evt) => {
-    if (mode === "idle") return;
+    if (mode === "idle" || mode === "exclude") return;
     const p = getSvgPoint(evt);
     if (mode === "scale") setScalePoints((prev) => (prev.length >= 2 ? [p] : [...prev, p]));
     if (mode === "draw") setPoints((prev) => [...prev, p]);
-    if (mode === "exclude") setCurrentExclude((prev) => [...prev, p]);
+  };
+
+  const toggleMatExclude = (m, e) => {
+    e.stopPropagation();
+    if (mode !== "exclude") return;
+    const key = matKey(m);
+    setExcludedMatKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
   };
 
   const undo = () => {
     if (mode === "draw") setPoints((prev) => prev.slice(0, -1));
-    if (mode === "exclude") setCurrentExclude((prev) => prev.slice(0, -1));
     if (mode === "scale") setScalePoints((prev) => prev.slice(0, -1));
-  };
-
-  const finishExclude = () => {
-    if (currentExclude.length >= 3) setExcludedZones((prev) => [...prev, currentExclude]);
-    setCurrentExclude([]);
+    if (mode === "exclude") setExcludedMatKeys((prev) => prev.slice(0, -1));
   };
 
   const finishDraw = () => { setMode("idle"); };
@@ -303,67 +277,66 @@ function PuzzleMatLayoutApp() {
   const resetAll = () => {
     if (!confirm('모든 작업이 삭제됩니다. 계속하시겠습니까?')) return;
     setPoints([]);
-    setExcludedZones([]);
-    setCurrentExclude([]);
+    setExcludedMatKeys([]);
     setScalePoints([]);
     setImage(null);
+    setImageDims({ w: 760, h: 540 });
     setMode("scale");
+    if (fileInputRef.current) fileInputRef.current.value = '';
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  };
+
+  const clearExcluded = () => {
+    if (excludedMatKeys.length === 0) return;
+    if (!confirm(`제외된 매트 ${excludedMatKeys.length}장을 모두 복구할까요?`)) return;
+    setExcludedMatKeys([]);
   };
 
   const exportJson = () => {
     const payload = {
-      version: "0.3",
-      rule: {
-        matSizeMm: 1000,
-        overcutCm: Number(overcutCm),
-        cuttingLossMm: 0,
-        grainAndColorIgnored: true,
-        reusableOffcutRule: "퍼즐이 살아있는 변이 있을 때만 재사용 가능",
-      },
+      version: "0.4",
+      rule: { matSizeMm: 1000, overcutCm: Number(overcutCm) },
       scale: { pxPerMeter },
       polygon: points,
-      excludedZones,
+      excludedMatKeys,
       result: {
         netAreaM2: Number(netAreaM2.toFixed(2)),
-        totalMats,
-        fullMats,
-        cutMats,
+        totalMats, fullMats, cutMats, excludedCount,
         estimatedLossRate: Number(lossRate.toFixed(1)),
         gridOffset: { x: optimized.ox, y: optimized.oy },
-        mats: optimized.mats,
+        mats: matsWithDisplay,
       },
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const stamp = new Date().toISOString().slice(0, 10);
-    a.download = `mat-layout-${stamp}.json`;
+    a.download = `mat-layout-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const polygonStr = points.map((p) => `${p.x},${p.y}`).join(" ");
-  const currentExcludeStr = currentExclude.map((p) => `${p.x},${p.y}`).join(" ");
+  const zoomPresets = [
+    { label: "50%", value: 0.5 },
+    { label: "75%", value: 0.75 },
+    { label: "100%", value: 1.0 },
+    { label: "150%", value: 1.5 },
+  ];
 
-  // ─────────────────────────────────────────
-  // 렌더링
-  // ─────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 p-4 text-slate-900">
+    <div className="min-h-screen bg-slate-50 p-3 md:p-4 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-4">
 
-        {/* 헤더 */}
         <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">📐 1m × 1m 퍼즐매트 배치 프로그램</h1>
-            <p className="text-sm text-slate-500">스케일 보정 → 시공 영역 → 제외 영역 → 자동 배치/수량 계산</p>
+            <h1 className="text-xl md:text-2xl font-bold">📐 1m × 1m 퍼즐매트 배치 프로그램</h1>
+            <p className="text-xs md:text-sm text-slate-500">스케일 보정 → 시공 영역 → 매트 제외 → 자동 수량 계산</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
               📤 도면 업로드
-              <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </label>
             <Button variant="outline" onClick={exportJson}>💾 결과 저장</Button>
             <Button variant="outline" onClick={undo}>↩️ 취소</Button>
@@ -371,7 +344,6 @@ function PuzzleMatLayoutApp() {
           </div>
         </div>
 
-        {/* 자동복원 알림 */}
         {restored && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
             💾 이전 작업이 자동으로 복원되었습니다. 새로 시작하려면 "초기화"를 누르세요.
@@ -380,10 +352,8 @@ function PuzzleMatLayoutApp() {
 
         <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
 
-          {/* 사이드바 */}
           <div className="space-y-4">
 
-            {/* 1. 작업 모드 */}
             <Card>
               <CardContent className="space-y-3 p-4">
                 <h2 className="font-semibold">1. 작업 모드</h2>
@@ -398,15 +368,15 @@ function PuzzleMatLayoutApp() {
               </CardContent>
             </Card>
 
-            {/* 2. 스케일 */}
             <Card>
               <CardContent className="space-y-3 p-4">
                 <h2 className="font-semibold">2. 스케일 보정</h2>
                 <div className="flex items-center gap-2">
                   <input
+                    type="text" inputMode="decimal"
                     value={scaleInputM}
                     onChange={(e) => setScaleInputM(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base"
                     placeholder="예: 2.04"
                   />
                   <span className="text-sm">m</span>
@@ -418,7 +388,6 @@ function PuzzleMatLayoutApp() {
               </CardContent>
             </Card>
 
-            {/* 3. 시공 변수 */}
             <Card>
               <CardContent className="space-y-3 p-4">
                 <h2 className="font-semibold">3. 시공 변수</h2>
@@ -426,10 +395,10 @@ function PuzzleMatLayoutApp() {
                   <label className="text-sm font-medium">벽면 밀착 여유</label>
                   <div className="flex items-center gap-2 mt-1">
                     <input
-                      type="number" min="0" max="5" step="0.1"
+                      type="number" inputMode="decimal" min="0" max="5" step="0.1"
                       value={overcutCm}
                       onChange={(e) => setOvercutCm(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base"
                     />
                     <span className="text-sm">cm</span>
                   </div>
@@ -439,28 +408,26 @@ function PuzzleMatLayoutApp() {
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 mt-1"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 mt-1 text-base"
                   >
                     <option value="fewCuts">재단장 적게</option>
                     <option value="fewMats">총 매트 적게</option>
                   </select>
                 </div>
 
-                {/* 모드별 완료 버튼 */}
                 {mode === "draw" && (
                   <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
                     ✏️ 시공 영역 그리기 종료
                   </Button>
                 )}
-                {mode === "exclude" && (
-                  <Button className="w-full" variant="outline" onClick={finishExclude} disabled={currentExclude.length < 3}>
-                    ➕ 제외 영역 추가
+                {mode === "exclude" && excludedCount > 0 && (
+                  <Button className="w-full" variant="outline" onClick={clearExcluded}>
+                    🔄 제외 매트 모두 복구 ({excludedCount}장)
                   </Button>
                 )}
               </CardContent>
             </Card>
 
-            {/* 결과 */}
             <Card>
               <CardContent className="space-y-3 p-4">
                 <h2 className="font-semibold">📊 계산 결과</h2>
@@ -486,28 +453,36 @@ function PuzzleMatLayoutApp() {
                     <b className="text-base">{lossRate.toFixed(1)}%</b>
                   </div>
                   <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="text-slate-500 text-xs">밀착 여유</div>
-                    <b className="text-base">{overcutCm}cm</b>
+                    <div className="text-slate-500 text-xs">제외 매트</div>
+                    <b className="text-base">{excludedCount}장</b>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* 보기 설정 */}
             <Card>
               <CardContent className="space-y-3 p-4">
                 <h2 className="font-semibold">🔍 보기 설정</h2>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}>−</Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))}>−</Button>
                   <Button variant="outline" onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))}>+</Button>
                   <Button variant="outline" onClick={() => setShowNumbers((v) => !v)}>🔢 번호</Button>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  {zoomPresets.map((p) => (
+                    <Button
+                      key={p.label}
+                      variant={Math.abs(zoom - p.value) < 0.05 ? "default" : "outline"}
+                      onClick={() => setZoom(p.value)}
+                      className="px-2 py-1 text-xs"
+                    >{p.label}</Button>
+                  ))}
                 </div>
                 <div className="text-xs text-slate-500">현재 줌: {(zoom * 100).toFixed(0)}%</div>
               </CardContent>
             </Card>
           </div>
 
-          {/* 캔버스 */}
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               <div className="h-[760px] overflow-auto bg-white">
@@ -517,7 +492,7 @@ function PuzzleMatLayoutApp() {
                   height={1000 * zoom}
                   viewBox="0 0 1400 1000"
                   onClick={handleCanvasClick}
-                  className="cursor-crosshair"
+                  className={mode === "exclude" ? "" : "cursor-crosshair"}
                 >
                   <defs>
                     <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -526,82 +501,77 @@ function PuzzleMatLayoutApp() {
                   </defs>
                   <rect width="1400" height="1000" fill="url(#smallGrid)" />
 
-                  {/* 도면 이미지 (가로세로 비율 보존) */}
                   {image && (
-                    <image
-                      href={image}
-                      x="80" y="60"
-                      width={imageDims.w} height={imageDims.h}
-                      opacity="0.45"
-                    />
+                    <image href={image} x="80" y="60" width={imageDims.w} height={imageDims.h} opacity="0.45" />
                   )}
 
-                  {/* 매트 배치 */}
-                  {optimized.mats.map((m) => (
-                    <g key={m.id}>
+                  {matsWithDisplay.map((m) => (
+                    <g
+                      key={`m-${m.x}-${m.y}`}
+                      onClick={(e) => toggleMatExclude(m, e)}
+                      className={mode === "exclude" ? "mat-clickable" : ""}
+                    >
                       <rect
                         x={m.x} y={m.y}
                         width={matPx} height={matPx}
-                        fill={m.full ? "rgba(34,197,94,0.20)" : "rgba(249,115,22,0.22)"}
-                        stroke={m.full ? "#16a34a" : "#ea580c"}
+                        fill={
+                          m.excluded ? "rgba(148,163,184,0.18)"
+                          : m.full ? "rgba(34,197,94,0.20)"
+                          : "rgba(249,115,22,0.22)"
+                        }
+                        stroke={
+                          m.excluded ? "#94a3b8"
+                          : m.full ? "#16a34a"
+                          : "#ea580c"
+                        }
                         strokeWidth="2"
+                        strokeDasharray={m.excluded ? "5 4" : "0"}
                       />
-                      {showNumbers && (
+                      {m.excluded && (
+                        <>
+                          <line x1={m.x + 12} y1={m.y + 12} x2={m.x + matPx - 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
+                          <line x1={m.x + matPx - 12} y1={m.y + 12} x2={m.x + 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
+                          <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600" fill="#64748b" style={{pointerEvents:"none"}}>제외</text>
+                        </>
+                      )}
+                      {!m.excluded && showNumbers && (
                         <text
                           x={m.x + matPx / 2} y={m.y + matPx / 2}
                           textAnchor="middle" dominantBaseline="middle"
                           fontSize="14" fontWeight="700" fill="#0f172a"
-                        >{m.id}</text>
+                          style={{pointerEvents:"none"}}
+                        >{m.displayNumber}</text>
                       )}
                     </g>
                   ))}
 
-                  {/* 시공 다각형 */}
                   {points.length >= 3 && (
                     <polygon points={polygonStr} fill="rgba(59,130,246,0.10)" stroke="#2563eb" strokeWidth="3" />
                   )}
-                  {/* 점이 2개일 때 미리보기 점선 */}
                   {points.length >= 2 && points.length < 3 && (
                     <polyline points={polygonStr} fill="none" stroke="#2563eb" strokeWidth="3" strokeDasharray="6 6" />
                   )}
-                  {points.map((p, i) => <circle key={`p-${i}`} cx={p.x} cy={p.y} r="5" fill="#2563eb" />)}
+                  {points.map((p, i) => <circle key={`p-${i}`} cx={p.x} cy={p.y} r="7" fill="#2563eb" />)}
 
-                  {/* 제외 영역들 */}
-                  {excludedZones.map((zone, zi) => (
-                    <g key={zi}>
-                      <polygon points={zone.map((p) => `${p.x},${p.y}`).join(" ")} fill="rgba(239,68,68,0.22)" stroke="#dc2626" strokeWidth="3" />
-                      <text x={zone[0].x} y={zone[0].y - 8} fontSize="14" fill="#dc2626" fontWeight="700">제외 {zi + 1}</text>
-                    </g>
-                  ))}
-
-                  {/* 그리는 중인 제외 영역 */}
-                  {currentExclude.length >= 2 && (
-                    <polyline points={currentExcludeStr} fill="none" stroke="#dc2626" strokeDasharray="6 6" strokeWidth="3" />
-                  )}
-                  {currentExclude.map((p, i) => <circle key={`ex-${i}`} cx={p.x} cy={p.y} r="5" fill="#dc2626" />)}
-
-                  {/* 스케일 라인 */}
                   {scalePoints.length === 2 && (
                     <line x1={scalePoints[0].x} y1={scalePoints[0].y} x2={scalePoints[1].x} y2={scalePoints[1].y} stroke="#7c3aed" strokeWidth="4" />
                   )}
-                  {scalePoints.map((p, i) => <circle key={`s-${i}`} cx={p.x} cy={p.y} r="6" fill="#7c3aed" />)}
+                  {scalePoints.map((p, i) => <circle key={`s-${i}`} cx={p.x} cy={p.y} r="8" fill="#7c3aed" />)}
                 </svg>
               </div>
 
-              {/* 모드별 안내 */}
               <div className="px-4 py-3 text-xs text-slate-700 border-t bg-slate-50">
                 {mode === "scale" && "🟣 스케일 모드: 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
                 {mode === "draw" && "🔵 시공 모드: 시공할 영역의 꼭짓점을 순서대로 클릭하세요. 다 그리면 \"그리기 종료\"를 누르세요."}
-                {mode === "exclude" && "🔴 제외 모드: 제외할 영역(팬트리, 기둥 등)의 꼭짓점을 클릭한 후 \"제외 영역 추가\"를 누르세요."}
+                {mode === "exclude" && "🔴 제외 모드: 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
                 {mode === "idle" && "✅ 작업 완료. 결과를 확인하세요. 수정하려면 다른 모드를 선택하세요."}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 푸터 */}
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.0 · 작업 내용은 자동 저장됩니다
+          돌봄매트 시공 도구 v1.1 · 작업 내용은 자동 저장됩니다
         </div>
       </div>
     </div>
