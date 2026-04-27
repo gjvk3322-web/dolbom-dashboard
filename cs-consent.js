@@ -126,6 +126,35 @@
         '【거부 권리】\n' +
         '· 본 동의는 선택사항이며, 거부하셔도 시공·샘플 신청 등 서비스 이용에 영향이 없습니다.\n' +
         '· 동의 후에도 언제든지 카카오톡 채널을 통해 수신·활용을 중지하실 수 있습니다.'
+    },
+    {
+      key: 'required_booking',
+      required: true,
+      pages: ['booking'],
+      title: '예약 안내사항 확인',
+      summary: '',
+      fullText:
+        '아래 예약 안내사항을 모두 확인하였으며, 동의합니다.\n\n' +
+        '【시공 가능 일정】\n' +
+        '· 입주청소·이사와 같은 날 시공은 불가합니다.\n' +
+        '· 이사 완료 후 1~2일 뒤 시공을 권장합니다.\n\n' +
+        '【시공 당일 안내】\n' +
+        '· 작업 시작과 끝에는 현장에 계셔야 합니다.\n' +
+        '· 부재 시 설치 변경이 불가하며, 추가 비용이 고객님 부담입니다.\n' +
+        '· 가벼운 물건은 미리 치워주시면 작업 시간이 단축됩니다.\n\n' +
+        '【추가 비용 안내】\n' +
+        '· 다른 작업(에어컨, TV설치 등)과 겹칠 경우 추가금 10만원이 발생합니다.\n' +
+        '· 소량 시공 시(1000매트 25장 이하 / 500매트 100장 이하) 시공비 10만원이 발생합니다.\n\n' +
+        '【취소·환불】\n' +
+        '· 시공 72시간 전 이후 취소는 불가합니다.\n' +
+        '· 예약금 20만원은 환불이 불가합니다.\n' +
+        '· 재사용 불가 상품으로, 설치 후 반품 및 환불이 불가합니다.\n\n' +
+        '【가격 안내】\n' +
+        '· 온누리상품권 이벤트 종료 시 정상가로 결제됩니다.\n' +
+        '· 1000매트 22T: 76,500원 / 18T: 64,500원 / 500매트 22T: 16,900원\n\n' +
+        '【거부 권리】\n' +
+        '· 본 동의를 거부하실 권리가 있습니다.\n' +
+        '· 다만 거부 시 시공 예약이 불가합니다.'
     }
   ];
 
@@ -383,9 +412,18 @@
    * ───────────────────────────────────────────────
    */
 
-  // 4개 동의 항목 메타데이터 반환
-  function getItems() {
-    return CONSENT_ITEMS.map(function(item) {
+  // 🆕 동의 항목 메타데이터 반환 (page 옵션 지원)
+  function getItems(options) {
+    options = options || {};
+    var pageName = options.page || '';
+
+    function _filterByPage(item) {
+      if (!item.pages || !item.pages.length) return true;
+      if (!pageName) return false;
+      return item.pages.indexOf(pageName) >= 0;
+    }
+
+    return CONSENT_ITEMS.filter(_filterByPage).map(function(item) {
       return {
         key: item.key,
         required: item.required,
@@ -398,10 +436,19 @@
   function renderItemsHTML(options) {
     options = options || {};
     var showAgreeAll = options.showAgreeAll !== false; // 기본 true
+    var pageName = options.page || ''; // 🆕 페이지 이름 (booking, sample 등)
 
-    // 🆕 필수 / 선택 그룹 분리
-    var requiredItems = CONSENT_ITEMS.filter(function(item) { return item.required; });
-    var optionalItems = CONSENT_ITEMS.filter(function(item) { return !item.required; });
+    // 🆕 페이지 필터링: pages 속성이 있으면 해당 페이지만 표시, 없으면 모든 페이지
+    function _filterByPage(item) {
+      if (!item.pages || !item.pages.length) return true; // pages 없으면 모든 페이지에서 표시
+      if (!pageName) return false; // pages는 있는데 page 미지정이면 표시 안 함
+      return item.pages.indexOf(pageName) >= 0;
+    }
+    var visibleItems = CONSENT_ITEMS.filter(_filterByPage);
+
+    // 🆕 필수 / 선택 그룹 분리 (visibleItems에서)
+    var requiredItems = visibleItems.filter(function(item) { return item.required; });
+    var optionalItems = visibleItems.filter(function(item) { return !item.required; });
 
     function _renderItem(item) {
       var initialChecked = item.required ? 'checked' : '';
@@ -500,12 +547,17 @@
     var values = {};
     CONSENT_ITEMS.forEach(function(item) {
       var cb = containerEl.querySelector('.cs-consent-item[data-key="' + item.key + '"] .cs-consent-checkbox');
-      var checkedValue = (cb && cb.checked) ? 'Y' : 'N';
+      // 체크박스가 페이지에 없으면 (필터링되어) skip
+      if (!cb) return;
+      var checkedValue = cb.checked ? 'Y' : 'N';
 
       if (item.key === 'optional_marketing') {
         // 통합 동의 → 기존 시트 컬럼 G(optional1)/H(optional2) 둘 다 동일 값
         values.optional1 = checkedValue;
         values.optional2 = checkedValue;
+      } else if (item.key === 'required_booking') {
+        // 🆕 booking 전용 항목 → 별도 키로 저장 (시트엔 안 들어가지만 검증용)
+        values.booking_notice = checkedValue;
       } else {
         values[item.key] = checkedValue;
       }
