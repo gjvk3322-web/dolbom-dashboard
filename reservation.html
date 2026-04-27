@@ -212,7 +212,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div id="dailyChart" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"></div>
   </div>
   <!-- 2열: 2주 일정 -->
-  <div class="card" style="flex:1;min-width:320px;margin:0;margin-top:12px;max-height:calc(100vh - 180px);overflow-y:auto">
+  <div class="card" style="flex:0 0 360px;min-width:320px;margin:0;margin-top:12px;max-height:calc(100vh - 180px);overflow-y:auto">
     <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;position:sticky;top:0;background:#fff;padding:4px 0;z-index:1">📋 전체 일정</div>
     <div id="weekList"></div>
     <div id="nearbyCard" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e3">
@@ -1289,7 +1289,7 @@ function renderNewBookings(bookings){
     var phoneFormatted=b.phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
     var datesStr=b.dates&&b.dates.length>0?b.dates.join(', '):'상관없음';
     var roomStr=b.roomCount>0?' / 방추가 '+b.roomCount+'개':'';
-    return '<div style="background:#fff;border:1px solid #FFE0B2;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px">'+
+    return '<div id="bookingCard_'+b.rowNumber+'" style="background:#fff;border:1px solid #FFE0B2;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;transition:all 0.5s ease">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
         '<div style="font-size:11px;color:#999">📋 '+b.submittedAt+'</div>'+
         (b.channel?'<div style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:8px">'+b.channel+'</div>':'')+
@@ -1300,10 +1300,10 @@ function renderNewBookings(bookings){
       '<div style="color:#555;line-height:1.5;margin-bottom:4px">🏠 '+b.pyung+'평 / '+b.product+' '+(b.color?'('+b.color+')':'')+roomStr+'</div>'+
       '<div style="color:#555;line-height:1.5;margin-bottom:8px">✏️ '+b.scope+'</div>'+
       (b.memo?'<div style="background:#FFF3E0;padding:6px 8px;border-radius:6px;font-size:11px;color:#666;margin-bottom:8px">💬 '+b.memo+'</div>':'')+
-      '<div style="display:flex;gap:4px">'+
-        '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:6px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
-        '<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:6px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
-        '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:6px 10px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>'+
+      '<div style="display:flex;gap:4px" data-row="'+b.rowNumber+'">'+
+        '<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
+        '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+        '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -1367,6 +1367,31 @@ function updateBookingStatus(rowNumber,status,name){
     name+' 고객님의 예약을 [취소]할까요?';
   if(!confirm(msg)) return;
   
+  // 🆕 즉시 시각적 피드백 (서버 응답 기다리지 않고)
+  var card=document.getElementById('bookingCard_'+rowNumber);
+  if(card){
+    if(status==='입금완료'){
+      card.style.background='linear-gradient(135deg,#C8E6C9,#A5D6A7)';
+      card.style.border='2px solid #2E7D32';
+      // 체크 마크 오버레이 추가
+      var checkOverlay=document.createElement('div');
+      checkOverlay.style.cssText='text-align:center;font-size:24px;color:#2E7D32;font-weight:800;margin-bottom:6px;animation:fadeIn 0.3s';
+      checkOverlay.textContent='✅ 입금완료 처리됨';
+      card.insertBefore(checkOverlay,card.firstChild);
+    } else {
+      card.style.background='#f5f5f5';
+      card.style.opacity='0.5';
+      card.style.textDecoration='line-through';
+      var cancelOverlay=document.createElement('div');
+      cancelOverlay.style.cssText='text-align:center;font-size:18px;color:#999;font-weight:700;margin-bottom:6px';
+      cancelOverlay.textContent='❌ 취소됨';
+      card.insertBefore(cancelOverlay,card.firstChild);
+    }
+    // 모든 버튼 비활성화
+    var btns=card.querySelectorAll('button');
+    btns.forEach(function(b){b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed'});
+  }
+  
   fetch(API_URL,{
     method:'POST',
     headers:{'Content-Type':'text/plain'},
@@ -1375,10 +1400,34 @@ function updateBookingStatus(rowNumber,status,name){
   .then(function(r){return r.json()})
   .then(function(data){
     if(data.success){
-      alert('✅ '+status+' 처리 완료!');
-      loadNewBookings(); // 새로고침
+      // 1.5초 후 카드 사라지면서 새로고침
+      if(card){
+        setTimeout(function(){
+          card.style.maxHeight='0';
+          card.style.padding='0';
+          card.style.margin='0';
+          card.style.opacity='0';
+          setTimeout(loadNewBookings,500);
+        },1500);
+      } else {
+        loadNewBookings();
+      }
     }else{
       alert('⚠️ 실패: '+(data.error||'알 수 없는 오류'));
+      // 실패 시 원상 복구
+      if(card){
+        card.style.background='#fff';
+        card.style.border='1px solid #FFE0B2';
+        card.style.opacity='1';
+        card.style.textDecoration='';
+        var btns=card.querySelectorAll('button');
+        btns.forEach(function(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer'});
+        // 오버레이 제거
+        var firstChild=card.firstChild;
+        if(firstChild&&(firstChild.textContent.indexOf('✅')>=0||firstChild.textContent.indexOf('❌')>=0)){
+          card.removeChild(firstChild);
+        }
+      }
     }
   })
   .catch(function(){

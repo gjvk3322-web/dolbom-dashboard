@@ -489,10 +489,11 @@ function submitBooking(){
   var hosuStr=hosu?(hosu.includes('호')?hosu:hosu+'호'):'';
   var dongHo=(dongStr?dongStr+' ':'')+hosuStr;
 
+  // 🆕 시트 저장용 주소: 우편번호 + 건물명 중복 제거 (네비 인식 가능)
+  // addrData.address에는 이미 도로명 + 건물명이 포함되어 있음
   var fullAddr='';
   if(addrData){
-    fullAddr='('+addrData.zonecode+') '+addrData.name;
-    if(addrData.address)fullAddr+=' '+addrData.address;
+    fullAddr=addrData.address||addrData.name||'';
   }
 
   // 동의 정보 수집
