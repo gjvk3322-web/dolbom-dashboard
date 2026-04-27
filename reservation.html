@@ -1289,9 +1289,32 @@ function renderNewBookings(bookings){
     var phoneFormatted=b.phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
     var datesStr=b.dates&&b.dates.length>0?b.dates.join(', '):'상관없음';
     var roomStr=b.roomCount>0?' / 방추가 '+b.roomCount+'개':'';
-    return '<div id="bookingCard_'+b.rowNumber+'" style="background:#fff;border:1px solid #FFE0B2;border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;transition:all 0.5s ease">'+
+    
+    // 🆕 상태별 카드 스타일 + 버튼 분기
+    var isDeposited=b.status==='입금완료';
+    var cardStyle=isDeposited?
+      'background:linear-gradient(135deg,#E8F5E9,#fff);border:2px solid #2E7D32;':
+      'background:#fff;border:1px solid #FFE0B2;';
+    var statusBadge=isDeposited?
+      '<div style="font-size:11px;background:#2E7D32;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">💰 입금완료</div>':
+      '<div style="font-size:11px;color:#999">📋 '+b.submittedAt+'</div>';
+    
+    // 🆕 상태별 버튼
+    var buttons='';
+    if(isDeposited){
+      // 입금완료 상태: [폼에 채우기] [예약완료]
+      buttons='<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+              '<button onclick="updateBookingStatus('+b.rowNumber+',\'예약완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:linear-gradient(135deg,#FF6F00,#E65100);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🎉 예약완료</button>';
+    } else {
+      // 신규접수 상태: [입금완료] [폼에 채우기] [취소]
+      buttons='<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
+              '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+              '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>';
+    }
+    
+    return '<div id="bookingCard_'+b.rowNumber+'" style="'+cardStyle+'border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;transition:all 0.5s ease">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-        '<div style="font-size:11px;color:#999">📋 '+b.submittedAt+'</div>'+
+        statusBadge+
         (b.channel?'<div style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:8px">'+b.channel+'</div>':'')+
       '</div>'+
       '<div style="font-weight:700;color:#1a1a1a;margin-bottom:4px">'+b.name+' <span style="color:#666;font-weight:normal;font-size:11px">'+phoneFormatted+'</span></div>'+
@@ -1301,9 +1324,7 @@ function renderNewBookings(bookings){
       '<div style="color:#555;line-height:1.5;margin-bottom:8px">✏️ '+b.scope+'</div>'+
       (b.memo?'<div style="background:#FFF3E0;padding:6px 8px;border-radius:6px;font-size:11px;color:#666;margin-bottom:8px">💬 '+b.memo+'</div>':'')+
       '<div style="display:flex;gap:4px" data-row="'+b.rowNumber+'">'+
-        '<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
-        '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
-        '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>'+
+        buttons+
       '</div>'+
     '</div>';
   }).join('');
@@ -1362,34 +1383,50 @@ function fillBookingForm(b){
 }
 
 function updateBookingStatus(rowNumber,status,name){
-  var msg=status==='입금완료'?
-    name+' 고객님의 예약을 [입금완료]로 처리할까요?\n\n* 입금완료 처리 후 [폼에 채우기]로 시공 일정에 추가하세요.':
-    name+' 고객님의 예약을 [취소]할까요?';
+  // 🆕 상태별 확인 메시지
+  var msg='';
+  if(status==='입금완료') msg=name+' 고객님의 예약을 [입금완료]로 처리할까요?\n\n* 입금 확인 후 폼에 채워서 시공 일정에 추가하세요.';
+  else if(status==='예약완료') msg=name+' 고객님의 예약을 [예약완료]로 처리할까요?\n\n* 시공 일정 등록까지 완료된 건만 클릭하세요.';
+  else msg=name+' 고객님의 예약을 [취소]할까요?';
+  
   if(!confirm(msg)) return;
   
-  // 🆕 즉시 시각적 피드백 (서버 응답 기다리지 않고)
   var card=document.getElementById('bookingCard_'+rowNumber);
+  
+  // 🆕 입금완료: 카드 유지하고 새로고침으로 상태만 업데이트 (UI 갱신)
+  // 예약완료/취소: 카드 사라짐
+  var willDisappear=(status==='예약완료'||status==='취소');
+  
+  // 즉시 시각적 피드백
   if(card){
     if(status==='입금완료'){
-      card.style.background='linear-gradient(135deg,#C8E6C9,#A5D6A7)';
+      // 카드 색깔 즉시 변경 (서버 응답 전)
+      card.style.background='linear-gradient(135deg,#E8F5E9,#fff)';
       card.style.border='2px solid #2E7D32';
-      // 체크 마크 오버레이 추가
-      var checkOverlay=document.createElement('div');
-      checkOverlay.style.cssText='text-align:center;font-size:24px;color:#2E7D32;font-weight:800;margin-bottom:6px;animation:fadeIn 0.3s';
-      checkOverlay.textContent='✅ 입금완료 처리됨';
-      card.insertBefore(checkOverlay,card.firstChild);
+      // 모든 버튼 비활성화 (응답 기다리는 동안)
+      var btns=card.querySelectorAll('button');
+      btns.forEach(function(b){b.disabled=true;b.style.opacity='0.5';b.style.cursor='wait'});
+    } else if(status==='예약완료'){
+      card.style.background='linear-gradient(135deg,#FFE0B2,#FFD180)';
+      card.style.border='2px solid #FF6F00';
+      var overlay=document.createElement('div');
+      overlay.style.cssText='text-align:center;font-size:20px;color:#E65100;font-weight:800;margin-bottom:6px';
+      overlay.textContent='🎉 예약완료!';
+      card.insertBefore(overlay,card.firstChild);
+      var btns=card.querySelectorAll('button');
+      btns.forEach(function(b){b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed'});
     } else {
+      // 취소
       card.style.background='#f5f5f5';
       card.style.opacity='0.5';
       card.style.textDecoration='line-through';
-      var cancelOverlay=document.createElement('div');
-      cancelOverlay.style.cssText='text-align:center;font-size:18px;color:#999;font-weight:700;margin-bottom:6px';
-      cancelOverlay.textContent='❌ 취소됨';
-      card.insertBefore(cancelOverlay,card.firstChild);
+      var overlay=document.createElement('div');
+      overlay.style.cssText='text-align:center;font-size:18px;color:#999;font-weight:700;margin-bottom:6px';
+      overlay.textContent='❌ 취소됨';
+      card.insertBefore(overlay,card.firstChild);
+      var btns=card.querySelectorAll('button');
+      btns.forEach(function(b){b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed'});
     }
-    // 모든 버튼 비활성화
-    var btns=card.querySelectorAll('button');
-    btns.forEach(function(b){b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed'});
   }
   
   fetch(API_URL,{
@@ -1400,8 +1437,8 @@ function updateBookingStatus(rowNumber,status,name){
   .then(function(r){return r.json()})
   .then(function(data){
     if(data.success){
-      // 1.5초 후 카드 사라지면서 새로고침
-      if(card){
+      if(willDisappear&&card){
+        // 예약완료/취소: 1.5초 후 사라짐
         setTimeout(function(){
           card.style.maxHeight='0';
           card.style.padding='0';
@@ -1410,28 +1447,18 @@ function updateBookingStatus(rowNumber,status,name){
           setTimeout(loadNewBookings,500);
         },1500);
       } else {
-        loadNewBookings();
+        // 입금완료: 즉시 새로고침 (카드는 다시 렌더링되며 입금완료 UI로)
+        setTimeout(loadNewBookings,300);
       }
     }else{
       alert('⚠️ 실패: '+(data.error||'알 수 없는 오류'));
       // 실패 시 원상 복구
-      if(card){
-        card.style.background='#fff';
-        card.style.border='1px solid #FFE0B2';
-        card.style.opacity='1';
-        card.style.textDecoration='';
-        var btns=card.querySelectorAll('button');
-        btns.forEach(function(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer'});
-        // 오버레이 제거
-        var firstChild=card.firstChild;
-        if(firstChild&&(firstChild.textContent.indexOf('✅')>=0||firstChild.textContent.indexOf('❌')>=0)){
-          card.removeChild(firstChild);
-        }
-      }
+      loadNewBookings();
     }
   })
   .catch(function(){
     alert('⚠️ 네트워크 오류');
+    loadNewBookings();
   });
 }
 </script>
