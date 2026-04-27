@@ -4,20 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>돌봄매트</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f5f7f3;
-  --card:#fff;
-  --text:#1a1a1a;
-  --text2:#555;
-  --text3:#999;
-  --border:#e8e8e3;
-  --green:#2E7D32;
-  --green-light:#E8F5E9;
-  --green-dark:#1B5E20;
+  --bg:#f7f8fa;
+  --card:#ffffff;
+  --text:#191f28;
+  --text2:#4e5968;
+  --text3:#8b95a1;
+  --border:#e5e8eb;
+  --primary:#e8736c;
+  --primary-light:#fdf0ef;
+  --primary-dark:#d45a53;
+  --green:#20c997;
+  --orange:#f59f00;
   --radius:14px;
-  --shadow:0 2px 8px rgba(0,0,0,0.04);
+  --shadow:0 1px 3px rgba(0,0,0,0.06);
 }
 
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -27,294 +29,245 @@ body{
   background:var(--bg);
   color:var(--text);
   min-height:100vh;
-  max-width:500px;
+  max-width:480px;
   margin:0 auto;
-  padding-bottom:60px;
-  font-weight:400;
+  padding-bottom:40px;
+  overflow-x:hidden;
 }
 
 /* 헤더 */
 .header{
-  background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);
-  padding:48px 24px 56px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  padding:32px 20px;
   text-align:center;
-  position:relative;
 }
 .brand-logo{
-  font-size:28px;
-  font-weight:700;
+  font-size:24px;
+  font-weight:800;
   color:#fff;
   letter-spacing:-0.5px;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 .brand-tagline{
-  font-size:13px;
-  color:rgba(255,255,255,0.75);
-  font-weight:400;
-  letter-spacing:0.3px;
+  font-size:12px;
+  color:rgba(255,255,255,0.85);
+  font-weight:500;
 }
-
-/* 추천 배지 (조건부 표시) */
 .ref-badge{
   display:none;
-  background:rgba(255,255,255,0.15);
-  border:1px solid rgba(255,255,255,0.25);
-  border-radius:20px;
-  padding:6px 14px;
-  font-size:12px;
-  color:#fff;
-  font-weight:500;
   margin-top:12px;
-  display:none;
+  padding:6px 14px;
+  background:rgba(255,255,255,0.2);
+  border:1px solid rgba(255,255,255,0.3);
+  border-radius:20px;
+  color:#fff;
+  font-size:12px;
+  font-weight:600;
 }
 .ref-badge.show{display:inline-block}
 
-/* 신뢰 지표 */
-.trust-bar{
-  background:#fff;
-  border-bottom:1px solid var(--border);
-  padding:16px 24px;
-  display:flex;
-  justify-content:space-around;
-  text-align:center;
-  margin-bottom:24px;
-}
-.trust-item{flex:1}
-.trust-num{
-  font-size:18px;
-  font-weight:700;
-  color:var(--green);
-  letter-spacing:-0.3px;
-}
-.trust-label{
-  font-size:11px;
-  color:var(--text3);
-  margin-top:2px;
-  font-weight:400;
-}
-.trust-divider{
-  width:1px;
-  background:var(--border);
-  margin:4px 0;
-}
-
 /* 컨테이너 */
-.container{
-  padding:0 20px;
-}
+.container{padding:16px}
 
-/* 메뉴 그룹 */
-.menu-section{
-  margin-bottom:32px;
-}
-.menu-label{
-  font-size:11px;
-  color:var(--text3);
-  font-weight:500;
-  letter-spacing:0.5px;
-  text-transform:uppercase;
-  margin-bottom:8px;
-  padding-left:4px;
-}
-
-.menu-list{
+/* 메뉴 카드 */
+.menu-card{
   background:var(--card);
-  border:1px solid var(--border);
   border-radius:var(--radius);
-  overflow:hidden;
   box-shadow:var(--shadow);
+  overflow:hidden;
+  margin-bottom:16px;
 }
 
 .menu-item{
   display:flex;
   align-items:center;
-  padding:18px 20px;
+  padding:18px 18px;
   border-bottom:1px solid var(--border);
   cursor:pointer;
-  transition:background 0.15s;
   text-decoration:none;
   color:inherit;
+  transition:background 0.15s;
 }
-.menu-item:last-child{
-  border-bottom:none;
-}
-.menu-item:active{
-  background:#fafaf7;
+.menu-item:last-child{border-bottom:none}
+.menu-item:active{background:var(--primary-light)}
+
+.menu-icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:var(--primary-light);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  flex-shrink:0;
+  margin-right:14px;
 }
 
-.menu-content{
-  flex:1;
-  min-width:0;
-}
+.menu-content{flex:1;min-width:0}
 .menu-title{
   font-size:15px;
-  font-weight:600;
+  font-weight:700;
   color:var(--text);
-  margin-bottom:3px;
+  margin-bottom:2px;
   letter-spacing:-0.2px;
 }
 .menu-desc{
   font-size:12px;
   color:var(--text3);
   font-weight:400;
-  letter-spacing:-0.1px;
 }
 
 .menu-arrow{
-  color:#ccc;
+  color:var(--text3);
   font-size:18px;
-  margin-left:12px;
-  font-weight:300;
+  margin-left:8px;
+  font-weight:400;
 }
 
-/* 카톡 상담 영역 */
-.contact-area{
-  margin-top:24px;
+/* 카톡 상담 */
+.contact-card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:18px;
   text-align:center;
+  margin-bottom:16px;
 }
-.contact-btn{
+.contact-title{
+  font-size:13px;
+  color:var(--text2);
+  margin-bottom:10px;
+  font-weight:500;
+}
+.btn-kakao{
   display:inline-flex;
   align-items:center;
   gap:8px;
   background:#fee500;
   color:#1a1a1a;
-  padding:14px 28px;
+  padding:13px 28px;
   border-radius:30px;
   font-size:14px;
-  font-weight:600;
+  font-weight:700;
   text-decoration:none;
   border:none;
   cursor:pointer;
   font-family:inherit;
   transition:transform 0.15s;
 }
-.contact-btn:active{transform:scale(0.97)}
+.btn-kakao:active{transform:scale(0.97)}
+
+/* 신뢰 정보 */
+.trust-line{
+  text-align:center;
+  font-size:11px;
+  color:var(--text3);
+  font-weight:500;
+  margin:24px 16px 8px;
+  letter-spacing:-0.1px;
+}
+.trust-divider{color:var(--border);margin:0 6px}
 
 /* 푸터 */
 .footer{
-  margin-top:40px;
-  padding:24px 20px;
+  margin-top:8px;
+  padding:16px 20px 0;
   text-align:center;
   font-size:11px;
   color:var(--text3);
   font-weight:400;
   line-height:1.6;
 }
-.footer a{
-  color:var(--text3);
-  text-decoration:underline;
-}
 
-/* 페이드 인 애니메이션 */
 @keyframes fadeUp{
   from{opacity:0;transform:translateY(8px)}
   to{opacity:1;transform:translateY(0)}
 }
-.menu-section{animation:fadeUp 0.4s ease both}
-.menu-section:nth-child(1){animation-delay:0.05s}
-.menu-section:nth-child(2){animation-delay:0.1s}
-.menu-section:nth-child(3){animation-delay:0.15s}
+.menu-card{animation:fadeUp 0.4s ease both}
+.contact-card{animation:fadeUp 0.4s 0.1s ease both;opacity:0;animation-fill-mode:forwards}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="brand-logo">돌봄매트</div>
-  <div class="brand-tagline">TPU 바닥매트 전문</div>
+  <div class="brand-logo">DOLBOMMAT</div>
+  <div class="brand-tagline">층간소음 62% 저감 · TPU 매트</div>
   <div id="refBadge" class="ref-badge"><span id="refName"></span> 추천</div>
-</div>
-
-<div class="trust-bar">
-  <div class="trust-item">
-    <div class="trust-num">6년</div>
-    <div class="trust-label">시공 경험</div>
-  </div>
-  <div class="trust-divider"></div>
-  <div class="trust-item">
-    <div class="trust-num">6,700+</div>
-    <div class="trust-label">시공 완료</div>
-  </div>
-  <div class="trust-divider"></div>
-  <div class="trust-item">
-    <div class="trust-num">80곳</div>
-    <div class="trust-label">어린이집</div>
-  </div>
 </div>
 
 <div class="container">
 
-  <!-- 메인 메뉴 -->
-  <div class="menu-section">
-    <div class="menu-list">
-      
-      <a href="https://www.dolbommat.com" class="menu-item" id="menuHome">
-        <div class="menu-content">
-          <div class="menu-title">홈페이지</div>
-          <div class="menu-desc">제품 소개 · 인증서 · 시공 후기</div>
-        </div>
-        <div class="menu-arrow">›</div>
-      </a>
+  <div class="menu-card">
 
-      <a href="quote.html" class="menu-item" id="menuQuote">
-        <div class="menu-content">
-          <div class="menu-title">견적 받기</div>
-          <div class="menu-desc">평수 입력하면 즉시 가격 확인</div>
-        </div>
-        <div class="menu-arrow">›</div>
-      </a>
-
-      <a href="sample.html" class="menu-item" id="menuSample">
-        <div class="menu-content">
-          <div class="menu-title">무료 샘플 신청</div>
-          <div class="menu-desc">직접 만져보고 결정하세요</div>
-        </div>
-        <div class="menu-arrow">›</div>
-      </a>
-
-      <a href="booking.html" class="menu-item" id="menuBooking">
-        <div class="menu-content">
-          <div class="menu-title">시공 예약</div>
-          <div class="menu-desc">원하는 날짜 선택해 신청</div>
-        </div>
-        <div class="menu-arrow">›</div>
-      </a>
-
-      <a href="review-event.html" class="menu-item" id="menuReview">
-        <div class="menu-content">
-          <div class="menu-title">후기 이벤트</div>
-          <div class="menu-desc">미션 참여하고 캐시백 받기</div>
-        </div>
-        <div class="menu-arrow">›</div>
-      </a>
-
-    </div>
-  </div>
-
-  <!-- 카톡 상담 -->
-  <div class="contact-area">
-    <a href="http://pf.kakao.com/_UMyBK/chat" class="contact-btn">
-      카카오톡 1:1 상담
+    <a href="https://www.dolbommat.com" class="menu-item" id="menuHome">
+      <div class="menu-icon">🏠</div>
+      <div class="menu-content">
+        <div class="menu-title">홈페이지</div>
+        <div class="menu-desc">제품 소개 · 인증서 · 시공 후기</div>
+      </div>
+      <div class="menu-arrow">›</div>
     </a>
+
+    <a href="quote.html" class="menu-item" id="menuQuote">
+      <div class="menu-icon">💰</div>
+      <div class="menu-content">
+        <div class="menu-title">우리집 견적</div>
+        <div class="menu-desc">평수 입력하면 즉시 가격 확인</div>
+      </div>
+      <div class="menu-arrow">›</div>
+    </a>
+
+    <a href="sample.html" class="menu-item" id="menuSample">
+      <div class="menu-icon">📦</div>
+      <div class="menu-content">
+        <div class="menu-title">무료 샘플</div>
+        <div class="menu-desc">직접 만져보고 결정하세요</div>
+      </div>
+      <div class="menu-arrow">›</div>
+    </a>
+
+    <a href="booking.html" class="menu-item" id="menuBooking">
+      <div class="menu-icon">📅</div>
+      <div class="menu-content">
+        <div class="menu-title">시공 예약</div>
+        <div class="menu-desc">원하는 날짜 선택해 신청</div>
+      </div>
+      <div class="menu-arrow">›</div>
+    </a>
+
+    <a href="cs-review-info.html" class="menu-item" id="menuReview">
+      <div class="menu-icon">🎁</div>
+      <div class="menu-content">
+        <div class="menu-title">후기 이벤트</div>
+        <div class="menu-desc">시공 후 최대 11만원 캐시백</div>
+      </div>
+      <div class="menu-arrow">›</div>
+    </a>
+
   </div>
 
+  <div class="contact-card">
+    <div class="contact-title">궁금한 점이 있으신가요?</div>
+    <a href="http://pf.kakao.com/_UMyBK/chat" class="btn-kakao">카카오톡 1:1 상담</a>
+  </div>
+
+</div>
+
+<div class="trust-line">
+  창업 6년 <span class="trust-divider">·</span> 6,700곳 시공 <span class="trust-divider">·</span> 어린이집 80곳
 </div>
 
 <div class="footer">
   돌봄매트 · TPU 바닥매트 전문<br>
-  창업 6년 · 6,700건 시공 완료
+  본사 직영 · KC 안전확인 인증
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// 추천 채널 자동 인식 + 모든 링크에 ?ch=xx 자동 전달
-// ═══════════════════════════════════════════════════════════════
-
 (function(){
-  // URL 파라미터에서 ch 추출
   var urlParams = new URLSearchParams(window.location.search);
   var ch = urlParams.get('ch');
   
-  // 또는 path에서 추출 (예: my.dolbommat.com/sj)
   if (!ch) {
     var path = window.location.pathname;
     var match = path.match(/\/([a-zA-Z0-9_-]+)$/);
@@ -323,9 +276,7 @@ body{
     }
   }
   
-  // 추천 채널이 있으면
   if (ch) {
-    // 1. 추천 배지 표시
     var badge = document.getElementById('refBadge');
     var name = document.getElementById('refName');
     if (badge && name) {
@@ -333,7 +284,6 @@ body{
       badge.classList.add('show');
     }
     
-    // 2. localStorage에 저장 (각 페이지에서 읽음)
     try {
       var saved = JSON.parse(localStorage.getItem('dolbom_shared') || '{}');
       saved.channel = ch;
@@ -341,12 +291,11 @@ body{
       localStorage.setItem('dolbom_shared', JSON.stringify(saved));
     } catch(e) {}
     
-    // 3. 모든 내부 링크에 ?ch= 추가 (홈페이지 제외)
     var menuItems = [
       {id: 'menuQuote',   url: 'quote.html'},
       {id: 'menuSample',  url: 'sample.html'},
       {id: 'menuBooking', url: 'booking.html'},
-      {id: 'menuReview',  url: 'review-event.html'}
+      {id: 'menuReview',  url: 'cs-review-info.html'}
     ];
     
     menuItems.forEach(function(item){
@@ -357,8 +306,7 @@ body{
     });
   }
   
-  // 고객 유입 추적 (cs-welcome.html과 동일한 패턴)
-  // localStorage에 phone이 있으면 trackEntry 호출
+  // 유입 추적
   try {
     var saved = JSON.parse(localStorage.getItem('dolbom_shared') || '{}');
     if (saved.phone && saved.name) {
