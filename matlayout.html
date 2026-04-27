@@ -231,7 +231,8 @@ function PuzzleMatLayoutApp() {
   const [scalePoints, setScalePoints] = useState([]);
   const [scaleInputM, setScaleInputM] = useState("2.04");
   const [pxPerMeter, setPxPerMeter] = useState(DEFAULT_SCALE);
-  const [zoom, setZoom] = useState(isViewMode ? 1.5 : 1);
+  // 초기 zoom: 컨테이너에 fit 되도록 작게 시작 (편집 0.55, view 0.7)
+  const [zoom, setZoom] = useState(isViewMode ? 0.7 : 0.55);
   const [showNumbers, setShowNumbers] = useState(true);
   const [showPairing, setShowPairing] = useState(true);
   const [restored, setRestored] = useState(false);
@@ -725,12 +726,6 @@ function PuzzleMatLayoutApp() {
   };
 
   const polygonStr = points.map((p) => `${p.x},${p.y}`).join(" ");
-  const zoomPresets = [
-    { label: "50%", value: 0.5 },
-    { label: "75%", value: 0.75 },
-    { label: "100%", value: 1.0 },
-    { label: "150%", value: 1.5 },
-  ];
 
   const getMatColors = (m) => {
     if (m.excluded) return { fill: "rgba(148,163,184,0.10)", stroke: "#94a3b8", dash: "5 4" };
@@ -766,10 +761,19 @@ function PuzzleMatLayoutApp() {
               <span className="text-slate-400">|</span>
               <span>제외 <b>{excludedCount}</b></span>
             </div>
-            <div className="flex gap-1">
-              <Button variant="outline" onClick={() => setZoom(z => Math.max(0.4, z - 0.1))}>−</Button>
-              <Button variant="outline" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>
-              <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>번호</Button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 hidden sm:inline">크기</span>
+              <input
+                type="range"
+                min="40"
+                max="300"
+                step="5"
+                value={zoom * 100}
+                onChange={(e) => setZoom(Number(e.target.value) / 100)}
+                className="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-700"
+              />
+              <span className="text-xs text-slate-500 font-mono w-10 text-right">{(zoom * 100).toFixed(0)}%</span>
+              <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>{showNumbers ? "✓ 번호" : "번호"}</Button>
               <Button variant="outline" onClick={downloadPng} className="bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100">이미지 저장</Button>
             </div>
             <button
@@ -781,7 +785,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         {/* 풀스크린 캔버스 */}
-        <div className="overflow-auto bg-white" style={{ height: 'calc(100vh - 60px)' }}>
+        <div className="overflow-hidden bg-white flex items-center justify-center" style={{ height: 'calc(100vh - 60px)' }}>
           <svg
             ref={svgRef}
             width={1400 * zoom}
@@ -1016,24 +1020,34 @@ function PuzzleMatLayoutApp() {
                     <span>보기 설정</span>
                     <span className="text-xs text-slate-400">▼</span>
                   </summary>
-                  <div className="px-3 pb-3 space-y-2">
-                    <div className="flex gap-1 flex-wrap">
-                      <Button variant="outline" onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))} className="text-xs px-2">−</Button>
-                      <Button variant="outline" onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))} className="text-xs px-2">+</Button>
-                      <Button variant="outline" onClick={() => setShowNumbers((v) => !v)} className="text-xs px-2">번호</Button>
-                      <Button variant={showPairing ? "default" : "outline"} onClick={() => setShowPairing((v) => !v)} className="text-xs px-2">페어</Button>
+                  <div className="px-3 pb-3 space-y-3">
+                    {/* 줌 슬라이더 */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-medium text-slate-700">크기 조절</label>
+                        <span className="text-xs text-slate-500 font-mono">{(zoom * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="40"
+                        max="300"
+                        step="5"
+                        value={zoom * 100}
+                        onChange={(e) => setZoom(Number(e.target.value) / 100)}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-700"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                        <span>작게</span>
+                        <span>기본</span>
+                        <span>크게</span>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {zoomPresets.map((p) => (
-                        <Button
-                          key={p.label}
-                          variant={Math.abs(zoom - p.value) < 0.05 ? "default" : "outline"}
-                          onClick={() => setZoom(p.value)}
-                          className="px-1 py-1 text-xs"
-                        >{p.label}</Button>
-                      ))}
+                    {/* 표시 옵션 */}
+                    <div className="flex gap-1 flex-wrap pt-1 border-t border-slate-100">
+                      <Button variant="outline" onClick={() => setShowNumbers((v) => !v)} className="text-xs px-2 flex-1">{showNumbers ? "✓ 번호" : "번호"}</Button>
+                      <Button variant={showPairing ? "default" : "outline"} onClick={() => setShowPairing((v) => !v)} className="text-xs px-2 flex-1">{showPairing ? "✓ 페어" : "페어"}</Button>
                     </div>
-                    <div className="text-xs text-slate-500">현재 줌: {(zoom * 100).toFixed(0)}%</div>
+                    {/* 색상 안내 */}
                     <div className="text-xs space-y-1 pt-2 border-t border-slate-200">
                       <div className="font-semibold text-slate-700 mb-1">색상 안내</div>
                       <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-300 border border-emerald-600"></span>온장 (100%)</div>
@@ -1049,7 +1063,7 @@ function PuzzleMatLayoutApp() {
 
           <Card className="overflow-hidden">
             <CardContent className="p-0">
-              <div className="h-[760px] overflow-auto bg-white">
+              <div className="h-[760px] overflow-hidden bg-white flex items-center justify-center">
                 <svg
                   ref={svgRef}
                   width={1400 * zoom}
@@ -1198,7 +1212,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v2.4 · 콤팩트 사이드바
+          돌봄매트 시공 도구 v2.5 · 줌 슬라이더 + 스크롤 제거
         </div>
       </div>
     </div>
