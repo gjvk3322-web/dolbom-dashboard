@@ -16,7 +16,10 @@
   --primary:#e8736c;
   --primary-light:#fdf0ef;
   --primary-dark:#d45a53;
-  --green:#20c997;
+  --baby-blue:#b9d5d8;
+  --baby-blue-light:#d8e7e9;
+  --baby-blue-dark:#8eb4b8;
+  --baby-blue-deep:#5e9499;
   --orange:#f59f00;
   --radius:14px;
   --shadow:0 1px 3px rgba(0,0,0,0.06);
@@ -35,227 +38,368 @@ body{
   overflow-x:hidden;
 }
 
-/* 헤더 */
-.header{
-  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-  padding:32px 20px;
+/* 히어로 섹션 - 베이비 블루 */
+.hero{
+  background:linear-gradient(180deg,var(--baby-blue) 0%,var(--baby-blue-light) 100%);
+  padding:24px 20px 32px;
   text-align:center;
-}
-.brand-logo{
-  font-size:24px;
-  font-weight:800;
-  color:#fff;
-  letter-spacing:-0.5px;
-  margin-bottom:6px;
-}
-.brand-tagline{
-  font-size:12px;
-  color:rgba(255,255,255,0.85);
-  font-weight:500;
+  position:relative;
 }
 .ref-badge{
   display:none;
-  margin-top:12px;
-  padding:6px 14px;
-  background:rgba(255,255,255,0.2);
-  border:1px solid rgba(255,255,255,0.3);
+  background:#fff;
+  border:1px solid var(--baby-blue-dark);
   border-radius:20px;
-  color:#fff;
-  font-size:12px;
-  font-weight:600;
+  padding:5px 14px;
+  font-size:11px;
+  color:var(--baby-blue-deep);
+  font-weight:700;
+  margin-bottom:14px;
 }
 .ref-badge.show{display:inline-block}
 
-/* 컨테이너 */
-.container{padding:16px}
+/* 로고 영역 */
+.logo-wrap{
+  margin:0 auto 8px;
+  width:160px;
+  height:160px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.logo-img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
 
-/* 메뉴 카드 */
-.menu-card{
+/* 핵심 메시지 */
+.hero-title{
+  font-size:22px;
+  font-weight:800;
+  color:var(--text);
+  line-height:1.4;
+  letter-spacing:-0.5px;
+  margin-bottom:8px;
+}
+.hero-sub{
+  font-size:13px;
+  color:var(--text2);
+  font-weight:500;
+  letter-spacing:-0.2px;
+}
+
+/* 신뢰 카드 영역 */
+.trust-section{
+  background:#fff;
+  padding:20px 16px;
+  border-bottom:1px solid var(--border);
+}
+.trust-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.trust-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  background:var(--baby-blue-light);
+  border-radius:10px;
+}
+.trust-check{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:var(--baby-blue-deep);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:800;
+  flex-shrink:0;
+}
+.trust-text{
+  flex:1;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+  letter-spacing:-0.2px;
+}
+.trust-num-inline{
+  color:var(--baby-blue-deep);
+  font-weight:800;
+}
+
+/* 컨테이너 */
+.container{padding:20px 16px 0}
+
+/* 섹션 타이틀 */
+.section-title{
+  font-size:14px;
+  font-weight:700;
+  color:var(--text);
+  margin-bottom:14px;
+  padding:0 4px;
+  letter-spacing:-0.3px;
+}
+
+/* 단계별 가이드 */
+.steps{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px 18px;
+  margin-bottom:16px;
+}
+.step{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px 0;
+  position:relative;
+  text-decoration:none;
+  color:inherit;
+}
+.step:not(:last-child)::after{
+  content:'';
+  position:absolute;
+  left:14px;
+  top:42px;
+  bottom:-12px;
+  width:2px;
+  background:var(--baby-blue-light);
+}
+.step-num{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:var(--baby-blue-deep);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:700;
+  flex-shrink:0;
+  position:relative;
+  z-index:1;
+}
+.step-content{flex:1;min-width:0}
+.step-title{
+  font-size:14px;
+  font-weight:700;
+  color:var(--text);
+  margin-bottom:2px;
+  letter-spacing:-0.2px;
+}
+.step-desc{
+  font-size:11px;
+  color:var(--text3);
+  font-weight:400;
+}
+.step-action{
+  background:var(--baby-blue-light);
+  color:var(--baby-blue-deep);
+  padding:5px 12px;
+  border-radius:14px;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.step-action.highlight{
+  background:var(--primary-light);
+  color:var(--primary);
+}
+
+/* 추가 정보 메뉴 */
+.extra-menu{
   background:var(--card);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   overflow:hidden;
   margin-bottom:16px;
 }
-
-.menu-item{
+.extra-item{
   display:flex;
   align-items:center;
-  padding:18px 18px;
+  padding:14px 18px;
   border-bottom:1px solid var(--border);
-  cursor:pointer;
   text-decoration:none;
   color:inherit;
+  cursor:pointer;
   transition:background 0.15s;
 }
-.menu-item:last-child{border-bottom:none}
-.menu-item:active{background:var(--primary-light)}
+.extra-item:last-child{border-bottom:none}
+.extra-item:active{background:var(--baby-blue-light)}
 
-.menu-icon{
-  width:42px;
-  height:42px;
-  border-radius:12px;
-  background:var(--primary-light);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:20px;
-  flex-shrink:0;
-  margin-right:14px;
-}
-
-.menu-content{flex:1;min-width:0}
-.menu-title{
-  font-size:15px;
+.extra-content{flex:1;min-width:0}
+.extra-title{
+  font-size:13px;
   font-weight:700;
   color:var(--text);
-  margin-bottom:2px;
   letter-spacing:-0.2px;
 }
-.menu-desc{
-  font-size:12px;
+.extra-desc{
+  font-size:11px;
   color:var(--text3);
+  margin-top:2px;
   font-weight:400;
 }
-
-.menu-arrow{
+.extra-arrow{
   color:var(--text3);
-  font-size:18px;
-  margin-left:8px;
+  font-size:16px;
   font-weight:400;
+  margin-left:8px;
 }
 
 /* 카톡 상담 */
-.contact-card{
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:18px;
-  text-align:center;
-  margin-bottom:16px;
-}
-.contact-title{
-  font-size:13px;
-  color:var(--text2);
-  margin-bottom:10px;
-  font-weight:500;
+.contact-area{
+  margin-bottom:8px;
 }
 .btn-kakao{
-  display:inline-flex;
+  width:100%;
+  display:flex;
   align-items:center;
+  justify-content:center;
   gap:8px;
   background:#fee500;
   color:#1a1a1a;
-  padding:13px 28px;
-  border-radius:30px;
+  padding:14px;
+  border-radius:14px;
+  text-decoration:none;
   font-size:14px;
   font-weight:700;
-  text-decoration:none;
+  font-family:inherit;
   border:none;
   cursor:pointer;
-  font-family:inherit;
   transition:transform 0.15s;
+  letter-spacing:-0.2px;
 }
-.btn-kakao:active{transform:scale(0.97)}
-
-/* 신뢰 정보 */
-.trust-line{
-  text-align:center;
-  font-size:11px;
-  color:var(--text3);
-  font-weight:500;
-  margin:24px 16px 8px;
-  letter-spacing:-0.1px;
-}
-.trust-divider{color:var(--border);margin:0 6px}
+.btn-kakao:active{transform:scale(0.98)}
 
 /* 푸터 */
 .footer{
-  margin-top:8px;
+  margin-top:24px;
   padding:16px 20px 0;
   text-align:center;
   font-size:11px;
   color:var(--text3);
   font-weight:400;
-  line-height:1.6;
+  line-height:1.7;
 }
 
 @keyframes fadeUp{
-  from{opacity:0;transform:translateY(8px)}
+  from{opacity:0;transform:translateY(10px)}
   to{opacity:1;transform:translateY(0)}
 }
-.menu-card{animation:fadeUp 0.4s ease both}
-.contact-card{animation:fadeUp 0.4s 0.1s ease both;opacity:0;animation-fill-mode:forwards}
+.steps,.extra-menu,.contact-area{animation:fadeUp 0.4s ease both}
+.steps{animation-delay:0.1s}
+.extra-menu{animation-delay:0.2s}
+.contact-area{animation-delay:0.3s}
+
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+.logo-img{animation:float 3s ease-in-out infinite}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="brand-logo">DOLBOMMAT</div>
-  <div class="brand-tagline">층간소음 62% 저감 · TPU 매트</div>
-  <div id="refBadge" class="ref-badge"><span id="refName"></span> 추천</div>
+<!-- 히어로 섹션 -->
+<div class="hero">
+  <div id="refBadge" class="ref-badge"><span id="refName"></span> 추천 받으셨군요</div>
+  <div class="logo-wrap">
+    <img src="dolbom-logo.png" alt="돌봄매트" class="logo-img">
+  </div>
+  <div class="hero-title">층간소음 62% 저감<br>프리미엄 TPU 매트</div>
+  <div class="hero-sub">아이와 반려동물의 안전을 책임집니다</div>
+</div>
+
+<!-- 신뢰 정보 -->
+<div class="trust-section">
+  <div class="trust-list">
+    <div class="trust-row">
+      <div class="trust-check">✓</div>
+      <div class="trust-text">5성급 호텔 키즈룸 시공 완료</div>
+    </div>
+    <div class="trust-row">
+      <div class="trust-check">✓</div>
+      <div class="trust-text"><span class="trust-num-inline">80개</span> 국공립 어린이집 시공 완료</div>
+    </div>
+    <div class="trust-row">
+      <div class="trust-check">✓</div>
+      <div class="trust-text"><span class="trust-num-inline">6,700곳</span> 시공 완료</div>
+    </div>
+  </div>
 </div>
 
 <div class="container">
 
-  <div class="menu-card">
-
-    <a href="https://www.dolbommat.com" class="menu-item" id="menuHome">
-      <div class="menu-icon">🏠</div>
-      <div class="menu-content">
-        <div class="menu-title">홈페이지</div>
-        <div class="menu-desc">제품 소개 · 인증서 · 시공 후기</div>
+  <!-- 단계별 가이드 -->
+  <div class="section-title">처음이시라면 이렇게 시작하세요</div>
+  <div class="steps">
+    
+    <a href="quote.html" class="step" id="stepQuote">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">우리집 견적 받기</div>
+        <div class="step-desc">평수 입력하면 즉시 가격 확인</div>
       </div>
-      <div class="menu-arrow">›</div>
+      <div class="step-action">계산</div>
     </a>
 
-    <a href="quote.html" class="menu-item" id="menuQuote">
-      <div class="menu-icon">💰</div>
-      <div class="menu-content">
-        <div class="menu-title">우리집 견적</div>
-        <div class="menu-desc">평수 입력하면 즉시 가격 확인</div>
+    <a href="sample.html" class="step" id="stepSample">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">무료 샘플 받기</div>
+        <div class="step-desc">직접 만져보고 품질 확인</div>
       </div>
-      <div class="menu-arrow">›</div>
+      <div class="step-action">신청</div>
     </a>
 
-    <a href="sample.html" class="menu-item" id="menuSample">
-      <div class="menu-icon">📦</div>
-      <div class="menu-content">
-        <div class="menu-title">무료 샘플</div>
-        <div class="menu-desc">직접 만져보고 결정하세요</div>
+    <a href="booking.html" class="step" id="stepBooking">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">시공 예약</div>
+        <div class="step-desc">원하는 날짜 선택해 신청</div>
       </div>
-      <div class="menu-arrow">›</div>
+      <div class="step-action">예약</div>
     </a>
 
-    <a href="booking.html" class="menu-item" id="menuBooking">
-      <div class="menu-icon">📅</div>
-      <div class="menu-content">
-        <div class="menu-title">시공 예약</div>
-        <div class="menu-desc">원하는 날짜 선택해 신청</div>
+    <a href="cs-review-info.html" class="step" id="stepReview">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">시공 후 후기 작성</div>
+        <div class="step-desc">최대 11만원 캐시백</div>
       </div>
-      <div class="menu-arrow">›</div>
-    </a>
-
-    <a href="cs-review-info.html" class="menu-item" id="menuReview">
-      <div class="menu-icon">🎁</div>
-      <div class="menu-content">
-        <div class="menu-title">후기 이벤트</div>
-        <div class="menu-desc">시공 후 최대 11만원 캐시백</div>
-      </div>
-      <div class="menu-arrow">›</div>
+      <div class="step-action highlight">미션</div>
     </a>
 
   </div>
 
-  <div class="contact-card">
-    <div class="contact-title">궁금한 점이 있으신가요?</div>
-    <a href="http://pf.kakao.com/_UMyBK/chat" class="btn-kakao">카카오톡 1:1 상담</a>
+  <!-- 자세한 정보 -->
+  <div class="section-title">자세히 알아보기</div>
+  <div class="extra-menu">
+    <a href="https://www.dolbommat.com" class="extra-item">
+      <div class="extra-content">
+        <div class="extra-title">홈페이지</div>
+        <div class="extra-desc">제품 소개 · 인증서 · 시공 후기</div>
+      </div>
+      <div class="extra-arrow">›</div>
+    </a>
   </div>
 
-</div>
+  <!-- 카톡 상담 -->
+  <div class="contact-area">
+    <a href="http://pf.kakao.com/_UMyBK/chat" class="btn-kakao">
+      카카오톡 24시 상담
+    </a>
+  </div>
 
-<div class="trust-line">
-  창업 6년 <span class="trust-divider">·</span> 6,700곳 시공 <span class="trust-divider">·</span> 어린이집 80곳
 </div>
 
 <div class="footer">
@@ -292,10 +436,10 @@ body{
     } catch(e) {}
     
     var menuItems = [
-      {id: 'menuQuote',   url: 'quote.html'},
-      {id: 'menuSample',  url: 'sample.html'},
-      {id: 'menuBooking', url: 'booking.html'},
-      {id: 'menuReview',  url: 'cs-review-info.html'}
+      {id: 'stepQuote',    url: 'quote.html'},
+      {id: 'stepSample',   url: 'sample.html'},
+      {id: 'stepBooking',  url: 'booking.html'},
+      {id: 'stepReview',   url: 'cs-review-info.html'}
     ];
     
     menuItems.forEach(function(item){
@@ -306,7 +450,6 @@ body{
     });
   }
   
-  // 유입 추적
   try {
     var saved = JSON.parse(localStorage.getItem('dolbom_shared') || '{}');
     if (saved.phone && saved.name) {
