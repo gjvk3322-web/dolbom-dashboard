@@ -698,7 +698,7 @@ function saveDraft(){
     hosu:document.getElementById('hosu').value,
     pyung:document.getElementById('pyung').value,
     memo:document.getElementById('memo').value,
-    addrInput:document.getElementById('addrInput').value,
+    // 🆕 addrInput은 저장 안 함 (addrData 객체와 정합성 안 맞아서 복원 시 검증 실패)
     savedAt:Date.now()
   };
   try{localStorage.setItem(SAVE_KEY,JSON.stringify(draft))}catch(e){}
@@ -715,11 +715,12 @@ function loadDraft(){
     if(draft.hosu)document.getElementById('hosu').value=draft.hosu;
     if(draft.pyung)document.getElementById('pyung').value=draft.pyung;
     if(draft.memo)document.getElementById('memo').value=draft.memo;
-    if(draft.addrInput)document.getElementById('addrInput').value=draft.addrInput;
+    // 🆕 주소 input은 복원 안 함 (addrData 객체와 정합성 안 맞아서 검증 실패)
+    // if(draft.addrInput)document.getElementById('addrInput').value=draft.addrInput;
   }catch(e){}
 }
 loadDraft();
-['name','phone','dong','hosu','pyung','addrInput','memo'].forEach(function(id){
+['name','phone','dong','hosu','pyung','memo'].forEach(function(id){
   document.getElementById(id).addEventListener('input',saveDraft);
 });
 
