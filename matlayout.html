@@ -32,7 +32,7 @@
 const { useMemo, useRef, useState, useEffect } = React;
 
 const DEFAULT_SCALE = 80;
-const STORAGE_KEY = 'puzzleMatLayout_v2';
+const STORAGE_KEY = 'puzzleMatLayout_v3'; // 격자 스냅 추가로 v3
 
 function Button({ children, variant = "default", className = "", ...props }) {
   const v = {
@@ -79,10 +79,7 @@ function pointInPolygon(point, polygon) {
 }
 
 function rectCorners(x, y, size) {
-  return [
-    { x, y }, { x: x + size, y },
-    { x: x + size, y: y + size }, { x, y: y + size },
-  ];
+  return [{ x, y }, { x: x + size, y }, { x: x + size, y: y + size }, { x, y: y + size }];
 }
 
 function rectIntersectsPolygon(x, y, size, polygon) {
@@ -117,7 +114,6 @@ function makeLayout(polygon, matPx, offsetX, offsetY, overcutPx) {
   const endY = b.maxY + matPx;
   const mats = [];
   let id = 1;
-
   for (let y = startY; y <= endY; y += matPx) {
     for (let x = startX; x <= endX; x += matPx) {
       if (!rectIntersectsPolygon(x, y, matPx, polygon)) continue;
@@ -129,6 +125,7 @@ function makeLayout(polygon, matPx, offsetX, offsetY, overcutPx) {
   return mats;
 }
 
+// 🆕 자동 최적화 격자 (자유 그리기 모드용)
 function optimizeLayout(polygon, matPx, overcutPx, priority) {
   let best = null;
   if (polygon.length < 3) return { mats: [], ox: 0, oy: 0, score: 0, cutCount: 0 };
@@ -144,6 +141,16 @@ function optimizeLayout(polygon, matPx, overcutPx, priority) {
   return best || { mats: [], ox: 0, oy: 0, score: 0, cutCount: 0 };
 }
 
+// 🆕 사용자 정의 격자 (격자 스냅 모드용 - 첫 점 기준)
+function fixedGridLayout(polygon, matPx, anchorX, anchorY, overcutPx) {
+  if (polygon.length < 3) return { mats: [], ox: 0, oy: 0, cutCount: 0 };
+  const ox = ((anchorX % matPx) + matPx) % matPx;
+  const oy = ((anchorY % matPx) + matPx) % matPx;
+  const mats = makeLayout(polygon, matPx, ox, oy, overcutPx);
+  const cutCount = mats.filter((m) => !m.full).length;
+  return { mats, ox, oy, cutCount };
+}
+
 function PuzzleMatLayoutApp() {
   const [image, setImage] = useState(null);
   const [imageDims, setImageDims] = useState({ w: 760, h: 540 });
@@ -157,6 +164,7 @@ function PuzzleMatLayoutApp() {
   const [priority, setPriority] = useState("fewCuts");
   const [zoom, setZoom] = useState(1);
   const [showNumbers, setShowNumbers] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(true); // 🆕 격자 스냅 (기본 ON)
   const [restored, setRestored] = useState(false);
   const svgRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -173,6 +181,7 @@ function PuzzleMatLayoutApp() {
       if (d.priority) setPriority(d.priority);
       if (d.image) setImage(d.image);
       if (d.imageDims) setImageDims(d.imageDims);
+      if (d.snapToGrid !== undefined) setSnapToGrid(d.snapToGrid);
       setRestored(true);
       setTimeout(() => setRestored(false), 5000);
     } catch (e) {}
@@ -180,22 +189,40 @@ function PuzzleMatLayoutApp() {
 
   useEffect(() => {
     try {
-      const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims };
+      const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims, snapToGrid };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
       try {
-        const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, imageDims };
+        const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, imageDims, snapToGrid };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch (e2) {}
     }
-  }, [points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims]);
+  }, [points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims, snapToGrid]);
 
   const matPx = pxPerMeter;
   const overcutPx = (Number(overcutCm) / 100) * pxPerMeter;
-  const optimized = useMemo(
-    () => optimizeLayout(points, matPx, overcutPx, priority),
-    [points, matPx, overcutPx, priority]
+
+  // 🆕 격자 스냅 모드: 사용자 첫 점 기준 고정 격자
+  // 자유 모드: 100가지 격자 시도해서 최적 선택
+  const gridFixed = useMemo(() => {
+    if (!snapToGrid || points.length === 0) return null;
+    return fixedGridLayout(points, matPx, points[0].x, points[0].y, overcutPx);
+  }, [points, matPx, overcutPx, snapToGrid]);
+
+  // 🆕 두 가지 자동 최적화 결과 (비교용 + 자유 모드용)
+  const optimizedFewCuts = useMemo(
+    () => optimizeLayout(points, matPx, overcutPx, "fewCuts"),
+    [points, matPx, overcutPx]
   );
+  const optimizedFewMats = useMemo(
+    () => optimizeLayout(points, matPx, overcutPx, "fewMats"),
+    [points, matPx, overcutPx]
+  );
+
+  // 현재 표시 결과
+  const optimized = snapToGrid && gridFixed
+    ? gridFixed
+    : (priority === "fewCuts" ? optimizedFewCuts : optimizedFewMats);
 
   const matKey = (m) => `${m.x.toFixed(2)}_${m.y.toFixed(2)}`;
   const excludedSet = new Set(excludedMatKeys);
@@ -243,6 +270,18 @@ function PuzzleMatLayoutApp() {
     return pt.matrixTransform(svg.getScreenCTM().inverse());
   };
 
+  // 🆕 격자 스냅 함수
+  const snapPoint = (p) => {
+    if (!snapToGrid || points.length === 0) return p;
+    const anchor = points[0];
+    const dx = p.x - anchor.x;
+    const dy = p.y - anchor.y;
+    return {
+      x: anchor.x + Math.round(dx / matPx) * matPx,
+      y: anchor.y + Math.round(dy / matPx) * matPx,
+    };
+  };
+
   const applyScale = () => {
     if (scalePoints.length !== 2) return;
     const m = Number(scaleInputM);
@@ -252,9 +291,12 @@ function PuzzleMatLayoutApp() {
 
   const handleCanvasClick = (evt) => {
     if (mode === "idle" || mode === "exclude") return;
-    const p = getSvgPoint(evt);
+    let p = getSvgPoint(evt);
     if (mode === "scale") setScalePoints((prev) => (prev.length >= 2 ? [p] : [...prev, p]));
-    if (mode === "draw") setPoints((prev) => [...prev, p]);
+    if (mode === "draw") {
+      p = snapPoint(p); // 🆕 격자 스냅 적용
+      setPoints((prev) => [...prev, p]);
+    }
   };
 
   const toggleMatExclude = (m, e) => {
@@ -294,8 +336,8 @@ function PuzzleMatLayoutApp() {
 
   const exportJson = () => {
     const payload = {
-      version: "0.4",
-      rule: { matSizeMm: 1000, overcutCm: Number(overcutCm) },
+      version: "0.5",
+      rule: { matSizeMm: 1000, overcutCm: Number(overcutCm), snapToGrid },
       scale: { pxPerMeter },
       polygon: points,
       excludedMatKeys,
@@ -323,6 +365,24 @@ function PuzzleMatLayoutApp() {
     { label: "100%", value: 1.0 },
     { label: "150%", value: 1.5 },
   ];
+
+  // 🆕 격자 미리보기 점 좌표 계산 (시공 모드 + 첫 점 있을 때)
+  const gridPreviewPoints = useMemo(() => {
+    if (mode !== "draw" || !snapToGrid || points.length === 0) return [];
+    const anchor = points[0];
+    const points_arr = [];
+    // 화면 영역(1400×1000)을 덮는 격자 점들 생성
+    const gridRange = 18; // 좌우 18칸씩
+    for (let i = -gridRange; i <= gridRange; i++) {
+      for (let j = -gridRange; j <= gridRange; j++) {
+        const x = anchor.x + i * matPx;
+        const y = anchor.y + j * matPx;
+        if (x < -50 || x > 1450 || y < -50 || y > 1050) continue;
+        points_arr.push({ x, y });
+      }
+    }
+    return points_arr;
+  }, [mode, snapToGrid, points, matPx]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-3 md:p-4 text-slate-900">
@@ -361,6 +421,19 @@ function PuzzleMatLayoutApp() {
                   <Button variant={mode === "scale" ? "default" : "outline"} onClick={() => setMode("scale")}>스케일</Button>
                   <Button variant={mode === "draw" ? "default" : "outline"} onClick={() => setMode("draw")}>시공</Button>
                   <Button variant={mode === "exclude" ? "default" : "outline"} onClick={() => setMode("exclude")}>제외</Button>
+                </div>
+                {/* 🆕 격자 스냅 토글 */}
+                <div className="flex items-center justify-between rounded-xl bg-blue-50 border border-blue-200 px-3 py-2">
+                  <div>
+                    <div className="text-sm font-medium text-blue-900">🧲 격자 스냅</div>
+                    <div className="text-xs text-blue-700">{snapToGrid ? "1m 단위 자동 정렬" : "자유 클릭 (자동 최적화)"}</div>
+                  </div>
+                  <button
+                    onClick={() => setSnapToGrid(!snapToGrid)}
+                    className={`relative w-11 h-6 rounded-full transition ${snapToGrid ? 'bg-blue-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${snapToGrid ? 'left-5' : 'left-0.5'}`}></span>
+                  </button>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   도면 치수선의 양 끝을 찍고 실제 길이를 입력하면 1m 매트 크기가 도면에 맞게 자동 보정됩니다.
@@ -403,17 +476,24 @@ function PuzzleMatLayoutApp() {
                     <span className="text-sm">cm</span>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">최적화 기준</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 mt-1 text-base"
-                  >
-                    <option value="fewCuts">재단장 적게</option>
-                    <option value="fewMats">총 매트 적게</option>
-                  </select>
-                </div>
+                {!snapToGrid && (
+                  <div>
+                    <label className="text-sm font-medium">최적화 기준</label>
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 mt-1 text-base"
+                    >
+                      <option value="fewCuts">재단장 적게</option>
+                      <option value="fewMats">총 매트 적게</option>
+                    </select>
+                  </div>
+                )}
+                {snapToGrid && (
+                  <div className="text-xs text-slate-500 bg-slate-50 rounded-lg p-2">
+                    💡 격자 스냅이 켜져 있어 사용자 첫 점 기준 고정 격자를 사용합니다.
+                  </div>
+                )}
 
                 {mode === "draw" && (
                   <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
@@ -427,6 +507,34 @@ function PuzzleMatLayoutApp() {
                 )}
               </CardContent>
             </Card>
+
+            {/* 🆕 두 모드 비교 카드 */}
+            {!snapToGrid && points.length >= 3 && (
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <h2 className="font-semibold text-sm">⚖️ 자동 최적화 비교</h2>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div
+                      className={`rounded-lg p-2 cursor-pointer transition ${priority === "fewCuts" ? "bg-blue-100 border-2 border-blue-500" : "bg-slate-50 border-2 border-transparent"}`}
+                      onClick={() => setPriority("fewCuts")}
+                    >
+                      <div className="font-semibold text-slate-800">재단장 적게</div>
+                      <div className="text-slate-600 mt-1">총 {optimizedFewCuts.mats.length}장</div>
+                      <div className="text-orange-700">재단 {optimizedFewCuts.cutCount}장</div>
+                    </div>
+                    <div
+                      className={`rounded-lg p-2 cursor-pointer transition ${priority === "fewMats" ? "bg-purple-100 border-2 border-purple-500" : "bg-slate-50 border-2 border-transparent"}`}
+                      onClick={() => setPriority("fewMats")}
+                    >
+                      <div className="font-semibold text-slate-800">총 매트 적게</div>
+                      <div className="text-slate-600 mt-1">총 {optimizedFewMats.mats.length}장</div>
+                      <div className="text-orange-700">재단 {optimizedFewMats.cutCount}장</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500">카드를 눌러 모드 전환</div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardContent className="space-y-3 p-4">
@@ -505,6 +613,18 @@ function PuzzleMatLayoutApp() {
                     <image href={image} x="80" y="60" width={imageDims.w} height={imageDims.h} opacity="0.45" />
                   )}
 
+                  {/* 🆕 격자 미리보기 점들 (시공 모드 + 격자 스냅 ON) */}
+                  {gridPreviewPoints.map((p, i) => (
+                    <circle
+                      key={`gp-${i}`}
+                      cx={p.x} cy={p.y}
+                      r="2.5"
+                      fill="#3b82f6"
+                      opacity="0.35"
+                      style={{pointerEvents: "none"}}
+                    />
+                  ))}
+
                   {matsWithDisplay.map((m) => (
                     <g
                       key={`m-${m.x}-${m.y}`}
@@ -551,7 +671,16 @@ function PuzzleMatLayoutApp() {
                   {points.length >= 2 && points.length < 3 && (
                     <polyline points={polygonStr} fill="none" stroke="#2563eb" strokeWidth="3" strokeDasharray="6 6" />
                   )}
-                  {points.map((p, i) => <circle key={`p-${i}`} cx={p.x} cy={p.y} r="7" fill="#2563eb" />)}
+                  {points.map((p, i) => (
+                    <circle
+                      key={`p-${i}`}
+                      cx={p.x} cy={p.y}
+                      r={i === 0 ? "9" : "7"}
+                      fill={i === 0 ? "#1e40af" : "#2563eb"}
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                  ))}
 
                   {scalePoints.length === 2 && (
                     <line x1={scalePoints[0].x} y1={scalePoints[0].y} x2={scalePoints[1].x} y2={scalePoints[1].y} stroke="#7c3aed" strokeWidth="4" />
@@ -562,7 +691,12 @@ function PuzzleMatLayoutApp() {
 
               <div className="px-4 py-3 text-xs text-slate-700 border-t bg-slate-50">
                 {mode === "scale" && "🟣 스케일 모드: 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
-                {mode === "draw" && "🔵 시공 모드: 시공할 영역의 꼭짓점을 순서대로 클릭하세요. 다 그리면 \"그리기 종료\"를 누르세요."}
+                {mode === "draw" && snapToGrid && (
+                  points.length === 0
+                    ? "🔵 시공 모드 (격자 스냅): 첫 점을 자유롭게 클릭하세요. 그 점이 격자 시작점이 됩니다."
+                    : "🔵 시공 모드 (격자 스냅): 1m 단위로 자동 정렬됩니다. 격자 점 가까이 클릭하세요."
+                )}
+                {mode === "draw" && !snapToGrid && "🔵 시공 모드 (자유 그리기): 시공할 영역의 꼭짓점을 자유롭게 클릭하세요."}
                 {mode === "exclude" && "🔴 제외 모드: 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
                 {mode === "idle" && "✅ 작업 완료. 결과를 확인하세요. 수정하려면 다른 모드를 선택하세요."}
               </div>
@@ -571,7 +705,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.1 · 작업 내용은 자동 저장됩니다
+          돌봄매트 시공 도구 v1.2 · 격자 스냅 + 자동 비교 · 작업 내용은 자동 저장됩니다
         </div>
       </div>
     </div>
