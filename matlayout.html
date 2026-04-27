@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📐 1m × 1m 퍼즐매트 배치 프로그램</title>
+<title>매트 배치 프로그램</title>
 
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="googlebot" content="noindex, nofollow">
@@ -565,7 +565,7 @@ function PuzzleMatLayoutApp() {
         {/* 간소화된 헤더 */}
         <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold">📐 시공 보기 모드</h1>
+            <h1 className="text-lg font-bold">시공 보기</h1>
             <div className="text-xs text-slate-500">매트 클릭 = 제외/복구</div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -579,7 +579,7 @@ function PuzzleMatLayoutApp() {
             <div className="flex gap-1">
               <Button variant="outline" onClick={() => setZoom(z => Math.max(0.4, z - 0.1))}>−</Button>
               <Button variant="outline" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>
-              <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>🔢</Button>
+              <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>번호</Button>
             </div>
             <a href={window.location.pathname} className="text-sm text-blue-600 hover:underline">← 편집 모드</a>
           </div>
@@ -658,29 +658,29 @@ function PuzzleMatLayoutApp() {
 
         <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-xl md:text-2xl font-bold">📐 1m × 1m 퍼즐매트 배치 프로그램</h1>
+            <h1 className="text-xl md:text-2xl font-bold">매트 배치 프로그램</h1>
             <p className="text-xs md:text-sm text-slate-500">스케일 보정 → 시공 영역 → 매트 제외 → 자동 수량 계산</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
-              📤 도면 업로드
+              도면 업로드
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </label>
-            {/* 🆕 전체화면 보기 버튼 */}
+            {/* 전체화면 보기 버튼 */}
             {points.length >= 3 && (
               <Button variant="outline" onClick={openViewerTab} className="bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100">
-                📺 전체화면 보기
+                전체화면 보기
               </Button>
             )}
-            <Button variant="outline" onClick={exportJson}>💾 결과 저장</Button>
-            <Button variant="outline" onClick={undo}>↩️ 취소</Button>
-            <Button variant="destructive" onClick={resetAll}>🗑️ 초기화</Button>
+            <Button variant="outline" onClick={exportJson}>결과 저장</Button>
+            <Button variant="outline" onClick={undo}>취소</Button>
+            <Button variant="destructive" onClick={resetAll}>초기화</Button>
           </div>
         </div>
 
         {restored && (
           <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
-            💾 이전 작업이 자동으로 복원되었습니다. 새로 시작하려면 "초기화"를 누르세요.
+            이전 작업이 자동으로 복원되었습니다. 새로 시작하려면 "초기화"를 누르세요.
           </div>
         )}
 
@@ -741,12 +741,12 @@ function PuzzleMatLayoutApp() {
 
                 {mode === "draw" && (
                   <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
-                    🔒 그리기 종료 (잠금)
+                    그리기 종료
                   </Button>
                 )}
                 {mode === "exclude" && excludedCount > 0 && (
                   <Button className="w-full" variant="outline" onClick={clearExcluded}>
-                    🔄 제외 매트 모두 복구 ({excludedCount}장)
+                    제외 매트 복구 ({excludedCount}장)
                   </Button>
                 )}
               </CardContent>
@@ -756,13 +756,13 @@ function PuzzleMatLayoutApp() {
             {points.length >= 3 && (
               <Card className="border-2 border-amber-300 bg-amber-50/50">
                 <CardContent className="space-y-2 p-4">
-                  <h2 className="font-bold text-base text-amber-900">💰 실제 발주 매트</h2>
+                  <h2 className="font-bold text-base text-amber-900">실제 발주 매트</h2>
                   <div className="text-3xl font-bold text-amber-900">
                     {actualOrderMats}<span className="text-base font-medium text-amber-700 ml-1">장</span>
                   </div>
                   {savedMats > 0 && (
                     <div className="text-xs text-emerald-700 font-medium">
-                      ✨ 짜투리 재활용으로 {savedMats}장 절약 (페어 {pairsCount}개)
+                      짜투리 재활용으로 {savedMats}장 절약 (페어 {pairsCount}개)
                     </div>
                   )}
                   <div className="text-xs text-slate-600 pt-1 border-t border-amber-200">
@@ -774,7 +774,7 @@ function PuzzleMatLayoutApp() {
 
             <Card>
               <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">📊 상세 통계</h2>
+                <h2 className="font-semibold">상세 통계</h2>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="rounded-xl bg-slate-100 p-3">
                     <div className="text-slate-500 text-xs">순시공 면적</div>
@@ -814,12 +814,12 @@ function PuzzleMatLayoutApp() {
 
             <Card>
               <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">🔍 보기 설정</h2>
+                <h2 className="font-semibold">보기 설정</h2>
                 <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))}>−</Button>
                   <Button variant="outline" onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))}>+</Button>
-                  <Button variant="outline" onClick={() => setShowNumbers((v) => !v)}>🔢 번호</Button>
-                  <Button variant={showPairing ? "default" : "outline"} onClick={() => setShowPairing((v) => !v)}>♻️ 페어</Button>
+                  <Button variant="outline" onClick={() => setShowNumbers((v) => !v)}>번호</Button>
+                  <Button variant={showPairing ? "default" : "outline"} onClick={() => setShowPairing((v) => !v)}>페어</Button>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
                   {zoomPresets.map((p) => (
@@ -958,21 +958,21 @@ function PuzzleMatLayoutApp() {
               </div>
 
               <div className="px-4 py-3 text-xs text-slate-700 border-t bg-slate-50">
-                {mode === "scale" && "🟣 스케일 모드: 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
+                {mode === "scale" && "스케일 모드 — 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
                 {mode === "draw" && (
                   selectedIdx !== null
-                    ? "🔵 시공 모드: 점 선택됨. 드래그하거나 화살표 키 (Shift+화살표 = 10px씩) | Esc 선택해제 | 빈 공간 클릭 = 새 점 추가"
-                    : "🔵 시공 모드: 도면 꼭짓점을 클릭하세요. 이미 찍은 점은 드래그하거나 클릭 후 화살표 키로 미세 조정 가능."
+                    ? "시공 모드 — 점 선택됨. 드래그하거나 화살표 키 (Shift+화살표 = 10px씩) | Esc 선택해제 | 빈 공간 클릭 = 새 점 추가"
+                    : "시공 모드 — 도면 꼭짓점을 클릭하세요. 이미 찍은 점은 드래그하거나 클릭 후 화살표 키로 미세 조정 가능."
                 )}
-                {mode === "exclude" && "🔴 제외 모드: 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
-                {mode === "idle" && "🔒 잠금 상태: 마우스로 드래그하거나 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 \"시공\" 모드 클릭."}
+                {mode === "exclude" && "제외 모드 — 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
+                {mode === "idle" && "잠금 상태 — 마우스로 드래그하거나 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 \"시공\" 모드 클릭."}
               </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.7 · 단순화 + 전체화면 보기 모드 + 탭 자동 동기화
+          돌봄매트 시공 도구 v1.8
         </div>
       </div>
     </div>
