@@ -98,48 +98,34 @@
         '· 다만 거부 시 배송·시공·결제 처리가 불가능하여 서비스 이용이 제한됩니다.'
     },
     {
-      key: 'optional1',
+      key: 'optional_marketing',
       required: false,
-      title: '마케팅 정보 수신 동의',
+      title: '마케팅 활용 동의',
       summary: '',
       fullText:
-        '신제품·할인·이벤트 정보를 알림톡으로 안내해드립니다.\n\n' +
-        '【수신 채널】\n' +
-        '· 알림톡 (카카오톡 채널)\n\n' +
-        '【수신 내용】\n' +
+        '알림톡 마케팅 정보 수신과 시공 사진 마케팅 활용에 동의합니다.\n\n' +
+        '【알림톡 수신 내용】\n' +
         '· 신제품 출시 안내\n' +
         '· 할인·프로모션 이벤트\n' +
         '· 후기 이벤트 안내\n' +
         '· 입주 시점 시공 시기 알림\n\n' +
-        '【보유·이용 기간】\n' +
-        '· 동의 철회 시까지\n\n' +
-        '【거부 권리】\n' +
-        '· 본 동의는 선택사항이며, 거부하셔도 시공·샘플 신청 등 서비스 이용에 영향이 없습니다.\n' +
-        '· 동의 후에도 언제든지 카카오톡 채널 차단 또는 카톡 상담을 통해 수신을 거부하실 수 있습니다.'
-    },
-    {
-      key: 'optional2',
-      required: false,
-      title: '시공 사진 마케팅 활용 동의',
-      summary: '',
-      fullText:
-        '시공 사진을 SNS·블로그·홈페이지 마케팅에 활용합니다.\n\n' +
-        '【활용 사진】\n' +
-        '· 시공 전·후 매트 시공 사진\n' +
-        '· 시공 과정 사진 (얼굴·이름·정확한 주소 미공개)\n\n' +
-        '【활용 채널】\n' +
+        '【시공 사진 활용 채널】\n' +
         '· 인스타그램 (@dolbommat 등)\n' +
         '· 블로그 (네이버, 티스토리)\n' +
         '· 카카오톡 채널\n' +
         '· 네이버 카페, 맘카페\n' +
         '· 유튜브\n\n' +
+        '【활용 사진 범위】\n' +
+        '· 시공 전·후 매트 시공 사진\n' +
+        '· 시공 과정 사진 (얼굴·이름·정확한 주소 미공개)\n\n' +
         '【보유·이용 기간】\n' +
         '· 동의 철회 시까지\n\n' +
         '【삭제 요청】\n' +
-        '· 게시된 사진의 삭제를 요청하시면 영업일 기준 3일 이내 삭제 처리합니다.\n' +
+        '· 게시된 사진의 삭제를 요청하시면 영업일 기준 3일 이내 처리합니다.\n' +
         '· 카카오톡 채널을 통해 요청해주세요.\n\n' +
         '【거부 권리】\n' +
-        '· 본 동의는 선택사항이며, 거부하셔도 시공 등 서비스 이용에 영향이 없습니다.'
+        '· 본 동의는 선택사항이며, 거부하셔도 시공·샘플 신청 등 서비스 이용에 영향이 없습니다.\n' +
+        '· 동의 후에도 언제든지 카카오톡 채널을 통해 수신·활용을 중지하실 수 있습니다.'
     }
   ];
 
@@ -149,16 +135,13 @@
    */
   function _buildModalHTML() {
     var itemsHTML = CONSENT_ITEMS.map(function(item, idx) {
-      var badgeClass = item.required ? 'cs-badge-required' : 'cs-badge-optional';
-      var badgeText = item.required ? '필수' : '선택';
       var initialChecked = item.required ? 'checked' : '';
-      
+
       return ''
         + '<div class="cs-consent-item" data-key="' + item.key + '">'
         +   '<label class="cs-consent-row">'
         +     '<input type="checkbox" class="cs-consent-checkbox" ' + initialChecked + ' data-key="' + item.key + '">'
         +     '<span class="cs-consent-checkbox-visual"></span>'
-        +     '<span class="cs-badge ' + badgeClass + '">' + badgeText + '</span>'
         +     '<span class="cs-consent-title">' + item.title + '</span>'
         +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '">자세히 ▼</button>'
         +   '</label>'
@@ -174,7 +157,6 @@
       +   '<div class="cs-consent-modal">'
       +     '<div class="cs-consent-header">'
       +       '<h3>🔒 개인정보 수집 동의</h3>'
-      +       '<div class="cs-consent-version">' + CONSENT_VERSION + ' · ' + _today() + '</div>'
       +     '</div>'
       +     '<div class="cs-consent-body">'
       +       '<div class="cs-consent-intro">'
@@ -189,7 +171,7 @@
       +     '</div>'
       +     '<button type="button" class="cs-consent-close" id="cs-btn-cancel" aria-label="닫기">×</button>'
       +     '<div class="cs-consent-notice">'
-      +       '본 동의서는 ' + CONSENT_VERSION + ' 기준이며, 6개월간 자동 인정됩니다.<br>'
+      +       '6개월간 자동 인정됩니다.<br>'
       +       '문의: 카카오톡 채널 [돌봄매트] · 사업자: 돌봄매트 (부산광역시)'
       +     '</div>'
       +   '</div>'
@@ -417,17 +399,17 @@
     options = options || {};
     var showAgreeAll = options.showAgreeAll !== false; // 기본 true
 
-    var itemsHTML = CONSENT_ITEMS.map(function(item, idx) {
-      var badgeClass = item.required ? 'cs-badge-required' : 'cs-badge-optional';
-      var badgeText = item.required ? '필수' : '선택';
-      var initialChecked = item.required ? 'checked' : '';
+    // 🆕 필수 / 선택 그룹 분리
+    var requiredItems = CONSENT_ITEMS.filter(function(item) { return item.required; });
+    var optionalItems = CONSENT_ITEMS.filter(function(item) { return !item.required; });
 
+    function _renderItem(item) {
+      var initialChecked = item.required ? 'checked' : '';
       return ''
         + '<div class="cs-consent-item" data-key="' + item.key + '">'
         +   '<label class="cs-consent-row">'
         +     '<input type="checkbox" class="cs-consent-checkbox" ' + initialChecked + ' data-key="' + item.key + '">'
         +     '<span class="cs-consent-checkbox-visual"></span>'
-        +     '<span class="cs-badge ' + badgeClass + '">' + badgeText + '</span>'
         +     '<span class="cs-consent-title">' + item.title + '</span>'
         +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '">자세히 ▼</button>'
         +   '</label>'
@@ -436,7 +418,15 @@
         +     '<pre>' + item.fullText + '</pre>'
         +   '</div>'
         + '</div>';
-    }).join('');
+    }
+
+    var requiredHTML = requiredItems.length
+      ? '<div class="cs-consent-group-label">필수 동의</div>' + requiredItems.map(_renderItem).join('')
+      : '';
+
+    var optionalHTML = optionalItems.length
+      ? '<div class="cs-consent-group-label">선택 동의</div>' + optionalItems.map(_renderItem).join('')
+      : '';
 
     var agreeAllHTML = showAgreeAll
       ? '<label class="cs-agree-all-row">'
@@ -448,9 +438,10 @@
 
     return ''
       + '<div class="cs-consent-embed">'
-      +   '<div class="cs-consent-embed-title">🔒 개인정보 수집 동의 (' + CONSENT_VERSION + ')</div>'
+      +   '<div class="cs-consent-embed-title">🔒 개인정보 수집 동의</div>'
       +   agreeAllHTML
-      +   itemsHTML
+      +   requiredHTML
+      +   optionalHTML
       + '</div>';
   }
 
@@ -503,12 +494,21 @@
   }
 
   // 현재 체크 상태 읽기
+  // 🆕 통합 동의 (optional_marketing) → 시트 G/H 컬럼 둘 다 같은 값으로 매핑
   function getConsentValues(containerEl) {
     if (!containerEl) return null;
     var values = {};
     CONSENT_ITEMS.forEach(function(item) {
       var cb = containerEl.querySelector('.cs-consent-item[data-key="' + item.key + '"] .cs-consent-checkbox');
-      values[item.key] = (cb && cb.checked) ? 'Y' : 'N';
+      var checkedValue = (cb && cb.checked) ? 'Y' : 'N';
+
+      if (item.key === 'optional_marketing') {
+        // 통합 동의 → 기존 시트 컬럼 G(optional1)/H(optional2) 둘 다 동일 값
+        values.optional1 = checkedValue;
+        values.optional2 = checkedValue;
+      } else {
+        values[item.key] = checkedValue;
+      }
     });
     return values;
   }
