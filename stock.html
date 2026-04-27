@@ -668,8 +668,9 @@ function renderOrder(){
   h+=`</div>`;
 
   // 제품별 행 (코튼 제외)
-  const palletLabel={'500':'24박스 기준','1000_22':'16박스 기준','1000_18':'18박스 기준'};
-  const bppMap={'500':24,'1000_22':18,'1000_18':15};
+  // 1파레트당 박스 수 (한 곳만 수정하면 라벨과 계산이 자동으로 맞춰짐)
+  const bppMap={'500':24,'1000_22':16,'1000_18':14};
+  const palletLabel={};Object.keys(bppMap).forEach(k=>palletLabel[k]=bppMap[k]+'박스 기준');
   const allRows=[];
   PR.forEach(p=>{
     const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
@@ -748,7 +749,7 @@ function removeDelivery(id){
 }
 
 function calcMonthlyOrder(){
-  const bppMap={'500':24,'1000_22':18,'1000_18':15};
+  const bppMap={'500':24,'1000_22':16,'1000_18':14};
   let grandTotal=0;
 
   deliveries.forEach(d=>{
