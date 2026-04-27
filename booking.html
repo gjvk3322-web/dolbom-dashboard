@@ -554,58 +554,45 @@ function submitBooking(){
   .then(function(r){return r.text()})
   .then(function(t){
     var res={};try{res=JSON.parse(t)}catch(e){}
+    // 🆕 성공/실패 관계없이 이미지 저장 + 텍스트 복사 흐름으로 (검증된 방식)
+    btn.textContent='✅ 예약 신청 완료!';
+    btn.style.background='linear-gradient(135deg,#2E7D32,#1B5E20)';
     if(res.success){
-      // 성공 처리
-      btn.textContent='✅ 예약 신청 완료!';
-      btn.style.background='linear-gradient(135deg,#2E7D32,#1B5E20)';
-      showToast('✅ 예약 접수 완료! 카카오톡 채널로 일정 안내드립니다');
-      // 카톡 안내 모달 (3초 후)
-      setTimeout(function(){showBookingComplete()},1500);
+      showToast('✅ 예약 접수 완료! 이미지를 카카오톡으로 보내주세요');
     }else{
-      // 실패 시: 카톡 복붙 옵션 제공
-      btn.disabled=false;
-      btn.style.opacity='1';
-      btn.textContent='📅 예약 신청하기';
-      showToast('⚠️ 자동 접수 실패. 카톡 복붙으로 진행해주세요');
-      // 안전망: 기존 이미지 저장 방식 호출
-      setTimeout(function(){saveBookingImage()},1500);
+      // 시트 저장 실패해도 → 이미지+카톡으로 받음 (안전망)
+      showToast('✅ 예약 신청! 이미지를 카카오톡으로 보내주세요');
     }
+    // 이미지 생성 + 텍스트 복사 (메인 흐름)
+    setTimeout(function(){generateBookingImage()},800);
   })
   .catch(function(err){
-    // 네트워크 오류 등
-    btn.disabled=false;
-    btn.style.opacity='1';
-    btn.textContent='📅 예약 신청하기';
-    showToast('⚠️ 네트워크 오류. 카톡 복붙으로 진행합니다');
-    setTimeout(function(){saveBookingImage()},1500);
+    // 네트워크 오류 등 - 이미지 저장으로 fallback
+    btn.textContent='✅ 예약 신청 완료!';
+    btn.style.background='linear-gradient(135deg,#2E7D32,#1B5E20)';
+    showToast('✅ 예약 신청! 이미지를 카카오톡으로 보내주세요');
+    setTimeout(function(){generateBookingImage()},800);
   });
 }
 
-// 🆕 예약 완료 안내 모달
-function showBookingComplete(){
-  var name=document.getElementById('name').value.trim();
-  var phone=document.getElementById('phone').value.trim();
-  var html='<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">'+
-    '<div style="background:#fff;border-radius:18px;max-width:400px;width:100%;padding:30px;text-align:center">'+
-    '<div style="font-size:48px;margin-bottom:16px">📅</div>'+
-    '<h2 style="font-size:20px;font-weight:800;margin-bottom:12px;color:#2E7D32">예약 접수 완료!</h2>'+
-    '<p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:20px">'+
-    '<strong>'+name+'</strong> 고객님,<br>예약이 정상적으로 접수되었습니다.<br><br>'+
-    '카카오톡 채널로<br><strong>시공 일정 확정</strong>과 <strong>예약금 안내</strong>를<br>곧 보내드릴 예정입니다.</p>'+
-    '<div style="background:#FFF3E0;border-radius:10px;padding:14px;margin-bottom:20px;text-align:left">'+
-    '<div style="font-size:13px;font-weight:700;color:#E65100;margin-bottom:6px">📌 다음 단계</div>'+
-    '<div style="font-size:12px;color:#555;line-height:1.6">'+
-    '1. 카톡 채널 도착 알림 확인<br>'+
-    '2. 시공 일정 협의<br>'+
-    '3. 예약금 입금 (확정 절차)</div></div>'+
-    '<a href="http://pf.kakao.com/_UMyBK/chat" target="_blank" style="display:block;background:#FEE500;color:#1a1a1a;text-decoration:none;padding:14px;border-radius:12px;font-size:15px;font-weight:700;margin-bottom:10px">💬 카카오톡 채널 바로가기</a>'+
-    '<button onclick="this.parentNode.parentNode.remove()" style="display:block;width:100%;background:#f5f5f5;color:#555;border:none;padding:12px;border-radius:12px;font-size:13px;cursor:pointer">닫기</button>'+
-    '</div></div>';
-  var div=document.createElement('div');
-  div.innerHTML=html;
-  document.body.appendChild(div.firstChild);
+// 🆕 예약 신청 후 이미지 생성 (saveBookingImage의 핵심 부분 분리)
+function generateBookingImage(){
+  showToast('📸 예약서 이미지 생성 중...');
+  var t=buildBookingText();
+  navigator.clipboard.writeText(t).catch(function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta)});
+  var cap=document.getElementById('captureArea');
+  cap.innerHTML=buildBookingImage();
+  html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
+    savedCanvasDataUrl=canvas.toDataURL('image/png');
+    document.getElementById('imgPreview').src=savedCanvasDataUrl;
+    var dlBtn=document.getElementById('downloadBtn');
+    if(dlBtn){dlBtn.style.display=window.innerWidth>=768?'block':'none';}
+    document.getElementById('imgOverlay').classList.add('show');
+    document.body.style.overflow='hidden';
+  }).catch(function(){showToast('⚠️ 이미지 생성 실패 - 텍스트는 복사되었습니다!')});
 }
 
+// 기존 saveBookingImage 함수 (수동 호출용 - 안전망)
 function saveBookingImage(){
   // 미입력 필드 검사 + 스크롤
   var checks=[
