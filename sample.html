@@ -10,6 +10,7 @@
 <meta property="og:url" content="https://my.dolbommat.com/sample.html">
 <meta property="og:type" content="website">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cs-consent.css?v=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Noto Sans KR',sans-serif;background:#F4F8F9;color:#1a1a1a;min-height:100vh}
@@ -228,21 +229,13 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
     </div>
   </div>
 
-  <!-- 개인정보 동의 -->
-  <div class="card">
+  <!-- 개인정보 동의 (모달로 처리) -->
+  <div class="card" style="background:#f5f9f3;border-color:#c8e0bc;">
     <div class="card-title"><span>🔒</span> 개인정보 수집 동의</div>
-    <div class="consent">
-      <div class="consent-body">
-        <strong>수집 항목:</strong> 이름, 연락처, 주소<br>
-        <strong>수집 목적:</strong> 샘플 배송 및 시공 관련 안내·프로모션 정보 제공<br>
-        <strong>보유 기간:</strong> 수집일로부터 6개월 (마케팅 수신 철회 시 즉시 삭제)<br><br>
-        동의를 거부하실 수 있으나, 거부 시 샘플 신청이 불가합니다.
-      </div>
-      <label class="consent-check">
-        <input type="checkbox" id="fConsent">
-        <div class="cbox"></div>
-        <span class="clabel">개인정보 수집 및 이용에 동의합니다.</span>
-      </label>
+    <div style="font-size:12px;color:#555;line-height:1.7;padding:4px 0;">
+      📋 <strong>신청하기 버튼</strong>을 누르시면<br>
+      개인정보 수집 동의 화면이 열립니다.<br>
+      <span style="color:#999;font-size:11px;">(필수 2가지 + 선택 2가지 · v3.0)</span>
     </div>
   </div>
 
@@ -278,6 +271,34 @@ if(chParam){
     if(routeField&&!routeField.value) routeField.value=chParam+' 추천';
   });
 }
+
+// ===== 🆕 이전 정보 자동 채움 (sharedData) =====
+document.addEventListener('DOMContentLoaded',function(){
+  if(window.DolbomData){
+    var saved=DolbomData.load('sample');
+    if(saved && saved.name){
+      document.getElementById('fName').value=saved.name;
+      if(saved.phone) document.getElementById('fPhone').value=saved.phone;
+      if(saved.address) document.getElementById('fAddress').value=saved.address;
+
+      // 자동 채움 안내문 표시
+      var firstCard=document.querySelector('.card');
+      if(firstCard){
+        var notice=document.createElement('div');
+        notice.style.cssText='background:#e8f5e9;border:1px solid #6B9EA6;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:#5A8C94;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+        notice.innerHTML='<span>✨ 이전에 입력하신 정보를 채웠어요</span><a href="#" id="csClearMe" style="color:#c62828;font-weight:600;text-decoration:underline;font-size:11px;flex-shrink:0;">제 정보 아니에요</a>';
+        firstCard.appendChild(notice);
+        document.getElementById('csClearMe').addEventListener('click',function(e){
+          e.preventDefault();
+          if(confirm('저장된 정보를 모두 삭제하고 새로 입력할까요?')){
+            DolbomData.clear();
+            location.reload();
+          }
+        });
+      }
+    }
+  }
+});
 
 function searchAddress(){
   new daum.Postcode({
@@ -359,7 +380,8 @@ function showConfirm(){
   const timing=getChipValue('chipTime');
   const purpose=getChipValues('chipPurpose');
   const route=document.getElementById('fRoute').value.trim();
-  const consent=document.getElementById('fConsent').checked;
+  // 🆕 동의는 submitForm에서 모달로 처리 (여기선 검증 안 함)
+  // const consent=document.getElementById('fConsent').checked;
 
   if(!name){showToast('⚠️ 이름을 입력해주세요','error');return}
   if(!phone||phone.replace(/[^0-9]/g,'').length<10){showToast('⚠️ 연락처를 정확히 입력해주세요','error');return}
@@ -369,7 +391,8 @@ function showConfirm(){
   if(!timing){showToast('⚠️ 시공 예정 시기를 선택해주세요','error');return}
   if(!purpose){showToast('⚠️ 시공 목적을 선택해주세요','error');return}
   if(!route){showToast('⚠️ 알게 된 경로를 입력해주세요','error');return}
-  if(!consent){showToast('⚠️ 개인정보 수집에 동의해주세요','error');return}
+  // 🆕 동의는 submitForm에서 모달로 처리
+  // if(!consent){showToast('⚠️ 개인정보 수집에 동의해주세요','error');return}
 
   const items=[['이름',name],['연락처',phone],['주소',address],['상세주소',addrDetail||building],['시공 예정 시기',timing],['시공 목적',purpose],['알게 된 경로',route]];
   if(chParam) items.push(['추천 채널','🎉 '+chParam]);
@@ -389,8 +412,40 @@ function submitForm(){
   const purpose=getChipValues('chipPurpose');
   const route=document.getElementById('fRoute').value.trim();
   const fullAddr=addrDetail?address+' '+addrDetail:address;
+
+  // 🆕 동의 모달: 유효한 동의 없으면 띄움
+  if(window.DolbomConsent && DolbomConsent.isRequired()){
+    DolbomConsent.show({
+      page:'sample',
+      name:name,
+      phone:phone,
+      address:fullAddr,
+      onAgree:function(consent){
+        // 동의 통과 → 실제 신청 진행
+        _doSampleSubmit(name,phone,fullAddr,timing,purpose,route);
+      },
+      onCancel:function(){
+        showToast('⚠️ 동의가 필요합니다','error');
+      }
+    });
+    return;
+  }
+
+  // 이미 동의 있음 → 바로 진행
+  _doSampleSubmit(name,phone,fullAddr,timing,purpose,route);
+}
+
+// 🆕 실제 신청 로직 (기존 submitForm 내용 그대로 분리)
+function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
   const btn=document.getElementById('submitBtn');
   btn.disabled=true;btn.textContent='확인 중...';
+
+  // 🆕 sharedData 저장 (다음 페이지에서 자동 채움)
+  if(window.DolbomData){
+    DolbomData.save({
+      name:name,phone:phone,address:fullAddr,page:'sample'
+    });
+  }
 
   fetch(API_URL,{
     method:'POST',headers:{'Content-Type':'text/plain'},
@@ -407,7 +462,7 @@ function submitForm(){
       body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
       showSuccessPopup();
-      document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fPurposeEtc').value='';document.getElementById('fPurposeEtc').style.display='none';document.getElementById('fConsent').checked=false;
+      document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fPurposeEtc').value='';document.getElementById('fPurposeEtc').style.display='none';
       document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       document.getElementById('detailRow').style.display='none';
       btn.textContent='✅ 신청 완료!';
@@ -445,5 +500,8 @@ function closeSuccessPopup(){document.getElementById('successOverlay').style.dis
   </div>
 </div>
 
+<!-- 🆕 통합 동의 시스템 -->
+<script src="sharedData.js?v=1"></script>
+<script src="cs-consent.js?v=1"></script>
 </body>
 </html>
