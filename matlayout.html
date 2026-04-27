@@ -233,6 +233,7 @@ function PuzzleMatLayoutApp() {
   const [pxPerMeter, setPxPerMeter] = useState(DEFAULT_SCALE);
   // 초기 zoom: 컨테이너에 fit 되도록 작게 시작 (편집 0.55, view 0.7)
   const [zoom, setZoom] = useState(isViewMode ? 0.7 : 0.55);
+  const [rotation, setRotation] = useState(0); // 도면 회전 각도 (0, 90, 180, 270)
   const [showNumbers, setShowNumbers] = useState(true);
   const [showPairing, setShowPairing] = useState(true);
   const [restored, setRestored] = useState(false);
@@ -336,7 +337,8 @@ function PuzzleMatLayoutApp() {
       const svg = svgRef.current;
       const pt = svg.createSVGPoint();
       pt.x = touch.clientX; pt.y = touch.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const p = transformSvgPoint(svgPoint);
       setPoints(prev => prev.map((pos, i) => i === draggingIdx ? p : pos));
       if (e.touches) e.preventDefault(); // 터치 시 스크롤 방지
     };
@@ -453,7 +455,8 @@ function PuzzleMatLayoutApp() {
       const svg = svgRef.current;
       const pt = svg.createSVGPoint();
       pt.x = touch.clientX; pt.y = touch.clientY;
-      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const p = transformSvgPoint(svgPoint);
       const dx = p.x - polygonDragRef.current.x;
       const dy = p.y - polygonDragRef.current.y;
       if (dx !== 0 || dy !== 0) {
@@ -545,12 +548,26 @@ function PuzzleMatLayoutApp() {
     reader.readAsDataURL(file);
   };
 
+  // SVG 좌표 + 회전 역변환 (회전된 상태에서도 정확한 좌표 반환)
+  const transformSvgPoint = (svgPoint) => {
+    if (rotation === 0) return svgPoint;
+    const cx = 700, cy = 500;
+    const rad = -rotation * Math.PI / 180;
+    const dx = svgPoint.x - cx;
+    const dy = svgPoint.y - cy;
+    return {
+      x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+      y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+    };
+  };
+
   const getSvgPoint = (evt) => {
     const svg = svgRef.current;
     const pt = svg.createSVGPoint();
     pt.x = evt.clientX;
     pt.y = evt.clientY;
-    return pt.matrixTransform(svg.getScreenCTM().inverse());
+    const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return transformSvgPoint(svgPoint);
   };
 
   const applyScale = () => {
@@ -651,6 +668,12 @@ function PuzzleMatLayoutApp() {
     const url = window.location.pathname + '?view=1';
     window.open(url, '_blank');
   };
+
+  // 도면 회전 (90도씩 회전: 0 → 90 → 180 → 270 → 0)
+  const rotateView = () => {
+    setRotation(prev => (prev + 90) % 360);
+  };
+  const resetRotation = () => setRotation(0);
 
   // PNG 이미지 생성 (SVG → Canvas → PNG Blob)
   const generatePngBlob = async () => {
@@ -773,6 +796,9 @@ function PuzzleMatLayoutApp() {
                 className="w-24 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-700"
               />
               <span className="text-xs text-slate-500 font-mono w-10 text-right">{(zoom * 100).toFixed(0)}%</span>
+              <Button variant="outline" onClick={rotateView} title="90도 회전">
+                ↻ {rotation}°
+              </Button>
               <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>{showNumbers ? "✓ 번호" : "번호"}</Button>
               <Button variant="outline" onClick={downloadPng} className="bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100">이미지 저장</Button>
             </div>
@@ -799,6 +825,7 @@ function PuzzleMatLayoutApp() {
               </pattern>
             </defs>
             <rect width="1400" height="1000" fill="url(#smallGrid)" />
+            <g transform={`rotate(${rotation}, 700, 500)`}>
             {image && (
               <image href={image} x="80" y="60" width={imageDims.w} height={imageDims.h} opacity="0.6" />
             )}
@@ -824,14 +851,14 @@ function PuzzleMatLayoutApp() {
                     <>
                       <line x1={m.x + 12} y1={m.y + 12} x2={m.x + matPx - 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
                       <line x1={m.x + matPx - 12} y1={m.y + 12} x2={m.x + 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
-                      <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600" fill="#64748b" style={{pointerEvents:"none"}}>제외</text>
+                      <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600" fill="#64748b" style={{pointerEvents:"none"}} transform={`rotate(${-rotation}, ${m.x + matPx / 2}, ${m.y + matPx / 2})`}>제외</text>
                     </>
                   )}
                   {!m.excluded && showNumbers && (
-                    <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="14" fontWeight="700" fill="#0f172a" style={{pointerEvents:"none"}}>{m.displayNumber}</text>
+                    <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="14" fontWeight="700" fill="#0f172a" style={{pointerEvents:"none"}} transform={`rotate(${-rotation}, ${m.x + matPx / 2}, ${m.y + matPx / 2})`}>{m.displayNumber}</text>
                   )}
                   {!m.excluded && isPaired && (
-                    <g style={{pointerEvents:"none"}}>
+                    <g style={{pointerEvents:"none"}} transform={`rotate(${-rotation}, ${m.x + matPx - 14}, ${m.y + 12})`}>
                       <rect x={m.x + matPx - 24} y={m.y + 4} width="20" height="16" rx="3" fill="#ca8a04"/>
                       <text x={m.x + matPx - 14} y={m.y + 12} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill="white">P{pairNum}</text>
                     </g>
@@ -840,6 +867,7 @@ function PuzzleMatLayoutApp() {
               );
             })}
             {/* view 모드는 잠금 상태이므로 파란 폴리곤 숨김 (가독성) */}
+            </g>
           </svg>
         </div>
       </div>
@@ -869,23 +897,52 @@ function PuzzleMatLayoutApp() {
                 <Button variant="outline" onClick={openViewerTab} className="bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100">
                   전체화면 보기
                 </Button>
-                {/* 가운데: 편집/잠금 토글 (현재 상태에 따라 라벨만 변경) */}
+                {/* 가운데: 편집/잠금 슬라이드 토글 */}
+                <div
+                  className="relative inline-flex items-center bg-slate-100 rounded-xl p-1 select-none"
+                  role="tablist"
+                  aria-label="편집 모드 / 잠금 토글"
+                >
+                  {/* 슬라이딩 활성 배경 (thumb) */}
+                  <div
+                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg shadow-sm transition-all duration-200 ${
+                      mode === "idle"
+                        ? "left-[calc(50%+0px)] bg-slate-700"
+                        : "left-1 bg-blue-600"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {/* 편집 버튼 */}
+                  <button
+                    onClick={() => { setMode("draw"); }}
+                    className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                      mode !== "idle" ? "text-white" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                    role="tab"
+                    aria-selected={mode !== "idle"}
+                  >
+                    편집
+                  </button>
+                  {/* 잠금 버튼 */}
+                  <button
+                    onClick={() => { setMode("idle"); setSelectedIdx(null); }}
+                    className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                      mode === "idle" ? "text-white" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                    role="tab"
+                    aria-selected={mode === "idle"}
+                  >
+                    잠금
+                  </button>
+                </div>
+                {/* 회전 버튼 */}
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    if (mode === "idle") {
-                      setMode("draw");
-                    } else {
-                      setMode("idle");
-                      setSelectedIdx(null);
-                    }
-                  }}
-                  className={mode === "idle"
-                    ? "bg-blue-50 border-blue-300 text-blue-900 hover:bg-blue-100"
-                    : "bg-slate-100 border-slate-400 text-slate-900 hover:bg-slate-200"
-                  }
+                  onClick={rotateView}
+                  className="bg-violet-50 border-violet-300 text-violet-900 hover:bg-violet-100"
+                  title="90도 회전"
                 >
-                  {mode === "idle" ? "편집 모드" : "잠금"}
+                  ↻ {rotation}°
                 </Button>
               </>
             )}
@@ -1082,7 +1139,8 @@ function PuzzleMatLayoutApp() {
                       const svg = svgRef.current;
                       const pt = svg.createSVGPoint();
                       pt.x = touch.clientX; pt.y = touch.clientY;
-                      polygonDragRef.current = pt.matrixTransform(svg.getScreenCTM().inverse());
+                      const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+                      polygonDragRef.current = transformSvgPoint(svgPoint);
                     }
                   }}
                   className={
@@ -1098,6 +1156,7 @@ function PuzzleMatLayoutApp() {
                   </defs>
                   <rect width="1400" height="1000" fill="url(#smallGrid)" />
 
+                  <g transform={`rotate(${rotation}, 700, 500)`}>
                   {image && (
                     <image href={image} x="80" y="60" width={imageDims.w} height={imageDims.h} opacity="0.6" />
                   )}
@@ -1125,7 +1184,7 @@ function PuzzleMatLayoutApp() {
                           <>
                             <line x1={m.x + 12} y1={m.y + 12} x2={m.x + matPx - 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
                             <line x1={m.x + matPx - 12} y1={m.y + 12} x2={m.x + 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
-                            <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600" fill="#64748b" style={{pointerEvents:"none"}}>제외</text>
+                            <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600" fill="#64748b" style={{pointerEvents:"none"}} transform={`rotate(${-rotation}, ${m.x + matPx / 2}, ${m.y + matPx / 2})`}>제외</text>
                           </>
                         )}
                         {!m.excluded && showNumbers && (
@@ -1134,10 +1193,11 @@ function PuzzleMatLayoutApp() {
                             textAnchor="middle" dominantBaseline="middle"
                             fontSize="14" fontWeight="700" fill="#0f172a"
                             style={{pointerEvents:"none"}}
+                            transform={`rotate(${-rotation}, ${m.x + matPx / 2}, ${m.y + matPx / 2})`}
                           >{m.displayNumber}</text>
                         )}
                         {!m.excluded && isPaired && (
-                          <g style={{pointerEvents:"none"}}>
+                          <g style={{pointerEvents:"none"}} transform={`rotate(${-rotation}, ${m.x + matPx - 14}, ${m.y + 12})`}>
                             <rect x={m.x + matPx - 24} y={m.y + 4} width="20" height="16" rx="3" fill="#ca8a04"/>
                             <text x={m.x + matPx - 14} y={m.y + 12} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill="white">P{pairNum}</text>
                           </g>
@@ -1184,6 +1244,7 @@ function PuzzleMatLayoutApp() {
                     <line x1={scalePoints[0].x} y1={scalePoints[0].y} x2={scalePoints[1].x} y2={scalePoints[1].y} stroke="#7c3aed" strokeWidth="4" />
                   )}
                   {scalePoints.map((p, i) => <circle key={`s-${i}`} cx={p.x} cy={p.y} r="8" fill="#7c3aed" />)}
+                  </g>
                 </svg>
               </div>
 
@@ -1212,7 +1273,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v2.5 · 줌 슬라이더 + 스크롤 제거
+          돌봄매트 시공 도구 v2.6.1
         </div>
       </div>
     </div>
