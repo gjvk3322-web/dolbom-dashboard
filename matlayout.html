@@ -97,6 +97,45 @@ function rectIntersectsPolygon(x, y, size, polygon) {
   return false;
 }
 
+// 점에서 선분까지의 최단 거리
+function distanceFromPointToSegment(p, a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  const px = a.x + t * dx;
+  const py = a.y + t * dy;
+  return Math.hypot(p.x - px, p.y - py);
+}
+
+// 점에서 폴리곤(외곽선)까지의 최단 거리
+function distanceFromPointToPolygon(p, polygon) {
+  if (polygon.length < 2) return Infinity;
+  let minDist = Infinity;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i];
+    const b = polygon[(i + 1) % polygon.length];
+    const d = distanceFromPointToSegment(p, a, b);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+// 매트가 폴리곤과 겹치거나 overcut 이내로 가까이 있으면 포함
+function rectNearPolygon(x, y, size, polygon, overcutPx) {
+  if (rectIntersectsPolygon(x, y, size, polygon)) return true;
+  if (overcutPx <= 0) return false;
+  const corners = rectCorners(x, y, size);
+  for (const c of corners) {
+    if (distanceFromPointToPolygon(c, polygon) <= overcutPx) return true;
+  }
+  // 매트 중심도 체크 (얇고 긴 폴리곤 대비)
+  const center = { x: x + size / 2, y: y + size / 2 };
+  if (distanceFromPointToPolygon(center, polygon) <= overcutPx) return true;
+  return false;
+}
+
 function matAreaRatio(x, y, size, polygon, samples) {
   if (polygon.length < 3) return 0;
   let inside = 0;
@@ -136,7 +175,8 @@ function makeLayout(polygon, matPx, offsetX, offsetY, overcutPx) {
   let id = 1;
   for (let y = startY; y <= endY; y += matPx) {
     for (let x = startX; x <= endX; x += matPx) {
-      if (!rectIntersectsPolygon(x, y, matPx, polygon)) continue;
+      // 🆕 폴리곤과 겹치거나 overcut 이내 거리에 있으면 포함
+      if (!rectNearPolygon(x, y, matPx, polygon, overcutPx)) continue;
       const corners = rectCorners(x, y, matPx);
       const full = corners.every((p) => pointInPolygon(p, polygon));
       mats.push({ id: id++, x, y, full });
@@ -191,8 +231,7 @@ function PuzzleMatLayoutApp() {
   const [scalePoints, setScalePoints] = useState([]);
   const [scaleInputM, setScaleInputM] = useState("2.04");
   const [pxPerMeter, setPxPerMeter] = useState(DEFAULT_SCALE);
-  const [overcutCm, setOvercutCm] = useState(2);
-  const [zoom, setZoom] = useState(isViewMode ? 1.5 : 1); // view 모드는 더 크게 시작
+  const [zoom, setZoom] = useState(isViewMode ? 1.5 : 1);
   const [showNumbers, setShowNumbers] = useState(true);
   const [showPairing, setShowPairing] = useState(true);
   const [restored, setRestored] = useState(false);
@@ -212,7 +251,6 @@ function PuzzleMatLayoutApp() {
       if (d.points) setPoints(d.points);
       if (d.excludedMatKeys) setExcludedMatKeys(d.excludedMatKeys);
       if (d.pxPerMeter) setPxPerMeter(d.pxPerMeter);
-      if (d.overcutCm !== undefined) setOvercutCm(d.overcutCm);
       if (d.image) setImage(d.image);
       if (d.imageDims) setImageDims(d.imageDims);
       // view 모드면 자동으로 idle 모드 진입 (편집 불가)
@@ -222,48 +260,65 @@ function PuzzleMatLayoutApp() {
     } catch (e) {}
   }, []);
 
-  // 자동 저장
+  // 자동 저장 (이미 같은 값이면 저장 안 함 - 탭 간 무한 루프 차단)
   useEffect(() => {
-    if (isViewMode) return; // view 모드는 저장 안 함 (편집 페이지에서만 저장)
+    if (isViewMode) return;
     try {
-      const data = { points, excludedMatKeys, pxPerMeter, overcutCm, image, imageDims };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      const data = JSON.stringify({ points, excludedMatKeys, pxPerMeter, image, imageDims });
+      if (localStorage.getItem(STORAGE_KEY) !== data) {
+        localStorage.setItem(STORAGE_KEY, data);
+      }
     } catch (e) {
       try {
-        const data = { points, excludedMatKeys, pxPerMeter, overcutCm, imageDims };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        const data = JSON.stringify({ points, excludedMatKeys, pxPerMeter, imageDims });
+        if (localStorage.getItem(STORAGE_KEY) !== data) {
+          localStorage.setItem(STORAGE_KEY, data);
+        }
       } catch (e2) {}
     }
-  }, [points, excludedMatKeys, pxPerMeter, overcutCm, image, imageDims]);
+  }, [points, excludedMatKeys, pxPerMeter, image, imageDims]);
 
-  // 🆕 view 모드: 다른 탭에서 변경 시 자동 동기화
-  // 🆕 편집 모드: 제외 매트만 view 탭에서 변경되면 동기화
+  // 다른 탭에서 변경 시 자동 동기화 (현재 값과 다를 때만 setState - 무한 루프 차단)
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key !== STORAGE_KEY || !e.newValue) return;
       try {
         const d = JSON.parse(e.newValue);
-        // 모든 데이터 동기화
-        if (d.points) setPoints(d.points);
-        if (d.excludedMatKeys) setExcludedMatKeys(d.excludedMatKeys);
-        if (d.pxPerMeter) setPxPerMeter(d.pxPerMeter);
-        if (d.overcutCm !== undefined) setOvercutCm(d.overcutCm);
-        if (d.image) setImage(d.image);
-        if (d.imageDims) setImageDims(d.imageDims);
+        if (d.points) {
+          setPoints(prev =>
+            JSON.stringify(prev) === JSON.stringify(d.points) ? prev : d.points
+          );
+        }
+        if (d.excludedMatKeys) {
+          setExcludedMatKeys(prev =>
+            JSON.stringify(prev) === JSON.stringify(d.excludedMatKeys) ? prev : d.excludedMatKeys
+          );
+        }
+        if (d.pxPerMeter) setPxPerMeter(prev => prev === d.pxPerMeter ? prev : d.pxPerMeter);
+        if (d.image) setImage(prev => prev === d.image ? prev : d.image);
+        if (d.imageDims) {
+          setImageDims(prev =>
+            (prev.w === d.imageDims.w && prev.h === d.imageDims.h) ? prev : d.imageDims
+          );
+        }
       } catch (err) {}
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  // 🆕 view 모드에서 매트 제외 변경 시 다른 탭에 알리기 위해 직접 저장
+  // view 모드에서 매트 제외 변경 시 다른 탭에 알리기 위해 저장 (이미 같은 값이면 저장 안 함)
   useEffect(() => {
     if (!isViewMode) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       const d = raw ? JSON.parse(raw) : {};
-      d.excludedMatKeys = excludedMatKeys;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+      const oldKeys = JSON.stringify(d.excludedMatKeys || []);
+      const newKeys = JSON.stringify(excludedMatKeys);
+      if (oldKeys !== newKeys) {
+        d.excludedMatKeys = excludedMatKeys;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+      }
     } catch (e) {}
   }, [excludedMatKeys]);
 
@@ -356,7 +411,7 @@ function PuzzleMatLayoutApp() {
   }, [mode, points.length]);
 
   const matPx = pxPerMeter;
-  const overcutPx = (Number(overcutCm) / 100) * pxPerMeter;
+  const overcutPx = 0; // 밀착 여유 제거 - 알고리즘이 100가지 격자 위치 시도하므로 불필요
 
   const optimized = useMemo(
     () => optimizeLayout(points, matPx, overcutPx),
@@ -510,7 +565,7 @@ function PuzzleMatLayoutApp() {
   const exportJson = () => {
     const payload = {
       version: "0.7",
-      rule: { matSizeMm: 1000, overcutCm: Number(overcutCm), offcutThreshold: OFFCUT_THRESHOLD, pairingThreshold: PAIRING_THRESHOLD },
+      rule: { matSizeMm: 1000, offcutThreshold: OFFCUT_THRESHOLD, pairingThreshold: PAIRING_THRESHOLD },
       scale: { pxPerMeter },
       polygon: points,
       excludedMatKeys,
@@ -566,7 +621,7 @@ function PuzzleMatLayoutApp() {
         <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-bold">시공 보기</h1>
-            <div className="text-xs text-slate-500">매트 클릭 = 제외/복구</div>
+            <div className="text-xs text-slate-500">매트 클릭 = 제외/복구 · 수정은 편집 탭에서</div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-3 text-sm bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
@@ -581,7 +636,11 @@ function PuzzleMatLayoutApp() {
               <Button variant="outline" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>
               <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>번호</Button>
             </div>
-            <a href={window.location.pathname} className="text-sm text-blue-600 hover:underline">← 편집 모드</a>
+            <button
+              onClick={() => window.close()}
+              className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+              title="이 보기 탭을 닫습니다. 수정은 편집 탭에서 하세요."
+            >탭 닫기</button>
           </div>
         </div>
 
@@ -699,6 +758,16 @@ function PuzzleMatLayoutApp() {
                 <p className="text-xs text-slate-500 leading-relaxed">
                   도면 치수선의 양 끝을 찍고 실제 길이를 입력하면 1m 매트 크기가 도면에 맞게 자동 보정됩니다.
                 </p>
+                {mode === "draw" && (
+                  <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
+                    그리기 종료
+                  </Button>
+                )}
+                {mode === "exclude" && excludedCount > 0 && (
+                  <Button className="w-full" variant="outline" onClick={clearExcluded}>
+                    제외 매트 복구 ({excludedCount}장)
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -719,36 +788,6 @@ function PuzzleMatLayoutApp() {
                   선택한 두 점으로 스케일 적용
                 </Button>
                 <div className="text-sm">현재 1m = <b>{pxPerMeter.toFixed(2)}px</b></div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">3. 시공 변수</h2>
-                <div>
-                  <label className="text-sm font-medium">벽면 밀착 여유</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="number" inputMode="decimal" min="0" max="5" step="0.1"
-                      value={overcutCm}
-                      onChange={(e) => setOvercutCm(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base"
-                    />
-                    <span className="text-sm">cm</span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">매트가 벽 안쪽으로 더 들어가는 여유. 추천: 1~3cm</p>
-                </div>
-
-                {mode === "draw" && (
-                  <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
-                    그리기 종료
-                  </Button>
-                )}
-                {mode === "exclude" && excludedCount > 0 && (
-                  <Button className="w-full" variant="outline" onClick={clearExcluded}>
-                    제외 매트 복구 ({excludedCount}장)
-                  </Button>
-                )}
               </CardContent>
             </Card>
 
@@ -803,10 +842,6 @@ function PuzzleMatLayoutApp() {
                   <div className="rounded-xl bg-slate-100 p-3">
                     <div className="text-slate-500 text-xs">제외 매트</div>
                     <b className="text-base">{excludedCount}장</b>
-                  </div>
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="text-slate-500 text-xs">밀착 여유</div>
-                    <b className="text-base">{overcutCm}cm</b>
                   </div>
                 </div>
               </CardContent>
@@ -972,7 +1007,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.8
+          돌봄매트 시공 도구 v1.9.1
         </div>
       </div>
     </div>
