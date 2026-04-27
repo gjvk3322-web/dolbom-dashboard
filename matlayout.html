@@ -564,18 +564,35 @@ function PuzzleMatLayoutApp() {
     if (isViewMode) return;
     if (mode === "idle" || mode === "exclude") return;
 
-    // 손바닥 보호: 터치 이벤트일 때 손바닥이 동시에 닿으면 무시
-    // touches.length가 1보다 크면 손바닥이거나 핀치줌 시도 → 무시
+    // 손바닥 보호 1: 터치 이벤트일 때 손바닥이 동시에 닿으면 무시
     if (evt.touches && evt.touches.length > 1) return;
 
-    // 포인터 이벤트가 있으면 펜이 아닌 큰 영역(손바닥)은 무시 (height/width로 판단)
-    if (evt.nativeEvent && evt.nativeEvent.height && evt.nativeEvent.height > 25) return;
+    // 손바닥 보호 2: 큰 영역 터치(손바닥)는 무시 - 여러 속성 종합 검사
+    const native = evt.nativeEvent;
+    if (native) {
+      // 터치 이벤트의 첫 번째 터치 정보
+      const touch = evt.changedTouches?.[0] || native.changedTouches?.[0];
+      if (touch) {
+        const radiusX = touch.radiusX || 0;
+        const radiusY = touch.radiusY || 0;
+        const force = touch.force ?? 1;
+        // 손바닥 특징: 큰 반경 (>20) 또는 매우 약한 압력 (<0.1)
+        if (radiusX > 20 || radiusY > 20) return;
+        if (force > 0 && force < 0.05) return; // 손바닥은 압력이 약함
+      }
+      // 폴백: height 체크 (이전 로직)
+      if (native.height && native.height > 25) return;
+      if (native.width && native.width > 25) return;
+    }
 
     const p = getSvgPoint(evt);
     if (mode === "scale") setScalePoints((prev) => (prev.length >= 2 ? [p] : [...prev, p]));
     if (mode === "draw") {
       setPoints((prev) => [...prev, p]);
       setSelectedIdx(points.length);
+      // 점 추가 직후 300ms 동안 추가 탭 차단 (손바닥이 연달아 닿는 경우 보호)
+      wasDraggingRef.current = true;
+      setTimeout(() => { wasDraggingRef.current = false; }, 300);
     }
   };
 
@@ -818,9 +835,7 @@ function PuzzleMatLayoutApp() {
                 </g>
               );
             })}
-            {points.length >= 3 && (
-              <polygon points={polygonStr} fill="rgba(59,130,246,0.10)" stroke="#2563eb" strokeWidth="3" />
-            )}
+            {/* view 모드는 잠금 상태이므로 파란 폴리곤 숨김 (가독성) */}
           </svg>
         </div>
       </div>
@@ -844,28 +859,40 @@ function PuzzleMatLayoutApp() {
               도면 업로드
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </label>
-            {/* 전체화면 보기 버튼 */}
             {points.length >= 3 && (
               <>
-                {mode === "idle" ? (
-                  <Button variant="outline" onClick={() => setMode("draw")} className="bg-blue-50 border-blue-300 text-blue-900 hover:bg-blue-100">
-                    편집 모드
-                  </Button>
-                ) : (
-                  <Button variant="outline" onClick={() => { setMode("idle"); setSelectedIdx(null); }} className="bg-slate-100 border-slate-400 text-slate-900 hover:bg-slate-200">
-                    잠금
-                  </Button>
-                )}
+                {/* 좌측: 전체화면 보기 */}
                 <Button variant="outline" onClick={openViewerTab} className="bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100">
                   전체화면 보기
                 </Button>
-                <Button variant="outline" onClick={downloadPng} className="bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100">
-                  이미지 저장
+                {/* 가운데: 편집/잠금 토글 (현재 상태에 따라 라벨만 변경) */}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (mode === "idle") {
+                      setMode("draw");
+                    } else {
+                      setMode("idle");
+                      setSelectedIdx(null);
+                    }
+                  }}
+                  className={mode === "idle"
+                    ? "bg-blue-50 border-blue-300 text-blue-900 hover:bg-blue-100"
+                    : "bg-slate-100 border-slate-400 text-slate-900 hover:bg-slate-200"
+                  }
+                >
+                  {mode === "idle" ? "편집 모드" : "잠금"}
                 </Button>
               </>
             )}
             <Button variant="outline" onClick={undo}>뒤로가기</Button>
             <Button variant="destructive" onClick={resetAll}>초기화</Button>
+            {/* 우측: 이미지 저장 */}
+            {points.length >= 3 && (
+              <Button variant="outline" onClick={downloadPng} className="bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100">
+                이미지 저장
+              </Button>
+            )}
           </div>
         </div>
 
@@ -875,21 +902,18 @@ function PuzzleMatLayoutApp() {
           </div>
         )}
 
-        <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
+        <div className="grid gap-3 lg:grid-cols-[280px_1fr]">
 
-          <div className="space-y-4">
+          <div className="space-y-3">
 
             <Card>
-              <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">1. 작업 모드</h2>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button variant={mode === "scale" ? "default" : "outline"} onClick={() => setMode("scale")}>스케일</Button>
-                  <Button variant={mode === "draw" ? "default" : "outline"} onClick={() => setMode("draw")}>시공</Button>
-                  <Button variant={mode === "exclude" ? "default" : "outline"} onClick={() => setMode("exclude")}>제외</Button>
+              <CardContent className="space-y-2 p-3">
+                <h2 className="font-semibold text-sm">1. 작업 모드</h2>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <Button variant={mode === "scale" ? "default" : "outline"} onClick={() => setMode("scale")} className="text-xs px-2">스케일</Button>
+                  <Button variant={mode === "draw" ? "default" : "outline"} onClick={() => setMode("draw")} className="text-xs px-2">시공</Button>
+                  <Button variant={mode === "exclude" ? "default" : "outline"} onClick={() => setMode("exclude")} className="text-xs px-2">제외</Button>
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  도면 치수선의 양 끝을 찍고 실제 길이를 입력하면 1m 매트 크기가 도면에 맞게 자동 보정됩니다.
-                </p>
                 {mode === "draw" && (
                   <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
                     그리기 종료
@@ -904,109 +928,121 @@ function PuzzleMatLayoutApp() {
             </Card>
 
             <Card>
-              <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">2. 스케일 보정</h2>
+              <CardContent className="space-y-2 p-3">
+                <h2 className="font-semibold text-sm">2. 스케일 보정</h2>
                 <div className="flex items-center gap-2">
                   <input
                     type="text" inputMode="decimal"
                     value={scaleInputM}
                     onChange={(e) => setScaleInputM(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base"
+                    className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
                     placeholder="예: 2.04"
                   />
                   <span className="text-sm">m</span>
                 </div>
-                <Button className="w-full" onClick={applyScale} disabled={scalePoints.length !== 2}>
+                <Button className="w-full text-xs" onClick={applyScale} disabled={scalePoints.length !== 2}>
                   선택한 두 점으로 스케일 적용
                 </Button>
-                <div className="text-sm">현재 1m = <b>{pxPerMeter.toFixed(2)}px</b></div>
+                <div className="text-xs text-slate-600">현재 1m = <b>{pxPerMeter.toFixed(2)}px</b></div>
               </CardContent>
             </Card>
 
-            {/* 실제 발주 매트 카드 */}
+            {/* 실제 발주 매트 카드 - 가장 중요한 정보, 항상 펼침 */}
             {points.length >= 3 && (
               <Card className="border-2 border-amber-300 bg-amber-50/50">
-                <CardContent className="space-y-2 p-4">
-                  <h2 className="font-bold text-base text-amber-900">실제 발주 매트</h2>
+                <CardContent className="space-y-1 p-3">
+                  <h2 className="font-bold text-sm text-amber-900">실제 발주 매트</h2>
                   <div className="text-3xl font-bold text-amber-900">
                     {actualOrderMats}<span className="text-base font-medium text-amber-700 ml-1">장</span>
                   </div>
                   {savedMats > 0 && (
                     <div className="text-xs text-emerald-700 font-medium">
-                      짜투리 재활용으로 {savedMats}장 절약 (페어 {pairsCount}개)
+                      짜투리 재활용 {savedMats}장 절약 (페어 {pairsCount}개)
                     </div>
                   )}
-                  <div className="text-xs text-slate-600 pt-1 border-t border-amber-200">
-                    화면 표시 매트: {totalMats}장 | 절약: {savedMats}장
-                  </div>
                 </CardContent>
               </Card>
             )}
 
-            <Card>
-              <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">상세 통계</h2>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="text-slate-500 text-xs">순시공 면적</div>
-                    <b className="text-base">{netAreaM2.toFixed(2)}㎡</b>
-                  </div>
-                  <div className="rounded-xl bg-emerald-50 p-3">
-                    <div className="text-emerald-700 text-xs">온장</div>
-                    <b className="text-base text-emerald-900">{fullMats}장</b>
-                  </div>
-                  <div className="rounded-xl bg-orange-50 p-3">
-                    <div className="text-orange-700 text-xs">큰 재단장</div>
-                    <b className="text-base text-orange-900">{bigCutsCount}장</b>
-                  </div>
-                  <div className="rounded-xl bg-yellow-50 p-3">
-                    <div className="text-yellow-700 text-xs">짜투리(페어)</div>
-                    <b className="text-base text-yellow-900">{pairsCount}쌍</b>
-                  </div>
-                  <div className="rounded-xl bg-orange-50 p-3">
-                    <div className="text-orange-700 text-xs">외톨이 짜투리</div>
-                    <b className="text-base text-orange-900">{unpairedOffcutsCount}장</b>
-                  </div>
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="text-slate-500 text-xs">예상 로스율</div>
-                    <b className="text-base">{lossRate.toFixed(1)}%</b>
-                  </div>
-                  <div className="rounded-xl bg-slate-100 p-3">
-                    <div className="text-slate-500 text-xs">제외 매트</div>
-                    <b className="text-base">{excludedCount}장</b>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* 상세 통계 - 접기 (기본 닫힘) */}
+            {points.length >= 3 && (
+              <Card>
+                <CardContent className="p-0">
+                  <details>
+                    <summary className="cursor-pointer p-3 font-semibold text-sm hover:bg-slate-50 flex items-center justify-between">
+                      <span>상세 통계</span>
+                      <span className="text-xs text-slate-400">▼</span>
+                    </summary>
+                    <div className="px-3 pb-3 grid grid-cols-2 gap-1.5 text-xs">
+                      <div className="rounded-lg bg-slate-100 p-2">
+                        <div className="text-slate-500">순시공 면적</div>
+                        <b>{netAreaM2.toFixed(2)}㎡</b>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50 p-2">
+                        <div className="text-emerald-700">온장</div>
+                        <b className="text-emerald-900">{fullMats}장</b>
+                      </div>
+                      <div className="rounded-lg bg-orange-50 p-2">
+                        <div className="text-orange-700">큰 재단장</div>
+                        <b className="text-orange-900">{bigCutsCount}장</b>
+                      </div>
+                      <div className="rounded-lg bg-yellow-50 p-2">
+                        <div className="text-yellow-700">짜투리(페어)</div>
+                        <b className="text-yellow-900">{pairsCount}쌍</b>
+                      </div>
+                      <div className="rounded-lg bg-orange-50 p-2">
+                        <div className="text-orange-700">외톨이</div>
+                        <b className="text-orange-900">{unpairedOffcutsCount}장</b>
+                      </div>
+                      <div className="rounded-lg bg-slate-100 p-2">
+                        <div className="text-slate-500">예상 로스율</div>
+                        <b>{lossRate.toFixed(1)}%</b>
+                      </div>
+                      <div className="rounded-lg bg-slate-100 p-2 col-span-2">
+                        <div className="text-slate-500">제외 매트 / 화면 표시</div>
+                        <b>{excludedCount}장 / {totalMats}장</b>
+                      </div>
+                    </div>
+                  </details>
+                </CardContent>
+              </Card>
+            )}
 
+            {/* 보기 설정 - 접기 (기본 닫힘) */}
             <Card>
-              <CardContent className="space-y-3 p-4">
-                <h2 className="font-semibold">보기 설정</h2>
-                <div className="flex gap-2 flex-wrap">
-                  <Button variant="outline" onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))}>−</Button>
-                  <Button variant="outline" onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))}>+</Button>
-                  <Button variant="outline" onClick={() => setShowNumbers((v) => !v)}>번호</Button>
-                  <Button variant={showPairing ? "default" : "outline"} onClick={() => setShowPairing((v) => !v)}>페어</Button>
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                  {zoomPresets.map((p) => (
-                    <Button
-                      key={p.label}
-                      variant={Math.abs(zoom - p.value) < 0.05 ? "default" : "outline"}
-                      onClick={() => setZoom(p.value)}
-                      className="px-2 py-1 text-xs"
-                    >{p.label}</Button>
-                  ))}
-                </div>
-                <div className="text-xs text-slate-500">현재 줌: {(zoom * 100).toFixed(0)}%</div>
-
-                <div className="text-xs space-y-1 pt-2 border-t border-slate-200">
-                  <div className="font-semibold text-slate-700 mb-1">색상 안내</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-300 border border-emerald-600"></span>온장 (100%)</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-300 border border-orange-600"></span>큰 재단장 (50%↑)</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-yellow-300 border border-yellow-600"></span>짜투리 페어 (재활용)</div>
-                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-200 border border-orange-400 border-dashed"></span>외톨이 짜투리</div>
-                </div>
+              <CardContent className="p-0">
+                <details>
+                  <summary className="cursor-pointer p-3 font-semibold text-sm hover:bg-slate-50 flex items-center justify-between">
+                    <span>보기 설정</span>
+                    <span className="text-xs text-slate-400">▼</span>
+                  </summary>
+                  <div className="px-3 pb-3 space-y-2">
+                    <div className="flex gap-1 flex-wrap">
+                      <Button variant="outline" onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))} className="text-xs px-2">−</Button>
+                      <Button variant="outline" onClick={() => setZoom((z) => Math.min(2.5, z + 0.1))} className="text-xs px-2">+</Button>
+                      <Button variant="outline" onClick={() => setShowNumbers((v) => !v)} className="text-xs px-2">번호</Button>
+                      <Button variant={showPairing ? "default" : "outline"} onClick={() => setShowPairing((v) => !v)} className="text-xs px-2">페어</Button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {zoomPresets.map((p) => (
+                        <Button
+                          key={p.label}
+                          variant={Math.abs(zoom - p.value) < 0.05 ? "default" : "outline"}
+                          onClick={() => setZoom(p.value)}
+                          className="px-1 py-1 text-xs"
+                        >{p.label}</Button>
+                      ))}
+                    </div>
+                    <div className="text-xs text-slate-500">현재 줌: {(zoom * 100).toFixed(0)}%</div>
+                    <div className="text-xs space-y-1 pt-2 border-t border-slate-200">
+                      <div className="font-semibold text-slate-700 mb-1">색상 안내</div>
+                      <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-300 border border-emerald-600"></span>온장 (100%)</div>
+                      <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-300 border border-orange-600"></span>큰 재단장</div>
+                      <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-yellow-300 border border-yellow-600"></span>짜투리 페어</div>
+                      <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-orange-200 border border-orange-400 border-dashed"></span>외톨이</div>
+                    </div>
+                  </div>
+                </details>
               </CardContent>
             </Card>
           </div>
@@ -1096,13 +1132,15 @@ function PuzzleMatLayoutApp() {
                     );
                   })}
 
-                  {points.length >= 3 && (
+                  {/* 파란색 폴리곤은 편집/그리기 중일 때만 표시 (잠금 상태에서는 숨김 - 가독성) */}
+                  {points.length >= 3 && mode !== "idle" && (
                     <polygon points={polygonStr} fill="rgba(59,130,246,0.10)" stroke="#2563eb" strokeWidth="3" />
                   )}
                   {points.length >= 2 && points.length < 3 && (
                     <polyline points={polygonStr} fill="none" stroke="#2563eb" strokeWidth="3" strokeDasharray="6 6" />
                   )}
-                  {points.map((p, i) => {
+                  {/* 점은 편집/그리기 중에만 표시 (잠금 상태에서는 숨김) */}
+                  {mode !== "idle" && points.map((p, i) => {
                     const isSelected = i === selectedIdx;
                     const isFirst = i === 0;
                     return (
@@ -1135,22 +1173,32 @@ function PuzzleMatLayoutApp() {
                 </svg>
               </div>
 
-              <div className="px-4 py-3 text-xs text-slate-700 border-t bg-slate-50">
-                {mode === "scale" && "스케일 모드 — 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
-                {mode === "draw" && (
-                  selectedIdx !== null
-                    ? "시공 모드 — 점 선택됨. 드래그하거나 화살표 키 (Shift+화살표 = 10px씩) | Esc 선택해제 | 빈 공간 탭 = 새 점 추가 | 다 그리면 우측 상단 \"잠금\" 클릭"
-                    : "시공 모드 — 도면 꼭짓점을 한 손가락으로 탭하세요. (손바닥 닿으면 자동 무시) 다 그리면 우측 상단 \"잠금\"을 누르세요."
+              <div className="px-4 py-3 text-xs text-slate-700 border-t bg-slate-50 flex items-center justify-between gap-2">
+                <div className="flex-1">
+                  {mode === "scale" && "스케일 모드 — 도면의 치수선 양 끝을 클릭한 후 \"스케일 적용\" 버튼을 누르세요."}
+                  {mode === "draw" && (
+                    selectedIdx !== null
+                      ? "시공 모드 — 점 선택됨. 드래그하거나 화살표 키 (Shift+화살표 = 10px씩) | Esc 선택해제 | 빈 공간 탭 = 새 점 추가"
+                      : "시공 모드 — 도면 꼭짓점을 한 손가락으로 탭하세요. 손바닥은 자동 무시됩니다."
+                  )}
+                  {mode === "exclude" && "제외 모드 — 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
+                  {mode === "idle" && "잠금 상태 — 도면 위 빈 공간을 드래그하거나 화살표 키로 시공 영역 전체 이동. 편집은 우측 상단 \"편집 모드\" 버튼."}
+                </div>
+                {mode === "draw" && points.length > 0 && (
+                  <button
+                    onClick={undo}
+                    className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-white border-2 border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100 active:bg-slate-200 shadow-sm"
+                  >
+                    ← 방금 점 취소
+                  </button>
                 )}
-                {mode === "exclude" && "제외 모드 — 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
-                {mode === "idle" && "잠금 상태 — 마우스로 드래그하거나 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 우측 상단 \"편집 모드\" 버튼을 누르세요."}
               </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v2.1 · 잠금/편집 토글 + 손바닥 보호
+          돌봄매트 시공 도구 v2.4 · 콤팩트 사이드바
         </div>
       </div>
     </div>
