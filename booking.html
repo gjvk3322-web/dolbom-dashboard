@@ -399,7 +399,7 @@ function copyBooking(){/* legacy */
   var dateText=dateAny?'상관없음 (빠른 날짜 배정)':selectedDates.sort().join(', ');
   var dongStr=dong?(dong.includes('동')?dong:dong+'동'):'';var hosuStr=hosu?(hosu.includes('호')?hosu:hosu+'호'):'';
   var dongHo=(dongStr?dongStr+' ':'')+hosuStr;
-  var addr=addrData?addrData.name+'\n  '+addrData.address+'\n  '+dongHo:'';
+  var addr=addrData?addrData.address+(dongHo?'\n  '+dongHo:''):'';
   var t='돌봄매트 시공 예약\n────────────────\n\n';
   if(REFERRAL_CODE)t+='추천인: '+REFERRAL_CODE+'\n\n';
   
@@ -430,7 +430,7 @@ function buildBookingImage(){
   var product=PRODUCTS[selectedProduct];
   var dateText=dateAny?'상관없음 (빠른 날짜)':selectedDates.sort().join(', ');
   var dongHo=(dong?(dong.includes('동')?dong:dong+'동')+' ':'')+(hosu?(hosu.includes('호')?hosu:hosu+'호'):'');
-  var addr=addrData?addrData.name+' '+addrData.address+' '+dongHo:'';
+  var addr=addrData?addrData.address+(dongHo?' '+dongHo:''):'';
   var h='<div style="padding:24px 20px;background:#fff;font-family:Noto Sans KR,sans-serif">';
   h+='<div style="text-align:center;padding-bottom:16px;border-bottom:2px solid #2E7D32;margin-bottom:16px"><div style="font-size:22px;font-weight:800;color:#2E7D32">돌봄매트 시공 예약</div><div style="font-size:14px;color:#666;margin-top:6px">'+name+' 고객님</div></div>';
   if(REFERRAL_CODE)h+='<div style="padding:10px 14px;background:#E8F5E9;border-radius:8px;font-size:13px;color:#2E7D32;font-weight:600;text-align:center;margin-bottom:14px">🎉 '+REFERRAL_CODE+' 추천 할인 적용</div>';
@@ -577,18 +577,31 @@ function submitBooking(){
 
 // 🆕 예약 신청 후 이미지 생성 (saveBookingImage의 핵심 부분 분리)
 function generateBookingImage(){
-  showToast('📸 예약서 이미지 생성 중...');
+  // 텍스트 클립보드 복사 (먼저 실행)
   var t=buildBookingText();
-  navigator.clipboard.writeText(t).catch(function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta)});
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).catch(function(){
+      var ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;left:-9999px;top:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);
+    });
+  } else {
+    var ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;left:-9999px;top:-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);
+  }
+
+  // 모달 먼저 열고 (사용자 즉시 반응 확인)
+  document.getElementById('imgOverlay').classList.add('show');
+  document.body.style.overflow='hidden';
+  showToast('📸 예약서 이미지 생성 중...');
+
+  // 이미지 생성
   var cap=document.getElementById('captureArea');
   cap.innerHTML=buildBookingImage();
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
     savedCanvasDataUrl=canvas.toDataURL('image/png');
     document.getElementById('imgPreview').src=savedCanvasDataUrl;
+    // 🆕 User Agent 기반 정확한 모바일 감지 (quote.html 패턴)
+    var isMobileUA=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     var dlBtn=document.getElementById('downloadBtn');
-    if(dlBtn){dlBtn.style.display=window.innerWidth>=768?'block':'none';}
-    document.getElementById('imgOverlay').classList.add('show');
-    document.body.style.overflow='hidden';
+    if(dlBtn)dlBtn.style.display=isMobileUA?'none':'block';
   }).catch(function(){showToast('⚠️ 이미지 생성 실패 - 텍스트는 복사되었습니다!')});
 }
 
@@ -623,9 +636,10 @@ function saveBookingImage(){
   html2canvas(cap,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(function(canvas){
     savedCanvasDataUrl=canvas.toDataURL('image/png');
     document.getElementById('imgPreview').src=savedCanvasDataUrl;
-    // PC(768px 이상)에서만 다운로드 버튼 표시 - 모바일은 길게 누르기로 저장
+    // 🆕 User Agent 기반 정확한 모바일 감지 (quote.html 패턴 통일)
+    var isMobileUA=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     var dlBtn=document.getElementById('downloadBtn');
-    if(dlBtn){dlBtn.style.display=window.innerWidth>=768?'block':'none';}
+    if(dlBtn)dlBtn.style.display=isMobileUA?'none':'block';
     document.getElementById('imgOverlay').classList.add('show');
     document.body.style.overflow='hidden';
   }).catch(function(){showToast('⚠️ 이미지 생성 실패 - 텍스트는 복사되었습니다!')});
@@ -658,7 +672,7 @@ function buildBookingText(){
   var dateText=dateAny?'상관없음 (빠른 날짜 배정)':selectedDates.sort().join(', ');
   var dongStr=dong?(dong.includes('동')?dong:dong+'동'):'';var hosuStr=hosu?(hosu.includes('호')?hosu:hosu+'호'):'';
   var dongHo=(dongStr?dongStr+' ':'')+hosuStr;
-  var addr=addrData?addrData.name+'\n  '+addrData.address+'\n  '+dongHo:'';
+  var addr=addrData?addrData.address+(dongHo?'\n  '+dongHo:''):'';
   var t='돌봄매트 시공 예약\n'+name+' 고객님\n────────────────\n\n';
   if(REFERRAL_CODE)t+='추천인: '+REFERRAL_CODE+'\n\n';
 
