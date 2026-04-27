@@ -54,8 +54,9 @@
       key: 'required1',
       required: true,
       title: '개인정보 수집·이용 동의',
-      summary: '이름·휴대폰·주소를 수집해 샘플 배송과 시공·A/S에 사용해요.',
+      summary: '',
       fullText: 
+        '이름·휴대폰·주소를 수집해 샘플 배송과 시공·A/S에 사용합니다.\n\n' +
         '【수집 항목】\n' +
         '· 필수: 이름, 휴대폰번호, 주소\n\n' +
         '【수집·이용 목적】\n' +
@@ -74,8 +75,9 @@
       key: 'required2',
       required: true,
       title: '개인정보 제3자 제공 동의',
-      summary: '시공·배송·결제·세금 처리를 위해 외부 협력사에 제공해요.',
+      summary: '',
       fullText:
+        '시공·배송·결제·세금 처리를 위해 외부 협력사에 제공합니다.\n\n' +
         '【제공받는 자】\n' +
         '· 택배사: 우체국택배, CJ대한통운\n' +
         '· 시공기사: 돌봄매트 시공팀 (부산·경기/인천)\n' +
@@ -99,8 +101,9 @@
       key: 'optional1',
       required: false,
       title: '마케팅 정보 수신 동의',
-      summary: '신제품·할인·이벤트를 알림톡으로 받아보실래요? (선택, 거부해도 OK)',
+      summary: '',
       fullText:
+        '신제품·할인·이벤트 정보를 알림톡으로 안내해드립니다.\n\n' +
         '【수신 채널】\n' +
         '· 알림톡 (카카오톡 채널)\n\n' +
         '【수신 내용】\n' +
@@ -118,8 +121,9 @@
       key: 'optional2',
       required: false,
       title: '시공 사진 마케팅 활용 동의',
-      summary: '시공 사진을 SNS·블로그에 활용하는 데 동의하시면 체크해주세요.',
+      summary: '',
       fullText:
+        '시공 사진을 SNS·블로그·홈페이지 마케팅에 활용합니다.\n\n' +
         '【활용 사진】\n' +
         '· 시공 전·후 매트 시공 사진\n' +
         '· 시공 과정 사진 (얼굴·이름·정확한 주소 미공개)\n\n' +
@@ -158,7 +162,7 @@
         +     '<span class="cs-consent-title">' + item.title + '</span>'
         +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '">자세히 ▼</button>'
         +   '</label>'
-        +   '<div class="cs-consent-summary">' + item.summary + '</div>'
+        +   (item.summary ? '<div class="cs-consent-summary">' + item.summary + '</div>' : '')
         +   '<div class="cs-consent-full" id="cs-full-' + item.key + '" style="display:none;">'
         +     '<pre>' + item.fullText + '</pre>'
         +   '</div>'
@@ -170,7 +174,7 @@
       +   '<div class="cs-consent-modal">'
       +     '<div class="cs-consent-header">'
       +       '<h3>🔒 개인정보 수집 동의</h3>'
-      +       '<div class="cs-consent-version">v' + CONSENT_VERSION + ' · ' + _today() + '</div>'
+      +       '<div class="cs-consent-version">' + CONSENT_VERSION + ' · ' + _today() + '</div>'
       +     '</div>'
       +     '<div class="cs-consent-body">'
       +       '<div class="cs-consent-intro">'
@@ -185,7 +189,7 @@
       +     '</div>'
       +     '<button type="button" class="cs-consent-close" id="cs-btn-cancel" aria-label="닫기">×</button>'
       +     '<div class="cs-consent-notice">'
-      +       '본 동의서는 v' + CONSENT_VERSION + ' 기준이며, 6개월간 자동 인정됩니다.<br>'
+      +       '본 동의서는 ' + CONSENT_VERSION + ' 기준이며, 6개월간 자동 인정됩니다.<br>'
       +       '문의: 카카오톡 채널 [돌봄매트] · 사업자: 돌봄매트 (부산광역시)'
       +     '</div>'
       +   '</div>'
@@ -385,6 +389,173 @@
   }
 
   /* ───────────────────────────────────────────────
+   * 🆕 EMBED 모드 (다른 모달 안에 동의 항목 삽입용)
+   * 
+   * sample.html 통합 모달 등에서 사용:
+   *   1. renderItemsHTML() 으로 HTML 생성
+   *   2. bindItemsEvents(containerEl) 로 이벤트 연결
+   *   3. 사용자 입력 받음
+   *   4. getConsentValues() 로 체크 결과 읽기
+   *   5. validateRequired() 로 필수 검증
+   *   6. submitConsent(data) 로 [동의기록] 시트 전송
+   * ───────────────────────────────────────────────
+   */
+
+  // 4개 동의 항목 메타데이터 반환
+  function getItems() {
+    return CONSENT_ITEMS.map(function(item) {
+      return {
+        key: item.key,
+        required: item.required,
+        title: item.title
+      };
+    });
+  }
+
+  // 동의 항목 HTML 생성 (embed용 · 헤더/푸터 없음)
+  function renderItemsHTML(options) {
+    options = options || {};
+    var showAgreeAll = options.showAgreeAll !== false; // 기본 true
+
+    var itemsHTML = CONSENT_ITEMS.map(function(item, idx) {
+      var badgeClass = item.required ? 'cs-badge-required' : 'cs-badge-optional';
+      var badgeText = item.required ? '필수' : '선택';
+      var initialChecked = item.required ? 'checked' : '';
+
+      return ''
+        + '<div class="cs-consent-item" data-key="' + item.key + '">'
+        +   '<label class="cs-consent-row">'
+        +     '<input type="checkbox" class="cs-consent-checkbox" ' + initialChecked + ' data-key="' + item.key + '">'
+        +     '<span class="cs-consent-checkbox-visual"></span>'
+        +     '<span class="cs-badge ' + badgeClass + '">' + badgeText + '</span>'
+        +     '<span class="cs-consent-title">' + item.title + '</span>'
+        +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '">자세히 ▼</button>'
+        +   '</label>'
+        +   (item.summary ? '<div class="cs-consent-summary">' + item.summary + '</div>' : '')
+        +   '<div class="cs-consent-full" id="cs-full-embed-' + item.key + '" style="display:none;">'
+        +     '<pre>' + item.fullText + '</pre>'
+        +   '</div>'
+        + '</div>';
+    }).join('');
+
+    var agreeAllHTML = showAgreeAll
+      ? '<label class="cs-agree-all-row">'
+        + '<input type="checkbox" class="cs-consent-checkbox" id="cs-agree-all-embed">'
+        + '<span class="cs-consent-checkbox-visual"></span>'
+        + '<span class="cs-agree-all-text">모두 동의 (선택 항목 포함)</span>'
+        + '</label>'
+      : '';
+
+    return ''
+      + '<div class="cs-consent-embed">'
+      +   '<div class="cs-consent-embed-title">🔒 개인정보 수집 동의 (' + CONSENT_VERSION + ')</div>'
+      +   agreeAllHTML
+      +   itemsHTML
+      + '</div>';
+  }
+
+  // embed된 동의 항목 이벤트 바인딩
+  function bindItemsEvents(containerEl) {
+    if (!containerEl) return;
+
+    // 자세히 ▼ / 접기 ▲ 버튼
+    var toggles = containerEl.querySelectorAll('.cs-consent-toggle');
+    Array.prototype.forEach.call(toggles, function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var key = btn.getAttribute('data-key');
+        var fullEl = containerEl.querySelector('#cs-full-embed-' + key);
+        if (!fullEl) return;
+        if (fullEl.style.display === 'none') {
+          fullEl.style.display = 'block';
+          btn.textContent = '접기 ▲';
+        } else {
+          fullEl.style.display = 'none';
+          btn.textContent = '자세히 ▼';
+        }
+      });
+    });
+
+    // 모두 동의 체크박스
+    var agreeAll = containerEl.querySelector('#cs-agree-all-embed');
+    if (agreeAll) {
+      agreeAll.addEventListener('change', function() {
+        var checkboxes = containerEl.querySelectorAll('.cs-consent-item .cs-consent-checkbox');
+        Array.prototype.forEach.call(checkboxes, function(cb) {
+          cb.checked = agreeAll.checked;
+        });
+      });
+    }
+
+    // 개별 항목 체크 시 모두동의 상태 업데이트
+    var itemCheckboxes = containerEl.querySelectorAll('.cs-consent-item .cs-consent-checkbox');
+    Array.prototype.forEach.call(itemCheckboxes, function(cb) {
+      cb.addEventListener('change', function() {
+        if (!agreeAll) return;
+        var allChecked = true;
+        Array.prototype.forEach.call(itemCheckboxes, function(c) {
+          if (!c.checked) allChecked = false;
+        });
+        agreeAll.checked = allChecked;
+      });
+    });
+  }
+
+  // 현재 체크 상태 읽기
+  function getConsentValues(containerEl) {
+    if (!containerEl) return null;
+    var values = {};
+    CONSENT_ITEMS.forEach(function(item) {
+      var cb = containerEl.querySelector('.cs-consent-item[data-key="' + item.key + '"] .cs-consent-checkbox');
+      values[item.key] = (cb && cb.checked) ? 'Y' : 'N';
+    });
+    return values;
+  }
+
+  // 필수 항목 검증
+  function validateRequired(containerEl) {
+    if (!containerEl) return { ok: false, failed: '컨테이너 없음' };
+    for (var i = 0; i < CONSENT_ITEMS.length; i++) {
+      var item = CONSENT_ITEMS[i];
+      if (!item.required) continue;
+      var cb = containerEl.querySelector('.cs-consent-item[data-key="' + item.key + '"] .cs-consent-checkbox');
+      if (!cb || !cb.checked) {
+        return { ok: false, failed: item.title };
+      }
+    }
+    return { ok: true };
+  }
+
+  // 동의 정보 sharedData에 저장 + Apps Script로 전송
+  function submitConsent(options) {
+    options = options || {};
+    var consent = options.consent;
+    if (!consent || !options.name || !options.phone) return;
+
+    if (window.DolbomData) {
+      // 1) localStorage 저장
+      window.DolbomData.save({
+        name: options.name,
+        phone: options.phone,
+        address: options.address || '',
+        page: options.page || 'unknown',
+        consent: consent
+      });
+
+      // 2) Apps Script로 전송
+      window.DolbomData.sendConsent({
+        name: options.name,
+        phone: options.phone,
+        page: options.page || 'unknown',
+        consent: consent
+      }).catch(function(err) {
+        console.warn('[DolbomConsent embed] 동의 기록 전송 실패 (무시):', err);
+      });
+    }
+  }
+
+  /* ───────────────────────────────────────────────
    * 전역 객체로 노출
    * ───────────────────────────────────────────────
    */
@@ -392,13 +563,21 @@
     show: show,
     close: _close,
     isRequired: isRequired,
-    
+
+    // 🆕 embed 모드 (통합 모달용)
+    getItems: getItems,
+    renderItemsHTML: renderItemsHTML,
+    bindItemsEvents: bindItemsEvents,
+    getConsentValues: getConsentValues,
+    validateRequired: validateRequired,
+    submitConsent: submitConsent,
+
     // 디버그용
-    _version: '1.0',
+    _version: '1.1',
     _consentVersion: CONSENT_VERSION,
     _items: CONSENT_ITEMS
   };
 
-  console.log('[DolbomConsent] v1.0 로드 완료 (동의서 ' + CONSENT_VERSION + ')');
+  console.log('[DolbomConsent] v1.1 로드 완료 (동의서 ' + CONSENT_VERSION + ' · embed 모드 지원)');
 
 })(window);

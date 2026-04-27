@@ -246,11 +246,12 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
 <!-- 확인 팝업 -->
 <div id="confirmOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:300;justify-content:center;align-items:center;padding:20px">
   <div style="background:#fff;border:1px solid #e8e8e3;border-radius:18px;max-width:400px;width:100%;padding:24px;max-height:85vh;overflow-y:auto">
-    <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:16px;text-align:center">📋 입력 내용을 확인해주세요</div>
+    <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:16px;text-align:center">📋 신청 내용 확인 + 동의</div>
     <div id="confirmBody" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div id="consentEmbed"></div>
     <div style="display:flex;gap:10px;margin-top:20px">
       <button onclick="closeConfirm()" style="flex:1;padding:14px;border:1.5px solid #e0ddd6;border-radius:12px;background:#fff;color:#555;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">수정하기</button>
-      <button onclick="submitForm()" id="confirmBtn" style="flex:1;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#6B9EA6,#5A8C94);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">접수하기</button>
+      <button onclick="submitForm()" id="confirmBtn" style="flex:1;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#6B9EA6,#5A8C94);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">동의·접수하기</button>
     </div>
   </div>
 </div>
@@ -397,13 +398,27 @@ function showConfirm(){
   const items=[['이름',name],['연락처',phone],['주소',address],['상세주소',addrDetail||building],['시공 예정 시기',timing],['시공 목적',purpose],['알게 된 경로',route]];
   if(chParam) items.push(['추천 채널','🎉 '+chParam]);
   document.getElementById('confirmBody').innerHTML=items.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:10px 14px;background:#f8f8f5;border-radius:10px;border:1px solid #e8e8e3"><span style="color:#999;font-size:13px;flex-shrink:0">${k}</span><span style="color:#1a1a1a;font-size:13px;font-weight:600;text-align:right;margin-left:12px">${v}</span></div>`).join('');
+
+  // 🆕 동의 항목 embed 렌더링 (이미 유효한 동의 있으면 안 보임)
+  var consentEmbedEl = document.getElementById('consentEmbed');
+  if (consentEmbedEl) {
+    if (window.DolbomConsent && DolbomConsent.isRequired()) {
+      consentEmbedEl.innerHTML = DolbomConsent.renderItemsHTML({showAgreeAll: true});
+      consentEmbedEl.style.display = 'block';
+      DolbomConsent.bindItemsEvents(consentEmbedEl);
+    } else {
+      // 이미 6개월 내 v3.0 동의 있음 → 동의 영역 숨김
+      consentEmbedEl.innerHTML = '<div style="background:#f5f9f3;border:1px solid #c8e0bc;border-radius:10px;padding:10px 14px;margin-top:14px;font-size:12px;color:#5A8C94;text-align:center">✅ 이전에 동의하신 내역이 있어 추가 동의 없이 진행됩니다 (6개월 내)</div>';
+      consentEmbedEl.style.display = 'block';
+    }
+  }
+
   document.getElementById('confirmOverlay').style.display='flex';
 }
 
 function closeConfirm(){document.getElementById('confirmOverlay').style.display='none';}
 
 function submitForm(){
-  closeConfirm();
   const name=document.getElementById('fName').value.trim();
   const phone=document.getElementById('fPhone').value.trim();
   const address=document.getElementById('fAddress').value.trim();
@@ -413,25 +428,30 @@ function submitForm(){
   const route=document.getElementById('fRoute').value.trim();
   const fullAddr=addrDetail?address+' '+addrDetail:address;
 
-  // 🆕 동의 모달: 유효한 동의 없으면 띄움
-  if(window.DolbomConsent && DolbomConsent.isRequired()){
-    DolbomConsent.show({
-      page:'sample',
-      name:name,
-      phone:phone,
-      address:fullAddr,
-      onAgree:function(consent){
-        // 동의 통과 → 실제 신청 진행
-        _doSampleSubmit(name,phone,fullAddr,timing,purpose,route);
-      },
-      onCancel:function(){
-        showToast('⚠️ 동의가 필요합니다','error');
-      }
+  // 🆕 동의 항목 embed 검증 (필수 모두 체크됐는지)
+  var consentEmbedEl = document.getElementById('consentEmbed');
+  var consent = null;
+
+  if (window.DolbomConsent && DolbomConsent.isRequired()) {
+    // 새로 동의받는 경우 → embed 검증
+    var validation = DolbomConsent.validateRequired(consentEmbedEl);
+    if (!validation.ok) {
+      showToast('⚠️ 필수 동의: ' + validation.failed, 'error');
+      return;
+    }
+    consent = DolbomConsent.getConsentValues(consentEmbedEl);
+
+    // sharedData 저장 + Apps Script로 [동의기록] 시트 전송
+    DolbomConsent.submitConsent({
+      page: 'sample',
+      name: name,
+      phone: phone,
+      address: fullAddr,
+      consent: consent
     });
-    return;
   }
 
-  // 이미 동의 있음 → 바로 진행
+  closeConfirm();
   _doSampleSubmit(name,phone,fullAddr,timing,purpose,route);
 }
 
