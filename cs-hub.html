@@ -92,46 +92,44 @@ body{
 /* 신뢰 카드 영역 */
 .trust-section{
   background:#fff;
-  padding:20px 16px;
+  padding:18px 16px;
   border-bottom:1px solid var(--border);
 }
 .trust-list{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px;
+}
+.trust-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 6px;
+  text-align:center;
   display:flex;
   flex-direction:column;
-  gap:10px;
-}
-.trust-row{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px 14px;
-  background:var(--baby-blue-light);
-  border-radius:10px;
-}
-.trust-check{
-  width:22px;
-  height:22px;
-  border-radius:50%;
-  background:var(--baby-blue-deep);
-  color:#fff;
-  display:flex;
   align-items:center;
   justify-content:center;
-  font-size:12px;
-  font-weight:800;
-  flex-shrink:0;
+  min-height:90px;
 }
-.trust-text{
-  flex:1;
-  font-size:13px;
-  font-weight:600;
-  color:var(--text);
+.trust-card-num{
+  font-size:15px;
+  font-weight:800;
+  line-height:1.2;
+  letter-spacing:-0.5px;
+  margin-bottom:6px;
+}
+.trust-card-desc{
+  font-size:11px;
+  color:var(--text2);
+  font-weight:500;
+  line-height:1.4;
   letter-spacing:-0.2px;
 }
-.trust-num-inline{
-  color:var(--baby-blue-deep);
-  font-weight:800;
-}
+/* 카드별 컬러 차별화 */
+.trust-card.blue .trust-card-num{color:var(--baby-blue-deep)}
+.trust-card.coral .trust-card-num{color:var(--primary)}
+.trust-card.amber .trust-card-num{color:var(--orange)}
 
 /* 컨테이너 */
 .container{padding:20px 16px 0}
@@ -322,17 +320,17 @@ body{
 <!-- 신뢰 정보 -->
 <div class="trust-section">
   <div class="trust-list">
-    <div class="trust-row">
-      <div class="trust-check">✓</div>
-      <div class="trust-text">5성급 호텔 키즈룸 시공 완료</div>
+    <div class="trust-card blue">
+      <div class="trust-card-num">5성급 호텔</div>
+      <div class="trust-card-desc">키즈룸 시공 완료</div>
     </div>
-    <div class="trust-row">
-      <div class="trust-check">✓</div>
-      <div class="trust-text"><span class="trust-num-inline">80개</span> 국공립 어린이집 시공 완료</div>
+    <div class="trust-card coral">
+      <div class="trust-card-num">80개+</div>
+      <div class="trust-card-desc">국공립 어린이집 시공 완료</div>
     </div>
-    <div class="trust-row">
-      <div class="trust-check">✓</div>
-      <div class="trust-text"><span class="trust-num-inline">6,700곳</span> 시공 완료</div>
+    <div class="trust-card amber">
+      <div class="trust-card-num">6,700곳</div>
+      <div class="trust-card-desc">시공 완료</div>
     </div>
   </div>
 </div>
