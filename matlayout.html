@@ -209,6 +209,7 @@ function PuzzleMatLayoutApp() {
   const svgRef = useRef(null);
   const fileInputRef = useRef(null);
   const wasDraggingRef = useRef(false); // 🆕 드래그 직후 클릭 차단
+  const polygonDragRef = useRef(null); // 🆕 폴리곤 전체 드래그 (idle 모드)
 
   useEffect(() => {
     try {
@@ -302,6 +303,31 @@ function PuzzleMatLayoutApp() {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
+  }, [mode, points.length]);
+
+  // 🆕 idle 모드에서 마우스 드래그로 폴리곤 전체 이동
+  useEffect(() => {
+    if (mode !== "idle" || points.length < 3) return;
+    const handleMove = (e) => {
+      if (!polygonDragRef.current || !svgRef.current) return;
+      const svg = svgRef.current;
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const dx = p.x - polygonDragRef.current.x;
+      const dy = p.y - polygonDragRef.current.y;
+      if (dx !== 0 || dy !== 0) {
+        setPoints(prev => prev.map(pos => ({ x: pos.x + dx, y: pos.y + dy })));
+        polygonDragRef.current = p;
+      }
+    };
+    const handleUp = () => { polygonDragRef.current = null; };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
   }, [mode, points.length]);
 
   const matPx = pxPerMeter;
@@ -757,7 +783,17 @@ function PuzzleMatLayoutApp() {
                   height={1000 * zoom}
                   viewBox="0 0 1400 1000"
                   onClick={handleCanvasClick}
-                  className={mode === "exclude" ? "" : "cursor-crosshair"}
+                  onMouseDown={(e) => {
+                    if (mode === "idle" && points.length >= 3) {
+                      const p = getSvgPoint(e);
+                      polygonDragRef.current = p;
+                    }
+                  }}
+                  className={
+                    mode === "idle" && points.length >= 3 ? "cursor-grab"
+                    : mode === "exclude" ? ""
+                    : "cursor-crosshair"
+                  }
                 >
                   <defs>
                     <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -861,14 +897,14 @@ function PuzzleMatLayoutApp() {
                     : "🔵 시공 모드: 도면 꼭짓점을 클릭하세요. 이미 찍은 점은 드래그하거나 클릭 후 화살표 키로 미세 조정 가능."
                 )}
                 {mode === "exclude" && "🔴 제외 모드: 빼고 싶은 매트(가구·기둥 위치)를 클릭하세요. 다시 클릭하면 복구됩니다."}
-                {mode === "idle" && "🔒 잠금 상태: 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 \"시공\" 모드 클릭."}
+                {mode === "idle" && "🔒 잠금 상태: 마우스로 드래그하거나 화살표 키로 시공 영역 전체 이동 (Shift+화살표 = 10px씩). 다시 편집하려면 \"시공\" 모드 클릭."}
               </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.6 · 잠금/전체이동 + 드래그 버그 수정 + 색상 투명화 · 작업 자동 저장
+          돌봄매트 시공 도구 v1.6.1 · 잠금 상태에서 마우스 드래그 + 화살표 키로 전체 이동 · 작업 자동 저장
         </div>
       </div>
     </div>
