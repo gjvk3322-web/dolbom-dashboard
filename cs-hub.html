@@ -21,7 +21,7 @@
   --baby-blue-dark:#8eb4b8;
   --baby-blue-deep:#5e9499;
   --orange:#f59f00;
-  --radius:14px;
+  --radius:12px;
   --shadow:0 1px 3px rgba(0,0,0,0.06);
 }
 
@@ -34,35 +34,40 @@ body{
   min-height:100vh;
   max-width:480px;
   margin:0 auto;
-  padding-bottom:40px;
+  padding-bottom:20px;
   overflow-x:hidden;
 }
 
-/* 히어로 섹션 - 베이비 블루 */
+/* 히어로 - 가로 정렬 압축 */
 .hero{
   background:linear-gradient(180deg,var(--baby-blue) 0%,var(--baby-blue-light) 100%);
-  padding:24px 20px 32px;
-  text-align:center;
+  padding:18px 20px;
   position:relative;
 }
 .ref-badge{
   display:none;
   background:#fff;
   border:1px solid var(--baby-blue-dark);
-  border-radius:20px;
-  padding:5px 14px;
-  font-size:11px;
+  border-radius:14px;
+  padding:4px 10px;
+  font-size:10px;
   color:var(--baby-blue-deep);
   font-weight:700;
-  margin-bottom:14px;
+  margin-bottom:10px;
+  text-align:center;
 }
 .ref-badge.show{display:inline-block}
 
-/* 로고 영역 */
+/* 로고 + 텍스트 가로 정렬 */
+.hero-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
 .logo-wrap{
-  margin:0 auto 8px;
-  width:160px;
-  height:160px;
+  width:80px;
+  height:80px;
+  flex-shrink:0;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -72,91 +77,89 @@ body{
   height:100%;
   object-fit:contain;
 }
-
-/* 핵심 메시지 */
+.hero-text{flex:1;min-width:0}
 .hero-title{
-  font-size:22px;
+  font-size:18px;
   font-weight:800;
   color:var(--text);
-  line-height:1.4;
+  line-height:1.3;
   letter-spacing:-0.5px;
-  margin-bottom:8px;
+  margin-bottom:4px;
 }
 .hero-sub{
-  font-size:13px;
+  font-size:11px;
   color:var(--text2);
   font-weight:500;
   letter-spacing:-0.2px;
+  line-height:1.4;
 }
 
-/* 신뢰 카드 영역 */
+/* 신뢰 카드 - 압축 */
 .trust-section{
   background:#fff;
-  padding:18px 16px;
+  padding:12px 14px;
   border-bottom:1px solid var(--border);
 }
 .trust-list{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
-  gap:8px;
+  gap:6px;
 }
 .trust-card{
   background:#fff;
   border:1px solid var(--border);
-  border-radius:12px;
-  padding:14px 6px;
+  border-radius:10px;
+  padding:10px 4px;
   text-align:center;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  min-height:90px;
+  min-height:64px;
 }
 .trust-card-num{
-  font-size:15px;
+  font-size:13px;
   font-weight:800;
   line-height:1.2;
   letter-spacing:-0.5px;
-  margin-bottom:6px;
+  margin-bottom:4px;
 }
 .trust-card-desc{
-  font-size:11px;
+  font-size:10px;
   color:var(--text2);
   font-weight:500;
-  line-height:1.4;
+  line-height:1.3;
   letter-spacing:-0.2px;
 }
-/* 카드별 컬러 차별화 */
 .trust-card.blue .trust-card-num{color:var(--baby-blue-deep)}
 .trust-card.coral .trust-card-num{color:var(--primary)}
 .trust-card.amber .trust-card-num{color:var(--orange)}
 
-/* 컨테이너 */
-.container{padding:20px 16px 0}
+/* 컨테이너 - 압축 */
+.container{padding:14px 14px 0}
 
-/* 섹션 타이틀 */
 .section-title{
-  font-size:14px;
+  font-size:13px;
   font-weight:700;
   color:var(--text);
-  margin-bottom:14px;
+  margin-bottom:10px;
   padding:0 4px;
   letter-spacing:-0.3px;
 }
 
-/* 단계별 가이드 */
+/* 단계별 가이드 - 압축 */
 .steps{
   background:var(--card);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  padding:20px 18px;
-  margin-bottom:16px;
+  padding:12px 16px;
+  margin-bottom:12px;
 }
 .step{
   display:flex;
   align-items:center;
-  gap:14px;
-  padding:12px 0;
+  gap:12px;
+  padding:8px 0;
   position:relative;
   text-decoration:none;
   color:inherit;
@@ -164,22 +167,22 @@ body{
 .step:not(:last-child)::after{
   content:'';
   position:absolute;
-  left:14px;
-  top:42px;
-  bottom:-12px;
+  left:13px;
+  top:34px;
+  bottom:-8px;
   width:2px;
   background:var(--baby-blue-light);
 }
 .step-num{
-  width:28px;
-  height:28px;
+  width:26px;
+  height:26px;
   border-radius:50%;
   background:var(--baby-blue-deep);
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:13px;
+  font-size:12px;
   font-weight:700;
   flex-shrink:0;
   position:relative;
@@ -187,23 +190,24 @@ body{
 }
 .step-content{flex:1;min-width:0}
 .step-title{
-  font-size:14px;
+  font-size:13px;
   font-weight:700;
   color:var(--text);
-  margin-bottom:2px;
+  margin-bottom:1px;
   letter-spacing:-0.2px;
 }
 .step-desc{
-  font-size:11px;
+  font-size:10px;
   color:var(--text3);
   font-weight:400;
+  line-height:1.3;
 }
 .step-action{
   background:var(--baby-blue-light);
   color:var(--baby-blue-deep);
-  padding:5px 12px;
-  border-radius:14px;
-  font-size:11px;
+  padding:4px 10px;
+  border-radius:12px;
+  font-size:10px;
   font-weight:700;
   white-space:nowrap;
 }
@@ -212,63 +216,58 @@ body{
   color:var(--primary);
 }
 
-/* 추가 정보 메뉴 */
+/* 추가 정보 */
 .extra-menu{
   background:var(--card);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
   overflow:hidden;
-  margin-bottom:16px;
+  margin-bottom:10px;
 }
 .extra-item{
   display:flex;
   align-items:center;
-  padding:14px 18px;
-  border-bottom:1px solid var(--border);
+  padding:11px 16px;
   text-decoration:none;
   color:inherit;
   cursor:pointer;
   transition:background 0.15s;
 }
-.extra-item:last-child{border-bottom:none}
 .extra-item:active{background:var(--baby-blue-light)}
-
 .extra-content{flex:1;min-width:0}
 .extra-title{
-  font-size:13px;
+  font-size:12px;
   font-weight:700;
   color:var(--text);
   letter-spacing:-0.2px;
 }
 .extra-desc{
-  font-size:11px;
+  font-size:10px;
   color:var(--text3);
-  margin-top:2px;
+  margin-top:1px;
   font-weight:400;
 }
 .extra-arrow{
   color:var(--text3);
-  font-size:16px;
+  font-size:14px;
   font-weight:400;
   margin-left:8px;
 }
 
 /* 카톡 상담 */
-.contact-area{
-  margin-bottom:8px;
-}
+.contact-area{margin-bottom:6px}
 .btn-kakao{
   width:100%;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
+  gap:6px;
   background:#fee500;
   color:#1a1a1a;
-  padding:14px;
-  border-radius:14px;
+  padding:13px;
+  border-radius:12px;
   text-decoration:none;
-  font-size:14px;
+  font-size:13px;
   font-weight:700;
   font-family:inherit;
   border:none;
@@ -280,17 +279,17 @@ body{
 
 /* 푸터 */
 .footer{
-  margin-top:24px;
-  padding:16px 20px 0;
+  margin-top:10px;
+  padding:8px 14px 0;
   text-align:center;
-  font-size:11px;
+  font-size:10px;
   color:var(--text3);
   font-weight:400;
-  line-height:1.7;
+  line-height:1.6;
 }
 
 @keyframes fadeUp{
-  from{opacity:0;transform:translateY(10px)}
+  from{opacity:0;transform:translateY(8px)}
   to{opacity:1;transform:translateY(0)}
 }
 .steps,.extra-menu,.contact-area{animation:fadeUp 0.4s ease both}
@@ -300,21 +299,25 @@ body{
 
 @keyframes float{
   0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-4px)}
+  50%{transform:translateY(-3px)}
 }
 .logo-img{animation:float 3s ease-in-out infinite}
 </style>
 </head>
 <body>
 
-<!-- 히어로 섹션 -->
+<!-- 히어로 - 가로 정렬 -->
 <div class="hero">
   <div id="refBadge" class="ref-badge"><span id="refName"></span> 추천 받으셨군요</div>
-  <div class="logo-wrap">
-    <img src="dolbom-logo.png" alt="돌봄매트" class="logo-img">
+  <div class="hero-row">
+    <div class="logo-wrap">
+      <img src="dolbom-logo.png" alt="돌봄매트" class="logo-img">
+    </div>
+    <div class="hero-text">
+      <div class="hero-title">층간소음 62% 저감<br>프리미엄 TPU 매트</div>
+      <div class="hero-sub">아이와 반려동물의 안전을 책임집니다</div>
+    </div>
   </div>
-  <div class="hero-title">층간소음 62% 저감<br>프리미엄 TPU 매트</div>
-  <div class="hero-sub">아이와 반려동물의 안전을 책임집니다</div>
 </div>
 
 <!-- 신뢰 정보 -->
@@ -380,7 +383,6 @@ body{
   </div>
 
   <!-- 자세한 정보 -->
-  <div class="section-title">자세히 알아보기</div>
   <div class="extra-menu">
     <a href="https://www.dolbommat.com" class="extra-item">
       <div class="extra-content">
@@ -401,8 +403,7 @@ body{
 </div>
 
 <div class="footer">
-  돌봄매트 · TPU 바닥매트 전문<br>
-  본사 직영 · KC 안전확인 인증
+  돌봄매트 · TPU 바닥매트 전문 · 본사 직영 · KC 안전확인 인증
 </div>
 
 <script>
