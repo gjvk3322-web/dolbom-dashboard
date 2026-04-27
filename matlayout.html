@@ -237,6 +237,7 @@ function PuzzleMatLayoutApp() {
   const [showNumbers, setShowNumbers] = useState(true);
   const [showPairing, setShowPairing] = useState(true);
   const [restored, setRestored] = useState(false);
+  const [uploading, setUploading] = useState(false); // 도면 업로드 중 인디케이터
   const [draggingIdx, setDraggingIdx] = useState(null);
   const [selectedIdx, setSelectedIdx] = useState(null);
   const svgRef = useRef(null);
@@ -362,6 +363,9 @@ function PuzzleMatLayoutApp() {
   useEffect(() => {
     if (selectedIdx === null || mode !== "draw") return;
     const handleKey = (e) => {
+      // input/textarea 포커스 시 화살표 키는 텍스트 편집용으로 사용
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       let dx = 0, dy = 0;
       const step = e.shiftKey ? 10 : 1;
       if (e.key === 'ArrowUp') dy = -step;
@@ -383,6 +387,9 @@ function PuzzleMatLayoutApp() {
   useEffect(() => {
     if (mode !== "idle" || points.length < 3 || isViewMode) return;
     const handleKey = (e) => {
+      // input/textarea 포커스 시 화살표 키는 텍스트 편집용으로 사용
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       let dx = 0, dy = 0;
       const step = e.shiftKey ? 10 : 1;
       if (e.key === 'ArrowUp') dy = -step;
@@ -492,7 +499,13 @@ function PuzzleMatLayoutApp() {
     });
   }, [optimized.mats, points, matPx]);
 
-  const matKey = (m) => `${m.x.toFixed(2)}_${m.y.toFixed(2)}`;
+  // 격자 인덱스 기반 matKey (영역 이동/조정에도 안정적)
+  // 매트 좌표(x, y)와 현재 격자 오프셋(ox, oy)으로부터 행/열 인덱스 계산
+  const matKey = (m) => {
+    const col = Math.round((m.x - optimized.ox) / matPx);
+    const row = Math.round((m.y - optimized.oy) / matPx);
+    return `r${row}_c${col}`;
+  };
   const excludedSet = new Set(excludedMatKeys);
   const isExcluded = (m) => excludedSet.has(matKey(m));
 
@@ -534,6 +547,24 @@ function PuzzleMatLayoutApp() {
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 파일 크기 검증 (15MB 이상은 거부)
+    const MAX_SIZE = 15 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert(`이미지가 너무 큽니다 (${(file.size / 1024 / 1024).toFixed(1)}MB).\n15MB 이하의 이미지를 사용해주세요.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // HEIC/HEIF 파일은 브라우저가 못 읽음 - 안내
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.heic') || fileName.endsWith('.heif')) {
+      alert('아이폰의 HEIC 형식은 지원하지 않습니다.\n\n해결 방법:\n• 사진앱에서 "공유 → 사본 저장" 후 JPG로 변환\n• 또는 설정 → 카메라 → 포맷 → "호환성 우선" 선택');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setUploading(true);
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -542,8 +573,19 @@ function PuzzleMatLayoutApp() {
         const targetH = (img.height / img.width) * targetW;
         setImageDims({ w: targetW, h: targetH });
         setImage(reader.result);
+        setUploading(false);
+      };
+      img.onerror = () => {
+        alert('이미지를 읽을 수 없습니다. 다른 파일을 시도해주세요.');
+        setUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
       };
       img.src = reader.result;
+    };
+    reader.onerror = () => {
+      alert('파일 읽기 실패. 다시 시도해주세요.');
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsDataURL(file);
   };
@@ -887,9 +929,9 @@ function PuzzleMatLayoutApp() {
             <p className="text-xs md:text-sm text-slate-500">스케일 보정 → 시공 영역 → 매트 제외 → 자동 수량 계산</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
-              도면 업로드
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+            <label className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white ${uploading ? 'bg-slate-500 cursor-wait' : 'bg-slate-900 hover:bg-slate-800 cursor-pointer'}`}>
+              {uploading ? '처리 중...' : '도면 업로드'}
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleUpload} disabled={uploading} />
             </label>
             {points.length >= 3 && (
               <>
@@ -1273,7 +1315,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v2.6.1
+          돌봄매트 시공 도구 v2.7
         </div>
       </div>
     </div>
