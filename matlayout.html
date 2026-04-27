@@ -33,18 +33,12 @@ const { useMemo, useRef, useState, useEffect } = React;
 
 const DEFAULT_SCALE = 80;
 const STORAGE_KEY = 'puzzleMatLayout_v3';
-
-// 짜투리 분류 임계값: 시공영역 내 비율이 이 값 미만이면 "짜투리"
 const OFFCUT_THRESHOLD = 0.5;
-// 페어링 가능 임계값: 두 짜투리 면적 합이 이 값 이하면 페어링
-// 0.95 이유: 매트 1m에서 5cm(0.05m) 여유 확보
-//   - 0.45+0.45=0.9: 10cm 여유 → 페어링 OK ✅
-//   - 0.4+0.55=0.95: 5cm 여유 → 페어링 OK (칼선 손실 5mm 감안 가능) ✅
-//   - 0.5+0.5=1.0: 여유 0 → 칼선 손실로 못 자름 → 페어링 X ❌
-//   - 0.3+0.7=1.0: 여유 0 → 페어링 X ❌
 const PAIRING_THRESHOLD = 0.95;
-// 면적 계산 샘플링 정밀도 (NxN)
 const AREA_SAMPLES = 10;
+
+// 🆕 URL 파라미터로 view 모드 감지
+const isViewMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('view') === '1';
 
 function Button({ children, variant = "default", className = "", ...props }) {
   const v = {
@@ -103,7 +97,6 @@ function rectIntersectsPolygon(x, y, size, polygon) {
   return false;
 }
 
-// 🆕 매트가 폴리곤 안에 차지하는 면적 비율 (샘플링 방식)
 function matAreaRatio(x, y, size, polygon, samples) {
   if (polygon.length < 3) return 0;
   let inside = 0;
@@ -152,7 +145,8 @@ function makeLayout(polygon, matPx, offsetX, offsetY, overcutPx) {
   return mats;
 }
 
-function optimizeLayout(polygon, matPx, overcutPx, priority) {
+// 🆕 단순화: priority 제거, 항상 "재단장 적게" 점수 사용
+function optimizeLayout(polygon, matPx, overcutPx) {
   let best = null;
   if (polygon.length < 3) return { mats: [], ox: 0, oy: 0, score: 0, cutCount: 0 };
   const step = matPx / 10;
@@ -160,16 +154,15 @@ function optimizeLayout(polygon, matPx, overcutPx, priority) {
     for (let oy = 0; oy < matPx; oy += step) {
       const mats = makeLayout(polygon, matPx, ox, oy, overcutPx);
       const cutCount = mats.filter((m) => !m.full).length;
-      const score = priority === "fewMats" ? mats.length * 1000 + cutCount * 50 : mats.length * 1000 + cutCount * 150;
+      // 재단장 적게 우선: cutCount * 150
+      const score = mats.length * 1000 + cutCount * 150;
       if (!best || score < best.score) best = { mats, ox, oy, score, cutCount };
     }
   }
   return best || { mats: [], ox: 0, oy: 0, score: 0, cutCount: 0 };
 }
 
-// 🆕 짜투리 페어링: 면적 합이 임계값 이하인 짜투리 두 개를 묶음
 function pairOffcuts(offcuts, threshold) {
-  // 면적 큰 순으로 정렬 (큰 짜투리부터 짝꿍 찾기)
   const sorted = [...offcuts].sort((a, b) => b.areaRatio - a.areaRatio);
   const pairs = [];
   const used = new Set();
@@ -199,18 +192,18 @@ function PuzzleMatLayoutApp() {
   const [scaleInputM, setScaleInputM] = useState("2.04");
   const [pxPerMeter, setPxPerMeter] = useState(DEFAULT_SCALE);
   const [overcutCm, setOvercutCm] = useState(2);
-  const [priority, setPriority] = useState("fewCuts");
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(isViewMode ? 1.5 : 1); // view 모드는 더 크게 시작
   const [showNumbers, setShowNumbers] = useState(true);
-  const [showPairing, setShowPairing] = useState(true); // 🆕 짜투리 페어링 표시
+  const [showPairing, setShowPairing] = useState(true);
   const [restored, setRestored] = useState(false);
-  const [draggingIdx, setDraggingIdx] = useState(null); // 🆕 드래그 중인 점 인덱스
-  const [selectedIdx, setSelectedIdx] = useState(null); // 🆕 선택된 점 인덱스 (키보드 이동용)
+  const [draggingIdx, setDraggingIdx] = useState(null);
+  const [selectedIdx, setSelectedIdx] = useState(null);
   const svgRef = useRef(null);
   const fileInputRef = useRef(null);
-  const wasDraggingRef = useRef(false); // 🆕 드래그 직후 클릭 차단
-  const polygonDragRef = useRef(null); // 🆕 폴리곤 전체 드래그 (idle 모드)
+  const wasDraggingRef = useRef(false);
+  const polygonDragRef = useRef(null);
 
+  // 자동 복원
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -220,30 +213,64 @@ function PuzzleMatLayoutApp() {
       if (d.excludedMatKeys) setExcludedMatKeys(d.excludedMatKeys);
       if (d.pxPerMeter) setPxPerMeter(d.pxPerMeter);
       if (d.overcutCm !== undefined) setOvercutCm(d.overcutCm);
-      if (d.priority) setPriority(d.priority);
       if (d.image) setImage(d.image);
       if (d.imageDims) setImageDims(d.imageDims);
+      // view 모드면 자동으로 idle 모드 진입 (편집 불가)
+      if (isViewMode && d.points && d.points.length >= 3) setMode("idle");
       setRestored(true);
       setTimeout(() => setRestored(false), 5000);
     } catch (e) {}
   }, []);
 
+  // 자동 저장
   useEffect(() => {
+    if (isViewMode) return; // view 모드는 저장 안 함 (편집 페이지에서만 저장)
     try {
-      const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims };
+      const data = { points, excludedMatKeys, pxPerMeter, overcutCm, image, imageDims };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
       try {
-        const data = { points, excludedMatKeys, pxPerMeter, overcutCm, priority, imageDims };
+        const data = { points, excludedMatKeys, pxPerMeter, overcutCm, imageDims };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch (e2) {}
     }
-  }, [points, excludedMatKeys, pxPerMeter, overcutCm, priority, image, imageDims]);
+  }, [points, excludedMatKeys, pxPerMeter, overcutCm, image, imageDims]);
 
-  // 🆕 점 드래그 처리 (window 레벨 - 빠른 드래그도 안정적)
+  // 🆕 view 모드: 다른 탭에서 변경 시 자동 동기화
+  // 🆕 편집 모드: 제외 매트만 view 탭에서 변경되면 동기화
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        const d = JSON.parse(e.newValue);
+        // 모든 데이터 동기화
+        if (d.points) setPoints(d.points);
+        if (d.excludedMatKeys) setExcludedMatKeys(d.excludedMatKeys);
+        if (d.pxPerMeter) setPxPerMeter(d.pxPerMeter);
+        if (d.overcutCm !== undefined) setOvercutCm(d.overcutCm);
+        if (d.image) setImage(d.image);
+        if (d.imageDims) setImageDims(d.imageDims);
+      } catch (err) {}
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // 🆕 view 모드에서 매트 제외 변경 시 다른 탭에 알리기 위해 직접 저장
+  useEffect(() => {
+    if (!isViewMode) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const d = raw ? JSON.parse(raw) : {};
+      d.excludedMatKeys = excludedMatKeys;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    } catch (e) {}
+  }, [excludedMatKeys]);
+
+  // 점 드래그
   useEffect(() => {
     if (draggingIdx === null) return;
-    wasDraggingRef.current = true; // 🆕 드래그 시작 표시
+    wasDraggingRef.current = true;
     const handleMove = (e) => {
       if (!svgRef.current) return;
       const svg = svgRef.current;
@@ -254,7 +281,6 @@ function PuzzleMatLayoutApp() {
     };
     const handleUp = () => {
       setDraggingIdx(null);
-      // 🆕 드래그 직후 잠시 클릭 차단 (브라우저 click 이벤트가 뒤따라 오기 때문)
       setTimeout(() => { wasDraggingRef.current = false; }, 100);
     };
     window.addEventListener('mousemove', handleMove);
@@ -265,12 +291,12 @@ function PuzzleMatLayoutApp() {
     };
   }, [draggingIdx]);
 
-  // 🆕 키보드 화살표로 미세 이동 (선택된 점)
+  // 키보드 화살표 (선택된 점 미세 이동)
   useEffect(() => {
     if (selectedIdx === null || mode !== "draw") return;
     const handleKey = (e) => {
       let dx = 0, dy = 0;
-      const step = e.shiftKey ? 10 : 1; // Shift 누르면 10px씩
+      const step = e.shiftKey ? 10 : 1;
       if (e.key === 'ArrowUp') dy = -step;
       else if (e.key === 'ArrowDown') dy = step;
       else if (e.key === 'ArrowLeft') dx = -step;
@@ -286,9 +312,9 @@ function PuzzleMatLayoutApp() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [selectedIdx, mode]);
 
-  // 🆕 idle 모드 (잠금 상태)에서 화살표 키로 폴리곤 전체 이동
+  // idle 모드 화살표 (전체 이동)
   useEffect(() => {
-    if (mode !== "idle" || points.length < 3) return;
+    if (mode !== "idle" || points.length < 3 || isViewMode) return;
     const handleKey = (e) => {
       let dx = 0, dy = 0;
       const step = e.shiftKey ? 10 : 1;
@@ -298,16 +324,15 @@ function PuzzleMatLayoutApp() {
       else if (e.key === 'ArrowRight') dx = step;
       else return;
       e.preventDefault();
-      // 폴리곤 전체 평행이동 (모든 점에 같은 dx, dy 적용)
       setPoints(prev => prev.map(p => ({ x: p.x + dx, y: p.y + dy })));
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [mode, points.length]);
 
-  // 🆕 idle 모드에서 마우스 드래그로 폴리곤 전체 이동
+  // idle 모드 마우스 드래그 (전체 이동)
   useEffect(() => {
-    if (mode !== "idle" || points.length < 3) return;
+    if (mode !== "idle" || points.length < 3 || isViewMode) return;
     const handleMove = (e) => {
       if (!polygonDragRef.current || !svgRef.current) return;
       const svg = svgRef.current;
@@ -333,17 +358,11 @@ function PuzzleMatLayoutApp() {
   const matPx = pxPerMeter;
   const overcutPx = (Number(overcutCm) / 100) * pxPerMeter;
 
-  const optimizedFewCuts = useMemo(
-    () => optimizeLayout(points, matPx, overcutPx, "fewCuts"),
+  const optimized = useMemo(
+    () => optimizeLayout(points, matPx, overcutPx),
     [points, matPx, overcutPx]
   );
-  const optimizedFewMats = useMemo(
-    () => optimizeLayout(points, matPx, overcutPx, "fewMats"),
-    [points, matPx, overcutPx]
-  );
-  const optimized = priority === "fewCuts" ? optimizedFewCuts : optimizedFewMats;
 
-  // 🆕 각 매트의 시공영역 내 면적 비율 계산
   const matsWithArea = useMemo(() => {
     return optimized.mats.map(m => {
       if (m.full) return { ...m, areaRatio: 1.0 };
@@ -363,38 +382,30 @@ function PuzzleMatLayoutApp() {
 
   const visibleMats = matsWithDisplay.filter((m) => !m.excluded);
 
-  // 🆕 짜투리 식별 + 페어링
   const pairing = useMemo(() => {
     const offcuts = visibleMats.filter(m => !m.full && m.areaRatio < OFFCUT_THRESHOLD);
     return pairOffcuts(offcuts, PAIRING_THRESHOLD);
   }, [visibleMats]);
 
-  // 🆕 매트 → 페어 번호 매핑
   const matToPair = new Map();
   pairing.pairs.forEach((pair, idx) => {
     matToPair.set(matKey(pair.a), idx + 1);
     matToPair.set(matKey(pair.b), idx + 1);
   });
 
-  // 통계
   const totalMats = visibleMats.length;
   const fullMats = visibleMats.filter((m) => m.full).length;
   const cutMats = totalMats - fullMats;
   const excludedCount = excludedMatKeys.length;
-
-  // 🆕 짜투리 통계
   const offcutsCount = pairing.pairs.length * 2 + pairing.unpaired.length;
   const pairsCount = pairing.pairs.length;
   const unpairedOffcutsCount = pairing.unpaired.length;
-  const bigCutsCount = cutMats - offcutsCount; // 큰 재단장 (50% 이상)
-
-  // 🆕 실제 발주 매트 수 = 온장 + 큰 재단장 + 페어 수 + 외톨이 짜투리
+  const bigCutsCount = cutMats - offcutsCount;
   const actualOrderMats = fullMats + bigCutsCount + pairsCount + unpairedOffcutsCount;
   const savedMats = totalMats - actualOrderMats;
 
   const areaM2 = polygonArea(points) / (pxPerMeter * pxPerMeter);
   const netAreaM2 = areaM2;
-  // 로스율은 실제 발주 기준
   const actualMatAreaM2 = actualOrderMats * 1.0;
   const lossRate = actualOrderMats > 0 ? Math.max(0, ((actualMatAreaM2 - netAreaM2) / actualMatAreaM2) * 100) : 0;
 
@@ -431,26 +442,27 @@ function PuzzleMatLayoutApp() {
   };
 
   const handleCanvasClick = (evt) => {
-    if (wasDraggingRef.current) return; // 🆕 드래그 직후 클릭 무시
+    if (wasDraggingRef.current) return;
+    if (isViewMode) return; // view 모드는 캔버스 클릭으로 점 추가 안 됨
     if (mode === "idle" || mode === "exclude") return;
     const p = getSvgPoint(evt);
     if (mode === "scale") setScalePoints((prev) => (prev.length >= 2 ? [p] : [...prev, p]));
     if (mode === "draw") {
       setPoints((prev) => [...prev, p]);
-      setSelectedIdx(points.length); // 🆕 새 점 자동 선택 (다음 인덱스)
+      setSelectedIdx(points.length);
     }
   };
 
-  // 🆕 점 mousedown - 드래그 시작 + 선택
   const handlePointMouseDown = (e, i) => {
-    if (mode !== "draw") return;
+    if (mode !== "draw" || isViewMode) return;
     e.stopPropagation();
     setDraggingIdx(i);
     setSelectedIdx(i);
   };
 
+  // 🆕 매트 클릭 - view 모드에서도 항상 토글 가능
   const toggleMatExclude = (m, e) => {
-    if (mode !== "exclude") return;
+    if (!isViewMode && mode !== "exclude") return;
     e.stopPropagation();
     const key = matKey(m);
     setExcludedMatKeys((prev) =>
@@ -489,6 +501,12 @@ function PuzzleMatLayoutApp() {
     setExcludedMatKeys([]);
   };
 
+  // 🆕 전체화면 보기 모드 새 탭 열기
+  const openViewerTab = () => {
+    const url = window.location.pathname + '?view=1';
+    window.open(url, '_blank');
+  };
+
   const exportJson = () => {
     const payload = {
       version: "0.7",
@@ -503,14 +521,8 @@ function PuzzleMatLayoutApp() {
         actualOrderMats, savedMats,
         estimatedLossRate: Number(lossRate.toFixed(1)),
         gridOffset: { x: optimized.ox, y: optimized.oy },
-        mats: matsWithDisplay.map(m => ({
-          ...m,
-          pairNumber: matToPair.get(matKey(m)) || null,
-        })),
-        pairs: pairing.pairs.map((p, idx) => ({
-          pairNumber: idx + 1,
-          mats: [matKey(p.a), matKey(p.b)],
-        })),
+        mats: matsWithDisplay.map(m => ({ ...m, pairNumber: matToPair.get(matKey(m)) || null })),
+        pairs: pairing.pairs.map((p, idx) => ({ pairNumber: idx + 1, mats: [matKey(p.a), matKey(p.b)] })),
       },
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -530,25 +542,116 @@ function PuzzleMatLayoutApp() {
     { label: "150%", value: 1.5 },
   ];
 
-  // 🆕 매트 색상 결정 (도면 가독성 위해 더 투명하게)
   const getMatColors = (m) => {
     if (m.excluded) return { fill: "rgba(148,163,184,0.10)", stroke: "#94a3b8", dash: "5 4" };
     if (m.full) return { fill: "rgba(34,197,94,0.12)", stroke: "#16a34a", dash: "0" };
-    // 짜투리 (50% 미만)
     if (m.areaRatio < OFFCUT_THRESHOLD) {
       const isPaired = matToPair.has(matKey(m));
       if (isPaired && showPairing) {
-        // 페어링된 짜투리: 노란색 (재활용 가능)
         return { fill: "rgba(250,204,21,0.18)", stroke: "#ca8a04", dash: "0" };
       } else {
-        // 외톨이 짜투리: 연한 주황
         return { fill: "rgba(249,115,22,0.10)", stroke: "#fb923c", dash: "3 2" };
       }
     }
-    // 큰 재단장
     return { fill: "rgba(249,115,22,0.13)", stroke: "#ea580c", dash: "0" };
   };
 
+  // ════════════════════════════════════════════════════
+  // 🆕 VIEW MODE (전체화면 보기 모드) - 사이드바 없음
+  // ════════════════════════════════════════════════════
+  if (isViewMode) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        {/* 간소화된 헤더 */}
+        <div className="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-bold">📐 시공 보기 모드</h1>
+            <div className="text-xs text-slate-500">매트 클릭 = 제외/복구</div>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 text-sm bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+              <span>실제 발주 <b className="text-amber-900 text-base">{actualOrderMats}장</b></span>
+              <span className="text-slate-400">|</span>
+              <span>면적 <b>{netAreaM2.toFixed(2)}㎡</b></span>
+              <span className="text-slate-400">|</span>
+              <span>제외 <b>{excludedCount}</b></span>
+            </div>
+            <div className="flex gap-1">
+              <Button variant="outline" onClick={() => setZoom(z => Math.max(0.4, z - 0.1))}>−</Button>
+              <Button variant="outline" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>+</Button>
+              <Button variant="outline" onClick={() => setShowNumbers(v => !v)}>🔢</Button>
+            </div>
+            <a href={window.location.pathname} className="text-sm text-blue-600 hover:underline">← 편집 모드</a>
+          </div>
+        </div>
+
+        {/* 풀스크린 캔버스 */}
+        <div className="overflow-auto bg-white" style={{ height: 'calc(100vh - 60px)' }}>
+          <svg
+            ref={svgRef}
+            width={1400 * zoom}
+            height={1000 * zoom}
+            viewBox="0 0 1400 1000"
+            className="cursor-default"
+          >
+            <defs>
+              <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect width="1400" height="1000" fill="url(#smallGrid)" />
+            {image && (
+              <image href={image} x="80" y="60" width={imageDims.w} height={imageDims.h} opacity="0.6" />
+            )}
+            {matsWithDisplay.map((m) => {
+              const colors = getMatColors(m);
+              const pairNum = matToPair.get(matKey(m));
+              const isPaired = pairNum && showPairing;
+              return (
+                <g
+                  key={`m-${m.x}-${m.y}`}
+                  onClick={(e) => toggleMatExclude(m, e)}
+                  className="mat-clickable"
+                >
+                  <rect
+                    x={m.x} y={m.y}
+                    width={matPx} height={matPx}
+                    fill={colors.fill}
+                    stroke={colors.stroke}
+                    strokeWidth="2"
+                    strokeDasharray={colors.dash}
+                  />
+                  {m.excluded && (
+                    <>
+                      <line x1={m.x + 12} y1={m.y + 12} x2={m.x + matPx - 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
+                      <line x1={m.x + matPx - 12} y1={m.y + 12} x2={m.x + 12} y2={m.y + matPx - 12} stroke="#94a3b8" strokeWidth="2.5" />
+                      <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="600" fill="#64748b" style={{pointerEvents:"none"}}>제외</text>
+                    </>
+                  )}
+                  {!m.excluded && showNumbers && (
+                    <text x={m.x + matPx / 2} y={m.y + matPx / 2} textAnchor="middle" dominantBaseline="middle" fontSize="14" fontWeight="700" fill="#0f172a" style={{pointerEvents:"none"}}>{m.displayNumber}</text>
+                  )}
+                  {!m.excluded && isPaired && (
+                    <g style={{pointerEvents:"none"}}>
+                      <rect x={m.x + matPx - 24} y={m.y + 4} width="20" height="16" rx="3" fill="#ca8a04"/>
+                      <text x={m.x + matPx - 14} y={m.y + 12} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill="white">P{pairNum}</text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+            {points.length >= 3 && (
+              <polygon points={polygonStr} fill="rgba(59,130,246,0.10)" stroke="#2563eb" strokeWidth="3" />
+            )}
+          </svg>
+        </div>
+      </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════════
+  // EDIT MODE (편집 모드 - 기본)
+  // ════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-slate-50 p-3 md:p-4 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -563,6 +666,12 @@ function PuzzleMatLayoutApp() {
               📤 도면 업로드
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             </label>
+            {/* 🆕 전체화면 보기 버튼 */}
+            {points.length >= 3 && (
+              <Button variant="outline" onClick={openViewerTab} className="bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100">
+                📺 전체화면 보기
+              </Button>
+            )}
             <Button variant="outline" onClick={exportJson}>💾 결과 저장</Button>
             <Button variant="outline" onClick={undo}>↩️ 취소</Button>
             <Button variant="destructive" onClick={resetAll}>🗑️ 초기화</Button>
@@ -627,22 +736,12 @@ function PuzzleMatLayoutApp() {
                     />
                     <span className="text-sm">cm</span>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">최적화 기준</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 mt-1 text-base"
-                  >
-                    <option value="fewCuts">재단장 적게</option>
-                    <option value="fewMats">총 매트 적게</option>
-                  </select>
+                  <p className="text-xs text-slate-500 mt-1">매트가 벽 안쪽으로 더 들어가는 여유. 추천: 1~3cm</p>
                 </div>
 
                 {mode === "draw" && (
                   <Button className="w-full" variant="outline" onClick={finishDraw} disabled={points.length < 3}>
-                    ✏️ 시공 영역 그리기 종료
+                    🔒 그리기 종료 (잠금)
                   </Button>
                 )}
                 {mode === "exclude" && excludedCount > 0 && (
@@ -653,7 +752,7 @@ function PuzzleMatLayoutApp() {
               </CardContent>
             </Card>
 
-            {/* 🆕 실제 발주 카드 (대장의 핵심 비즈니스 지표!) */}
+            {/* 실제 발주 매트 카드 */}
             {points.length >= 3 && (
               <Card className="border-2 border-amber-300 bg-amber-50/50">
                 <CardContent className="space-y-2 p-4">
@@ -669,34 +768,6 @@ function PuzzleMatLayoutApp() {
                   <div className="text-xs text-slate-600 pt-1 border-t border-amber-200">
                     화면 표시 매트: {totalMats}장 | 절약: {savedMats}장
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 자동 비교 카드 */}
-            {points.length >= 3 && (
-              <Card>
-                <CardContent className="space-y-2 p-4">
-                  <h2 className="font-semibold text-sm">⚖️ 두 모드 비교 (표시 매트 기준)</h2>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div
-                      className={`rounded-lg p-2 cursor-pointer transition ${priority === "fewCuts" ? "bg-blue-100 border-2 border-blue-500" : "bg-slate-50 border-2 border-transparent hover:bg-slate-100"}`}
-                      onClick={() => setPriority("fewCuts")}
-                    >
-                      <div className="font-semibold text-slate-800">재단장 적게</div>
-                      <div className="text-slate-600 mt-1">총 {optimizedFewCuts.mats.length}장</div>
-                      <div className="text-orange-700">재단 {optimizedFewCuts.cutCount}장</div>
-                    </div>
-                    <div
-                      className={`rounded-lg p-2 cursor-pointer transition ${priority === "fewMats" ? "bg-purple-100 border-2 border-purple-500" : "bg-slate-50 border-2 border-transparent hover:bg-slate-100"}`}
-                      onClick={() => setPriority("fewMats")}
-                    >
-                      <div className="font-semibold text-slate-800">총 매트 적게</div>
-                      <div className="text-slate-600 mt-1">총 {optimizedFewMats.mats.length}장</div>
-                      <div className="text-orange-700">재단 {optimizedFewMats.cutCount}장</div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-500">카드 클릭으로 모드 전환</div>
                 </CardContent>
               </Card>
             )}
@@ -762,7 +833,6 @@ function PuzzleMatLayoutApp() {
                 </div>
                 <div className="text-xs text-slate-500">현재 줌: {(zoom * 100).toFixed(0)}%</div>
 
-                {/* 🆕 색상 범례 */}
                 <div className="text-xs space-y-1 pt-2 border-t border-slate-200">
                   <div className="font-semibold text-slate-700 mb-1">색상 안내</div>
                   <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-300 border border-emerald-600"></span>온장 (100%)</div>
@@ -840,7 +910,6 @@ function PuzzleMatLayoutApp() {
                             style={{pointerEvents:"none"}}
                           >{m.displayNumber}</text>
                         )}
-                        {/* 🆕 페어 번호 표시 (우측 상단 코너) */}
                         {!m.excluded && isPaired && (
                           <g style={{pointerEvents:"none"}}>
                             <rect x={m.x + matPx - 24} y={m.y + 4} width="20" height="16" rx="3" fill="#ca8a04"/>
@@ -862,7 +931,6 @@ function PuzzleMatLayoutApp() {
                     const isFirst = i === 0;
                     return (
                       <g key={`p-${i}`}>
-                        {/* 선택 표시 (외곽 하이라이트) */}
                         {isSelected && (
                           <circle cx={p.x} cy={p.y} r="14" fill="none" stroke="#dc2626" strokeWidth="2" strokeDasharray="3 3" />
                         )}
@@ -904,7 +972,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v1.6.1 · 잠금 상태에서 마우스 드래그 + 화살표 키로 전체 이동 · 작업 자동 저장
+          돌봄매트 시공 도구 v1.7 · 단순화 + 전체화면 보기 모드 + 탭 자동 동기화
         </div>
       </div>
     </div>
