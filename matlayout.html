@@ -33,6 +33,7 @@ const { useMemo, useRef, useState, useEffect } = React;
 
 const DEFAULT_SCALE = 80;
 const STORAGE_KEY = 'puzzleMatLayout_v3';
+const MAT_SIZE_M = 0.99; // 매트 실제 크기 (미터) - 99cm
 const OFFCUT_THRESHOLD = 0.5;
 const PAIRING_THRESHOLD = 0.95;
 const AREA_SAMPLES = 10;
@@ -484,7 +485,7 @@ function PuzzleMatLayoutApp() {
     };
   }, [mode, points.length]);
 
-  const matPx = pxPerMeter;
+  const matPx = pxPerMeter * MAT_SIZE_M; // 매트 한 변의 픽셀 (99cm 기준)
   const overcutPx = 0; // 밀착 여유 제거 - 알고리즘이 100가지 격자 위치 시도하므로 불필요
 
   const optimized = useMemo(
@@ -1315,7 +1316,7 @@ function PuzzleMatLayoutApp() {
         </div>
 
         <div className="text-center text-xs text-slate-400 py-2">
-          돌봄매트 시공 도구 v2.7
+          돌봄매트 시공 도구 v2.8 · 매트 크기 99cm
         </div>
       </div>
     </div>
