@@ -526,8 +526,8 @@ let delIdCounter=0;
 let orderInputs={};  // 발주서 입력 데이터 유지용
 let orderMonth=new Date().getMonth()+1;  // 발주서 월
 let orderYear=new Date().getFullYear();
-const ORDER_CL={'모던':'#9ca3af','마블':'#3b82f6','베이지':'#d4a574'};
-const ORDER_COLORS={'500':['마블','모던'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
+const ORDER_CL={'모던':'#9ca3af','마블':'#3b82f6','코튼':'#22c55e','베이지':'#d4a574'};
+const ORDER_COLORS={'500':['마블','모던','코튼'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
 const ORDER_SHAPES={'500':['센터','사이드','코너','10T'],'1000_22':['센터','사이드','코너','10T'],'1000_17':['센터','사이드','코너']};
 
 function initDefaultDeliveries(){
@@ -566,8 +566,17 @@ function saveOrderInputs(){
       const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
       (ORDER_COLORS[p.id]||[]).forEach(c=>{
         shapes.forEach(t=>{
-          const el=document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t);
-          if(el&&el.value)orderInputs['oc_'+d.id+'_'+p.id+'_'+c+'_'+t]=el.value;
+          const key='oc_'+d.id+'_'+p.id+'_'+c+'_'+t;
+          const el=document.getElementById(key);
+          if(el){
+            // 🛠 버그 수정: 빈 값/0이면 저장된 옛날값을 명시적으로 삭제
+            // (그래야 탭 이동 후 돌아왔을 때 옛날 값이 부활하지 않음)
+            if(el.value && el.value!=='0'){
+              orderInputs[key]=el.value;
+            } else {
+              delete orderInputs[key];
+            }
+          }
         });
       });
     });
