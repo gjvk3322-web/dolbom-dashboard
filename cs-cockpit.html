@@ -428,6 +428,108 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   from{opacity:0; transform:translateY(6px)}
   to{opacity:1; transform:translateY(0)}
 }
+/* ═══ 광고 순위 카드 (네이버 SERP 추적) ═══ */
+.adrank-meta{
+  font-size:11.5px; color:var(--muted); margin-bottom:14px;
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+}
+.adrank-update{font-weight:650; color:var(--soft)}
+.adrank-kpis{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+  margin-bottom:18px;
+}
+.adrank-kpi{
+  background:var(--warm); border-radius:var(--radius-sm);
+  padding:14px 16px; text-align:center;
+}
+.adrank-kpi-label{
+  font-size:10.5px; font-weight:680; letter-spacing:0.05em;
+  color:var(--muted); margin-bottom:7px; text-transform:uppercase;
+}
+.adrank-kpi-value{
+  font-size:26px; font-weight:800; letter-spacing:-0.035em;
+  font-variant-numeric:tabular-nums; line-height:1;
+}
+.adrank-kpi.green{background:var(--green-bg)}
+.adrank-kpi.green .adrank-kpi-value{color:var(--green-dk)}
+.adrank-kpi.green .adrank-kpi-label{color:var(--green-dk); opacity:0.75}
+.adrank-kpi.blue{background:var(--accent-bg)}
+.adrank-kpi.blue .adrank-kpi-value{color:var(--accent-dk)}
+.adrank-kpi.blue .adrank-kpi-label{color:var(--accent-dk); opacity:0.75}
+.adrank-kpi.red{background:var(--red-bg)}
+.adrank-kpi.red .adrank-kpi-value{color:var(--red-dk)}
+.adrank-kpi.red .adrank-kpi-label{color:var(--red-dk); opacity:0.75}
+
+.adrank-list{
+  display:flex; flex-direction:column; gap:6px; margin-bottom:16px;
+}
+.adrank-row{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; border-radius:var(--radius-sm);
+  background:var(--warm); border-left:3px solid var(--muted);
+  transition:transform 0.15s var(--ease);
+}
+.adrank-row:hover{transform:translateX(2px)}
+.adrank-row.r-top{border-left-color:var(--green); background:var(--green-bg)}
+.adrank-row.r-mid{border-left-color:var(--gold); background:var(--gold-bg)}
+.adrank-row.r-low{border-left-color:#c8a55a; background:rgba(200,165,90,0.08)}
+.adrank-row.r-none{border-left-color:var(--red); background:var(--red-bg)}
+.adrank-name{
+  font-size:13.5px; font-weight:700; color:var(--text); flex:1;
+  display:flex; align-items:center; gap:5px; min-width:0;
+}
+.adrank-info{font-size:11px; color:var(--muted); flex-shrink:0}
+.adrank-pos{
+  font-size:13px; font-weight:780; min-width:50px; text-align:right;
+  font-variant-numeric:tabular-nums; flex-shrink:0;
+}
+.adrank-row.r-top .adrank-pos{color:var(--green-dk)}
+.adrank-row.r-mid .adrank-pos{color:var(--gold-dk)}
+.adrank-row.r-low .adrank-pos{color:#8a6e2e}
+.adrank-row.r-none .adrank-pos{color:var(--red-dk); font-weight:800}
+.adrank-star{font-size:11px; flex-shrink:0; margin-left:auto}
+
+.adrank-comp{
+  background:var(--purple-bg); border-radius:var(--radius-sm);
+  padding:14px 16px;
+}
+.adrank-comp-head{
+  font-size:10.5px; font-weight:680; letter-spacing:0.05em;
+  color:var(--purple-dk); margin-bottom:10px; text-transform:uppercase;
+}
+.adrank-comp-row{
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  padding:6px 0; font-size:12.5px;
+}
+.adrank-comp-row + .adrank-comp-row{
+  border-top:1px solid rgba(168,158,189,0.25); padding-top:10px; margin-top:4px;
+}
+.adrank-comp-key{color:var(--soft); font-weight:600; flex-shrink:0}
+.adrank-comp-val{
+  color:var(--text); font-weight:700; text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+.adrank-loading,.adrank-error,.adrank-empty{
+  text-align:center; padding:36px 20px; font-size:12.5px; border-radius:var(--radius-sm);
+}
+.adrank-loading{color:var(--muted); background:var(--warm)}
+.adrank-error{color:var(--red-dk); background:var(--red-bg)}
+.adrank-empty{color:var(--soft); background:var(--warm)}
+
+@media(max-width:768px){
+  .adrank-kpis{gap:8px}
+  .adrank-kpi{padding:12px 10px}
+  .adrank-kpi-value{font-size:22px}
+  .adrank-kpi-label{font-size:9.5px}
+  .adrank-row{padding:10px 12px; gap:8px}
+  .adrank-name{font-size:12.5px}
+  .adrank-info{font-size:10px}
+  .adrank-pos{font-size:12.5px; min-width:46px}
+  .adrank-comp{padding:12px 14px}
+  .adrank-comp-row{font-size:12px}
+}
+
 .scorecard,.section,.alert{animation:fadeUp 0.5s var(--ease) backwards}
 .scorecard:nth-child(1){animation-delay:0.05s}
 .scorecard:nth-child(2){animation-delay:0.1s}
@@ -1184,6 +1286,31 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
 <!-- ═══ 영역 레이블 · 4줄 ═══ -->
 <div class="area-label">EXTERNAL · 외부 데이터 연동</div>
+
+<!-- ┌────────────────────────────────────────────────────────┐
+     │ 영역 2-A · 네이버 광고 순위 (col-12) · 2026-04-30      │
+     └────────────────────────────────────────────────────────┘ -->
+<div class="grid">
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-icon icon-purple">🎯</span>
+        네이버 광고 순위
+        <span class="badge bg-gray">실시간</span>
+      </div>
+      <button class="section-more" onclick="loadAdRank()">새로고침 ↻</button>
+    </div>
+
+    <div class="adrank-meta">
+      <span class="adrank-update" id="adrankUpdate">📡 데이터 로드 중...</span>
+      <span style="color:var(--muted)">2시간마다 자동 수집 (08~22시)</span>
+    </div>
+
+    <div id="adrankContent">
+      <div class="adrank-loading">광고 순위 데이터를 가져오는 중...</div>
+    </div>
+  </div>
+</div>
 
 <!-- ┌────────────────────────────────────────────────────────┐
      │ 영역 2 · Looker Studio iframe (col-12)                 │
@@ -1995,7 +2122,167 @@ window.addEventListener('DOMContentLoaded', () => {
   loadConversionStats();
   loadMonthlyFunnel();
   loadPhoneStats();
+  loadAdRank();           // 🆕 네이버 광고 순위 (2026-04-30)
 });
+
+/* ═══════════════════════════════════════════════════════════
+   📊 네이버 광고 순위 추적 (2026-04-30)
+   ═══════════════════════════════════════════════════════════
+   데이터 출처: Google Sheets [광고순위] 시트 직접 CSV 읽기
+   자동 수집: 매일 8회 (08, 10, 12, 14, 16, 18, 20, 22시)
+   페이지 열 때마다 가장 최근 1회분(8개 키워드) 표시
+   ═══════════════════════════════════════════════════════════ */
+const ADRANK_SHEET_ID = '1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+const ADRANK_GID = '1204245366';
+const ADRANK_OUR_BRAND = '돌봄매트';
+
+// CSV 파싱 (큰따옴표 처리 포함)
+function parseAdRankCSV(text){
+  const rows = [];
+  const lines = text.split(/\r?\n/);
+  for(const line of lines){
+    if(!line.trim()) continue;
+    const row = [];
+    let cur = '', inQuote = false;
+    for(let i = 0; i < line.length; i++){
+      const c = line[i];
+      if(c === '"'){
+        if(inQuote && line[i+1] === '"'){ cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if(c === ',' && !inQuote){
+        row.push(cur); cur = '';
+      } else cur += c;
+    }
+    row.push(cur);
+    rows.push(row);
+  }
+  return rows;
+}
+
+async function loadAdRank(){
+  const content = document.getElementById('adrankContent');
+  const update = document.getElementById('adrankUpdate');
+  if(!content) return;
+
+  content.innerHTML = '<div class="adrank-loading">광고 순위 데이터를 가져오는 중...</div>';
+  update.textContent = '📡 로딩 중...';
+
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${ADRANK_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${ADRANK_GID}&t=${Date.now()}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const csv = await res.text();
+    const rows = parseAdRankCSV(csv);
+
+    if(rows.length < 2){
+      content.innerHTML = '<div class="adrank-empty">📭 아직 데이터가 없습니다 (다음 자동 실행: 매일 08:00)</div>';
+      update.textContent = '데이터 없음';
+      return;
+    }
+
+    // 헤더 제외, 유효한 행만 (날짜 + 키워드 있음)
+    const dataRows = rows.slice(1).filter(r => r[0] && r[2]);
+    if(dataRows.length === 0){
+      content.innerHTML = '<div class="adrank-empty">📭 아직 데이터가 없습니다</div>';
+      update.textContent = '데이터 없음';
+      return;
+    }
+
+    // 가장 최근 시간 (마지막 행 기준)
+    const lastRow = dataRows[dataRows.length - 1];
+    const lastDate = lastRow[0];
+    const lastTime = lastRow[1];
+
+    // 가장 최근 시간의 데이터만
+    const latest = dataRows.filter(r => r[0] === lastDate && r[1] === lastTime);
+
+    // KPI 계산
+    let top1 = 0, top3 = 0, none = 0;
+    latest.forEach(r => {
+      const rank = (r[3] || '').trim();
+      if(rank === '미노출' || rank === '') none++;
+      else {
+        const n = parseInt(rank);
+        if(n === 1) top1++;
+        if(!isNaN(n) && n <= 3) top3++;
+      }
+    });
+
+    // 경쟁사 분석 (1~3위 브랜드 등장 횟수)
+    const competitors = {};
+    latest.forEach(r => {
+      [r[5], r[7], r[9]].forEach(brand => {
+        const b = (brand || '').trim();
+        if(b && b !== ADRANK_OUR_BRAND && b !== '(브랜드명 없음)' && b !== ''){
+          competitors[b] = (competitors[b] || 0) + 1;
+        }
+      });
+    });
+    const sortedComp = Object.entries(competitors).sort((a,b) => b[1] - a[1]);
+    const topComp = sortedComp[0];
+    const others = sortedComp.slice(1, 5).map(c => c[0]).join(', ');
+
+    // HTML 생성
+    let html = '';
+
+    // KPI 3개
+    html += '<div class="adrank-kpis">';
+    html += `<div class="adrank-kpi green"><div class="adrank-kpi-label">⭐ 1위</div><div class="adrank-kpi-value">${top1}</div></div>`;
+    html += `<div class="adrank-kpi blue"><div class="adrank-kpi-label">✅ TOP 3</div><div class="adrank-kpi-value">${top3}</div></div>`;
+    html += `<div class="adrank-kpi red"><div class="adrank-kpi-label">❌ 미노출</div><div class="adrank-kpi-value">${none}</div></div>`;
+    html += '</div>';
+
+    // 키워드 리스트 (1위 → 미노출 순으로 정렬)
+    const sorted = [...latest].sort((a,b) => {
+      const ra = (a[3] || '').trim();
+      const rb = (b[3] || '').trim();
+      const na = (ra === '미노출' || ra === '') ? 999 : parseInt(ra);
+      const nb = (rb === '미노출' || rb === '') ? 999 : parseInt(rb);
+      return na - nb;
+    });
+
+    html += '<div class="adrank-list">';
+    sorted.forEach(r => {
+      const kw = r[2] || '';
+      const rank = (r[3] || '').trim();
+      const ads = r[4] || '0';
+      let cls, label, star = '';
+      if(rank === '미노출' || rank === ''){
+        cls = 'r-none'; label = '미노출';
+      } else {
+        const n = parseInt(rank);
+        if(n === 1){ cls = 'r-top'; label = '1위'; star = '<span class="adrank-star">⭐</span>'; }
+        else if(n <= 3){ cls = 'r-mid'; label = n + '위'; }
+        else { cls = 'r-low'; label = n + '위'; }
+      }
+      html += `<div class="adrank-row ${cls}">`;
+      html += `<span class="adrank-name">${kw}${star}</span>`;
+      html += `<span class="adrank-info">${ads}개 광고</span>`;
+      html += `<span class="adrank-pos">${label}</span>`;
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // 경쟁사 분석
+    if(topComp){
+      html += '<div class="adrank-comp">';
+      html += '<div class="adrank-comp-head">⚔️ 메인 경쟁사 동향</div>';
+      html += `<div class="adrank-comp-row"><span class="adrank-comp-key">${topComp[0]}</span><span class="adrank-comp-val">${topComp[1]} / ${latest.length}개 키워드 노출</span></div>`;
+      if(others){
+        html += `<div class="adrank-comp-row"><span class="adrank-comp-key">기타 경쟁사</span><span class="adrank-comp-val" style="font-size:11.5px">${others}</span></div>`;
+      }
+      html += '</div>';
+    }
+
+    content.innerHTML = html;
+    update.textContent = `📅 ${lastDate} ${lastTime} 기준 · ${latest.length}개 키워드`;
+
+  } catch(e){
+    console.error('광고순위 로드 실패:', e);
+    content.innerHTML = `<div class="adrank-error">⚠️ 데이터 로드 실패: ${e.message}</div>`;
+    update.textContent = '⚠️ 로드 실패';
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════
    📌 TODO (Phase 2에서 실제 데이터 연결)
