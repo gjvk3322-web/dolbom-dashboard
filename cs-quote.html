@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>돌봄매트 상담 견적 (직원용)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { overflow-x: hidden; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: #f5f3ee;
+  min-height: 100vh;
+  color: #1a1a1a;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header {
+  max-width: 1280px; margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 4px;
+}
+.header-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.header-badge {
+  background: #1a1a1a; color: #fff; font-size: 10px;
+  padding: 3px 8px; border-radius: 4px; letter-spacing: 1px; font-weight: 600;
+}
+.header-sub { font-size: 11px; color: #999; letter-spacing: 0.5px; }
+
+.layout {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 380px 1fr;
+  gap: 14px; align-items: start;
+}
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 10px; } }
+
+.card {
+  background: #fff; border-radius: 14px; padding: 14px;
+  margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.card-title {
+  font-size: 13px; font-weight: 700; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px; color: #1a1a1a;
+}
+.card-title .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; background: #1a1a1a; color: #fff;
+  font-size: 10px; border-radius: 50%; font-weight: 700;
+}
+.card-title .sub { font-size: 10px; color: #999; font-weight: 400; margin-left: auto; }
+
+.input-row { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
+.pyeong-input-box {
+  display: flex; align-items: center; gap: 4px;
+  border: 1.5px solid #2E7D32; border-radius: 8px;
+  padding: 6px 10px; background: #fff; height: 38px; flex: 1; min-width: 0;
+}
+.pyeong-input-box input {
+  width: 100%; border: none; font-size: 16px; font-weight: 700;
+  text-align: center; font-family: inherit; outline: none; color: #2E7D32; min-width: 0;
+}
+.pyeong-input-box span { font-size: 13px; color: #2E7D32; font-weight: 600; flex-shrink: 0; }
+.pyeong-quick {
+  padding: 0 10px; height: 38px; border: 1px solid #e0ddd6;
+  border-radius: 8px; background: #fff; font-size: 12px; font-family: inherit;
+  cursor: pointer; color: #666; transition: all .15s; flex-shrink: 0; font-weight: 600;
+}
+.pyeong-quick:hover { border-color: #2E7D32; color: #2E7D32; }
+.pyeong-quick.active { background: #2E7D32; color: #fff; border-color: #2E7D32; }
+
+.toggle-row { display: flex; gap: 8px; margin-top: 10px; }
+.toggle-box { flex: 1; border: 1.5px solid #e0ddd6; border-radius: 8px; padding: 6px 8px; background: #fff; }
+.toggle-box-label { font-size: 10px; color: #999; display: block; text-align: center; margin-bottom: 4px; font-weight: 500; }
+.toggle-box-btns { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid #e0ddd6; }
+.tb-btn { flex: 1; padding: 7px 4px; border: none; background: #fff; font-size: 11px; font-family: inherit; cursor: pointer; color: #666; transition: all .15s; }
+.tb-btn.active { background: #2E7D32; color: #fff; font-weight: 600; }
+
+.scope-list { display: flex; flex-direction: column; gap: 5px; }
+.scope-btn {
+  padding: 10px; border: 1.5px solid #e0ddd6; border-radius: 8px;
+  background: #fff; font-size: 12px; font-family: inherit;
+  cursor: pointer; transition: all .15s; color: #666; text-align: center;
+}
+.scope-btn.active { border-color: #2E7D32; background: #E8F5E9; color: #2E7D32; font-weight: 600; }
+
+.small-room-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.small-room-counter { display: flex; align-items: center; gap: 8px; }
+.sr-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid #e0ddd6; background: #fff;
+  font-size: 16px; font-weight: 600; color: #666;
+  cursor: pointer; font-family: inherit;
+}
+.sr-btn:active { transform: scale(.92); }
+.sr-btn.disabled { opacity: .3; cursor: not-allowed; }
+.sr-count {
+  font-size: 18px; font-weight: 700; color: #2E7D32;
+  min-width: 24px; text-align: center; font-family: 'JetBrains Mono', monospace;
+}
+
+.dim-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; padding: 8px 0; font-size: 12px; font-weight: 600; color: #666;
+}
+.dim-toggle .arrow { transition: transform .2s; }
+.dim-toggle.open .arrow { transform: rotate(180deg); }
+.dim-area { display: none; margin-top: 8px; }
+.dim-area.show { display: block; }
+.dim-room { margin-bottom: 8px; padding: 8px; background: #fafaf7; border-radius: 8px; }
+.dim-room-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.dim-room-name { font-size: 12px; font-weight: 600; color: #333; }
+.dim-room-remove {
+  font-size: 10px; color: #d32f2f; cursor: pointer;
+  padding: 2px 6px; border: 1px solid #f0c0c0; border-radius: 4px; background: #fff;
+}
+.dim-inputs { display: flex; gap: 4px; align-items: center; }
+.dim-input {
+  flex: 1; min-width: 0; padding: 7px 4px;
+  border: 1.5px solid #e0ddd6; border-radius: 6px;
+  font-size: 16px; font-family: 'JetBrains Mono', monospace; text-align: center;
+}
+.dim-input:focus { outline: none; border-color: #2E7D32; }
+.dim-add {
+  display: flex; justify-content: center; padding: 8px;
+  border: 1.5px dashed #d0cdc6; border-radius: 8px;
+  font-size: 11px; color: #999; cursor: pointer; margin-bottom: 8px;
+}
+.dim-mode-info {
+  background: #FFF8E1; border-left: 3px solid #FF8F00;
+  padding: 8px 10px; border-radius: 6px;
+  font-size: 11px; color: #6a4a00; margin-top: 8px; display: none;
+}
+.dim-mode-info.show { display: block; }
+
+.benefit-helper {
+  font-size: 10.5px; color: #999; line-height: 1.5;
+  background: #f9f7f2; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px;
+}
+.benefit-helper b { color: #2E7D32; }
+.benefit-item {
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 9px 6px; border-radius: 8px;
+  cursor: pointer; transition: all .15s; user-select: none;
+}
+.benefit-item:hover { background: #fafaf7; }
+.benefit-item.checked { background: #E8F5E9; }
+.benefit-check-box {
+  width: 20px; height: 20px;
+  border: 1.5px solid #d0cdc6; border-radius: 5px;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  margin-top: 1px; background: #fff; transition: all .15s;
+}
+.benefit-item.checked .benefit-check-box { background: #2E7D32; border-color: #2E7D32; }
+.benefit-item.checked .benefit-check-box::after {
+  content: '✓'; color: #fff; font-size: 13px; font-weight: 700;
+}
+.benefit-item.phase2 .benefit-check-box { border-color: #FF8F00; }
+.benefit-item.phase2.checked { background: #FFF8E1; }
+.benefit-item.phase2.checked .benefit-check-box { background: #FF8F00; border-color: #FF8F00; }
+.benefit-info-wrap { flex: 1; min-width: 0; }
+.benefit-name-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.benefit-name { font-size: 12.5px; font-weight: 600; color: #1a1a1a; }
+.benefit-discount-label {
+  font-size: 12px; font-weight: 700; color: #d32f2f;
+  flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
+}
+.benefit-item.phase2 .benefit-discount-label { color: #FF8F00; }
+.benefit-desc { font-size: 10.5px; color: #999; margin-top: 2px; }
+.benefit-divider {
+  font-size: 10px; color: #FF8F00; font-weight: 700;
+  margin: 8px 0 4px; padding: 0 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.benefit-divider::before { content: ''; flex: 0 0 12px; height: 1px; background: #FFB74D; }
+.benefit-divider::after { content: ''; flex: 1; height: 1px; background: #FFB74D; }
+
+.result-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 10px;
+}
+@media (max-width: 700px) { .result-grid { grid-template-columns: 1fr; } }
+
+/* 결제 안내 박스 */
+.payment-notice {
+  background: #E8F5E9;
+  border: 1px solid #A5D6A7;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #2E7D32;
+  line-height: 1.5;
+}
+.payment-notice b { color: #1B5E20; font-weight: 700; }
+@media (max-width: 460px) {
+  .payment-notice { font-size: 11px; padding: 9px 12px; }
+}
+
+/* 견적 기준 박스 */
+.quote-context {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid #2E7D32;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.quote-context-title {
+  font-size: 10.5px;
+  color: #999;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+.quote-context-row {
+  display: flex;
+  align-items: flex-start;
+  font-size: 12.5px;
+  margin-top: 5px;
+  line-height: 1.45;
+}
+.quote-context-row:first-child { margin-top: 0; }
+.quote-context-row .qc-icon {
+  width: 22px;
+  flex-shrink: 0;
+}
+.quote-context-row .qc-label {
+  color: #888;
+  min-width: 64px;
+  flex-shrink: 0;
+}
+.quote-context-row .qc-val {
+  font-weight: 600;
+  color: #1a1a1a;
+  flex: 1;
+}
+.quote-context-row .qc-val .small {
+  font-size: 11px;
+  color: #666;
+  font-weight: 400;
+  margin-left: 4px;
+}
+@media (max-width: 460px) {
+  .quote-context { padding: 10px 12px; }
+  .quote-context-row { font-size: 12px; }
+  .quote-context-row .qc-label { min-width: 58px; }
+}
+
+.product-card {
+  background: #fff; border-radius: 14px;
+  padding: 16px 12px 12px;
+  position: relative; border: 2px solid transparent; transition: all .2s;
+}
+.product-card.highlight { border-color: #2E7D32; box-shadow: 0 4px 16px rgba(46,125,50,.12); }
+.product-card.highlight-orange { border-color: #FF8F00; }
+.product-card.highlight-amber { border-color: #C79100; }
+
+.product-badge {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  background: #2E7D32; color: #fff;
+  font-size: 10px; padding: 3px 10px; border-radius: 6px;
+  font-weight: 700; white-space: nowrap; letter-spacing: 0.5px;
+}
+.product-badge.orange { background: #FF8F00; }
+.product-badge.amber { background: #C79100; }
+
+.product-name { font-size: 15px; font-weight: 800; text-align: center; letter-spacing: -0.3px; }
+.product-feature { font-size: 10px; color: #888; text-align: center; margin-top: 3px; margin-bottom: 12px; }
+.product-divider { height: 1px; background: #f0ede5; margin: 8px 0; }
+
+.product-qty {
+  text-align: center; font-family: 'JetBrains Mono', monospace;
+  font-size: 28px; font-weight: 700; color: #1a1a1a;
+  letter-spacing: -1px; line-height: 1;
+}
+.product-qty-label { text-align: center; font-size: 10px; color: #999; margin-top: 2px; }
+.product-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: #666; margin-top: 4px;
+}
+.product-row .val { font-weight: 600; color: #1a1a1a; font-family: 'JetBrains Mono', monospace; }
+
+.product-total { background: #f9f7f2; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; }
+.product-total-label { font-size: 10px; color: #999; font-weight: 500; }
+.product-total-val {
+  font-size: 17px; font-weight: 800; color: #2E7D32;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; margin-top: 2px;
+  white-space: nowrap;
+}
+.product-total-val .range-suffix {
+  font-size: 12px; font-weight: 600;
+  color: inherit; opacity: 0.65;
+  margin-left: 5px; letter-spacing: -0.2px;
+}
+.product-total-original {
+  font-size: 10px; color: #aaa; text-decoration: line-through;
+  margin-top: 1px; font-family: 'JetBrains Mono', monospace;
+}
+.product-install-note { font-size: 10px; color: #d32f2f; text-align: center; margin-top: 4px; font-weight: 500; }
+
+.product-phase2-box {
+  margin-top: 8px; padding: 8px 10px;
+  background: #FFF8E1; border-radius: 8px; border: 1px dashed #FFB74D;
+}
+.product-phase2-title { font-size: 9.5px; color: #FF8F00; font-weight: 700; margin-bottom: 4px; }
+.product-phase2-final { text-align: center; margin-top: 6px; padding-top: 6px; border-top: 1px solid #FFE0A0; }
+.product-phase2-final-label { font-size: 9px; color: #FF8F00; font-weight: 600; }
+.product-phase2-final-val {
+  font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800;
+  color: #FF8F00; margin-top: 2px; letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.product-phase2-final-val .range-suffix {
+  font-size: 11px; font-weight: 600;
+  color: inherit; opacity: 0.7;
+  margin-left: 5px; letter-spacing: -0.2px;
+}
+
+.chart-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+.chart-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.chart-row:last-child { margin-bottom: 0; }
+.chart-label {
+  width: 130px; font-size: 12px; font-weight: 600; flex-shrink: 0;
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+}
+.chart-bar-wrap {
+  flex: 1; min-height: 28px;
+  background: #f5f3ee; border-radius: 6px;
+  position: relative; overflow: visible;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 3px;
+}
+.chart-bar-track {
+  height: 22px; background: rgba(0,0,0,.04);
+  border-radius: 4px; position: relative; overflow: hidden;
+}
+.chart-bar {
+  height: 100%; background: linear-gradient(90deg, #2E7D32, #4CAF50);
+  border-radius: 4px; transition: width .4s cubic-bezier(.4,0,.2,1);
+  display: flex; align-items: center; padding: 0 8px;
+  justify-content: flex-end;
+}
+.chart-bar.bar-orange { background: linear-gradient(90deg, #FF8F00, #FFB74D); }
+.chart-bar.bar-amber { background: linear-gradient(90deg, #C79100, #FFD54F); }
+.chart-bar.bar-original {
+  background: linear-gradient(90deg, #b0aca5, #d0cdc6);
+}
+.chart-bar-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; }
+.chart-bar-val.original { color: #fff; opacity: 0.95; }
+.chart-bar-tag {
+  position: absolute;
+  left: 6px; top: 50%; transform: translateY(-50%);
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,.95);
+  letter-spacing: 0.3px;
+  pointer-events: none;
+}
+.chart-cheapest {
+  display: inline-block; background: #FFD54F; color: #5a4500;
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px;
+}
+.chart-saved-badge {
+  display: inline-block;
+  background: #E8F5E9; color: #2E7D32;
+  font-size: 9.5px; font-weight: 700;
+  padding: 2px 6px; border-radius: 3px;
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.reply-card { background: #FEF7D0; border: 1.5px solid #FFE066; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+.reply-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.reply-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.reply-text {
+  background: #fff; border-radius: 8px; padding: 12px;
+  font-size: 12px; line-height: 1.65; white-space: pre-wrap;
+  font-family: 'Noto Sans KR', sans-serif; color: #333;
+  max-height: 380px; overflow-y: auto; border: 1px solid #f0e8a8;
+}
+.reply-actions { display: flex; gap: 6px; margin-top: 10px; }
+.reply-btn {
+  flex: 1; padding: 12px; border: none; border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.reply-btn-primary { background: #1a1a1a; color: #fff; }
+.reply-btn-primary:hover { background: #333; }
+.reply-btn-primary:active { transform: scale(.98); }
+.reply-btn-secondary { background: #fff; color: #666; border: 1px solid #e0ddd6; }
+
+.empty-state {
+  background: #fff; border-radius: 14px;
+  padding: 50px 20px; text-align: center; color: #999;
+}
+.empty-state-icon { font-size: 36px; margin-bottom: 10px; }
+.empty-state-text { font-size: 13px; line-height: 1.6; }
+
+/* ===== 이미지 공유 카드 ===== */
+.share-card {
+  background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(46,125,50,.18);
+}
+.share-card-head {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; margin-bottom: 4px;
+}
+.share-card-desc {
+  font-size: 11px; opacity: 0.85; margin-bottom: 12px; line-height: 1.4;
+}
+.share-actions { display: flex; gap: 6px; }
+.share-btn {
+  flex: 1; padding: 12px; border: none; border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.share-btn-primary { background: #fff; color: #1B5E20; }
+.share-btn-primary:hover { background: #f5f3ee; }
+.share-btn-primary:active { transform: scale(.98); }
+.share-btn-primary:disabled { opacity: .6; cursor: wait; }
+.share-btn-secondary {
+  background: rgba(255,255,255,.15); color: #fff;
+  border: 1px solid rgba(255,255,255,.3);
+}
+.share-btn-secondary:hover { background: rgba(255,255,255,.25); }
+
+/* 캡처 시 임시 적용 */
+.capturing {
+  padding: 18px !important;
+  background: #f5f3ee !important;
+  border-radius: 16px;
+}
+.capture-header {
+  display: none;
+  text-align: center;
+  padding: 6px 0 18px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1B5E20;
+  letter-spacing: -0.5px;
+}
+.capturing .capture-header { display: block; }
+.capture-footer {
+  display: none;
+  text-align: center;
+  padding: 14px 0 4px;
+  font-size: 11px;
+  color: #888;
+  border-top: 1px solid #e0ddd6;
+  margin-top: 10px;
+}
+.capture-footer b { color: #2E7D32; }
+.capturing .capture-footer { display: block; }
+
+.toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(.9);
+  background: rgba(30,30,30,.95); color: #fff;
+  padding: 16px 28px; border-radius: 12px;
+  font-size: 14px; font-weight: 600; z-index: 999;
+  transition: all .25s; opacity: 0; pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,.25);
+}
+.toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+@media (max-width: 460px) {
+  body { padding: 10px; }
+  .header-title { font-size: 14px; }
+  .header-sub { display: none; }
+  .pyeong-quick { padding: 0 8px; font-size: 11px; }
+  .product-qty { font-size: 26px; }
+  .product-total-val { font-size: 17px; }
+  .chart-label { width: 110px; font-size: 11px; }
+  .reply-btn { font-size: 12px; padding: 11px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    🛠️ 돌봄매트 상담 견적
+    <span class="header-badge">STAFF</span>
+  </div>
+  <div class="header-sub">3가지 제품 동시 비교</div>
+</div>
+
+<div class="layout">
+  <div class="input-panel">
+
+    <div class="card">
+      <div class="card-title"><span class="num">1</span> 평수 입력</div>
+      <div class="input-row">
+        <div class="pyeong-input-box">
+          <input type="number" inputmode="numeric" id="pyeongInput" placeholder="0" oninput="recalculate()">
+          <span>평</span>
+        </div>
+        <button class="pyeong-quick" onclick="setPyeong(24, this)">24평</button>
+        <button class="pyeong-quick" onclick="setPyeong(30, this)">30평</button>
+        <button class="pyeong-quick" onclick="setPyeong(34, this)">34평</button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-box">
+          <span class="toggle-box-label">확장여부</span>
+          <div class="toggle-box-btns">
+            <button class="tb-btn active" id="tbExpand" onclick="setExpand(true)">확장형</button>
+            <button class="tb-btn" id="tbNoExpand" onclick="setExpand(false)">비확장</button>
+          </div>
+        </div>
+        <div class="toggle-box">
+          <span class="toggle-box-label">거실사이즈</span>
+          <div class="toggle-box-btns">
+            <button class="tb-btn" id="tbSizeNormal" onclick="setRoomSizeMode('normal')">평균</button>
+            <button class="tb-btn active" id="tbSizeRange" onclick="setRoomSizeMode('range')">평균~넓</button>
+            <button class="tb-btn" id="tbSizeWide" onclick="setRoomSizeMode('wide')">넓은편</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="num">2</span> 시공 범위</div>
+      <div class="scope-list">
+        <button class="scope-btn active" onclick="setScope(0, this)">거실 + 복도</button>
+        <button class="scope-btn" onclick="setScope(1, this)">거실 + 복도 + 아일랜드</button>
+        <button class="scope-btn" onclick="setScope(2, this)">거실 + 복도 + 주방</button>
+      </div>
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
+        <div class="small-room-row">
+          <div style="font-size:12px; font-weight:600; color:#666;">🚪 작은방 추가</div>
+          <div class="small-room-counter">
+            <button class="sr-btn disabled" id="srMinus" onclick="changeSmallRoom(-1)">−</button>
+            <span class="sr-count" id="srCount">0</span>
+            <button class="sr-btn" onclick="changeSmallRoom(1)">+</button>
+          </div>
+        </div>
+        <div id="smallRoomInfo" style="font-size:10px;color:#999;margin-top:6px;text-align:right">평수 비례 자동 환산 (1개당 500매트 N장 = 평수)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="dim-toggle" id="dimToggle" onclick="toggleDim()">
+        <span>📐 도면 치수로 정확하게 계산 <span style="font-size:9px;color:#2E7D32;background:#E8F5E9;padding:2px 6px;border-radius:4px;margin-left:4px;font-weight:700">정확↑</span></span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="dim-area" id="dimArea">
+        <div id="dimRooms"></div>
+        <div class="dim-add" onclick="addRoom()">+ 방 추가</div>
+        <div class="dim-mode-info" id="dimModeInfo">
+          ✓ 도면 치수가 입력되어 견적에 반영됩니다 (재단 여유 +10% 포함)
+        </div>
+        <div style="font-size:10px; color:#bbb; margin-top:6px;">도면에 적힌 mm 단위 치수를 입력하세요</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="num">3</span> 혜택 적용 <span class="sub">고객 상황에 맞춰 체크</span></div>
+      <div class="benefit-helper">
+        💡 <b>모든 혜택 기본 적용</b>되어 있어요. 고객이 해당 안 되는 항목만 체크 해제하세요.
+      </div>
+      <div id="benefitList"></div>
+    </div>
+  </div>
+
+  <div class="result-panel">
+    <div id="captureArea">
+      <div class="capture-header">
+        돌봄매트 견적표
+      </div>
+      <div id="quoteContext" class="quote-context" style="display:none">
+        <div id="quoteContextBody"></div>
+      </div>
+      <div id="paymentNotice" class="payment-notice" style="display:none">
+        💡 <b>실제 시공 후 들어간 갯수만큼 결제됩니다</b> · 견적은 예상 수량 기준이며 시공 시 ±변동 가능
+      </div>
+      <div id="resultGrid" class="result-grid"></div>
+
+      <div id="chartCard" class="chart-card" style="display:none">
+        <div class="card-title">총액 비교 <span id="chartSubLabel" class="sub">예상 체감가 기준</span></div>
+        <div id="chartContent"></div>
+      </div>
+
+      <div class="capture-footer">
+        <b>돌봄매트</b> · TPU 층간소음 매트 · 카카오톡 채널 문의 환영
+      </div>
+    </div>
+
+    <!-- 이미지 공유 카드 -->
+    <div id="shareCard" class="share-card" style="display:none">
+      <div class="share-card-head">🖼️ 견적표 이미지 만들기</div>
+      <div class="share-card-desc" id="shareCardDesc">
+        아래 버튼을 누르면 견적표가 이미지로 만들어집니다.<br>
+        📱 <b>모바일</b>: 이미지를 <b>길게 눌러서</b> 저장 → 카톡 채팅창에 첨부<br>
+        💻 <b>PC</b>: <b>다운로드</b> 버튼 또는 이미지 우클릭으로 저장
+      </div>
+      <div class="share-actions">
+        <button class="share-btn share-btn-primary" onclick="generatePreview()">
+          🖼️ 이미지 만들기
+        </button>
+        <button class="share-btn share-btn-secondary" onclick="downloadAsImage()">
+          💾 PC 다운로드
+        </button>
+      </div>
+
+      <div id="imagePreviewWrap" style="display:none; margin-top:14px;">
+        <div style="text-align:center; background:#f5f3ee; padding:12px; border-radius:10px;">
+          <img id="generatedImage" style="max-width:100%; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,.12); display:block; margin:0 auto;" alt="돌봄매트 견적표">
+          <div style="font-size:11px; color:#666; margin-top:10px; line-height:1.5;">
+            👆 <b style="color:#2E7D32">이미지를 길게 누르거나 우클릭</b>해서 저장하세요
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="replyCard" class="reply-card" style="display:none">
+      <div class="reply-head">
+        <div class="reply-title">💬 카톡 답변 텍스트</div>
+        <span style="font-size:10px;color:#999">고객에게 보낼 메시지</span>
+      </div>
+      <div class="reply-text" id="replyText"></div>
+      <div class="reply-actions">
+        <button class="reply-btn reply-btn-primary" onclick="copyReply()">📋 복사하기</button>
+        <button class="reply-btn reply-btn-secondary" onclick="toggleReplyStyle()" id="styleBtn">📝 간단 모드</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 제품 데이터 (quote.html v2026.04.29 기준 - 17T) =====
+var PRODUCTS = [
+  { key:'mat1000_22', name:'1000매트 22T', thickness:'22T', price:76500,
+    feature:'논슬립·방오·UV차단', badge:'대형사이즈', badgeClass:'',       cardClass:'highlight',         is1000:true,  icon:'⭐' },
+  { key:'mat1000_17', name:'1000매트 17T', thickness:'17T', price:64500,
+    feature:'논슬립·방오·UV차단', badge:'애견 추천',    badgeClass:'orange', cardClass:'highlight-orange',  is1000:true,  icon:'🐶' },
+  { key:'mat500',     name:'500매트 22T',  thickness:'22T', price:16900,
+    feature:'기본 코팅',          badge:'갓성비',       badgeClass:'amber',  cardClass:'highlight-amber',   is1000:false, icon:'💰' }
+];
+
+var INSTALL_FEE = 100000;
+var INSTALL_THRESHOLD_500 = 100;
+var INSTALL_THRESHOLD_1000 = 25;
+var SCOPE_NAMES = ['거실+복도', '거실+복도+아일랜드', '거실+복도+주방'];
+var DEFAULT_ROOMS = [
+  { name:'거실', removable:false },
+  { name:'복도', removable:false },
+  { name:'주방', removable:false }
+];
+
+// ===== 혜택 데이터 (quote.html과 동일) =====
+var BENEFITS = [
+  { key:'review_contract', name:'계약 후기 작성',     desc:'샘플박스 3만원 쿠폰 지급',  type:'fixed',   discount:30000, label:'-30,000원', phase:1 },
+  { key:'group_buy',       name:'5인 공동구매',       desc:'5인 이상 공동구매 시',       type:'percent', discount:3,     label:'-3%',       phase:1 },
+  { key:'onnuri',          name:'온누리 결제',    desc:'디지털온누리 앱 7% 할인',    type:'percent', discount:7,     label:'-7%',       phase:1 },
+  { key:'review_event',    name:'후기 이벤트',         desc:'5곳 후기 작성 시 캐시백',    type:'fixed',   discount:80000, label:'-80,000원', phase:2 }
+];
+
+// ===== 상태 =====
+var isExpand = true;
+var roomSizeMode = 'range'; // 'normal' | 'range' | 'wide' (기본: 평균~넓은편)
+var currentScopeIdx = 0;
+var smallRoomCount = 0;
+var rooms = [];
+var roomIdCounter = 0;
+var useDimMode = false;
+var replyStyle = 'full';
+// 기본값: 모든 혜택 ON (직원이 고객 상황 따라 OFF로 전환)
+var selectedBenefits = {
+  review_contract: true,
+  group_buy: true,
+  onnuri: true,
+  review_event: true
+};
+
+// ===== 평수→수량 (quote.html 동일) =====
+function calcQtyFromPyeong(py, scopeIdx) {
+  var bases, rates;
+  if (isExpand) { bases=[105,115,125]; rates=[2,3,3.5]; }
+  else          { bases=[90,105,115];  rates=[2.5,2.5,3]; }
+  var q = Math.ceil(bases[scopeIdx] + (py-24)*rates[scopeIdx]);
+  if (py>=45) q = Math.ceil(q*1.21);
+  else if (py>=42) q = Math.ceil(q*1.12);
+  return q;
+}
+
+function setPyeong(py, btn) {
+  document.getElementById('pyeongInput').value = py;
+  document.querySelectorAll('.pyeong-quick').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  recalculate();
+}
+function setExpand(e) {
+  isExpand = e;
+  document.getElementById('tbExpand').className = e ? 'tb-btn active' : 'tb-btn';
+  document.getElementById('tbNoExpand').className = e ? 'tb-btn' : 'tb-btn active';
+  recalculate();
+}
+function setRoomSizeMode(mode) {
+  roomSizeMode = mode;
+  document.getElementById('tbSizeNormal').className = mode==='normal' ? 'tb-btn active' : 'tb-btn';
+  document.getElementById('tbSizeRange').className = mode==='range' ? 'tb-btn active' : 'tb-btn';
+  document.getElementById('tbSizeWide').className = mode==='wide' ? 'tb-btn active' : 'tb-btn';
+  recalculate();
+}
+function setScope(idx, btn) {
+  currentScopeIdx = idx;
+  document.querySelectorAll('.scope-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  recalculate();
+}
+function changeSmallRoom(delta) {
+  smallRoomCount = Math.max(0, smallRoomCount + delta);
+  document.getElementById('srCount').textContent = smallRoomCount;
+  document.getElementById('srMinus').className = smallRoomCount > 0 ? 'sr-btn' : 'sr-btn disabled';
+  recalculate();
+}
+
+// ===== 도면 =====
+function toggleDim() {
+  document.getElementById('dimArea').classList.toggle('show');
+  document.getElementById('dimToggle').classList.toggle('open');
+}
+function initRooms() {
+  rooms = [];
+  DEFAULT_ROOMS.forEach(function(r){
+    rooms.push({ id: roomIdCounter++, name:r.name, removable:r.removable, w:'', h:'' });
+  });
+  renderRooms();
+}
+function addRoom() {
+  rooms.push({
+    id: roomIdCounter++,
+    name: '방 ' + (rooms.length - DEFAULT_ROOMS.length + 1),
+    removable: true, w:'', h:''
+  });
+  renderRooms();
+}
+function removeRoom(id) {
+  rooms = rooms.filter(function(r){ return r.id !== id; });
+  renderRooms();
+  recalculate();
+}
+function renderRooms() {
+  var c = document.getElementById('dimRooms');
+  c.innerHTML = '';
+  rooms.forEach(function(r){
+    var d = document.createElement('div');
+    d.className = 'dim-room';
+    var rb = r.removable ? '<span class="dim-room-remove" onclick="removeRoom('+r.id+')">삭제</span>' : '';
+    d.innerHTML =
+      '<div class="dim-room-head"><span class="dim-room-name">'+r.name+'</span>'+rb+'</div>' +
+      '<div class="dim-inputs">' +
+        '<input class="dim-input" type="number" inputmode="numeric" placeholder="가로" value="'+(r.w||'')+'" oninput="updateRoomDim('+r.id+',\'w\',this.value)">' +
+        '<span style="color:#ccc;font-size:11px">×</span>' +
+        '<input class="dim-input" type="number" inputmode="numeric" placeholder="세로" value="'+(r.h||'')+'" oninput="updateRoomDim('+r.id+',\'h\',this.value)">' +
+        '<span style="color:#bbb;font-size:10px">mm</span>' +
+      '</div>';
+    c.appendChild(d);
+  });
+}
+function updateRoomDim(id, axis, val) {
+  var r = rooms.find(function(x){ return x.id === id; });
+  if (r) r[axis] = val;
+  recalculate();
+}
+function calcQtyFromDim(is1000) {
+  var matSize = is1000 ? 1000 : 500;
+  var matArea = matSize * matSize;
+  var totalQty = 0;
+  rooms.forEach(function(r){
+    var w = parseInt(r.w) || 0;
+    var h = parseInt(r.h) || 0;
+    if (w>0 && h>0) totalQty += (w*h)/matArea;
+  });
+  if (totalQty <= 0) return 0;
+  return Math.ceil(Math.ceil(totalQty) * 1.1);
+}
+function hasDimInput() {
+  return rooms.some(function(r){
+    return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0;
+  });
+}
+
+// ===== 혜택 UI =====
+function renderBenefits() {
+  var c = document.getElementById('benefitList');
+  c.innerHTML = '';
+  var phase2Inserted = false;
+  BENEFITS.forEach(function(b){
+    if (b.phase === 2 && !phase2Inserted) {
+      var sep = document.createElement('div');
+      sep.className = 'benefit-divider';
+      sep.innerHTML = '⭐ 후기 이벤트 (별도 표시)';
+      c.appendChild(sep);
+      phase2Inserted = true;
+    }
+    var checked = !!selectedBenefits[b.key];
+    var item = document.createElement('div');
+    item.className = 'benefit-item' + (checked?' checked':'') + (b.phase===2?' phase2':'');
+    item.onclick = function(){ toggleBenefit(b.key); };
+    item.innerHTML =
+      '<div class="benefit-check-box"></div>' +
+      '<div class="benefit-info-wrap">' +
+        '<div class="benefit-name-row">' +
+          '<span class="benefit-name">'+b.name+'</span>' +
+          '<span class="benefit-discount-label">'+b.label+'</span>' +
+        '</div>' +
+        '<div class="benefit-desc">'+b.desc+'</div>' +
+      '</div>';
+    c.appendChild(item);
+  });
+}
+function toggleBenefit(key) {
+  selectedBenefits[key] = !selectedBenefits[key];
+  if (!selectedBenefits[key]) delete selectedBenefits[key];
+  renderBenefits();
+  recalculate();
+}
+
+// ===== 메인 계산 =====
+function recalculate() {
+  useDimMode = hasDimInput();
+  document.getElementById('dimModeInfo').classList.toggle('show', useDimMode);
+
+  var srInfo = document.getElementById('smallRoomInfo');
+  if (useDimMode) {
+    srInfo.textContent = '⚠️ 도면 모드: 작은방을 도면에 직접 추가하세요';
+    srInfo.style.color = '#FF8F00';
+  } else {
+    srInfo.textContent = '평수 비례 자동 환산 (1개당 500매트 N장 = 평수)';
+    srInfo.style.color = '#999';
+  }
+
+  var py = parseInt(document.getElementById('pyeongInput').value) || 0;
+  var pyValid = py > 0;
+
+  if (!useDimMode && !pyValid) {
+    showEmptyState();
+    return;
+  }
+
+  var results = PRODUCTS.map(function(p){
+    // 한 모드(평균 또는 넓은편)에 대한 모든 값 계산
+    function computeForRoomMode(forceWide) {
+      var qty;
+      if (useDimMode) {
+        qty = calcQtyFromDim(p.is1000);
+      } else {
+        var base500 = calcQtyFromPyeong(py, currentScopeIdx);
+        var baseQty = forceWide ? Math.ceil(base500*1.13) : base500;
+        qty = p.is1000 ? Math.ceil(baseQty/4) : baseQty;
+      }
+
+      var smallRoomQty = 0;
+      if (smallRoomCount > 0 && !useDimMode && pyValid) {
+        var srBase500 = smallRoomCount * py;
+        smallRoomQty = p.is1000 ? Math.ceil(srBase500/4) : srBase500;
+      }
+
+      var totalQty = qty + smallRoomQty;
+      var matCost = totalQty * p.price;
+
+      var threshold = p.is1000 ? INSTALL_THRESHOLD_1000 : INSTALL_THRESHOLD_500;
+      var hasInstallFee = totalQty > 0 && totalQty <= threshold;
+      var installFee = hasInstallFee ? INSTALL_FEE : 0;
+
+      var p1Discount = 0, p1Details = [];
+      var p2Discount = 0, p2Details = [];
+      BENEFITS.forEach(function(b){
+        if (!selectedBenefits[b.key]) return;
+        var d = (b.type === 'fixed') ? b.discount : Math.round(matCost * b.discount / 100);
+        if (b.phase === 1) {
+          p1Discount += d;
+          p1Details.push({ name:b.name, label:b.label, amount:d });
+        } else {
+          p2Discount += d;
+          p2Details.push({ name:b.name, label:b.label, amount:d });
+        }
+      });
+
+      var beforeDiscount = matCost + installFee;
+      var totalCost = Math.max(0, beforeDiscount - p1Discount);
+      var finalCost = Math.max(0, totalCost - p2Discount);
+
+      return {
+        qty:qty, smallRoomQty:smallRoomQty, totalQty:totalQty,
+        matCost:matCost, hasInstallFee:hasInstallFee, installFee:installFee,
+        p1Discount:p1Discount, p1Details:p1Details,
+        p2Discount:p2Discount, p2Details:p2Details,
+        hasPhase2: p2Details.length > 0,
+        beforeDiscount:beforeDiscount, totalCost:totalCost, finalCost:finalCost,
+        threshold:threshold
+      };
+    }
+
+    // 메인 결과 (평균 모드 기준 또는 넓은편 모드 기준)
+    var primary = computeForRoomMode(roomSizeMode === 'wide');
+
+    // 범위 모드일 때만 넓은편 결과도 계산 (도면 모드는 무관)
+    var isRange = roomSizeMode === 'range' && !useDimMode;
+    var wide = isRange ? computeForRoomMode(true) : null;
+
+    var out = Object.assign({}, primary, { product: p, isRange: isRange });
+    if (wide) {
+      out.rangeQty = wide.totalQty;
+      out.rangeMatCost = wide.matCost;
+      out.rangeBeforeDiscount = wide.beforeDiscount;
+      out.rangeTotalCost = wide.totalCost;
+      out.rangeFinalCost = wide.finalCost;
+    }
+    return out;
+  });
+
+  var hasAnyPhase2 = results.some(function(r){ return r.hasPhase2; });
+  var hasAnyP1 = results.some(function(r){ return r.p1Discount > 0; });
+  // 최저가 비교: 평균값(primary) 기준
+  var costForCompare = function(r){ return hasAnyPhase2 ? r.finalCost : r.totalCost; };
+  var minCost = Math.min.apply(null, results.map(costForCompare));
+  results.forEach(function(r){ r.isCheapest = costForCompare(r) === minCost; });
+
+  document.getElementById('chartSubLabel').textContent =
+    hasAnyPhase2 ? '최종 체감가 기준' : (hasAnyP1 ? '예상 체감가 기준' : '총 견적 기준');
+
+  // 결제 안내 박스 + 공유 카드 표시
+  document.getElementById('paymentNotice').style.display = 'block';
+  document.getElementById('shareCard').style.display = 'block';
+  // 조건이 바뀌면 이전 이미지 미리보기는 자동으로 숨김 (잘못된 이미지 저장 방지)
+  document.getElementById('imagePreviewWrap').style.display = 'none';
+
+  // 견적 기준 박스 (고객도 어떻게 설정했는지 한눈에 확인)
+  renderQuoteContext(py);
+
+  renderProductCards(results);
+  renderChart(results, hasAnyP1, hasAnyPhase2);
+  renderReply(results, py);
+}
+
+// 견적 기준 박스 채우기
+function renderQuoteContext(py) {
+  var box = document.getElementById('quoteContext');
+  var body = document.getElementById('quoteContextBody');
+  var html = '';
+
+  if (useDimMode) {
+    // 도면 모드
+    var dimRows = rooms
+      .filter(function(r){ return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0; })
+      .map(function(r){ return r.name + ' ' + r.w + '×' + r.h + 'mm'; });
+    html =
+      '<div class="quote-context-row">' +
+        '<span class="qc-icon">📐</span>' +
+        '<span class="qc-label">입력 방식</span>' +
+        '<span class="qc-val">도면 치수 기반 <span class="small">(재단여유 +10% 포함)</span></span>' +
+      '</div>' +
+      '<div class="quote-context-row">' +
+        '<span class="qc-icon">📏</span>' +
+        '<span class="qc-label">치수</span>' +
+        '<span class="qc-val">' + dimRows.join(', ') + '</span>' +
+      '</div>';
+  } else {
+    // 평수 모드
+    var expandText = isExpand ? '확장형' : '비확장';
+    html =
+      '<div class="quote-context-row">' +
+        '<span class="qc-icon">🏠</span>' +
+        '<span class="qc-label">평수</span>' +
+        '<span class="qc-val">' + py + '평 <span class="small">· ' + expandText + '</span></span>' +
+      '</div>' +
+      '<div class="quote-context-row">' +
+        '<span class="qc-icon">🛋️</span>' +
+        '<span class="qc-label">시공 범위</span>' +
+        '<span class="qc-val">' + SCOPE_NAMES[currentScopeIdx] + '</span>' +
+      '</div>';
+    if (smallRoomCount > 0) {
+      html +=
+        '<div class="quote-context-row">' +
+          '<span class="qc-icon">🚪</span>' +
+          '<span class="qc-label">작은방</span>' +
+          '<span class="qc-val">' + smallRoomCount + '개 추가</span>' +
+        '</div>';
+    }
+  }
+
+  body.innerHTML = html;
+  box.style.display = 'block';
+}
+
+// 캡처 헤더에 들어갈 조건 요약 (예: "30평 확장형 / 거실+복도+주방")
+function buildCaptureSubtitle(py) {
+  if (useDimMode) {
+    var dimSummary = rooms
+      .filter(function(r){ return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0; })
+      .map(function(r){ return r.name+' '+r.w+'×'+r.h+'mm'; })
+      .join(' · ');
+    return '도면 기준 · ' + dimSummary;
+  }
+  var roomSizeStr = roomSizeMode === 'wide' ? ' (거실 넓은편)' :
+                    roomSizeMode === 'range' ? ' (평균~넓은편)' : '';
+  var s = py + '평 ' + (isExpand?'확장형':'비확장') + roomSizeStr +
+          ' · ' + SCOPE_NAMES[currentScopeIdx];
+  if (smallRoomCount > 0) s += ' · 작은방 '+smallRoomCount+'개';
+  return s;
+}
+
+function showEmptyState() {
+  document.getElementById('resultGrid').innerHTML =
+    '<div style="grid-column:1/-1" class="empty-state">' +
+      '<div class="empty-state-icon">📋</div>' +
+      '<div class="empty-state-text">평수를 입력하거나<br>도면 치수를 넣으면<br>3가지 제품 견적이 자동으로 나와요</div>' +
+    '</div>';
+  document.getElementById('quoteContext').style.display = 'none';
+  document.getElementById('paymentNotice').style.display = 'none';
+  document.getElementById('chartCard').style.display = 'none';
+  document.getElementById('replyCard').style.display = 'none';
+  document.getElementById('shareCard').style.display = 'none';
+}
+
+function renderProductCards(results) {
+  var grid = document.getElementById('resultGrid');
+  grid.innerHTML = '';
+
+  results.forEach(function(r){
+    var p = r.product;
+    var card = document.createElement('div');
+    card.className = 'product-card ' + p.cardClass;
+
+    var smallRoomLine = r.smallRoomQty > 0
+      ? '<div class="product-row"><span>┗ 작은방 '+smallRoomCount+'개</span><span class="val">+'+r.smallRoomQty+'장</span></div>'
+      : '';
+
+    var installLine = r.hasInstallFee
+      ? '<div class="product-install-note">⚠️ 소량 시공비 +10만원 ('+r.threshold+'장 이하)</div>'
+      : '';
+
+    var benefitRows = '';
+    if (r.p1Discount > 0) {
+      benefitRows += '<div class="product-row" style="color:#d32f2f;font-weight:600"><span>혜택 할인</span><span class="val" style="color:#d32f2f">-'+fmt(r.p1Discount)+'원</span></div>';
+      r.p1Details.forEach(function(d){
+        benefitRows += '<div class="product-row" style="font-size:10px;color:#999"><span style="padding-left:8px">· '+d.name+'</span><span style="color:#999">-'+fmt(d.amount)+'원</span></div>';
+      });
+    }
+
+    // ===== 범위 모드 표시 헬퍼 =====
+    // 수량은 짧게 한 줄로, 큰 가격은 두 줄로 표시
+    var qtyDisplay = r.isRange
+      ? r.totalQty + '~' + r.rangeQty
+      : '' + r.totalQty;
+
+    // ===== 예상 체감가 (Phase 1) - 한 줄 표시 =====
+    var totalCostDisplay;
+    if (r.isRange) {
+      totalCostDisplay =
+        '<div class="product-total-val">'+fmt(r.totalCost)+'원<span class="range-suffix">~ '+fmt(r.rangeTotalCost)+'원</span></div>';
+    } else {
+      totalCostDisplay = '<div class="product-total-val">'+fmt(r.totalCost)+'원</div>';
+    }
+
+    // ===== 후기 이벤트 박스 (Phase 2) - 한 줄 표시 =====
+    var phase2Section = '';
+    if (r.hasPhase2) {
+      var finalDisplay = r.isRange
+        ? '<div class="product-phase2-final-val">'+fmt(r.finalCost)+'원<span class="range-suffix">~ '+fmt(r.rangeFinalCost)+'원</span></div>'
+        : '<div class="product-phase2-final-val">'+fmt(r.finalCost)+'원</div>';
+      phase2Section =
+        '<div class="product-phase2-box">' +
+          '<div class="product-phase2-title">⭐ 후기 이벤트 참여 시</div>' +
+          '<div class="product-row" style="font-size:10px;color:#FF8F00"><span>추가 할인</span><span class="val" style="color:#FF8F00">-'+fmt(r.p2Discount)+'원</span></div>' +
+          '<div class="product-phase2-final">' +
+            '<div class="product-phase2-final-label">최종 체감가</div>' +
+            finalDisplay +
+          '</div>' +
+        '</div>';
+    }
+
+    var originalPriceLine = (r.p1Discount > 0)
+      ? '<div class="product-total-original">'+fmt(r.beforeDiscount)+'원</div>'
+      : '';
+
+    card.innerHTML =
+      '<div class="product-badge '+p.badgeClass+'">'+p.icon+' '+p.badge+'</div>' +
+      '<div class="product-name">'+p.name+'</div>' +
+      '<div class="product-feature">'+p.feature+'</div>' +
+      '<div class="product-divider"></div>' +
+      '<div class="product-qty">'+qtyDisplay+'<span style="font-size:14px;color:#999;font-weight:500"> 장</span></div>' +
+      smallRoomLine +
+      '<div class="product-row" style="margin-top:10px"><span>장당 단가</span><span class="val">'+fmt(p.price)+'원</span></div>' +
+      '<div class="product-row"><span>매트 비용</span><span class="val">'+fmt(r.matCost)+'원</span></div>' +
+      (r.hasInstallFee ? '<div class="product-row"><span style="color:#d32f2f">시공비 추가</span><span class="val" style="color:#d32f2f">+'+fmt(r.installFee)+'원</span></div>' : '') +
+      benefitRows +
+      '<div class="product-total">' +
+        '<div class="product-total-label">'+(r.p1Discount>0?'예상 체감가':'총 견적')+'</div>' +
+        originalPriceLine +
+        totalCostDisplay +
+      '</div>' +
+      installLine +
+      phase2Section;
+
+    grid.appendChild(card);
+  });
+}
+
+function renderChart(results, hasAnyP1, hasAnyPhase2) {
+  document.getElementById('chartCard').style.display = 'block';
+  var hasAnyDiscount = hasAnyP1 || hasAnyPhase2;
+
+  // 비교 기준: 모든 가격대 중 최댓값 (원가, 체감가, 최종체감가 모두 고려)
+  var allCosts = [];
+  results.forEach(function(r){
+    allCosts.push(r.beforeDiscount, r.totalCost, r.finalCost);
+  });
+  var maxCost = Math.max.apply(null, allCosts);
+  if (maxCost <= 0) maxCost = 1;
+
+  var html = '';
+  results.forEach(function(r){
+    var p = r.product;
+    var barClass = p.badgeClass === 'orange' ? 'bar-orange' :
+                   p.badgeClass === 'amber' ? 'bar-amber' : '';
+    var cheapestTag = r.isCheapest ? '<span class="chart-cheapest">최저가</span>' : '';
+
+    // 최종 표시 가격 (Phase 2 적용 시 finalCost, 아니면 totalCost)
+    var displayCost = hasAnyPhase2 ? r.finalCost : r.totalCost;
+    var displayLabel = hasAnyPhase2 ? '최종 체감가' : (hasAnyP1 ? '예상 체감가' : '');
+    var saved = r.beforeDiscount - displayCost;
+
+    var savedBadge = (hasAnyDiscount && saved > 0)
+      ? '<span class="chart-saved-badge">-' + fmt(saved) + '원 절약</span>'
+      : '';
+
+    var barsHtml = '';
+    if (hasAnyDiscount) {
+      // 혜택 적용 - 듀얼 막대
+      var originalPct = (r.beforeDiscount / maxCost) * 100;
+      var displayPct = (displayCost / maxCost) * 100;
+
+      barsHtml =
+        // 원가 막대 (회색)
+        '<div class="chart-bar-track">' +
+          '<div class="chart-bar bar-original" style="width:' + originalPct + '%">' +
+            '<span class="chart-bar-tag">혜택 전</span>' +
+            '<span class="chart-bar-val original">' + fmt(r.beforeDiscount) + '원</span>' +
+          '</div>' +
+        '</div>' +
+        // 체감가 막대 (컬러)
+        '<div class="chart-bar-track">' +
+          '<div class="chart-bar ' + barClass + '" style="width:' + displayPct + '%">' +
+            '<span class="chart-bar-tag">' + displayLabel + '</span>' +
+            '<span class="chart-bar-val">' + fmt(displayCost) + '원</span>' +
+          '</div>' +
+        '</div>';
+    } else {
+      // 혜택 없음 - 단일 막대
+      var pct = (displayCost / maxCost) * 100;
+      barsHtml =
+        '<div class="chart-bar-track" style="height:28px">' +
+          '<div class="chart-bar ' + barClass + '" style="width:' + pct + '%">' +
+            '<span class="chart-bar-val">' + fmt(displayCost) + '원</span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    html +=
+      '<div class="chart-row">' +
+        '<div class="chart-label">' + p.name + cheapestTag + savedBadge + '</div>' +
+        '<div class="chart-bar-wrap">' + barsHtml + '</div>' +
+      '</div>';
+  });
+
+  document.getElementById('chartContent').innerHTML = html;
+}
+
+function renderReply(results, py) {
+  document.getElementById('replyCard').style.display = 'block';
+
+  // 견적 기준 - 줄바꿈 형태로 명확하게 표시 (고객이 한눈에 확인)
+  var contextLines = [];
+  if (useDimMode) {
+    var dimSummary = rooms
+      .filter(function(r){ return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0; })
+      .map(function(r){ return r.name + ' ' + r.w + '×' + r.h + 'mm'; })
+      .join(', ');
+    contextLines.push('📐 입력 방식: 도면 치수 기반');
+    contextLines.push('📏 치수: ' + dimSummary);
+  } else {
+    var roomSizeText = roomSizeMode === 'wide' ? '거실 넓은편' :
+                       roomSizeMode === 'range' ? '거실 평균~넓은편' : '거실 평균';
+    var expandText = isExpand ? '확장형' : '비확장';
+    contextLines.push('🏠 평수: ' + py + '평 (' + expandText + ', ' + roomSizeText + ')');
+    contextLines.push('🛋️ 시공 범위: ' + SCOPE_NAMES[currentScopeIdx]);
+    if (smallRoomCount > 0) contextLines.push('🚪 작은방: ' + smallRoomCount + '개 추가');
+  }
+  // 한 줄용 (간단 모드에서 사용)
+  var conditionLineShort;
+  if (useDimMode) {
+    conditionLineShort = '📐 도면 기준';
+  } else {
+    var sizeShort = roomSizeMode === 'wide' ? ' (거실 넓은편)' :
+                    roomSizeMode === 'range' ? ' (평균~넓은편)' : '';
+    conditionLineShort = '🏠 ' + py + '평 ' + (isExpand?'확장형':'비확장') +
+                         sizeShort + ' / ' + SCOPE_NAMES[currentScopeIdx];
+    if (smallRoomCount > 0) conditionLineShort += ' / 작은방 '+smallRoomCount+'개';
+  }
+
+  var hasAnyPhase2 = results.some(function(r){ return r.hasPhase2; });
+  var hasAnyP1 = results.some(function(r){ return r.p1Discount > 0; });
+
+  // 수량/금액 범위 표시 헬퍼
+  function qtyText(r) { return r.isRange ? r.totalQty+'~'+r.rangeQty : ''+r.totalQty; }
+  function totalCostText(r) { return r.isRange ? fmt(r.totalCost)+'~'+fmt(r.rangeTotalCost) : fmt(r.totalCost); }
+  function finalCostText(r) { return r.isRange ? fmt(r.finalCost)+'~'+fmt(r.rangeFinalCost) : fmt(r.finalCost); }
+
+  var text;
+  if (replyStyle === 'simple') {
+    // ===== 간단 모드: 견적 기준은 한 줄로 =====
+    text = '안녕하세요 고객님 😊\n돌봄매트 견적 안내드립니다.\n\n';
+    text += '📋 견적 기준\n' + contextLines.join('\n') + '\n\n';
+    results.forEach(function(r){
+      text += '▫️ '+r.product.name+' : '+qtyText(r)+'장 / '+totalCostText(r)+'원';
+      if (r.hasPhase2) text += '\n   ⭐ 후기 이벤트 시 → '+finalCostText(r)+'원';
+      text += '\n';
+    });
+    if (hasAnyP1) {
+      text += '\n✨ 적용 혜택: ';
+      var benefitNames = [];
+      BENEFITS.forEach(function(b){
+        if (selectedBenefits[b.key] && b.phase === 1) benefitNames.push(b.name+' '+b.label);
+      });
+      text += benefitNames.join(', ') + '\n';
+    }
+    if (results[0] && results[0].isRange) {
+      text += '\n* 거실 사이즈에 따라 평균~넓은편 범위로 안내드려요.';
+    }
+    text += '\n* 실제 시공 후 들어간 갯수만큼 결제됩니다.\n궁금한 점 언제든 편하게 문의주세요! 💕';
+  } else {
+    // ===== 상세 모드: 견적 기준 박스 + 제품별 상세 =====
+    text = '안녕하세요 고객님 😊\n돌봄매트 견적 안내드립니다.\n\n';
+    text += '📋 견적 기준\n';
+    text += '━━━━━━━━━━━━━━━━━\n';
+    contextLines.forEach(function(l){ text += l + '\n'; });
+    text += '━━━━━━━━━━━━━━━━━\n\n';
+    results.forEach(function(r){
+      var p = r.product;
+      text += '📦 '+p.name+' ('+p.badge+')\n';
+      text += '   수량: '+qtyText(r)+'장 (장당 '+fmt(p.price)+'원)';
+      if (r.hasInstallFee) text += '\n   + 소량 시공비 100,000원';
+      text += '\n';
+
+      if (r.p1Discount > 0) {
+        text += '   ─ 혜택 할인\n';
+        r.p1Details.forEach(function(d){
+          text += '     · '+d.name+' '+d.label+' (-'+fmt(d.amount)+'원)\n';
+        });
+      }
+
+      var totalLabel = (r.p1Discount > 0) ? '예상 체감가' : '합계';
+      text += '   = '+totalLabel+' '+totalCostText(r)+'원\n';
+      if (r.hasPhase2) text += '   ⭐ 후기 이벤트 시 → '+finalCostText(r)+'원\n';
+      text += '   ▶ '+p.feature+'\n\n';
+    });
+    text += '━━━━━━━━━━━━━━━━━\n';
+    if (results[0] && results[0].isRange) {
+      text += '* 거실 사이즈에 따른 평균~넓은편 범위 안내입니다\n';
+    }
+    if (hasAnyPhase2) text += '* ⭐ 표시: 5곳 후기 작성 시 추가 80,000원 캐시백\n';
+    text += '* 실제 시공 후 들어간 수량 기준으로 결제됩니다\n';
+    text += '* 1000매트 25장 / 500매트 100장 이하 시공 시 시공비 +10만원\n\n';
+    text += '어떤 제품이 마음에 드시나요? 😊\n자세한 상담은 언제든 편하게 문의주세요! 💕';
+  }
+
+  document.getElementById('replyText').textContent = text;
+}
+
+function toggleReplyStyle() {
+  replyStyle = (replyStyle === 'full') ? 'simple' : 'full';
+  document.getElementById('styleBtn').textContent =
+    replyStyle === 'full' ? '📝 간단 모드' : '📋 상세 모드';
+  recalculate();
+}
+
+function copyReply() {
+  var text = document.getElementById('replyText').textContent;
+  if (!text) { showToast('⚠️ 내용이 없습니다'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showToast('✅ 복사 완료!'); }
+  catch(e) { showToast('⚠️ 복사 실패. 직접 선택해주세요'); }
+  document.body.removeChild(ta);
+}
+
+function fmt(n) { return (n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 1800);
+}
+
+// ===== 이미지 캡처 / 공유 / 저장 =====
+async function captureImage() {
+  if (typeof html2canvas === 'undefined') {
+    showToast('⚠️ 이미지 라이브러리 로딩 실패');
+    return null;
+  }
+
+  var captureArea = document.getElementById('captureArea');
+
+  // 캡처 모드 활성화 (헤더/푸터 보이기)
+  captureArea.classList.add('capturing');
+
+  // 차트는 캡처에서 제외 (고객용은 단순하게)
+  var chart = document.getElementById('chartCard');
+  var chartPrevDisplay = chart.style.display;
+  chart.style.display = 'none';
+
+  try {
+    var canvas = await html2canvas(captureArea, {
+      backgroundColor: '#f5f3ee',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false
+    });
+    return canvas;
+  } catch (e) {
+    console.error('html2canvas 실패:', e);
+    return null;
+  } finally {
+    captureArea.classList.remove('capturing');
+    chart.style.display = chartPrevDisplay;
+  }
+}
+
+function makeFilename() {
+  var py = parseInt(document.getElementById('pyeongInput').value) || 0;
+  var d = new Date();
+  var dateStr = d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2);
+  return '돌봄매트_견적_' + (py ? py+'평_' : '') + dateStr + '.png';
+}
+
+async function downloadAsImage() {
+  showToast('이미지 생성 중...');
+  var canvas = await captureImage();
+  if (!canvas) { showToast('⚠️ 이미지 생성 실패'); return; }
+
+  canvas.toBlob(function(blob){
+    if (!blob) { showToast('⚠️ 이미지 변환 실패'); return; }
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.download = makeFilename();
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    showToast('✅ 이미지 저장 완료!');
+  }, 'image/png');
+}
+
+// 이미지 미리보기 생성 (모바일에서 길게 눌러 저장 가능)
+async function generatePreview() {
+  showToast('이미지 생성 중...');
+  var canvas = await captureImage();
+  if (!canvas) { showToast('⚠️ 이미지 생성 실패'); return; }
+
+  var dataUrl = canvas.toDataURL('image/png');
+  var img = document.getElementById('generatedImage');
+  img.src = dataUrl;
+  document.getElementById('imagePreviewWrap').style.display = 'block';
+
+  // 생성된 이미지로 부드럽게 스크롤
+  setTimeout(function(){
+    var wrap = document.getElementById('imagePreviewWrap');
+    if (wrap && wrap.scrollIntoView) {
+      wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 300);
+
+  showToast('✅ 길게 눌러서 저장하세요');
+}
+
+// ===== 초기화 =====
+initRooms();
+renderBenefits();
+showEmptyState();
+</script>
+
+</body>
+</html>
