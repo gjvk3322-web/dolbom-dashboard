@@ -55,6 +55,102 @@ body {
 }
 .card-title .sub { font-size: 10px; color: #999; font-weight: 400; margin-left: auto; }
 
+/* ===== 환영 카드 ===== */
+.welcome-card {
+  background: linear-gradient(135deg, #fff8e7 0%, #fff3d6 100%);
+  border: 1px solid #f0d878;
+  position: relative;
+}
+.welcome-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.welcome-title {
+  font-size: 13px; font-weight: 800; color: #8b6914;
+  display: flex; align-items: center; gap: 4px;
+}
+.welcome-icon { font-size: 14px; }
+.welcome-settings-btn {
+  background: rgba(255,255,255,0.6); border: 1px solid #e0c878;
+  border-radius: 8px; width: 28px; height: 28px; cursor: pointer;
+  font-size: 13px; padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.welcome-settings-btn:hover { background: #fff; transform: rotate(45deg); }
+.welcome-hint {
+  font-size: 11px; color: #a08040; margin-bottom: 8px;
+}
+.welcome-text {
+  background: #fff; border-radius: 8px; padding: 10px 12px;
+  font-size: 12.5px; line-height: 1.55; color: #333;
+  white-space: pre-wrap; margin-bottom: 10px;
+  border: 1px solid #f0e4c0; max-height: 120px; overflow-y: auto;
+}
+.welcome-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.welcome-btn {
+  border: none; border-radius: 8px; padding: 10px;
+  font-size: 12.5px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: all 0.15s; line-height: 1;
+}
+.welcome-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.welcome-btn-text { background: #2E7D32; color: #fff; }
+.welcome-btn-video { background: #1a1a1a; color: #fff; }
+
+/* ===== 환영 메시지 설정 모달 ===== */
+.welcome-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 9999;
+  align-items: center; justify-content: center; padding: 16px;
+}
+.welcome-modal-overlay.show { display: flex; }
+.welcome-modal {
+  background: #fff; border-radius: 14px; padding: 20px;
+  max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+}
+.welcome-modal-title {
+  font-size: 15px; font-weight: 800; margin-bottom: 14px; color: #1a1a1a;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.welcome-modal-close {
+  background: none; border: none; font-size: 22px; cursor: pointer;
+  color: #999; line-height: 1; padding: 0;
+}
+.welcome-modal-label {
+  font-size: 12px; font-weight: 700; color: #555;
+  margin-top: 12px; margin-bottom: 5px; display: block;
+}
+.welcome-modal-input, .welcome-modal-textarea {
+  width: 100%; padding: 9px 11px; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 13px; font-family: inherit;
+  box-sizing: border-box;
+}
+.welcome-modal-textarea { min-height: 130px; resize: vertical; line-height: 1.55; }
+.welcome-modal-input:focus, .welcome-modal-textarea:focus {
+  outline: none; border-color: #2E7D32;
+}
+.welcome-modal-help {
+  font-size: 10.5px; color: #888; margin-top: 4px; line-height: 1.45;
+}
+.welcome-modal-actions {
+  display: flex; gap: 8px; margin-top: 18px;
+}
+.welcome-modal-btn {
+  flex: 1; border: none; border-radius: 8px; padding: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.welcome-modal-btn-save { background: #2E7D32; color: #fff; }
+.welcome-modal-btn-reset { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+
+@media (max-width: 460px) {
+  .welcome-card { padding: 12px; }
+  .welcome-text { font-size: 12px; max-height: 100px; }
+  .welcome-btn { font-size: 11.5px; padding: 9px; }
+}
+
 .input-row { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
 .pyeong-input-box {
   display: flex; align-items: center; gap: 4px;
@@ -765,6 +861,24 @@ body {
 <div class="layout">
   <div class="input-panel">
 
+    <!-- ===== 고객 환영 카드 (상담 시작용) ===== -->
+    <div class="card welcome-card">
+      <div class="welcome-header">
+        <div class="welcome-title"><span class="welcome-icon">🌟</span> 고객 환영 메시지</div>
+        <button class="welcome-settings-btn" onclick="openWelcomeSettings()" title="환영 메시지 / 영상 설정">⚙️</button>
+      </div>
+      <div class="welcome-hint">상담 시작 시 고객에게 두 개를 함께 보내주세요</div>
+      <div class="welcome-text" id="welcomeText"></div>
+      <div class="welcome-actions">
+        <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
+          📋 <span>메시지 복사</span>
+        </button>
+        <button class="welcome-btn welcome-btn-video" onclick="shareWelcomeVideo()">
+          🎬 <span>영상 공유하기</span>
+        </button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title"><span class="num">1</span> 평수 입력</div>
       <div class="input-row">
@@ -981,6 +1095,32 @@ body {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ===== 환영 메시지 설정 모달 ===== -->
+<div class="welcome-modal-overlay" id="welcomeModal" onclick="closeWelcomeOnBg(event)">
+  <div class="welcome-modal" onclick="event.stopPropagation()">
+    <div class="welcome-modal-title">
+      ⚙️ 환영 메시지 / 영상 설정
+      <button class="welcome-modal-close" onclick="closeWelcomeSettings()">×</button>
+    </div>
+
+    <label class="welcome-modal-label">📝 환영 메시지</label>
+    <textarea class="welcome-modal-textarea" id="welcomeTextEdit" placeholder="고객에게 처음 보낼 환영 메시지를 입력하세요"></textarea>
+    <div class="welcome-modal-help">상담 시작 시 고객에게 복사·전송할 텍스트입니다.</div>
+
+    <label class="welcome-modal-label">🎬 영상 URL</label>
+    <input type="url" class="welcome-modal-input" id="welcomeVideoEdit" placeholder="https://my.dolbommat.com/assets/dolbom-air-care.mp4">
+    <div class="welcome-modal-help">
+      영상 파일을 GitHub repo에 업로드한 후 그 URL을 입력하세요.<br>
+      모바일에서는 카톡으로 파일이 직접 전송되고, 데스크톱에서는 URL이 복사됩니다.
+    </div>
+
+    <div class="welcome-modal-actions">
+      <button class="welcome-modal-btn welcome-modal-btn-reset" onclick="resetWelcomeSettings()">기본값 복원</button>
+      <button class="welcome-modal-btn welcome-modal-btn-save" onclick="saveWelcomeSettings()">저장</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ===== 제품 데이터 (quote.html v2026.04.29 기준 - 17T) =====
@@ -1655,6 +1795,116 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(function(){ t.classList.remove('show'); }, 1800);
 }
+
+// ===== 고객 환영 메시지 / 영상 시스템 =====
+var WELCOME_DEFAULT_TEXT =
+  '안녕하세요 고객님 :)\n' +
+  '돌봄매트 상담 도와드리겠습니다.\n\n' +
+  '해당 부분만 1cm매트로 진행되시거나\n' +
+  '펜트리 위에 공간있는경우 펜트리를\n' +
+  '위로 올려드리고 작업되세요!';
+
+var WELCOME_DEFAULT_VIDEO = 'https://my.dolbommat.com/assets/dolbom-air-care.mp4';
+
+function getWelcomeText() {
+  return localStorage.getItem('dolbom_welcome_text') || WELCOME_DEFAULT_TEXT;
+}
+function getWelcomeVideo() {
+  return localStorage.getItem('dolbom_welcome_video') || WELCOME_DEFAULT_VIDEO;
+}
+
+function renderWelcomeText() {
+  document.getElementById('welcomeText').textContent = getWelcomeText();
+}
+
+// 메시지 복사 (한 번 클릭 = 카톡 붙여넣기 준비 완료)
+function copyWelcomeText() {
+  var text = getWelcomeText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 환영 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 영상 공유 - Web Share API로 파일 직접 전송 (모바일) / URL 복사 (데스크톱)
+async function shareWelcomeVideo() {
+  var url = getWelcomeVideo();
+
+  // Web Share API + 파일 지원 여부 체크 (모바일에서 가장 좋은 경험)
+  if (navigator.canShare && typeof navigator.share === 'function') {
+    try {
+      showToast('📥 영상 준비 중...');
+      var response = await fetch(url);
+      if (!response.ok) throw new Error('영상 불러오기 실패');
+      var blob = await response.blob();
+      var filename = url.split('/').pop() || 'dolbom-air-care.mp4';
+      var file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: '돌봄매트 공기순환 케어'
+        });
+        showToast('✅ 영상 전송 완료!');
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return; // 사용자가 공유 취소
+      console.warn('영상 파일 공유 실패, URL 복사로 대체:', err);
+      // 폴백으로 진행
+    }
+  }
+
+  // 폴백: URL 복사 (데스크톱이나 Web Share 미지원 환경)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){
+      showToast('✅ 영상 URL 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(url); });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+// ===== 환영 설정 모달 =====
+function openWelcomeSettings() {
+  document.getElementById('welcomeTextEdit').value = getWelcomeText();
+  document.getElementById('welcomeVideoEdit').value = getWelcomeVideo();
+  document.getElementById('welcomeModal').classList.add('show');
+}
+function closeWelcomeSettings() {
+  document.getElementById('welcomeModal').classList.remove('show');
+}
+function closeWelcomeOnBg(event) {
+  if (event.target.id === 'welcomeModal') closeWelcomeSettings();
+}
+function saveWelcomeSettings() {
+  var text = document.getElementById('welcomeTextEdit').value.trim();
+  var video = document.getElementById('welcomeVideoEdit').value.trim();
+  if (!text) { showToast('⚠️ 환영 메시지를 입력해주세요'); return; }
+  localStorage.setItem('dolbom_welcome_text', text);
+  if (video) localStorage.setItem('dolbom_welcome_video', video);
+  else localStorage.removeItem('dolbom_welcome_video');
+  renderWelcomeText();
+  closeWelcomeSettings();
+  showToast('✅ 설정이 저장되었습니다');
+}
+function resetWelcomeSettings() {
+  if (!confirm('기본값으로 되돌릴까요? 현재 저장된 내용이 사라집니다.')) return;
+  localStorage.removeItem('dolbom_welcome_text');
+  localStorage.removeItem('dolbom_welcome_video');
+  document.getElementById('welcomeTextEdit').value = WELCOME_DEFAULT_TEXT;
+  document.getElementById('welcomeVideoEdit').value = WELCOME_DEFAULT_VIDEO;
+  renderWelcomeText();
+  showToast('✅ 기본값으로 복원되었습니다');
+}
+
+// 페이지 로드 시 환영 메시지 렌더링
+document.addEventListener('DOMContentLoaded', renderWelcomeText);
+// DOMContentLoaded가 이미 발생했을 수도 있어서 안전장치
+if (document.readyState !== 'loading') renderWelcomeText();
 
 // ===== 이미지 캡처 / 공유 / 저장 =====
 async function captureImage() {
