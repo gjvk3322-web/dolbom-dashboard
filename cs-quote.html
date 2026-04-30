@@ -97,7 +97,7 @@ body {
 }
 .welcome-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 .welcome-btn-text { background: #2E7D32; color: #fff; }
-.welcome-btn-video { background: #1a1a1a; color: #fff; }
+.welcome-btn-form { background: #c98a3e; color: #fff; }
 
 /* ===== 환영 메시지 설정 모달 ===== */
 .welcome-modal-overlay {
@@ -867,14 +867,14 @@ body {
         <div class="welcome-title"><span class="welcome-icon">🌟</span> 고객 환영 메시지</div>
         <button class="welcome-settings-btn" onclick="openWelcomeSettings()" title="환영 메시지 / 영상 설정">⚙️</button>
       </div>
-      <div class="welcome-hint">상담 시작 시 고객에게 두 개를 함께 보내주세요</div>
+      <div class="welcome-hint">상담 시작 시 두 메시지를 순서대로 보내주세요</div>
       <div class="welcome-text" id="welcomeText"></div>
       <div class="welcome-actions">
         <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
-          📋 <span>메시지 복사</span>
+          📋 <span>환영 메시지</span>
         </button>
-        <button class="welcome-btn welcome-btn-video" onclick="shareWelcomeVideo()">
-          🎬 <span>영상 공유하기</span>
+        <button class="welcome-btn welcome-btn-form" onclick="copyQuoteForm()">
+          📝 <span>견적 양식</span>
         </button>
       </div>
     </div>
@@ -1106,14 +1106,11 @@ body {
 
     <label class="welcome-modal-label">📝 환영 메시지</label>
     <textarea class="welcome-modal-textarea" id="welcomeTextEdit" placeholder="고객에게 처음 보낼 환영 메시지를 입력하세요"></textarea>
-    <div class="welcome-modal-help">상담 시작 시 고객에게 복사·전송할 텍스트입니다.</div>
+    <div class="welcome-modal-help">상담 시작 시 고객에게 복사·전송할 환영 메시지입니다.</div>
 
-    <label class="welcome-modal-label">🎬 영상 URL</label>
-    <input type="url" class="welcome-modal-input" id="welcomeVideoEdit" placeholder="https://my.dolbommat.com/assets/dolbom-air-care.mp4">
-    <div class="welcome-modal-help">
-      영상 파일을 GitHub repo에 업로드한 후 그 URL을 입력하세요.<br>
-      모바일에서는 카톡으로 파일이 직접 전송되고, 데스크톱에서는 URL이 복사됩니다.
-    </div>
+    <label class="welcome-modal-label">📋 견적 양식</label>
+    <textarea class="welcome-modal-textarea" id="quoteFormEdit" placeholder="고객에게 받을 정보를 안내하는 견적 양식을 입력하세요"></textarea>
+    <div class="welcome-modal-help">고객이 작성하실 정보 양식입니다 (아파트 명, 평수, 시공 범위 등).</div>
 
     <div class="welcome-modal-actions">
       <button class="welcome-modal-btn welcome-modal-btn-reset" onclick="resetWelcomeSettings()">기본값 복원</button>
@@ -1796,28 +1793,48 @@ function showToast(msg) {
   setTimeout(function(){ t.classList.remove('show'); }, 1800);
 }
 
-// ===== 고객 환영 메시지 / 영상 시스템 =====
+// ===== 고객 환영 메시지 / 견적 양식 시스템 =====
 var WELCOME_DEFAULT_TEXT =
-  '안녕하세요 고객님 :)\n' +
-  '돌봄매트 상담 도와드리겠습니다.\n\n' +
-  '해당 부분만 1cm매트로 진행되시거나\n' +
-  '펜트리 위에 공간있는경우 펜트리를\n' +
-  '위로 올려드리고 작업되세요!';
+  '🏡 6,700가구와 함께한 신뢰\n' +
+  '✔️ 매월 200가구 작업 중 !\n\n' +
+  '🏅 97만 장 이상의 시공 경험\n' +
+  '✔️ 본사 직접 시공\n' +
+  '본사 직접 시공, 이전설치까지!\n\n' +
+  '✔️ 층간소음 해결\n' +
+  '97만장의 시공 경험으로 검증된 제품!\n\n' +
+  '✔️ 맞춤 시공 서비스\n' +
+  '내 집 구조에 딱 맞춘 맞춤형 매트로 안심!\n\n' +
+  '✔️ 실제 고객의 선택\n' +
+  '6,700가구가 선택한 돌봄매트로 가족의 행복을 지키세요.\n\n' +
+  '돌봄매트와 함께라면\n' +
+  '아이안전, 층간소음은 이제 걱정할 필요가 없습니다!\n' +
+  '지금 바로 상담하세요! 😊\n\n' +
+  'https://my.dolbommat.com/video-air.html';
 
-var WELCOME_DEFAULT_VIDEO = 'https://my.dolbommat.com/assets/dolbom-air-care.mp4';
+var QUOTE_FORM_DEFAULT_TEXT =
+  '돌봄매트 견적안내 💕\n' +
+  '아래 내용을 작성해주시면 빠르게 견적 안내 드리겠습니다😊\n\n' +
+  '아파트 명 :\n' +
+  '평 수 :\n' +
+  '거실베란다 여부 :\n' +
+  '시공 범위 :\n' +
+  '궁금하신 내용 :\n\n' +
+  '언제든 카카오톡 채널로 문의 주시면\n' +
+  '최대한 빠른 답변 드리겠습니다!\n' +
+  '감사합니다 💌';
 
 function getWelcomeText() {
   return localStorage.getItem('dolbom_welcome_text') || WELCOME_DEFAULT_TEXT;
 }
-function getWelcomeVideo() {
-  return localStorage.getItem('dolbom_welcome_video') || WELCOME_DEFAULT_VIDEO;
+function getQuoteFormText() {
+  return localStorage.getItem('dolbom_quote_form_text') || QUOTE_FORM_DEFAULT_TEXT;
 }
 
 function renderWelcomeText() {
   document.getElementById('welcomeText').textContent = getWelcomeText();
 }
 
-// 메시지 복사 (한 번 클릭 = 카톡 붙여넣기 준비 완료)
+// 환영 메시지 복사 (한 번 클릭 = 카톡 붙여넣기 준비 완료)
 function copyWelcomeText() {
   var text = getWelcomeText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1829,49 +1846,22 @@ function copyWelcomeText() {
   }
 }
 
-// 영상 공유 - Web Share API로 파일 직접 전송 (모바일) / URL 복사 (데스크톱)
-async function shareWelcomeVideo() {
-  var url = getWelcomeVideo();
-
-  // Web Share API + 파일 지원 여부 체크 (모바일에서 가장 좋은 경험)
-  if (navigator.canShare && typeof navigator.share === 'function') {
-    try {
-      showToast('📥 영상 준비 중...');
-      var response = await fetch(url);
-      if (!response.ok) throw new Error('영상 불러오기 실패');
-      var blob = await response.blob();
-      var filename = url.split('/').pop() || 'dolbom-air-care.mp4';
-      var file = new File([blob], filename, { type: blob.type || 'video/mp4' });
-
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: '돌봄매트 공기순환 케어'
-        });
-        showToast('✅ 영상 전송 완료!');
-        return;
-      }
-    } catch (err) {
-      if (err.name === 'AbortError') return; // 사용자가 공유 취소
-      console.warn('영상 파일 공유 실패, URL 복사로 대체:', err);
-      // 폴백으로 진행
-    }
-  }
-
-  // 폴백: URL 복사 (데스크톱이나 Web Share 미지원 환경)
+// 견적 양식 복사 (고객 정보 받기용)
+function copyQuoteForm() {
+  var text = getQuoteFormText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(function(){
-      showToast('✅ 영상 URL 복사 완료! 카톡에 붙여넣으세요');
-    }).catch(function(){ fallbackCopy(url); });
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 견적 양식 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
   } else {
-    fallbackCopy(url);
+    fallbackCopy(text);
   }
 }
 
-// ===== 환영 설정 모달 =====
+// ===== 환영 / 견적 양식 설정 모달 =====
 function openWelcomeSettings() {
   document.getElementById('welcomeTextEdit').value = getWelcomeText();
-  document.getElementById('welcomeVideoEdit').value = getWelcomeVideo();
+  document.getElementById('quoteFormEdit').value = getQuoteFormText();
   document.getElementById('welcomeModal').classList.add('show');
 }
 function closeWelcomeSettings() {
@@ -1881,12 +1871,12 @@ function closeWelcomeOnBg(event) {
   if (event.target.id === 'welcomeModal') closeWelcomeSettings();
 }
 function saveWelcomeSettings() {
-  var text = document.getElementById('welcomeTextEdit').value.trim();
-  var video = document.getElementById('welcomeVideoEdit').value.trim();
-  if (!text) { showToast('⚠️ 환영 메시지를 입력해주세요'); return; }
-  localStorage.setItem('dolbom_welcome_text', text);
-  if (video) localStorage.setItem('dolbom_welcome_video', video);
-  else localStorage.removeItem('dolbom_welcome_video');
+  var welcome = document.getElementById('welcomeTextEdit').value.trim();
+  var form = document.getElementById('quoteFormEdit').value.trim();
+  if (!welcome) { showToast('⚠️ 환영 메시지를 입력해주세요'); return; }
+  if (!form) { showToast('⚠️ 견적 양식을 입력해주세요'); return; }
+  localStorage.setItem('dolbom_welcome_text', welcome);
+  localStorage.setItem('dolbom_quote_form_text', form);
   renderWelcomeText();
   closeWelcomeSettings();
   showToast('✅ 설정이 저장되었습니다');
@@ -1894,16 +1884,15 @@ function saveWelcomeSettings() {
 function resetWelcomeSettings() {
   if (!confirm('기본값으로 되돌릴까요? 현재 저장된 내용이 사라집니다.')) return;
   localStorage.removeItem('dolbom_welcome_text');
-  localStorage.removeItem('dolbom_welcome_video');
+  localStorage.removeItem('dolbom_quote_form_text');
   document.getElementById('welcomeTextEdit').value = WELCOME_DEFAULT_TEXT;
-  document.getElementById('welcomeVideoEdit').value = WELCOME_DEFAULT_VIDEO;
+  document.getElementById('quoteFormEdit').value = QUOTE_FORM_DEFAULT_TEXT;
   renderWelcomeText();
   showToast('✅ 기본값으로 복원되었습니다');
 }
 
 // 페이지 로드 시 환영 메시지 렌더링
 document.addEventListener('DOMContentLoaded', renderWelcomeText);
-// DOMContentLoaded가 이미 발생했을 수도 있어서 안전장치
 if (document.readyState !== 'loading') renderWelcomeText();
 
 // ===== 이미지 캡처 / 공유 / 저장 =====
