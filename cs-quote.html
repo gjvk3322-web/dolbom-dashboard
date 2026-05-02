@@ -98,6 +98,8 @@ body {
 .welcome-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 .welcome-btn-text { background: #2E7D32; color: #fff; }
 .welcome-btn-form { background: #c98a3e; color: #fff; }
+.welcome-btn-booking { background: #3a5f7c; color: #fff; }
+.welcome-btn-review { background: #a44663; color: #fff; }
 
 /* ===== 환영 메시지 설정 모달 ===== */
 .welcome-modal-overlay {
@@ -867,14 +869,20 @@ body {
         <div class="welcome-title"><span class="welcome-icon">🌟</span> 고객 환영 메시지</div>
         <button class="welcome-settings-btn" onclick="openWelcomeSettings()" title="환영 메시지 / 영상 설정">⚙️</button>
       </div>
-      <div class="welcome-hint">상담 시작 시 두 메시지를 순서대로 보내주세요</div>
+      <div class="welcome-hint">고객 응대에 필요한 메시지·링크 (클릭 시 자동 복사)</div>
       <div class="welcome-text" id="welcomeText"></div>
       <div class="welcome-actions">
         <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
-          📋 <span>환영 메시지</span>
+          1️⃣ <span>환영 메시지</span>
         </button>
         <button class="welcome-btn welcome-btn-form" onclick="copyQuoteForm()">
-          📝 <span>견적 양식</span>
+          2️⃣ <span>견적 양식</span>
+        </button>
+        <button class="welcome-btn welcome-btn-booking" onclick="copyBookingUrl()">
+          3️⃣ <span>예약 양식</span>
+        </button>
+        <button class="welcome-btn welcome-btn-review" onclick="copyReviewUrl()">
+          ⭐ <span>리뷰 이벤트</span>
         </button>
       </div>
     </div>
@@ -1855,6 +1863,30 @@ function copyQuoteForm() {
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
+  }
+}
+
+// 예약 양식 URL 복사
+function copyBookingUrl() {
+  var url = 'https://my.dolbommat.com/booking.html';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){
+      showToast('✅ 예약 양식 URL 복사 완료!');
+    }).catch(function(){ fallbackCopy(url); });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+// 리뷰 이벤트 URL 복사
+function copyReviewUrl() {
+  var url = 'https://my.dolbommat.com/review-event.html';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){
+      showToast('✅ 리뷰 이벤트 URL 복사 완료!');
+    }).catch(function(){ fallbackCopy(url); });
+  } else {
+    fallbackCopy(url);
   }
 }
 
