@@ -136,7 +136,7 @@ const PHONE=new URLSearchParams(location.search).get('phone')||'';
 if(PHONE){document.getElementById('phoneDisplay').textContent=PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3')+' 님의 후기이벤트';}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 const MISSIONS=[
-  {id:'contract',title:'계약 후기 작성',reward:30000,icon:'📝',tag:'시공 전 작성',desc:'맘스홀릭 돌봄매트 게시판'},
+  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',desc:'맘스홀릭 카페 > 돌봄매트 게시판 (샘플박스 QR 참고)'},
   {id:'chatroom',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,icon:'💬',tag:'시공 중 업로드',desc:'설치하고 있다는 후기만 올려주시면 됩니다'},
   {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',desc:'@dolbomstore 태그 + #돌봄매트 해시태그 필수'},
   {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',desc:'맘스홀릭 돌봄매트 후기 게시판'},
@@ -195,7 +195,7 @@ function renderMissions(){
     const badgeCls=paid?'done':done?'done':'pending';
     card.innerHTML=`<div class="mission-header" onclick="toggleMission(${idx})">
       <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
-      <div class="mission-info"><h4>${m.title}${m.tag?` <span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;margin-left:4px">${m.tag}</span>`:''}</h4>${m.desc?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${m.desc}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
+      <div class="mission-info"><h4>${m.title}${m.tag?` <span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;margin-left:4px">${m.tag}</span>`:''}${m.tag2?` <span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;margin-left:4px">${m.tag2}</span>`:''}</h4>${m.desc?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${m.desc}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
       <span class="mission-badge ${badgeCls}" ${paid?'style="background:#e3faf1;color:#20c997"':''}>${badgeText}</span>
     </div>
     <div class="mission-body" id="mbody${idx}">
