@@ -1108,17 +1108,25 @@ body {
 <div class="welcome-modal-overlay" id="welcomeModal" onclick="closeWelcomeOnBg(event)">
   <div class="welcome-modal" onclick="event.stopPropagation()">
     <div class="welcome-modal-title">
-      ⚙️ 환영 메시지 / 영상 설정
+      ⚙️ 응대 메시지 설정
       <button class="welcome-modal-close" onclick="closeWelcomeSettings()">×</button>
     </div>
 
-    <label class="welcome-modal-label">📝 환영 메시지</label>
+    <label class="welcome-modal-label">1️⃣ 환영 메시지</label>
     <textarea class="welcome-modal-textarea" id="welcomeTextEdit" placeholder="고객에게 처음 보낼 환영 메시지를 입력하세요"></textarea>
     <div class="welcome-modal-help">상담 시작 시 고객에게 복사·전송할 환영 메시지입니다.</div>
 
-    <label class="welcome-modal-label">📋 견적 양식</label>
+    <label class="welcome-modal-label">2️⃣ 견적 양식</label>
     <textarea class="welcome-modal-textarea" id="quoteFormEdit" placeholder="고객에게 받을 정보를 안내하는 견적 양식을 입력하세요"></textarea>
     <div class="welcome-modal-help">고객이 작성하실 정보 양식입니다 (아파트 명, 평수, 시공 범위 등).</div>
+
+    <label class="welcome-modal-label">3️⃣ 예약 양식 메시지</label>
+    <textarea class="welcome-modal-textarea" id="bookingTextEdit" placeholder="예약 페이지 안내 메시지 + URL"></textarea>
+    <div class="welcome-modal-help">예약 페이지로 안내할 때 보낼 메시지입니다. URL을 마지막 줄에 두면 카톡 미리보기 카드가 자동 생성됩니다.</div>
+
+    <label class="welcome-modal-label">⭐ 리뷰 이벤트 메시지</label>
+    <textarea class="welcome-modal-textarea" id="reviewTextEdit" placeholder="리뷰 이벤트 페이지 안내 메시지 + URL"></textarea>
+    <div class="welcome-modal-help">상담 중 후기 이벤트 문의 시 보낼 메시지입니다. URL을 마지막 줄에 두면 카톡 미리보기 카드가 자동 생성됩니다.</div>
 
     <div class="welcome-modal-actions">
       <button class="welcome-modal-btn welcome-modal-btn-reset" onclick="resetWelcomeSettings()">기본값 복원</button>
@@ -1831,11 +1839,25 @@ var QUOTE_FORM_DEFAULT_TEXT =
   '최대한 빠른 답변 드리겠습니다!\n' +
   '감사합니다 💌';
 
+var BOOKING_DEFAULT_TEXT =
+  '아래 링크에서 예약 가능하세요! 😊\n' +
+  'https://my.dolbommat.com/booking.html';
+
+var REVIEW_DEFAULT_TEXT =
+  '후기 이벤트는 아래 링크에서 참여 가능합니다 :)\n' +
+  'https://my.dolbommat.com/review-event.html';
+
 function getWelcomeText() {
   return localStorage.getItem('dolbom_welcome_text') || WELCOME_DEFAULT_TEXT;
 }
 function getQuoteFormText() {
   return localStorage.getItem('dolbom_quote_form_text') || QUOTE_FORM_DEFAULT_TEXT;
+}
+function getBookingText() {
+  return localStorage.getItem('dolbom_booking_text') || BOOKING_DEFAULT_TEXT;
+}
+function getReviewText() {
+  return localStorage.getItem('dolbom_review_text') || REVIEW_DEFAULT_TEXT;
 }
 
 function renderWelcomeText() {
@@ -1866,34 +1888,36 @@ function copyQuoteForm() {
   }
 }
 
-// 예약 양식 URL 복사
+// 예약 양식 메시지 복사 (안내 메시지 + URL)
 function copyBookingUrl() {
-  var url = 'https://my.dolbommat.com/booking.html';
+  var text = getBookingText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(function(){
-      showToast('✅ 예약 양식 URL 복사 완료!');
-    }).catch(function(){ fallbackCopy(url); });
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 예약 양식 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
   } else {
-    fallbackCopy(url);
+    fallbackCopy(text);
   }
 }
 
-// 리뷰 이벤트 URL 복사
+// 리뷰 이벤트 메시지 복사 (안내 메시지 + URL)
 function copyReviewUrl() {
-  var url = 'https://my.dolbommat.com/review-event.html';
+  var text = getReviewText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(function(){
-      showToast('✅ 리뷰 이벤트 URL 복사 완료!');
-    }).catch(function(){ fallbackCopy(url); });
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 리뷰 이벤트 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
   } else {
-    fallbackCopy(url);
+    fallbackCopy(text);
   }
 }
 
-// ===== 환영 / 견적 양식 설정 모달 =====
+// ===== 환영 / 견적 양식 / 예약 / 리뷰 설정 모달 =====
 function openWelcomeSettings() {
   document.getElementById('welcomeTextEdit').value = getWelcomeText();
   document.getElementById('quoteFormEdit').value = getQuoteFormText();
+  document.getElementById('bookingTextEdit').value = getBookingText();
+  document.getElementById('reviewTextEdit').value = getReviewText();
   document.getElementById('welcomeModal').classList.add('show');
 }
 function closeWelcomeSettings() {
@@ -1905,10 +1929,16 @@ function closeWelcomeOnBg(event) {
 function saveWelcomeSettings() {
   var welcome = document.getElementById('welcomeTextEdit').value.trim();
   var form = document.getElementById('quoteFormEdit').value.trim();
+  var booking = document.getElementById('bookingTextEdit').value.trim();
+  var review = document.getElementById('reviewTextEdit').value.trim();
   if (!welcome) { showToast('⚠️ 환영 메시지를 입력해주세요'); return; }
   if (!form) { showToast('⚠️ 견적 양식을 입력해주세요'); return; }
+  if (!booking) { showToast('⚠️ 예약 양식 메시지를 입력해주세요'); return; }
+  if (!review) { showToast('⚠️ 리뷰 이벤트 메시지를 입력해주세요'); return; }
   localStorage.setItem('dolbom_welcome_text', welcome);
   localStorage.setItem('dolbom_quote_form_text', form);
+  localStorage.setItem('dolbom_booking_text', booking);
+  localStorage.setItem('dolbom_review_text', review);
   renderWelcomeText();
   closeWelcomeSettings();
   showToast('✅ 설정이 저장되었습니다');
@@ -1917,8 +1947,12 @@ function resetWelcomeSettings() {
   if (!confirm('기본값으로 되돌릴까요? 현재 저장된 내용이 사라집니다.')) return;
   localStorage.removeItem('dolbom_welcome_text');
   localStorage.removeItem('dolbom_quote_form_text');
+  localStorage.removeItem('dolbom_booking_text');
+  localStorage.removeItem('dolbom_review_text');
   document.getElementById('welcomeTextEdit').value = WELCOME_DEFAULT_TEXT;
   document.getElementById('quoteFormEdit').value = QUOTE_FORM_DEFAULT_TEXT;
+  document.getElementById('bookingTextEdit').value = BOOKING_DEFAULT_TEXT;
+  document.getElementById('reviewTextEdit').value = REVIEW_DEFAULT_TEXT;
   renderWelcomeText();
   showToast('✅ 기본값으로 복원되었습니다');
 }
