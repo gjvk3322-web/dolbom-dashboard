@@ -63,8 +63,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .closed-label{display:block;font-size:8px;color:#e53935;font-weight:600;line-height:1;margin-top:-1px}
 .notice-box{background:#FFF8E1;border-radius:10px;padding:14px;margin:10px 0}
 .notice-box .title{font-size:13px;font-weight:700;color:#E65100;margin-bottom:8px}
-.notice-item{font-size:11px;color:#795548;line-height:1.7;padding-left:20px;position:relative;margin-bottom:2px}
-.notice-item::before{content:'\1F4CC';position:absolute;left:0;top:0;font-size:11px}
+.notice-section{margin-top:12px;padding-top:10px;border-top:1px dashed #F0D8A0}
+.notice-section:first-of-type{margin-top:4px;padding-top:0;border-top:0}
+.notice-section-label{font-size:11px;font-weight:700;color:#BF6E00;margin-bottom:6px;letter-spacing:0.3px}
+.notice-item{font-size:11px;color:#795548;line-height:1.7;margin-bottom:4px}
 .agree-row{display:flex;align-items:flex-start;gap:10px;padding:12px 0;cursor:pointer}
 .agree-check{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .2s}
 .agree-check.on{background:var(--green);border-color:var(--green);color:#fff}
@@ -177,15 +179,36 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="card"><div class="card-title">📝 추가 요청사항</div><div class="fg" style="margin-bottom:0"><textarea id="memo" placeholder="추가 요청사항이 있으면 입력해주세요 (선택)"></textarea></div></div>
   <div class="notice-box">
     <div class="title">예약 안내사항</div>
-    <div class="notice-item">입주청소, 이사와 같은 날 시공은 <strong style="color:#e53935">불가</strong>합니다.<br>이사 완료 후 1~2일 뒤 시공을 권장합니다.</div>
-    <div class="notice-item">작업 시작과 끝에는 현장에 계셔야 합니다.<br>부재 시 설치 변경 불가, 추가 비용 고객님 부담</div>
-    <div class="notice-item">시공 당일 가벼운 물건은 미리 치워주시면 작업 시간이 단축됩니다.</div>
-    <div class="notice-item">다른 작업(에어컨, TV설치 등)과 겹칠 경우 추가금 10만원 발생</div>
-    <div class="notice-item">소량 시공 시 시공비 10만원이 발생합니다.<br><span style="color:#795548;font-size:10px">1000매트 25장 이하 / 500매트 100장 이하</span></div>
-    <div class="notice-item">시공 72시간 전 이후 취소 불가, 예약금 20만원 환불 불가</div>
-    <div class="notice-item">온누리상품권 이벤트 종료 시 정상가 결제<br><span style="color:#795548;font-size:10px">1000매트 22T: 76,500원 / 17T: 64,500원 / 500매트: 16,900원</span></div>
-    <div class="notice-item">재사용 불가 상품으로 설치 후 반품 및 환불은 <strong style="color:#e53935">불가</strong>합니다.</div>
-    <div class="notice-item">작업 사진은 돌봄매트 마케팅에 활용될 수 있습니다.</div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">시공 일정</div>
+      <div class="notice-item">입주청소·이사와 같은 날 시공은 <strong style="color:#e53935">불가</strong>합니다. 이사 완료 후 1~2일 뒤 시공을 권장합니다.</div>
+      <div class="notice-item">시공 72시간 전 이후 일정 변경·취소 <strong style="color:#e53935">불가</strong></div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">시공 당일</div>
+      <div class="notice-item">작업 시작과 종료 부재 시 설치 변경 불가, 추가 비용은 고객님 부담입니다.</div>
+      <div class="notice-item">가벼운 물건은 미리 정리해 주시면 작업 시간이 단축됩니다.</div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">추가 비용 발생 조건</div>
+      <div class="notice-item">다른 작업(에어컨·TV설치 등)과 겹칠 경우 <strong style="color:#BF360C">+10만원</strong></div>
+      <div class="notice-item">소량 시공 시 시공비 <strong style="color:#BF360C">+10만원</strong><br><span style="color:#795548;font-size:10px">1000매트 25장 이하 / 500매트 100장 이하</span></div>
+      <div class="notice-item">온누리상품권 이벤트 종료 시 정상가 결제<br><span style="color:#795548;font-size:10px">1000매트 22T 76,500원 / 17T 64,500원 / 500매트 16,900원</span></div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">환불·반품</div>
+      <div class="notice-item">시공 72시간 전 이후 예약금 20만원 환불 <strong style="color:#e53935">불가</strong></div>
+      <div class="notice-item">재사용 불가 상품으로 설치 후 반품·환불 <strong style="color:#e53935">불가</strong>합니다.</div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">마케팅 활용</div>
+      <div class="notice-item">작업 사진은 돌봄매트 마케팅에 활용될 수 있습니다.</div>
+    </div>
   </div>
   <div class="card" id="consentCard">
     <div id="consentCardContent">
