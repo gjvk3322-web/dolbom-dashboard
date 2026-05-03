@@ -1,14 +1,19 @@
 /* ═══════════════════════════════════════════════════════════════
- * 🎨 돌봄매트 cs-consent.css v1.0
- * 통합 동의 모달 디자인
+ * 🎨 돌봄매트 cs-consent.css v1.3
+ * 통합 동의 모달 디자인 - 아정당 스타일 미니멀
  * 
  * 사용:
  *   <link rel="stylesheet" href="cs-consent.css">
  * 
  * 디자인 컨셉:
  *   - 모바일 우선 (뷰포트 480px 기준)
- *   - 돌봄매트 브랜드 컬러: #2E7D32 (그린)
- *   - 깔끔하고 신뢰감 있는 디자인
+ *   - 미니멀 깔끔 (흰 배경, 가는 라인)
+ *   - 자연스러운 [전체 동의] 시선 유도
+ * 
+ * 변경 이력:
+ *   v1.0 - 최초 작성
+ *   v1.2 - 빈 상태 시작 + 전체 동의 강조
+ *   v1.3 - 아정당 스타일 미니멀 (흰 배경 + 가는 라인)
  * ═══════════════════════════════════════════════════════════════ */
 
 /* ─── 오버레이 (배경 어둡게) ─── */
@@ -63,12 +68,6 @@
   color: #fff;
 }
 
-.cs-consent-version {
-  font-size: 11px;
-  opacity: 0.7;
-  letter-spacing: 0.3px;
-}
-
 /* ─── 닫기 버튼 ─── */
 .cs-consent-close {
   position: absolute;
@@ -95,10 +94,6 @@
   background: rgba(255, 255, 255, 0.35);
 }
 
-.cs-consent-close:active {
-  transform: scale(0.95);
-}
-
 /* ─── 본문 ─── */
 .cs-consent-body {
   padding: 18px 20px 16px;
@@ -117,150 +112,6 @@
 
 .cs-consent-intro strong {
   color: #2E7D32;
-}
-
-/* ─── 동의 항목 ─── */
-.cs-consent-item {
-  border: 1.5px solid #e8e8e3;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  overflow: hidden;
-  transition: border-color 0.15s;
-}
-
-.cs-consent-item:hover {
-  border-color: #c8e0bc;
-}
-
-.cs-consent-row {
-  display: flex;
-  align-items: center;
-  padding: 12px 14px;
-  cursor: pointer;
-  user-select: none;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* ─── 체크박스 ─── */
-.cs-consent-checkbox {
-  display: none;
-}
-
-.cs-consent-checkbox-visual {
-  width: 22px;
-  height: 22px;
-  border: 2px solid #d0d0d0;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  position: relative;
-}
-
-.cs-consent-checkbox:checked + .cs-consent-checkbox-visual {
-  background: #2E7D32;
-  border-color: #2E7D32;
-}
-
-.cs-consent-checkbox:checked + .cs-consent-checkbox-visual::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 6px;
-  width: 5px;
-  height: 11px;
-  border: solid white;
-  border-width: 0 2.5px 2.5px 0;
-  transform: rotate(45deg);
-}
-
-/* ─── 배지 (필수/선택) ─── */
-.cs-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 10px;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-.cs-badge-required {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.cs-badge-optional {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-/* ─── 동의 항목 제목 ─── */
-.cs-consent-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
-  flex: 1;
-  min-width: 0;
-}
-
-/* ─── 자세히 버튼 ─── */
-.cs-consent-toggle {
-  background: transparent;
-  border: 1px solid #e0ddd6;
-  color: #777;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-
-.cs-consent-toggle:hover {
-  background: #f5f9f3;
-  border-color: #2E7D32;
-  color: #2E7D32;
-}
-
-.cs-consent-toggle:active {
-  transform: scale(0.96);
-}
-
-/* ─── 요약 텍스트 ─── */
-.cs-consent-summary {
-  font-size: 12px;
-  color: #777;
-  line-height: 1.6;
-  padding: 0 14px 12px;
-  margin-left: 30px;
-}
-
-/* ─── 펼친 본문 ─── */
-.cs-consent-full {
-  background: #f9f9f6;
-  border-top: 1px solid #e8e8e3;
-  padding: 14px 16px;
-  animation: csExpand 0.25s ease;
-}
-
-@keyframes csExpand {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 600px; }
-}
-
-.cs-consent-full pre {
-  font-family: 'Noto Sans KR', sans-serif;
-  font-size: 12px;
-  color: #555;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 0;
 }
 
 /* ─── 푸터 (버튼 영역) ─── */
@@ -294,19 +145,10 @@
   color: #555;
 }
 
-.cs-btn-secondary:hover {
-  background: #f5f5f0;
-  border-color: #999;
-}
-
 .cs-btn-primary {
   background: linear-gradient(135deg, #2E7D32, #1B5E20);
   border-color: #1B5E20;
   color: #fff;
-}
-
-.cs-btn-primary:hover {
-  background: linear-gradient(135deg, #388E3C, #2E7D32);
 }
 
 /* ─── 안내문구 ─── */
@@ -320,22 +162,8 @@
   border-radius: 0 0 16px 16px;
 }
 
-/* ─── 좁은 화면 대응 ─── */
-@media (max-width: 360px) {
-  .cs-consent-header { padding: 16px 18px 14px; }
-  .cs-consent-header h3 { font-size: 15px; }
-  .cs-consent-body { padding: 14px 16px 12px; }
-  .cs-consent-row { padding: 10px 12px; }
-  .cs-consent-title { font-size: 12px; }
-  .cs-consent-toggle { font-size: 10px; padding: 3px 8px; }
-  .cs-consent-summary { font-size: 11px; padding: 0 12px 10px; margin-left: 26px; }
-  .cs-consent-footer { padding: 12px 16px 14px; }
-  .cs-btn { padding: 11px; font-size: 13px; }
-}
-
 /* ═══════════════════════════════════════════════════════════════
- * 🆕 EMBED 모드 (다른 모달 안에 동의 항목 삽입)
- * sample.html 통합 모달 등에서 사용
+ * 🎨 v1.3: 아정당 스타일 - 미니멀 박스
  * ═══════════════════════════════════════════════════════════════ */
 
 .cs-consent-embed {
@@ -347,86 +175,313 @@
   font-weight: 700;
   color: #1a1a1a;
   margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1.5px solid #e8e8e3;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-/* 🆕 그룹 라벨 (필수 동의 / 선택 동의) */
-.cs-consent-group-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #888;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  padding-left: 4px;
-  letter-spacing: 0.3px;
+/* 동의 박스 - 흰 배경 + 가는 테두리 */
+.cs-consent-box {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 6px 16px;
+  overflow: hidden;
 }
 
-.cs-consent-group-label:first-of-type {
-  margin-top: 4px;
-}
-
-/* 모두 동의 행 (전체 항목 위에 강조) */
+/* 전체 동의 행 - 흰 배경, 굵은 글씨 */
 .cs-agree-all-row {
   display: flex;
   align-items: center;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, #f5f9f3, #e8f5e9);
-  border: 1.5px solid #6B9EA6;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  padding: 14px 0;
   cursor: pointer;
   user-select: none;
-  gap: 10px;
-  transition: all 0.15s;
+  gap: 12px;
+  transition: opacity 0.15s;
 }
 
-.cs-agree-all-row:hover {
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+.cs-agree-all-row:active {
+  opacity: 0.7;
 }
 
 .cs-agree-all-text {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
-  color: #2E7D32;
+  color: #1a1a1a;
   flex: 1;
+  letter-spacing: -0.3px;
 }
 
-/* embed 환경의 cs-consent-item 스타일 미세 조정 */
+/* 가로 구분선 */
+.cs-consent-divider {
+  height: 1px;
+  background: #ececec;
+  margin: 0 -16px 4px;
+}
+
+/* ─── 동의 항목 (아정당 스타일) ─── */
 .cs-consent-embed .cs-consent-item {
-  border: 1px solid #e8e8e3;
-  border-radius: 8px;
-  margin-bottom: 6px;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 0;
   overflow: hidden;
-  transition: border-color 0.15s;
-}
-
-.cs-consent-embed .cs-consent-item:hover {
-  border-color: #c8e0bc;
 }
 
 .cs-consent-embed .cs-consent-row {
-  padding: 10px 12px;
-  gap: 7px;
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+  transition: opacity 0.15s;
 }
 
+.cs-consent-embed .cs-consent-row:active {
+  opacity: 0.7;
+}
+
+/* 체크박스 */
+.cs-consent-embed .cs-consent-checkbox {
+  display: none;
+}
+
+.cs-consent-embed .cs-consent-checkbox-visual {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  position: relative;
+  background: #fff;
+}
+
+.cs-consent-embed .cs-consent-checkbox:checked + .cs-consent-checkbox-visual {
+  background: #2E7D32;
+  border-color: #2E7D32;
+}
+
+.cs-consent-embed .cs-consent-checkbox:checked + .cs-consent-checkbox-visual::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* 동의 항목 제목 */
 .cs-consent-embed .cs-consent-title {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+  letter-spacing: -0.2px;
 }
 
+/* (필수) / (선택) 라벨 - 텍스트 앞에 */
+.cs-label-req {
+  color: #c62828;
+  font-weight: 500;
+}
+
+.cs-label-opt {
+  color: #888;
+  font-weight: 500;
+}
+
+/* 자세히 버튼 - 화살표만 */
 .cs-consent-embed .cs-consent-toggle {
-  font-size: 10px;
-  padding: 3px 8px;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 22px;
+  font-weight: 400;
+  padding: 0 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
+.cs-consent-embed .cs-consent-toggle:hover {
+  color: #555;
+}
+
+.cs-consent-embed .cs-consent-toggle:active {
+  transform: scale(0.92);
+}
+
+/* 펼친 본문 */
 .cs-consent-embed .cs-consent-full {
+  background: #f9f9f6;
   padding: 12px 14px;
+  margin: 0 -16px 8px;
+  border-top: 1px solid #ececec;
+  border-bottom: 1px solid #ececec;
+  animation: csExpand 0.25s ease;
+}
+
+@keyframes csExpand {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 600px; }
 }
 
 .cs-consent-embed .cs-consent-full pre {
+  font-family: 'Noto Sans KR', sans-serif;
   font-size: 11px;
+  color: #555;
   line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+/* 안내 문구 */
+.cs-consent-embed-notice {
+  font-size: 11px;
+  color: #999;
+  text-align: left;
+  margin-top: 10px;
+  padding: 0 4px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * 모달 모드용 (아정당 스타일 적용)
+ * ═══════════════════════════════════════════════════════════════ */
+
+.cs-consent-modal .cs-consent-item {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.cs-consent-modal .cs-consent-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+}
+
+.cs-consent-modal .cs-consent-checkbox {
+  display: none;
+}
+
+.cs-consent-modal .cs-consent-checkbox-visual {
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  position: relative;
+  background: #fff;
+}
+
+.cs-consent-modal .cs-consent-checkbox:checked + .cs-consent-checkbox-visual {
+  background: #2E7D32;
+  border-color: #2E7D32;
+}
+
+.cs-consent-modal .cs-consent-checkbox:checked + .cs-consent-checkbox-visual::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 5px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+
+.cs-consent-modal .cs-consent-title {
+  font-size: 13px;
+  font-weight: 400;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.cs-consent-modal .cs-consent-toggle {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 22px;
+  font-weight: 400;
+  padding: 0 4px;
+  cursor: pointer;
+  font-family: inherit;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.cs-consent-modal .cs-consent-summary {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.6;
+  padding: 0 14px 12px;
+  margin-left: 32px;
+}
+
+.cs-consent-modal .cs-consent-full {
+  background: #f9f9f6;
+  border-top: 1px solid #e5e5e5;
+  padding: 14px 16px;
+  animation: csExpand 0.25s ease;
+}
+
+.cs-consent-modal .cs-consent-full pre {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+/* ─── 좁은 화면 대응 ─── */
+@media (max-width: 360px) {
+  .cs-consent-header { padding: 16px 18px 14px; }
+  .cs-consent-header h3 { font-size: 15px; }
+  .cs-consent-body { padding: 14px 16px 12px; }
+  .cs-consent-modal .cs-consent-row { padding: 10px 12px; }
+  .cs-consent-modal .cs-consent-title { font-size: 12px; }
+  .cs-consent-footer { padding: 12px 16px 14px; }
+  .cs-btn { padding: 11px; font-size: 13px; }
+  
+  .cs-consent-box { padding: 4px 14px; }
+  .cs-agree-all-text { font-size: 14px; }
+  .cs-consent-embed .cs-consent-title { font-size: 12px; }
+  .cs-consent-divider { margin: 0 -14px 4px; }
+  .cs-consent-embed .cs-consent-full { margin: 0 -14px 8px; }
 }

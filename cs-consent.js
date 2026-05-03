@@ -164,15 +164,21 @@
    */
   function _buildModalHTML() {
     var itemsHTML = CONSENT_ITEMS.map(function(item, idx) {
-      var initialChecked = item.required ? 'checked' : '';
+      // 🆕 v1.3: 아정당 스타일 - 라벨을 텍스트 앞에 배치, 빈 상태 시작
+      var initialChecked = '';
+      var labelText = item.required ? '(필수)' : '(선택)';
+      var labelClass = item.required ? 'cs-label-req' : 'cs-label-opt';
 
       return ''
         + '<div class="cs-consent-item" data-key="' + item.key + '">'
         +   '<label class="cs-consent-row">'
         +     '<input type="checkbox" class="cs-consent-checkbox" ' + initialChecked + ' data-key="' + item.key + '">'
         +     '<span class="cs-consent-checkbox-visual"></span>'
-        +     '<span class="cs-consent-title">' + item.title + '</span>'
-        +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '">자세히 ▼</button>'
+        +     '<span class="cs-consent-title">'
+        +       '<span class="' + labelClass + '">' + labelText + '</span> '
+        +       item.title
+        +     '</span>'
+        +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '" aria-label="자세히 보기">›</button>'
         +   '</label>'
         +   (item.summary ? '<div class="cs-consent-summary">' + item.summary + '</div>' : '')
         +   '<div class="cs-consent-full" id="cs-full-' + item.key + '" style="display:none;">'
@@ -231,10 +237,12 @@
         if (!fullEl) return;
         if (fullEl.style.display === 'none') {
           fullEl.style.display = 'block';
-          btn.textContent = '접기 ▲';
+          btn.textContent = '⌃';
+          btn.setAttribute('aria-label', '접기');
         } else {
           fullEl.style.display = 'none';
-          btn.textContent = '자세히 ▼';
+          btn.textContent = '›';
+          btn.setAttribute('aria-label', '자세히 보기');
         }
       });
     });
@@ -451,14 +459,21 @@
     var optionalItems = visibleItems.filter(function(item) { return !item.required; });
 
     function _renderItem(item) {
-      var initialChecked = item.required ? 'checked' : '';
+      // 🆕 v1.3: 아정당 스타일 - 라벨을 텍스트 앞에 배치
+      var initialChecked = '';
+      var labelText = item.required ? '(필수)' : '(선택)';
+      var labelClass = item.required ? 'cs-label-req' : 'cs-label-opt';
+      
       return ''
         + '<div class="cs-consent-item" data-key="' + item.key + '">'
         +   '<label class="cs-consent-row">'
         +     '<input type="checkbox" class="cs-consent-checkbox" ' + initialChecked + ' data-key="' + item.key + '">'
         +     '<span class="cs-consent-checkbox-visual"></span>'
-        +     '<span class="cs-consent-title">' + item.title + '</span>'
-        +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '">자세히 ▼</button>'
+        +     '<span class="cs-consent-title">'
+        +       '<span class="' + labelClass + '">' + labelText + '</span> '
+        +       item.title
+        +     '</span>'
+        +     '<button type="button" class="cs-consent-toggle" data-key="' + item.key + '" aria-label="자세히 보기">›</button>'
         +   '</label>'
         +   (item.summary ? '<div class="cs-consent-summary">' + item.summary + '</div>' : '')
         +   '<div class="cs-consent-full" id="cs-full-embed-' + item.key + '" style="display:none;">'
@@ -467,28 +482,27 @@
         + '</div>';
     }
 
-    var requiredHTML = requiredItems.length
-      ? '<div class="cs-consent-group-label">필수 동의</div>' + requiredItems.map(_renderItem).join('')
-      : '';
-
-    var optionalHTML = optionalItems.length
-      ? '<div class="cs-consent-group-label">선택 동의</div>' + optionalItems.map(_renderItem).join('')
-      : '';
+    var requiredHTML = requiredItems.map(_renderItem).join('');
+    var optionalHTML = optionalItems.map(_renderItem).join('');
 
     var agreeAllHTML = showAgreeAll
-      ? '<label class="cs-agree-all-row">'
+      ? '<label class="cs-agree-all-row" id="cs-agree-all-label">'
         + '<input type="checkbox" class="cs-consent-checkbox" id="cs-agree-all-embed">'
         + '<span class="cs-consent-checkbox-visual"></span>'
-        + '<span class="cs-agree-all-text">모두 동의 (선택 항목 포함)</span>'
+        + '<span class="cs-agree-all-text">전체 동의</span>'
         + '</label>'
       : '';
 
     return ''
       + '<div class="cs-consent-embed">'
       +   '<div class="cs-consent-embed-title">🔒 개인정보 수집 동의</div>'
-      +   agreeAllHTML
-      +   requiredHTML
-      +   optionalHTML
+      +   '<div class="cs-consent-box">'
+      +     agreeAllHTML
+      +     '<div class="cs-consent-divider"></div>'
+      +     requiredHTML
+      +     optionalHTML
+      +   '</div>'
+      +   '<div class="cs-consent-embed-notice">※ 선택 항목은 거부하셔도 서비스 이용이 가능합니다</div>'
       + '</div>';
   }
 
@@ -496,7 +510,7 @@
   function bindItemsEvents(containerEl) {
     if (!containerEl) return;
 
-    // 자세히 ▼ / 접기 ▲ 버튼
+    // 자세히 › / 접기 ⌃ 버튼
     var toggles = containerEl.querySelectorAll('.cs-consent-toggle');
     Array.prototype.forEach.call(toggles, function(btn) {
       btn.addEventListener('click', function(e) {
@@ -507,10 +521,12 @@
         if (!fullEl) return;
         if (fullEl.style.display === 'none') {
           fullEl.style.display = 'block';
-          btn.textContent = '접기 ▲';
+          btn.textContent = '⌃';
+          btn.setAttribute('aria-label', '접기');
         } else {
           fullEl.style.display = 'none';
-          btn.textContent = '자세히 ▼';
+          btn.textContent = '›';
+          btn.setAttribute('aria-label', '자세히 보기');
         }
       });
     });
@@ -627,11 +643,11 @@
     submitConsent: submitConsent,
 
     // 디버그용
-    _version: '1.1',
+    _version: '1.3',
     _consentVersion: CONSENT_VERSION,
     _items: CONSENT_ITEMS
   };
 
-  console.log('[DolbomConsent] v1.1 로드 완료 (동의서 ' + CONSENT_VERSION + ' · embed 모드 지원)');
+  console.log('[DolbomConsent] v1.3 로드 완료 (동의서 ' + CONSENT_VERSION + ' · 아정당 스타일 미니멀)');
 
 })(window);
