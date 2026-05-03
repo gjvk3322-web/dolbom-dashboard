@@ -501,6 +501,77 @@ body {
 }
 
 .reply-card { background: #FEF7D0; border: 1.5px solid #FFE066; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+
+/* ===== 모바일 친화 콤팩트 카톡 답변 카드 (평수 입력 위) ===== */
+.reply-card-mobile {
+  background: #FEF7D0;
+  border: 1.5px solid #FFE066;
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.reply-mobile-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.reply-mobile-title {
+  font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; gap: 4px;
+  color: #8B6914;
+}
+.reply-mobile-toggle {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid #FFD54F;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; color: #8B6914;
+  transition: all 0.15s;
+}
+.reply-mobile-toggle:hover { background: #fff; }
+.reply-mobile-text {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #333;
+  white-space: pre-wrap;
+  border: 1px solid #f0e4c0;
+  margin-bottom: 8px;
+  font-family: inherit;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.reply-mobile-text[data-empty="true"] {
+  color: #a08040;
+  font-style: italic;
+  text-align: center;
+  padding: 16px 12px;
+  font-size: 12px;
+}
+.reply-mobile-more {
+  font-size: 10.5px;
+  color: #a08040;
+  margin-top: -4px;
+  padding: 2px 0 8px;
+  text-align: center;
+  font-style: italic;
+}
+.reply-mobile-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.reply-mobile-btn {
+  border: none; border-radius: 8px; padding: 10px;
+  font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.reply-mobile-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.reply-mobile-btn-primary { background: #2E7D32; color: #fff; }
+.reply-mobile-btn-secondary { background: #c98a3e; color: #fff; }
 .reply-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .reply-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .reply-text {
@@ -869,8 +940,7 @@ body {
         <div class="welcome-title"><span class="welcome-icon">🌟</span> 고객 환영 메시지</div>
         <button class="welcome-settings-btn" onclick="openWelcomeSettings()" title="환영 메시지 / 영상 설정">⚙️</button>
       </div>
-      <div class="welcome-hint">고객 응대에 필요한 메시지·링크 (클릭 시 자동 복사)</div>
-      <div class="welcome-text" id="welcomeText"></div>
+      <div class="welcome-text" id="welcomeText" style="display:none"></div>
       <div class="welcome-actions">
         <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
           1️⃣ <span>환영 메시지</span>
@@ -885,6 +955,17 @@ body {
           ⭐ <span>리뷰 이벤트</span>
         </button>
       </div>
+    </div>
+
+    <!-- ===== 카톡 답변 텍스트 (콤팩트, 평수 입력 위) ===== -->
+    <div class="card reply-card-mobile" id="replyCardMobile">
+      <div class="reply-mobile-header">
+        <div class="reply-mobile-title">💬 카톡 답변 (자동 생성)</div>
+        <button class="reply-mobile-toggle" onclick="toggleReplyExpand()" id="replyExpandBtn">▼ 펼치기</button>
+      </div>
+      <div class="reply-mobile-text" id="replyTextMobile" data-empty="true">평수를 입력하면 카톡 답변이 자동으로 생성됩니다.</div>
+      <div class="reply-mobile-more" id="replyMoreHint" style="display:none">⋯ 펼치기 눌러 전체 내용 (제품 2·3 + 혜택 안내) 보기</div>
+      <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyReply()">📋 복사하기</button>
     </div>
 
     <div class="card">
@@ -1088,17 +1169,6 @@ body {
       </div>
     </div>
 
-    <div id="replyCard" class="reply-card" style="display:none">
-      <div class="reply-head">
-        <div class="reply-title">💬 카톡 답변 텍스트</div>
-        <span style="font-size:10px;color:#999">고객에게 보낼 메시지</span>
-      </div>
-      <div class="reply-text" id="replyText"></div>
-      <div class="reply-actions">
-        <button class="reply-btn reply-btn-primary" onclick="copyReply()">📋 복사하기</button>
-        <button class="reply-btn reply-btn-secondary" onclick="toggleReplyStyle()" id="styleBtn">📝 간단 모드</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1172,7 +1242,6 @@ var smallRoomCount = 0;
 var rooms = [];
 var roomIdCounter = 0;
 var useDimMode = false;
-var replyStyle = 'full';
 // 기본값: 모든 혜택 ON (직원이 고객 상황 따라 OFF로 전환)
 var selectedBenefits = {
   review_contract: true,
@@ -1507,7 +1576,16 @@ function showEmptyState() {
   document.getElementById('quoteContext').style.display = 'none';
   document.getElementById('paymentNotice').style.display = 'none';
   document.getElementById('chartCard').style.display = 'none';
-  document.getElementById('replyCard').style.display = 'none';
+  // 카톡 답변 카드는 그대로 두고 빈 상태(placeholder)로 되돌림
+  var replyTextEl = document.getElementById('replyTextMobile');
+  var replyHintEl = document.getElementById('replyMoreHint');
+  if (replyTextEl) {
+    replyTextEl.setAttribute('data-empty', 'true');
+    replyTextEl.textContent = '평수를 입력하면 카톡 답변이 자동으로 생성됩니다.';
+  }
+  if (replyHintEl) replyHintEl.style.display = 'none';
+  window._fullReplyText = '';
+  window._previewReplyText = '';
   document.getElementById('shareCard').style.display = 'none';
   // 자동 캡처 타이머 취소 + 안내 텍스트 리셋
   if (captureDebounceTimer) clearTimeout(captureDebounceTimer);
@@ -1673,7 +1751,9 @@ function renderChart(results, hasAnyP1, hasAnyPhase2) {
 }
 
 function renderReply(results, py) {
-  document.getElementById('replyCard').style.display = 'block';
+  // 카드는 항상 보임. 데이터만 채움.
+  var card = document.getElementById('replyCardMobile');
+  card.style.display = 'block';
 
   // 만 단위 변환 (Math.floor — 대장님 양식 기준)
   function toMan(n) { return Math.floor((n||0) / 10000) + '만'; }
@@ -1737,18 +1817,54 @@ function renderReply(results, py) {
   text += '샘플 신청, 시공 예약, 자주 묻는 질문은 아래 링크에서 한 번에 확인하실 수 있습니다.\n';
   text += '👉 https://www.dolbommat.com/c.html';
 
-  document.getElementById('replyText').textContent = text;
+  // 전체 텍스트는 전역에 보관 (복사 / 펼침에 사용)
+  window._fullReplyText = text;
+  window._previewReplyText = buildReplyPreview(text);
+  // 현재 상태에 맞춰 표시 (펼침 / 콤팩트)
+  var textEl = document.getElementById('replyTextMobile');
+  var hintEl = document.getElementById('replyMoreHint');
+  if (textEl) {
+    textEl.removeAttribute('data-empty'); // placeholder 스타일 해제
+    textEl.textContent = window._replyExpanded ? text : window._previewReplyText;
+  }
+  // 콤팩트 상태일 때만 안내 보임
+  if (hintEl) hintEl.style.display = window._replyExpanded ? 'none' : 'block';
 }
 
-function toggleReplyStyle() {
-  replyStyle = (replyStyle === 'full') ? 'simple' : 'full';
-  document.getElementById('styleBtn').textContent =
-    replyStyle === 'full' ? '📝 간단 모드' : '📋 상세 모드';
-  recalculate();
+// ===== 카톡 답변 미리보기 (1번 제품까지만) =====
+function buildReplyPreview(fullText) {
+  var lines = fullText.split('\n');
+  var preview = [];
+  var emptyLineCount = 0;
+  for (var i = 0; i < lines.length; i++) {
+    preview.push(lines[i]);
+    if (lines[i].trim() === '') {
+      emptyLineCount++;
+      if (emptyLineCount >= 2) break;
+    }
+  }
+  return preview.join('\n').trim();
+}
+
+// ===== 펼치기 / 접기 토글 =====
+function toggleReplyExpand() {
+  window._replyExpanded = !window._replyExpanded;
+  var btn = document.getElementById('replyExpandBtn');
+  var hint = document.getElementById('replyMoreHint');
+  var textEl = document.getElementById('replyTextMobile');
+  if (window._replyExpanded) {
+    btn.textContent = '▲ 접기';
+    if (hint) hint.style.display = 'none';
+    textEl.textContent = window._fullReplyText || '';
+  } else {
+    btn.textContent = '▼ 펼치기';
+    if (hint) hint.style.display = 'block';
+    textEl.textContent = window._previewReplyText || '';
+  }
 }
 
 function copyReply() {
-  var text = document.getElementById('replyText').textContent;
+  var text = window._fullReplyText || '';
   if (!text) { showToast('⚠️ 내용이 없습니다'); return; }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
