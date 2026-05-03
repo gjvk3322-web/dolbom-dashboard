@@ -218,18 +218,44 @@ body{
   line-height:1.4;
 }
 .step-action{
-  background:var(--baby-blue-light);
+  background:#fff;
   color:var(--baby-blue-deep);
-  padding:5px 12px;
-  border-radius:14px;
-  font-size:11px;
+  border:1px solid var(--baby-blue-dark);
+  padding:7px 12px;
+  border-radius:8px;
+  font-size:12px;
   font-weight:700;
   white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  transition:all 0.15s ease;
+  flex-shrink:0;
 }
+.step-action::after{
+  content:'›';
+  font-size:14px;
+  font-weight:500;
+  margin-top:-1px;
+}
+/* 1번 메인 강조 — 채워진 버튼 */
+.step-action.primary{
+  background:var(--baby-blue-deep);
+  color:#fff;
+  border-color:var(--baby-blue-deep);
+}
+/* 4번 미션 — 코랄 아웃라인 */
 .step-action.highlight{
-  background:var(--primary-light);
   color:var(--primary);
+  border-color:var(--primary);
 }
+/* 호버/탭 피드백 */
+@media (hover:hover){
+  .step:hover .step-action{background:var(--baby-blue-light);border-color:var(--baby-blue-deep)}
+  .step:hover .step-action.primary{filter:brightness(0.92)}
+  .step:hover .step-action.highlight{background:var(--primary-light)}
+}
+.step:active .step-action{transform:scale(0.96)}
 
 /* 추가 정보 */
 .extra-menu{
@@ -426,7 +452,7 @@ body{
         <div class="step-title">우리집 견적 받기</div>
         <div class="step-desc">평수 입력하면 즉시 가격 확인</div>
       </div>
-      <div class="step-action">계산</div>
+      <div class="step-action primary">견적받기</div>
     </a>
 
     <a href="sample.html" class="step" id="stepSample">
@@ -435,7 +461,7 @@ body{
         <div class="step-title">무료 샘플 받기</div>
         <div class="step-desc">직접 만져보고 품질 확인</div>
       </div>
-      <div class="step-action">신청</div>
+      <div class="step-action">신청하기</div>
     </a>
 
     <a href="booking.html" class="step" id="stepBooking">
@@ -444,7 +470,7 @@ body{
         <div class="step-title">시공 예약</div>
         <div class="step-desc">원하는 날짜 선택해 신청</div>
       </div>
-      <div class="step-action">예약</div>
+      <div class="step-action">예약하기</div>
     </a>
 
     <a href="cs-review-info.html" class="step" id="stepReview">
@@ -453,7 +479,7 @@ body{
         <div class="step-title">시공 후 후기 작성</div>
         <div class="step-desc">최대 11만원 캐시백</div>
       </div>
-      <div class="step-action highlight">미션</div>
+      <div class="step-action highlight">참여하기</div>
     </a>
 
   </div>
