@@ -1757,10 +1757,10 @@ function renderReply(results, py) {
 
   // 만 단위 변환 (Math.floor — 대장님 양식 기준)
   function toMan(n) { return Math.floor((n||0) / 10000) + '만'; }
-  // 수량+가격 한 줄 형태: "40장(264만) ~ 46장(305만)" 또는 "40장(264만)"
+  // 수량+가격 한 줄 형태: "40장(264만)~46장(305만)" 또는 "40장(264만)"
   function priceLine(r, costLow, costHigh) {
     if (r.isRange) {
-      return r.totalQty + '장(' + toMan(r[costLow]) + ') ~ ' + r.rangeQty + '장(' + toMan(r[costHigh]) + ')';
+      return r.totalQty + '장(' + toMan(r[costLow]) + ')~' + r.rangeQty + '장(' + toMan(r[costHigh]) + ')';
     }
     return r.totalQty + '장(' + toMan(r[costLow]) + ')';
   }
@@ -1777,7 +1777,7 @@ function renderReply(results, py) {
   var PRODUCT_REPLY_INFO = {
     mat1000_22: { badge: '대형사이즈', feature: '층간소음, 아이안전' },
     mat1000_17: { badge: '대형사이즈', feature: '아이안전, 반려동물 추천' },
-    mat500:     { badge: '실속형',     feature: '합리적 가격' }
+    mat500:     { badge: '실속형',     feature: '층간소음, 아이안전, 합리적 가격' }
   };
 
   var numberIcons = ['1️⃣', '2️⃣', '3️⃣'];
@@ -1798,7 +1798,7 @@ function renderReply(results, py) {
     var p = r.product;
     var icon = numberIcons[i] || '·';
     var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
-    text += icon + ' ' + p.name + ' (' + info.badge + ')\n';
+    text += icon + ' ' + p.name + ' [' + info.badge + ']\n';
     text += '기존 가격 : ' + priceLine(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
     text += '체감가(혜택적용): ' + priceLine(r, 'totalCost', 'rangeTotalCost') + '\n';
     text += '· 특징: ' + info.feature + '\n\n';
