@@ -412,7 +412,7 @@ body {
 }
 .product-row .val { font-weight: 600; color: #1a1a1a; font-family: 'JetBrains Mono', monospace; }
 
-.product-total { background: #f9f7f2; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; }
+.product-total { background: #f9f7f2; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: right; }
 .product-total-label { font-size: 10px; color: #999; font-weight: 500; }
 .product-total-val {
   font-size: 17px; font-weight: 800; color: #2E7D32;
@@ -435,7 +435,7 @@ body {
   background: #FFF8E1; border-radius: 8px; border: 1px dashed #FFB74D;
 }
 .product-phase2-title { font-size: 9.5px; color: #FF8F00; font-weight: 700; margin-bottom: 4px; }
-.product-phase2-final { text-align: center; margin-top: 6px; padding-top: 6px; border-top: 1px solid #FFE0A0; }
+.product-phase2-final { text-align: right; margin-top: 6px; padding-top: 6px; border-top: 1px solid #FFE0A0; }
 .product-phase2-final-label { font-size: 9px; color: #FF8F00; font-weight: 600; }
 .product-phase2-final-val {
   font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800;
@@ -1675,99 +1675,64 @@ function renderChart(results, hasAnyP1, hasAnyPhase2) {
 function renderReply(results, py) {
   document.getElementById('replyCard').style.display = 'block';
 
-  // 견적 기준 - 줄바꿈 형태로 명확하게 표시 (고객이 한눈에 확인)
-  var contextLines = [];
+  // 만 단위 변환 (Math.floor — 대장님 양식 기준)
+  function toMan(n) { return Math.floor((n||0) / 10000) + '만'; }
+  function priceText(r, lowField, highField) {
+    if (r.isRange) return toMan(r[lowField]) + ' ~ ' + toMan(r[highField]);
+    return toMan(r[lowField]);
+  }
+
+  // 혜택 표시 매핑 (카톡 양식 라벨)
+  var BENEFIT_DISPLAY = {
+    review_contract: '계약 후기 (-3만)',
+    group_buy: '5인 공구 (-3%)',
+    onnuri: '온누리 결제 (-7%)',
+    review_event: '추가 혜택: 후기 5곳 작성 시 8만원 현금 캐시백'
+  };
+
+  // 제품별 카톡 양식 라벨 (코드 기본값과 다른 카피로 보낼 때 사용)
+  var PRODUCT_REPLY_INFO = {
+    mat1000_22: { badge: '대형사이즈', feature: '층간소음, 아이안전' },
+    mat1000_17: { badge: '대형사이즈', feature: '아이안전, 반려동물 추천' },
+    mat500:     { badge: '실속형',     feature: '합리적 가격' }
+  };
+
+  var numberIcons = ['1️⃣', '2️⃣', '3️⃣'];
+
+  var text = '';
+
+  // 시공 기준 라인 (제목 + 조건 한 줄로)
   if (useDimMode) {
-    var dimSummary = rooms
-      .filter(function(r){ return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0; })
-      .map(function(r){ return r.name + ' ' + r.w + '×' + r.h + 'mm'; })
-      .join(', ');
-    contextLines.push('📐 입력 방식: 도면 치수 기반');
-    contextLines.push('📏 치수: ' + dimSummary);
+    text += py + '평형 도면 기준 견적 안내\n\n';
   } else {
-    var roomSizeText = roomSizeMode === 'wide' ? '거실 넓은편' :
-                       roomSizeMode === 'range' ? '거실 평균~넓은편' : '거실 평균';
     var expandText = isExpand ? '확장형' : '비확장';
-    contextLines.push('🏠 평수: ' + py + '평 (' + expandText + ', ' + roomSizeText + ')');
-    contextLines.push('🛋️ 시공 범위: ' + SCOPE_NAMES[currentScopeIdx]);
-    if (smallRoomCount > 0) contextLines.push('🚪 작은방: ' + smallRoomCount + '개 추가');
-  }
-  // 한 줄용 (간단 모드에서 사용)
-  var conditionLineShort;
-  if (useDimMode) {
-    conditionLineShort = '📐 도면 기준';
-  } else {
-    var sizeShort = roomSizeMode === 'wide' ? ' (거실 넓은편)' :
-                    roomSizeMode === 'range' ? ' (평균~넓은편)' : '';
-    conditionLineShort = '🏠 ' + py + '평 ' + (isExpand?'확장형':'비확장') +
-                         sizeShort + ' / ' + SCOPE_NAMES[currentScopeIdx];
-    if (smallRoomCount > 0) conditionLineShort += ' / 작은방 '+smallRoomCount+'개';
+    var scopeText = SCOPE_NAMES[currentScopeIdx];
+    text += py + '평형 ' + expandText + ' (' + scopeText + ') 견적 안내\n\n';
   }
 
-  var hasAnyPhase2 = results.some(function(r){ return r.hasPhase2; });
-  var hasAnyP1 = results.some(function(r){ return r.p1Discount > 0; });
+  // 제품별 견적
+  results.forEach(function(r, i) {
+    var p = r.product;
+    var icon = numberIcons[i] || '·';
+    var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
+    text += icon + ' ' + p.name + ' (' + info.badge + ')\n';
+    text += '기존 가격 : ' + priceText(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
+    text += '체감가(혜택적용): ' + priceText(r, 'totalCost', 'rangeTotalCost') + '\n';
+    text += '· 특징: ' + info.feature + '\n\n';
+  });
 
-  // 수량/금액 범위 표시 헬퍼
-  function qtyText(r) { return r.isRange ? r.totalQty+'~'+r.rangeQty : ''+r.totalQty; }
-  function totalCostText(r) { return r.isRange ? fmt(r.totalCost)+'~'+fmt(r.rangeTotalCost) : fmt(r.totalCost); }
-  function finalCostText(r) { return r.isRange ? fmt(r.finalCost)+'~'+fmt(r.rangeFinalCost) : fmt(r.finalCost); }
-
-  var text;
-  if (replyStyle === 'simple') {
-    // ===== 간단 모드: 견적 기준은 한 줄로 =====
-    text = '안녕하세요 고객님 😊\n돌봄매트 견적 안내드립니다.\n\n';
-    text += '📋 견적 기준\n' + contextLines.join('\n') + '\n\n';
-    results.forEach(function(r){
-      text += '▫️ '+r.product.name+' : '+qtyText(r)+'장 / '+totalCostText(r)+'원';
-      if (r.hasPhase2) text += '\n   ⭐ 후기 이벤트 시 → '+finalCostText(r)+'원';
-      text += '\n';
-    });
-    if (hasAnyP1) {
-      text += '\n✨ 적용 혜택: ';
-      var benefitNames = [];
-      BENEFITS.forEach(function(b){
-        if (selectedBenefits[b.key] && b.phase === 1) benefitNames.push(b.name+' '+b.label);
-      });
-      text += benefitNames.join(', ') + '\n';
+  // 적용 혜택 (체크된 것만 표시)
+  text += '🎁 체감가 적용된 혜택 안내\n';
+  BENEFITS.forEach(function(b) {
+    if (selectedBenefits[b.key] && BENEFIT_DISPLAY[b.key]) {
+      text += '✔️ ' + BENEFIT_DISPLAY[b.key] + '\n';
     }
-    text += '\n* 실제 시공 후 들어간 갯수만큼 결제됩니다.\n\n';
-    text += '📌 샘플 신청, 시공 예약, 자주 묻는 질문은 아래 페이지에서 한 번에 확인하실 수 있습니다.\n';
-    text += '👉 https://my.dolbommat.com/cs-hub.html\n\n';
-    text += '추가로 궁금하신 부분은 언제든 편하게 문의 주세요. 💕';
-  } else {
-    // ===== 상세 모드: 견적 기준 박스 + 제품별 상세 =====
-    text = '안녕하세요 고객님 😊\n돌봄매트 견적 안내드립니다.\n\n';
-    text += '📋 견적 기준\n';
-    text += '━━━━━━━━━━━━━━━━━\n';
-    contextLines.forEach(function(l){ text += l + '\n'; });
-    text += '━━━━━━━━━━━━━━━━━\n\n';
-    results.forEach(function(r){
-      var p = r.product;
-      text += '📦 '+p.name+' ('+p.badge+')\n';
-      text += '   수량: '+qtyText(r)+'장 (장당 '+fmt(p.price)+'원)';
-      if (r.hasInstallFee) text += '\n   + 소량 시공비 100,000원';
-      text += '\n';
+  });
+  text += '\n\n';
 
-      if (r.p1Discount > 0) {
-        text += '   ─ 혜택 할인\n';
-        r.p1Details.forEach(function(d){
-          text += '     · '+d.name+' '+d.label+' (-'+fmt(d.amount)+'원)\n';
-        });
-      }
-
-      var totalLabel = (r.p1Discount > 0) ? '예상 체감가' : '합계';
-      text += '   = '+totalLabel+' '+totalCostText(r)+'원\n';
-      if (r.hasPhase2) text += '   ⭐ 후기 이벤트 시 → '+finalCostText(r)+'원\n';
-      text += '   ▶ '+p.feature+'\n\n';
-    });
-    text += '━━━━━━━━━━━━━━━━━\n';
-    if (hasAnyPhase2) text += '* ⭐ 표시: 5곳 후기 작성 시 추가 80,000원 캐시백\n';
-    text += '* 실제 시공 후 들어간 수량 기준으로 결제됩니다\n';
-    text += '* 1000매트 25장 / 500매트 100장 이하 시공 시 시공비 +10만원\n\n';
-    text += '📌 샘플 신청, 시공 예약, 자주 묻는 질문은 아래 페이지에서 한 번에 확인하실 수 있습니다.\n';
-    text += '👉 https://my.dolbommat.com/cs-hub.html\n\n';
-    text += '어떤 제품이 마음에 드시는지 편하게 말씀 주세요. 😊\n자세한 상담은 언제든 편하게 문의 주세요. 💕';
-  }
+  // CTA
+  text += '샘플 신청, 시공 예약, 자주 묻는 질문은 아래 링크에서 한 번에 확인하실 수 있습니다.\n';
+  text += '👉 https://my.dolbommat.com/cs-hub.html';
 
   document.getElementById('replyText').textContent = text;
 }
