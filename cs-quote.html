@@ -1677,9 +1677,12 @@ function renderReply(results, py) {
 
   // 만 단위 변환 (Math.floor — 대장님 양식 기준)
   function toMan(n) { return Math.floor((n||0) / 10000) + '만'; }
-  function priceText(r, lowField, highField) {
-    if (r.isRange) return toMan(r[lowField]) + ' ~ ' + toMan(r[highField]);
-    return toMan(r[lowField]);
+  // 수량+가격 한 줄 형태: "40장(264만) ~ 46장(305만)" 또는 "40장(264만)"
+  function priceLine(r, costLow, costHigh) {
+    if (r.isRange) {
+      return r.totalQty + '장(' + toMan(r[costLow]) + ') ~ ' + r.rangeQty + '장(' + toMan(r[costHigh]) + ')';
+    }
+    return r.totalQty + '장(' + toMan(r[costLow]) + ')';
   }
 
   // 혜택 표시 매핑 (카톡 양식 라벨)
@@ -1687,7 +1690,7 @@ function renderReply(results, py) {
     review_contract: '계약 후기 (-3만)',
     group_buy: '5인 공구 (-3%)',
     onnuri: '온누리 결제 (-7%)',
-    review_event: '추가 혜택: 후기 5곳 작성 시 8만원 현금 캐시백'
+    review_event: '후기작성 시 8만원 현금 캐시백'
   };
 
   // 제품별 카톡 양식 라벨 (코드 기본값과 다른 카피로 보낼 때 사용)
@@ -1716,8 +1719,8 @@ function renderReply(results, py) {
     var icon = numberIcons[i] || '·';
     var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
     text += icon + ' ' + p.name + ' (' + info.badge + ')\n';
-    text += '기존 가격 : ' + priceText(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
-    text += '체감가(혜택적용): ' + priceText(r, 'totalCost', 'rangeTotalCost') + '\n';
+    text += '기존 가격 : ' + priceLine(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
+    text += '체감가(혜택적용): ' + priceLine(r, 'totalCost', 'rangeTotalCost') + '\n';
     text += '· 특징: ' + info.feature + '\n\n';
   });
 
@@ -1728,11 +1731,11 @@ function renderReply(results, py) {
       text += '✔️ ' + BENEFIT_DISPLAY[b.key] + '\n';
     }
   });
-  text += '\n\n';
+  text += '\n';
 
   // CTA
   text += '샘플 신청, 시공 예약, 자주 묻는 질문은 아래 링크에서 한 번에 확인하실 수 있습니다.\n';
-  text += '👉 https://my.dolbommat.com/cs-hub.html';
+  text += '👉 https://dolbommat.com/c.html';
 
   document.getElementById('replyText').textContent = text;
 }
