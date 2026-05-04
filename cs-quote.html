@@ -100,6 +100,8 @@ body {
 .welcome-btn-form { background: #c98a3e; color: #fff; }
 .welcome-btn-booking { background: #3a5f7c; color: #fff; }
 .welcome-btn-review { background: #a44663; color: #fff; }
+.welcome-btn-closing { background: #5d6d7e; color: #fff; }
+.welcome-btn-onnuri { background: #6a1b9a; color: #fff; }
 
 /* ===== 환영 메시지 설정 모달 ===== */
 .welcome-modal-overlay {
@@ -975,6 +977,12 @@ body {
         </button>
         <button class="welcome-btn welcome-btn-review" onclick="copyReviewUrl()">
           ⭐ <span>리뷰 이벤트</span>
+        </button>
+        <button class="welcome-btn welcome-btn-closing" onclick="copyClosingMessage()">
+          💬 <span>마무리 인사</span>
+        </button>
+        <button class="welcome-btn welcome-btn-onnuri" onclick="copyOnnuriQR()">
+          📱 <span>온누리 QR</span>
         </button>
       </div>
     </div>
@@ -2078,6 +2086,28 @@ function copyReviewUrl() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 리뷰 이벤트 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function copyOnnuriQR() {
+  var text = '돌봄매트 온누리 QR입니다!\nhttps://m.site.naver.com/274EG\n\n결제 해주시고 내역 보내주시면 되세요!';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 온누리 QR 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function copyClosingMessage() {
+  var text = '궁금하신 내용 있으시면 언제든 카톡 주시면 최대한 빠른 답변드리겠습니다!';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 마무리 인사 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
