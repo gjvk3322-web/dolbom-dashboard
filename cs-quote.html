@@ -598,6 +598,13 @@ body {
 .reply-mobile-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 .reply-mobile-btn-primary { background: #2E7D32; color: #fff; }
 .reply-mobile-btn-secondary { background: #c98a3e; color: #fff; }
+/* ===== 쓰레드 댓글 카드 전용 스타일 ===== */
+#threadsCardMobile .reply-mobile-title { color: #5B6573; }
+#threadsCardMobile .reply-mobile-btn-primary { background: #1a1a1a; color: #fff; }
+#threadsCardMobile.disabled { opacity: 0.55; }
+#threadsCardMobile.disabled .reply-mobile-btn-primary { background: #aaa; cursor: not-allowed; pointer-events: none; }
+.threads-disabled-hint { display: none; font-size: 12px; color: #888; padding: 8px 0 4px; line-height: 1.5; }
+#threadsCardMobile.disabled .threads-disabled-hint { display: block; }
 .reply-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .reply-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .reply-text {
@@ -1004,6 +1011,16 @@ body {
       <div class="reply-mobile-text" id="replyTextMobile" data-empty="true">평수를 입력하면 카톡 답변이 자동으로 생성됩니다.</div>
       <div class="reply-mobile-more" id="replyMoreHint" style="display:none">⋯ 펼치기 눌러 전체 내용 (제품 2·3 + 혜택 안내) 보기</div>
       <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyReply()">📋 복사하기</button>
+    </div>
+
+    <!-- ===== 쓰레드 댓글 텍스트 (카톡 답변 아래) ===== -->
+    <div class="card reply-card-mobile" id="threadsCardMobile">
+      <div class="reply-mobile-header">
+        <div class="reply-mobile-title">🧵 쓰레드 댓글 (자동 생성)</div>
+      </div>
+      <div class="reply-mobile-text" id="threadsTextMobile" data-empty="true">평수를 입력하면 쓰레드 댓글이 자동으로 생성됩니다.</div>
+      <div class="threads-disabled-hint">⚠️ 도면 모드에서는 쓰레드 댓글을 만들지 않아요. 도면 견적은 카톡 1:1로만 안내해주세요.</div>
+      <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyThreadsReply()">📋 쓰레드 댓글 복사</button>
     </div>
 
     <div class="card">
@@ -1630,6 +1647,15 @@ function showEmptyState() {
   if (replyHintEl) replyHintEl.style.display = 'none';
   window._fullReplyText = '';
   window._previewReplyText = '';
+  // 쓰레드 댓글 카드도 빈 상태로 복구
+  var threadsTextEl2 = document.getElementById('threadsTextMobile');
+  var threadsCardEl2 = document.getElementById('threadsCardMobile');
+  if (threadsTextEl2) {
+    threadsTextEl2.setAttribute('data-empty', 'true');
+    threadsTextEl2.textContent = '평수를 입력하면 쓰레드 댓글이 자동으로 생성됩니다.';
+  }
+  if (threadsCardEl2) threadsCardEl2.classList.remove('disabled');
+  window._threadsReplyText = '';
   document.getElementById('shareCard').style.display = 'none';
   // 자동 캡처 타이머 취소 + 안내 텍스트 리셋
   if (captureDebounceTimer) clearTimeout(captureDebounceTimer);
@@ -1882,6 +1908,77 @@ function renderReply(results, py) {
   }
   // 콤팩트 상태일 때만 안내 보임
   if (hintEl) hintEl.style.display = window._replyExpanded ? 'none' : 'block';
+
+  // ===== 쓰레드 댓글 양식 자동 생성 =====
+  var threadsCard = document.getElementById('threadsCardMobile');
+  var threadsTextEl = document.getElementById('threadsTextMobile');
+
+  if (useDimMode) {
+    // 도면 모드: 쓰레드 카드 비활성화
+    if (threadsCard) threadsCard.classList.add('disabled');
+    if (threadsTextEl) {
+      threadsTextEl.setAttribute('data-empty', 'true');
+      threadsTextEl.textContent = '도면 모드에서는 사용할 수 없어요.';
+    }
+    window._threadsReplyText = '';
+  } else {
+    // 일반 모드: 쓰레드 양식 생성
+    if (threadsCard) threadsCard.classList.remove('disabled');
+
+    var tText = '';
+    var expandTextT = isExpand ? '확장형' : '비확장';
+    var scopeTextT = SCOPE_NAMES[currentScopeIdx];
+    var smallRoomTextT = smallRoomCount > 0 ? '+작은방 ' + smallRoomCount + '개' : '';
+
+    // 첫 줄: 평수 + 시공 범위
+    tText += py + '평 ' + expandTextT + ' (' + scopeTextT + smallRoomTextT + ') 기준이에요!\n\n';
+
+    // 제품별 가격 (기본가만, 만원 단위로)
+    results.forEach(function(r) {
+      var p = r.product;
+      var priceStr;
+      if (r.isRange) {
+        priceStr = Math.floor(r.beforeDiscount/10000) + '~' + Math.floor(r.rangeBeforeDiscount/10000) + '만';
+      } else {
+        priceStr = Math.floor(r.beforeDiscount/10000) + '만';
+      }
+      tText += '🔹 ' + p.name + ' : ' + priceStr + '\n';
+    });
+
+    // 할인 차이 자동 계산 (체크된 혜택이 있을 때만)
+    var hasAnyBenefit = false;
+    BENEFITS.forEach(function(b){ if (selectedBenefits[b.key]) hasAnyBenefit = true; });
+
+    if (hasAnyBenefit && results.length > 0) {
+      // 평균 할인액 계산 (beforeDiscount - totalCost)
+      // ※ finalCost 대신 totalCost 사용: 캐시백은 후기 작성 후 별도 입금이라 "가격 인하"가 아닌 "선물"에 가까워서 제외
+      var diffSum = 0;
+      results.forEach(function(r) {
+        diffSum += (r.beforeDiscount - r.totalCost);
+      });
+      var avgDiffManwon = Math.floor((diffSum / results.length) / 10000);
+      // 5만원 단위로 반올림
+      var roundedDiff = Math.round(avgDiffManwon / 5) * 5;
+
+      if (roundedDiff >= 5) {
+        tText += '\n조건 맞으면 ' + roundedDiff + '만원 가까이 더 빠져요.\n';
+      } else {
+        tText += '\n';
+      }
+    } else {
+      tText += '\n';
+    }
+
+    // 마지막 CTA (링크 텍스트 없음 - 알고리즘 안전)
+    tText += '정확한 건 프로필 링크 한번 눌러보세요!';
+
+    window._threadsReplyText = tText;
+
+    if (threadsTextEl) {
+      threadsTextEl.removeAttribute('data-empty');
+      threadsTextEl.textContent = tText;
+    }
+  }
 }
 
 // ===== 카톡 답변 미리보기 (1번 제품까지만) =====
@@ -1973,6 +2070,17 @@ function copyReply() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+function copyThreadsReply() {
+  var text = window._threadsReplyText || '';
+  if (!text) { showToast('⚠️ 평수를 먼저 입력하세요'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 복사 완료! 쓰레드 댓글에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
