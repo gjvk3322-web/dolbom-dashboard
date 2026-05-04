@@ -332,6 +332,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="submit-area full" style="display:flex;gap:8px">
       <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()" style="flex:2">예약 접수하기</button>
+      <button id="confirmMsgBtn" onclick="copyReservationConfirm()" style="flex:1.3;padding:10px;border:none;border-radius:10px;background:#FEE500;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">💬 확정 메시지</button>
       <button id="cancelBtn" onclick="cancelReservation()" style="display:none;flex:1;padding:10px;border:none;border-radius:10px;background:#e53935;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">예약 취소</button>
     </div>
   </div>
@@ -1302,12 +1303,14 @@ function renderNewBookings(bookings){
     // 🆕 상태별 버튼
     var buttons='';
     if(isDeposited){
-      // 입금완료 상태: [폼에 채우기] [예약완료]
-      buttons='<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+      // 입금완료 상태: [확인 메시지] [폼에 채우기] [예약완료]
+      buttons='<button onclick="copyConfirmMessage('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#FEE500;color:#1a1a1a;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">💬 확인 메시지</button>'+
+              '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
               '<button onclick="updateBookingStatus('+b.rowNumber+',\'예약완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:linear-gradient(135deg,#FF6F00,#E65100);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🎉 예약완료</button>';
     } else {
-      // 신규접수 상태: [입금완료] [폼에 채우기] [취소]
-      buttons='<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
+      // 신규접수 상태: [확인 메시지] [입금완료] [폼에 채우기] [취소]
+      buttons='<button onclick="copyConfirmMessage('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#FEE500;color:#1a1a1a;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">💬 확인 메시지</button>'+
+              '<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
               '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
               '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>';
     }
@@ -1330,6 +1333,111 @@ function renderNewBookings(bookings){
   }).join('');
   
   document.getElementById('newBookingsList').innerHTML=html;
+}
+
+// 🆕 예약 확정 메시지 복사 (새 예약 폼 기준 - 시공일 확정 후)
+function copyReservationConfirm(){
+  // 폼 값 가져오기
+  var time=document.getElementById('fTime').value.trim();
+  var date=document.getElementById('fDate').value.trim();
+  var address=document.getElementById('fAddress').value.trim();
+  var phone=document.getElementById('fPhone').value.replace(/[^0-9]/g,'');
+  var isNew=document.getElementById('fIsNew').value.trim();
+  var size=document.getElementById('fSize').value.trim();
+  var scope=document.getElementById('fScope').value.trim();
+  var product=document.getElementById('fProduct1').value.trim();
+  
+  // 필수 입력 검증
+  if(!time||!date||!address||!phone||!size||!product){
+    alert('⚠️ 폼을 먼저 작성해주세요!\n\n필요한 항목:\n· 시간\n· 시공일\n· 주소\n· 연락처\n· 평수\n· 제품');
+    return;
+  }
+  
+  // 전화번호 포맷
+  var phoneFormatted=phone;
+  if(phone.length===11) phoneFormatted=phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+  else if(phone.length===10) phoneFormatted=phone.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');
+  
+  // 날짜 포맷 (2026-05-15 → 5월 15일 (목))
+  var dateObj=new Date(date);
+  var weekDays=['일','월','화','수','목','금','토'];
+  var dateFormatted=(dateObj.getMonth()+1)+'월 '+dateObj.getDate()+'일 ('+weekDays[dateObj.getDay()]+')';
+  
+  // 제품명 한글화 (모던1m17 → 모던화이트 1M 17T)
+  var productMap={
+    '마블50':'마블 (500size 22T)',
+    '코튼50':'코튼 (500size 22T)',
+    '모던50':'모던화이트 (500size 22T)',
+    '모던1m17':'모던화이트 1M 17T',
+    '모던1m22':'모던화이트 1M 22T',
+    '베이지1m17':'베이지 1M 17T',
+    '베이지1m22':'베이지 1M 22T'
+  };
+  var productName=productMap[product]||product;
+  
+  // 메시지 조립
+  var text='[돌봄매트] 시공 예약 확정 안내드립니다 :)\n\n';
+  text+='🎉 예약이 확정되었습니다!\n\n';
+  text+='📋 시공 정보\n';
+  text+='· 시공일: '+dateFormatted+' · '+time+'\n';
+  text+='· 주소: '+address+'\n';
+  text+='· 연락처: '+phoneFormatted+'\n';
+  text+='· '+size+'평'+(isNew?' / '+isNew:'')+' / '+productName+'\n';
+  text+='· 시공범위: '+scope+'\n\n';
+  text+='⏰ 시공 시작 시간은 시공 전날 안내드립니다.\n';
+  text+='✨ 본사 직영 시공팀 2명이 방문하여 약 3~4시간 소요됩니다.\n\n';
+  text+='궁금하신 점은 언제든 카카오톡 채널로 문의 주세요!';
+  
+  // 클립보드 복사
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 예약 확정 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){
+      fallbackCopyText(text);
+    });
+  } else {
+    fallbackCopyText(text);
+  }
+}
+
+// 🆕 고객 본인 확인용 메시지 복사 (카톡 채널에 붙여넣기용)
+function copyConfirmMessage(b){
+  var phoneFormatted=b.phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+  var datesStr=b.dates&&b.dates.length>0?b.dates.join(', '):'상관없음';
+  var roomStr=b.roomCount>0?' / 방추가 '+b.roomCount+'개':'';
+  
+  var text='[돌봄매트] 예약 신청 확인 안내드립니다 :)\n\n';
+  text+='📋 신청 내역\n';
+  text+='· 이름: '+b.name+'\n';
+  text+='· 연락처: '+phoneFormatted+'\n';
+  text+='· 주소: '+b.address+(b.dongHo?' '+b.dongHo:'')+'\n';
+  text+='· 희망일: '+datesStr+' · '+b.time+'\n';
+  text+='· '+b.pyung+'평 / '+b.product+(b.color?' ('+b.color+')':'')+roomStr+'\n';
+  text+='· 시공범위: '+b.scope+'\n';
+  if(b.memo) text+='· 추가요청: '+b.memo+'\n';
+  text+='\n위 내용이 맞으시면 카카오톡 채널로 "확인" 답변 부탁드립니다!\n';
+  text+='혹시 변경할 내용이 있으시면 알려주시면 빠르게 수정하겠습니다 :)';
+  
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      alert('✅ '+b.name+' 고객님의 확인 메시지가 복사되었습니다!\n카카오톡 채널방에 붙여넣어 주세요.');
+    }).catch(function(){
+      fallbackCopyText(text);
+    });
+  } else {
+    fallbackCopyText(text);
+  }
+}
+
+function fallbackCopyText(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';
+  ta.style.opacity='0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{document.execCommand('copy');alert('✅ 확인 메시지가 복사되었습니다!');}catch(e){alert('❌ 복사 실패. 직접 복사해주세요.');}
+  document.body.removeChild(ta);
 }
 
 function fillBookingForm(b){
