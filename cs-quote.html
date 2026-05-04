@@ -502,6 +502,28 @@ body {
 
 .reply-card { background: #FEF7D0; border: 1.5px solid #FFE066; border-radius: 14px; padding: 14px; margin-bottom: 10px; }
 
+/* ===== 초기화 버튼 (평수 입력 카드 우상단) ===== */
+.card-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.reset-btn {
+  background: #fff;
+  border: 1.5px solid #d8d8d8;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px; font-weight: 600;
+  color: #666; cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.reset-btn:hover {
+  background: #fef2f2;
+  border-color: #ef9a9a;
+  color: #c62828;
+}
+.reset-btn:active { transform: scale(0.97); }
+
 /* ===== 모바일 친화 콤팩트 카톡 답변 카드 (평수 입력 위) ===== */
 .reply-card-mobile {
   background: #FEF7D0;
@@ -969,7 +991,10 @@ body {
     </div>
 
     <div class="card">
-      <div class="card-title"><span class="num">1</span> 평수 입력</div>
+      <div class="card-title-row">
+        <div class="card-title" style="margin-bottom:0"><span class="num">1</span> 평수 입력</div>
+        <button class="reset-btn" onclick="resetAll()" title="모든 입력값 초기화 (다음 고객 응대용)">↻ 초기화</button>
+      </div>
       <div class="input-row">
         <div class="pyeong-input-box">
           <input type="number" inputmode="numeric" id="pyeongInput" placeholder="0" oninput="recalculate()">
@@ -1344,14 +1369,17 @@ function updateRoomDim(id, axis, val) {
 function calcQtyFromDim(is1000) {
   var matSize = is1000 ? 1000 : 500;
   var matArea = matSize * matSize;
-  var totalQty = 0;
+  var totalArea = 0;
   rooms.forEach(function(r){
     var w = parseInt(r.w) || 0;
     var h = parseInt(r.h) || 0;
-    if (w>0 && h>0) totalQty += (w*h)/matArea;
+    if (w>0 && h>0) totalArea += w*h;
   });
-  if (totalQty <= 0) return 0;
-  return Math.ceil(Math.ceil(totalQty) * 1.1);
+  if (totalArea <= 0) return 0;
+  // 10% 여유분 먼저 추가한 뒤 한 번만 올림 (이중 올림 방지)
+  // 예: 거실 3400×3400 = 11.56장 → ×1.1 = 12.72장 → 13장
+  //     (이전 버그: 11.56 → ceil → 12 → ×1.1 = 13.2 → ceil → 14장)
+  return Math.ceil((totalArea / matArea) * 1.1);
 }
 function hasDimInput() {
   return rooms.some(function(r){
@@ -1786,11 +1814,20 @@ function renderReply(results, py) {
 
   // 시공 기준 라인 (제목 + 조건 한 줄로)
   if (useDimMode) {
-    text += py + '평형 도면 기준 견적 안내\n\n';
+    // 도면 모드: 입력된 방 목록을 라인으로 추가
+    var dimRoomList = rooms
+      .filter(function(r){ return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0; })
+      .map(function(r){ return r.name + ' ' + r.w + '×' + r.h; });
+    text += '도면 기준 견적 안내\n';
+    if (dimRoomList.length > 0) {
+      text += '· 시공 범위: ' + dimRoomList.join(', ') + ' (mm)\n';
+    }
+    text += '\n';
   } else {
     var expandText = isExpand ? '확장형' : '비확장';
     var scopeText = SCOPE_NAMES[currentScopeIdx];
-    text += py + '평형 ' + expandText + ' (' + scopeText + ') 견적 안내\n\n';
+    var smallRoomTextReply = smallRoomCount > 0 ? ' + 작은방 ' + smallRoomCount + '개' : '';
+    text += py + '평형 ' + expandText + ' (' + scopeText + smallRoomTextReply + ') 견적 안내\n\n';
   }
 
   // 제품별 견적
@@ -1861,6 +1898,57 @@ function toggleReplyExpand() {
     if (hint) hint.style.display = 'block';
     textEl.textContent = window._previewReplyText || '';
   }
+}
+
+// ===== 전체 초기화 (다음 고객 응대용) =====
+function resetAll() {
+  if (!confirm('모든 입력값을 초기화할까요?\n(평수, 시공범위, 도면 치수, 작은방, 혜택 체크)')) return;
+
+  // 1) 평수 입력
+  document.getElementById('pyeongInput').value = '';
+  document.querySelectorAll('.pyeong-quick').forEach(function(b){ b.classList.remove('active'); });
+
+  // 2) 확장 / 거실 사이즈 토글 (기본값으로)
+  isExpand = true;
+  roomSizeMode = 'range';
+  document.getElementById('tbExpand').classList.add('active');
+  document.getElementById('tbNoExpand').classList.remove('active');
+  document.getElementById('tbSizeNormal').classList.remove('active');
+  document.getElementById('tbSizeRange').classList.add('active');
+  document.getElementById('tbSizeWide').classList.remove('active');
+
+  // 3) 시공 범위 (거실+복도로 기본 복귀)
+  currentScopeIdx = 0;
+  document.querySelectorAll('.scope-btn').forEach(function(b, i){
+    b.classList.toggle('active', i === 0);
+  });
+
+  // 4) 작은방 추가 0개로
+  smallRoomCount = 0;
+  document.getElementById('srCount').textContent = '0';
+  document.getElementById('srMinus').className = 'sr-btn disabled';
+
+  // 5) 도면 치수 모두 비우기
+  initRooms();
+
+  // 6) 혜택 모두 ON으로 복귀 (기본값)
+  selectedBenefits = {
+    review_contract: true,
+    group_buy: true,
+    onnuri: true,
+    review_event: true
+  };
+  renderBenefits();
+
+  // 7) 카톡 답변 펼침 상태 접기
+  window._replyExpanded = false;
+  var btn = document.getElementById('replyExpandBtn');
+  if (btn) btn.textContent = '▼ 펼치기';
+
+  // 8) 재계산 (빈 상태로 자동 전환됨)
+  recalculate();
+
+  showToast('✅ 초기화 완료');
 }
 
 function copyReply() {
