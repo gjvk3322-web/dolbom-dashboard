@@ -102,6 +102,8 @@ body {
 .welcome-btn-review { background: #a44663; color: #fff; }
 .welcome-btn-closing { background: #5d6d7e; color: #fff; }
 .welcome-btn-onnuri { background: #6a1b9a; color: #fff; }
+.welcome-btn-time { background: #00796b; color: #fff; }
+.welcome-btn-deposit { background: #d84315; color: #fff; }
 
 /* ===== 환영 메시지 설정 모달 ===== */
 .welcome-modal-overlay {
@@ -983,6 +985,12 @@ body {
         </button>
         <button class="welcome-btn welcome-btn-onnuri" onclick="copyOnnuriQR()">
           📱 <span>온누리 QR</span>
+        </button>
+        <button class="welcome-btn welcome-btn-time" onclick="copyWorkTime()">
+          🕘 <span>오전작업시간</span>
+        </button>
+        <button class="welcome-btn welcome-btn-deposit" onclick="copyDeposit()">
+          💳 <span>예약금</span>
         </button>
       </div>
     </div>
@@ -2092,6 +2100,28 @@ function copyOnnuriQR() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 온누리 QR 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function copyWorkTime() {
+  var text = '보통 작업은 9:00-10:00시 시작 되시며 오후 12-2시 마무리 되실 것 같습니다!';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 오전작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function copyDeposit() {
+  var text = '👉 예약금\n기업은행 030-505520-04-011 허민석(돌봄) 으로 20만원 입금 해주시면 예약 확정되세요~';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 예약금 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
