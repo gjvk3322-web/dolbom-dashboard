@@ -603,6 +603,9 @@ body {
 #threadsCardMobile .reply-mobile-btn-primary { background: #1a1a1a; color: #fff; }
 #threadsCardMobile.disabled { opacity: 0.55; }
 #threadsCardMobile.disabled .reply-mobile-btn-primary { background: #aaa; cursor: not-allowed; pointer-events: none; }
+/* 접힌 상태 (기본): 카드 좁게 표시 */
+#threadsCardMobile.threads-card-collapsed { padding: 8px 12px; }
+#threadsCardMobile.threads-card-collapsed .reply-mobile-header { margin-bottom: 0; }
 .threads-disabled-hint { display: none; font-size: 12px; color: #888; padding: 8px 0 4px; line-height: 1.5; }
 #threadsCardMobile.disabled .threads-disabled-hint { display: block; }
 .reply-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -1002,14 +1005,17 @@ body {
       </div>
     </div>
 
-    <!-- ===== 쓰레드 댓글 텍스트 (위 — 짧은 첫 응대용) ===== -->
-    <div class="card reply-card-mobile" id="threadsCardMobile">
-      <div class="reply-mobile-header">
+    <!-- ===== 쓰레드 댓글 텍스트 (위 — 짧은 첫 응대용, 기본 접힘) ===== -->
+    <div class="card reply-card-mobile threads-card-collapsed" id="threadsCardMobile">
+      <div class="reply-mobile-header" onclick="toggleThreadsExpand()" style="cursor:pointer">
         <div class="reply-mobile-title">🧵 쓰레드 댓글 (자동 생성)</div>
+        <button class="reply-mobile-toggle" id="threadsExpandBtn">▼ 펼치기</button>
       </div>
-      <div class="reply-mobile-text" id="threadsTextMobile" data-empty="true">평수를 입력하면 쓰레드 댓글이 자동으로 생성됩니다.</div>
-      <div class="threads-disabled-hint">⚠️ 도면 모드에서는 쓰레드 댓글을 만들지 않아요. 도면 견적은 카톡 1:1로만 안내해주세요.</div>
-      <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyThreadsReply()">📋 쓰레드 댓글 복사</button>
+      <div id="threadsExpandContent" style="display:none">
+        <div class="reply-mobile-text" id="threadsTextMobile" data-empty="true">평수를 입력하면 쓰레드 댓글이 자동으로 생성됩니다.</div>
+        <div class="threads-disabled-hint">⚠️ 도면 모드에서는 쓰레드 댓글을 만들지 않아요. 도면 견적은 카톡 1:1로만 안내해주세요.</div>
+        <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyThreadsReply()">📋 쓰레드 댓글 복사</button>
+      </div>
     </div>
 
     <!-- ===== 카톡 답변 텍스트 (아래 — 상세 견적용) ===== -->
@@ -1828,10 +1834,10 @@ function renderReply(results, py) {
   // 원 단위 표기: 1094500 → "1,094,500원"
   function formatWon(n) { return fmt(n || 0) + '원'; }
 
-  // 단일/범위 가격 표시: "13장 1,094,500원" 또는 "13장 ... ~ 15장 ..."
+  // 단일/범위 가격 표시: "13장 1,094,500원" 또는 "13장 ...~15장 ..."
   function priceLine(r, costLow, costHigh) {
     if (r.isRange) {
-      return r.totalQty + '장 ' + formatWon(r[costLow]) + ' ~ ' + r.rangeQty + '장 ' + formatWon(r[costHigh]);
+      return r.totalQty + '장 ' + formatWon(r[costLow]) + '~' + r.rangeQty + '장 ' + formatWon(r[costHigh]);
     }
     return r.totalQty + '장 ' + formatWon(r[costLow]);
   }
@@ -1879,8 +1885,8 @@ function renderReply(results, py) {
     var icon = numberIcons[i] || '·';
     var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
     text += icon + ' ' + p.name + ' [' + info.badge + ']\n';
-    text += '기존 가격 : ' + priceLine(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
-    text += '체감가(혜택적용) : ' + priceLine(r, 'finalCost', 'rangeFinalCost') + '\n';
+    text += '기존 가격 : \n' + priceLine(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
+    text += '혜택적용 체감가 : \n' + priceLine(r, 'finalCost', 'rangeFinalCost') + '\n';
     text += '· 특징: ' + info.feature + '\n\n';
   });
 
@@ -1939,7 +1945,7 @@ function renderReply(results, py) {
       var p = r.product;
       var priceStr;
       if (r.isRange) {
-        priceStr = fmt(r.beforeDiscount) + '원 ~ ' + fmt(r.rangeBeforeDiscount) + '원';
+        priceStr = fmt(r.beforeDiscount) + '원~' + fmt(r.rangeBeforeDiscount) + '원';
       } else {
         priceStr = fmt(r.beforeDiscount) + '원';
       }
@@ -2011,6 +2017,24 @@ function toggleReplyExpand() {
     btn.textContent = '▼ 펼치기';
     if (hint) hint.style.display = 'block';
     textEl.textContent = window._previewReplyText || '';
+  }
+}
+
+// 쓰레드 댓글 토글 (헤더 클릭 또는 버튼 클릭 시 펼침/접힘)
+function toggleThreadsExpand() {
+  var card = document.getElementById('threadsCardMobile');
+  var content = document.getElementById('threadsExpandContent');
+  var btn = document.getElementById('threadsExpandBtn');
+  if (!content || !btn || !card) return;
+  var isExpanded = content.style.display !== 'none';
+  if (isExpanded) {
+    content.style.display = 'none';
+    btn.textContent = '▼ 펼치기';
+    card.classList.add('threads-card-collapsed');
+  } else {
+    content.style.display = 'block';
+    btn.textContent = '▲ 접기';
+    card.classList.remove('threads-card-collapsed');
   }
 }
 
