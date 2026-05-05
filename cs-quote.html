@@ -1834,6 +1834,9 @@ function renderReply(results, py) {
   // 원 단위 표기: 1094500 → "1,094,500원"
   function formatWon(n) { return fmt(n || 0) + '원'; }
 
+  // 만원 단위 절사 표기: 3060000 → "306만원", 994500 → "99만원"
+  function toMan(n) { return Math.floor((n || 0) / 10000) + '만원'; }
+
   // 단일/범위 가격 표시: "13장 1,094,500원" 또는 "13장 ...~15장 ..."
   function priceLine(r, costLow, costHigh) {
     if (r.isRange) {
@@ -1844,10 +1847,10 @@ function renderReply(results, py) {
 
   // 혜택 표시 매핑 (카톡 양식 라벨)
   var BENEFIT_DISPLAY = {
-    review_contract: '계약 후기 (-3만)',
-    group_buy: '5인 공구 (-3%)',
-    onnuri: '온누리 결제 (-7%)',
-    review_event: '후기작성 시 8만원 현금 캐시백'
+    review_contract: '계약 후기(-3만)',
+    group_buy: '5인 공구(-3%)',
+    onnuri: '온누리 결제(-7%)',
+    review_event: '후기작성(-8만)'
   };
 
   // 제품별 카톡 양식 라벨 (코드 기본값과 다른 카피로 보낼 때 사용)
@@ -1867,7 +1870,7 @@ function renderReply(results, py) {
     var dimRoomList = rooms
       .filter(function(r){ return (parseInt(r.w)||0) > 0 && (parseInt(r.h)||0) > 0; })
       .map(function(r){ return r.name + ' ' + r.w + '×' + r.h; });
-    text += '도면 기준 견적 안내\n';
+    text += '도면 기준 견적\n';
     if (dimRoomList.length > 0) {
       text += '· 시공 범위: ' + dimRoomList.join(', ') + ' (mm)\n';
     }
@@ -1876,7 +1879,7 @@ function renderReply(results, py) {
     var expandText = isExpand ? '확장형' : '비확장';
     var scopeText = SCOPE_NAMES[currentScopeIdx];
     var smallRoomTextReply = smallRoomCount > 0 ? ' + 작은방 ' + smallRoomCount + '개' : '';
-    text += py + '평 ' + expandText + ' (' + scopeText + smallRoomTextReply + ') 견적 안내\n\n';
+    text += py + '평 ' + expandText + ' (' + scopeText + smallRoomTextReply + ') 견적\n\n';
   }
 
   // 제품별 견적
@@ -1885,44 +1888,46 @@ function renderReply(results, py) {
     var icon = numberIcons[i] || '·';
     var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
 
-    // 장당 체감가 계산 (시공비 영향 받는 finalCost / qty 기반)
+    // 장당 체감가 (낮은 값만 표시) - finalCost / qty 기반
     var perFinalLow = Math.round(r.finalCost / r.totalQty);
-    var perFinalText;
-    if (r.isRange) {
-      var perFinalHigh = Math.round(r.rangeFinalCost / r.rangeQty);
-      perFinalText = (perFinalLow === perFinalHigh)
-        ? fmt(perFinalLow) + '원'
-        : fmt(perFinalLow) + '원~' + fmt(perFinalHigh) + '원';
-    } else {
-      perFinalText = fmt(perFinalLow) + '원';
-    }
 
     text += icon + ' ' + p.name + ' [' + info.badge + ']\n';
-    // 기존 가격 (매트 단가 × 장수, 시공비 미포함)
-    text += '기존 가격 : 장당 ' + fmt(p.price) + '원\n';
-    text += priceLine(r, 'matCost', 'rangeMatCost') + '\n';
+    // 장당 가격 한 줄 (기존 → 체감가)
+    text += '장당 ' + fmt(p.price) + '원 → 체감가 ' + fmt(perFinalLow) + '원\n';
+    // 장수별 가격 (만원 단위, 기존 → 체감가)
+    text += r.totalQty + '장 ' + toMan(r.matCost) + ' → 체감가 ' + toMan(r.finalCost) + '\n';
+    if (r.isRange) {
+      text += r.rangeQty + '장 ' + toMan(r.rangeMatCost) + ' → 체감가 ' + toMan(r.rangeFinalCost) + '\n';
+    }
     // 시공비 별도 안내 (소량 시공 시에만)
     if (r.hasInstallFee) {
-      text += '※ 소량 시공 시 시공비 +' + fmt(r.installFee) + '원 별도\n';
+      text += '※ 소량 시공 시 시공비 +' + Math.floor(r.installFee/10000) + '만원 별도\n';
     }
-    // 혜택적용 체감가 (시공비 + 모든 혜택 적용 후 실제 결제 금액)
-    text += '혜택적용 체감가 : 장당 ' + perFinalText + '\n';
-    text += priceLine(r, 'finalCost', 'rangeFinalCost') + '\n';
     text += '· 특징: ' + info.feature + '\n\n';
   });
 
-  // 적용 혜택 (체크된 것만 표시)
+  // 적용 혜택 (체크된 것만 표시, 한 줄에 2개씩, 정액→비율 순서)
   text += '🎁 체감가 적용된 혜택 안내\n';
-  BENEFITS.forEach(function(b) {
-    if (selectedBenefits[b.key] && BENEFIT_DISPLAY[b.key]) {
-      text += '✔️ ' + BENEFIT_DISPLAY[b.key] + '\n';
+  // 카톡 텍스트 전용 순서: 정액 할인(직관적 큰 숫자) → 비율 할인
+  var KAKAO_BENEFIT_ORDER = ['review_contract', 'review_event', 'onnuri', 'group_buy'];
+  var benefitItems = [];
+  KAKAO_BENEFIT_ORDER.forEach(function(key) {
+    if (selectedBenefits[key] && BENEFIT_DISPLAY[key]) {
+      benefitItems.push('✔️' + BENEFIT_DISPLAY[key]);
     }
   });
-  text += '\n';
+  // 2개씩 묶어서 한 줄로 (사이 공백 없이)
+  for (var i = 0; i < benefitItems.length; i += 2) {
+    if (i + 1 < benefitItems.length) {
+      text += benefitItems[i] + benefitItems[i+1] + '\n';
+    } else {
+      text += benefitItems[i] + '\n';
+    }
+  }
 
-  // CTA
-  text += '샘플 신청, 시공 예약, 자주 묻는 질문은 아래 링크에서 한 번에 확인하실 수 있습니다.\n';
-  text += '👉 https://www.dolbommat.com/c.html';
+  // CTA (혜택 다음 빈 줄 없이 바로)
+  text += '더 많은 정보는 아래 링크에서!\n';
+  text += '👉 https://m.site.naver.com/279vd';
 
   // 전체 텍스트는 전역에 보관 (복사 / 펼침에 사용)
   window._fullReplyText = text;
