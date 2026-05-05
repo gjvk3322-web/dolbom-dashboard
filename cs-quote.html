@@ -1002,7 +1002,17 @@ body {
       </div>
     </div>
 
-    <!-- ===== 카톡 답변 텍스트 (콤팩트, 평수 입력 위) ===== -->
+    <!-- ===== 쓰레드 댓글 텍스트 (위 — 짧은 첫 응대용) ===== -->
+    <div class="card reply-card-mobile" id="threadsCardMobile">
+      <div class="reply-mobile-header">
+        <div class="reply-mobile-title">🧵 쓰레드 댓글 (자동 생성)</div>
+      </div>
+      <div class="reply-mobile-text" id="threadsTextMobile" data-empty="true">평수를 입력하면 쓰레드 댓글이 자동으로 생성됩니다.</div>
+      <div class="threads-disabled-hint">⚠️ 도면 모드에서는 쓰레드 댓글을 만들지 않아요. 도면 견적은 카톡 1:1로만 안내해주세요.</div>
+      <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyThreadsReply()">📋 쓰레드 댓글 복사</button>
+    </div>
+
+    <!-- ===== 카톡 답변 텍스트 (아래 — 상세 견적용) ===== -->
     <div class="card reply-card-mobile" id="replyCardMobile">
       <div class="reply-mobile-header">
         <div class="reply-mobile-title">💬 카톡 답변 (자동 생성)</div>
@@ -1011,16 +1021,6 @@ body {
       <div class="reply-mobile-text" id="replyTextMobile" data-empty="true">평수를 입력하면 카톡 답변이 자동으로 생성됩니다.</div>
       <div class="reply-mobile-more" id="replyMoreHint" style="display:none">⋯ 펼치기 눌러 전체 내용 (제품 2·3 + 혜택 안내) 보기</div>
       <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyReply()">📋 복사하기</button>
-    </div>
-
-    <!-- ===== 쓰레드 댓글 텍스트 (카톡 답변 아래) ===== -->
-    <div class="card reply-card-mobile" id="threadsCardMobile">
-      <div class="reply-mobile-header">
-        <div class="reply-mobile-title">🧵 쓰레드 댓글 (자동 생성)</div>
-      </div>
-      <div class="reply-mobile-text" id="threadsTextMobile" data-empty="true">평수를 입력하면 쓰레드 댓글이 자동으로 생성됩니다.</div>
-      <div class="threads-disabled-hint">⚠️ 도면 모드에서는 쓰레드 댓글을 만들지 않아요. 도면 견적은 카톡 1:1로만 안내해주세요.</div>
-      <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyThreadsReply()">📋 쓰레드 댓글 복사</button>
     </div>
 
     <div class="card">
@@ -1059,9 +1059,9 @@ body {
     <div class="card">
       <div class="card-title"><span class="num">2</span> 시공 범위</div>
       <div class="scope-list">
-        <button class="scope-btn active" onclick="setScope(0, this)">거실 + 복도</button>
+        <button class="scope-btn" onclick="setScope(0, this)">거실 + 복도</button>
         <button class="scope-btn" onclick="setScope(1, this)">거실 + 복도 + 아일랜드</button>
-        <button class="scope-btn" onclick="setScope(2, this)">거실 + 복도 + 주방</button>
+        <button class="scope-btn active" onclick="setScope(2, this)">거실 + 복도 + 주방</button>
       </div>
       <div style="margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
         <div class="small-room-row">
@@ -1295,7 +1295,7 @@ var BENEFITS = [
 // ===== 상태 =====
 var isExpand = true;
 var roomSizeMode = 'range'; // 'normal' | 'range' | 'wide' (기본: 평균~넓은편)
-var currentScopeIdx = 0;
+var currentScopeIdx = 2;
 var smallRoomCount = 0;
 var rooms = [];
 var roomIdCounter = 0;
@@ -1825,23 +1825,15 @@ function renderReply(results, py) {
   var card = document.getElementById('replyCardMobile');
   card.style.display = 'block';
 
-  // 만+천 단위 변환: 965050 → "96만 5천원", 960000 → "96만원"
-  function toManCheon(n) {
-    n = n || 0;
-    var man = Math.floor(n / 10000);
-    var cheon = Math.floor((n % 10000) / 1000);
-    if (man === 0 && cheon === 0) return '0원';
-    if (man === 0) return cheon + '천원';
-    if (cheon === 0) return man + '만원';
-    return man + '만 ' + cheon + '천원';
-  }
+  // 원 단위 표기: 1094500 → "1,094,500원"
+  function formatWon(n) { return fmt(n || 0) + '원'; }
 
-  // 단일/범위 가격 표시: "13장 96만 5천원" 또는 "13장 96만 5천원 ~ 15장 108만 7천원"
+  // 단일/범위 가격 표시: "13장 1,094,500원" 또는 "13장 ... ~ 15장 ..."
   function priceLine(r, costLow, costHigh) {
     if (r.isRange) {
-      return r.totalQty + '장 ' + toManCheon(r[costLow]) + ' ~ ' + r.rangeQty + '장 ' + toManCheon(r[costHigh]);
+      return r.totalQty + '장 ' + formatWon(r[costLow]) + ' ~ ' + r.rangeQty + '장 ' + formatWon(r[costHigh]);
     }
-    return r.totalQty + '장 ' + toManCheon(r[costLow]);
+    return r.totalQty + '장 ' + formatWon(r[costLow]);
   }
 
   // 혜택 표시 매핑 (카톡 양식 라벨)
@@ -1942,14 +1934,14 @@ function renderReply(results, py) {
     // 첫 줄: 평수 + 시공 범위
     tText += py + '평 ' + expandTextT + ' (' + scopeTextT + smallRoomTextT + ') 기준이에요!\n\n';
 
-    // 제품별 가격 (기본가만, 만원 단위로)
+    // 제품별 가격 (기본가, 원 단위로 — 카톡 텍스트와 통일)
     results.forEach(function(r) {
       var p = r.product;
       var priceStr;
       if (r.isRange) {
-        priceStr = Math.floor(r.beforeDiscount/10000) + '~' + Math.floor(r.rangeBeforeDiscount/10000) + '만';
+        priceStr = fmt(r.beforeDiscount) + '원 ~ ' + fmt(r.rangeBeforeDiscount) + '원';
       } else {
-        priceStr = Math.floor(r.beforeDiscount/10000) + '만';
+        priceStr = fmt(r.beforeDiscount) + '원';
       }
       tText += '🔹 ' + p.name + ' : ' + priceStr + '\n';
     });
@@ -1970,7 +1962,7 @@ function renderReply(results, py) {
       var roundedDiff = Math.round(avgDiffManwon / 5) * 5;
 
       if (roundedDiff >= 5) {
-        tText += '\n조건 맞으면 ' + roundedDiff + '만원 가까이 더 빠져요.\n';
+        tText += '\n이벤트 적용하면 ' + roundedDiff + '만원 가까이 더 빠져요.\n';
       } else {
         tText += '\n';
       }
