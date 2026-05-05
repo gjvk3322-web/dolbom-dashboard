@@ -1876,7 +1876,7 @@ function renderReply(results, py) {
     var expandText = isExpand ? '확장형' : '비확장';
     var scopeText = SCOPE_NAMES[currentScopeIdx];
     var smallRoomTextReply = smallRoomCount > 0 ? ' + 작은방 ' + smallRoomCount + '개' : '';
-    text += py + '평형 ' + expandText + ' (' + scopeText + smallRoomTextReply + ') 견적 안내\n\n';
+    text += py + '평 ' + expandText + ' (' + scopeText + smallRoomTextReply + ') 견적 안내\n\n';
   }
 
   // 제품별 견적
@@ -1884,9 +1884,30 @@ function renderReply(results, py) {
     var p = r.product;
     var icon = numberIcons[i] || '·';
     var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
+
+    // 장당 체감가 계산 (시공비 영향 받는 finalCost / qty 기반)
+    var perFinalLow = Math.round(r.finalCost / r.totalQty);
+    var perFinalText;
+    if (r.isRange) {
+      var perFinalHigh = Math.round(r.rangeFinalCost / r.rangeQty);
+      perFinalText = (perFinalLow === perFinalHigh)
+        ? fmt(perFinalLow) + '원'
+        : fmt(perFinalLow) + '원~' + fmt(perFinalHigh) + '원';
+    } else {
+      perFinalText = fmt(perFinalLow) + '원';
+    }
+
     text += icon + ' ' + p.name + ' [' + info.badge + ']\n';
-    text += '기존 가격 : \n' + priceLine(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
-    text += '혜택적용 체감가 : \n' + priceLine(r, 'finalCost', 'rangeFinalCost') + '\n';
+    // 기존 가격 (매트 단가 × 장수, 시공비 미포함)
+    text += '기존 가격 : 장당 ' + fmt(p.price) + '원\n';
+    text += priceLine(r, 'matCost', 'rangeMatCost') + '\n';
+    // 시공비 별도 안내 (소량 시공 시에만)
+    if (r.hasInstallFee) {
+      text += '※ 소량 시공 시 시공비 +' + fmt(r.installFee) + '원 별도\n';
+    }
+    // 혜택적용 체감가 (시공비 + 모든 혜택 적용 후 실제 결제 금액)
+    text += '혜택적용 체감가 : 장당 ' + perFinalText + '\n';
+    text += priceLine(r, 'finalCost', 'rangeFinalCost') + '\n';
     text += '· 특징: ' + info.feature + '\n\n';
   });
 
