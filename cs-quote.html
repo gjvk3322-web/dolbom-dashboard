@@ -1825,14 +1825,23 @@ function renderReply(results, py) {
   var card = document.getElementById('replyCardMobile');
   card.style.display = 'block';
 
-  // 만 단위 변환 (Math.floor — 대장님 양식 기준)
-  function toMan(n) { return Math.floor((n||0) / 10000) + '만'; }
-  // 수량+가격 한 줄 형태: "40장(264만)~46장(305만)" 또는 "40장(264만)"
+  // 만+천 단위 변환: 965050 → "96만 5천원", 960000 → "96만원"
+  function toManCheon(n) {
+    n = n || 0;
+    var man = Math.floor(n / 10000);
+    var cheon = Math.floor((n % 10000) / 1000);
+    if (man === 0 && cheon === 0) return '0원';
+    if (man === 0) return cheon + '천원';
+    if (cheon === 0) return man + '만원';
+    return man + '만 ' + cheon + '천원';
+  }
+
+  // 단일/범위 가격 표시: "13장 96만 5천원" 또는 "13장 96만 5천원 ~ 15장 108만 7천원"
   function priceLine(r, costLow, costHigh) {
     if (r.isRange) {
-      return r.totalQty + '장(' + toMan(r[costLow]) + ')~' + r.rangeQty + '장(' + toMan(r[costHigh]) + ')';
+      return r.totalQty + '장 ' + toManCheon(r[costLow]) + ' ~ ' + r.rangeQty + '장 ' + toManCheon(r[costHigh]);
     }
-    return r.totalQty + '장(' + toMan(r[costLow]) + ')';
+    return r.totalQty + '장 ' + toManCheon(r[costLow]);
   }
 
   // 혜택 표시 매핑 (카톡 양식 라벨)
@@ -1879,7 +1888,7 @@ function renderReply(results, py) {
     var info = PRODUCT_REPLY_INFO[p.key] || { badge: p.badge, feature: p.feature };
     text += icon + ' ' + p.name + ' [' + info.badge + ']\n';
     text += '기존 가격 : ' + priceLine(r, 'beforeDiscount', 'rangeBeforeDiscount') + '\n';
-    text += '체감가(혜택적용): ' + priceLine(r, 'totalCost', 'rangeTotalCost') + '\n';
+    text += '체감가(혜택적용) : ' + priceLine(r, 'finalCost', 'rangeFinalCost') + '\n';
     text += '· 특징: ' + info.feature + '\n\n';
   });
 
