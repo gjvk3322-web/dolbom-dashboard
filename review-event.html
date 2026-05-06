@@ -350,106 +350,94 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <script>
 // ═════════════════════════════════════════════════════════
-// 공통 (탭 / 토스트 / 로딩)
+// 공통 (탭 / 로딩 / 체크리스트 펼치기)
 // ═════════════════════════════════════════════════════════
 const API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 const PHONE=new URLSearchParams(location.search).get('phone')||'';
+const TAB_PARAM=(new URLSearchParams(location.search).get('tab')||'').toLowerCase();
 
-// 휴대폰 마스킹 표시
-if(PHONE){
-  const masked=PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3');
-  document.getElementById('phoneDisplay').textContent=masked;
+// URL ?tab= 파라미터로 첫 진입 탭 결정
+function getInitialTabIndex(){
+  if(TAB_PARAM==='before'||TAB_PARAM==='guide') return 1;
+  if(TAB_PARAM==='after'||TAB_PARAM==='inspection') return 2;
+  return 0;
 }
+
+// 휴대폰 마스킹 표시 (원본 형식 유지)
+if(PHONE){document.getElementById('phoneDisplay').textContent=PHONE.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-****-$3')+' 님의 후기이벤트';}
 
 function switchTab(idx){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
   document.querySelectorAll('.tab-content').forEach((c,i)=>c.classList.toggle('active',i===idx));
-  // 탭 전환 시 상단으로 부드럽게 스크롤
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function showToast(m){
-  const t=document.getElementById('toast');
-  t.textContent=m;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
-function showLoading(pct){
-  document.getElementById('loadingBar').style.width=pct+'%';
-}
+function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
 
 function toggleChecklist(el){
   var body=el.querySelector('.checklist-body');
   var chevron=el.querySelector('.chevron');
   if(!body||!chevron)return;
-  if(body.style.display==='none'){
-    body.style.display='block';
-    chevron.style.transform='rotate(180deg)';
-  } else {
-    body.style.display='none';
-    chevron.style.transform='rotate(0deg)';
-  }
+  if(body.style.display==='none'){body.style.display='block';chevron.style.transform='rotate(180deg)';}
+  else{body.style.display='none';chevron.style.transform='rotate(0deg)';}
 }
 
 // ═════════════════════════════════════════════════════════
-// 탭 0 · 후기 이벤트 (기존 review-event.html 로직 그대로)
+// 탭 0 · 후기 이벤트 (원본 review-event.html 100% 그대로)
 // ═════════════════════════════════════════════════════════
 const MISSIONS=[
-  {id:'contract',     icon:'📝', title:'계약 후기 작성',     reward:30000, tag:'필수'},
-  {id:'instagram',    icon:'📸', title:'인스타 팔로우',      reward:10000},
-  {id:'chatroom',     icon:'💬', title:'카톡 채널 추가',      reward:10000},
-  {id:'review1',      icon:'⭐', title:'네이버 영수증 리뷰',  reward:20000},
-  {id:'review2',      icon:'⭐', title:'블로그 리뷰',         reward:20000, tag2:'추천'},
-  {id:'review_month', icon:'🏆', title:'월간 베스트 후기',    reward:20000, tag2:'추첨'}
+  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',desc:'맘스홀릭 카페 > 돌봄매트 게시판 (샘플박스 QR 참고)'},
+  {id:'chatroom',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,icon:'💬',tag:'시공 중 업로드',desc:'설치하고 있다는 후기만 올려주시면 됩니다'},
+  {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',desc:'@dolbomstore 태그 + #돌봄매트 해시태그 필수'},
+  {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',desc:'맘스홀릭 돌봄매트 후기 게시판'},
+  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',desc:'셀인 / 강사모 카페 / 다이렉트 결혼준비 카페 중 1곳'},
+  {id:'review_month',title:'한 달 후 후기',reward:20000,icon:'📅',desc:'시공 당일 후기와 같은 곳에 작성 가능'}
 ];
 const MAX_REWARD=110000;
 let missionState={};
 let paidTotal=0;
 let payStatus='';
 
-function initMissions(){
-  MISSIONS.forEach(m=>{
-    if(!missionState[m.id]) missionState[m.id]={done:false,url:'',submittedAt:''};
-  });
-  renderMissions();
-}
+function initMissions(){MISSIONS.forEach(m=>{if(!missionState[m.id])missionState[m.id]={done:false,url:'',submittedAt:''};});renderMissions();}
 
 function renderMissions(){
   let earned=0;
-  MISSIONS.forEach(m=>{
-    if(missionState[m.id]&&missionState[m.id].done) earned+=m.reward;
-  });
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
   document.getElementById('rewardTotal').textContent=earned.toLocaleString()+'원';
-  const pct=Math.min(100,Math.round(earned/MAX_REWARD*100));
-  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressBar').style.width=Math.round(earned/MAX_REWARD*100)+'%';
   document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+MAX_REWARD.toLocaleString()+'원';
-
-  const isPaid=paidTotal>0&&paidTotal>=earned;
-  if(paidTotal>0){
+  const remain=earned-paidTotal;
+  const isPending=payStatus.indexOf('신청완료')>=0;
+  const isPaid=payStatus.indexOf('지급완료')>=0;
+  if(paidTotal>0||earned>0||isPending){
     document.getElementById('paidInfo').style.display='block';
-    document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원';
-    document.getElementById('remainAmount').textContent=Math.max(0,earned-paidTotal).toLocaleString()+'원';
+    if(isPaid){
+      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 ✅';
+      document.getElementById('paidAmount').style.color='var(--green)';
+    }else if(isPending){
+      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 (입금 대기 중)';
+      document.getElementById('paidAmount').style.color='var(--orange)';
+    }else{
+      document.getElementById('paidAmount').textContent='0원';
+    }
+    document.getElementById('remainAmount').textContent=(remain>0?remain:0).toLocaleString()+'원';
+    // 상태 표시
+    const sr=document.getElementById('statusRow'),st=document.getElementById('statusText');
+    if(payStatus){
+      sr.style.display='flex';
+      if(isPaid){st.textContent='✅ 지급완료';st.style.color='var(--green)';}
+      else if(isPending){st.textContent='💰 신청완료 (입금 대기 중)';st.style.color='var(--orange)';}
+      else{st.textContent=payStatus;st.style.color='var(--text2)';}
+    }
   }
-  if(payStatus){
-    document.getElementById('statusRow').style.display='flex';
-    document.getElementById('statusText').textContent=payStatus;
-  }
-
   const btn=document.getElementById('cashbackBtn');
-  if(earned>0&&!isPaid&&payStatus!=='신청완료'){
-    btn.disabled=false;
-    btn.textContent='캐시백 받기 ('+(earned-paidTotal).toLocaleString()+'원)';
-  } else if(earned>0&&isPaid){
-    btn.disabled=true;
-    btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';
-  } else if(earned>0){
-    btn.disabled=true;
-    btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';
-  } else {
-    btn.disabled=true;
-    btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';
-  }
+  if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
+  else if(remain>0){const consented=document.getElementById('cashbackConsent')&&document.getElementById('cashbackConsent').checked;btn.disabled=!consented;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
+  else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';}
+  else if(earned>0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
+  else{btn.disabled=true;btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';}
 
   const list=document.getElementById('missionList');list.innerHTML='';
   MISSIONS.forEach((m,idx)=>{
@@ -473,24 +461,13 @@ function renderMissions(){
 }
 
 let openIdx=-1;
-function toggleMission(idx){
-  const b=document.getElementById('mbody'+idx);if(!b)return;
-  if(openIdx===idx){b.classList.remove('open');openIdx=-1;}
-  else{
-    if(openIdx>=0){const p=document.getElementById('mbody'+openIdx);if(p)p.classList.remove('open');}
-    b.classList.add('open');openIdx=idx;
-  }
-}
+function toggleMission(idx){const b=document.getElementById('mbody'+idx);if(!b)return;if(openIdx===idx){b.classList.remove('open');openIdx=-1;}else{if(openIdx>=0){const p=document.getElementById('mbody'+openIdx);if(p)p.classList.remove('open');}b.classList.add('open');openIdx=idx;}}
 
 const uploadData={};
-function handleUpload(idx,input){
-  const f=input.files[0];if(!f)return;
-  if(f.size>10*1024*1024){showToast('10MB 이하만 가능');return;}
+function handleUpload(idx,input){const f=input.files[0];if(!f)return;if(f.size>10*1024*1024){showToast('10MB 이하만 가능');return;}
   // 이미지 압축 (최대 1200px, 품질 80%)
-  const r=new FileReader();
-  r.onload=function(e){
-    const img=new Image();
-    img.onload=function(){
+  const r=new FileReader();r.onload=function(e){
+    const img=new Image();img.onload=function(){
       const maxW=1200,maxH=1200;let w=img.width,h=img.height;
       if(w>maxW||h>maxH){const ratio=Math.min(maxW/w,maxH/h);w=Math.round(w*ratio);h=Math.round(h*ratio)}
       const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
@@ -501,13 +478,13 @@ function handleUpload(idx,input){
       document.getElementById('uzone'+idx).querySelector('.txt').textContent='업로드 완료!';
       const btn=document.getElementById('msubmit'+idx);if(btn)btn.disabled=false;
     };img.src=e.target.result;
-  };r.readAsDataURL(f);
-}
+  };r.readAsDataURL(f);}
 
 async function submitMission(idx){
   const m=MISSIONS[idx];if(!uploadData[idx]){showToast('스크린샷을 업로드해 주세요');return;}
   const btn=document.getElementById('msubmit'+idx);btn.disabled=true;btn.textContent='사진 업로드 중...';
   try{
+    // 사진을 Google Drive에 업로드
     const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[idx]})});
     const txt=await res.text();
@@ -517,6 +494,8 @@ async function submitMission(idx){
     renderMissions();fireConfetti();showToast('🎉 '+m.title+' 달성! +'+m.reward.toLocaleString()+'원');
   }catch(e){btn.disabled=false;btn.textContent='미션 달성하기';showToast('전송 실패');}
 }
+
+function checkCashbackReady(){renderMissions();}
 
 async function requestCashback(){
   if(!document.getElementById('cashbackConsent').checked){showToast('개인정보 수집에 동의해 주세요');return;}
@@ -534,77 +513,29 @@ async function requestCashback(){
   }catch(e){btn.disabled=false;btn.textContent='캐시백 받기';showToast('신청 실패');}
 }
 
-function fireConfetti(){
-  const c=document.getElementById('confetti'),x=c.getContext('2d');
-  c.width=innerWidth;c.height=innerHeight;
-  const p=[];const cl=['#e8736c','#f59f00','#20c997','#5b9bd5','#ff6b9d','#c084fc'];
-  for(let i=0;i<80;i++)p.push({x:c.width/2+(Math.random()-.5)*100,y:c.height/2,vx:(Math.random()-.5)*12,vy:Math.random()*-14-4,s:Math.random()*8+4,c:cl[Math.floor(Math.random()*cl.length)],r:Math.random()*360,rv:(Math.random()-.5)*10,l:1});
-  let f=0;
-  (function a(){
-    x.clearRect(0,0,c.width,c.height);let alive=false;
-    p.forEach(q=>{
-      if(q.l<=0)return;alive=true;
-      q.x+=q.vx;q.y+=q.vy;q.vy+=.35;q.r+=q.rv;q.l-=.012;
-      x.save();x.translate(q.x,q.y);x.rotate(q.r*Math.PI/180);
-      x.globalAlpha=Math.max(0,q.l);x.fillStyle=q.c;
-      x.fillRect(-q.s/2,-q.s/2,q.s,q.s*.6);x.restore();
-    });
-    f++;if(alive&&f<150)requestAnimationFrame(a);
-    else x.clearRect(0,0,c.width,c.height);
-  })();
-}
+function fireConfetti(){const c=document.getElementById('confetti'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;const p=[];const cl=['#e8736c','#f59f00','#20c997','#5b9bd5','#ff6b9d','#c084fc'];for(let i=0;i<80;i++)p.push({x:c.width/2+(Math.random()-.5)*100,y:c.height/2,vx:(Math.random()-.5)*12,vy:Math.random()*-14-4,s:Math.random()*8+4,c:cl[Math.floor(Math.random()*cl.length)],r:Math.random()*360,rv:(Math.random()-.5)*10,l:1});let f=0;(function a(){x.clearRect(0,0,c.width,c.height);let alive=false;p.forEach(q=>{if(q.l<=0)return;alive=true;q.x+=q.vx;q.y+=q.vy;q.vy+=.35;q.r+=q.rv;q.l-=.012;x.save();x.translate(q.x,q.y);x.rotate(q.r*Math.PI/180);x.globalAlpha=Math.max(0,q.l);x.fillStyle=q.c;x.fillRect(-q.s/2,-q.s/2,q.s,q.s*.6);x.restore();});f++;if(alive&&f<150)requestAnimationFrame(a);else x.clearRect(0,0,c.width,c.height);})();}
 
 // ═════════════════════════════════════════════════════════
-// 탭 2 · 시공 후 검수 (기존 guide.html 로직 그대로)
+// 탭 2 · 시공 후 검수 (원본 guide.html 100% 그대로)
 // ═════════════════════════════════════════════════════════
 const checks=[false,false,false,false,false,false,false,false,false,false,false,false];
 let inspectionSubmitted=false;
-
-function toggleCheck(i){
-  if(inspectionSubmitted)return;
-  checks[i]=!checks[i];
-  const el=document.getElementById('chk'+i);
-  el.classList.toggle('checked',checks[i]);
-  el.textContent=checks[i]?'✓':'';
-  updateInspectBtn();
-}
-
-function updateInspectBtn(){
-  document.getElementById('inspectBtn').disabled=!checks.every(Boolean);
-}
-
-async function submitInspection(){
-  if(inspectionSubmitted)return;
-  const btn=document.getElementById('inspectBtn');
-  btn.disabled=true;btn.textContent='전송 중...';
-  try{
-    await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});
-    inspectionSubmitted=true;
-    document.getElementById('inspectionForm').style.display='none';
-    document.getElementById('inspectionDone').style.display='block';
-    showToast('검수 완료! 감사합니다');
-  }catch(e){
-    btn.disabled=false;btn.textContent='검수 완료';
-    showToast('전송 실패 - 다시 시도해주세요');
-  }
-}
+function toggleCheck(i){if(inspectionSubmitted)return;checks[i]=!checks[i];const el=document.getElementById('chk'+i);el.classList.toggle('checked',checks[i]);el.textContent=checks[i]?'✓':'';updateInspectBtn();}
+function updateInspectBtn(){document.getElementById('inspectBtn').disabled=!checks.every(Boolean);}
+async function submitInspection(){if(inspectionSubmitted)return;const btn=document.getElementById('inspectBtn');btn.disabled=true;btn.textContent='전송 중...';try{await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});inspectionSubmitted=true;document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';showToast('검수 완료! 감사합니다');}catch(e){btn.disabled=false;btn.textContent='검수 완료';showToast('전송 실패 - 다시 시도해주세요');}}
 
 // ═════════════════════════════════════════════════════════
-// 데이터 로드 (이벤트 + 검수 상태 모두)
+// 데이터 로드 (이벤트 + 검수 상태)
 // ═════════════════════════════════════════════════════════
 async function loadData(){
-  if(!PHONE){
-    document.getElementById('loadingOverlay').style.display='none';
-    return;
-  }
-
-  // 후기 이벤트 데이터 로드
+  if(!PHONE){document.getElementById('loadingOverlay').style.display='none';return;}
+  // 후기이벤트 데이터 (원본 그대로)
   try{
     const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
     const data=await res.json();
     if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
     if(data.status)payStatus=data.status;
+    // 지급완료 미션 기반으로 paidTotal 계산
     paidTotal=0;
     MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
     if(data.account){
@@ -613,8 +544,7 @@ async function loadData(){
       if(data.account.num)document.getElementById('accNum').value=data.account.num;
     }
   }catch(e){console.error('이벤트 로드 실패',e);}
-
-  // 검수 상태 로드 (이미 검수 완료된 경우)
+  // 검수 상태 (시공 후 탭용)
   try{
     showLoading(30);
     const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
@@ -628,13 +558,14 @@ async function loadData(){
       document.getElementById('inspectionDone').style.display='block';
     }
   }catch(e){console.error('검수 상태 로드 실패',e);showLoading(0);}
-
   document.getElementById('loadingOverlay').style.display='none';
   renderMissions();
 }
+initMissions();loadData();
 
-initMissions();
-loadData();
+// URL ?tab= 파라미터에 따라 첫 진입 탭 자동 활성화
+const _initialTab=getInitialTabIndex();
+if(_initialTab!==0) switchTab(_initialTab);
 </script>
 </body>
 </html>
