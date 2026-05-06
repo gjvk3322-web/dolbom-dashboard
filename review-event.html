@@ -522,7 +522,74 @@ const checks=[false,false,false,false,false,false,false,false,false,false,false,
 let inspectionSubmitted=false;
 function toggleCheck(i){if(inspectionSubmitted)return;checks[i]=!checks[i];const el=document.getElementById('chk'+i);el.classList.toggle('checked',checks[i]);el.textContent=checks[i]?'✓':'';updateInspectBtn();}
 function updateInspectBtn(){document.getElementById('inspectBtn').disabled=!checks.every(Boolean);}
-async function submitInspection(){if(inspectionSubmitted)return;const btn=document.getElementById('inspectBtn');btn.disabled=true;btn.textContent='전송 중...';try{await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});inspectionSubmitted=true;document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';showToast('검수 완료! 감사합니다');}catch(e){btn.disabled=false;btn.textContent='검수 완료';showToast('전송 실패 - 다시 시도해주세요');}}
+async function submitInspection(){if(inspectionSubmitted)return;const btn=document.getElementById('inspectBtn');btn.disabled=true;btn.textContent='전송 중...';try{await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});inspectionSubmitted=true;saveInspectionToLocal();document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';showToast('검수 완료! 감사합니다');}catch(e){btn.disabled=false;btn.textContent='검수 완료';showToast('전송 실패 - 다시 시도해주세요');}}
+
+// 검수 데이터 localStorage 저장 (서버 핸들러 추가 전 백업용)
+function saveInspectionToLocal(){
+  if(!PHONE)return;
+  try{
+    localStorage.setItem('dolbom_inspection_'+PHONE, JSON.stringify({
+      checks: checks,
+      submittedAt: new Date().toISOString()
+    }));
+  }catch(e){console.error('검수 localStorage 저장 실패',e);}
+}
+
+// 검수 데이터 localStorage 복원 (새로고침 시 체크 상태 + 잠금 + 배너 표시)
+function restoreInspectionFromLocal(){
+  if(!PHONE)return false;
+  try{
+    var raw=localStorage.getItem('dolbom_inspection_'+PHONE);
+    if(!raw)return false;
+    var data=JSON.parse(raw);
+    if(!data||!Array.isArray(data.checks))return false;
+
+    // 체크 상태 복원
+    for(var i=0;i<data.checks.length&&i<checks.length;i++){
+      checks[i]=!!data.checks[i];
+      if(checks[i]){
+        var el=document.getElementById('chk'+i);
+        if(el){el.classList.add('checked');el.textContent='✓';}
+      }
+    }
+
+    // 다시 못 풀게 잠금
+    inspectionSubmitted=true;
+
+    // 검수 완료 날짜 추출
+    var dateStr='';
+    try{
+      var d=new Date(data.submittedAt);
+      dateStr=(d.getMonth()+1)+'/'+d.getDate();
+    }catch(e){}
+
+    // 검수 완료 버튼으로 변경
+    var btn=document.getElementById('inspectBtn');
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='✅ 검수 완료'+(dateStr?' ('+dateStr+')':'');
+      btn.style.background='var(--green)';
+      btn.style.color='#fff';
+      btn.style.opacity='1';
+      btn.style.cursor='default';
+    }
+
+    // 체크리스트 위에 "검수 완료" 배너 추가
+    var card=document.querySelector('#inspectionForm .card');
+    if(card&&!document.getElementById('inspectionCompleteBanner')){
+      var banner=document.createElement('div');
+      banner.id='inspectionCompleteBanner';
+      banner.style.cssText='background:var(--green-light);color:var(--green);padding:12px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;margin-bottom:14px;border:1px solid var(--green);';
+      banner.innerHTML='✅ 검수가 완료되었습니다'+(dateStr?' ('+dateStr+')':'');
+      card.insertBefore(banner,card.firstChild);
+    }
+
+    return true;
+  }catch(e){
+    console.error('검수 localStorage 복원 실패',e);
+    return false;
+  }
+}
 
 // ═════════════════════════════════════════════════════════
 // 데이터 로드 (이벤트 + 검수 상태)
@@ -545,6 +612,7 @@ async function loadData(){
     }
   }catch(e){console.error('이벤트 로드 실패',e);}
   // 검수 상태 (시공 후 탭용)
+  let inspectionRestoredFromServer=false;
   try{
     showLoading(30);
     const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
@@ -556,8 +624,13 @@ async function loadData(){
       inspectionSubmitted=true;
       document.getElementById('inspectionForm').style.display='none';
       document.getElementById('inspectionDone').style.display='block';
+      inspectionRestoredFromServer=true;
     }
   }catch(e){console.error('검수 상태 로드 실패',e);showLoading(0);}
+  // 서버에서 못 가져오면 localStorage에서 복원 (체크 그대로 보이고, 못 풀게 잠금)
+  if(!inspectionRestoredFromServer){
+    restoreInspectionFromLocal();
+  }
   document.getElementById('loadingOverlay').style.display='none';
   renderMissions();
 }
