@@ -218,44 +218,18 @@ body{
   line-height:1.4;
 }
 .step-action{
-  background:#fff;
+  background:var(--baby-blue-light);
   color:var(--baby-blue-deep);
-  border:1px solid var(--baby-blue-dark);
-  padding:7px 12px;
-  border-radius:8px;
-  font-size:12px;
+  padding:5px 12px;
+  border-radius:14px;
+  font-size:11px;
   font-weight:700;
   white-space:nowrap;
-  display:inline-flex;
-  align-items:center;
-  gap:3px;
-  transition:all 0.15s ease;
-  flex-shrink:0;
 }
-.step-action::after{
-  content:'›';
-  font-size:14px;
-  font-weight:500;
-  margin-top:-1px;
-}
-/* 1번 메인 강조 — 채워진 버튼 */
-.step-action.primary{
-  background:var(--baby-blue-deep);
-  color:#fff;
-  border-color:var(--baby-blue-deep);
-}
-/* 4번 미션 — 코랄 아웃라인 */
 .step-action.highlight{
+  background:var(--primary-light);
   color:var(--primary);
-  border-color:var(--primary);
 }
-/* 호버/탭 피드백 */
-@media (hover:hover){
-  .step:hover .step-action{background:var(--baby-blue-light);border-color:var(--baby-blue-deep)}
-  .step:hover .step-action.primary{filter:brightness(0.92)}
-  .step:hover .step-action.highlight{background:var(--primary-light)}
-}
-.step:active .step-action{transform:scale(0.96)}
 
 /* 추가 정보 */
 .extra-menu{
@@ -452,7 +426,7 @@ body{
         <div class="step-title">우리집 견적 받기</div>
         <div class="step-desc">평수 입력하면 즉시 가격 확인</div>
       </div>
-      <div class="step-action primary">견적받기</div>
+      <div class="step-action">계산</div>
     </a>
 
     <a href="sample.html" class="step" id="stepSample">
@@ -461,7 +435,7 @@ body{
         <div class="step-title">무료 샘플 받기</div>
         <div class="step-desc">직접 만져보고 품질 확인</div>
       </div>
-      <div class="step-action">신청하기</div>
+      <div class="step-action">신청</div>
     </a>
 
     <a href="booking.html" class="step" id="stepBooking">
@@ -470,7 +444,7 @@ body{
         <div class="step-title">시공 예약</div>
         <div class="step-desc">원하는 날짜 선택해 신청</div>
       </div>
-      <div class="step-action">예약하기</div>
+      <div class="step-action">예약</div>
     </a>
 
     <a href="cs-review-info.html" class="step" id="stepReview">
@@ -479,7 +453,7 @@ body{
         <div class="step-title">시공 후 후기 작성</div>
         <div class="step-desc">최대 11만원 캐시백</div>
       </div>
-      <div class="step-action highlight">참여하기</div>
+      <div class="step-action highlight">미션</div>
     </a>
 
   </div>
@@ -542,9 +516,9 @@ body{
       </div>
       <div class="faq-answer">
         <strong>부산·경기 본사에서 시공팀을 운영합니다.</strong><br><br>
-        <strong>· 부산팀</strong>: 부산·울산·대구·경상남도, 경상북도(포항·경주·김천·구미·경산·영천)<br>
-        <strong>· 경기팀</strong>: 서울·경기·인천·충청남도·충청북도<br><br>
-        ※ 광주광역시·강원도·전라도·제주도·경상북도(위 6곳 외)는 현재 시공이 어렵습니다. 카카오톡으로 문의해주세요.
+        <strong>· 부산팀</strong>: 부산·울산·대구·경상남도, 경상북도(포항·경주·김천·구미·경산·영천·청도·고령·성주·칠곡)<br>
+        <strong>· 경기팀</strong>: 서울·경기·인천·세종·대전, 충청남도(금산·서천 제외), 충청북도(제천·보은·옥천·영동·단양 제외), 강원 원주<br><br>
+        ※ 광주광역시·전라도·제주도·강원도(원주 외)·경상북도(위 시군 외)는 현재 시공이 어렵습니다. 카카오톡으로 문의해주세요.
       </div>
     </div>
 
@@ -557,19 +531,6 @@ body{
         <strong>네, 무료로 보내드립니다!</strong><br><br>
         위에 있는 <strong>"무료 샘플 받기"</strong> 버튼을 눌러 신청하시면 2~3일 내 배송됩니다.<br><br>
         실제 매트를 직접 만져보고 결정하세요.
-      </div>
-    </div>
-
-    <div class="faq-item">
-      <div class="faq-question" onclick="toggleFaq(this)">
-        <div class="faq-q-text">공동구매는 어떻게 하나요?</div>
-        <div class="faq-icon">+</div>
-      </div>
-      <div class="faq-answer">
-        <strong>네, 공동구매로 더 저렴하게 시공받으실 수 있어요!</strong><br><br>
-        · <strong>5인 공동구매 시 -3% 할인</strong>이 추가 적용됩니다.<br><br>
-        같이하실 분은 <strong>맘스홀릭</strong> 같은 네이버 카페에서 쉽게 구하실 수 있어요.<br><br>
-        함께 시공받으실 분의 <strong>휴대폰 뒷자리</strong>만 <a href="http://pf.kakao.com/_UMyBK/chat" target="_blank" rel="noopener" class="faq-link-kakao">카카오톡 채널</a>로 공유해주시면 됩니다 :)
       </div>
     </div>
 
