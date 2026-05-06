@@ -2054,7 +2054,7 @@ function renderReply(results, py) {
     var smallRoomTextT = smallRoomCount > 0 ? '+작은방 ' + smallRoomCount + '개' : '';
 
     // 첫 줄: 평수 + 시공 범위
-    tText += py + '평 ' + expandTextT + ' (' + scopeTextT + smallRoomTextT + ') 기준이에요!\n\n';
+    tText += py + '평 ' + expandTextT + ' (' + scopeTextT + smallRoomTextT + ')\n\n';
 
     // 제품별 가격 (기본가, 원 단위로 — 카톡 텍스트와 통일)
     results.forEach(function(r) {
@@ -2084,7 +2084,7 @@ function renderReply(results, py) {
       var roundedDiff = Math.round(avgDiffManwon / 5) * 5;
 
       if (roundedDiff >= 5) {
-        tText += '\n이벤트 적용하면 ' + roundedDiff + '만원 가까이 더 빠져요.\n';
+        tText += '\n이벤트 적용하면 ' + roundedDiff + '만원 가까이 더 빠져!\n반말해서 미안!\n';
       } else {
         tText += '\n';
       }
@@ -2092,8 +2092,8 @@ function renderReply(results, py) {
       tText += '\n';
     }
 
-    // 마지막 CTA (링크 텍스트 없음 - 알고리즘 안전)
-    tText += '정확한 건 프로필 링크 한번 눌러보세요!';
+    // 마지막 CTA — 도면 치수 추천 (정확한 견적 유도)
+    tText += '젤 좋은건 도면 치수로 비교하는게 가장 좋아!';
 
     window._threadsReplyText = tText;
 
