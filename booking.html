@@ -131,7 +131,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
   <div class="card">
     <div class="card-title">📅 희망 시공일</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:6px">최대 3개까지 선택 가능 (10일 이후부터 예약 가능)</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:6px">최대 3개까지 선택 가능 (5일 이후부터 예약 가능)</div>
     <div style="margin-bottom:10px"><div class="opt-btn" id="dateAnyBtn" onclick="toggleDateAny()" style="display:inline-block">상관없음 (빠른 날짜 배정)</div></div>
     <div id="calWrap">
       <div class="cal-header"><button onclick="changeMonth(-1)">◀</button><span class="month" id="calMonth"></span><button onclick="changeMonth(1)">▶</button></div>
@@ -246,10 +246,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <div style="font-size:11.5px;color:#5D4037;line-height:1.6">갤러리에 저장된 후<br>카카오톡으로 전송해주세요!</div>
       </div>
 
-      <!-- 카톡 1버튼 (PC/모바일 통합) -->
-      <a onclick="openKakao()" style="display:flex;align-items:center;justify-content:center;padding:14px 12px;background:#FEE500;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer;width:100%;box-sizing:border-box;margin-bottom:8px">💬 카톡 상담</a>
+      <!-- 안내 박스 (PC/모바일 통합) -->
+      <div style="background:#E8F5E9;border:1.5px solid #2E7D32;border-radius:10px;padding:12px;margin-bottom:10px;text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:4px">📌 예약서를 저장 후 카톡 채널로 보내주세요!</div>
+        <div style="font-size:11px;color:#5D4037;line-height:1.5">아래 카톡 상담 버튼을 눌러 채널 입장 후<br>방금 저장한 이미지를 전송해주시면 끝!</div>
+      </div>
 
-      <div style="font-size:10px;color:#999;text-align:center;margin-bottom:8px">* 텍스트도 자동 복사되어 있어요. 이미지 전송이 어려우면 붙여넣기 해주세요!</div>
+      <!-- 카톡 1버튼 (PC/모바일 통합) -->
+      <a onclick="openKakao()" style="display:flex;align-items:center;justify-content:center;padding:14px 12px;background:#FEE500;border-radius:10px;text-decoration:none;font-size:14px;font-weight:700;color:#3C1E1E;cursor:pointer;width:100%;box-sizing:border-box;margin-bottom:8px">💬 카톡 채널 열기 → 이미지 전송</a>
+
       <button onclick="document.getElementById('imgOverlay').classList.remove('show');document.body.style.overflow=''" style="width:100%;padding:11px;background:#f0f0f0;color:#666;border:none;border-radius:10px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer">닫기</button>
     </div>
   </div>
@@ -387,7 +392,7 @@ function renderCal(){
   var grid=document.getElementById('calGrid');grid.innerHTML='';
   ['일','월','화','수','목','금','토'].forEach(function(d,i){var el=document.createElement('div');el.className='cal-day head'+(i===0?' sun':'')+(i===6?' sat':'');el.textContent=d;grid.appendChild(el)});
   var first=new Date(calYear,calMonth,1),last=new Date(calYear,calMonth+1,0),today=new Date();today.setHours(0,0,0,0);
-  var minDate=new Date(today);minDate.setDate(minDate.getDate()+10);
+  var minDate=new Date(today);minDate.setDate(minDate.getDate()+5);
   for(var i=0;i<first.getDay();i++){var el=document.createElement('div');el.className='cal-day';grid.appendChild(el)}
   for(var d=1;d<=last.getDate();d++){
     var el=document.createElement('div'),dt=new Date(calYear,calMonth,d),dow=dt.getDay();
