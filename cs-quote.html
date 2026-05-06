@@ -88,6 +88,10 @@ body {
 }
 .welcome-actions {
   display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  align-items: start;
+}
+.welcome-col {
+  display: flex; flex-direction: column; gap: 6px;
 }
 .welcome-btn {
   border: none; border-radius: 8px; padding: 10px;
@@ -96,14 +100,75 @@ body {
   transition: all 0.15s; line-height: 1;
 }
 .welcome-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-.welcome-btn-text { background: #2E7D32; color: #fff; }
-.welcome-btn-form { background: #c98a3e; color: #fff; }
-.welcome-btn-booking { background: #3a5f7c; color: #fff; }
-.welcome-btn-review { background: #a44663; color: #fff; }
-.welcome-btn-closing { background: #5d6d7e; color: #fff; }
-.welcome-btn-onnuri { background: #6a1b9a; color: #fff; }
-.welcome-btn-time { background: #00796b; color: #fff; }
-.welcome-btn-deposit { background: #d84315; color: #fff; }
+/* ===== 왼쪽 열: 이벤트/안내성 (다양한 톤으로 시선 분산) ===== */
+.welcome-btn-review { background: #d81b60; color: #fff; }   /* 리뷰 이벤트 — 핫핑크 */
+.welcome-btn-onnuri { background: #6a1b9a; color: #fff; }   /* 온누리 QR — 퍼플 */
+.welcome-btn-group  { background: #ef6c00; color: #fff; }   /* 공구안내 — 오렌지 */
+.welcome-btn-move   { background: #5d4037; color: #fff; }   /* 이전설치 — 브라운 */
+
+/* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
+.welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
+.welcome-btn-form    { background: #2E7D32; color: #fff; } /* 2단계: 견적 양식 */
+.welcome-btn-closing { background: #1F7A52; color: #fff; } /* 3단계: 마무리 인사 */
+.welcome-btn-booking { background: #00796B; color: #fff; } /* 4단계: 예약 양식 */
+.welcome-btn-deposit { background: #00695C; color: #fff; } /* 5단계: 예약금 */
+.welcome-btn-time    { background: #004D40; color: #fff; } /* 6단계: 오전작업시간 (가장 진함) */
+.welcome-btn-custom { background: #546e7a; color: #fff; position: relative; }
+.welcome-btn-add {
+  background: #fff; color: #8b6914; border: 1.5px dashed #c8a64d;
+  font-weight: 600;
+}
+.welcome-btn-add:hover { background: #fffbe6; border-style: solid; }
+
+/* ===== 커스텀 메시지 관리 영역 ===== */
+.custom-section {
+  margin-top: 18px; padding-top: 14px; border-top: 1px dashed #ddd;
+}
+.custom-section-title {
+  font-size: 13px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+.custom-section-help {
+  font-size: 10.5px; color: #888; margin-bottom: 10px; line-height: 1.45;
+}
+.custom-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.custom-item {
+  background: #fafaf7; border: 1px solid #e0ddd6; border-radius: 8px; padding: 10px;
+}
+.custom-item-row {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 6px;
+}
+.custom-item-icon {
+  width: 38px; padding: 7px 4px; border: 1px solid #ddd; border-radius: 6px;
+  font-size: 14px; text-align: center; font-family: inherit; box-sizing: border-box;
+}
+.custom-item-label {
+  flex: 1; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px;
+  font-size: 12px; font-family: inherit; box-sizing: border-box;
+}
+.custom-item-delete {
+  width: 32px; height: 32px; border: none; background: #fee; color: #c44;
+  border-radius: 6px; cursor: pointer; font-size: 14px; flex-shrink: 0;
+}
+.custom-item-delete:hover { background: #fdd; }
+.custom-item-textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px;
+  font-size: 12px; font-family: inherit; box-sizing: border-box;
+  min-height: 60px; resize: vertical; line-height: 1.5;
+}
+.custom-item-textarea:focus, .custom-item-label:focus, .custom-item-icon:focus {
+  outline: none; border-color: #2E7D32;
+}
+.custom-add-btn {
+  width: 100%; padding: 10px; border: 1.5px dashed #c8a64d;
+  background: #fffbe6; color: #8b6914; border-radius: 8px;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.custom-add-btn:hover { background: #fff5cc; border-style: solid; }
+.custom-empty {
+  padding: 14px; text-align: center; color: #aaa; font-size: 11.5px;
+  background: #fafaf7; border-radius: 8px; border: 1px dashed #e0ddd6;
+}
 
 /* ===== 환영 메시지 설정 모달 ===== */
 .welcome-modal-overlay {
@@ -978,30 +1043,46 @@ body {
       </div>
       <div class="welcome-text" id="welcomeText" style="display:none"></div>
       <div class="welcome-actions">
-        <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
-          1️⃣ <span>환영 메시지</span>
-        </button>
-        <button class="welcome-btn welcome-btn-form" onclick="copyQuoteForm()">
-          2️⃣ <span>견적 양식</span>
-        </button>
-        <button class="welcome-btn welcome-btn-booking" onclick="copyBookingUrl()">
-          3️⃣ <span>예약 양식</span>
-        </button>
-        <button class="welcome-btn welcome-btn-review" onclick="copyReviewUrl()">
-          ⭐ <span>리뷰 이벤트</span>
-        </button>
-        <button class="welcome-btn welcome-btn-closing" onclick="copyClosingMessage()">
-          💬 <span>마무리 인사</span>
-        </button>
-        <button class="welcome-btn welcome-btn-onnuri" onclick="copyOnnuriQR()">
-          📱 <span>온누리 QR</span>
-        </button>
-        <button class="welcome-btn welcome-btn-time" onclick="copyWorkTime()">
-          🕘 <span>오전작업시간</span>
-        </button>
-        <button class="welcome-btn welcome-btn-deposit" onclick="copyDeposit()">
-          💳 <span>예약금</span>
-        </button>
+        <!-- 왼쪽 열: 리뷰이벤트, 온누리 QR, 공구안내, 이전설치, (동적 커스텀들), + 커스텀 추가 -->
+        <div class="welcome-col">
+          <button class="welcome-btn welcome-btn-review" onclick="copyReviewUrl()">
+            ⭐ <span>리뷰 이벤트</span>
+          </button>
+          <button class="welcome-btn welcome-btn-onnuri" onclick="copyOnnuriQR()">
+            📱 <span>온누리 QR</span>
+          </button>
+          <button class="welcome-btn welcome-btn-group" onclick="copyGroupBuy()">
+            👥 <span>공구안내</span>
+          </button>
+          <button class="welcome-btn welcome-btn-move" onclick="copyMoveInstall()">
+            📦 <span>이전설치</span>
+          </button>
+          <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
+          <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
+            ➕ <span>커스텀 추가</span>
+          </button>
+        </div>
+        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 예약금, 오전작업시간 -->
+        <div class="welcome-col">
+          <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
+            1️⃣ <span>환영 메시지</span>
+          </button>
+          <button class="welcome-btn welcome-btn-form" onclick="copyQuoteForm()">
+            2️⃣ <span>견적 양식</span>
+          </button>
+          <button class="welcome-btn welcome-btn-closing" onclick="copyClosingMessage()">
+            💬 <span>마무리 인사</span>
+          </button>
+          <button class="welcome-btn welcome-btn-booking" onclick="copyBookingUrl()">
+            3️⃣ <span>예약 양식</span>
+          </button>
+          <button class="welcome-btn welcome-btn-deposit" onclick="copyDeposit()">
+            💳 <span>예약금</span>
+          </button>
+          <button class="welcome-btn welcome-btn-time" onclick="copyWorkTime()">
+            🕘 <span>오전작업시간</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1261,6 +1342,19 @@ body {
     <label class="welcome-modal-label">⭐ 리뷰 이벤트 메시지</label>
     <textarea class="welcome-modal-textarea" id="reviewTextEdit" placeholder="리뷰 이벤트 페이지 안내 메시지 + URL"></textarea>
     <div class="welcome-modal-help">상담 중 후기 이벤트 문의 시 보낼 메시지입니다. URL을 마지막 줄에 두면 카톡 미리보기 카드가 자동 생성됩니다.</div>
+
+    <!-- ===== 커스텀 메시지 관리 ===== -->
+    <div class="custom-section">
+      <div class="custom-section-title">🎨 커스텀 메시지 (직접 만들기)</div>
+      <div class="custom-section-help">
+        자주 쓰는 안내 문구를 버튼으로 만들어두세요. 추가하면 위 버튼 목록에 자동으로 나타납니다.<br>
+        예) 매트 소개, A/S 안내, 결제 안내 등
+      </div>
+      <div class="custom-list" id="customListEdit">
+        <!-- JS가 채웁니다 -->
+      </div>
+      <button class="custom-add-btn" onclick="addCustomItem()">+ 커스텀 메시지 추가</button>
+    </div>
 
     <div class="welcome-modal-actions">
       <button class="welcome-modal-btn welcome-modal-btn-reset" onclick="resetWelcomeSettings()">기본값 복원</button>
@@ -2378,6 +2472,45 @@ function copyDeposit() {
   }
 }
 
+// 📦 이전설치 안내 복사
+function copyMoveInstall() {
+  var text =
+    '📦 이전설치 안내\n\n' +
+    '기존 매트는 분리해서 가져가시면 되세요!\n\n' +
+    '✔️ 이전설치 비용: 30만원 + 추가 매트 수량 계산\n' +
+    '✔️ 이사 후 다른 작업이 다 종료된 후,\n' +
+    '   1~2일 뒤 가장 마지막에 설치하시면 되세요!\n\n' +
+    '※ 매트는 도배·바닥·가구 작업이 모두 끝난 뒤 시공해야\n' +
+    '   가장 깔끔하게 마무리됩니다 :)';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 이전설치 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 👥 공구 안내 복사 (5인 공구)
+function copyGroupBuy() {
+  var text =
+    '👥 5인 공구 안내\n\n' +
+    '5인 공구는 맘스홀릭에서 쉽게 모집하실 수 있으세요! 😊\n\n' +
+    '✔️ 같이하실 분 휴대폰 뒷자리만 알려주시면 적용되세요\n' +
+    '✔️ 지역, 일정 모두 상관없으세요\n' +
+    '✔️ 모집하신 분들이 각자 저희 카카오톡 채널로 오셔서\n' +
+    '   "같이하실 분 휴대폰 뒷자리"를 알려주시면 됩니다!\n\n' +
+    '편하게 5명 모으시고 알려만 주시면\n' +
+    '나머지는 저희가 처리해드릴게요 💕';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 공구 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
 function copyClosingMessage() {
   var text = '궁금하신 내용 있으시면 언제든 카톡 주시면 최대한 빠른 답변드리겠습니다!';
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2395,6 +2528,7 @@ function openWelcomeSettings() {
   document.getElementById('quoteFormEdit').value = getQuoteFormText();
   document.getElementById('bookingTextEdit').value = getBookingText();
   document.getElementById('reviewTextEdit').value = getReviewText();
+  renderCustomList(); // 커스텀 리스트도 함께 렌더링
   document.getElementById('welcomeModal').classList.add('show');
 }
 function closeWelcomeSettings() {
@@ -2412,11 +2546,27 @@ function saveWelcomeSettings() {
   if (!form) { showToast('⚠️ 견적 양식을 입력해주세요'); return; }
   if (!booking) { showToast('⚠️ 예약 양식 메시지를 입력해주세요'); return; }
   if (!review) { showToast('⚠️ 리뷰 이벤트 메시지를 입력해주세요'); return; }
+
+  // 커스텀 메시지 수집 및 검증
+  var customs = collectCustomFromForm();
+  for (var i = 0; i < customs.length; i++) {
+    if (!customs[i].label) {
+      showToast('⚠️ 커스텀 #' + (i+1) + '의 버튼 이름을 입력해주세요');
+      return;
+    }
+    if (!customs[i].message) {
+      showToast('⚠️ 커스텀 "' + customs[i].label + '"의 메시지를 입력해주세요');
+      return;
+    }
+  }
+
   localStorage.setItem('dolbom_welcome_text', welcome);
   localStorage.setItem('dolbom_quote_form_text', form);
   localStorage.setItem('dolbom_booking_text', booking);
   localStorage.setItem('dolbom_review_text', review);
+  saveCustomButtons(customs);
   renderWelcomeText();
+  renderCustomButtons();
   closeWelcomeSettings();
   showToast('✅ 설정이 저장되었습니다');
 }
@@ -2434,9 +2584,177 @@ function resetWelcomeSettings() {
   showToast('✅ 기본값으로 복원되었습니다');
 }
 
-// 페이지 로드 시 환영 메시지 렌더링
-document.addEventListener('DOMContentLoaded', renderWelcomeText);
-if (document.readyState !== 'loading') renderWelcomeText();
+// 페이지 로드 시 환영 메시지 + 커스텀 버튼 렌더링
+document.addEventListener('DOMContentLoaded', function(){
+  renderWelcomeText();
+  renderCustomButtons();
+});
+if (document.readyState !== 'loading') {
+  renderWelcomeText();
+  renderCustomButtons();
+}
+
+// 메인 화면 "+ 커스텀 추가" 버튼 → 설정 열고 바로 새 항목 추가
+function openSettingsAndAddCustom() {
+  openWelcomeSettings();
+  // 모달 렌더링이 끝난 다음 새 항목 추가 (포커스까지 자동)
+  setTimeout(function(){ addCustomItem(); }, 50);
+}
+
+// ===== 🎨 커스텀 메시지 시스템 =====
+// localStorage 키: dolbom_custom_buttons (JSON 배열)
+// 항목 구조: { id, icon, label, message }
+
+function getCustomButtons() {
+  try {
+    var raw = localStorage.getItem('dolbom_custom_buttons');
+    if (!raw) return [];
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    console.error('커스텀 버튼 로드 실패:', e);
+    return [];
+  }
+}
+
+function saveCustomButtons(arr) {
+  localStorage.setItem('dolbom_custom_buttons', JSON.stringify(arr));
+}
+
+// 메인 화면의 커스텀 버튼 영역 렌더링
+// + 커스텀 추가 버튼 바로 위에 동적으로 삽입
+function renderCustomButtons() {
+  // 기존에 동적으로 만든 커스텀 버튼들 제거
+  var existing = document.querySelectorAll('.welcome-btn-custom-dynamic');
+  for (var i = 0; i < existing.length; i++) {
+    existing[i].remove();
+  }
+  // + 커스텀 추가 버튼을 기준점으로 사용
+  var addBtn = document.querySelector('.welcome-btn-add');
+  if (!addBtn) return;
+  var customs = getCustomButtons();
+  for (var i = 0; i < customs.length; i++) {
+    var c = customs[i];
+    var icon = escapeHtml(c.icon || '✨');
+    var label = escapeHtml(c.label || '커스텀');
+    var temp = document.createElement('div');
+    temp.innerHTML = '<button class="welcome-btn welcome-btn-custom welcome-btn-custom-dynamic" onclick="copyCustomMessage(\'' + c.id + '\')">' +
+                     icon + ' <span>' + label + '</span></button>';
+    var btn = temp.firstChild;
+    addBtn.parentNode.insertBefore(btn, addBtn);
+  }
+}
+
+// 모달 안의 편집 리스트 렌더링
+function renderCustomList() {
+  var listEl = document.getElementById('customListEdit');
+  if (!listEl) return;
+  var customs = getCustomButtons();
+  if (customs.length === 0) {
+    listEl.innerHTML = '<div class="custom-empty">아직 커스텀 메시지가 없습니다.<br>아래 버튼으로 추가해보세요!</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < customs.length; i++) {
+    var c = customs[i];
+    html += '<div class="custom-item" data-id="' + c.id + '">' +
+              '<div class="custom-item-row">' +
+                '<input type="text" class="custom-item-icon" data-field="icon" value="' + escapeHtml(c.icon || '') + '" maxlength="3" placeholder="🎁">' +
+                '<input type="text" class="custom-item-label" data-field="label" value="' + escapeHtml(c.label || '') + '" maxlength="14" placeholder="버튼 이름 (예: 매트소개)">' +
+                '<button class="custom-item-delete" onclick="removeCustomItem(\'' + c.id + '\')" title="삭제">🗑️</button>' +
+              '</div>' +
+              '<textarea class="custom-item-textarea" data-field="message" placeholder="고객에게 보낼 메시지 내용을 입력하세요">' + escapeHtml(c.message || '') + '</textarea>' +
+            '</div>';
+  }
+  listEl.innerHTML = html;
+}
+
+// 모달의 입력 필드에서 현재 값 수집 (저장 시 호출)
+function collectCustomFromForm() {
+  var listEl = document.getElementById('customListEdit');
+  if (!listEl) return [];
+  var items = listEl.querySelectorAll('.custom-item');
+  var result = [];
+  for (var i = 0; i < items.length; i++) {
+    var el = items[i];
+    var id = el.getAttribute('data-id');
+    var icon = (el.querySelector('[data-field="icon"]').value || '✨').trim();
+    var label = (el.querySelector('[data-field="label"]').value || '').trim();
+    var message = (el.querySelector('[data-field="message"]').value || '').trim();
+    result.push({ id: id, icon: icon, label: label, message: message });
+  }
+  return result;
+}
+
+// 새 커스텀 항목 추가 (모달 안에서)
+function addCustomItem() {
+  // 현재 입력 중인 내용을 보존하기 위해 한번 수집
+  var current = collectCustomFromForm();
+  var newId = 'c' + Date.now();
+  current.push({ id: newId, icon: '✨', label: '', message: '' });
+  // 임시로 저장하지는 않고, 화면만 다시 그림
+  // 그리려면 listEl에 새 항목 HTML을 직접 append
+  var listEl = document.getElementById('customListEdit');
+  // 빈 상태 메시지가 있으면 제거
+  var emptyEl = listEl.querySelector('.custom-empty');
+  if (emptyEl) emptyEl.remove();
+  var div = document.createElement('div');
+  div.className = 'custom-item';
+  div.setAttribute('data-id', newId);
+  div.innerHTML =
+    '<div class="custom-item-row">' +
+      '<input type="text" class="custom-item-icon" data-field="icon" value="✨" maxlength="3" placeholder="🎁">' +
+      '<input type="text" class="custom-item-label" data-field="label" value="" maxlength="14" placeholder="버튼 이름 (예: 매트소개)">' +
+      '<button class="custom-item-delete" onclick="removeCustomItem(\'' + newId + '\')" title="삭제">🗑️</button>' +
+    '</div>' +
+    '<textarea class="custom-item-textarea" data-field="message" placeholder="고객에게 보낼 메시지 내용을 입력하세요"></textarea>';
+  listEl.appendChild(div);
+  // 새로 만든 라벨 입력란에 포커스
+  var labelInput = div.querySelector('[data-field="label"]');
+  if (labelInput) labelInput.focus();
+}
+
+// 커스텀 항목 삭제 (DOM에서만 — 저장 버튼 눌러야 실제 저장됨)
+function removeCustomItem(id) {
+  if (!confirm('이 커스텀 메시지를 삭제할까요?')) return;
+  var listEl = document.getElementById('customListEdit');
+  var item = listEl.querySelector('.custom-item[data-id="' + id + '"]');
+  if (item) item.remove();
+  // 리스트가 비었으면 빈 상태 표시
+  if (listEl.querySelectorAll('.custom-item').length === 0) {
+    listEl.innerHTML = '<div class="custom-empty">아직 커스텀 메시지가 없습니다.<br>아래 버튼으로 추가해보세요!</div>';
+  }
+}
+
+// 커스텀 메시지 복사 (메인 버튼 클릭 시)
+function copyCustomMessage(id) {
+  var customs = getCustomButtons();
+  var found = null;
+  for (var i = 0; i < customs.length; i++) {
+    if (customs[i].id === id) { found = customs[i]; break; }
+  }
+  if (!found) { showToast('⚠️ 메시지를 찾을 수 없습니다'); return; }
+  var text = found.message;
+  var label = found.label || '커스텀 메시지';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ "' + label + '" 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 간단 HTML 이스케이프 (XSS 방지)
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ===== 이미지 캡처 / 공유 / 저장 =====
 async function captureImage() {
