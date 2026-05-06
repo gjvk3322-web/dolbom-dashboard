@@ -499,6 +499,14 @@ function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
       body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
       showSuccessPopup();
+      // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
+      try {
+        if (window.wcs && window.wcs.trans) {
+          var _conv_1 = {1:"1", 2:""};
+          wcs.trans(_conv_1, "s_520031fef386");
+        }
+      } catch(e) { console.warn('네이버 전환 추적 실패:', e); }
+      // ═══════════════════════════════════════════════
       document.getElementById('fName').value='';document.getElementById('fPhone').value='';document.getElementById('fAddress').value='';document.getElementById('fDong').value='';document.getElementById('fHo').value='';document.getElementById('fRoute').value='';document.getElementById('fPurposeEtc').value='';document.getElementById('fPurposeEtc').style.display='none';
       document.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
       document.getElementById('detailRow').style.display='none';
@@ -508,7 +516,17 @@ function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
   }).catch(()=>{
     btn.textContent='신청 중...';
     fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
-    }).then(()=>{showSuccessPopup();btn.textContent='✅ 신청 완료!';setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
+    }).then(()=>{
+      showSuccessPopup();
+      // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
+      try {
+        if (window.wcs && window.wcs.trans) {
+          var _conv_2 = {1:"1", 2:""};
+          wcs.trans(_conv_2, "s_520031fef386");
+        }
+      } catch(e) { console.warn('네이버 전환 추적 실패:', e); }
+      // ═══════════════════════════════════════════════
+      btn.textContent='✅ 신청 완료!';setTimeout(()=>{btn.disabled=false;btn.textContent='무료 샘플 신청하기'},3000);
     }).catch(()=>{showToast('⚠️ 전송 실패','error');btn.disabled=false;btn.textContent='무료 샘플 신청하기';});
   });
 }
