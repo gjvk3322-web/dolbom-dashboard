@@ -120,8 +120,99 @@ const checks=[false,false,false,false,false,false,false,false,false,false,false,
 let inspectionSubmitted=false;
 function toggleCheck(i){if(inspectionSubmitted)return;checks[i]=!checks[i];const el=document.getElementById('chk'+i);el.classList.toggle('checked',checks[i]);el.textContent=checks[i]?'✓':'';updateInspectBtn();}
 function updateInspectBtn(){document.getElementById('inspectBtn').disabled=!checks.every(Boolean);}
-async function submitInspection(){if(inspectionSubmitted)return;const btn=document.getElementById('inspectBtn');btn.disabled=true;btn.textContent='전송 중...';try{await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});inspectionSubmitted=true;document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';showToast('검수 완료! 감사합니다');}catch(e){btn.disabled=false;btn.textContent='검수 완료';showToast('전송 실패 - 다시 시도해주세요');}}
-async function loadData(){if(!PHONE)return;showLoading(30);try{const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));showLoading(70);const data=await res.json();showLoading(100);setTimeout(()=>showLoading(0),500);if(data.inspection&&data.inspection.submitted){inspectionSubmitted=true;document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';}}catch(e){console.error(e);showLoading(0);}}
+async function submitInspection(){if(inspectionSubmitted)return;const btn=document.getElementById('inspectBtn');btn.disabled=true;btn.textContent='전송 중...';try{await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'inspection',phone:PHONE,checks:checks,submittedAt:new Date().toISOString()})});inspectionSubmitted=true;saveInspectionToLocal();document.getElementById('inspectionForm').style.display='none';document.getElementById('inspectionDone').style.display='block';showToast('검수 완료! 감사합니다');}catch(e){btn.disabled=false;btn.textContent='검수 완료';showToast('전송 실패 - 다시 시도해주세요');}}
+
+// localStorage 키: phone 있으면 phone 기반, 없으면 anon (솔라피로 phone 없이 보내는 케이스)
+function getInspectionKey(){return 'dolbom_inspection_'+(PHONE||'anon');}
+
+// 검수 데이터 localStorage 저장
+function saveInspectionToLocal(){
+  try{
+    localStorage.setItem(getInspectionKey(), JSON.stringify({
+      checks: checks,
+      submittedAt: new Date().toISOString()
+    }));
+  }catch(e){console.error('검수 localStorage 저장 실패',e);}
+}
+
+// 검수 데이터 localStorage 복원 (새로고침 시 체크 + 잠금 + 배너)
+function restoreInspectionFromLocal(){
+  try{
+    var raw=localStorage.getItem(getInspectionKey());
+    if(!raw)return false;
+    var data=JSON.parse(raw);
+    if(!data||!Array.isArray(data.checks))return false;
+
+    // 체크 상태 복원
+    for(var i=0;i<data.checks.length&&i<checks.length;i++){
+      checks[i]=!!data.checks[i];
+      if(checks[i]){
+        var el=document.getElementById('chk'+i);
+        if(el){el.classList.add('checked');el.textContent='✓';}
+      }
+    }
+
+    // 다시 못 풀게 잠금
+    inspectionSubmitted=true;
+
+    // 검수 완료 날짜 추출
+    var dateStr='';
+    try{
+      var d=new Date(data.submittedAt);
+      dateStr=(d.getMonth()+1)+'/'+d.getDate();
+    }catch(e){}
+
+    // 검수 완료 버튼으로 변경
+    var btn=document.getElementById('inspectBtn');
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='✅ 검수 완료'+(dateStr?' ('+dateStr+')':'');
+      btn.style.background='var(--green)';
+      btn.style.color='#fff';
+      btn.style.opacity='1';
+      btn.style.cursor='default';
+    }
+
+    // 체크리스트 위에 "검수 완료" 배너 추가
+    var card=document.querySelector('#inspectionForm .card');
+    if(card&&!document.getElementById('inspectionCompleteBanner')){
+      var banner=document.createElement('div');
+      banner.id='inspectionCompleteBanner';
+      banner.style.cssText='background:var(--green-light);color:var(--green);padding:12px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;margin-bottom:14px;border:1px solid var(--green);';
+      banner.innerHTML='✅ 검수가 완료되었습니다'+(dateStr?' ('+dateStr+')':'');
+      card.insertBefore(banner,card.firstChild);
+    }
+
+    return true;
+  }catch(e){
+    console.error('검수 localStorage 복원 실패',e);
+    return false;
+  }
+}
+async function loadData(){
+  let inspectionRestoredFromServer=false;
+  // phone 있으면 서버 조회 시도
+  if(PHONE){
+    showLoading(30);
+    try{
+      const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
+      showLoading(70);
+      const data=await res.json();
+      showLoading(100);
+      setTimeout(()=>showLoading(0),500);
+      if(data.inspection&&data.inspection.submitted){
+        inspectionSubmitted=true;
+        document.getElementById('inspectionForm').style.display='none';
+        document.getElementById('inspectionDone').style.display='block';
+        inspectionRestoredFromServer=true;
+      }
+    }catch(e){console.error(e);showLoading(0);}
+  }
+  // 서버에서 못 가져왔으면 localStorage에서 복원 (phone 없는 솔라피 케이스 포함)
+  if(!inspectionRestoredFromServer){
+    restoreInspectionFromLocal();
+  }
+}
 loadData();
 </script>
 </body>
