@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>돌봄매트 시공 예약</title>
 <script src="https://www.dolbommat.com/tracking.js" defer></script>
+<!-- ═══ 네이버 광고 전환 추적 (NAVER WCS) - 2026-05-07 추가 ═══ -->
+<script type="text/javascript" src="//wcs.naver.net/wcslog.js"></script>
+<script type="text/javascript">
+if (!wcs_add) var wcs_add={};
+wcs_add["wa"] = "s_520031fef386";
+if (!_nasa) var _nasa={};
+if(window.wcs){
+  wcs.inflow();
+  wcs_do();
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/cs-consent.css?v=v5">
 <style>
@@ -626,6 +637,15 @@ function submitBooking(){
       // 시트 저장 실패해도 → 이미지+카톡으로 받음 (안전망)
       showToast('✅ 예약 신청! 이미지를 카카오톡으로 보내주세요');
     }
+    // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
+    try {
+      if (window.wcs && window.wcs.trans) {
+        var _conv = {};
+        _conv.type = 'lead';
+        wcs.trans(_conv);
+      }
+    } catch(e) { console.warn('네이버 전환 추적 실패:', e); }
+    // ═══════════════════════════════════════════════
     // 이미지 생성 + 텍스트 복사 (메인 흐름)
     setTimeout(function(){generateBookingImage()},800);
   })

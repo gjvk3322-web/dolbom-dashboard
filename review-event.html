@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>돌봄매트 후기이벤트 & 시공 안내</title>
+<script src="https://www.dolbommat.com/tracking.js" defer></script>
+<!-- ═══ 네이버 광고 전환 추적 (NAVER WCS) - 2026-05-07 추가 ═══ -->
+<script type="text/javascript" src="//wcs.naver.net/wcslog.js"></script>
+<script type="text/javascript">
+if (!wcs_add) var wcs_add={};
+wcs_add["wa"] = "s_520031fef386";
+if (!_nasa) var _nasa={};
+if(window.wcs){
+  wcs.inflow();
+  wcs_do();
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;--border:#e5e8eb;--primary:#e8736c;--primary-light:#fdf0ef;--primary-dark:#d45a53;--green:#20c997;--green-light:#e3faf1;--red:#f04452;--orange:#f59f00;--blue:#5b9bd5;--radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);}
@@ -510,6 +522,15 @@ async function requestCashback(){
       body:JSON.stringify({type:'cashback',phone:PHONE,bank,accountName:name,accountNum:num,totalEarned:earned,paidAmount:paidTotal,requestAmount:reqAmt,submittedAt:new Date().toISOString()})});
     document.getElementById('successAmt').textContent=reqAmt.toLocaleString()+'원';
     document.getElementById('successOverlay').classList.add('show');
+    // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
+    try {
+      if (window.wcs && window.wcs.trans) {
+        var _conv = {};
+        _conv.type = 'lead';
+        wcs.trans(_conv);
+      }
+    } catch(e) { console.warn('네이버 전환 추적 실패:', e); }
+    // ═══════════════════════════════════════════════
     fireConfetti();payStatus='신청완료';renderMissions();
   }catch(e){btn.disabled=false;btn.textContent='캐시백 받기';showToast('신청 실패');}
 }
