@@ -185,10 +185,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <label>계좌번호</label>
         <input type="text" id="accNum" placeholder="000-0000-0000-00" inputmode="numeric">
       </div>
-      <div class="full" style="margin-top:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer">
-          <input type="checkbox" id="cashbackConsent" style="width:18px;height:18px">
-          <span>개인정보 수집·이용에 동의합니다</span>
+      <div class="full" style="margin-top:12px;padding:12px;background:#fdf0ef;border:1.5px solid var(--primary);border-radius:10px">
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--primary-dark);cursor:pointer;font-weight:600">
+          <input type="checkbox" id="cashbackConsent" style="width:20px;height:20px;accent-color:var(--primary);flex-shrink:0">
+          <span>개인정보 수집·이용에 동의합니다 (필수)</span>
         </label>
       </div>
     </div>
@@ -447,7 +447,7 @@ function renderMissions(){
   }
   const btn=document.getElementById('cashbackBtn');
   if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
-  else if(remain>0){const consented=document.getElementById('cashbackConsent')&&document.getElementById('cashbackConsent').checked;btn.disabled=!consented;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
+  else if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
   else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';}
   else if(earned>0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
   else{btn.disabled=true;btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';}
