@@ -3014,11 +3014,11 @@ async function checkSampleDuplicate() {
   }
 
   const apiUrl = getSoomgoApiUrl();
-  if (!apiUrl || apiUrl === SOOMGO_API_URL_DEFAULT) {
+  if (!apiUrl || apiUrl.indexOf('script.google.com') === -1) {
     resultDiv.className = 'soomgo-result danger';
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = '<div class="soomgo-result-title">⚙️ API URL 설정 필요</div>' +
-      '<div class="soomgo-result-detail">Google Apps Script URL을 먼저 설정해주세요.<br>아래 "여기 클릭" 또는 가이드 참조.</div>';
+      '<div class="soomgo-result-detail">올바른 Google Apps Script URL을 설정해주세요.<br>아래 "여기 클릭" 으로 등록 가능.</div>';
     return;
   }
 
