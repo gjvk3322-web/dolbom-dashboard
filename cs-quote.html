@@ -3175,14 +3175,9 @@ function recordSoomgoLeadToSheet() {
 
   const py = parseInt(document.getElementById('pyeongInput').value) || 0;
   
-  // 시공범위 가져오기 (체크박스에서)
-  const scopeBoxes = document.querySelectorAll('.scope-checkbox:checked');
-  const scopeArr = [];
-  scopeBoxes.forEach(b => {
-    const lbl = b.parentElement.textContent.trim();
-    scopeArr.push(lbl);
-  });
-  const scope = scopeArr.join('+') || '';
+  // 시공범위 가져오기 (활성화된 .scope-btn.active 버튼에서)
+  const activeBtn = document.querySelector('.scope-btn.active');
+  const scope = activeBtn ? activeBtn.textContent.trim() : '';
   
   // 1번 제품 추출 (window._fullReplyText에서)
   const fullText = window._fullReplyText || '';
