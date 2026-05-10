@@ -1904,6 +1904,12 @@ function recalculate() {
 
   // 결과가 바뀌면 1.5초 디바운스 후 자동으로 이미지 생성
   scheduleAutoCapture();
+
+  // 🆕 숨고 답장 자동 갱신 (이미 표시 중일 때만)
+  var soomgoSection = document.getElementById('soomgoReplySection');
+  if (soomgoSection && soomgoSection.style.display === 'block' && typeof generateSoomgoReply === 'function') {
+    generateSoomgoReply();
+  }
 }
 
 // 견적 기준 박스 채우기
@@ -1992,6 +1998,12 @@ function showEmptyState() {
   if (hint) {
     hint.style.display = 'block';
     hint.innerHTML = '📷 견적표 이미지 준비 중...<br><span style="font-size:11px; color:#bbb;">잠시 후 자동으로 표시됩니다</span>';
+  }
+
+  // 🆕 숨고 답장도 자동 갱신 (평수 0이면 견적 부분 자동으로 빠짐)
+  var soomgoSection2 = document.getElementById('soomgoReplySection');
+  if (soomgoSection2 && soomgoSection2.style.display === 'block' && typeof generateSoomgoReply === 'function') {
+    generateSoomgoReply();
   }
 }
 
