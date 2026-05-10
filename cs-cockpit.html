@@ -866,6 +866,52 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     </div>
   </div>
 
+  <!-- 🆕 숨고 유입 KPI · 2026-05-10 추가 -->
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-icon icon-blue">🎯</span>숨고 유입 KPI
+        <span class="badge bg-gray" id="soomgoBadge">최근 30일</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <select id="soomgoPeriodSelect" onchange="loadSoomgoKPI()" style="padding:6px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; background:#fff; cursor:pointer">
+          <option value="7">최근 7일</option>
+          <option value="30" selected>최근 30일</option>
+          <option value="90">최근 90일</option>
+        </select>
+        <button class="section-more" onclick="loadSoomgoKPI()">🔄 새로고침</button>
+      </div>
+    </div>
+
+    <div class="adrank-kpis" style="grid-template-columns:repeat(5,1fr); gap:12px; margin-top:12px">
+      <div class="adrank-kpi blue">
+        <div class="adrank-kpi-label">📞 답장 수</div>
+        <div class="adrank-kpi-value" id="soomgoTotal">—</div>
+      </div>
+      <div class="adrank-kpi blue">
+        <div class="adrank-kpi-label">📦 샘플 전환</div>
+        <div class="adrank-kpi-value" id="soomgoSample">—</div>
+      </div>
+      <div class="adrank-kpi green">
+        <div class="adrank-kpi-label">🏠 시공 전환</div>
+        <div class="adrank-kpi-value" id="soomgoInstall">—</div>
+      </div>
+      <div class="adrank-kpi green">
+        <div class="adrank-kpi-label">💰 누적 매출</div>
+        <div class="adrank-kpi-value" id="soomgoRevenue">—</div>
+      </div>
+      <div class="adrank-kpi green">
+        <div class="adrank-kpi-label">💎 답장당 ROI</div>
+        <div class="adrank-kpi-value" id="soomgoROI">—</div>
+      </div>
+    </div>
+    
+    <div style="margin-top:14px; padding:10px 14px; background:#f8fafc; border-radius:8px; font-size:11.5px; color:var(--muted); line-height:1.6">
+      💡 <b>추적 방식:</b> cs-quote에서 답장 복사 시 자동 기록 → 샘플접수·시공스케줄 시트와 이름 매칭 → 상태 자동 업데이트<br>
+      📊 <b>답장당 ROI:</b> 누적매출 ÷ 답장수. 숨고 답장당 비용보다 높으면 광고비 늘릴만함, 낮으면 메시지·답장 텍스트 개선 필요
+    </div>
+  </div>
+
   <!-- 🟠 영역 6 · 후기이벤트 + 알림톡 현황 (실데이터) -->
   <div class="section col-5">
     <div class="section-head">
@@ -1366,6 +1412,44 @@ setInterval(updateTime, 60000);
 
 // ═══ 새로고침 (실제 API 호출) ═══
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+// 🆕 숨고 유입 KPI 로드 함수 · 2026-05-10
+async function loadSoomgoKPI() {
+  const periodSelect = document.getElementById('soomgoPeriodSelect');
+  const days = periodSelect ? periodSelect.value : 30;
+  const badge = document.getElementById('soomgoBadge');
+  const labels = {7:'최근 7일', 30:'최근 30일', 90:'최근 90일'};
+  if (badge) badge.textContent = labels[days] || ('최근 ' + days + '일');
+  
+  // 로딩 표시
+  ['soomgoTotal','soomgoSample','soomgoInstall','soomgoRevenue','soomgoROI'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=getSoomgoKPI&days=${days}`);
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('숨고 KPI 로드 실패:', data.error);
+      return;
+    }
+    
+    const fmt10k = n => (n / 10000).toFixed(0);
+    
+    document.getElementById('soomgoTotal').textContent = data.total + '명';
+    document.getElementById('soomgoSample').textContent = 
+      data.total > 0 ? `${data.sample}명 (${data.sampleRate}%)` : '0명';
+    document.getElementById('soomgoInstall').textContent = 
+      data.total > 0 ? `${data.install}명 (${data.installRate}%)` : '0명';
+    document.getElementById('soomgoRevenue').textContent = 
+      data.revenue > 0 ? `${fmt10k(data.revenue)}만원` : '0원';
+    document.getElementById('soomgoROI').textContent = 
+      data.roiPerLead > 0 ? `${fmt10k(data.roiPerLead)}만원` : '0원';
+  } catch (err) {
+    console.error('숨고 KPI 로드 에러:', err);
+  }
+}
 
 // 유입경로 이모지 매핑
 function getChannelIcon(ch){
@@ -2117,6 +2201,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadMonthStats();
   loadStockSummary();
   loadReviewStats();
+  loadSoomgoKPI();
   loadAlimtalkStats();
   loadAptPipeline();      // 🆕 입주아파트 실데이터
   loadConversionStats();
