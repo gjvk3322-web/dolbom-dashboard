@@ -3107,11 +3107,17 @@ async function checkSampleDuplicate() {
 function generateSoomgoReply() {
   const name = (document.getElementById('soomgoCustomerName').value || '').trim() || '고객';
   const py = parseInt(document.getElementById('pyeongInput').value) || 0;
-  const replyTextMobile = document.getElementById('replyTextMobile');
-  const kakaoReply = (replyTextMobile.textContent || '').trim();
-  const isEmpty = (replyTextMobile.dataset.empty === 'true');
 
-  // 위쪽: 도입 (페인 1위 직격) + 객관적 체크포인트 + 회사 어필 (왜 돌봄매트인가)
+  // 🆕 카톡 답변 전체 텍스트 (window._fullReplyText에 1·2·3번 매트 + 체감가 + 혜택 모두 포함)
+  // replyTextMobile.textContent는 펼치기 상태에 따라 1번만 보일 수 있어 사용 X
+  let kakaoReply = window._fullReplyText || '';
+
+  // "더 많은 정보는 아래 링크에서!\n👉 https://..." 부분 제거 (대장님 요청)
+  kakaoReply = kakaoReply.replace(/\n*더 많은 정보는 아래 링크에서![\s\S]*$/, '').trim();
+
+  const hasQuote = (py > 0 && kakaoReply.length > 0);
+
+  // 위쪽: 도입 + 객관적 체크포인트 + 회사 어필
   const top =
     '안녕하세요 ' + name + '님,\n' +
     '\n' +
@@ -3129,10 +3135,10 @@ function generateSoomgoReply() {
     '3. 공신력: 까다로운 80여 곳의 국공립 어린이집 및 5성급 호텔 키즈라운지 시공 전담\n' +
     '4. 독보적 기술: 1000사이즈 공기순환통로 + 마룻바닥 곰팡이·습기 차단\n';
 
-  // 견적 부분 (평수 있으면 카톡 답변 자동 삽입)
+  // 견적 부분 (평수 + 카톡 답변 모두 있을 때만 삽입)
   let middle = '';
-  if (py && !isEmpty && kakaoReply) {
-    middle = '\n[' + py + '평 견적 안내]\n' + kakaoReply + '\n';
+  if (hasQuote) {
+    middle = '\n' + kakaoReply + '\n';
   }
 
   // 아래쪽: 감사 + 6주년 이벤트 + 무료 샘플 + CTA
