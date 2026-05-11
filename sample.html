@@ -193,11 +193,11 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
     <div id="detailRow" style="display:none;gap:10px;margin-bottom:14px">
       <div id="dongBox" style="flex:1">
         <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">동</label>
-        <input type="text" id="fDong" placeholder="예: 101" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
+        <input type="text" id="fDong" placeholder="예: 101 또는 C" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
       </div>
       <div id="hoBox" style="flex:1">
         <label style="display:block;font-size:12px;font-weight:600;color:#777;margin-bottom:6px">호수 <span style="color:#e53935">*</span></label>
-        <input type="text" id="fHo" placeholder="예: 1502" inputmode="numeric" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
+        <input type="text" id="fHo" placeholder="예: 1502 또는 602" style="width:100%;padding:14px;border:1.5px solid #e0ddd6;border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:#1a1a1a;box-sizing:border-box" />
       </div>
     </div>
   </div>
@@ -387,8 +387,8 @@ function getAddrDetail(){
   const ho=document.getElementById('fHo').value.trim();
   if(building==='주택') return '주택';
   let detail='';
-  if(dong) detail+=dong.replace(/[^0-9]/g,'')+'동 ';
-  if(ho) detail+=ho.replace(/[^0-9]/g,'')+'호';
+  if(dong) detail+=(dong.endsWith('동')?dong:dong+'동')+' ';
+  if(ho) detail+=(ho.endsWith('호')?ho:ho+'호');
   return detail.trim();
 }
 
