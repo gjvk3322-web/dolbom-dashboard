@@ -122,6 +122,8 @@ function pickTeam(t){
   team=t;loc=null;invDataDate=dateKey;
   // URL 업데이트 (새로고침 없이)
   const url=new URL(window.location);url.searchParams.set('team',t);window.history.replaceState({},'',url);
+  // 🆕 발주 탭이면 Firebase 응답 기다리지 말고 즉시 렌더 (재고 데이터와 무관)
+  if(tab==='order'){renderOrder();return;}
   if(fbInRef)fbInRef.off();
   // 오늘 데이터 먼저 확인
   fbInRef=db.ref('inventory/'+dateKey+'/'+team);
