@@ -51,7 +51,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .prod-card{border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;flex:1}
 .prod-card.active{border-color:var(--green);background:var(--green-light)}
 .prod-card.recommend{position:relative}
-.prod-card.recommend::before{content:'대형사이즈';position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600}
+.prod-card.recommend::before{content:'대형사이즈';position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600;white-space:nowrap}
 .prod-card .name{font-size:14px;font-weight:600}
 .prod-card .spec{font-size:11px;color:var(--text3);margin-top:2px}
 .prod-card .price{font-size:12px;font-weight:600;color:var(--green);margin-top:3px}
@@ -141,16 +141,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="fg"><label>평수 <span class="req">*</span></label><input type="number" id="pyung" placeholder="" inputmode="numeric"></div>
   </div>
   <div class="card">
-    <div class="card-title">📅 희망 시공일</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:6px">최대 3개까지 선택 가능 (5일 이후부터 예약 가능)</div>
-    <div style="margin-bottom:10px"><div class="opt-btn" id="dateAnyBtn" onclick="toggleDateAny()" style="display:inline-block">상관없음 (빠른 날짜 배정)</div></div>
-    <div id="calWrap">
-      <div class="cal-header"><button onclick="changeMonth(-1)">◀</button><span class="month" id="calMonth"></span><button onclick="changeMonth(1)">▶</button></div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div style="font-size:11px;color:#e53935;margin-top:6px">* 일요일은 돌봄매트 휴무입니다</div>
-      <div id="selectedDatesDisplay" style="margin-top:8px"></div>
+    <div class="card-title">📅 희망 시공일 <span style="font-weight:400;font-size:12px;color:#999">(최대 3개까지 선택 가능)</span></div>
+    <div class="fg" style="margin-bottom:0">
+      <div style="margin-bottom:10px"><div class="opt-btn active" id="dateAnyBtn" onclick="toggleDateAny()" style="display:inline-block">상관없음 (빠른 날짜 배정)</div></div>
+      <div id="calWrap">
+        <div class="cal-header"><button onclick="changeMonth(-1)">◀</button><span class="month" id="calMonth"></span><button onclick="changeMonth(1)">▶</button></div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div style="font-size:11px;color:#e53935;margin-top:6px">* 일요일은 돌봄매트 휴무입니다</div>
+        <div id="selectedDatesDisplay" style="margin-top:8px"></div>
+      </div>
     </div>
-    <div class="fg" style="margin-top:12px">
+    <div class="fg" style="margin-top:16px;padding-top:16px;border-top:1px dashed #e8e8e3">
       <label>희망 시간</label>
       <div class="opt-group" id="timeGroup">
         <div class="opt-btn active" onclick="selectTime(this,'상관없음')">상관없음</div>
@@ -165,7 +166,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div style="display:flex;gap:8px">
       <div class="prod-card recommend" id="prod0" onclick="selectProduct(0)"><div class="name">1000매트 22T</div><div class="spec">논슬립·방오·UV차단</div><div class="price">76,500원</div></div>
       <div class="prod-card" id="prod1" onclick="selectProduct(1)" style="position:relative"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#FF8F00;color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600;white-space:nowrap">애견 추천</div><div class="name">1000매트 17T</div><div class="spec">논슬립·방오·UV차단</div><div class="price">64,500원</div></div>
-      <div class="prod-card" id="prod2" onclick="selectProduct(2)" style="position:relative"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#C79100;color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600;white-space:nowrap">갓성비</div><div class="name">500매트 22T</div><div class="spec">기본 코팅</div><div class="price">16,900원</div></div>
+      <div class="prod-card" id="prod2" onclick="selectProduct(2)" style="position:relative"><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#C79100;color:#fff;font-size:9px;padding:1px 8px;border-radius:4px;font-weight:600;white-space:nowrap">실속형</div><div class="name">500매트 22T</div><div class="spec">기본 코팅</div><div class="price">16,900원</div></div>
     </div>
     <div class="fg" style="margin-top:12px"><label>색상 <span class="req">*</span></label><div class="color-group" id="colorGroup"></div></div>
   </div>
@@ -194,12 +195,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="notice-section">
       <div class="notice-section-label">시공 일정</div>
       <div class="notice-item">입주청소·이사와 같은 날 시공은 <strong style="color:#e53935">불가</strong>합니다. 이사 완료 후 1~2일 뒤 시공을 권장합니다.</div>
-      <div class="notice-item">시공 72시간 전 이후 일정 변경·취소 <strong style="color:#e53935">불가</strong></div>
     </div>
 
     <div class="notice-section">
       <div class="notice-section-label">시공 당일</div>
-      <div class="notice-item">작업 시작과 종료 부재 시 설치 변경 불가, 추가 비용은 고객님 부담입니다.</div>
+      <div class="notice-item">작업 시작과 끝 부재 시 작업된 설치 변경 불가, 변경 요청 시 비용이 발생됩니다.</div>
       <div class="notice-item">가벼운 물건은 미리 정리해 주시면 작업 시간이 단축됩니다.</div>
     </div>
 
@@ -211,9 +211,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
 
     <div class="notice-section">
-      <div class="notice-section-label">환불·반품</div>
-      <div class="notice-item">시공 72시간 전 이후 예약금 20만원 환불 <strong style="color:#e53935">불가</strong></div>
-      <div class="notice-item">재사용 불가 상품으로 설치 후 반품·환불 <strong style="color:#e53935">불가</strong>합니다.</div>
+      <div class="notice-section-label">환불·반품 조항</div>
+      <div class="notice-item">작업일 기준 3일 전 예약 변경 및 취소 시 예약금 환불은 <strong>불가</strong>합니다.</div>
+      <div class="notice-item">재사용 <strong>불가</strong> 상품으로 설치 후 반품·환불 <strong>불가</strong>합니다.</div>
+      <div class="notice-item">논슬립 코팅 강도는 제품마다 차이가 있을 수 있습니다.</div>
     </div>
 
     <div class="notice-section">
@@ -392,7 +393,7 @@ var PRODUCTS=[
   {name:'1000매트 17T',price:64500,colors:['모던','미정']},
   {name:'500매트 22T',price:16900,colors:['모던','마블','코튼']}
 ];
-var selectedProduct=-1,selectedColor='',selectedDates=[],dateAny=false,selectedTime='상관없음',selectedScope='',roomCount=0,addrData=null;
+var selectedProduct=-1,selectedColor='',selectedDates=[],dateAny=true,selectedTime='상관없음',selectedScope='',roomCount=0,addrData=null;
 
 // 🆕 동의 상태 동적 체크 (cs-consent.js와 연동)
 function getAgreedStatus() {
