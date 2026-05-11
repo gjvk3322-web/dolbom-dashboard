@@ -78,6 +78,11 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 .toast-msg{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1a3a1a;color:var(--accent);padding:8px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:300;opacity:0;transition:opacity .3s}
 .toast-msg.show{opacity:1}
 .sum-card{text-align:center;margin:16px 0;padding:16px;background:var(--card);border-radius:12px;border:.5px solid var(--border)}
+
+/* 🆕 number input 스피너(위아래 화살표) 제거 + 휠 조정 방지 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type="number"]{-moz-appearance:textfield;appearance:textfield}
 </style>
 </head>
 <body>
@@ -678,7 +683,7 @@ function renderOrder(){
     const mm=String(dt.getMonth()+1).padStart(2,'0');
     const dd2=String(dt.getDate()).padStart(2,'0');
     h+=`<div style="text-align:center;padding:6px 2px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px;position:relative">`;
-    h+=`<div onclick="confirmRemoveDelivery(${d.id})" title="이 날짜 열 삭제" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#fff;border:1.5px solid #ffcdd2;color:#e53935;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.1);z-index:2">✕</div>`;
+    h+=`<div onclick="confirmRemoveDelivery(${d.id})" title="이 날짜 열 삭제" class="cap-hide" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#fff;border:1.5px solid #ffcdd2;color:#e53935;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.1);z-index:2">✕</div>`;
     h+=`<div onclick="toggleLoc(${d.id})" style="padding:5px 2px;background:${locBg};border:1px solid ${locColor}30;border-radius:6px;color:${locColor};font-size:12px;font-weight:800;cursor:pointer;user-select:none">${d.loc}</div>`;
     h+=`<div onclick="document.getElementById('ddate_${d.id}').showPicker()" style="margin-top:4px;font-size:11px;color:#1a1a1a;font-weight:600;cursor:pointer">${mm}.${dd2} <span style="color:${dayColor}">(${dayName})</span></div>`;
     h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="this.closest('div').querySelector('div:nth-child(2)');calcMonthlyOrder();renderOrder()" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">`;
@@ -834,7 +839,12 @@ async function saveMonthlyOrder(){
   }
   try{
     const el=document.getElementById('orderSheet');
-    const canvas=await html2canvas(el,{backgroundColor:'#ffffff',scale:2,width:el.scrollWidth,height:el.scrollHeight,windowWidth:el.scrollWidth+40});
+    const canvas=await html2canvas(el,{
+      backgroundColor:'#ffffff',scale:2,
+      width:el.scrollWidth,height:el.scrollHeight,
+      windowWidth:el.scrollWidth+40,
+      ignoreElements:(node)=>node.classList&&node.classList.contains('cap-hide') // 🆕 ✕ 버튼은 캡처에서 제외
+    });
     const link=document.createElement('a');
     link.download='발주서_'+orderMonth+'월_'+dateKey+'.png';
     link.href=canvas.toDataURL();link.click();
@@ -886,6 +896,12 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
 
 if(urlTab&&['inventory','incoming','summary','order'].includes(urlTab))tab=urlTab;
 if(urlTeam&&TEAMS[urlTeam]){pickTeam(urlTeam)}else if(urlTeam==='경기도'&&TEAMS['경기']){pickTeam('경기')}else{render()}
+
+// 🆕 트랙패드/마우스 휠로 숫자 input 값이 바뀌는 것 방지
+window.addEventListener('wheel',function(e){
+  const a=document.activeElement;
+  if(a&&a.tagName==='INPUT'&&a.type==='number')a.blur();
+},{passive:true});
 </script>
 </body>
 </html>
