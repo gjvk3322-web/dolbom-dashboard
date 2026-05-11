@@ -560,6 +560,13 @@ function saveOrderToStorage(){
   }catch(e){}
 }
 
+// 🆕 입력 중 자동저장 (debounce 400ms) — 새로고침/탭전환 직전 손실 방지
+let _orderSaveTimer=null;
+function saveOrderDraft(){
+  clearTimeout(_orderSaveTimer);
+  _orderSaveTimer=setTimeout(()=>{saveOrderInputs()},400);
+}
+
 function saveOrderInputs(){
   deliveries.forEach(d=>{
     PR.forEach(p=>{
@@ -668,7 +675,8 @@ function renderOrder(){
     const dayColor=dt.getDay()===0?'#e53935':dt.getDay()===6?'#1565c0':'#555';
     const mm=String(dt.getMonth()+1).padStart(2,'0');
     const dd2=String(dt.getDate()).padStart(2,'0');
-    h+=`<div style="text-align:center;padding:6px 2px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px">`;
+    h+=`<div style="text-align:center;padding:6px 2px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px;position:relative">`;
+    h+=`<div onclick="confirmRemoveDelivery(${d.id})" title="이 날짜 열 삭제" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#fff;border:1.5px solid #ffcdd2;color:#e53935;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.1);z-index:2">✕</div>`;
     h+=`<div onclick="toggleLoc(${d.id})" style="padding:5px 2px;background:${locBg};border:1px solid ${locColor}30;border-radius:6px;color:${locColor};font-size:12px;font-weight:800;cursor:pointer;user-select:none">${d.loc}</div>`;
     h+=`<div onclick="document.getElementById('ddate_${d.id}').showPicker()" style="margin-top:4px;font-size:11px;color:#1a1a1a;font-weight:600;cursor:pointer">${mm}.${dd2} <span style="color:${dayColor}">(${dayName})</span></div>`;
     h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="this.closest('div').querySelector('div:nth-child(2)');calcMonthlyOrder();renderOrder()" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">`;
@@ -708,7 +716,7 @@ function renderOrder(){
         const cellBg=d.loc==='부산'?'#fff5f5':'#f0f7ff';
         const cellBorder=d.loc==='부산'?'#f5c6c6':'#c6d9f5';
         const focusBg=d.loc==='부산'?'#ffe8e8':'#e0eeff';
-        h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="calcMonthlyOrder()" style="width:100%;height:32px;background:${cellBg};border:1.5px solid ${cellBorder};border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='${d.loc==='부산'?'#e53935':'#1565c0'}';this.style.background='${focusBg}'" onblur="this.style.borderColor='${cellBorder}';this.style.background='${cellBg}'"></div>`;
+        h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="calcMonthlyOrder();saveOrderDraft()" style="width:100%;height:32px;background:${cellBg};border:1.5px solid ${cellBorder};border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='${d.loc==='부산'?'#e53935':'#1565c0'}';this.style.background='${focusBg}'" onblur="this.style.borderColor='${cellBorder}';this.style.background='${cellBg}'"></div>`;
       });
       h+=`</div>`;
     }
@@ -727,7 +735,7 @@ function renderOrder(){
   h+=`</div>`;
 
   // 메모
-  h+=`<div style="margin-top:14px"><div style="font-size:12px;font-weight:600;color:#999;margin-bottom:6px">📝 메모</div><textarea id="ordMemo" style="width:100%;height:52px;background:#fafafa;border:1.5px solid #e0e0e0;border-radius:8px;color:#1a1a1a;font-size:13px;padding:10px;outline:none;resize:none;font-family:inherit" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e0e0e0'"></textarea></div>`;
+  h+=`<div style="margin-top:14px"><div style="font-size:12px;font-weight:600;color:#999;margin-bottom:6px">📝 메모</div><textarea id="ordMemo" oninput="saveOrderDraft()" style="width:100%;height:52px;background:#fafafa;border:1.5px solid #e0e0e0;border-radius:8px;color:#1a1a1a;font-size:13px;padding:10px;outline:none;resize:none;font-family:inherit" onfocus="this.style.borderColor='#2E7D32'" onblur="this.style.borderColor='#e0e0e0'"></textarea></div>`;
 
   h+=`</div>`;// orderSheet
 
