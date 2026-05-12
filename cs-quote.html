@@ -1122,6 +1122,8 @@ body {
   box-shadow: 0 2px 6px rgba(108,92,231,0.3);
 }
 
+/* 견적표 이미지 미리보기 비활성화 (2026-05-12) */
+.share-card { display: none !important; }
 </style>
 </head>
 <body>
@@ -1249,6 +1251,9 @@ body {
       <button class="reply-mobile-btn reply-mobile-btn-primary" style="width:100%" onclick="copyReply()">📋 복사하기</button>
     </div>
 
+  </div>
+
+  <div class="result-panel">
     <div class="card">
       <div class="card-title-row">
         <div class="card-title" style="margin-bottom:0"><span class="num">1</span> 평수 입력</div>
@@ -1324,9 +1329,6 @@ body {
       </div>
       <div id="benefitList"></div>
     </div>
-  </div>
-
-  <div class="result-panel">
     <div id="captureArea">
       <!-- ===== 상단 히어로 섹션 (홈페이지 카피 + 실제 수치) ===== -->
       <div class="capture-hero">
@@ -1891,7 +1893,7 @@ function recalculate() {
 
   // 결제 안내 박스 + 공유 카드 표시
   document.getElementById('paymentNotice').style.display = 'block';
-  document.getElementById('shareCard').style.display = 'block';
+  // [비활성화 2026-05-12] document.getElementById('shareCard').style.display = 'block';
   // 조건이 바뀌면 이전 이미지 미리보기는 자동으로 숨김 (잘못된 이미지 저장 방지)
   document.getElementById('imagePreviewWrap').style.display = 'none';
 
@@ -1902,8 +1904,8 @@ function recalculate() {
   renderChart(results, hasAnyP1, hasAnyPhase2);
   renderReply(results, py);
 
-  // 결과가 바뀌면 1.5초 디바운스 후 자동으로 이미지 생성
-  scheduleAutoCapture();
+  // [비활성화 2026-05-12] 자동 이미지 생성 - 이미지 미리보기 미사용
+  // scheduleAutoCapture();
 
   // 🆕 숨고 답장 자동 갱신 (이미 표시 중일 때만)
   var soomgoSection = document.getElementById('soomgoReplySection');
