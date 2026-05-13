@@ -1098,7 +1098,7 @@ toast('🔓 확정 해제','ok');renderAll()}
 // ===== 시공보고서 =====
 let currentChatUrl='';
 let reportJobId='';let currentChannelName='';
-const PRICE_MAP={'마블50':16000,'코튼50':16000,'모던50':16000,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
+const PRICE_MAP={'마블50(16000)':16000,'마블50(16900)':16900,'코튼50(16000)':16000,'코튼50(16900)':16900,'모던50(16000)':16000,'모던50(16900)':16900,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
 
 function formatFee(el){
 const v=el.value;
@@ -1112,10 +1112,13 @@ const color=document.getElementById('rColor').value;
 const qty=parseInt(document.getElementById('rQty').value)||0;
 const checks=document.querySelectorAll('.rDiscount:checked');
 let coupon=0;checks.forEach(c=>coupon+=parseInt(c.value)||0);const extraD=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;coupon+=extraD;
-const isGonggu=document.getElementById('rGonggu').value==='O';
+const gongguVal=document.getElementById('rGonggu').value;
+const isGonggu=gongguVal==='O';
+const isGonggu3=gongguVal==='O3';
 const unitPrice=PRICE_MAP[color]||0;
 let total=qty*unitPrice-coupon;
 if(isGonggu) total=total-(qty*500);
+if(isGonggu3) total=total-Math.round(total*0.03);
 const installFee=document.getElementById('rInstallFee').value;
 const fee=(installFee&&installFee!=='X'&&installFee!=='x')?parseInt(installFee.replace(/[^0-9]/g,''))||0:0;
 total+=fee;
@@ -1135,7 +1138,7 @@ const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
 const colorVal=j.mat.length?j.mat[0].t:'';
-const colorOpts=['마블50','코튼50','모던50','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+const colorOpts=['마블50(16000)','마블50(16900)','코튼50(16000)','코튼50(16900)','모던50(16000)','모던50(16900)','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
 const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
 const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
@@ -1162,7 +1165,7 @@ const html=`
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
 <span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatFee(this);calcReport()">
-<span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option></select>
+<span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option><option value="O3">O (3% 할인)</option></select>
 <span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" id="rExtraDiscountChk" onchange="document.getElementById('rExtraDiscount').style.display=this.checked?'block':'none';if(!this.checked){document.getElementById('rExtraDiscount').value='';};calcReport()">추가할인</label><input id="rExtraDiscount" type="text" inputmode="numeric" placeholder="금액 입력" style="display:none;${eS};width:90px;font-size:10px" oninput="formatFee(this);calcReport()"></div>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
 <span style="${lE}">16. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}" oninput="calcReport()">
@@ -1183,7 +1186,7 @@ calcReport();
 db.ref('reports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
 if(d.ref)document.getElementById('rRef').value=d.ref;
-if(d.color){const sel=document.getElementById('rColor');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.color)sel.selectedIndex=i;}}
+if(d.color){const sel=document.getElementById('rColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16000)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
 if(d.scope)document.getElementById('rScope').value=d.scope;
 if(d.isNew){const sel=document.getElementById('rNew');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.isNew)sel.selectedIndex=i;}}
 if(d.installFee)document.getElementById('rInstallFee').value=d.installFee;
@@ -1226,7 +1229,9 @@ const qty=parseInt(g('rQty'))||0;
 const checks=document.querySelectorAll('.rDiscount:checked');
 let couponVal=0;const couponNames=[];
 checks.forEach(c=>{couponVal+=parseInt(c.value)||0;couponNames.push(c.dataset.name);});const _edCalc=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;if(_edCalc>0){couponVal+=_edCalc;couponNames.push('추가'+_edCalc.toLocaleString());}
-const isGonggu=g('rGonggu')==='O';
+const gongguVal=g('rGonggu');
+const isGonggu=gongguVal==='O';
+const isGonggu3=gongguVal==='O3';
 const unitPrice=PRICE_MAP[color]||0;
 const unpaid=g('rUnpaid');
 const hasUnpaid=unpaid&&unpaid!=='0원'&&unpaid!=='0';
@@ -1234,7 +1239,8 @@ const hasUnpaid=unpaid&&unpaid!=='0원'&&unpaid!=='0';
 // 계산 내역 만들기
 let calcLines=[];
 const baseTotal=qty*unitPrice;
-calcLines.push(`${color} ${unitPrice.toLocaleString()}원 × ${qty}장 = ${baseTotal.toLocaleString()}원`);
+const displayColor=color.replace(/\(\d+\)$/,'');
+calcLines.push(`${displayColor} ${unitPrice.toLocaleString()}원 × ${qty}장 = ${baseTotal.toLocaleString()}원`);
 if(couponVal>0){
 calcLines.push(`할인적용(${couponNames.join('+')}) -${couponVal.toLocaleString()}원`);
 }
@@ -1243,6 +1249,11 @@ if(isGonggu){
 const discount=qty*500;
 calcLines.push(`공동구매 장당 500원 할인 -${discount.toLocaleString()}원`);
 afterCoupon=afterCoupon-discount;
+}
+if(isGonggu3){
+const discount3=Math.round(afterCoupon*0.03);
+calcLines.push(`공동구매 3% 할인 -${discount3.toLocaleString()}원`);
+afterCoupon=afterCoupon-discount3;
 }
 const installFee=g('rInstallFee');
 if(installFee&&installFee!=='X'&&installFee!=='x'&&installFee!=='0'){
@@ -1404,7 +1415,7 @@ const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
 const colorVal=j.mat.length?j.mat[0].t:'';
-const colorOpts=['마블50','코튼50','모던50','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+const colorOpts=['마블50(16000)','마블50(16900)','코튼50(16000)','코튼50(16900)','모던50(16000)','모던50(16900)','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
 const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
@@ -1452,7 +1463,7 @@ document.getElementById('asReportOverlay').style.display='block';
 calcAsReport();
 db.ref('asReports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
-if(d.color){const sel=document.getElementById('arColor');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.color)sel.selectedIndex=i;}}
+if(d.color){const sel=document.getElementById('arColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16000)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
 if(d.scope)document.getElementById('arScope').value=d.scope;
 if(d.prevWorker){const pw=d.prevWorker.split(', ');if(pw[0]){const sel=document.getElementById('arPrev1');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[0])sel.selectedIndex=i;}}if(pw[1]){const sel=document.getElementById('arPrev2');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[1])sel.selectedIndex=i;}}}
 if(d.content)document.getElementById('arContent').value=d.content;
