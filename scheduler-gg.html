@@ -1144,8 +1144,8 @@ const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
 const colorVal=j.mat.length?j.mat[0].t:'';
-const colorOpts=['마블50(16000)','마블50(16900)','코튼50(16000)','코튼50(16900)','모던50(16000)','모던50(16900)','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
-const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
+const colorOpts=['마블50(16000)','코튼50(16000)','모던50(16000)','---','마블50(16900)','코튼50(16900)','모던50(16900)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+const colorSelect=colorOpts.map(c=>c==='---'?'<option disabled>──────────</option>':`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
 const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
 const autoS='background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);border-radius:6px;padding:5px 8px;color:var(--green);font-size:11px;font-family:var(--font);font-weight:600';
@@ -1421,8 +1421,8 @@ const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
 const colorVal=j.mat.length?j.mat[0].t:'';
-const colorOpts=['마블50(16000)','마블50(16900)','코튼50(16000)','코튼50(16900)','모던50(16000)','모던50(16900)','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
-const colorSelect=colorOpts.map(c=>`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
+const colorOpts=['마블50(16000)','코튼50(16000)','모던50(16000)','---','마블50(16900)','코튼50(16900)','모던50(16900)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+const colorSelect=colorOpts.map(c=>c==='---'?'<option disabled>──────────</option>':`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
 const eS='background:rgba(255,69,58,.06);border:1px solid rgba(255,69,58,.25);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
