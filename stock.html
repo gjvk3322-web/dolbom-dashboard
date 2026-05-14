@@ -879,10 +879,36 @@ async function submitInv(){if(!loc||!team)return;
   const memo=document.getElementById('invMemo')?.value||'';
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
   const fb={time:hm,data:dm};if(loc==='사무실'&&memo)fb.memo=memo;
-  try{await db.ref('inventory/'+dateKey+'/'+team+'/'+fk(loc)).set(fb);toast('✅ '+team+' '+loc+' 저장! (기준일:'+surveyDateKey+')')}catch(e){toast('실패');btn.disabled=false;btn.textContent='재고 제출';return}
+  // 🆕 두 저장소(Firebase + Apps Script) 결과를 따로 추적
+  let fbOK=false, gsOK=false, gsResp='';
+  // 1) Firebase 저장
+  try{
+    await db.ref('inventory/'+dateKey+'/'+team+'/'+fk(loc)).set(fb);
+    fbOK=true;
+  }catch(e){console.error('Firebase 저장 실패:',e);toast('❌ Firebase 저장 실패');btn.disabled=false;btn.textContent='재고 제출';return}
+  // 2) 카톡 복사용 텍스트
   let txt=mm+dd+' '+team+' '+loc+' (기준일:'+surveyDateKey+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:surveyDateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).then(r=>{if(!r.ok)toast('⚠️ 시트 저장 실패')}).catch(()=>toast('⚠️ 시트 저장 실패'));
+  // 3) Apps Script 저장 — await로 응답 확인 (예전: fire-and-forget이라 실패해도 모름)
+  try{
+    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:surveyDateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}});
+    gsResp=await res.text();
+    if(res.ok){
+      // success:false도 잡아냄 (Apps Script가 에러를 JSON으로 반환할 수 있음)
+      try{const j=JSON.parse(gsResp);gsOK=j.success!==false;if(!gsOK)console.error('Apps Script 에러 응답:',j);}
+      catch(e){gsOK=true;} // JSON 아니면 그냥 OK로 간주 (옛 형식 호환)
+    }else{
+      console.error('Apps Script HTTP 오류:',res.status,gsResp);
+    }
+  }catch(e){console.error('Apps Script fetch 실패:',e);gsOK=false}
+  // 4) 결과 안내 — 명확하게
+  console.log('[stock] submitInv 결과:',{team,loc,fbOK,gsOK,itemCount:items.length,nonZeroCount:items.filter(i=>i.qty>0).length,gsResp:gsResp.substring(0,200)});
+  if(fbOK&&gsOK){
+    stockCache=null; // 🆕 종합 탭 캐시 무효화
+    toast('✅ '+team+' '+loc+' 저장 완료! (시트도 OK · 기준일:'+surveyDateKey+')');
+  }else if(fbOK&&!gsOK){
+    toast('⚠️ '+loc+' Firebase OK / 시트 저장 실패 — 종합 계산에 반영 안 됨!');
+  }
   btn.disabled=false;btn.textContent='재고 제출'}
 
 async function submitIn(){if(!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
