@@ -238,7 +238,11 @@ async function fetchStockData(){
   try{
     const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:team})});
     const txt=await r.text();
-    try{const d=JSON.parse(txt);stockCache=d;return d;}catch(e){console.error('JSON parse error:',txt);return {error:txt}}
+    try{const d=JSON.parse(txt);stockCache=d;
+      // 🆕 디버그: 콘솔에서 어떤 데이터가 왔는지 바로 확인 (문제 추적용)
+      console.log('[stock] getStock 응답:',{team,calcResult:d.calcResult,futureTotal:d.futureTotal,lastSurveyDate:d.lastSurveyDate,incomingCount:(d.incoming||[]).length});
+      return d;
+    }catch(e){console.error('JSON parse error:',txt);return {error:txt}}
   }catch(e){console.error('fetch error:',e);return {error:e.message}}
 }
 
@@ -521,7 +525,7 @@ async function renderSummary(){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;cursor:pointer" onclick="const el=document.getElementById('inDetail');el.style.display=el.style.display==='none'?'block':'none'"><span style="font-size:13px;font-weight:700">📥 최근 입고</span><span style="font-size:12px;color:var(--dim)">${sd.incoming.length}건 ▸</span></div>`;
     h+=`<div id="inDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
-    sd.incoming.forEach(i=>{h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date} ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`});
+    sd.incoming.forEach(i=>{const pName=(i.product||'').replace('매트','').trim();h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date}${pName?' · '+pName:''} · ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`});
     h+=`</div></div>`;
   }
   if(sd&&sd.error)h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
@@ -889,11 +893,29 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
   const selDate=document.getElementById('inDate')?.value||dateKey;
   incomingDate=selDate;
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
-  try{await db.ref('incoming/'+team+'/'+selDate+'_'+hm.replace(':','')).set({time:hm,date:selDate,items:items,memo:memo});
-    fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'incoming',team:team,date:selDate,time:hm,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}}).catch(()=>{});
+  // 🆕 두 저장소(Firebase + Apps Script) 모두 성공해야 진짜 입고 완료
+  let fbOK=false, gsOK=false;
+  try{
+    // 1) Firebase 저장
+    await db.ref('incoming/'+team+'/'+selDate+'_'+hm.replace(':','')).set({time:hm,date:selDate,items:items,memo:memo});
+    fbOK=true;
+    // 2) Apps Script 저장 — 응답까지 await로 기다림 (실패 시 사용자에게 알림)
+    try{
+      const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'incoming',team:team,date:selDate,time:hm,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}});
+      gsOK=res.ok;
+      if(!gsOK)console.error('Apps Script 응답 오류:',res.status,await res.text());
+    }catch(e){console.error('Apps Script fetch 실패:',e);gsOK=false}
+    // 3) 카톡 복사용 텍스트
     let txt=mm+dd+' '+team+' 입고\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
     if(memo)txt+='비고: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
-    toast('✅ '+team+' 입고 완료!')}catch(e){toast('실패')}
+    // 4) 결과 안내 — 두 저장소 상태에 따라 메시지 다르게
+    if(fbOK&&gsOK){
+      stockCache=null; // 🆕 종합 탭 캐시 무효화 → 다음 진입 시 최신 데이터 fetch
+      toast('✅ '+team+' 입고 완료! (재고 갱신됨)');
+    }else if(fbOK&&!gsOK){
+      toast('⚠️ Firebase 저장 OK / 시트 저장 실패 — 종합 재고에 반영 안 됨!');
+    }
+  }catch(e){console.error('입고 저장 실패:',e);toast('❌ 입고 저장 실패: '+(e.message||''))}
   btn.disabled=false;btn.textContent='입고 기록 저장'}
 
 if(urlTab&&['inventory','incoming','summary','order'].includes(urlTab))tab=urlTab;
