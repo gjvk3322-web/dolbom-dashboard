@@ -640,26 +640,9 @@ async function loadData(){
       if(data.account.num)document.getElementById('accNum').value=data.account.num;
     }
   }catch(e){console.error('이벤트 로드 실패',e);}
-  // 검수 상태 (시공 후 탭용)
-  let inspectionRestoredFromServer=false;
-  try{
-    showLoading(30);
-    const res=await fetch(API_URL+'?type=checklist&phone='+encodeURIComponent(PHONE));
-    showLoading(70);
-    const data=await res.json();
-    showLoading(100);
-    setTimeout(()=>showLoading(0),500);
-    if(data.inspection&&data.inspection.submitted){
-      inspectionSubmitted=true;
-      document.getElementById('inspectionForm').style.display='none';
-      document.getElementById('inspectionDone').style.display='block';
-      inspectionRestoredFromServer=true;
-    }
-  }catch(e){console.error('검수 상태 로드 실패',e);showLoading(0);}
-  // 서버에서 못 가져오면 localStorage에서 복원 (체크 그대로 보이고, 못 풀게 잠금)
-  if(!inspectionRestoredFromServer){
-    restoreInspectionFromLocal();
-  }
+  // 검수 상태 (시공 후 탭용) · 서버 호출 비활성화 (불필요한 19.6초 지연 제거)
+  // localStorage 기반으로 작동하므로 서버 조회 불필요
+  restoreInspectionFromLocal();
   document.getElementById('loadingOverlay').style.display='none';
   renderMissions();
 }
