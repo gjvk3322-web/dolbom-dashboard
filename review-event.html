@@ -672,7 +672,13 @@ if(_initialTab!==0) switchTab(_initialTab);
 // 사진 모달 (lightbox)
 function showPhotoModal(url){
   if(!url||url.toString().indexOf('http')!==0)return;
-  document.getElementById('photoModalImg').src=url;
+  // Drive 뷰어 URL → thumbnail URL 자동 변환
+  var imgUrl = url;
+  var driveMatch = url.match(/\/d\/([^\/\?]+)/);
+  if (driveMatch && driveMatch[1]) {
+    imgUrl = 'https://drive.google.com/thumbnail?id=' + driveMatch[1] + '&sz=w1600';
+  }
+  document.getElementById('photoModalImg').src=imgUrl;
   document.getElementById('photoModal').classList.add('open');
 }
 function closePhotoModal(){
