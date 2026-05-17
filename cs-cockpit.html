@@ -700,25 +700,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <button class="section-more" onclick="loadMonthStats()">🔄 새로고침</button>
     </div>
 
-    <div class="stat-row">
-      <div class="stat-col">
-        <div class="stat-label">부산팀</div>
-        <div class="stat-val" id="revBusan">—<span class="u">만원</span></div>
-        <div class="stat-sub" id="revBusanSub">데이터 로드 중</div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">경기팀</div>
-        <div class="stat-val" id="revGyeonggi">—<span class="u">만원</span></div>
-        <div class="stat-sub" id="revGyeonggiSub">데이터 로드 중</div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">합계</div>
-        <div class="stat-val" style="color:var(--accent-dk)" id="revTotal">—<span class="u">만원</span></div>
-        <div class="stat-sub" id="revTotalSub">데이터 로드 중</div>
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line)">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px">
       <div>
         <div class="stat-label" style="margin-bottom:8px">구분별</div>
         <div id="categoryRows">
@@ -782,26 +764,8 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <button class="section-more">전체 →</button>
     </div>
 
-    <div class="stat-row">
-      <div class="stat-col">
-        <div class="stat-label" id="sampleMonthLabel">이번 달</div>
-        <div class="stat-val" id="sampleThisMonth">0<span class="u">샘플</span></div>
-        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)" id="reservedThisMonth">0</b>건 · 시공 <b id="installedThisMonth">0</b>건</div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">샘플 → 예약 전환</div>
-        <div class="stat-val md" style="color:var(--green-dk)" id="sampleToReserveVal">0<span class="u">%</span></div>
-        <div class="stat-sub" style="margin-top:4px" id="sampleToReserveSub">0/0</div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-label">샘플 → 시공 전환</div>
-        <div class="stat-val md" style="color:var(--gold-dk)" id="sampleToInstallVal">0<span class="u">%</span></div>
-        <div class="stat-sub" style="margin-top:4px" id="sampleToInstallSub">0/0</div>
-      </div>
-    </div>
-
     <!-- 콤보 차트 · 3지표(샘플/예약/시공) + 시간 토글 · 2026-05-18 -->
-    <div style="margin-top:18px">
+    <div style="margin-top:8px">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px">
         <div class="stat-label" style="font-size:12.5px; font-weight:700">📈 샘플 → 예약 → 시공 추이</div>
         <div id="funnelRangeToggle" class="toggle-pill">
@@ -830,9 +794,39 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         ℹ️ 데이터 로드 중…
       </div>
 
+      <!-- 🎯 진짜 샘플 → 예약 전환 (휴대폰 매칭 기반) · 차트 아래 원위치 -->
+      <div style="margin-top:18px; padding:14px; background:#FFF8E1; border:1px solid #FFE082; border-radius:var(--radius-sm)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+          <div class="stat-label" style="font-size:12.5px; font-weight:700">🎯 진짜 샘플 → 예약 전환 <span style="font-size:10px; color:var(--muted); font-weight:550">(휴대폰 매칭)</span></div>
+          <div id="conversionUpdate" style="font-size:10.5px; color:var(--muted)"></div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:12px">
+          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
+            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">총 매칭</div>
+            <div style="font-size:17px; font-weight:700; color:var(--accent-dk)" id="convTotal">-</div>
+          </div>
+          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
+            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">평균</div>
+            <div style="font-size:17px; font-weight:700" id="convAvg">-</div>
+          </div>
+          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
+            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">75% 결정</div>
+            <div style="font-size:17px; font-weight:700; color:var(--green-dk)" id="convP75">-</div>
+          </div>
+          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
+            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">90% 결정</div>
+            <div style="font-size:17px; font-weight:700; color:var(--gold-dk)" id="convP90">-</div>
+          </div>
+        </div>
+        <div id="conversionDistribution" style="display:flex; flex-direction:column; gap:5px"></div>
+        <div style="margin-top:12px; padding:9px 11px; background:#fff; border-radius:6px; font-size:11px; line-height:1.6; color:var(--soft)" id="conversionTiming">
+          💡 follow-up 타이밍 로드 중...
+        </div>
+      </div>
+
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1.3fr 1.4fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+    <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
       <!-- 시공목적 TOP -->
       <div>
         <div class="stat-label" style="margin-bottom:8px">시공목적 TOP</div>
@@ -895,36 +889,6 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
           </tfoot>
         </table>
       </div>
-
-      <!-- 🎯 진짜 샘플 → 예약 전환 (3컬럼 grid의 3번째 col) -->
-      <div style="padding:14px; background:#FFF8E1; border:1px solid #FFE082; border-radius:var(--radius-sm)">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px">
-          <div class="stat-label" style="font-size:11.5px; font-weight:700">🎯 진짜 샘플→예약 <span style="font-size:9.5px; color:var(--muted); font-weight:550">(휴대폰 매칭)</span></div>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin-bottom:10px">
-          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
-            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">총 매칭</div>
-            <div style="font-size:15px; font-weight:700; color:var(--accent-dk)" id="convTotal">-</div>
-          </div>
-          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
-            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">평균</div>
-            <div style="font-size:15px; font-weight:700" id="convAvg">-</div>
-          </div>
-          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
-            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">75% 결정</div>
-            <div style="font-size:15px; font-weight:700; color:var(--green-dk)" id="convP75">-</div>
-          </div>
-          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
-            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">90% 결정</div>
-            <div style="font-size:15px; font-weight:700; color:var(--gold-dk)" id="convP90">-</div>
-          </div>
-        </div>
-        <div id="conversionDistribution" style="display:flex; flex-direction:column; gap:4px"></div>
-        <div style="margin-top:10px; padding:7px 9px; background:#fff; border-radius:5px; font-size:10.5px; line-height:1.5; color:var(--soft)" id="conversionTiming">
-          💡 follow-up 타이밍 로드 중...
-        </div>
-        <div id="conversionUpdate" style="font-size:9.5px; color:var(--muted); text-align:center; margin-top:6px"></div>
-      </div>
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px">
@@ -942,6 +906,44 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       <span class="chip new">🆕 AI검색 <b>1건</b></span>
       <span class="chip">📱 인스타 <b>2건</b></span>
       <span class="chip">🥕 당근마켓 <b>2건</b></span>
+    </div>
+  </div>
+
+  <!-- 🎨 영역 8 · 제품/색상별 (영역 3 우측 col-5) · 2026-05-18 -->
+  <div class="section col-5">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-icon icon-purple">🎨</span>
+        제품/색상별 고객 선택 분포
+        <span class="badge bg-purple" id="productBadge">실데이터 로드 중…</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+        <div id="productPeriodToggle" class="toggle-pill">
+          <button data-period="이번달" class="range-btn active">이번달</button>
+          <button data-period="최근3개월" class="range-btn">3개월</button>
+          <button data-period="전체누적" class="range-btn">전체</button>
+          <button data-period="월별" class="range-btn" id="productMonthlyBtn">월별 ▼</button>
+        </div>
+        <select id="productMonthSelect" style="display:none; padding:6px 10px; border:1.5px solid var(--accent); border-radius:6px; font-size:12px; background:#fff; color:var(--accent-dk); font-weight:600; cursor:pointer; font-family:inherit"></select>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div style="max-width:240px; margin:0 auto">
+        <div class="product-canvas-wrap">
+          <canvas id="productDonut" role="img" aria-label="제품별 판매 비율 도넛 차트"></canvas>
+        </div>
+        <div id="productCenterInfo" style="text-align:center; margin-top:4px; font-size:11.5px; color:var(--soft)">
+          총 <b id="productTotalQty" style="color:var(--text); font-size:14px; font-weight:700">0</b>장
+        </div>
+      </div>
+      <div id="productLegend" style="display:flex; flex-direction:column; gap:6px; margin-top:16px">
+        <div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">데이터 로드 중…</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; padding:10px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); line-height:1.55">
+      💡 <b style="color:var(--text)">시공 건수 기준:</b> 시공스케줄 직접 카운팅 (100% 정확).<br>⚠️ 1000매트 신제품은 <b>월별 ▼</b>로 트렌드 확인 가능!
     </div>
   </div>
 
@@ -1031,6 +1033,27 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         </div>
       </div>
       <span class="badge bg-green">AWS 9시 자동</span>
+    </div>
+  </div>
+
+  <!-- 🎯 영역 2-A · 네이버 광고 순위 (영역 6 우측 col-7) · 2026-05-18 -->
+  <div class="section col-7">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-icon icon-purple">🎯</span>
+        네이버 광고 순위
+        <span class="badge bg-gray">실시간</span>
+      </div>
+      <button class="section-more" onclick="loadAdRank()">새로고침 ↻</button>
+    </div>
+
+    <div class="adrank-meta">
+      <span class="adrank-update" id="adrankUpdate">📡 데이터 로드 중...</span>
+      <span style="color:var(--muted)">2시간마다 자동 수집 (08~22시)</span>
+    </div>
+
+    <div id="adrankContent">
+      <div class="adrank-loading">광고 순위 데이터를 가져오는 중...</div>
     </div>
   </div>
 
@@ -1409,75 +1432,9 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   </div>
 </div>
 
-<!-- ┌────────────────────────────────────────────────────────┐
-     │ 영역 8 · 제품/색상별 판매 (발주 의사결정) · 2026-05-18  │
-     └────────────────────────────────────────────────────────┘ -->
-<div class="grid">
-  <div class="section col-12">
-    <div class="section-head">
-      <div class="section-title">
-        <span class="section-icon icon-purple">🎨</span>
-        제품/색상별 고객 선택 분포
-        <span class="badge bg-purple" id="productBadge">실데이터 로드 중…</span>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
-        <div id="productPeriodToggle" class="toggle-pill">
-          <button data-period="이번달" class="range-btn active">이번달</button>
-          <button data-period="최근3개월" class="range-btn">3개월</button>
-          <button data-period="전체누적" class="range-btn">전체</button>
-          <button data-period="월별" class="range-btn" id="productMonthlyBtn">월별 ▼</button>
-        </div>
-        <select id="productMonthSelect" style="display:none; padding:6px 10px; border:1.5px solid var(--accent); border-radius:6px; font-size:12px; background:#fff; color:var(--accent-dk); font-weight:600; cursor:pointer; font-family:inherit"></select>
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns: 1fr 1.4fr; gap:28px; align-items:center; margin-top:16px">
-      <div>
-        <div class="product-canvas-wrap">
-          <canvas id="productDonut" role="img" aria-label="제품별 판매 비율 도넛 차트"></canvas>
-        </div>
-        <div id="productCenterInfo" style="text-align:center; margin-top:4px; font-size:11.5px; color:var(--soft)">
-          총 <b id="productTotalQty" style="color:var(--text); font-size:14px; font-weight:700">0</b>장
-        </div>
-      </div>
-      <div id="productLegend" style="display:flex; flex-direction:column; gap:8px">
-        <div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">데이터 로드 중…</div>
-      </div>
-    </div>
-
-    <div style="margin-top:16px; padding:10px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11.5px; color:var(--soft); line-height:1.6">
-      💡 <b style="color:var(--text)">시공 건수 기준 (정확):</b> 시공스케줄에서 직접 카운팅한 <b>실제 집(고객) 수</b>입니다. 환산값이 아니라 100% 정확해요. 범례 작은 글씨는 원 장수(발주 참고용).<br>⚠️ 1000매트는 출시 초기라 월별 트렌드 보기가 더 정확합니다 (월별 토글은 다음 작업 예정).
-    </div>
-  </div>
-</div>
 
 <!-- ═══ 영역 레이블 · 4줄 ═══ -->
 <div class="area-label">EXTERNAL · 외부 데이터 연동</div>
-
-<!-- ┌────────────────────────────────────────────────────────┐
-     │ 영역 2-A · 네이버 광고 순위 (col-12) · 2026-04-30      │
-     └────────────────────────────────────────────────────────┘ -->
-<div class="grid">
-  <div class="section col-12">
-    <div class="section-head">
-      <div class="section-title">
-        <span class="section-icon icon-purple">🎯</span>
-        네이버 광고 순위
-        <span class="badge bg-gray">실시간</span>
-      </div>
-      <button class="section-more" onclick="loadAdRank()">새로고침 ↻</button>
-    </div>
-
-    <div class="adrank-meta">
-      <span class="adrank-update" id="adrankUpdate">📡 데이터 로드 중...</span>
-      <span style="color:var(--muted)">2시간마다 자동 수집 (08~22시)</span>
-    </div>
-
-    <div id="adrankContent">
-      <div class="adrank-loading">광고 순위 데이터를 가져오는 중...</div>
-    </div>
-  </div>
-</div>
 
 <!-- ┌────────────────────────────────────────────────────────┐
      │ 영역 2 · Looker Studio iframe (col-12)                 │
@@ -1901,23 +1858,9 @@ async function loadMonthlyStatsForHeader(){
     const ymMatch = monthStr.match(/^(\d{4})-(\d{2})$/);
     if(ymMatch) monthLabel = `이번 달 (${parseInt(ymMatch[2])}월)`;
     
-    const sample = parseInt(latest.sample) || 0;
-    const reserved = parseInt(latest.reserved) || 0;
-    const installed = parseInt(latest.installed) || 0;
-    
-    const r1 = sample > 0 ? (reserved/sample*100).toFixed(1) : 0;
-    const r2 = sample > 0 ? (installed/sample*100).toFixed(1) : 0;
-    
-    document.getElementById('sampleMonthLabel').textContent = monthLabel;
-    document.getElementById('sampleThisMonth').innerHTML = sample + '<span class="u">샘플</span>';
-    document.getElementById('reservedThisMonth').textContent = reserved;
-    document.getElementById('installedThisMonth').textContent = installed;
-    
-    document.getElementById('sampleToReserveVal').innerHTML = r1 + '<span class="u">%</span>';
-    document.getElementById('sampleToReserveSub').textContent = reserved + '/' + sample;
-    
-    document.getElementById('sampleToInstallVal').innerHTML = r2 + '<span class="u">%</span>';
-    document.getElementById('sampleToInstallSub').textContent = installed + '/' + sample;
+    // 영역 3 상단 통계 HTML이 제거됨 (가장 위 스코어카드와 중복) → 데이터 표시 생략
+    // 필요시 다시 추가하려면 sampleThisMonth, sampleToReserveVal 등 HTML 복원 필요
+    return;
   } catch(e){
     console.error('월별 통계 로드 실패:', e);
   }
@@ -2456,12 +2399,7 @@ async function loadMonthStats(month){
     const avgG = data.installs.gyeonggi > 0 ? Math.round(data.revenue.gyeonggi/data.installs.gyeonggi/10000) : 0;
     const avgT = data.installs.total > 0 ? Math.round(data.revenue.total/data.installs.total/10000) : 0;
     
-    document.getElementById('revBusan').innerHTML = busanMan.toLocaleString() + '<span class="u">만원</span>';
-    document.getElementById('revGyeonggi').innerHTML = ggMan.toLocaleString() + '<span class="u">만원</span>';
-    document.getElementById('revTotal').innerHTML = totalMan.toLocaleString() + '<span class="u">만원</span>';
-    document.getElementById('revBusanSub').textContent = `${data.installs.busan}건 · 건당 ${avgB}만`;
-    document.getElementById('revGyeonggiSub').textContent = `${data.installs.gyeonggi}건 · 건당 ${avgG}만`;
-    document.getElementById('revTotalSub').innerHTML = `${data.installs.total}건 · 건당 <b>${avgT}만</b>`;
+    // 부산/경기/합계 통계는 HTML에서 제거됨 (가장 위 스코어카드와 중복)
     document.getElementById('revMonthBadge').textContent = parseInt(json.month.substring(5)) + '월';
     
     const catEl = document.getElementById('categoryRows');
