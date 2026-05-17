@@ -830,38 +830,9 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         ℹ️ 데이터 로드 중…
       </div>
 
-      <!-- 🎯 진짜 샘플 → 예약 전환 (휴대폰 매칭 기반) · 2026-05-18 -->
-      <div style="margin-top:18px; padding:14px; background:#FFF8E1; border:1px solid #FFE082; border-radius:var(--radius-sm)">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px">
-          <div class="stat-label" style="font-size:12.5px; font-weight:700">🎯 진짜 샘플 → 예약 전환 <span style="font-size:10px; color:var(--muted); font-weight:550">(휴대폰 매칭)</span></div>
-          <div id="conversionUpdate" style="font-size:10.5px; color:var(--muted)"></div>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:12px">
-          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
-            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">총 매칭</div>
-            <div style="font-size:17px; font-weight:700; color:var(--accent-dk)" id="convTotal">-</div>
-          </div>
-          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
-            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">평균</div>
-            <div style="font-size:17px; font-weight:700" id="convAvg">-</div>
-          </div>
-          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
-            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">75% 결정</div>
-            <div style="font-size:17px; font-weight:700; color:var(--green-dk)" id="convP75">-</div>
-          </div>
-          <div style="padding:10px 8px; background:#fff; border-radius:6px; text-align:center">
-            <div style="font-size:10px; color:var(--soft); margin-bottom:3px">90% 결정</div>
-            <div style="font-size:17px; font-weight:700; color:var(--gold-dk)" id="convP90">-</div>
-          </div>
-        </div>
-        <div id="conversionDistribution" style="display:flex; flex-direction:column; gap:5px"></div>
-        <div style="margin-top:12px; padding:9px 11px; background:#fff; border-radius:6px; font-size:11px; line-height:1.6; color:var(--soft)" id="conversionTiming">
-          💡 follow-up 타이밍 로드 중...
-        </div>
-      </div>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
+    <div style="display:grid; grid-template-columns:1fr 1.3fr 1.4fr; gap:18px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line)">
       <!-- 시공목적 TOP -->
       <div>
         <div class="stat-label" style="margin-bottom:8px">시공목적 TOP</div>
@@ -923,6 +894,36 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      <!-- 🎯 진짜 샘플 → 예약 전환 (3컬럼 grid의 3번째 col) -->
+      <div style="padding:14px; background:#FFF8E1; border:1px solid #FFE082; border-radius:var(--radius-sm)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px">
+          <div class="stat-label" style="font-size:11.5px; font-weight:700">🎯 진짜 샘플→예약 <span style="font-size:9.5px; color:var(--muted); font-weight:550">(휴대폰 매칭)</span></div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin-bottom:10px">
+          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
+            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">총 매칭</div>
+            <div style="font-size:15px; font-weight:700; color:var(--accent-dk)" id="convTotal">-</div>
+          </div>
+          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
+            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">평균</div>
+            <div style="font-size:15px; font-weight:700" id="convAvg">-</div>
+          </div>
+          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
+            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">75% 결정</div>
+            <div style="font-size:15px; font-weight:700; color:var(--green-dk)" id="convP75">-</div>
+          </div>
+          <div style="padding:8px 6px; background:#fff; border-radius:5px; text-align:center">
+            <div style="font-size:9.5px; color:var(--soft); margin-bottom:2px">90% 결정</div>
+            <div style="font-size:15px; font-weight:700; color:var(--gold-dk)" id="convP90">-</div>
+          </div>
+        </div>
+        <div id="conversionDistribution" style="display:flex; flex-direction:column; gap:4px"></div>
+        <div style="margin-top:10px; padding:7px 9px; background:#fff; border-radius:5px; font-size:10.5px; line-height:1.5; color:var(--soft)" id="conversionTiming">
+          💡 follow-up 타이밍 로드 중...
+        </div>
+        <div id="conversionUpdate" style="font-size:9.5px; color:var(--muted); text-align:center; margin-top:6px"></div>
       </div>
     </div>
 
@@ -1419,10 +1420,14 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
         제품/색상별 고객 선택 분포
         <span class="badge bg-purple" id="productBadge">실데이터 로드 중…</span>
       </div>
-      <div id="productPeriodToggle" class="toggle-pill">
-        <button data-period="이번달" class="range-btn active">이번달</button>
-        <button data-period="최근3개월" class="range-btn">3개월</button>
-        <button data-period="전체누적" class="range-btn">전체</button>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+        <div id="productPeriodToggle" class="toggle-pill">
+          <button data-period="이번달" class="range-btn active">이번달</button>
+          <button data-period="최근3개월" class="range-btn">3개월</button>
+          <button data-period="전체누적" class="range-btn">전체</button>
+          <button data-period="월별" class="range-btn" id="productMonthlyBtn">월별 ▼</button>
+        </div>
+        <select id="productMonthSelect" style="display:none; padding:6px 10px; border:1.5px solid var(--accent); border-radius:6px; font-size:12px; background:#fff; color:var(--accent-dk); font-weight:600; cursor:pointer; font-family:inherit"></select>
       </div>
     </div>
 
@@ -1963,15 +1968,30 @@ async function renderProductDonut(){
   const filtered = all.filter(r => r.period === currentProductPeriod);
 
   if(filtered.length === 0){
-    if(badge) badge.textContent = currentProductPeriod + ' 데이터 없음';
+    const isYM = /^\d{4}-\d{2}$/.test(currentProductPeriod);
+    let label = currentProductPeriod;
+    if(isYM){
+      const [y, m] = currentProductPeriod.split('-');
+      label = y + '년 ' + parseInt(m) + '월';
+    }
+    if(badge) badge.textContent = label + ' 데이터 없음';
     document.getElementById('productLegend').innerHTML =
-      '<div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">' + currentProductPeriod + ' 판매 데이터가 없습니다.</div>';
+      '<div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">' + label + ' 시공 데이터가 없습니다.<br><span style="font-size:10px">Code.gs <code>getProductSales</code> 함수 월별 확장 필요</span></div>';
     if(productDonut) productDonut.destroy();
     document.getElementById('productTotalQty').textContent = '0';
     return;
   }
 
-  if(badge) badge.textContent = currentProductPeriod;
+  // 월별 형식(YYYY-MM)이면 한국식 표시로 변환
+  if(badge){
+    const isYearMonth = /^\d{4}-\d{2}$/.test(currentProductPeriod);
+    if(isYearMonth){
+      const [y, m] = currentProductPeriod.split('-');
+      badge.textContent = y + '년 ' + parseInt(m) + '월';
+    } else {
+      badge.textContent = currentProductPeriod;
+    }
+  }
 
   // ★ 시공스케줄에서 직접 카운팅한 집(고객) 수 사용 (Code.gs v4)
   // houses 필드가 없으면 환산값으로 fallback (구버전 호환)
@@ -2045,10 +2065,7 @@ async function renderProductDonut(){
     const pct = total > 0 ? (r.adjQty/total*100).toFixed(1) : 0;
     const color = PRODUCT_COLORS[r.colorCode] || '#888780';
     const productName = r.colorCode.includes('1m') ? r.colorCode.replace('1m', ' 1M ') : r.colorCode.replace('50', ' 500');
-    const isHalf = String(r.type||'').includes('500');
-    const rawText = isHalf 
-      ? '<span style="font-size:10px; color:var(--muted); font-weight:550">원 ' + r.rawQty.toLocaleString() + '장 ÷4</span>'
-      : '<span style="font-size:10px; color:var(--muted); font-weight:550">' + r.rawQty.toLocaleString() + '장</span>';
+    const rawText = '<span style="font-size:10px; color:var(--muted); font-weight:550">' + r.rawQty.toLocaleString() + '장</span>';
     return '<div class="product-legend-item">' +
       '<div class="product-legend-color" style="background:' + color + '"></div>' +
       '<div style="flex:1; min-width:0">' +
@@ -2111,19 +2128,58 @@ async function loadSampleConversion(){
   }
 }
 
+// 최근 12개월 옵션 생성 (YYYY-MM 형식)
+function buildMonthOptions(){
+  const sel = document.getElementById('productMonthSelect');
+  if(!sel) return;
+  const now = new Date();
+  const opts = [];
+  for(let i = 0; i < 12; i++){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const label = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월';
+    opts.push('<option value="' + ym + '">' + label + '</option>');
+  }
+  sel.innerHTML = opts.join('');
+}
+
 async function loadProductSales(){
+  buildMonthOptions();
   const toggleBox = document.getElementById('productPeriodToggle');
+  const monthSel = document.getElementById('productMonthSelect');
+  
   if(toggleBox){
     toggleBox.addEventListener('click', e => {
       const btn = e.target.closest('button[data-period]');
       if(!btn) return;
-      currentProductPeriod = btn.dataset.period;
+      const period = btn.dataset.period;
+      
       toggleBox.querySelectorAll('button').forEach(b => {
-        b.classList.toggle('active', b.dataset.period === currentProductPeriod);
+        b.classList.toggle('active', b.dataset.period === period);
       });
+      
+      if(period === '월별'){
+        // 드롭다운 보이기 + 선택된 월의 데이터로 렌더링
+        if(monthSel){
+          monthSel.style.display = 'inline-block';
+          currentProductPeriod = monthSel.value || '';
+        }
+      } else {
+        // 드롭다운 숨기기 + 기본 기간 사용
+        if(monthSel) monthSel.style.display = 'none';
+        currentProductPeriod = period;
+      }
       renderProductDonut();
     });
   }
+  
+  if(monthSel){
+    monthSel.addEventListener('change', () => {
+      currentProductPeriod = monthSel.value;
+      renderProductDonut();
+    });
+  }
+  
   await renderProductDonut();
 }
 
