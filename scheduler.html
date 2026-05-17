@@ -1274,10 +1274,17 @@ ${calcLines.join('\n')}
 1. 영수증 (현금영수증/카드결제)
 * 온누리 사용시 자동으로 현금영수증 처리됩니다.
 2. 작업 전·후 사진
+`;
 
-🎁 리뷰 이벤트 (최대 11만원 캐시백!)
-https://m.site.naver.com/1zAHw
+if(phone){
+msg+=`
+🎁 리뷰 이벤트 (최대 12만원 캐시백!)
+https://my.dolbommat.com/review-event.html?phone=${phone.replace(/-/g,'')}
+↳ 후기 작성 가이드 + 캐시백 신청
+`;
+}
 
+msg+=`
 🎟️ 지인쿠폰 사용방법
 http://dolbommat.notion.site
 
@@ -1293,13 +1300,6 @@ msg+=`
 msg+=`
 
 예약금 받으실 계좌번호 주시면 저녁에 입금드리겠습니다.`;
-}
-
-if(phone){
-msg+=`
-
-📋 리뷰 이벤트 정산 받기
-https://my.dolbommat.com/review-event.html?phone=${phone.replace(/-/g,'')}`;
 }
 
 msg+=`
@@ -1551,7 +1551,6 @@ function copyReviewMsg(phone){
   const unpaidNum=parseInt(unpaid)||0;
   const reviewUrl='https://my.dolbommat.com/review-event.html?phone='+cleanPhone;
   const referralUrl='http://dolbommat.notion.site';
-  const naverReview='https://m.site.naver.com/1zAHw';
   let txt=`안녕하세요, 고객님 😊
 돌봄매트 시공이 완료되었습니다!
 
@@ -1561,8 +1560,10 @@ function copyReviewMsg(phone){
 * 온누리 사용시 자동으로 현금영수증 처리됩니다.
 3. 작업 전·후 사진
 
-🎁 리뷰 이벤트 (최대 11만원 캐시백!)
-${naverReview}
+🎁 리뷰 이벤트 (최대 12만원 캐시백!)
+${reviewUrl}
+↳ 후기 작성 가이드 + 캐시백 신청
+
 🎟️ 지인쿠폰 사용방법
 ${referralUrl}
 `;
@@ -1571,10 +1572,7 @@ ${referralUrl}
 예약금 받으실 계좌번호 주시면 저녁에 입금드리겠습니다.
 `;
   }
-  txt+=`📋 리뷰 이벤트 정산 받기
-${reviewUrl}
-
-감사합니다. 돌봄매트 드림 💌`;
+  txt+=`감사합니다. 돌봄매트 드림 💌`;
   navigator.clipboard.writeText(txt).then(()=>{
     toast('📋 후기 메시지 복사 완료! 카톡방에 붙여넣기','ok');
   }).catch(()=>{
