@@ -242,6 +242,53 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 .bar-legend-dot.sample{background:var(--accent); opacity:0.35}
 .bar-legend-dot.reserved{background:var(--accent)}
 
+/* ═══ 🆕 일별 콤보 차트 (막대=샘플, 선=예약) · 2026-05-17 ═══ */
+.daily-chart{position:relative; margin:14px 0 4px}
+.daily-chart-area{position:relative; height:130px; width:100%}
+.daily-bars{
+  position:absolute; inset:0;
+  display:flex; align-items:flex-end; gap:2px;
+}
+.daily-bar{
+  flex:1; background:var(--accent); opacity:0.45;
+  border-radius:2px 2px 0 0; min-height:0;
+  transition:opacity 0.2s, background 0.2s;
+  cursor:default; position:relative;
+}
+.daily-bar:hover{opacity:0.75; background:var(--accent-dk)}
+.daily-bar.today{background:var(--text); opacity:0.85}
+.daily-line{
+  position:absolute; inset:0;
+  pointer-events:none; width:100%; height:100%;
+  overflow:visible;
+}
+.daily-x-labels{
+  display:flex; gap:2px; font-size:9.5px;
+  color:var(--muted); margin-top:6px;
+  font-variant-numeric:tabular-nums;
+}
+.daily-x-labels span{flex:1; text-align:center}
+.daily-x-labels b{color:var(--soft); font-weight:600}
+.daily-legend{
+  display:flex; gap:14px; font-size:10.5px;
+  color:var(--soft); justify-content:flex-end; align-items:center;
+}
+.daily-legend-item{display:flex; align-items:center; gap:5px}
+.daily-legend-bar{
+  width:11px; height:8px; border-radius:1.5px;
+  background:var(--accent); opacity:0.45;
+}
+.daily-legend-line{
+  width:14px; height:2px; background:var(--green-dk);
+  position:relative;
+}
+.daily-legend-line::after{
+  content:''; position:absolute; left:50%; top:50%;
+  width:5px; height:5px; transform:translate(-50%,-50%);
+  background:var(--green-dk); border-radius:50%;
+  border:1px solid #fff;
+}
+
 /* ═══ 가로 바 (비율) ═══ */
 .rowbar{margin:9px 0}
 .rowbar-top{
@@ -564,27 +611,8 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 <div class="container">
 
 <!-- ═══════════════════════════════════════════════════════════
-     🔴 영역 1 · 경보 배너 (상시 감시)
+     🔴 영역 1 · 경보 배너 (제거됨 · 2026-05-17)
      ═══════════════════════════════════════════════════════════ -->
-<div class="alerts" id="alerts">
-  <div class="alert alert-red">
-    <span class="emoji">🚨</span>
-    <span class="tag">재고</span>
-    <span><b>경기 1000매트 22T</b> 재고 1주 이하 — 발주 검토 필요</span>
-    <button class="alert-action" onclick="location.href='stock.html'">재고 보기 →</button>
-  </div>
-  <div class="alert alert-gold">
-    <span class="emoji">⚠️</span>
-    <span class="tag">리뷰</span>
-    <span>시공 후 30일 경과, 후기 미작성 고객 <b>7명</b></span>
-    <button class="alert-action" onclick="alert('알림톡 발송 기능 준비 중')">알림톡 발송</button>
-  </div>
-  <div class="alert alert-blue">
-    <span class="emoji">💰</span>
-    <span class="tag">온누리</span>
-    <span>온누리상품권 누적 <b>28.3억</b> · 30억 cap까지 1.7억 남음</span>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      상단 스코어카드 · 오늘 ↔ 월별 토글 + 월 선택 드롭다운 (v0.5.1)
@@ -751,35 +779,24 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       </div>
     </div>
 
-    <!-- 월별 바차트 · 실데이터 (4월부터) -->
+    <!-- 일별 콤보 차트 · 막대(샘플) + 선(예약) · 2026-05-17 -->
     <div style="margin-top:18px">
-      <div style="display:flex; justify-content:space-between; align-items:center">
-        <div class="stat-label">최근 6개월 · 샘플 vs 예약</div>
-        <div class="bar-legend">
-          <div class="bar-legend-item"><span class="bar-legend-dot sample"></span>샘플 접수</div>
-          <div class="bar-legend-item"><span class="bar-legend-dot reserved"></span>예약 완료</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
+        <div class="stat-label">최근 30일 · 일별 샘플 vs 예약</div>
+        <div class="daily-legend">
+          <div class="daily-legend-item"><span class="daily-legend-bar"></span>샘플 접수</div>
+          <div class="daily-legend-item"><span class="daily-legend-line"></span>예약 완료</div>
         </div>
       </div>
-      <div class="barchart" id="monthlyBars" style="height:90px">
-        <div class="bar" style="height:3%" title="11월 · 데이터 없음"></div>
-        <div class="bar" style="height:3%" title="12월 · 데이터 없음"></div>
-        <div class="bar" style="height:3%" title="1월 · 데이터 없음"></div>
-        <div class="bar" style="height:3%" title="2월 · 데이터 없음"></div>
-        <div class="bar" style="height:3%" title="3월 · 데이터 없음"></div>
-        <div class="bar today" style="height:100%" title="4월 · 샘플 136 / 예약 116">
-          <div class="bar-inner" style="height:85.3%"></div>
+      <div class="daily-chart">
+        <div class="daily-chart-area">
+          <div class="daily-bars" id="dailyBars"></div>
+          <svg class="daily-line" id="dailyLine" viewBox="0 0 1000 100" preserveAspectRatio="none"></svg>
         </div>
+        <div class="daily-x-labels" id="dailyXLabels"></div>
       </div>
-      <div class="bar-labels">
-        <span style="color:var(--muted)">11월 <b>-</b></span>
-        <span style="color:var(--muted)">12월 <b>-</b></span>
-        <span style="color:var(--muted)">1월 <b>-</b></span>
-        <span style="color:var(--muted)">2월 <b>-</b></span>
-        <span style="color:var(--muted)">3월 <b>-</b></span>
-        <span style="color:var(--text);font-weight:700">4월 <b>136/116</b></span>
-      </div>
-      <div style="margin-top:6px; padding:8px 12px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); text-align:center">
-        ℹ️ 시스템 전환 · <b style="color:var(--text)">2026년 4월부터 데이터 수집 시작</b> · 5월부터 전월 대비 추세 가능
+      <div style="margin-top:6px; padding:8px 12px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); text-align:center" id="dailySum">
+        ℹ️ 데이터 로드 중…
       </div>
     </div>
 
@@ -1520,27 +1537,106 @@ async function loadConversionStats(){
   }
 }
 
-// 월별 퍼널 로드
-async function loadMonthlyFunnel(){
+// 🆕 일별 콤보 차트 로드 (막대=샘플, 선=예약) · 2026-05-17
+// TODO: 추후 Apps Script에 type=dailyFunnel 엔드포인트 추가하면 fetch로 교체
+async function loadDailyFunnel(){
   try{
-    const res = await fetch(`${APPS_SCRIPT_URL}?type=monthlyFunnel`);
-    const json = await res.json();
-    if(!json.success || !json.data) return;
-    
-    const maxVal = Math.max(...json.data.map(m => m.sample), 1);
-    const barsEl = document.getElementById('monthlyBars');
-    if(!barsEl) return;
-    
-    barsEl.innerHTML = json.data.map((m, idx) => {
-      const isLast = idx === json.data.length - 1;
-      const sampleH = m.sample > 0 ? Math.max(3, m.sample/maxVal*100) : 3;
-      const reservedH = m.sample > 0 ? (m.reserved/m.sample*100) : 0;
-      const title = m.sample > 0 ? `${m.month} · 샘플 ${m.sample} / 예약 ${m.reserved}` : `${m.month} · 데이터 없음`;
-      const inner = m.sample > 0 ? `<div class="bar-inner" style="height:${reservedH.toFixed(1)}%"></div>` : '';
-      return `<div class="bar${isLast && m.sample > 0 ? ' today' : ''}" style="height:${sampleH.toFixed(1)}%" title="${title}">${inner}</div>`;
-    }).join('');
+    // ┌─────────────────────────────────────────────────────────┐
+    // │ 임시 더미 데이터 (30일) · API 연동 전까지 시각화 용도   │
+    // │ 추후: const res = await fetch(`${APPS_SCRIPT_URL}?type=dailyFunnel&days=30`);  │
+    // │       const json = await res.json(); const data = json.data;            │
+    // └─────────────────────────────────────────────────────────┘
+    const today = new Date();
+    const data = [];
+    for(let i=29; i>=0; i--){
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dow = d.getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      const trend = (29-i) / 29;
+      const base = 3 + trend * 5;
+      // 시드 기반(날짜 고정) — 새로고침해도 값 동일
+      const seed = (d.getMonth()+1)*100 + d.getDate();
+      const rand = ((Math.sin(seed)*10000) % 1 + 1) % 1;
+      const rand2 = ((Math.sin(seed*1.7)*10000) % 1 + 1) % 1;
+      const sampleCount = Math.max(0, Math.round(base * (isWeekend ? 0.4 : 1) + rand * 4 - 1));
+      const reservedCount = Math.max(0, Math.round(sampleCount * (0.22 + rand2 * 0.18)));
+      data.push({
+        date: d,
+        sample: sampleCount,
+        reserved: reservedCount
+      });
+    }
+    renderDailyChart(data);
   } catch(e){
-    console.error('월별퍼널 로드 실패:', e);
+    console.error('일별 차트 로드 실패:', e);
+    const sumEl = document.getElementById('dailySum');
+    if(sumEl) sumEl.innerHTML = '⚠️ 차트 로드 실패';
+  }
+}
+
+// 일별 콤보 차트 렌더링 (재사용 가능)
+function renderDailyChart(data){
+  if(!data || data.length === 0) return;
+  
+  const maxVal = Math.max(...data.map(d => Math.max(d.sample, d.reserved)), 1);
+  const yMax = Math.ceil(maxVal * 1.15);
+  
+  // ── 막대 (샘플) ──
+  const barsEl = document.getElementById('dailyBars');
+  if(barsEl){
+    barsEl.innerHTML = data.map((d, i) => {
+      const h = d.sample > 0 ? Math.max(2, d.sample/yMax*100) : 0;
+      const isToday = i === data.length-1;
+      const dateStr = `${d.date.getMonth()+1}/${d.date.getDate()}`;
+      return `<div class="daily-bar${isToday?' today':''}" 
+                style="height:${h.toFixed(1)}%" 
+                title="${dateStr} · 샘플 ${d.sample}건 / 예약 ${d.reserved}건"></div>`;
+    }).join('');
+  }
+  
+  // ── 선 (예약) ── SVG path
+  const lineEl = document.getElementById('dailyLine');
+  if(lineEl){
+    const w = 1000, h = 100;
+    const n = data.length;
+    const points = data.map((d, i) => {
+      const x = (i + 0.5) * (w / n);
+      const y = h - (d.reserved / yMax * h);
+      return [x, y];
+    });
+    
+    let path = `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
+    for(let i=1; i<points.length; i++){
+      path += ` L ${points[i][0].toFixed(1)} ${points[i][1].toFixed(1)}`;
+    }
+    
+    const dots = points.map(([x,y]) => 
+      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#3F7249" stroke="white" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`
+    ).join('');
+    
+    lineEl.innerHTML = `
+      <path d="${path}" fill="none" stroke="#3F7249" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      ${dots}
+    `;
+  }
+  
+  // ── X축 라벨 (5일 간격) ──
+  const labelsEl = document.getElementById('dailyXLabels');
+  if(labelsEl){
+    labelsEl.innerHTML = data.map((d, i) => {
+      const showLabel = (i % 5 === 0 || i === data.length - 1);
+      if(!showLabel) return '<span></span>';
+      return `<span><b>${d.date.getMonth()+1}/${d.date.getDate()}</b></span>`;
+    }).join('');
+  }
+  
+  // ── 합계 ──
+  const totalSample = data.reduce((s, d) => s + d.sample, 0);
+  const totalReserved = data.reduce((s, d) => s + d.reserved, 0);
+  const sumEl = document.getElementById('dailySum');
+  if(sumEl){
+    sumEl.innerHTML = `최근 30일 · 샘플 <b style="color:var(--text)">${totalSample}</b>건 · 예약 <b style="color:var(--green-dk)">${totalReserved}</b>건 · 전환율 <b style="color:var(--green-dk)">${totalSample>0?(totalReserved/totalSample*100).toFixed(1):0}%</b>`;
   }
 }
 
@@ -1617,7 +1713,7 @@ function refreshAll(){
     loadAlimtalkStats(),
     loadAptPipeline(),
     loadConversionStats(),
-    loadMonthlyFunnel(),
+    loadDailyFunnel(),
     loadPhoneStats()
   ]).finally(() => {
     btn.style.opacity = '1';
@@ -2205,7 +2301,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadAlimtalkStats();
   loadAptPipeline();      // 🆕 입주아파트 실데이터
   loadConversionStats();
-  loadMonthlyFunnel();
+  loadDailyFunnel();
   loadPhoneStats();
   loadAdRank();           // 🆕 네이버 광고 순위 (2026-04-30)
 });
