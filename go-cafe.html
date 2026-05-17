@@ -331,6 +331,30 @@ if (isKakaoTalk) {
 }
 
 // ============================================
+// PC URL → 모바일 URL 자동 변환
+// 모바일에서 cafe.naver.com을 열면 PC 버전으로 강제 표시되는 문제 해결
+// 예: cafe.naver.com/f-e/cafes/10094499/menus/1064
+//   → m.cafe.naver.com/ca-fe/cafes/10094499/menus/1064
+// ============================================
+function toMobileUrl(url) {
+  if (!url) return url;
+  // 이미 모바일이면 그대로
+  if (url.indexOf('m.cafe.naver.com') !== -1) return url;
+  // 네이버 카페가 아니면 그대로 (인스타 등)
+  if (url.indexOf('cafe.naver.com') === -1) return url;
+  // PC URL → 모바일 URL
+  return url
+    .replace('https://cafe.naver.com/f-e/', 'https://m.cafe.naver.com/ca-fe/')
+    .replace('http://cafe.naver.com/f-e/', 'https://m.cafe.naver.com/ca-fe/')
+    .replace('https://cafe.naver.com/', 'https://m.cafe.naver.com/');
+}
+
+// 모바일이면 모바일 URL, PC면 원본 URL 반환
+function getOptimalUrl() {
+  return (isIOS || isAndroid) ? toMobileUrl(target.webUrl) : target.webUrl;
+}
+
+// ============================================
 // 카페 앱/웹 열기
 // ============================================
 function openTarget() {
@@ -347,33 +371,35 @@ function openTarget() {
     return;
   }
 
-  // 네이버 카페 — 앱 딥링크 시도
+  // 네이버 카페 — 모바일이면 m.cafe.naver.com 사용 (PC 버전 강제 표시 방지)
+  const finalUrl = getOptimalUrl();
+
   if (isAndroid) {
-    // 안드로이드: Intent URI로 네이버 카페 앱 시도
-    const intentUrl = `intent://${target.webUrl.replace('https://', '')}#Intent;scheme=https;package=com.nhn.android.navercafe;S.browser_fallback_url=${encodeURIComponent(target.webUrl)};end`;
+    // 안드로이드: Intent URI로 네이버 카페 앱 시도 → 없으면 모바일 웹
+    const intentUrl = `intent://${finalUrl.replace('https://', '')}#Intent;scheme=https;package=com.nhn.android.navercafe;S.browser_fallback_url=${encodeURIComponent(finalUrl)};end`;
     window.location.href = intentUrl;
   } else if (isIOS) {
-    // iOS: 네이버 앱 딥링크 시도 후 웹으로 fallback
-    const appUrl = `naversearchapp://inappbrowser?url=${encodeURIComponent(target.webUrl)}&target=mini`;
+    // iOS: 네이버 앱 딥링크 시도 후 모바일 웹으로 fallback
+    const appUrl = `naversearchapp://inappbrowser?url=${encodeURIComponent(finalUrl)}&target=mini`;
     const start = Date.now();
     window.location.href = appUrl;
-    // 1.5초 후 앱 안 열렸으면 웹으로
+    // 1.5초 후 앱 안 열렸으면 모바일 웹으로
     setTimeout(() => {
       if (Date.now() - start < 2000 && document.visibilityState === 'visible') {
-        window.location.href = target.webUrl;
+        window.location.href = finalUrl;
       }
     }, 1500);
   } else {
-    // PC면 바로 웹으로
+    // PC면 PC URL 그대로
     window.location.href = target.webUrl;
   }
 }
 
 // ============================================
-// 웹 브라우저로 강제 열기
+// 웹 브라우저로 강제 열기 (모바일이면 모바일 URL)
 // ============================================
 function openWeb() {
-  window.location.href = target.webUrl;
+  window.location.href = getOptimalUrl();
 }
 
 // ============================================
