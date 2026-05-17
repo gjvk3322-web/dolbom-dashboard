@@ -1416,7 +1416,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div class="section-head">
       <div class="section-title">
         <span class="section-icon icon-purple">🎨</span>
-        제품/색상별 판매
+        제품/색상별 고객 선택 분포
         <span class="badge bg-purple" id="productBadge">실데이터 로드 중…</span>
       </div>
       <div id="productPeriodToggle" class="toggle-pill">
@@ -1441,7 +1441,7 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     </div>
 
     <div style="margin-top:16px; padding:10px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11.5px; color:var(--soft); line-height:1.6">
-      💡 <b style="color:var(--text)">발주 활용 팁:</b> 이번달 비율과 최근 3개월 비율을 비교해서 추세 변화를 확인하세요. 전체누적은 장기 트렌드 파악용입니다.
+      💡 <b style="color:var(--text)">시공 건수 기준 (정확):</b> 시공스케줄에서 직접 카운팅한 <b>실제 집(고객) 수</b>입니다. 환산값이 아니라 100% 정확해요. 범례 작은 글씨는 원 장수(발주 참고용).<br>⚠️ 1000매트는 출시 초기라 월별 트렌드 보기가 더 정확합니다 (월별 토글은 다음 작업 예정).
     </div>
   </div>
 </div>
@@ -1973,13 +1973,29 @@ async function renderProductDonut(){
 
   if(badge) badge.textContent = currentProductPeriod;
 
-  // 정렬 (장수 많은 순)
-  filtered.sort((a, b) => (b.qty||0) - (a.qty||0));
+  // ★ 시공스케줄에서 직접 카운팅한 집(고객) 수 사용 (Code.gs v4)
+  // houses 필드가 없으면 환산값으로 fallback (구버전 호환)
+  const adjusted = filtered.map(r => {
+    const houses = parseInt(r.houses);
+    let realHouses;
+    if (!isNaN(houses) && houses > 0) {
+      realHouses = houses;  // ★ 진짜 집 수 (시공스케줄 직접 카운팅)
+    } else {
+      // Fallback: Code.gs 구버전일 경우 환산
+      const is500 = String(r.type || '').includes('500');
+      const perHouse = is500 ? 145 : 36;
+      realHouses = Math.round((r.qty || 0) / perHouse);
+    }
+    return { ...r, adjQty: realHouses, rawQty: (r.qty || 0), perHouse: 0 };
+  });
+  
+  // 환산값 기준으로 재정렬
+  adjusted.sort((a, b) => b.adjQty - a.adjQty);
 
-  const labels = filtered.map(r => r.colorCode);
-  const qtys = filtered.map(r => r.qty || 0);
+  const labels = adjusted.map(r => r.colorCode);
+  const qtys = adjusted.map(r => r.adjQty);
   const total = qtys.reduce((s,n)=>s+n, 0);
-  const colors = filtered.map(r => PRODUCT_COLORS[r.colorCode] || '#888780');
+  const colors = adjusted.map(r => PRODUCT_COLORS[r.colorCode] || '#888780');
 
   // 도넛 차트
   if(productDonut) productDonut.destroy();
@@ -2007,7 +2023,8 @@ async function renderProductDonut(){
           callbacks: {
             label: function(ctx){
               const pct = total > 0 ? (ctx.parsed/total*100).toFixed(1) : 0;
-              return ctx.label + ': ' + ctx.parsed + '장 (' + pct + '%)';
+              const item = adjusted[ctx.dataIndex];
+              return ctx.label + ': ' + ctx.parsed + '집 (' + pct + '%) · ' + item.rawQty + '장';
             }
           }
         }
@@ -2015,26 +2032,34 @@ async function renderProductDonut(){
     }
   });
 
-  // 중앙 총합
+  // 중앙 총합 (환산값)
   document.getElementById('productTotalQty').textContent = total.toLocaleString();
+  // 안내문 업데이트 (500매트 환산 안내)
+  const centerInfo = document.getElementById('productCenterInfo');
+  if(centerInfo){
+    centerInfo.innerHTML = '<b id="productTotalQty" style="color:var(--text); font-size:18px; font-weight:700">' + total.toLocaleString() + '</b>집 <span style="font-size:10.5px; color:var(--muted)">(시공 건수 기준)</span>';
+  }
 
-  // 범례 (HTML 직접)
-  const legend = filtered.map(r => {
-    const pct = total > 0 ? (r.qty/total*100).toFixed(1) : 0;
+  // 범례 (환산값 기준 비율 + raw 장수 보조 표시)
+  const legend = adjusted.map(r => {
+    const pct = total > 0 ? (r.adjQty/total*100).toFixed(1) : 0;
     const color = PRODUCT_COLORS[r.colorCode] || '#888780';
     const productName = r.colorCode.includes('1m') ? r.colorCode.replace('1m', ' 1M ') : r.colorCode.replace('50', ' 500');
-    return `
-      <div class="product-legend-item">
-        <div class="product-legend-color" style="background:${color}"></div>
-        <div style="flex:1; min-width:0">
-          <div class="product-legend-name">${productName}</div>
-          <div style="font-size:10.5px; color:var(--muted); margin-top:2px">${r.color || ''} · ${r.thickness || ''}</div>
-        </div>
-        <div style="text-align:right; flex-shrink:0">
-          <div class="product-legend-qty">${(r.qty||0).toLocaleString()}<span style="font-size:10.5px; color:var(--soft); font-weight:550; margin-left:2px">장</span></div>
-          <div class="product-legend-pct">${pct}%</div>
-        </div>
-      </div>`;
+    const isHalf = String(r.type||'').includes('500');
+    const rawText = isHalf 
+      ? '<span style="font-size:10px; color:var(--muted); font-weight:550">원 ' + r.rawQty.toLocaleString() + '장 ÷4</span>'
+      : '<span style="font-size:10px; color:var(--muted); font-weight:550">' + r.rawQty.toLocaleString() + '장</span>';
+    return '<div class="product-legend-item">' +
+      '<div class="product-legend-color" style="background:' + color + '"></div>' +
+      '<div style="flex:1; min-width:0">' +
+        '<div class="product-legend-name">' + productName + '</div>' +
+        '<div style="font-size:10.5px; color:var(--muted); margin-top:2px">' + (r.color || '') + ' · ' + (r.thickness || '') + ' · ' + rawText + '</div>' +
+      '</div>' +
+      '<div style="text-align:right; flex-shrink:0">' +
+        '<div class="product-legend-qty">' + r.adjQty.toLocaleString() + '<span style="font-size:10.5px; color:var(--soft); font-weight:550; margin-left:2px">명</span></div>' +
+        '<div class="product-legend-pct">' + pct + '%</div>' +
+      '</div>' +
+    '</div>';
   }).join('');
 
   document.getElementById('productLegend').innerHTML = legend;
