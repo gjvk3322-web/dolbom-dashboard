@@ -14,6 +14,7 @@
 <meta name="theme-color" content="#FAFAF7">
 <title>돌봄매트 · 조종실</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#FAFAF7; --warm:#F0EDE6; --card:#FFFFFF;
@@ -585,6 +586,26 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 .grid:nth-of-type(1) .section{animation-delay:0.25s}
 .grid:nth-of-type(2) .section{animation-delay:0.3s}
 .grid:nth-of-type(3) .section{animation-delay:0.35s}
+
+/* ═══ Phase 2 · 콤보 차트 + 도넛 (2026-05-18) ═══ */
+.range-btn{padding:5px 12px; font-size:11.5px; border:none; background:transparent; border-radius:6px; cursor:pointer; color:var(--soft); font-family:inherit; transition:all 0.15s; font-weight:550}
+.range-btn:hover{background:rgba(255,255,255,0.5)}
+.range-btn.active{background:#fff; color:var(--text); font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.metric-btn{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; font-size:11.5px; border:1px solid var(--line); background:#fff; border-radius:14px; cursor:pointer; font-family:inherit; color:var(--text); transition:opacity 0.15s, transform 0.1s; font-weight:550}
+.metric-btn:hover{transform:translateY(-1px)}
+.metric-btn:not(.active){opacity:0.32}
+.metric-dot{width:10px; height:10px; border-radius:2px; display:inline-block; flex-shrink:0}
+.metric-line{width:16px; height:2.5px; display:inline-block; flex-shrink:0; border-radius:1px}
+.metric-line.dashed{background-image:linear-gradient(90deg, currentColor 50%, transparent 50%); background-size:6px 100%; background-color:transparent !important}
+.toggle-pill{display:inline-flex; gap:2px; background:var(--warm); padding:3px; border-radius:8px}
+.product-legend-item{display:flex; align-items:center; gap:10px; padding:9px 12px; background:var(--warm); border-radius:8px; transition:transform 0.1s}
+.product-legend-item:hover{transform:translateX(2px)}
+.product-legend-color{width:14px; height:14px; border-radius:3px; flex-shrink:0}
+.product-legend-name{font-size:12.5px; font-weight:650; color:var(--text); flex:1}
+.product-legend-qty{font-size:13px; font-weight:700; color:var(--text)}
+.product-legend-pct{font-size:10.5px; color:var(--soft); margin-left:6px; min-width:38px; text-align:right}
+.funnel-canvas-wrap{position:relative; height:200px; padding:6px 0; width:100%}
+.product-canvas-wrap{position:relative; height:240px; width:100%}
 </style>
 </head>
 <body>
@@ -779,23 +800,33 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       </div>
     </div>
 
-    <!-- 일별 콤보 차트 · 막대(샘플) + 선(예약) · 2026-05-17 -->
+    <!-- 콤보 차트 · 3지표(샘플/예약/시공) + 시간 토글 · 2026-05-18 -->
     <div style="margin-top:18px">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
-        <div class="stat-label">최근 30일 · 일별 샘플 vs 예약</div>
-        <div class="daily-legend">
-          <div class="daily-legend-item"><span class="daily-legend-bar"></span>샘플 접수</div>
-          <div class="daily-legend-item"><span class="daily-legend-line"></span>예약 완료</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px">
+        <div class="stat-label" style="font-size:12.5px; font-weight:700">📈 샘플 → 예약 → 시공 추이</div>
+        <div id="funnelRangeToggle" class="toggle-pill">
+          <button data-range="7d" class="range-btn">7일</button>
+          <button data-range="30d" class="range-btn active">30일</button>
+          <button data-range="12w" class="range-btn">12주</button>
+          <button data-range="12m" class="range-btn">12개월</button>
         </div>
       </div>
-      <div class="daily-chart">
-        <div class="daily-chart-area">
-          <div class="daily-bars" id="dailyBars"></div>
-          <svg class="daily-line" id="dailyLine" viewBox="0 0 1000 100" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="daily-x-labels" id="dailyXLabels"></div>
+      <div id="funnelMetricToggle" style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px">
+        <button data-metric="sample" class="metric-btn active">
+          <span class="metric-dot" style="background:#85B7EB"></span>샘플접수
+        </button>
+        <button data-metric="reserved" class="metric-btn active">
+          <span class="metric-line" style="background:#3F7249; color:#3F7249"></span>예약접수
+        </button>
+        <button data-metric="installed" class="metric-btn active">
+          <span class="metric-line dashed" style="background:#185FA5; color:#185FA5"></span>시공
+        </button>
+        <span style="font-size:10.5px; color:var(--muted); margin-left:auto; align-self:center">← 클릭해서 켜고 끄세요</span>
       </div>
-      <div style="margin-top:6px; padding:8px 12px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); text-align:center" id="dailySum">
+      <div class="funnel-canvas-wrap">
+        <canvas id="funnelChart" role="img" aria-label="샘플 예약 시공 추이 콤보 차트"></canvas>
+      </div>
+      <div style="margin-top:8px; padding:9px 12px; background:var(--warm); border-radius:var(--radius-sm); font-size:11.5px; color:var(--soft); text-align:center" id="funnelSum">
         ℹ️ 데이터 로드 중…
       </div>
     </div>
@@ -1347,6 +1378,44 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   </div>
 </div>
 
+<!-- ┌────────────────────────────────────────────────────────┐
+     │ 영역 8 · 제품/색상별 판매 (발주 의사결정) · 2026-05-18  │
+     └────────────────────────────────────────────────────────┘ -->
+<div class="grid">
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-icon icon-purple">🎨</span>
+        제품/색상별 판매
+        <span class="badge bg-purple" id="productBadge">실데이터 로드 중…</span>
+      </div>
+      <div id="productPeriodToggle" class="toggle-pill">
+        <button data-period="이번달" class="range-btn active">이번달</button>
+        <button data-period="최근3개월" class="range-btn">3개월</button>
+        <button data-period="전체누적" class="range-btn">전체</button>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1.4fr; gap:28px; align-items:center; margin-top:16px">
+      <div>
+        <div class="product-canvas-wrap">
+          <canvas id="productDonut" role="img" aria-label="제품별 판매 비율 도넛 차트"></canvas>
+        </div>
+        <div id="productCenterInfo" style="text-align:center; margin-top:4px; font-size:11.5px; color:var(--soft)">
+          총 <b id="productTotalQty" style="color:var(--text); font-size:14px; font-weight:700">0</b>장
+        </div>
+      </div>
+      <div id="productLegend" style="display:flex; flex-direction:column; gap:8px">
+        <div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">데이터 로드 중…</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; padding:10px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11.5px; color:var(--soft); line-height:1.6">
+      💡 <b style="color:var(--text)">발주 활용 팁:</b> 이번달 비율과 최근 3개월 비율을 비교해서 추세 변화를 확인하세요. 전체누적은 장기 트렌드 파악용입니다.
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 영역 레이블 · 4줄 ═══ -->
 <div class="area-label">EXTERNAL · 외부 데이터 연동</div>
 
@@ -1537,107 +1606,357 @@ async function loadConversionStats(){
   }
 }
 
-// 🆕 일별 콤보 차트 로드 (막대=샘플, 선=예약) · 2026-05-17
-// TODO: 추후 Apps Script에 type=dailyFunnel 엔드포인트 추가하면 fetch로 교체
-async function loadDailyFunnel(){
+// ═══════════════════════════════════════════════════════════════
+// 🆕 콤보 차트 (3지표) + 시간 토글 + 제품 도넛 · 2026-05-18
+// ═══════════════════════════════════════════════════════════════
+
+let funnelChart = null;
+let productDonut = null;
+let currentFunnelRange = '30d';
+let funnelMetrics = { sample:true, reserved:true, installed:true };
+const funnelCache = {};
+
+const FUNNEL_COLORS = {
+  sample: '#85B7EB',
+  reserved: '#3F7249',
+  installed: '#185FA5'
+};
+
+async function fetchFunnelData(range){
+  if(funnelCache[range]) return funnelCache[range];
+
+  let url, data;
   try{
-    // ┌─────────────────────────────────────────────────────────┐
-    // │ 임시 더미 데이터 (30일) · API 연동 전까지 시각화 용도   │
-    // │ 추후: const res = await fetch(`${APPS_SCRIPT_URL}?type=dailyFunnel&days=30`);  │
-    // │       const json = await res.json(); const data = json.data;            │
-    // └─────────────────────────────────────────────────────────┘
-    const today = new Date();
-    const data = [];
-    for(let i=29; i>=0; i--){
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dow = d.getDay();
-      const isWeekend = dow === 0 || dow === 6;
-      const trend = (29-i) / 29;
-      const base = 3 + trend * 5;
-      // 시드 기반(날짜 고정) — 새로고침해도 값 동일
-      const seed = (d.getMonth()+1)*100 + d.getDate();
-      const rand = ((Math.sin(seed)*10000) % 1 + 1) % 1;
-      const rand2 = ((Math.sin(seed*1.7)*10000) % 1 + 1) % 1;
-      const sampleCount = Math.max(0, Math.round(base * (isWeekend ? 0.4 : 1) + rand * 4 - 1));
-      const reservedCount = Math.max(0, Math.round(sampleCount * (0.22 + rand2 * 0.18)));
-      data.push({
-        date: d,
-        sample: sampleCount,
-        reserved: reservedCount
-      });
+    if(range === '12m'){
+      url = `${APPS_SCRIPT_URL}?type=monthlyFunnel`;
+      const res = await fetch(url);
+      const json = await res.json();
+      data = (json.data || []).map(m => ({
+        label: m.month || '',
+        sample: parseInt(m.sample) || 0,
+        reserved: parseInt(m.reserved) || 0,
+        installed: parseInt(m.installed) || 0
+      }));
+    } else {
+      url = `${APPS_SCRIPT_URL}?type=dailyFunnel`;
+      const res = await fetch(url);
+      const json = await res.json();
+      const all = (json.data || []).map(d => ({
+        date: d.date,
+        label: d.label || '',
+        sample: parseInt(d.sample) || 0,
+        reserved: parseInt(d.reserved) || 0,
+        installed: parseInt(d.installed) || 0
+      }));
+
+      if(range === '7d'){
+        data = all.slice(-7);
+      } else if(range === '30d'){
+        data = all.slice(-30);
+      } else if(range === '12w'){
+        // 최근 84일을 7일씩 묶어서 12주
+        const last84 = all.slice(-84);
+        data = [];
+        for(let i = 0; i < 12; i++){
+          const week = last84.slice(i*7, (i+1)*7);
+          if(week.length === 0) continue;
+          data.push({
+            label: week[0].label,
+            sample: week.reduce((s,d)=>s+d.sample, 0),
+            reserved: week.reduce((s,d)=>s+d.reserved, 0),
+            installed: week.reduce((s,d)=>s+d.installed, 0)
+          });
+        }
+      }
     }
-    renderDailyChart(data);
+    funnelCache[range] = data;
+    return data;
   } catch(e){
-    console.error('일별 차트 로드 실패:', e);
-    const sumEl = document.getElementById('dailySum');
-    if(sumEl) sumEl.innerHTML = '⚠️ 차트 로드 실패';
+    console.error('funnel 데이터 로드 실패:', e);
+    return [];
   }
 }
 
-// 일별 콤보 차트 렌더링 (재사용 가능)
-function renderDailyChart(data){
-  if(!data || data.length === 0) return;
-  
-  const maxVal = Math.max(...data.map(d => Math.max(d.sample, d.reserved)), 1);
-  const yMax = Math.ceil(maxVal * 1.15);
-  
-  // ── 막대 (샘플) ──
-  const barsEl = document.getElementById('dailyBars');
-  if(barsEl){
-    barsEl.innerHTML = data.map((d, i) => {
-      const h = d.sample > 0 ? Math.max(2, d.sample/yMax*100) : 0;
-      const isToday = i === data.length-1;
-      const dateStr = `${d.date.getMonth()+1}/${d.date.getDate()}`;
-      return `<div class="daily-bar${isToday?' today':''}" 
-                style="height:${h.toFixed(1)}%" 
-                title="${dateStr} · 샘플 ${d.sample}건 / 예약 ${d.reserved}건"></div>`;
-    }).join('');
+async function renderFunnelChart(){
+  const data = await fetchFunnelData(currentFunnelRange);
+  const sumEl = document.getElementById('funnelSum');
+
+  if(!data || data.length === 0){
+    if(sumEl) sumEl.innerHTML = '⚠️ 데이터 없음';
+    return;
   }
-  
-  // ── 선 (예약) ── SVG path
-  const lineEl = document.getElementById('dailyLine');
-  if(lineEl){
-    const w = 1000, h = 100;
-    const n = data.length;
-    const points = data.map((d, i) => {
-      const x = (i + 0.5) * (w / n);
-      const y = h - (d.reserved / yMax * h);
-      return [x, y];
+
+  const labels = data.map(d => d.label);
+  const datasets = [];
+
+  if(funnelMetrics.sample){
+    datasets.push({
+      type: 'bar',
+      label: '샘플접수',
+      data: data.map(d => d.sample),
+      backgroundColor: FUNNEL_COLORS.sample,
+      borderRadius: 3,
+      barPercentage: 0.78,
+      categoryPercentage: 0.85,
+      order: 3
     });
-    
-    let path = `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
-    for(let i=1; i<points.length; i++){
-      path += ` L ${points[i][0].toFixed(1)} ${points[i][1].toFixed(1)}`;
+  }
+  if(funnelMetrics.reserved){
+    datasets.push({
+      type: 'line',
+      label: '예약접수',
+      data: data.map(d => d.reserved),
+      borderColor: FUNNEL_COLORS.reserved,
+      backgroundColor: FUNNEL_COLORS.reserved,
+      borderWidth: 2.2,
+      tension: 0.3,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: FUNNEL_COLORS.reserved,
+      pointBorderWidth: 1.8,
+      order: 2
+    });
+  }
+  if(funnelMetrics.installed){
+    datasets.push({
+      type: 'line',
+      label: '시공',
+      data: data.map(d => d.installed),
+      borderColor: FUNNEL_COLORS.installed,
+      backgroundColor: FUNNEL_COLORS.installed,
+      borderWidth: 2.2,
+      borderDash: [5, 3],
+      tension: 0.3,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: FUNNEL_COLORS.installed,
+      pointBorderWidth: 1.8,
+      order: 1
+    });
+  }
+
+  if(funnelChart) funnelChart.destroy();
+  funnelChart = new Chart(document.getElementById('funnelChart'), {
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,20,0.92)',
+          padding: 10,
+          titleFont: { size: 12, weight: 'bold' },
+          bodyFont: { size: 12 },
+          callbacks: {
+            afterBody: function(items){
+              const i = items[0].dataIndex;
+              const d = data[i];
+              const c1 = d.sample > 0 ? (d.reserved/d.sample*100).toFixed(1) : 0;
+              const c2 = d.reserved > 0 ? (d.installed/d.reserved*100).toFixed(1) : 0;
+              return ['─────', '샘플→예약: ' + c1 + '%', '예약→시공: ' + c2 + '%'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10.5 }, autoSkip: true, maxTicksLimit: 12, maxRotation: 0 }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { font: { size: 10.5 }, precision: 0 }
+        }
+      }
     }
-    
-    const dots = points.map(([x,y]) => 
-      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="#3F7249" stroke="white" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`
-    ).join('');
-    
-    lineEl.innerHTML = `
-      <path d="${path}" fill="none" stroke="#3F7249" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-      ${dots}
-    `;
-  }
-  
-  // ── X축 라벨 (5일 간격) ──
-  const labelsEl = document.getElementById('dailyXLabels');
-  if(labelsEl){
-    labelsEl.innerHTML = data.map((d, i) => {
-      const showLabel = (i % 5 === 0 || i === data.length - 1);
-      if(!showLabel) return '<span></span>';
-      return `<span><b>${d.date.getMonth()+1}/${d.date.getDate()}</b></span>`;
-    }).join('');
-  }
-  
-  // ── 합계 ──
-  const totalSample = data.reduce((s, d) => s + d.sample, 0);
-  const totalReserved = data.reduce((s, d) => s + d.reserved, 0);
-  const sumEl = document.getElementById('dailySum');
+  });
+
+  // 요약
+  const ts = data.reduce((s,d)=>s+d.sample, 0);
+  const tr = data.reduce((s,d)=>s+d.reserved, 0);
+  const ti = data.reduce((s,d)=>s+d.installed, 0);
+  const c1 = ts > 0 ? (tr/ts*100).toFixed(1) : 0;
+  const c2 = tr > 0 ? (ti/tr*100).toFixed(1) : 0;
+  const rangeLabel = {'7d':'최근 7일', '30d':'최근 30일', '12w':'최근 12주', '12m':'최근 12개월'}[currentFunnelRange];
   if(sumEl){
-    sumEl.innerHTML = `최근 30일 · 샘플 <b style="color:var(--text)">${totalSample}</b>건 · 예약 <b style="color:var(--green-dk)">${totalReserved}</b>건 · 전환율 <b style="color:var(--green-dk)">${totalSample>0?(totalReserved/totalSample*100).toFixed(1):0}%</b>`;
+    sumEl.innerHTML = `${rangeLabel} · 샘플 <b style="color:var(--text)">${ts}</b>건 · 예약 <b style="color:#3F7249">${tr}</b>건 · 시공 <b style="color:#185FA5">${ti}</b>건 · 전환 <b style="color:#3F7249">${c1}%</b> → <b style="color:#185FA5">${c2}%</b>`;
   }
+}
+
+// 토글 이벤트 바인딩
+function bindFunnelToggles(){
+  const rangeBox = document.getElementById('funnelRangeToggle');
+  if(rangeBox){
+    rangeBox.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-range]');
+      if(!btn) return;
+      currentFunnelRange = btn.dataset.range;
+      rangeBox.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('active', b.dataset.range === currentFunnelRange);
+      });
+      renderFunnelChart();
+    });
+  }
+
+  const metricBox = document.getElementById('funnelMetricToggle');
+  if(metricBox){
+    metricBox.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-metric]');
+      if(!btn) return;
+      const m = btn.dataset.metric;
+      funnelMetrics[m] = !funnelMetrics[m];
+      btn.classList.toggle('active', funnelMetrics[m]);
+      renderFunnelChart();
+    });
+  }
+}
+
+async function loadDailyFunnel(){
+  bindFunnelToggles();
+  await renderFunnelChart();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 제품/색상별 도넛 차트 (영역 8) · 2026-05-18
+// ═══════════════════════════════════════════════════════════════
+
+let productCache = null;
+let currentProductPeriod = '이번달';
+
+const PRODUCT_COLORS = {
+  '마블50':   '#D85A30',
+  '코튼50':   '#EF9F27',
+  '모던50':   '#7F77DD',
+  '모던1m17': '#5DCAA5',
+  '모던1m22': '#1D9E75',
+  '베이지1m17': '#F0997B',
+  '베이지1m22': '#BA7517',
+  '기타':     '#888780'
+};
+
+async function fetchProductSales(){
+  if(productCache) return productCache;
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=productSales`);
+    const json = await res.json();
+    productCache = json.data || [];
+    return productCache;
+  } catch(e){
+    console.error('productSales 로드 실패:', e);
+    return [];
+  }
+}
+
+async function renderProductDonut(){
+  const all = await fetchProductSales();
+  const badge = document.getElementById('productBadge');
+
+  if(!all || all.length === 0){
+    if(badge) badge.textContent = '데이터 없음';
+    document.getElementById('productLegend').innerHTML =
+      '<div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">아직 데이터가 없어요. getProductSales 함수를 실행해주세요.</div>';
+    return;
+  }
+
+  const filtered = all.filter(r => r.period === currentProductPeriod);
+
+  if(filtered.length === 0){
+    if(badge) badge.textContent = currentProductPeriod + ' 데이터 없음';
+    document.getElementById('productLegend').innerHTML =
+      '<div style="padding:14px; text-align:center; color:var(--muted); font-size:12px">' + currentProductPeriod + ' 판매 데이터가 없습니다.</div>';
+    if(productDonut) productDonut.destroy();
+    document.getElementById('productTotalQty').textContent = '0';
+    return;
+  }
+
+  if(badge) badge.textContent = currentProductPeriod;
+
+  // 정렬 (장수 많은 순)
+  filtered.sort((a, b) => (b.qty||0) - (a.qty||0));
+
+  const labels = filtered.map(r => r.colorCode);
+  const qtys = filtered.map(r => r.qty || 0);
+  const total = qtys.reduce((s,n)=>s+n, 0);
+  const colors = filtered.map(r => PRODUCT_COLORS[r.colorCode] || '#888780');
+
+  // 도넛 차트
+  if(productDonut) productDonut.destroy();
+  productDonut = new Chart(document.getElementById('productDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: qtys,
+        backgroundColor: colors,
+        borderWidth: 2,
+        borderColor: '#fff',
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,20,0.92)',
+          padding: 10,
+          callbacks: {
+            label: function(ctx){
+              const pct = total > 0 ? (ctx.parsed/total*100).toFixed(1) : 0;
+              return ctx.label + ': ' + ctx.parsed + '장 (' + pct + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // 중앙 총합
+  document.getElementById('productTotalQty').textContent = total.toLocaleString();
+
+  // 범례 (HTML 직접)
+  const legend = filtered.map(r => {
+    const pct = total > 0 ? (r.qty/total*100).toFixed(1) : 0;
+    const color = PRODUCT_COLORS[r.colorCode] || '#888780';
+    const productName = r.colorCode.includes('1m') ? r.colorCode.replace('1m', ' 1M ') : r.colorCode.replace('50', ' 500');
+    return `
+      <div class="product-legend-item">
+        <div class="product-legend-color" style="background:${color}"></div>
+        <div style="flex:1; min-width:0">
+          <div class="product-legend-name">${productName}</div>
+          <div style="font-size:10.5px; color:var(--muted); margin-top:2px">${r.color || ''} · ${r.thickness || ''}</div>
+        </div>
+        <div style="text-align:right; flex-shrink:0">
+          <div class="product-legend-qty">${(r.qty||0).toLocaleString()}<span style="font-size:10.5px; color:var(--soft); font-weight:550; margin-left:2px">장</span></div>
+          <div class="product-legend-pct">${pct}%</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('productLegend').innerHTML = legend;
+}
+
+async function loadProductSales(){
+  const toggleBox = document.getElementById('productPeriodToggle');
+  if(toggleBox){
+    toggleBox.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-period]');
+      if(!btn) return;
+      currentProductPeriod = btn.dataset.period;
+      toggleBox.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('active', b.dataset.period === currentProductPeriod);
+      });
+      renderProductDonut();
+    });
+  }
+  await renderProductDonut();
 }
 
 // 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
