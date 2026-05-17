@@ -148,6 +148,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .photo-modal-loading{color:#fff;font-size:14px;position:absolute}
 .photo-btn{margin-top:8px;font-size:13px;color:#4a7c9e;background:rgba(74,124,158,.08);border:1px solid #4a7c9e;padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:4px}
 .photo-btn:active{transform:scale(.96);background:rgba(74,124,158,.15)}
+
+/* 후기 작성 가이드 카드 */
+.guide-section{background:linear-gradient(135deg,#FFF8E1 0%,#FFF4D6 100%);border:1px solid #F5D87E;border-radius:14px;margin:12px 16px 4px;overflow:hidden}
+.guide-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;font-size:14px;font-weight:700;color:#7A5C10;user-select:none}
+.guide-header:active{background:rgba(0,0,0,.03)}
+.guide-toggle{font-size:11px;transition:transform .2s;color:#A07A20}
+.guide-toggle.open{transform:rotate(180deg)}
+.guide-body{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 16px}
+.guide-body.open{max-height:800px;padding:0 16px 14px}
+.guide-item{padding:11px 0;border-top:1px solid #F5E5A0}
+.guide-item:first-child{border-top:none;padding-top:4px}
+.guide-item .gtitle{display:block;font-size:13px;font-weight:700;color:#7A5C10;margin-bottom:6px}
+.guide-item p{font-size:12.5px;color:#5C4810;margin:3px 0;line-height:1.55}
+.guide-item .example{font-size:11.5px;color:#9A7820;background:#FFFAE8;padding:6px 10px;border-radius:6px;margin-top:5px;border-left:3px solid #E8B548}
+.guide-item ul{margin:4px 0 0;padding-left:16px;font-size:12.5px;color:#5C4810;line-height:1.7}
+.guide-item ul li{margin:1px 0}
+.guide-item ul li strong{color:#7A5C10}
 </style>
 </head>
 <body>
@@ -186,6 +203,40 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
     <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
     <div class="row" id="statusRow" style="display:none;margin-top:4px;padding-top:6px;border-top:1px solid var(--border)"><span class="label">상태</span><span class="value" id="statusText" style="color:var(--orange)">-</span></div>
+  </div>
+
+  <!-- 후기 작성 가이드 -->
+  <div class="guide-section">
+    <div class="guide-header" onclick="toggleGuide()">
+      <span>✍️ 후기 작성법 보기 (10분이면 완성!)</span>
+      <span class="guide-toggle" id="guideToggle">▼</span>
+    </div>
+    <div class="guide-body" id="guideBody">
+      <div class="guide-item">
+        <span class="gtitle">📝 제목 작성법</span>
+        <p>필수 키워드 <strong>3개 이상</strong> 포함</p>
+        <p style="font-size:11.5px;color:#9A7820">지역명 + (층간소음매트 / 시공매트 / 매트시공) + <strong>돌봄매트</strong></p>
+        <div class="example">예시: 부산 층간소음매트 돌봄매트 시공 후기 👶</div>
+      </div>
+      <div class="guide-item">
+        <span class="gtitle">✏️ 내용 작성법</span>
+        <ul>
+          <li>제목 키워드 <strong>1~2회 반복</strong></li>
+          <li><strong>'돌봄매트'</strong> 키워드 1회 이상 포함</li>
+          <li>사진 <strong>3장 이상</strong> 첨부</li>
+        </ul>
+        <div class="example" style="margin-top:8px">
+          🎬 <strong>짧은 영상도 함께 올려주시면 큰 도움이 돼요!</strong><br>
+          <span style="font-size:11px;color:#9A7820">고민하는 다른 가족들에게 매트 질감과 분위기를 더 잘 전달할 수 있어요 ☺️</span>
+        </div>
+      </div>
+      <div class="guide-item">
+        <span class="gtitle">📍 작성 후</span>
+        <p>① 작성한 후기 화면 캡쳐</p>
+        <p>② 아래 미션에서 스크린샷 업로드</p>
+        <p>③ 캐시백 자동 계산 → 계좌 입력 후 신청</p>
+      </div>
+    </div>
   </div>
 
   <div id="missionList"></div>
@@ -414,6 +465,14 @@ function switchTab(idx){
 
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
+// 후기 작성 가이드 토글
+function toggleGuide(){
+  const body=document.getElementById('guideBody');
+  const toggle=document.getElementById('guideToggle');
+  body.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
 function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
 
 function toggleChecklist(el){
@@ -429,13 +488,13 @@ function toggleChecklist(el){
 // ═════════════════════════════════════════════════════════
 const MISSIONS=[
   // 1번: 웰컴쿠폰 (계약후기)
-  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',desc:'맘스홀릭 카페 > 돌봄매트 게시판 (샘플박스 QR 참고)',link:'mom_contract',linkLabel:'맘스홀릭 카페'},
+  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',desc:'맘스홀릭 카페 > 돌봄매트 게시판',link:'mom_contract',linkLabel:'맘스홀릭 카페'},
   // 2번: 입주자 단톡방
   {id:'chatroom',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,icon:'💬',tag:'시공 중 업로드',desc:'돌봄매트 설치하고 있다는 후기만 올려주시면 됩니다'},
   // 3번: 시공 당일 후기 ①
-  {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',desc:'맘스홀릭 돌봄매트 후기 게시판',keyword:'시공매트, 층간소음매트 택 1 필수',link:'mom_review',linkLabel:'맘스홀릭 후기 게시판'},
+  {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',desc:'맘스홀릭 돌봄매트 후기 게시판',link:'mom_review',linkLabel:'맘스홀릭 후기 게시판'},
   // 4번: 시공 당일 후기 ②
-  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',desc:'셀인 / 강사모 / 다이렉트 결혼준비 카페 중 1곳',keyword:'시공매트, 돌봄매트 필수',links:[{to:'sellin',label:'셀인 카페'},{to:'gangsamo',label:'강사모 카페'},{to:'marry',label:'다이렉트 결혼준비 카페'}]},
+  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',desc:'셀인 / 강사모 / 다이렉트 결혼준비 카페 중 1곳',links:[{to:'sellin',label:'셀인 카페'},{to:'gangsamo',label:'강사모 카페'},{to:'marry',label:'다이렉트 결혼준비 카페'}]},
   // 5번: 인스타그램
   {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',desc:'@dolbomstore 태그 + #돌봄매트 #매트시공 해시태그 필수',link:'instagram',linkLabel:'인스타그램'},
   // 6번: 마미톡 (신규)
