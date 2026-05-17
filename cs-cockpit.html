@@ -784,19 +784,19 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 
     <div class="stat-row">
       <div class="stat-col">
-        <div class="stat-label">이번 달 (4월)</div>
-        <div class="stat-val" id="sampleThisMonth">136<span class="u">샘플</span></div>
-        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)" id="reservedThisMonth">116</b>건 · 시공 5건</div>
+        <div class="stat-label" id="sampleMonthLabel">이번 달</div>
+        <div class="stat-val" id="sampleThisMonth">0<span class="u">샘플</span></div>
+        <div class="stat-sub" style="margin-top:4px">예약 <b style="color:var(--accent-dk)" id="reservedThisMonth">0</b>건 · 시공 <b id="installedThisMonth">0</b>건</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">샘플 → 예약 전환</div>
-        <div class="stat-val md" style="color:var(--green-dk)">17<span class="u">%</span></div>
-        <div class="stat-sub" style="margin-top:4px">23/136 (직접예약 제외)</div>
+        <div class="stat-val md" style="color:var(--green-dk)" id="sampleToReserveVal">0<span class="u">%</span></div>
+        <div class="stat-sub" style="margin-top:4px" id="sampleToReserveSub">0/0</div>
       </div>
       <div class="stat-col">
         <div class="stat-label">샘플 → 시공 전환</div>
-        <div class="stat-val md" style="color:var(--gold-dk)">3.7<span class="u">%</span></div>
-        <div class="stat-sub" style="margin-top:4px">5/136 · 리드타임 영향</div>
+        <div class="stat-val md" style="color:var(--gold-dk)" id="sampleToInstallVal">0<span class="u">%</span></div>
+        <div class="stat-sub" style="margin-top:4px" id="sampleToInstallSub">0/0</div>
       </div>
     </div>
 
@@ -1846,6 +1846,46 @@ function bindFunnelToggles(){
 async function loadDailyFunnel(){
   bindFunnelToggles();
   await renderFunnelChart();
+  await loadMonthlyStatsForHeader();
+}
+
+// 영역 3 상단 통계 · 이번달 실데이터 자동 채우기
+async function loadMonthlyStatsForHeader(){
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?type=monthlyFunnel`);
+    const json = await res.json();
+    const all = json.data || [];
+    if(all.length === 0) return;
+    
+    // 가장 최근 월 (2026-05 형식)
+    const latest = all[all.length - 1];
+    const monthStr = String(latest.month || '');
+    
+    // "2026-05" → "5월" 형식으로 변환
+    let monthLabel = '이번 달';
+    const ymMatch = monthStr.match(/^(\d{4})-(\d{2})$/);
+    if(ymMatch) monthLabel = `이번 달 (${parseInt(ymMatch[2])}월)`;
+    
+    const sample = parseInt(latest.sample) || 0;
+    const reserved = parseInt(latest.reserved) || 0;
+    const installed = parseInt(latest.installed) || 0;
+    
+    const r1 = sample > 0 ? (reserved/sample*100).toFixed(1) : 0;
+    const r2 = sample > 0 ? (installed/sample*100).toFixed(1) : 0;
+    
+    document.getElementById('sampleMonthLabel').textContent = monthLabel;
+    document.getElementById('sampleThisMonth').innerHTML = sample + '<span class="u">샘플</span>';
+    document.getElementById('reservedThisMonth').textContent = reserved;
+    document.getElementById('installedThisMonth').textContent = installed;
+    
+    document.getElementById('sampleToReserveVal').innerHTML = r1 + '<span class="u">%</span>';
+    document.getElementById('sampleToReserveSub').textContent = reserved + '/' + sample;
+    
+    document.getElementById('sampleToInstallVal').innerHTML = r2 + '<span class="u">%</span>';
+    document.getElementById('sampleToInstallSub').textContent = installed + '/' + sample;
+  } catch(e){
+    console.error('월별 통계 로드 실패:', e);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
