@@ -265,30 +265,35 @@ const TARGETS = {
   mom_contract: {
     name: '맘스홀릭 카페 > 돌봄매트 게시판',
     webUrl: 'https://cafe.naver.com/f-e/cafes/10094499/menus/1064?viewType=L',
+    mobileUrl: 'https://m.cafe.naver.com/imsanbu',
     cafeId: 'imsanbu'
   },
   // 맘스홀릭 카페 (시공 후기 - 돌봄매트 게시판과 동일)
   mom_review: {
     name: '맘스홀릭 카페 > 후기 게시판',
     webUrl: 'https://cafe.naver.com/f-e/cafes/10094499/menus/1064?viewType=L',
+    mobileUrl: 'https://m.cafe.naver.com/imsanbu',
     cafeId: 'imsanbu'
   },
   // 셀인 카페 (셀프 인테리어)
   sellin: {
     name: '셀프 인테리어 카페',
     webUrl: 'https://cafe.naver.com/f-e/cafes/23700418/menus/41?viewType=L',
+    mobileUrl: 'https://m.cafe.naver.com/sellin',
     cafeId: 'sellin'
   },
   // 강사모 카페
   gangsamo: {
     name: '강사모 카페',
     webUrl: 'https://cafe.naver.com/f-e/cafes/10258021/menus/150?viewType=L',
+    mobileUrl: 'https://m.cafe.naver.com/iampricelee',
     cafeId: 'iampricelee'
   },
   // 다이렉트 결혼준비 카페
   marry: {
     name: '다이렉트 결혼준비 카페',
     webUrl: 'https://cafe.naver.com/f-e/cafes/25228091/menus/155?viewType=L',
+    mobileUrl: 'https://m.cafe.naver.com/directwedding',
     cafeId: 'directwedding'
   },
   // 인스타그램 @dolbomstore
@@ -331,27 +336,13 @@ if (isKakaoTalk) {
 }
 
 // ============================================
-// PC URL → 모바일 URL 자동 변환
-// 모바일에서 cafe.naver.com을 열면 PC 버전으로 강제 표시되는 문제 해결
-// 예: cafe.naver.com/f-e/cafes/10094499/menus/1064
-//   → m.cafe.naver.com/ca-fe/cafes/10094499/menus/1064
+// 모바일이면 mobileUrl, PC면 webUrl 반환
 // ============================================
-function toMobileUrl(url) {
-  if (!url) return url;
-  // 이미 모바일이면 그대로
-  if (url.indexOf('m.cafe.naver.com') !== -1) return url;
-  // 네이버 카페가 아니면 그대로 (인스타 등)
-  if (url.indexOf('cafe.naver.com') === -1) return url;
-  // PC URL → 모바일 URL
-  return url
-    .replace('https://cafe.naver.com/f-e/', 'https://m.cafe.naver.com/ca-fe/')
-    .replace('http://cafe.naver.com/f-e/', 'https://m.cafe.naver.com/ca-fe/')
-    .replace('https://cafe.naver.com/', 'https://m.cafe.naver.com/');
-}
-
-// 모바일이면 모바일 URL, PC면 원본 URL 반환
 function getOptimalUrl() {
-  return (isIOS || isAndroid) ? toMobileUrl(target.webUrl) : target.webUrl;
+  if (isIOS || isAndroid) {
+    return target.mobileUrl || target.webUrl;
+  }
+  return target.webUrl;
 }
 
 // ============================================
@@ -371,26 +362,18 @@ function openTarget() {
     return;
   }
 
-  // 네이버 카페 — 모바일이면 m.cafe.naver.com 사용 (PC 버전 강제 표시 방지)
-  const finalUrl = getOptimalUrl();
-
+  // 네이버 카페
   if (isAndroid) {
-    // 안드로이드: Intent URI로 네이버 카페 앱 시도 → 없으면 모바일 웹
-    const intentUrl = `intent://${finalUrl.replace('https://', '')}#Intent;scheme=https;package=com.nhn.android.navercafe;S.browser_fallback_url=${encodeURIComponent(finalUrl)};end`;
+    // 안드로이드: 카페 앱 시도 (intent) → 없으면 모바일 웹
+    const mobileUrl = target.mobileUrl || target.webUrl;
+    const intentUrl = `intent://${mobileUrl.replace('https://', '')}#Intent;scheme=https;package=com.nhn.android.navercafe;S.browser_fallback_url=${encodeURIComponent(mobileUrl)};end`;
     window.location.href = intentUrl;
   } else if (isIOS) {
-    // iOS: 네이버 앱 딥링크 시도 후 모바일 웹으로 fallback
-    const appUrl = `naversearchapp://inappbrowser?url=${encodeURIComponent(finalUrl)}&target=mini`;
-    const start = Date.now();
-    window.location.href = appUrl;
-    // 1.5초 후 앱 안 열렸으면 모바일 웹으로
-    setTimeout(() => {
-      if (Date.now() - start < 2000 && document.visibilityState === 'visible') {
-        window.location.href = finalUrl;
-      }
-    }, 1500);
+    // iOS: 모바일 사파리에서 모바일 웹으로 직접 이동
+    // 카페 앱 설치되어 있으면 사파리가 자동으로 "앱으로 열기" 옵션 표시
+    window.location.href = target.mobileUrl || target.webUrl;
   } else {
-    // PC면 PC URL 그대로
+    // PC: PC URL 그대로
     window.location.href = target.webUrl;
   }
 }
