@@ -178,10 +178,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
   <div class="reward-header">
     <div class="reward-amount" id="rewardTotal">0원</div>
-    <div class="reward-max">최대 11만원 캐시백</div>
+    <div class="reward-max">최대 12만원 캐시백</div>
   </div>
   <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-  <div class="progress-label" id="progressLabel">0 / 110,000원</div>
+  <div class="progress-label" id="progressLabel">0 / 120,000원</div>
   <div class="paid-info" id="paidInfo">
     <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
     <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
@@ -496,12 +496,11 @@ function renderMissions(){
     card.innerHTML=`<div class="mission-header" onclick="toggleMission(${idx})">
       <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
       <div class="mission-info"><h4>${m.title}</h4>${(m.tag||m.tag2)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${m.tag?`<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag}</span>`:''}${m.tag2?`<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag2}</span>`:''}</div>`:''}${m.desc?`<div style="font-size:10px;color:var(--text3);margin-top:4px">${m.desc}</div>`:''}${m.note?`<div style="font-size:11px;color:var(--orange);margin-top:3px;font-weight:600">${m.note}</div>`:''}${m.keyword?`<div style="font-size:10px;color:var(--red);margin-top:3px;font-weight:600">키워드: ${m.keyword}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
-      ${!done&&(m.link||m.links)?`<button class="ext-link" onclick="event.stopPropagation();openWriteLink(${idx})" title="작성하러 가기">↗</button>`:''}
       <span class="mission-badge ${badgeCls}" ${paid?'style="background:#e3faf1;color:#20c997"':''}>${badgeText}</span>
     </div>
     <div class="mission-body" id="mbody${idx}">
       ${done?`<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">${paid?'💰 지급완료!':'✅ 달성 완료!'} (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>${(s.url && s.url.toString().indexOf('http')===0)?`<button class="photo-btn" onclick="showPhotoModal('${s.url.toString().replace(/'/g,"\\'")}')">📷 사진 보기</button>`:''}</div>`:`
-      ${m.link?`<button class="go-write-btn" onclick="openWriteLink(${idx})"><span>✏️ ${m.linkLabel||'카페'}에서 작성하기</span><span class="arrow">→</span></button>`:m.links?`<button class="go-write-btn" onclick="openWriteLink(${idx})"><span>✏️ 카페 선택해서 작성하기</span><span class="arrow">→</span></button>`:''}
+      ${m.link?`<button class="go-write-btn" onclick="openWriteLink(${idx})"><span>${m.linkLabel||'카페'}에서 작성하기</span><span class="arrow">→</span></button>`:m.links?`<button class="go-write-btn" onclick="openWriteLink(${idx})"><span>카페 선택해서 작성하기</span><span class="arrow">→</span></button>`:''}
       <div class="upload-zone" id="uzone${idx}"><input type="file" accept="image/*" onchange="handleUpload(${idx},this)"><div class="icon">📷</div><div class="txt">스크린샷을 업로드해 주세요</div></div>
       <div class="upload-preview" id="uprev${idx}"><img id="uimg${idx}"></div>
       <button class="submit-btn primary" onclick="submitMission(${idx})" id="msubmit${idx}" disabled>미션 달성하기</button>`}
