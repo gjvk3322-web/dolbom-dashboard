@@ -1631,23 +1631,45 @@ async function fetchFunnelData(range){
       url = `${APPS_SCRIPT_URL}?type=monthlyFunnel`;
       const res = await fetch(url);
       const json = await res.json();
-      data = (json.data || []).map(m => ({
-        label: m.month || '',
-        sample: parseInt(m.sample) || 0,
-        reserved: parseInt(m.reserved) || 0,
-        installed: parseInt(m.installed) || 0
-      }));
+      data = (json.data || []).map(m => {
+        let lbl = String(m.month || '');
+        // ISO 또는 날짜 객체로 들어왔을 때 "M월"로 변환
+        if(lbl.includes('T') || lbl.includes('-') || lbl.includes('Z')){
+          const dateObj = new Date(lbl);
+          if(!isNaN(dateObj)) lbl = (dateObj.getMonth()+1) + '월';
+        }
+        // 숫자 형식(5)으로 들어왔으면 "5월" 추가
+        if(/^\d+$/.test(lbl)) lbl = lbl + '월';
+        return {
+          label: lbl,
+          sample: parseInt(m.sample) || 0,
+          reserved: parseInt(m.reserved) || 0,
+          installed: parseInt(m.installed) || 0
+        };
+      });
     } else {
       url = `${APPS_SCRIPT_URL}?type=dailyFunnel`;
       const res = await fetch(url);
       const json = await res.json();
-      const all = (json.data || []).map(d => ({
-        date: d.date,
-        label: d.label || '',
-        sample: parseInt(d.sample) || 0,
-        reserved: parseInt(d.reserved) || 0,
-        installed: parseInt(d.installed) || 0
-      }));
+      const all = (json.data || []).map(d => {
+        // 라벨 정규화: ISO 형식이 들어와도 M/D로 변환
+        let lbl = String(d.label || '');
+        if(lbl.includes('T') || lbl.includes('-') || lbl.includes('Z')){
+          const dateObj = new Date(lbl);
+          if(!isNaN(dateObj)) lbl = (dateObj.getMonth()+1) + '/' + dateObj.getDate();
+        }
+        if(!lbl && d.date){
+          const dateObj = new Date(d.date);
+          if(!isNaN(dateObj)) lbl = (dateObj.getMonth()+1) + '/' + dateObj.getDate();
+        }
+        return {
+          date: d.date,
+          label: lbl,
+          sample: parseInt(d.sample) || 0,
+          reserved: parseInt(d.reserved) || 0,
+          installed: parseInt(d.installed) || 0
+        };
+      });
 
       if(range === '7d'){
         data = all.slice(-7);
