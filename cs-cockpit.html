@@ -1633,13 +1633,18 @@ async function fetchFunnelData(range){
       const json = await res.json();
       data = (json.data || []).map(m => {
         let lbl = String(m.month || '');
-        // ISO 또는 날짜 객체로 들어왔을 때 "M월"로 변환
-        if(lbl.includes('T') || lbl.includes('-') || lbl.includes('Z')){
-          const dateObj = new Date(lbl);
-          if(!isNaN(dateObj)) lbl = (dateObj.getMonth()+1) + '월';
+        // ★ "2026-05" 형식 우선 처리 (Code.gs v3 표준 형식)
+        const ymMatch = lbl.match(/^(\d{4})-(\d{2})$/);
+        if(ymMatch){
+          lbl = "'" + ymMatch[1].slice(2) + "년 " + parseInt(ymMatch[2]) + "월";
         }
-        // 숫자 형식(5)으로 들어왔으면 "5월" 추가
-        if(/^\d+$/.test(lbl)) lbl = lbl + '월';
+        // ISO 또는 날짜 객체로 들어왔을 때 fallback
+        else if(lbl.includes('T') || lbl.includes('Z')){
+          const dateObj = new Date(lbl);
+          if(!isNaN(dateObj)) lbl = "'" + String(dateObj.getFullYear()).slice(2) + "년 " + (dateObj.getMonth()+1) + "월";
+        }
+        // 숫자 형식(5)으로 들어왔으면 "5월"
+        else if(/^\d+$/.test(lbl)) lbl = lbl + '월';
         return {
           label: lbl,
           sample: parseInt(m.sample) || 0,
