@@ -691,30 +691,6 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
 <!-- ┌────────────────────────────────────────────────────────┐
      │ 영역 4 매출요약 (col-8) │ 영역 5 재고 (col-4)           │
      └────────────────────────────────────────────────────────┘ -->
-<div class="grid">
-
-  <!-- 🟡 영역 5 · 재고 요약 (실데이터 · getStock API) -->
-  <div class="section col-12">
-    <div class="section-head">
-      <div class="section-title"><span class="section-icon icon-gold">📦</span>재고 현황</div>
-      <button class="section-more" onclick="loadStockSummary()">🔄</button>
-    </div>
-
-    <div id="stockRows" style="display:flex; flex-direction:column; gap:10px">
-      <div style="padding:14px; text-align:center; color:var(--muted); font-size:11.5px">재고 데이터 로드 중…</div>
-    </div>
-
-    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line)">
-      <div class="stat-label" style="margin-bottom:6px">재고 기준</div>
-      <div style="font-size:11.5px; color:var(--soft); line-height:1.5" id="stockBaseInfo">
-        stock.html과 동일 계산 (실사 + 입고 - 시공)<br>
-        <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650">📦 전체 재고 보기 →</a>
-      </div>
-    </div>
-  </div>
-
-</div>
-
 <!-- ┌────────────────────────────────────────────────────────┐
      │ 영역 3 샘플(col-7) │ 영역 6 후기+알림톡 (col-5)        │
      └────────────────────────────────────────────────────────┘ -->
@@ -917,6 +893,20 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
       </div>
       <div id="categoryRows">
         <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
+      </div>
+    </div>
+
+    <!-- 📦 재고 현황 (영역 5에서 이동) · 2026-05-18 -->
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line)">
+      <div class="stat-label" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between">
+        <span>📦 재고 현황</span>
+        <button onclick="loadStockSummary()" style="font-size:10px; padding:3px 8px; border:1px solid var(--line); border-radius:5px; background:#fff; color:var(--soft); cursor:pointer">🔄</button>
+      </div>
+      <div id="stockRows" style="display:flex; flex-direction:column; gap:8px">
+        <div style="padding:10px; text-align:center; color:var(--muted); font-size:11px">재고 로드 중…</div>
+      </div>
+      <div style="margin-top:8px; font-size:10.5px; color:var(--muted); line-height:1.45" id="stockBaseInfo">
+        실사 + 입고 - 시공 · <a href="stock.html" style="color:var(--accent-dk); text-decoration:none; font-weight:650">전체 재고 보기 →</a>
       </div>
     </div>
   </div>
