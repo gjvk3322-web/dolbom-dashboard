@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<title>돌봄매트 - 마미톡 후기 작성하기</title>
+<style>
+  :root {
+    --blue: #8BB5C0;
+    --blue-dark: #6B95A0;
+    --pink: #FFB6C1;
+    --pink-dark: #FF8FA3;
+    --beige: #F5EFE6;
+    --kakao: #FEE500;
+    --kakao-dark: #3C1E1E;
+    --text: #2D2D2D;
+    --text2: #6B6B6B;
+    --text3: #999;
+    --bg: #FAFAF8;
+    --card: #FFFFFF;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  .logo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: -0.3px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 32px 24px;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    animation: fadeIn 0.5s ease 0.1s forwards;
+  }
+  .icon-wrap {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+  .reward-badge {
+    display: inline-block;
+    background: #FFF8E7;
+    color: #B8860B;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .steps {
+    background: var(--beige);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+  .steps-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .step:last-child { margin-bottom: 0; }
+  .step-num {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    background: var(--pink-dark);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .step-text { flex: 1; padding-top: 2px; }
+  .step-text strong { color: var(--text); font-weight: 600; }
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(255,143,163,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-decoration: none;
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(255,143,163,0.2);
+  }
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: var(--card);
+    color: var(--text2);
+    border: 1px solid #E5E5E5;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: background 0.1s;
+    text-decoration: none;
+  }
+  .btn-secondary:active { background: #F5F5F5; }
+  .divider {
+    margin: 16px 0;
+    height: 1px;
+    background: #EEEEEE;
+  }
+  .helper-text {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--blue-dark);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: background 0.1s;
+  }
+  .back-link:active { background: rgba(139,181,192,0.1); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">돌봄매트</div>
+  
+  <div class="card">
+    <div class="icon-wrap">🤱</div>
+    
+    <h1>마미톡 후기 작성</h1>
+    <p class="subtitle">
+      마미톡 앱에서 돌봄매트 후기를 남겨주세요.<br>
+      사진 업로드 시 캐시백 1만원!
+    </p>
+    
+    <div class="reward-badge">💰 +10,000원 캐시백</div>
+    
+    <div class="steps">
+      <div class="steps-title">📝 후기 작성 안내</div>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">아래 <strong>"마미톡 앱 열기"</strong> 버튼을 눌러 앱을 실행하세요</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>커뮤니티 게시판</strong>에 돌봄매트 후기 작성</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">후기 화면을 <strong>스크린샷</strong>으로 캡처</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">후기이벤트 페이지로 돌아가 스크린샷 업로드</div>
+      </div>
+    </div>
+    
+    <button class="btn-primary" id="open-app-btn">
+      🤱 마미톡 앱 열기
+    </button>
+    
+    <div class="divider"></div>
+    
+    <p class="helper-text" style="margin-top:0; margin-bottom:10px;">앱이 없으시면 다운로드 받으세요</p>
+    
+    <a class="btn-secondary" id="ios-btn" href="https://apps.apple.com/kr/app/id1494440076" target="_blank">
+      🍎 App Store에서 받기
+    </a>
+    
+    <a class="btn-secondary" id="android-btn" href="https://play.google.com/store/apps/details?id=com.mommytalkappv1" target="_blank">
+      🤖 Google Play에서 받기
+    </a>
+    
+    <p class="helper-text">
+      마미톡 앱에서 후기 작성 후<br>
+      이전 페이지로 돌아와 스크린샷을 업로드해주세요
+    </p>
+  </div>
+  
+  <a class="back-link" href="javascript:history.back()">← 후기이벤트로 돌아가기</a>
+</div>
+
+<script>
+  // iOS / Android 자동 감지
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isAndroid = /android/i.test(ua);
+  
+  // 플랫폼별 우선순위로 버튼 표시
+  const iosBtn = document.getElementById('ios-btn');
+  const androidBtn = document.getElementById('android-btn');
+  
+  if (isIOS) {
+    androidBtn.style.display = 'none';
+  } else if (isAndroid) {
+    iosBtn.style.display = 'none';
+  }
+  // 데스크톱은 둘 다 표시
+  
+  // 마미톡 앱 열기 (앱 설치 시 자동 실행, 없으면 스토어로)
+  document.getElementById('open-app-btn').addEventListener('click', function() {
+    if (isIOS) {
+      // iOS: 앱 열기 시도 → 일정 시간 후 앱스토어로
+      const appStoreUrl = 'https://apps.apple.com/kr/app/id1494440076';
+      // 마미톡 iOS 딥링크 (앱 개발자가 등록한 경우만 작동)
+      window.location.href = 'mmtalk://';
+      setTimeout(function() {
+        window.location.href = appStoreUrl;
+      }, 1500);
+    } else if (isAndroid) {
+      // Android: intent URL 사용 → 앱 없으면 자동으로 플레이스토어로
+      const intentUrl = 'intent://#Intent;scheme=mmtalk;package=com.mommytalkappv1;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.mommytalkappv1;end';
+      window.location.href = intentUrl;
+    } else {
+      // 데스크톱: 안내 메시지
+      alert('마미톡은 모바일 앱이에요. 핸드폰에서 이 페이지를 열어주세요!');
+    }
+  });
+</script>
+</body>
+</html>
