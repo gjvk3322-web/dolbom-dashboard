@@ -494,7 +494,7 @@ const MISSIONS=[
   // 3번: 시공 당일 후기 ①
   {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',desc:'맘스홀릭 카페 > 돌봄매트 게시판'},
   // 4번: 시공 당일 후기 ②
-  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',desc:'셀인 > 자유수다방  /  강사모 > 반려용품 사용후기  /  다이렉트 결혼준비 > 임신·출산·육아  중 1곳'},
+  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',desc:'셀인 > 자유수다방<br>강사모 > 반려용품 사용후기<br>다이렉트 결혼준비 > 임신·출산·육아<br>위 카페 중 1곳에 작성'},
   // 5번: 인스타그램
   {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',desc:'@dolbomstore 태그 + #돌봄매트 #매트시공 해시태그 필수'},
   // 6번: 마미톡 (작성하기 버튼 유지 — 안내 페이지 필요)
@@ -554,7 +554,7 @@ function renderMissions(){
     const badgeCls=paid?'done':done?'done':'pending';
     card.innerHTML=`<div class="mission-header" onclick="toggleMission(${idx})">
       <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
-      <div class="mission-info"><h4>${m.title}</h4>${(m.tag||m.tag2)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${m.tag?`<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag}</span>`:''}${m.tag2?`<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag2}</span>`:''}</div>`:''}${m.desc?`<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">📍 ${m.desc}</div>`:''}${m.note?`<div style="font-size:11px;color:var(--orange);margin-top:3px;font-weight:600">${m.note}</div>`:''}${m.keyword?`<div style="font-size:10px;color:var(--red);margin-top:3px;font-weight:600">키워드: ${m.keyword}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
+      <div class="mission-info"><h4>${m.title}</h4>${(m.tag||m.tag2)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${m.tag?`<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag}</span>`:''}${m.tag2?`<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag2}</span>`:''}</div>`:''}${m.desc?`<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">${m.desc}</div>`:''}${m.note?`<div style="font-size:11px;color:var(--orange);margin-top:3px;font-weight:600">${m.note}</div>`:''}${m.keyword?`<div style="font-size:10px;color:var(--red);margin-top:3px;font-weight:600">키워드: ${m.keyword}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
       <span class="mission-badge ${badgeCls}" ${paid?'style="background:#e3faf1;color:#20c997"':''}>${badgeText}</span>
     </div>
     <div class="mission-body" id="mbody${idx}">
