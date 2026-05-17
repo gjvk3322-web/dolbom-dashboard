@@ -693,45 +693,8 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
      └────────────────────────────────────────────────────────┘ -->
 <div class="grid">
 
-  <!-- 🟣 영역 4 · 매출 요약 (AS/실측 제외) -->
-  <div class="section col-8">
-    <div class="section-head">
-      <div class="section-title"><span class="section-icon icon-purple">💰</span>매출 요약 <span class="badge bg-gray" id="revMonthBadge">4월</span></div>
-      <button class="section-more" onclick="loadMonthStats()">🔄 새로고침</button>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px">
-      <div>
-        <div class="stat-label" style="margin-bottom:8px">구분별</div>
-        <div id="categoryRows">
-          <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
-        </div>
-      </div>
-      <div>
-        <div class="stat-label" style="margin-bottom:8px">제품별 <span style="color:var(--muted); font-weight:500">(장수 기반)</span></div>
-        <div id="productRows">
-          <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 🔥 예약 채널 분해 (실데이터 연동) -->
-    <div id="channelBreakdown" style="margin-top:14px; padding:11px 14px; background:var(--green-bg); border-radius:var(--radius-sm); font-size:11.5px; color:var(--green-dk); line-height:1.6; display:none">
-      <b>💡 예약 <span id="cbTotal">0</span>건 채널 분해:</b>
-      샘플 경유 <b><span id="cbViaSample">0</span>건</b> (<span id="cbViaSampleRate">0</span>%) ·
-      <b>직접 예약 <span id="cbDirect">0</span>건 (<span id="cbDirectRate">0</span>%)</b> ★
-      → 지인추천·재시공·입소문이 진짜 주력 채널
-    </div>
-
-    <div class="links-row">
-      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ" target="_blank">📊 월간마진분석</a>
-      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit#gid=144225567" target="_blank">📋 시공스케줄 부산</a>
-      <a class="link-chip" href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit#gid=1995986285" target="_blank">📋 시공스케줄 경기</a>
-    </div>
-  </div>
-
   <!-- 🟡 영역 5 · 재고 요약 (실데이터 · getStock API) -->
-  <div class="section col-4">
+  <div class="section col-12">
     <div class="section-head">
       <div class="section-title"><span class="section-icon icon-gold">📦</span>재고 현황</div>
       <button class="section-more" onclick="loadStockSummary()">🔄</button>
@@ -945,51 +908,16 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     <div style="margin-top:16px; padding:10px 14px; background:var(--warm); border-radius:var(--radius-sm); font-size:11px; color:var(--soft); line-height:1.55">
       💡 <b style="color:var(--text)">시공 건수 기준:</b> 시공스케줄 직접 카운팅 (100% 정확).<br>⚠️ 1000매트 신제품은 <b>월별 ▼</b>로 트렌드 확인 가능!
     </div>
-  </div>
 
-  <!-- 🆕 숨고 유입 KPI · 2026-05-10 추가 -->
-  <div class="section col-12">
-    <div class="section-head">
-      <div class="section-title">
-        <span class="section-icon icon-blue">🎯</span>숨고 유입 KPI
-        <span class="badge bg-gray" id="soomgoBadge">최근 30일</span>
+    <!-- 💰 매출 구분별 (영역 4에서 이동) · 2026-05-18 -->
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line)">
+      <div class="stat-label" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between">
+        <span>💰 매출 구분별 <span style="color:var(--muted); font-weight:500" id="revMonthBadge">(이번달)</span></span>
+        <button onclick="loadMonthStats()" style="font-size:10px; padding:3px 8px; border:1px solid var(--line); border-radius:5px; background:#fff; color:var(--soft); cursor:pointer">🔄</button>
       </div>
-      <div style="display:flex; gap:8px; align-items:center">
-        <select id="soomgoPeriodSelect" onchange="loadSoomgoKPI()" style="padding:6px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; background:#fff; cursor:pointer">
-          <option value="7">최근 7일</option>
-          <option value="30" selected>최근 30일</option>
-          <option value="90">최근 90일</option>
-        </select>
-        <button class="section-more" onclick="loadSoomgoKPI()">🔄 새로고침</button>
+      <div id="categoryRows">
+        <div style="padding:12px 0; text-align:center; color:var(--muted); font-size:11.5px">로드 중…</div>
       </div>
-    </div>
-
-    <div class="adrank-kpis" style="grid-template-columns:repeat(5,1fr); gap:12px; margin-top:12px">
-      <div class="adrank-kpi blue">
-        <div class="adrank-kpi-label">📞 답장 수</div>
-        <div class="adrank-kpi-value" id="soomgoTotal">—</div>
-      </div>
-      <div class="adrank-kpi blue">
-        <div class="adrank-kpi-label">📦 샘플/예약 전환</div>
-        <div class="adrank-kpi-value" id="soomgoSample">—</div>
-      </div>
-      <div class="adrank-kpi green">
-        <div class="adrank-kpi-label">🏠 시공 전환</div>
-        <div class="adrank-kpi-value" id="soomgoInstall">—</div>
-      </div>
-      <div class="adrank-kpi green">
-        <div class="adrank-kpi-label">💰 누적 매출</div>
-        <div class="adrank-kpi-value" id="soomgoRevenue">—</div>
-      </div>
-      <div class="adrank-kpi green">
-        <div class="adrank-kpi-label">💎 답장당 ROI</div>
-        <div class="adrank-kpi-value" id="soomgoROI">—</div>
-      </div>
-    </div>
-    
-    <div style="margin-top:14px; padding:10px 14px; background:#f8fafc; border-radius:8px; font-size:11.5px; color:var(--muted); line-height:1.6">
-      💡 <b>추적 방식:</b> cs-quote에서 답장 복사 시 자동 기록 → 샘플접수·시공스케줄 시트와 이름 매칭 → 상태 자동 업데이트<br>
-      📊 <b>답장당 ROI:</b> 누적매출 ÷ 답장수. 숨고 답장당 비용보다 높으면 광고비 늘릴만함, 낮으면 메시지·답장 텍스트 개선 필요
     </div>
   </div>
 
@@ -1058,6 +986,52 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
   </div>
 
 </div>
+
+  <!-- 🆕 숨고 유입 KPI · 2026-05-10 추가 -->
+  <div class="section col-12">
+    <div class="section-head">
+      <div class="section-title">
+        <span class="section-icon icon-blue">🎯</span>숨고 유입 KPI
+        <span class="badge bg-gray" id="soomgoBadge">최근 30일</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <select id="soomgoPeriodSelect" onchange="loadSoomgoKPI()" style="padding:6px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; background:#fff; cursor:pointer">
+          <option value="7">최근 7일</option>
+          <option value="30" selected>최근 30일</option>
+          <option value="90">최근 90일</option>
+        </select>
+        <button class="section-more" onclick="loadSoomgoKPI()">🔄 새로고침</button>
+      </div>
+    </div>
+
+    <div class="adrank-kpis" style="grid-template-columns:repeat(5,1fr); gap:12px; margin-top:12px">
+      <div class="adrank-kpi blue">
+        <div class="adrank-kpi-label">📞 답장 수</div>
+        <div class="adrank-kpi-value" id="soomgoTotal">—</div>
+      </div>
+      <div class="adrank-kpi blue">
+        <div class="adrank-kpi-label">📦 샘플/예약 전환</div>
+        <div class="adrank-kpi-value" id="soomgoSample">—</div>
+      </div>
+      <div class="adrank-kpi green">
+        <div class="adrank-kpi-label">🏠 시공 전환</div>
+        <div class="adrank-kpi-value" id="soomgoInstall">—</div>
+      </div>
+      <div class="adrank-kpi green">
+        <div class="adrank-kpi-label">💰 누적 매출</div>
+        <div class="adrank-kpi-value" id="soomgoRevenue">—</div>
+      </div>
+      <div class="adrank-kpi green">
+        <div class="adrank-kpi-label">💎 답장당 ROI</div>
+        <div class="adrank-kpi-value" id="soomgoROI">—</div>
+      </div>
+    </div>
+    
+    <div style="margin-top:14px; padding:10px 14px; background:#f8fafc; border-radius:8px; font-size:11.5px; color:var(--muted); line-height:1.6">
+      💡 <b>추적 방식:</b> cs-quote에서 답장 복사 시 자동 기록 → 샘플접수·시공스케줄 시트와 이름 매칭 → 상태 자동 업데이트<br>
+      📊 <b>답장당 ROI:</b> 누적매출 ÷ 답장수. 숨고 답장당 비용보다 높으면 광고비 늘릴만함, 낮으면 메시지·답장 텍스트 개선 필요
+    </div>
+  </div>
 
 <!-- ═══ 영역 레이블 · 2줄 ═══ -->
 <div class="area-label">MARKETING · 마케팅 & 유입</div>
@@ -1431,7 +1405,6 @@ button,input,select{font-family:inherit;letter-spacing:-0.01em}
     </div>
   </div>
 </div>
-
 
 <!-- ═══ 영역 레이블 · 4줄 ═══ -->
 <div class="area-label">EXTERNAL · 외부 데이터 연동</div>
@@ -2210,7 +2183,6 @@ function refreshAll(){
   });
 }
 
-
 // ═══════════════════════════════════════════════════════════════
 // 🆕 v0.5.1 · KPI 5개 + 월 선택 드롭다운 + 토글 버그 수정
 // ═══════════════════════════════════════════════════════════════
@@ -2361,7 +2333,6 @@ function renderKPIs(){
   }
 }
 
-
 async function loadTodayStats(){
   try{
     const res = await fetch(`${APPS_SCRIPT_URL}?type=todayStats`);
@@ -2374,7 +2345,6 @@ async function loadTodayStats(){
     console.error('todayStats 로드 실패:', e);
   }
 }
-
 
 async function loadMonthStats(month){
   try{
@@ -2456,7 +2426,6 @@ async function loadMonthStats(month){
     console.error('monthStats 로드 실패:', e);
   }
 }
-
 
 async function loadStockSummary(){
   try{
@@ -2559,7 +2528,6 @@ async function loadStockSummary(){
   }
 }
 
-
 async function loadReviewStats(){
   try{
     const res = await fetch(`${APPS_SCRIPT_URL}?type=reviewStats`);
@@ -2596,7 +2564,6 @@ async function loadReviewStats(){
   }
 }
 
-
 async function loadAlimtalkStats(){
   try{
     const res = await fetch(`${APPS_SCRIPT_URL}?type=alimtalkStats`);
@@ -2608,7 +2575,6 @@ async function loadAlimtalkStats(){
     console.error('alimtalkStats 로드 실패:', e);
   }
 }
-
 
 // 🆕 입주아파트 파이프라인 로드 (v0.5.2)
 async function loadAptPipeline(){
@@ -2712,7 +2678,6 @@ async function loadAptPipeline(){
   }
 }
 
-
 // 🆕 상담폰 통계 로드 (cs-phone.html 데이터 · 받은/놓친/콜백 3필드)
 async function loadPhoneStats(){
   try{
@@ -2771,7 +2736,6 @@ async function loadPhoneStats(){
     console.error('상담폰 로드 실패:', e);
   }
 }
-
 
 // 페이지 로드 시 자동 fetch
 window.addEventListener('DOMContentLoaded', () => {
