@@ -257,8 +257,13 @@ var DONE_MESSAGE = '이번 주도 수고하셨습니다.\n부족했던 부분은
 <script>
 var ratings = {};
 var now = new Date();
-var weekNum = Math.ceil(((now - new Date(now.getFullYear(),0,1)) / 86400000 + new Date(now.getFullYear(),0,1).getDay() + 1) / 7);
-document.getElementById('weekBadge').textContent = (now.getMonth()+1) + '월 ' + weekNum + '주차';
+// 토(6)/일(0)이면 안내가 발송된 금요일 기준으로 주차 계산 (Math.ceil 토요일 자정 점프 버그 해결)
+var refDate = new Date(now);
+var dow = refDate.getDay();
+if (dow === 6) refDate.setDate(refDate.getDate() - 1); // 토 → 금
+else if (dow === 0) refDate.setDate(refDate.getDate() - 2); // 일 → 금
+var weekNum = Math.ceil(((refDate - new Date(refDate.getFullYear(),0,1)) / 86400000 + new Date(refDate.getFullYear(),0,1).getDay() + 1) / 7);
+document.getElementById('weekBadge').textContent = (refDate.getMonth()+1) + '월 ' + weekNum + '주차';
 
 // 완료 화면 설정 반영
 document.getElementById('doneEmoji').textContent = DONE_EMOJI;
