@@ -27,11 +27,8 @@ gtag('event', 'cs_welcome_view', {source: urlParams.get('from') || 'direct'});
   --primary-lighter:#F1F8E9;
   --warm-bg:#FBF5EC;
   --warm-bg-light:#FFF9F0;
-  --warm-bg-card:#FFFCF6;
   --pink-soft:#FAEAE0;
   --pink-deep:#E08570;
-  --beige-line:#EAE1D2;
-  --text:#1a1a1a;
   --text-strong:#0f1f12;
   --text-body:#2a3a2d;
   --muted:#5a625c;
@@ -47,7 +44,7 @@ html{scroll-behavior:smooth}
 body{
   margin:0;
   font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
-  color:var(--text);
+  color:#1a1a1a;
   background:linear-gradient(180deg,#FBF5EC 0%,#F8F2E8 50%,#FCF8F0 100%);
   line-height:1.8;
   word-break:keep-all;
@@ -68,8 +65,6 @@ a{color:inherit;text-decoration:none}
 .brand-kicker{display:inline-block;color:var(--primary);font-size:13px;font-weight:700;margin-bottom:14px}
 .hero-title{margin:0;font-size:26px;line-height:1.42;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
 .hero-title .accent{color:var(--primary)}
-.hero-desc{margin:16px 0 0;color:var(--text-body);font-size:14.5px;font-weight:500;line-height:1.8}
-.hero-desc strong{color:var(--text-strong);font-weight:700}
 .hero-chips{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
 .hero-chip{padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--primary-dark);font-size:12px;font-weight:700}
 .hero-image-wrap{margin-top:24px}
@@ -77,15 +72,14 @@ a{color:inherit;text-decoration:none}
 
 /* === 메시지 카드 === */
 .message-card{margin-top:18px;padding:26px 22px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
-.message-title{margin:0 0 12px;font-size:19px;line-height:1.5;letter-spacing:-.025em;font-weight:800;color:var(--text-strong)}
+.message-title{margin:0 0 18px;font-size:19px;line-height:1.5;letter-spacing:-.025em;font-weight:800;color:var(--text-strong)}
 .message-title strong{color:var(--primary)}
-.message-desc{margin:0 0 18px;color:var(--muted);font-size:14px;font-weight:500;line-height:1.8}
 .message-box{padding:18px 20px;border-radius:14px;background:var(--warm-bg);border:1px solid var(--line)}
 .message-box-title{margin:0 0 12px;color:var(--text-strong);font-size:13px;font-weight:700}
 .message-box ul{margin:0;padding:0;list-style:none}
-.message-box li{position:relative;padding-left:22px;font-size:13.5px;color:var(--text-body);font-weight:500;line-height:1.7;margin-bottom:8px}
+.message-box li{position:relative;padding-left:22px;font-size:13.5px;color:var(--text-body);font-weight:500;line-height:1.75;margin-bottom:9px}
 .message-box li:last-child{margin-bottom:0}
-.message-box li::before{content:"";position:absolute;left:0;top:10px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.message-box li::before{content:"";position:absolute;left:0;top:11px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
 
 /* === 섹션 === */
 .section{margin-top:18px;padding:30px 24px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
@@ -95,7 +89,6 @@ a{color:inherit;text-decoration:none}
 .section h2 em{color:var(--primary);font-style:normal;font-weight:800}
 .section .lead{margin:12px 0 0;color:var(--muted);font-size:14px;font-weight:500;line-height:1.8}
 
-/* === 섹션 이미지 === */
 .section-image{width:100%;aspect-ratio:5/3;object-fit:cover;border-radius:14px;margin:18px 0 4px;background:var(--warm-bg-light)}
 
 /* === info 카드 === */
@@ -104,22 +97,9 @@ a{color:inherit;text-decoration:none}
 .info-card h3{margin:0 0 6px;color:var(--text-strong);font-size:14.5px;font-weight:800;line-height:1.4;letter-spacing:-.015em}
 .info-card p{margin:0;color:var(--text-body);font-size:13.5px;font-weight:500;line-height:1.8}
 
-/* === 실제 후기 인용 박스 (신규) === */
-.review-quote{
-  margin-top:18px;padding:20px 22px;
-  background:#fff;
-  border-left:3px solid var(--primary);
-  border-radius:0 12px 12px 0;
-  box-shadow:0 4px 12px rgba(0,0,0,.04);
-  position:relative;
-}
-.review-quote::before{
-  content:"";display:block;
-  width:24px;height:18px;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E7D32' opacity='0.3'><path d='M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z'/></svg>");
-  background-size:contain;background-repeat:no-repeat;
-  margin-bottom:8px;
-}
+/* === 실제 후기 인용 박스 === */
+.review-quote{margin-top:18px;padding:20px 22px;background:#fff;border-left:3px solid var(--primary);border-radius:0 12px 12px 0;box-shadow:0 4px 12px rgba(0,0,0,.04);position:relative}
+.review-quote::before{content:"";display:block;width:24px;height:18px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E7D32' opacity='0.3'><path d='M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z'/></svg>");background-size:contain;background-repeat:no-repeat;margin-bottom:8px}
 .review-quote-text{color:#3a4a3c;font-size:14px;font-weight:500;line-height:1.75;font-style:italic}
 .review-quote-meta{margin-top:10px;color:var(--muted);font-size:11.5px;font-weight:600}
 
@@ -129,22 +109,12 @@ a{color:inherit;text-decoration:none}
 .bullet li:last-child{margin-bottom:0}
 .bullet li::before{content:"";position:absolute;left:0;top:6px;width:18px;height:18px;border-radius:5px;background:var(--primary-soft);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");background-size:12px;background-position:center;background-repeat:no-repeat}
 
-/* === 강조 박스 === */
+/* === 강조 박스들 === */
 .highlight-box{margin-top:18px;padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,var(--primary-soft),var(--primary-lighter));border:1px solid rgba(46,125,50,.18);color:var(--primary-dark);font-size:14.5px;font-weight:700;line-height:1.7;letter-spacing:-.015em}
-
 .yellow-box{margin-top:18px;padding:18px 20px;background:linear-gradient(135deg,#FFFBEB,#FFF8E1);border-left:4px solid #FFA000;border-radius:12px}
 .yellow-box-text{color:#5D4037;font-size:14px;font-weight:700;line-height:1.7}
-
-.pink-box{margin-top:18px;padding:18px 20px;background:linear-gradient(135deg,#FCEDE5,#FAEAE0);border-left:4px solid var(--pink-deep);border-radius:12px}
-.pink-box-text{color:#7A4838;font-size:14px;font-weight:700;line-height:1.7}
-
-/* === 비교 표 === */
-.comparison-table{width:100%;margin-top:16px;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:#fff}
-.comparison-table th,.comparison-table td{padding:13px 8px;border-bottom:1px solid var(--line-soft);text-align:center;vertical-align:middle;font-size:13px;line-height:1.6}
-.comparison-table thead th{background:var(--primary-soft);color:var(--primary-dark);font-weight:800;font-size:13.5px}
-.comparison-table tbody th{width:30%;background:var(--warm-bg);color:var(--text-strong);font-weight:700;font-size:12px;text-align:center}
-.comparison-table td{color:var(--text-body);font-weight:600}
-.comparison-table tr:last-child th,.comparison-table tr:last-child td{border-bottom:none}
+.pink-box{margin-top:18px;padding:22px 20px;background:linear-gradient(135deg,#FCEDE5,#FAEAE0);border-left:4px solid var(--pink-deep);border-radius:12px;text-align:center}
+.pink-box-text{color:#7A4838;font-size:15px;font-weight:700;line-height:1.8}
 
 /* === 검증 박스 === */
 .proof-box{margin-top:18px;padding:24px 20px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff}
@@ -153,6 +123,24 @@ a{color:inherit;text-decoration:none}
 .proof-item{padding:16px 4px;text-align:center;background:rgba(255,255,255,.08);border-radius:12px;border:1px solid rgba(255,255,255,.12)}
 .proof-value{display:block;color:#FDD835;font-size:21px;line-height:1;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
 .proof-label{display:block;color:rgba(255,255,255,.94);font-size:11px;font-weight:600;line-height:1.45}
+
+/* === 1M vs 500mm 비교 슬라이더 === */
+.compare-section{margin-top:18px}
+.compare-title{font-size:14px;font-weight:700;color:var(--text-strong);margin-bottom:6px;text-align:center}
+.compare-sub{font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center}
+.compare-box{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;touch-action:none;cursor:col-resize;background:#f0ede6;user-select:none;-webkit-user-select:none}
+.compare-layer{position:absolute;top:0;left:0;width:100%;height:100%;display:grid;gap:2px;padding:4px}
+.compare-left{background:#e8e2d4;z-index:1;clip-path:inset(0 50% 0 0)}
+.compare-right{background:#D6EFD8;z-index:0}
+.mat-cell{border-radius:3px;background:rgba(255,255,255,.45)}
+.compare-right .mat-cell{background:rgba(255,255,255,.4)}
+.compare-label{position:absolute;top:10px;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;z-index:5;pointer-events:none;letter-spacing:-.01em}
+.label-left{left:10px;background:rgba(110,90,60,.92);color:#fff}
+.label-right{right:10px;background:rgba(46,125,50,.92);color:#fff}
+.slider-line{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:4;left:50%;transform:translateX(-50%);pointer-events:none}
+.slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:5;display:flex;align-items:center;justify-content:center;cursor:col-resize}
+.slider-handle svg{width:18px;height:18px}
+.slider-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;font-weight:500}
 
 /* === Timeline === */
 .timeline{margin-top:16px;display:grid;gap:10px}
@@ -189,7 +177,6 @@ a{color:inherit;text-decoration:none}
 .sticky-mobile.hidden{opacity:0;pointer-events:none;transform:translateY(20px)}
 .sticky-mobile a{display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;font-size:14px;font-weight:800;letter-spacing:-.015em}
 
-/* === 푸터 === */
 .footer{text-align:center;padding:24px 20px 0;font-size:11.5px;color:#888;line-height:1.7}
 .footer .brand{font-weight:700;color:#666;display:block;margin-bottom:4px;font-size:12.5px}
 
@@ -222,13 +209,9 @@ a{color:inherit;text-decoration:none}
         샘플을 받아보셨다면,<br>
         이제 <span class="accent">후회 없는<br>선택 기준</span>을 확인하실 차례입니다.
       </h1>
-      <p class="hero-desc">
-        실제 시공매트 후기 데이터를 분석해,<br>
-        구매 전 가장 많이 고민하시는 <strong>9가지 기준</strong>을 순서대로 정리했습니다.
-      </p>
       <div class="hero-chips">
         <span class="hero-chip">층간소음</span>
-        <span class="hero-chip">17T vs 22T</span>
+        <span class="hero-chip">1M vs 500mm</span>
         <span class="hero-chip">틈새·마감·청소</span>
       </div>
     </div>
@@ -240,222 +223,29 @@ a{color:inherit;text-decoration:none}
   <!-- ===== 메시지 카드 ===== -->
   <section class="message-card">
     <h2 class="message-title">
-      실제 후기 580건을 분석한<br>
-      <strong>1분 가이드</strong>입니다.
+      결정 전 꼭 확인하실<br>
+      <strong>7가지 기준</strong>입니다.
     </h2>
-    <p class="message-desc">
-      가격만 볼수록 결정은 더 어려워집니다.<br>
-      샘플을 받아보신 지금이 가장 중요한 비교 순간입니다.
-    </p>
     <div class="message-box">
       <div class="message-box-title">가장 많이 고민하시는 순서</div>
       <ul>
-        <li>층간소음, 정말 잡힐까?</li>
-        <li>폴더매트로 충분할까, 시공매트로 가야 할까?</li>
-        <li>매트 사이 틈과 마감, 정말 깔끔할까?</li>
-        <li>17T와 22T 중 우리 집에 맞는 두께</li>
-        <li>거실 분위기와 잘 어울릴까?</li>
-        <li>청소와 관리는 어렵지 않을까?</li>
+        <li>비싸야 더 좋은 매트일까요?</li>
+        <li>청소와 관리는 어렵지 않을까요?</li>
+        <li>층간소음, 정말 잡힐까요?</li>
+        <li>폴더매트로 충분할까요, 시공매트로 가야 할까요?</li>
+        <li>매트 사이 틈과 마감, 정말 깔끔할까요?</li>
+        <li>1M와 500mm, 어떤 사이즈가 맞을까요?</li>
+        <li>거실 분위기와 잘 어울릴까요?</li>
       </ul>
     </div>
   </section>
 
-  <!-- ===== 섹션 01: 층간소음 ===== -->
+  <!-- ===== 섹션 01: 비싸야 프리미엄? (구 기준 07) ===== -->
   <section class="section">
     <div class="section-head">
       <span class="section-num">기준 01</span>
-      <h2><em>층간소음,</em><br>어디까지 잡힐 수 있을까요?</h2>
-      <p class="lead">시공매트를 알아보시는 분들이 가장 먼저 고민하는 1순위입니다.</p>
-    </div>
-
-    <div class="split">
-      <div class="info-card">
-        <h3>왜 시공매트를 찾게 될까요</h3>
-        <p>아이가 뛰거나 의자를 끄는 소리, 발망치 소리에서 시작되는 아랫집과의 작은 트러블이 가장 큰 동기입니다.</p>
-      </div>
-      <div class="info-card">
-        <h3>완벽한 차단은 어렵지만</h3>
-        <p>충격 흡수가 좋은 두꺼운 시공매트는 충격을 매트가 흡수해 아랫집 전달음을 줄이는 데 도움이 됩니다.</p>
-      </div>
-    </div>
-
-    <div class="review-quote">
-      <div class="review-quote-text">"새로 이사오신 밑에집 이웃분과 층간소음으로 자꾸 트러블이 생기고, 스트레스를 많이 받았어요."</div>
-      <div class="review-quote-meta">실제 시공 후기 中</div>
-    </div>
-
-    <div class="highlight-box">
-      층간소음이 가장 큰 고민이라면 22T가 더 든든하고, 일상 보행과 난방감을 함께 보신다면 17T도 좋은 선택입니다.
-    </div>
-  </section>
-
-  <!-- ===== 섹션 02: 폴더매트 → 시공매트 ===== -->
-  <section class="section">
-    <div class="section-head">
-      <span class="section-num">기준 02</span>
-      <h2><em>폴더매트로 시작해도,</em><br>결국 시공매트를 다시 고민합니다</h2>
-      <p class="lead">아이와 반려견의 활동 반경은 생각보다 빠르게 넓어집니다.</p>
-    </div>
-
-    <div class="split">
-      <div class="info-card">
-        <h3>처음에는 이렇게 생각합니다</h3>
-        <p>"거실 한쪽만 깔면 되지 않을까?"<br>"일단 폴더매트로 시작해볼까?"</p>
-      </div>
-      <div class="info-card">
-        <h3>시간이 지나면 달라집니다</h3>
-        <p>기고, 걷고, 뛰기 시작하면 복도와 주방까지 생활 동선 전체가 매트 고민의 대상이 됩니다.</p>
-      </div>
-    </div>
-
-    <ul class="bullet">
-      <li>매트가 없는 곳에서 넘어지는 일이 생깁니다.</li>
-      <li>거실만 덮어서는 층간소음 걱정이 완전히 사라지지 않습니다.</li>
-      <li>집 전체가 자연스럽게 이어지는 인테리어를 원하게 됩니다.</li>
-    </ul>
-
-    <div class="pink-box">
-      <div class="pink-box-text">폴더매트가 나쁜 게 아니라, 아이의 활동 반경이 생각보다 빨리 넓어집니다.</div>
-    </div>
-  </section>
-
-  <!-- ===== 섹션 03: 시공품질·마감 (틈새) ===== -->
-  <section class="section">
-    <div class="section-head">
-      <span class="section-num">기준 03</span>
-      <h2>완성도는 <em>틈새와 마감</em>에서<br>갈립니다</h2>
-      <p class="lead">후기에서 가장 자주 언급되는 만족·불만족 포인트입니다.</p>
-    </div>
-
-    <img class="section-image" src="./assets/welcome/mat-structure.jpg" alt="돌봄매트 구조 - 매트 시공 단면">
-
-    <div class="split">
-      <div class="info-card">
-        <h3>비교할 때 꼭 볼 점</h3>
-        <p>이음선이 과하게 많지 않은지, 벽면과 모서리가 자연스럽게 마감되는지 확인해보세요.</p>
-      </div>
-      <div class="info-card">
-        <h3>돌봄매트가 강조하는 기준</h3>
-        <p>넓은 매트 구성과 꼼꼼한 본사 직접 시공으로 집 전체가 한 공간처럼 이어지는 느낌을 지향합니다.</p>
-      </div>
-    </div>
-
-    <div class="review-quote">
-      <div class="review-quote-text">"이질감이 거의 없고, 바닥재를 새로 시공한 것처럼 깔끔하게 마감된 느낌이었습니다."</div>
-      <div class="review-quote-meta">실제 시공 후기 中</div>
-    </div>
-
-    <div class="yellow-box">
-      <div class="yellow-box-text">시공 직후 예쁜 것보다, 매일 청소할 때 편한지가 더 중요합니다.</div>
-    </div>
-  </section>
-
-  <!-- ===== 섹션 04: 17T vs 22T ===== -->
-  <section class="section">
-    <div class="section-head">
-      <span class="section-num">기준 04</span>
-      <h2><em>17T vs 22T,</em><br>어떤 두께가 맞을까요?</h2>
-      <p class="lead">두께는 가족 구성과 우선순위에 따라 정해집니다.</p>
-    </div>
-
-    <img class="section-image" src="./assets/welcome/mat-sizes.jpg" alt="돌봄매트 두께 비교">
-
-    <table class="comparison-table">
-      <thead>
-        <tr>
-          <th>구분</th>
-          <th>17T</th>
-          <th>22T</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>추천 가정</th>
-          <td>반려견 가정<br>생활 편의·난방감</td>
-          <td>유아 가정<br>층간소음·충격 흡수</td>
-        </tr>
-        <tr>
-          <th>쿠션감</th>
-          <td>안정적·생활성</td>
-          <td>도톰·보호감 큼</td>
-        </tr>
-        <tr>
-          <th>추천 목적</th>
-          <td>미끄럼방지<br>보행 편의</td>
-          <td>머리쿵 완화<br>뛰는 소음 완화</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="highlight-box">
-      고민된다면 우리 집 가족 구성과 시공 범위로 상담받는 것이 가장 정확합니다.
-    </div>
-  </section>
-
-  <!-- ===== 섹션 05: 우리 집 분위기 (NEW) ===== -->
-  <section class="section">
-    <div class="section-head">
-      <span class="section-num">기준 05</span>
-      <h2><em>우리 집 분위기</em>에<br>어울리는 매트인지</h2>
-      <p class="lead">실제 후기에서 만족도가 높은 포인트 중 하나가 '집 분위기와 잘 어울리는지'입니다.</p>
-    </div>
-
-    <img class="section-image" src="./assets/welcome/kids-playing.jpg" alt="돌봄매트 시공 사례 - 거실 분위기">
-
-    <div class="split">
-      <div class="info-card">
-        <h3>색상이 만드는 차이</h3>
-        <p>너무 하얗기만 한 매트는 때가 쉽게 보이고, 너무 어두우면 거실이 답답해 보입니다. 은은한 톤이 가장 무난합니다.</p>
-      </div>
-      <div class="info-card">
-        <h3>공간감</h3>
-        <p>큰 사이즈로 시공한 매트는 거실을 더 넓어 보이게 합니다. 작은 매트가 여러 장 이어진 것보다 자연스럽습니다.</p>
-      </div>
-    </div>
-
-    <div class="review-quote">
-      <div class="review-quote-text">"너무 하얗지도 않고 은은한 샌드톤이 가미된 베이지 느낌이라 집안 분위기가 훨씬 따뜻하고 고급스러워 보여요."</div>
-      <div class="review-quote-meta">실제 시공 후기 中</div>
-    </div>
-
-    <div class="pink-box">
-      <div class="pink-box-text">샘플을 거실 바닥에 직접 올려두고 가구·벽지와의 색감을 확인해보세요.</div>
-    </div>
-  </section>
-
-  <!-- ===== 섹션 06: 청소·관리 ===== -->
-  <section class="section">
-    <div class="section-head">
-      <span class="section-num">기준 06</span>
-      <h2><em>청소·물 흘림·습기,</em><br>관리가 중요합니다</h2>
-      <p class="lead">시공매트는 하루 보고 결정하지만, 실제 사용은 몇 년간 이어집니다.</p>
-    </div>
-
-    <img class="section-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 - 공기 순환 구조" style="background:var(--warm-bg-light);object-fit:contain;padding:14px">
-
-    <div class="split">
-      <div class="info-card">
-        <h3>일상 관리</h3>
-        <p>청소기와 물걸레 관리가 편한지, 물이나 음식물을 흘렸을 때 어떻게 관리하는지 확인하세요.</p>
-      </div>
-      <div class="info-card">
-        <h3>장기 사용</h3>
-        <p>공기 순환 구조와 바닥 습기 관리, 시공 범위 선택까지 함께 살펴봐야 오래 만족합니다.</p>
-      </div>
-    </div>
-
-    <ul class="bullet">
-      <li>주방까지 시공할지 고민된다면 생활 습관과 관리 부담을 함께 봐야 합니다.</li>
-      <li>아이와 반려견이 매일 머무는 바닥일수록 관리 편의성은 중요합니다.</li>
-    </ul>
-  </section>
-
-  <!-- ===== 섹션 07: 비싸야 프리미엄? ===== -->
-  <section class="section">
-    <div class="section-head">
-      <span class="section-num">기준 07</span>
-      <h2><em>비싸야 프리미엄</em>일까요?</h2>
-      <p class="lead">가격은 후기 데이터에서 3순위로 자주 거론되는 중요한 기준입니다.</p>
+      <h2><em>비싸야 더 좋은 매트</em>일까요?</h2>
+      <p class="lead">가격이 높다고 무조건 더 검증된 매트는 아닙니다.</p>
     </div>
 
     <p style="margin:0;color:var(--text-body);font-size:14px;font-weight:500;line-height:1.85">
@@ -482,6 +272,197 @@ a{color:inherit;text-decoration:none}
 
     <div class="highlight-box">
       합리적인 가격이지만, 선택받은 공간은 결코 가볍지 않습니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 02: 청소·관리 (구 기준 06) ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 02</span>
+      <h2><em>청소와 관리는</em><br>어렵지 않을까요?</h2>
+      <p class="lead">시공매트는 하루 보고 결정하지만, 실제 사용은 몇 년간 이어집니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 - 공기 순환 구조" style="background:var(--warm-bg-light);object-fit:contain;padding:14px">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>일상 관리</h3>
+        <p>청소기와 물걸레 관리가 편한지, 물이나 음식물을 흘렸을 때 어떻게 관리하는지 확인하세요.</p>
+      </div>
+      <div class="info-card">
+        <h3>장기 사용</h3>
+        <p>공기 순환 구조와 바닥 습기 관리, 시공 범위 선택까지 함께 살펴봐야 오래 만족합니다.</p>
+      </div>
+    </div>
+
+    <ul class="bullet">
+      <li>주방까지 시공할지 고민된다면 생활 습관과 관리 부담을 함께 봐야 합니다.</li>
+      <li>아이와 반려견이 매일 머무는 바닥일수록 관리 편의성은 중요합니다.</li>
+    </ul>
+  </section>
+
+  <!-- ===== 섹션 03: 층간소음 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 03</span>
+      <h2><em>층간소음,</em><br>정말 잡힐까요?</h2>
+      <p class="lead">시공매트를 알아보시는 분들이 가장 많이 고민하는 부분입니다.</p>
+    </div>
+
+    <div class="split">
+      <div class="info-card">
+        <h3>왜 시공매트를 찾게 될까요</h3>
+        <p>아이가 뛰거나 의자를 끄는 소리, 발망치 소리에서 시작되는 아랫집과의 작은 트러블이 가장 큰 동기입니다.</p>
+      </div>
+      <div class="info-card">
+        <h3>완벽한 차단은 어렵지만</h3>
+        <p>충격 흡수가 좋은 두꺼운 시공매트는 충격을 매트가 흡수해 아랫집 전달음을 줄이는 데 도움이 됩니다.</p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      층간소음이 가장 큰 고민이라면 22T가 더 든든하고, 일상 보행과 난방감을 함께 보신다면 17T도 좋은 선택입니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 04: 폴더매트 → 시공매트 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 04</span>
+      <h2><em>폴더매트로 충분할까요,</em><br>시공매트로 가야 할까요?</h2>
+      <p class="lead">아이와 반려견의 활동 반경은 생각보다 빠르게 넓어집니다.</p>
+    </div>
+
+    <div class="split">
+      <div class="info-card">
+        <h3>처음에는 이렇게 생각합니다</h3>
+        <p>"거실 한쪽만 깔면 되지 않을까?"<br>"일단 폴더매트로 시작해볼까?"</p>
+      </div>
+      <div class="info-card">
+        <h3>시간이 지나면 달라집니다</h3>
+        <p>기고, 걷고, 뛰기 시작하면 복도와 주방까지 생활 동선 전체가 매트 고민의 대상이 됩니다.</p>
+      </div>
+    </div>
+
+    <ul class="bullet">
+      <li>매트가 없는 곳에서 넘어지는 일이 생깁니다.</li>
+      <li>거실만 덮어서는 층간소음 걱정이 완전히 사라지지 않습니다.</li>
+      <li>반려견이 미끄러지지 않도록 슬개골 보호도 함께 고려하게 됩니다.</li>
+      <li>집 전체가 자연스럽게 이어지는 인테리어를 원하게 됩니다.</li>
+    </ul>
+
+    <div class="pink-box">
+      <div class="pink-box-text">
+        폴더매트가 나쁜 게 아닙니다.<br>
+        아이의 활동 반경이<br>
+        생각보다 빨리 넓어집니다.
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 섹션 05: 시공품질·마감 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 05</span>
+      <h2>매트 사이 <em>틈과 마감,</em><br>정말 깔끔할까요?</h2>
+      <p class="lead">사진으로는 비슷해 보여도, 매일 생활할수록 차이가 체감됩니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/mat-structure.jpg" alt="돌봄매트 구조 - 매트 시공 단면">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>비교할 때 꼭 볼 점</h3>
+        <p>이음선이 과하게 많지 않은지, 벽면과 모서리가 자연스럽게 마감되는지 확인해보세요.</p>
+      </div>
+      <div class="info-card">
+        <h3>돌봄매트가 강조하는 기준</h3>
+        <p>넓은 매트 구성과 꼼꼼한 본사 직접 시공으로 집 전체가 한 공간처럼 이어지는 느낌을 지향합니다.</p>
+      </div>
+    </div>
+
+    <div class="review-quote">
+      <div class="review-quote-text">"이질감이 거의 없고, 바닥재를 새로 시공한 것처럼 깔끔하게 마감된 느낌이었습니다."</div>
+      <div class="review-quote-meta">실제 시공 후기 中</div>
+    </div>
+
+    <div class="yellow-box">
+      <div class="yellow-box-text">시공 직후 예쁜 것보다, 매일 청소할 때 편한지가 더 중요합니다.</div>
+    </div>
+  </section>
+
+  <!-- ===== 섹션 06: 1M vs 500mm 사이즈 비교 (인터랙티브 슬라이더) ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 06</span>
+      <h2><em>1M vs 500mm,</em><br>어떤 사이즈가 맞을까요?</h2>
+      <p class="lead">사이즈는 시공 마감과 가격, 관리 편의성을 동시에 좌우합니다.</p>
+    </div>
+
+    <div class="compare-section">
+      <div class="compare-title">이음새가 줄면, 바닥이 달라집니다</div>
+      <div class="compare-sub">슬라이더를 좌우로 움직여 비교해보세요</div>
+
+      <div class="compare-box" id="compareBox">
+        <div class="compare-layer compare-right" id="rightLayer"></div>
+        <div class="compare-layer compare-left" id="leftLayer"></div>
+        <span class="compare-label label-left">500mm</span>
+        <span class="compare-label label-right">돌봄매트 1,000mm</span>
+        <div class="slider-line" id="sliderLine"></div>
+        <div class="slider-handle" id="sliderHandle">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M8.5 8.5L6 11l2.5 2.5M15.5 8.5L18 11l-2.5 2.5" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="slider-hint">← 좌우로 움직이며 이음새 차이를 비교 →</div>
+    </div>
+
+    <div class="split">
+      <div class="info-card">
+        <h3>500mm 매트의 장점</h3>
+        <p>합리적인 가격에 시작할 수 있고, 일부가 오염되거나 손상되면 그 부분만 부분 교체가 가능해 관리 부담이 적습니다.</p>
+      </div>
+      <div class="info-card">
+        <h3>1M 매트의 장점</h3>
+        <p>이음새가 훨씬 적어 매트 사이 틈이 덜하고, 시공 후 바닥재처럼 깔끔한 마감을 만들어 인테리어 효과가 좋습니다.</p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      이음새와 인테리어 마감을 우선시한다면 1M, 가격과 부분 교체 편의성을 우선시한다면 500mm가 좋은 선택입니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 07: 우리 집 분위기 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 07</span>
+      <h2><em>거실 분위기와</em><br>잘 어울릴까요?</h2>
+      <p class="lead">실제 후기에서 만족도가 높은 포인트 중 하나가 '집 분위기와 잘 어울리는지'입니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/kids-playing.jpg" alt="돌봄매트 시공 사례 - 거실 분위기">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>색상이 만드는 차이</h3>
+        <p>너무 하얗기만 한 매트는 때가 쉽게 보이고, 너무 어두우면 거실이 답답해 보입니다. 은은한 톤이 가장 무난합니다.</p>
+      </div>
+      <div class="info-card">
+        <h3>공간감</h3>
+        <p>큰 사이즈로 시공한 매트는 거실을 더 넓어 보이게 합니다. 작은 매트가 여러 장 이어진 것보다 자연스럽습니다.</p>
+      </div>
+    </div>
+
+    <div class="review-quote">
+      <div class="review-quote-text">"너무 하얗지도 않고 은은한 샌드톤이 가미된 베이지 느낌이라 집안 분위기가 훨씬 따뜻하고 고급스러워 보여요."</div>
+      <div class="review-quote-meta">실제 시공 후기 中</div>
+    </div>
+
+    <div class="pink-box">
+      <div class="pink-box-text">샘플을 거실 바닥에 직접 올려두고<br>가구·벽지와의 색감을 확인해보세요.</div>
     </div>
   </section>
 
@@ -522,7 +503,7 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 섹션 09: 우리 집 몇 장 ===== -->
+  <!-- ===== 섹션 09: 우리 집 몇 장? ===== -->
   <section class="section">
     <div class="section-head">
       <span class="section-num">기준 09</span>
@@ -582,17 +563,60 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <script>
+// Sticky CTA 자동 숨김
 (function(){
-  const finalCta = document.getElementById('consult');
-  const sticky = document.getElementById('stickyBar');
+  var finalCta = document.getElementById('consult');
+  var sticky = document.getElementById('stickyBar');
   if(!finalCta || !sticky || !('IntersectionObserver' in window)) return;
-  const obs = new IntersectionObserver(function(entries){
+  var obs = new IntersectionObserver(function(entries){
     entries.forEach(function(e){
       if(e.isIntersecting) sticky.classList.add('hidden');
       else sticky.classList.remove('hidden');
     });
   },{threshold:0.25});
   obs.observe(finalCta);
+})();
+
+// 1M vs 500mm 사이즈 비교 슬라이더
+(function(){
+  var leftLayer = document.getElementById('leftLayer');
+  var rightLayer = document.getElementById('rightLayer');
+  var box = document.getElementById('compareBox');
+  if(!leftLayer || !rightLayer || !box) return;
+
+  // 돌봄매트 1,000mm (right) - 4x3 = 12장
+  rightLayer.style.gridTemplateColumns = 'repeat(4,1fr)';
+  rightLayer.style.gridTemplateRows = 'repeat(3,1fr)';
+  for(var i=0; i<12; i++){
+    var c = document.createElement('div');
+    c.className = 'mat-cell';
+    rightLayer.appendChild(c);
+  }
+
+  // 500mm (left) - 8x6 = 48장 (같은 공간 4배 많음)
+  leftLayer.style.gridTemplateColumns = 'repeat(8,1fr)';
+  leftLayer.style.gridTemplateRows = 'repeat(6,1fr)';
+  for(var j=0; j<48; j++){
+    var c2 = document.createElement('div');
+    c2.className = 'mat-cell';
+    leftLayer.appendChild(c2);
+  }
+
+  var isDragging = false;
+  function updateSlider(x){
+    var rect = box.getBoundingClientRect();
+    var pct = Math.max(5, Math.min(95, ((x - rect.left) / rect.width) * 100));
+    document.getElementById('sliderHandle').style.left = pct + '%';
+    document.getElementById('sliderLine').style.left = pct + '%';
+    leftLayer.style.clipPath = 'inset(0 ' + (100-pct) + '% 0 0)';
+  }
+
+  box.addEventListener('mousedown', function(e){ isDragging = true; updateSlider(e.clientX); });
+  document.addEventListener('mousemove', function(e){ if(isDragging) updateSlider(e.clientX); });
+  document.addEventListener('mouseup', function(){ isDragging = false; });
+  box.addEventListener('touchstart', function(e){ isDragging = true; updateSlider(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('touchmove', function(e){ if(isDragging) updateSlider(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('touchend', function(){ isDragging = false; });
 })();
 </script>
 
