@@ -124,22 +124,27 @@ a{color:inherit;text-decoration:none}
 .proof-value{display:block;color:#FDD835;font-size:21px;line-height:1;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
 .proof-label{display:block;color:rgba(255,255,255,.94);font-size:11px;font-weight:600;line-height:1.45}
 
-/* === 1M vs 500mm 비교 슬라이더 === */
+/* === 1M vs 작은 사이즈 비교 슬라이더 (quote.html 원본 색상) === */
 .compare-section{margin-top:18px}
-.compare-title{font-size:14px;font-weight:700;color:var(--text-strong);margin-bottom:6px;text-align:center}
-.compare-sub{font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center}
+.compare-title{font-size:18px;font-weight:800;color:var(--text-strong);margin-bottom:6px;text-align:center;line-height:1.4;letter-spacing:-.02em}
+.compare-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;text-align:center}
+.size-btns{display:flex;gap:6px;margin-bottom:16px;justify-content:center;flex-wrap:wrap}
+.size-btn{padding:8px 16px;border:1.5px solid #e0ddd6;border-radius:20px;background:#fff;font-size:12.5px;font-family:inherit;cursor:pointer;color:#999;transition:all .2s;font-weight:600}
+.size-btn.active{background:#666;color:#fff;border-color:#666}
 .compare-box{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden;touch-action:none;cursor:col-resize;background:#f0ede6;user-select:none;-webkit-user-select:none}
 .compare-layer{position:absolute;top:0;left:0;width:100%;height:100%;display:grid;gap:2px;padding:4px}
-.compare-left{background:#e8e2d4;z-index:1;clip-path:inset(0 50% 0 0)}
-.compare-right{background:#D6EFD8;z-index:0}
-.mat-cell{border-radius:3px;background:rgba(255,255,255,.45)}
-.compare-right .mat-cell{background:rgba(255,255,255,.4)}
-.compare-label{position:absolute;top:10px;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;z-index:5;pointer-events:none;letter-spacing:-.01em}
-.label-left{left:10px;background:rgba(110,90,60,.92);color:#fff}
-.label-right{right:10px;background:rgba(46,125,50,.92);color:#fff}
+.compare-left{background:#e8e5de;z-index:1;clip-path:inset(0 50% 0 0)}
+.compare-right{background:#d4eef5;z-index:0}
+.mat-cell{border-radius:3px;background:rgba(255,255,255,.4)}
+.compare-right .mat-cell{background:rgba(255,255,255,.35)}
+.compare-label{position:absolute;top:10px;padding:5px 10px;border-radius:6px;font-size:10.5px;font-weight:600;z-index:5;pointer-events:none;letter-spacing:-.01em}
+.label-left{left:8px;background:rgba(80,80,80,.85);color:#fff}
+.label-right{right:8px;background:rgba(100,170,200,.85);color:#fff}
 .slider-line{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:4;left:50%;transform:translateX(-50%);pointer-events:none}
-.slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:5;display:flex;align-items:center;justify-content:center;cursor:col-resize}
-.slider-handle svg{width:18px;height:18px}
+.slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:5;display:flex;align-items:center;justify-content:center;cursor:col-resize}
+.slider-handle svg{width:16px;height:16px}
+.size-info{display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.size-info strong{color:var(--text-strong);font-weight:700}
 .slider-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;font-weight:500}
 
 /* === Timeline === */
@@ -182,6 +187,10 @@ a{color:inherit;text-decoration:none}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .section,.final-cta,.message-card{animation:fadeUp .45s ease both}
+
+@media (max-width:360px){
+  .size-btn{padding:6px 12px;font-size:11.5px}
+}
 
 @media (min-width:600px){
   .hero-text{padding:38px 32px 12px}
@@ -240,7 +249,7 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 섹션 01: 비싸야 프리미엄? (구 기준 07) ===== -->
+  <!-- ===== 섹션 01: 비싸야 프리미엄? ===== -->
   <section class="section">
     <div class="section-head">
       <span class="section-num">기준 01</span>
@@ -249,7 +258,8 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <p style="margin:0;color:var(--text-body);font-size:14px;font-weight:500;line-height:1.85">
-      일부 브랜드는 높은 가격을 근거로 "고급"과 "프리미엄"을 이야기합니다. 하지만 정말 중요한 건 <strong style="color:var(--primary-dark);font-weight:800">얼마나 비싼가가 아니라, 어디에서 선택받았는가</strong>입니다.
+      일부 브랜드는 높은 가격을 근거로 "고급"과 "프리미엄"을 이야기합니다.<br><br>
+      하지만 정말 중요한 건 <strong style="color:var(--primary-dark);font-weight:800">얼마나 비싼가가 아니라, 어디에서 선택받았는가</strong>입니다.
     </p>
 
     <div class="proof-box">
@@ -271,11 +281,13 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <div class="highlight-box">
-      합리적인 가격이지만, 선택받은 공간은 결코 가볍지 않습니다.
+      대리점 마진 0원,<br>
+      좋은 제품을 합리적인 가격으로<br>
+      본사에서 직접 시공합니다.
     </div>
   </section>
 
-  <!-- ===== 섹션 02: 청소·관리 (구 기준 06) ===== -->
+  <!-- ===== 섹션 02: 청소·관리 ===== -->
   <section class="section">
     <div class="section-head">
       <span class="section-num">기준 02</span>
@@ -288,7 +300,7 @@ a{color:inherit;text-decoration:none}
     <div class="split">
       <div class="info-card">
         <h3>일상 관리</h3>
-        <p>청소기와 물걸레 관리가 편한지, 물이나 음식물을 흘렸을 때 어떻게 관리하는지 확인하세요.</p>
+        <p>로봇청소기와 일반 청소기 모두 문제없이 사용 가능하고, 매트 90%를 덮는 커넥트 구조로 이물질이 바닥으로 들어가지 않게 막아줍니다.</p>
       </div>
       <div class="info-card">
         <h3>장기 사용</h3>
@@ -297,7 +309,6 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <ul class="bullet">
-      <li>주방까지 시공할지 고민된다면 생활 습관과 관리 부담을 함께 봐야 합니다.</li>
       <li>아이와 반려견이 매일 머무는 바닥일수록 관리 편의성은 중요합니다.</li>
     </ul>
   </section>
@@ -316,13 +327,13 @@ a{color:inherit;text-decoration:none}
         <p>아이가 뛰거나 의자를 끄는 소리, 발망치 소리에서 시작되는 아랫집과의 작은 트러블이 가장 큰 동기입니다.</p>
       </div>
       <div class="info-card">
-        <h3>완벽한 차단은 어렵지만</h3>
-        <p>충격 흡수가 좋은 두꺼운 시공매트는 충격을 매트가 흡수해 아랫집 전달음을 줄이는 데 도움이 됩니다.</p>
+        <h3>어디까지 잡을 수 있나요</h3>
+        <p>거실·복도·주방 빈틈 없이 차단합니다. 아이들이 가볍게 뛰는 정도, 발망치는 충분히 잡을 수 있습니다.</p>
       </div>
     </div>
 
     <div class="highlight-box">
-      층간소음이 가장 큰 고민이라면 22T가 더 든든하고, 일상 보행과 난방감을 함께 보신다면 17T도 좋은 선택입니다.
+      층간소음이 가장 큰 고민이라면 22T가 더 든든하고, 아이 안전과 반려견의 미끄럼방지를 생각하면 17T도 좋은 선택입니다.
     </div>
   </section>
 
@@ -348,7 +359,7 @@ a{color:inherit;text-decoration:none}
     <ul class="bullet">
       <li>매트가 없는 곳에서 넘어지는 일이 생깁니다.</li>
       <li>거실만 덮어서는 층간소음 걱정이 완전히 사라지지 않습니다.</li>
-      <li>반려견이 미끄러지지 않도록 슬개골 보호도 함께 고려하게 됩니다.</li>
+      <li>반려견이 거실 어디에서 놀든 미끄러지지 않도록 사각지대 없이 시공됩니다.</li>
       <li>집 전체가 자연스럽게 이어지는 인테리어를 원하게 됩니다.</li>
     </ul>
 
@@ -401,13 +412,15 @@ a{color:inherit;text-decoration:none}
     </div>
 
     <div class="compare-section">
-      <div class="compare-title">이음새가 줄면, 바닥이 달라집니다</div>
-      <div class="compare-sub">슬라이더를 좌우로 움직여 비교해보세요</div>
+      <div class="compare-title">이음새가 줄면,<br>바닥이 달라집니다.</div>
+      <div class="compare-sub">타사 사이즈를 선택하고 슬라이더를 움직여 보세요</div>
+
+      <div class="size-btns" id="sizeBtns"></div>
 
       <div class="compare-box" id="compareBox">
         <div class="compare-layer compare-right" id="rightLayer"></div>
         <div class="compare-layer compare-left" id="leftLayer"></div>
-        <span class="compare-label label-left">500mm</span>
+        <span class="compare-label label-left" id="labelLeft">타사 매트 500mm</span>
         <span class="compare-label label-right">돌봄매트 1,000mm</span>
         <div class="slider-line" id="sliderLine"></div>
         <div class="slider-handle" id="sliderHandle">
@@ -416,6 +429,12 @@ a{color:inherit;text-decoration:none}
           </svg>
         </div>
       </div>
+
+      <div class="size-info">
+        <span>타사 <strong id="sizeLeftLabel">500mm</strong></span>
+        <span>돌봄매트 <strong>1,000mm</strong></span>
+      </div>
+
       <div class="slider-hint">← 좌우로 움직이며 이음새 차이를 비교 →</div>
     </div>
 
@@ -577,31 +596,60 @@ a{color:inherit;text-decoration:none}
   obs.observe(finalCta);
 })();
 
-// 1M vs 500mm 사이즈 비교 슬라이더
+// 1M vs 작은 사이즈 비교 슬라이더 (500/600/800)
 (function(){
+  var COMPARE_SIZES = [500, 600, 800];
+  var currentCompareSize = 500;
   var leftLayer = document.getElementById('leftLayer');
   var rightLayer = document.getElementById('rightLayer');
   var box = document.getElementById('compareBox');
-  if(!leftLayer || !rightLayer || !box) return;
+  var sizeBtnsContainer = document.getElementById('sizeBtns');
+  if(!leftLayer || !rightLayer || !box || !sizeBtnsContainer) return;
 
-  // 돌봄매트 1,000mm (right) - 4x3 = 12장
-  rightLayer.style.gridTemplateColumns = 'repeat(4,1fr)';
-  rightLayer.style.gridTemplateRows = 'repeat(3,1fr)';
-  for(var i=0; i<12; i++){
-    var c = document.createElement('div');
-    c.className = 'mat-cell';
-    rightLayer.appendChild(c);
+  // 사이즈 버튼 동적 생성
+  COMPARE_SIZES.forEach(function(s){
+    var b = document.createElement('button');
+    b.className = 'size-btn' + (s === currentCompareSize ? ' active' : '');
+    b.textContent = s + 'mm';
+    b.onclick = function(){
+      currentCompareSize = s;
+      sizeBtnsContainer.querySelectorAll('.size-btn').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active');
+      document.getElementById('labelLeft').textContent = '타사 매트 ' + s + 'mm';
+      document.getElementById('sizeLeftLabel').textContent = s + 'mm';
+      buildGrids();
+    };
+    sizeBtnsContainer.appendChild(b);
+  });
+
+  function buildGrids(){
+    var ratio = currentCompareSize / 1000;
+    var lc = Math.round(4 / ratio);
+    var lr = Math.round(3 / ratio);
+
+    leftLayer.style.gridTemplateColumns = 'repeat(' + lc + ',1fr)';
+    leftLayer.style.gridTemplateRows = 'repeat(' + lr + ',1fr)';
+    rightLayer.style.gridTemplateColumns = 'repeat(4,1fr)';
+    rightLayer.style.gridTemplateRows = 'repeat(3,1fr)';
+
+    leftLayer.innerHTML = '';
+    rightLayer.innerHTML = '';
+
+    for(var i = 0; i < lc * lr; i++){
+      var c = document.createElement('div');
+      c.className = 'mat-cell';
+      leftLayer.appendChild(c);
+    }
+    for(var j = 0; j < 12; j++){
+      var c2 = document.createElement('div');
+      c2.className = 'mat-cell';
+      rightLayer.appendChild(c2);
+    }
   }
 
-  // 500mm (left) - 8x6 = 48장 (같은 공간 4배 많음)
-  leftLayer.style.gridTemplateColumns = 'repeat(8,1fr)';
-  leftLayer.style.gridTemplateRows = 'repeat(6,1fr)';
-  for(var j=0; j<48; j++){
-    var c2 = document.createElement('div');
-    c2.className = 'mat-cell';
-    leftLayer.appendChild(c2);
-  }
+  buildGrids();
 
+  // 슬라이더 인터랙션
   var isDragging = false;
   function updateSlider(x){
     var rect = box.getBoundingClientRect();
