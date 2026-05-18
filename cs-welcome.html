@@ -1,327 +1,755 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <script src="/auth.js"></script>
-
-    <!-- 검색엔진 노출 차단 (자동 추가) -->
-    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-    <meta name="googlebot" content="noindex, nofollow">
-    <meta name="naverbot" content="noindex, nofollow">
-    <meta name="yeti" content="noindex, nofollow">
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>돌봄매트 · 환영합니다</title>
-<script src="https://www.dolbommat.com/tracking.js" defer></script>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./cs-common.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>돌봄매트 | 시공 전 꼭 확인해 주세요</title>
+<meta name="description" content="샘플을 받아보신 고객님을 위한 시공매트 비교 가이드">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+
+<!-- GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-Z98MT8N5WK"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-Z98MT8N5WK');
+const urlParams = new URLSearchParams(window.location.search);
+gtag('event', 'cs_welcome_view', {source: urlParams.get('from') || 'direct'});
+</script>
+
 <style>
-.welcome-hero {
-  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 40%, #43A047 100%);
-  padding: 40px 20px 28px;
-  text-align: center;
-  color: #fff;
-  position: relative;
-  overflow: hidden;
+:root{
+  --primary:#2E7D32;
+  --primary-dark:#1B5E20;
+  --primary-soft:#E8F5E9;
+  --primary-lighter:#F1F8E9;
+  --accent:#388E3C;
+  --text:#1a1a1a;
+  --text-sub:#3a4a3c;
+  --muted:#666e6a;
+  --line:#e4ece5;
+  --bg-soft:#fafbfa;
+  --yellow:#FEE500;
+  --yellow-dark:#FDD835;
+  --soft-pink:#FCE4EC;
+  --shadow:0 16px 40px rgba(46,125,50,.08);
+  --shadow-sm:0 6px 18px rgba(46,125,50,.05);
 }
 
-.welcome-hero::before {
-  content: '';
-  position: absolute;
-  top: -40%;
-  right: -20%;
-  width: 280px;
-  height: 280px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 50%;
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg,#f8fbf8 0%,#f5f9f5 50%,#ffffff 100%);
+  line-height:1.75;
+  word-break:keep-all;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+
+.page{width:min(100%,540px);margin:0 auto;padding:20px 18px 110px}
+
+/* === 상단 알약 === */
+.top-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 14px;border-radius:999px;
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
+  color:var(--primary-dark);
+  font-size:13px;font-weight:700;
+}
+.top-pill::before{
+  content:"";display:block;
+  width:7px;height:7px;border-radius:50%;
+  background:var(--primary);
 }
 
-.team-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  margin-bottom: 14px;
-  position: relative;
+/* === 헤더 === */
+.hero{
+  margin-top:14px;border-radius:24px;
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.hero-text{padding:30px 24px 8px}
+.brand-kicker{
+  display:inline-block;
+  color:var(--primary);
+  font-size:13px;font-weight:700;
+  margin-bottom:14px;
+  letter-spacing:-.01em;
+}
+.hero-title{
+  margin:0;
+  font-size:26px;line-height:1.4;
+  letter-spacing:-.035em;font-weight:800;
+  color:#0f1f12;
+}
+.hero-title .accent{color:var(--primary)}
+.hero-desc{
+  margin:16px 0 0;color:var(--text-sub);
+  font-size:15px;font-weight:500;line-height:1.75;
+}
+.hero-chips{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin:20px 0 0;
+}
+.hero-chip{
+  padding:7px 12px;border-radius:999px;
+  background:var(--primary-soft);
+  color:var(--primary-dark);
+  font-size:12px;font-weight:700;
+}
+.hero-image-wrap{
+  margin-top:24px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-image{
+  width:100%;
+  aspect-ratio:16/10;
+  object-fit:cover;
 }
 
-.welcome-hero h1 {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.3;
-  margin-bottom: 8px;
-  position: relative;
+/* === 메시지 카드 === */
+.message-card{
+  margin-top:18px;padding:26px 22px;
+  border-radius:22px;
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
+}
+.message-title{
+  margin:0 0 12px;
+  font-size:19px;line-height:1.5;
+  letter-spacing:-.025em;font-weight:800;
+}
+.message-title strong{color:var(--primary)}
+.message-desc{
+  margin:0 0 18px;color:var(--muted);
+  font-size:14px;font-weight:500;line-height:1.75;
+}
+.message-box{
+  padding:18px 20px;
+  border-radius:14px;background:var(--bg-soft);
+  border:1px solid var(--line);
+}
+.message-box-title{
+  margin:0 0 12px;color:#384b3a;
+  font-size:13px;font-weight:700;
+  letter-spacing:-.01em;
+}
+.message-box ul{margin:0;padding:0;list-style:none}
+.message-box li{
+  position:relative;padding-left:22px;
+  font-size:13.5px;color:#3d4d3f;font-weight:500;
+  line-height:1.65;margin-bottom:8px;
+}
+.message-box li:last-child{margin-bottom:0}
+.message-box li::before{
+  content:"";position:absolute;left:0;top:9px;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--primary);
 }
 
-.welcome-hero .team-name {
-  color: var(--accent);
+/* === 메인 CTA 버튼 === */
+.cta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-height:50px;padding:0 22px;border-radius:14px;border:none;cursor:pointer;
+  font-family:inherit;font-size:14px;font-weight:800;letter-spacing:-.02em;
+  transition:transform .15s ease;
+  text-decoration:none;flex:1;
+}
+.btn:active{transform:scale(.98)}
+.btn-primary{
+  color:#fff;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  box-shadow:0 10px 22px rgba(46,125,50,.18);
+}
+.btn-kakao{
+  color:#3C1E1E;
+  background:var(--yellow-dark);
+  box-shadow:0 10px 22px rgba(253,216,53,.22);
 }
 
-.welcome-hero p {
-  font-size: 13px;
-  color: rgba(255,255,255,0.85);
-  position: relative;
-  line-height: 1.6;
+/* === 섹션 === */
+.section{
+  margin-top:18px;padding:30px 24px;
+  border-radius:22px;
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
+}
+.section-head{margin-bottom:18px}
+.section-num{
+  display:inline-block;
+  padding:4px 12px;border-radius:8px;
+  background:var(--primary-soft);
+  color:var(--primary-dark);
+  font-size:11px;font-weight:800;
+  letter-spacing:1.5px;
+  margin-bottom:14px;
+}
+.section h2{
+  margin:0;font-size:22px;line-height:1.42;
+  letter-spacing:-.035em;font-weight:800;
+  color:#0f1f12;
+}
+.section h2 em{color:var(--primary);font-style:normal;font-weight:800}
+.section .lead{
+  margin:12px 0 0;color:var(--muted);
+  font-size:14px;font-weight:500;line-height:1.75;
 }
 
-.trust-row {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 18px;
-  position: relative;
+/* === 섹션 이미지 === */
+.section-image{
+  width:100%;aspect-ratio:5/3;
+  object-fit:cover;border-radius:14px;
+  margin:18px 0 4px;
+  background:var(--bg-soft);
 }
 
-.trust-item {
-  text-align: center;
+/* === info 카드 === */
+.split{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+.info-card{
+  padding:18px 20px;border-radius:14px;
+  background:var(--bg-soft);
+  border:1px solid var(--line);
+}
+.info-card h3{
+  margin:0 0 6px;color:#1f2f22;
+  font-size:14px;font-weight:800;line-height:1.4;letter-spacing:-.02em;
+}
+.info-card p{
+  margin:0;color:var(--muted);
+  font-size:13.5px;font-weight:500;line-height:1.75;
 }
 
-.trust-num {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--accent);
+/* === 체크 리스트 (이모지 제거, 단순 체크 마크) === */
+.bullet{margin:18px 0 0;padding:0;list-style:none}
+.bullet li{
+  position:relative;padding-left:26px;
+  color:var(--text-sub);
+  font-size:14px;font-weight:600;line-height:1.7;
+  margin-bottom:10px;
+}
+.bullet li:last-child{margin-bottom:0}
+.bullet li::before{
+  content:"";position:absolute;left:0;top:9px;
+  width:14px;height:14px;border-radius:4px;
+  background:var(--primary-soft);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+  background-size:11px;
+  background-position:center;
+  background-repeat:no-repeat;
 }
 
-.trust-label {
-  font-size: 10px;
-  color: rgba(255,255,255,0.75);
-  margin-top: 2px;
+/* === 강조 박스 (녹색) === */
+.highlight-box{
+  margin-top:18px;padding:18px 20px;border-radius:14px;
+  background:linear-gradient(135deg,var(--primary-soft),var(--primary-lighter));
+  border:1px solid rgba(46,125,50,.18);
+  color:var(--primary-dark);
+  font-size:14.5px;font-weight:700;line-height:1.65;
+  letter-spacing:-.015em;
 }
 
-.next-btns {
-  display: grid;
-  gap: 10px;
-  margin-top: 20px;
+/* === 노란 강조 박스 (리플릿 스타일) === */
+.yellow-box{
+  margin-top:18px;padding:18px 20px;
+  background:linear-gradient(135deg,#FFFBEB,#FFF8E1);
+  border-left:4px solid #FFA000;border-radius:12px;
+}
+.yellow-box-text{
+  color:#5D4037;font-size:14px;font-weight:700;line-height:1.65;
 }
 
-.err-msg {
-  background: #ffebee;
-  border: 1px solid #ffcdd2;
-  color: #c62828;
-  padding: 14px;
-  border-radius: 10px;
-  margin: 20px 0;
-  text-align: center;
-  font-size: 13px;
+/* === 비교 표 === */
+.comparison-table{
+  width:100%;margin-top:16px;
+  border-collapse:separate;border-spacing:0;
+  overflow:hidden;border-radius:14px;
+  border:1px solid var(--line);background:#fff;
+}
+.comparison-table th,.comparison-table td{
+  padding:12px 8px;border-bottom:1px solid var(--line);
+  text-align:center;vertical-align:middle;
+  font-size:12.5px;line-height:1.55;
+}
+.comparison-table thead th{
+  background:var(--primary-soft);color:var(--primary-dark);
+  font-weight:800;font-size:13.5px;
+}
+.comparison-table tbody th{
+  width:30%;background:var(--bg-soft);color:#2e4631;
+  font-weight:700;font-size:11.5px;text-align:center;
+}
+.comparison-table td{color:#516053;font-weight:600}
+.comparison-table tr:last-child th,.comparison-table tr:last-child td{border-bottom:none}
+
+/* === 통계 그리드 (리플릿 검증 박스 스타일) === */
+.proof-box{
+  margin-top:18px;padding:24px 20px;
+  border-radius:18px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;
+}
+.proof-title{
+  font-size:13px;font-weight:700;color:#FDD835;
+  letter-spacing:1px;margin-bottom:14px;text-align:center;
+}
+.proof-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.proof-item{
+  padding:14px 4px;text-align:center;
+  background:rgba(255,255,255,.08);
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+}
+.proof-value{
+  display:block;color:#FDD835;
+  font-size:20px;line-height:1;font-weight:800;letter-spacing:-.02em;
+  margin-bottom:6px;
+}
+.proof-label{
+  display:block;color:rgba(255,255,255,.92);
+  font-size:11px;font-weight:600;line-height:1.4;
+}
+
+/* === Timeline === */
+.timeline{margin-top:16px;display:grid;gap:10px}
+.timeline-item{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:16px 18px;border-radius:14px;
+  background:var(--bg-soft);border:1px solid var(--line);
+}
+.timeline-dot{
+  flex:0 0 auto;width:10px;height:10px;margin-top:7px;
+  border-radius:999px;background:var(--primary);
+  box-shadow:0 0 0 5px rgba(46,125,50,.10);
+}
+.timeline-item strong{
+  display:block;margin-bottom:3px;color:#1f3324;
+  font-size:14px;font-weight:800;letter-spacing:-.015em;
+}
+.timeline-item span{
+  color:var(--muted);font-size:13px;font-weight:500;line-height:1.7;
+}
+
+/* === 범위 카드 === */
+.scope-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.scope-card{
+  padding:18px 20px;border-radius:14px;
+  background:linear-gradient(135deg,#FFFBEB,#FFF8E1);
+  border:1px solid rgba(255,160,0,.18);
+}
+.scope-card h3{
+  margin:0 0 6px;color:#7B5800;
+  font-size:14px;font-weight:800;letter-spacing:-.015em;
+}
+.scope-card p{
+  margin:0;color:#6B5D45;
+  font-size:13px;font-weight:500;line-height:1.7;
+}
+
+/* === 외부 링크 === */
+.external-links{margin-top:24px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.ext-link{
+  padding:10px 18px;background:#fff;
+  border:1px solid var(--line);border-radius:24px;
+  color:var(--muted);font-size:12px;font-weight:600;text-decoration:none;
+}
+
+/* === 마지막 CTA === */
+.final-cta{
+  margin-top:22px;padding:36px 24px;
+  border-radius:24px;text-align:center;color:#fff;
+  background:
+    radial-gradient(circle at top right,rgba(255,255,255,.10),transparent 35%),
+    linear-gradient(135deg,var(--primary),var(--primary-dark));
+  box-shadow:0 20px 44px rgba(46,125,50,.22);
+  position:relative;overflow:hidden;
+}
+.final-cta::before{content:"";position:absolute;top:-40px;left:-40px;width:140px;height:140px;background:rgba(255,255,255,.05);border-radius:50%}
+.final-cta-content{position:relative;z-index:1}
+.final-cta-badge{
+  display:inline-block;padding:5px 14px;
+  background:rgba(255,255,255,.16);
+  color:#FDD835;font-size:11px;font-weight:700;
+  border-radius:16px;margin-bottom:16px;letter-spacing:.5px;
+}
+.final-cta h2{
+  margin:0;font-size:22px;line-height:1.45;letter-spacing:-.035em;font-weight:800;
+}
+.final-cta p{
+  margin:14px 0 22px;
+  color:rgba(255,255,255,.88);
+  font-size:14px;font-weight:500;line-height:1.75;
+}
+.final-cta .btn{flex:1}
+.final-cta .btn-kakao{color:#3C1E1E}
+
+/* === Sticky 모바일 하단 CTA === */
+.sticky-mobile{
+  position:fixed;left:12px;right:12px;bottom:12px;z-index:30;
+  padding:8px;border-radius:18px;
+  background:rgba(255,255,255,.94);
+  backdrop-filter:blur(14px);
+  border:1px solid var(--line);
+  box-shadow:0 14px 32px rgba(46,125,50,.16);
+  max-width:520px;margin:0 auto;
+}
+.sticky-mobile a{
+  display:flex;align-items:center;justify-content:center;
+  min-height:46px;border-radius:12px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;font-size:14px;font-weight:800;letter-spacing:-.015em;
+}
+
+/* === 푸터 === */
+.footer{text-align:center;padding:24px 20px 0;font-size:11px;color:#999;line-height:1.7}
+.footer .brand{font-weight:700;color:#666;display:block;margin-bottom:4px}
+
+/* === 애니메이션 === */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.section,.final-cta,.message-card{animation:fadeUp .45s ease both}
+.section:nth-child(2){animation-delay:.04s}
+.section:nth-child(3){animation-delay:.08s}
+.section:nth-child(4){animation-delay:.12s}
+
+/* === 데스크탑 최적화 === */
+@media (min-width:600px){
+  .hero-text{padding:38px 32px 12px}
+  .hero-title{font-size:30px}
+  .hero-desc{font-size:16px}
+  .section{padding:36px 30px}
+  .section h2{font-size:24px}
+  .message-card{padding:32px 28px}
+  .message-title{font-size:21px}
+  .final-cta{padding:44px 32px}
+  .final-cta h2{font-size:26px}
 }
 </style>
 </head>
 <body>
 
-<div id="errorBox" class="err-msg hidden">
-  추천 링크 정보를 찾을 수 없습니다.<br>
-  <a href="javascript:history.back()" style="color:#c62828;text-decoration:underline;">이전 페이지로</a>
-</div>
+<main class="page">
 
-<div id="mainContent" class="hidden">
+  <div class="top-pill">샘플 수령 고객님 전용 비교 가이드</div>
 
-  <div class="welcome-hero">
-    <div class="team-badge">
-      🎉 <span id="refBadgeTeam">승재</span> 시공팀 소개
-    </div>
-    <h1>
-      <span class="team-name" id="heroTeamName">승재</span> 시공팀의<br>
-      소개로 오셨나요?
-    </h1>
-    <p>간단히 정보만 남겨주시면<br>맞춤 상담이 시작됩니다</p>
-    <div class="trust-row">
-      <div class="trust-item">
-        <div class="trust-num">6주년</div>
-        <div class="trust-label">시공 경험</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-num">6,700건</div>
-        <div class="trust-label">시공 완료</div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-num">98%</div>
-        <div class="trust-label">고객 만족</div>
+  <!-- ===== 헤더 ===== -->
+  <section class="hero">
+    <div class="hero-text">
+      <div class="brand-kicker">[돌봄매트] 시공 전 꼭 확인해 주세요</div>
+      <h1 class="hero-title">
+        샘플을 받아보셨다면,<br>
+        이제 <span class="accent">후회 없는<br>선택 기준</span>을 확인하실 차례입니다.
+      </h1>
+      <p class="hero-desc">
+        여러 브랜드를 비교 중이신 고객님을 위해<br>
+        시공 전 꼭 확인해야 할 <strong>핵심 기준</strong>만 정리했습니다.
+      </p>
+      <div class="hero-chips">
+        <span class="hero-chip">폴더매트 vs 시공매트</span>
+        <span class="hero-chip">17T vs 22T</span>
+        <span class="hero-chip">틈새·마감·청소</span>
       </div>
     </div>
-  </div>
+    <div class="hero-image-wrap">
+      <img class="hero-image" src="./assets/welcome/kids-drawing-wide.jpg" alt="돌봄매트 실제 시공 사례 - 거실에서 아이들이 매트 위에서 놀고 있는 모습">
+    </div>
+  </section>
 
-  <div class="container">
+  <!-- ===== 메시지 카드 ===== -->
+  <section class="message-card">
+    <h2 class="message-title">
+      고객님이 지금 궁금해하실 내용을<br>
+      <strong>1분 가이드</strong>로 정리했습니다.
+    </h2>
+    <p class="message-desc">
+      가격만 볼수록 결정은 더 어려워집니다.<br>
+      우리 집에 맞는 선택인지, 오래 써도 괜찮은지부터 확인해보세요.
+    </p>
+    <div class="message-box">
+      <div class="message-box-title">이 가이드에서 바로 확인할 수 있어요</div>
+      <ul>
+        <li>폴더매트와 시공매트의 실제 차이</li>
+        <li>17T와 22T 중 우리 집에 맞는 선택</li>
+        <li>틈새·마감·청소 관리 체크포인트</li>
+        <li>가격보다 먼저 봐야 할 검증 기준</li>
+        <li>우리 집 예상 장수와 상담 연결</li>
+      </ul>
+    </div>
+  </section>
 
-    <div class="card fade-up">
-      <div class="card-title">
-        <span class="icon">📋</span> 고객 정보
+  <!-- ===== 섹션 01 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 01</span>
+      <h2><em>폴더매트로 시작해도,</em><br>결국 시공매트를 다시 고민합니다</h2>
+      <p class="lead">아이와 반려견의 활동 반경은 생각보다 빠르게 넓어집니다.</p>
+    </div>
+
+    <div class="split">
+      <div class="info-card">
+        <h3>처음에는 이렇게 생각합니다</h3>
+        <p>"거실 한쪽만 깔면 되지 않을까?"<br>"일단 폴더매트로 시작해볼까?"</p>
       </div>
-
-      <div class="fg">
-        <label>이름 <span class="req">*</span></label>
-        <input type="text" id="fName" placeholder="성함을 입력해주세요" />
-      </div>
-
-      <div class="fg">
-        <label>휴대폰 번호 <span class="req">*</span></label>
-        <input type="tel" id="fPhone" placeholder="- 없이 숫자만 입력" inputmode="numeric" maxlength="11" />
-        <div class="hint">시공 완료까지 연락을 위해 필요합니다</div>
+      <div class="info-card">
+        <h3>하지만 시간이 지나면 달라집니다</h3>
+        <p>기고, 걷고, 뛰기 시작하면 복도와 주방까지 생활 동선 전체가 매트 고민의 대상이 됩니다.</p>
       </div>
     </div>
 
-    <div class="card fade-up fade-up-2">
-      <div class="card-title">
-        <span class="icon">🔒</span> 개인정보 수집 동의
+    <ul class="bullet">
+      <li>매트가 없는 곳에서 넘어지는 일이 생깁니다.</li>
+      <li>거실만 덮어서는 층간소음 걱정이 완전히 사라지지 않습니다.</li>
+      <li>집 전체가 자연스럽게 이어지는 인테리어를 원하게 됩니다.</li>
+    </ul>
+
+    <div class="highlight-box">
+      폴더매트가 나쁜 게 아니라, 아이의 활동 반경이 생각보다 빨리 넓어집니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 02 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 02</span>
+      <h2><em>17T vs 22T,</em><br>어떤 두께가 맞을까요?</h2>
+      <p class="lead">무조건 두꺼운 제품보다 우리 집 목적에 맞는 선택이 중요합니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/mat-sizes.jpg" alt="돌봄매트 두께 비교">
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>17T</th>
+          <th>22T</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>추천 가정</th>
+          <td>반려견 가정<br>생활 편의·난방감</td>
+          <td>유아 가정<br>층간소음·충격 흡수</td>
+        </tr>
+        <tr>
+          <th>쿠션감</th>
+          <td>안정적·생활성</td>
+          <td>도톰·보호감 큼</td>
+        </tr>
+        <tr>
+          <th>추천 목적</th>
+          <td>미끄럼방지<br>보행 편의</td>
+          <td>머리쿵 완화<br>뛰는 소음 완화</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box">
+      고민된다면 우리 집 가족 구성과 시공 범위로 상담받는 것이 가장 정확합니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 03 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 03</span>
+      <h2>완성도는 <em>틈새와 마감</em>에서<br>갈립니다</h2>
+      <p class="lead">사진으로는 비슷해 보여도, 매일 생활할수록 차이가 체감됩니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/mat-structure.jpg" alt="돌봄매트 구조 - 매트 시공 단면">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>비교할 때 꼭 볼 점</h3>
+        <p>이음선이 과하게 많지 않은지, 벽면과 모서리가 자연스럽게 마감되는지 확인해보세요.</p>
       </div>
-      <div class="consent">
-        <div class="consent-body">
-          <strong>수집 항목:</strong> 이름, 연락처<br>
-          <strong>수집 목적:</strong> 시공 관련 상담 및 정보 제공<br>
-          <strong>보유 기간:</strong> 수집일로부터 1년<br><br>
-          동의를 거부하실 수 있으며, 거부 시 상담 진행이 불가합니다.
+      <div class="info-card">
+        <h3>돌봄매트가 강조하는 기준</h3>
+        <p>넓은 매트 구성과 꼼꼼한 본사 직접 시공으로 집 전체가 한 공간처럼 이어지는 느낌을 지향합니다.</p>
+      </div>
+    </div>
+
+    <div class="yellow-box">
+      <div class="yellow-box-text">시공 직후 예쁜 것보다, 매일 청소할 때 편한지가 더 중요합니다.</div>
+    </div>
+  </section>
+
+  <!-- ===== 섹션 04 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 04</span>
+      <h2><em>청소·물 흘림·습기,</em><br>관리가 중요합니다</h2>
+      <p class="lead">시공매트는 하루 보고 결정하지만, 실제 사용은 몇 년간 이어집니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 - 공기 순환 구조" style="background:#fafbfa;object-fit:contain;padding:14px">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>일상 관리</h3>
+        <p>청소기와 물걸레 관리가 편한지, 물이나 음식물을 흘렸을 때 어떻게 관리하는지 확인하세요.</p>
+      </div>
+      <div class="info-card">
+        <h3>장기 사용</h3>
+        <p>공기 순환 구조와 바닥 습기 관리, 시공 범위 선택까지 함께 살펴봐야 오래 만족합니다.</p>
+      </div>
+    </div>
+
+    <ul class="bullet">
+      <li>주방까지 시공할지 고민된다면 생활 습관과 관리 부담을 함께 봐야 합니다.</li>
+      <li>아이와 반려견이 매일 머무는 바닥일수록 관리 편의성은 중요합니다.</li>
+    </ul>
+  </section>
+
+  <!-- ===== 섹션 05 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 05</span>
+      <h2><em>비싸야 프리미엄</em>일까요?</h2>
+      <p class="lead">가격이 높다고 무조건 더 검증된 매트는 아닙니다.</p>
+    </div>
+
+    <p style="margin:0;color:var(--text-sub);font-size:14px;font-weight:500;line-height:1.8">
+      일부 브랜드는 높은 가격을 근거로 "고급"과 "프리미엄"을 이야기합니다. 하지만 정말 중요한 건 <strong style="color:var(--primary-dark);font-weight:800">얼마나 비싼가가 아니라, 어디에서 선택받았는가</strong>입니다.
+    </p>
+
+    <img class="section-image" src="./assets/welcome/kids-playing.jpg" alt="돌봄매트 시공 사례 - 거실에서 아이들이 노는 모습">
+
+    <div class="proof-box">
+      <div class="proof-title">검증된 시공 이력</div>
+      <div class="proof-grid">
+        <div class="proof-item">
+          <span class="proof-value">5★</span>
+          <span class="proof-label">5성급 호텔<br>키즈 공간</span>
         </div>
-        <label class="consent-check">
-          <input type="checkbox" id="fConsent">
-          <div class="cbox"></div>
-          <span class="clabel">개인정보 수집 및 이용에 동의합니다.</span>
-        </label>
+        <div class="proof-item">
+          <span class="proof-value">80곳</span>
+          <span class="proof-label">전국 어린이집<br>시공 완료</span>
+        </div>
+        <div class="proof-item">
+          <span class="proof-value">6,700</span>
+          <span class="proof-label">실제 가정<br>시공 세대</span>
+        </div>
       </div>
     </div>
 
-    <div class="next-btns fade-up fade-up-3">
-      <button class="btn btn-large btn-success" id="btnQuote">
-        📋 셀프 맞춤견적 받기
-      </button>
-      <button class="btn btn-kakao" id="btnKakao">
-        💬 카카오톡으로 상담하기
-      </button>
+    <div class="highlight-box">
+      합리적인 가격이지만, 선택받은 공간은 결코 가볍지 않습니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 06 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 06</span>
+      <h2>오래 쓰는 제품이라면<br><em>업체의 지속성</em>도 확인하세요</h2>
+      <p class="lead">몇 년 뒤에도 믿고 연락할 수 있는 회사인지가 중요합니다.</p>
     </div>
 
-    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text-tertiary);">
-      정보 입력 후 원하시는 방법을 선택하세요
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div>
+          <strong>2020년 창업, 6년째 운영</strong>
+          <span>짧게 반짝하는 브랜드가 아니라, 시공 경험을 꾸준히 쌓아온 브랜드인지 확인하세요.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div>
+          <strong>본사 직접 시공 경험</strong>
+          <span>고객이 체감하는 만족도는 제품뿐 아니라 현장 시공 품질에서 크게 갈립니다.</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div>
+          <strong>시공 이후까지 생각하는 선택</strong>
+          <span>추가 상담, 관리 문의, 시공 후 소통까지 오래 이어질 수 있는지 보는 것이 좋습니다.</span>
+        </div>
+      </div>
     </div>
 
-    <div style="text-align:center;margin-top:10px;padding-bottom:40px;font-size:11px;color:var(--text-tertiary);">
-      상담은 평일 오전 9시~오후 6시 진행됩니다
+    <div class="yellow-box">
+      <div class="yellow-box-text">매트는 시공 당일보다, 몇 년 뒤에도 믿고 연락할 수 있는지가 더 중요합니다.</div>
+    </div>
+  </section>
+
+  <!-- ===== 섹션 07 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 07</span>
+      <h2><em>우리 집은</em><br>몇 장이 필요할까요?</h2>
+      <p class="lead">같은 평형이라도 구조와 시공 범위에 따라 수량은 달라집니다.</p>
     </div>
 
+    <div class="split">
+      <div class="info-card">
+        <h3>이런 정보가 있으면 더 빠릅니다</h3>
+        <p>평면도, 거실 사진, 시공 희망 범위, 주방 포함 여부를 보내주세요.</p>
+      </div>
+      <div class="info-card">
+        <h3>상담에서 안내드리는 것</h3>
+        <p>예상 장수, 대략적인 시공 금액, 17T·22T 추천 방향을 빠르게 도와드립니다.</p>
+      </div>
+    </div>
+
+    <div class="scope-grid">
+      <div class="scope-card">
+        <h3>거실 + 복도</h3>
+        <p>주요 생활 동선을 먼저 보호하고 싶을 때 가장 많이 고민하는 기본 범위입니다.</p>
+      </div>
+      <div class="scope-card">
+        <h3>거실 + 복도 + 주방</h3>
+        <p>아이와 반려견의 활동 범위를 넓게 보호하고 싶을 때 상담이 많은 범위입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 외부 링크 ===== -->
+  <div class="external-links">
+    <a href="https://m.site.naver.com/1AWJU" class="ext-link" onclick="gtag('event','cs_welcome_click',{button:'review'})">실시간 리뷰</a>
+    <a href="https://m.site.naver.com/1Ac41" class="ext-link" onclick="gtag('event','cs_welcome_click',{button:'cert'})">인증서·테스트</a>
   </div>
 
+  <!-- ===== 마지막 CTA ===== -->
+  <section class="final-cta" id="consult">
+    <div class="final-cta-content">
+      <div class="final-cta-badge">마지막 단계</div>
+      <h2>샘플까지 받아보셨다면,<br>이제 우리 집에 맞는<br>선택만 남았습니다.</h2>
+      <p>사진 한 장만 보내주셔도<br>예상 장수와 상담 방향을 빠르게 안내해드립니다.</p>
+      <div class="cta-row">
+        <a class="btn btn-kakao" href="http://pf.kakao.com/_UMyBK/chat" onclick="gtag('event','cs_welcome_click',{button:'kakao_chat'})">카톡으로 상담받기</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 푸터 ===== -->
+  <div class="footer">
+    <span class="brand">돌봄매트</span>
+    6년간 6,700세대가 선택한 본사 직접 시공<br>
+    ⓒ Dolbommat. All rights reserved.
+  </div>
+
+</main>
+
+<!-- Sticky 모바일 하단 CTA -->
+<div class="sticky-mobile">
+  <a href="http://pf.kakao.com/_UMyBK/chat" onclick="gtag('event','cs_welcome_click',{button:'sticky_kakao'})">우리 집 예상 장수 · 상담받기</a>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
-const KAKAO_URL = 'http://pf.kakao.com/_UMyBK/chat';
-
-// URL 파라미터 파싱
-const params = new URLSearchParams(window.location.search);
-const ref = params.get('ref') || '';
-const contentId = params.get('content') || '';
-const nextDest = params.get('next') || 'quote'; // quote | kakao · 기본은 quote
-
-// 시공팀 정보 매핑 (임시 · 추후 API 호출로 대체)
-const TEAM_MAP = {
-  'sj': { name: '승재', region: '부산' },
-  'sw': { name: '세욱', region: '부산' },
-  'jh': { name: '준형', region: '부산' },
-  'yc': { name: '윤철', region: '부산' },
-  'mw': { name: '민우', region: '경기' },
-  'hs': { name: '형석', region: '경기' },
-  'sj2': { name: '선재', region: '경기' },
-  'kj': { name: '경준', region: '경기' },
-  'hj': { name: '현진', region: '경기' },
-  'jm': { name: '재문', region: '경기' }
-};
-
-// 페이지 초기화
-function init() {
-  if (!ref || !TEAM_MAP[ref]) {
-    document.getElementById('errorBox').classList.remove('hidden');
-    return;
-  }
-
-  const team = TEAM_MAP[ref];
-  document.getElementById('refBadgeTeam').textContent = team.name;
-  document.getElementById('heroTeamName').textContent = team.name;
-  document.getElementById('mainContent').classList.remove('hidden');
-}
-
-// 휴대폰 숫자만 필터
-document.addEventListener('DOMContentLoaded', function() {
-  init();
-
-  const phoneInput = document.getElementById('fPhone');
-  if (phoneInput) {
-    phoneInput.addEventListener('input', function(e) {
-      e.target.value = e.target.value.replace(/[^0-9]/g, '');
-    });
-  }
-
-  document.getElementById('btnQuote').addEventListener('click', () => handleNext('quote'));
-  document.getElementById('btnKakao').addEventListener('click', () => handleNext('kakao'));
-});
-
-function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + (type || '');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function validate() {
-  const name = document.getElementById('fName').value.trim();
-  const phone = document.getElementById('fPhone').value.trim();
-  const consent = document.getElementById('fConsent').checked;
-
-  if (!name) { showToast('⚠️ 이름을 입력해주세요', 'error'); return false; }
-  if (!phone || phone.length < 10 || phone.length > 11) {
-    showToast('⚠️ 휴대폰 번호를 정확히 입력해주세요', 'error');
-    return false;
-  }
-  if (!consent) { showToast('⚠️ 개인정보 수집에 동의해주세요', 'error'); return false; }
-
-  return { name, phone, consent: 'Y' };
-}
-
-async function handleNext(nextStep) {
-  const data = validate();
-  if (!data) return;
-
-  // 버튼 비활성화
-  document.getElementById('btnQuote').disabled = true;
-  document.getElementById('btnKakao').disabled = true;
-
-  try {
-    // API 호출 · 고객 유입 기록
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'trackEntry',
-        name: data.name,
-        phone: data.phone,
-        ref: ref,
-        page: '/cs-welcome',
-        content_id: contentId,
-        consent: data.consent
-      })
-    });
-  } catch (e) {
-    // 실패해도 다음 단계로 진행
-    console.error('trackEntry failed', e);
-  }
-
-  // 다음 단계 라우팅
-  if (nextStep === 'quote') {
-    showToast('✅ 맞춤견적 페이지로 이동합니다', 'success');
-    setTimeout(() => {
-      // 기존 quote.html · ch(추천인) + phone(자동 채움) + name(참고용)
-      const qs = `ch=${encodeURIComponent(ref)}&phone=${encodeURIComponent(data.phone)}&name=${encodeURIComponent(data.name)}`;
-      window.location.href = `./quote.html?${qs}`;
-    }, 600);
-  } else if (nextStep === 'kakao') {
-    showToast('✅ 카카오톡 상담으로 이동합니다', 'success');
-    setTimeout(() => {
-      window.location.href = KAKAO_URL;
-    }, 600);
-  }
-}
-</script>
 </body>
 </html>
