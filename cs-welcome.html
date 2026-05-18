@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>돌봄매트 | 시공 전 꼭 확인해 주세요</title>
 <meta name="description" content="샘플을 받아보신 고객님을 위한 시공매트 비교 가이드">
+<meta name="theme-color" content="#FBF5EC">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 
 <!-- GA4 -->
@@ -24,27 +25,31 @@ gtag('event', 'cs_welcome_view', {source: urlParams.get('from') || 'direct'});
   --primary-dark:#1B5E20;
   --primary-soft:#E8F5E9;
   --primary-lighter:#F1F8E9;
-  --accent:#388E3C;
+  --warm-bg:#FBF5EC;
+  --warm-bg-light:#FFF9F0;
+  --warm-bg-card:#FFFCF6;
+  --pink-soft:#FAEAE0;
+  --pink-deep:#E08570;
+  --beige-line:#EAE1D2;
   --text:#1a1a1a;
-  --text-sub:#3a4a3c;
-  --muted:#666e6a;
-  --line:#e4ece5;
-  --bg-soft:#fafbfa;
-  --yellow:#FEE500;
+  --text-strong:#0f1f12;
+  --text-body:#2a3a2d;
+  --muted:#5a625c;
+  --line:#e8e0d2;
+  --line-soft:#f0e9dc;
   --yellow-dark:#FDD835;
-  --soft-pink:#FCE4EC;
-  --shadow:0 16px 40px rgba(46,125,50,.08);
-  --shadow-sm:0 6px 18px rgba(46,125,50,.05);
+  --shadow:0 14px 36px rgba(120,90,40,.08);
+  --shadow-sm:0 6px 16px rgba(120,90,40,.06);
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
 body{
   margin:0;
-  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
   color:var(--text);
-  background:linear-gradient(180deg,#f8fbf8 0%,#f5f9f5 50%,#ffffff 100%);
-  line-height:1.75;
+  background:linear-gradient(180deg,#FBF5EC 0%,#F8F2E8 50%,#FCF8F0 100%);
+  line-height:1.8;
   word-break:keep-all;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -54,381 +59,146 @@ a{color:inherit;text-decoration:none}
 
 .page{width:min(100%,540px);margin:0 auto;padding:20px 18px 110px}
 
-/* === 상단 알약 === */
-.top-pill{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:9px 14px;border-radius:999px;
-  background:#fff;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow-sm);
-  color:var(--primary-dark);
-  font-size:13px;font-weight:700;
-}
-.top-pill::before{
-  content:"";display:block;
-  width:7px;height:7px;border-radius:50%;
-  background:var(--primary);
-}
+.top-pill{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);color:var(--primary-dark);font-size:13px;font-weight:700}
+.top-pill::before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:var(--primary)}
 
 /* === 헤더 === */
-.hero{
-  margin-top:14px;border-radius:24px;
-  background:#fff;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
+.hero{margin-top:14px;border-radius:22px;background:linear-gradient(180deg,#FFF9F0 0%,#FFFCF6 100%);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
 .hero-text{padding:30px 24px 8px}
-.brand-kicker{
-  display:inline-block;
-  color:var(--primary);
-  font-size:13px;font-weight:700;
-  margin-bottom:14px;
-  letter-spacing:-.01em;
-}
-.hero-title{
-  margin:0;
-  font-size:26px;line-height:1.4;
-  letter-spacing:-.035em;font-weight:800;
-  color:#0f1f12;
-}
+.brand-kicker{display:inline-block;color:var(--primary);font-size:13px;font-weight:700;margin-bottom:14px}
+.hero-title{margin:0;font-size:26px;line-height:1.42;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
 .hero-title .accent{color:var(--primary)}
-.hero-desc{
-  margin:16px 0 0;color:var(--text-sub);
-  font-size:15px;font-weight:500;line-height:1.75;
-}
-.hero-chips{
-  display:flex;flex-wrap:wrap;gap:6px;
-  margin:20px 0 0;
-}
-.hero-chip{
-  padding:7px 12px;border-radius:999px;
-  background:var(--primary-soft);
-  color:var(--primary-dark);
-  font-size:12px;font-weight:700;
-}
-.hero-image-wrap{
-  margin-top:24px;
-  position:relative;
-  overflow:hidden;
-}
-.hero-image{
-  width:100%;
-  aspect-ratio:16/10;
-  object-fit:cover;
-}
+.hero-desc{margin:16px 0 0;color:var(--text-body);font-size:14.5px;font-weight:500;line-height:1.8}
+.hero-desc strong{color:var(--text-strong);font-weight:700}
+.hero-chips{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
+.hero-chip{padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--primary-dark);font-size:12px;font-weight:700}
+.hero-image-wrap{margin-top:24px}
+.hero-image{width:100%;aspect-ratio:16/10;object-fit:cover}
 
 /* === 메시지 카드 === */
-.message-card{
-  margin-top:18px;padding:26px 22px;
-  border-radius:22px;
-  background:#fff;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow-sm);
-}
-.message-title{
-  margin:0 0 12px;
-  font-size:19px;line-height:1.5;
-  letter-spacing:-.025em;font-weight:800;
-}
+.message-card{margin-top:18px;padding:26px 22px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.message-title{margin:0 0 12px;font-size:19px;line-height:1.5;letter-spacing:-.025em;font-weight:800;color:var(--text-strong)}
 .message-title strong{color:var(--primary)}
-.message-desc{
-  margin:0 0 18px;color:var(--muted);
-  font-size:14px;font-weight:500;line-height:1.75;
-}
-.message-box{
-  padding:18px 20px;
-  border-radius:14px;background:var(--bg-soft);
-  border:1px solid var(--line);
-}
-.message-box-title{
-  margin:0 0 12px;color:#384b3a;
-  font-size:13px;font-weight:700;
-  letter-spacing:-.01em;
-}
+.message-desc{margin:0 0 18px;color:var(--muted);font-size:14px;font-weight:500;line-height:1.8}
+.message-box{padding:18px 20px;border-radius:14px;background:var(--warm-bg);border:1px solid var(--line)}
+.message-box-title{margin:0 0 12px;color:var(--text-strong);font-size:13px;font-weight:700}
 .message-box ul{margin:0;padding:0;list-style:none}
-.message-box li{
-  position:relative;padding-left:22px;
-  font-size:13.5px;color:#3d4d3f;font-weight:500;
-  line-height:1.65;margin-bottom:8px;
-}
+.message-box li{position:relative;padding-left:22px;font-size:13.5px;color:var(--text-body);font-weight:500;line-height:1.7;margin-bottom:8px}
 .message-box li:last-child{margin-bottom:0}
-.message-box li::before{
-  content:"";position:absolute;left:0;top:9px;
-  width:6px;height:6px;border-radius:50%;
-  background:var(--primary);
-}
-
-/* === 메인 CTA 버튼 === */
-.cta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  min-height:50px;padding:0 22px;border-radius:14px;border:none;cursor:pointer;
-  font-family:inherit;font-size:14px;font-weight:800;letter-spacing:-.02em;
-  transition:transform .15s ease;
-  text-decoration:none;flex:1;
-}
-.btn:active{transform:scale(.98)}
-.btn-primary{
-  color:#fff;
-  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-  box-shadow:0 10px 22px rgba(46,125,50,.18);
-}
-.btn-kakao{
-  color:#3C1E1E;
-  background:var(--yellow-dark);
-  box-shadow:0 10px 22px rgba(253,216,53,.22);
-}
+.message-box li::before{content:"";position:absolute;left:0;top:10px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
 
 /* === 섹션 === */
-.section{
-  margin-top:18px;padding:30px 24px;
-  border-radius:22px;
-  background:#fff;
-  border:1px solid var(--line);
-  box-shadow:var(--shadow-sm);
-}
+.section{margin-top:18px;padding:30px 24px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
 .section-head{margin-bottom:18px}
-.section-num{
-  display:inline-block;
-  padding:4px 12px;border-radius:8px;
-  background:var(--primary-soft);
-  color:var(--primary-dark);
-  font-size:11px;font-weight:800;
-  letter-spacing:1.5px;
-  margin-bottom:14px;
-}
-.section h2{
-  margin:0;font-size:22px;line-height:1.42;
-  letter-spacing:-.035em;font-weight:800;
-  color:#0f1f12;
-}
+.section-num{display:inline-block;padding:4px 12px;border-radius:8px;background:var(--primary-soft);color:var(--primary-dark);font-size:11px;font-weight:800;letter-spacing:1.5px;margin-bottom:14px}
+.section h2{margin:0;font-size:22px;line-height:1.45;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
 .section h2 em{color:var(--primary);font-style:normal;font-weight:800}
-.section .lead{
-  margin:12px 0 0;color:var(--muted);
-  font-size:14px;font-weight:500;line-height:1.75;
-}
+.section .lead{margin:12px 0 0;color:var(--muted);font-size:14px;font-weight:500;line-height:1.8}
 
 /* === 섹션 이미지 === */
-.section-image{
-  width:100%;aspect-ratio:5/3;
-  object-fit:cover;border-radius:14px;
-  margin:18px 0 4px;
-  background:var(--bg-soft);
-}
+.section-image{width:100%;aspect-ratio:5/3;object-fit:cover;border-radius:14px;margin:18px 0 4px;background:var(--warm-bg-light)}
 
 /* === info 카드 === */
 .split{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
-.info-card{
-  padding:18px 20px;border-radius:14px;
-  background:var(--bg-soft);
-  border:1px solid var(--line);
-}
-.info-card h3{
-  margin:0 0 6px;color:#1f2f22;
-  font-size:14px;font-weight:800;line-height:1.4;letter-spacing:-.02em;
-}
-.info-card p{
-  margin:0;color:var(--muted);
-  font-size:13.5px;font-weight:500;line-height:1.75;
-}
+.info-card{padding:18px 20px;border-radius:14px;background:var(--warm-bg);border:1px solid var(--line-soft)}
+.info-card h3{margin:0 0 6px;color:var(--text-strong);font-size:14.5px;font-weight:800;line-height:1.4;letter-spacing:-.015em}
+.info-card p{margin:0;color:var(--text-body);font-size:13.5px;font-weight:500;line-height:1.8}
 
-/* === 체크 리스트 (이모지 제거, 단순 체크 마크) === */
+/* === 실제 후기 인용 박스 (신규) === */
+.review-quote{
+  margin-top:18px;padding:20px 22px;
+  background:#fff;
+  border-left:3px solid var(--primary);
+  border-radius:0 12px 12px 0;
+  box-shadow:0 4px 12px rgba(0,0,0,.04);
+  position:relative;
+}
+.review-quote::before{
+  content:"";display:block;
+  width:24px;height:18px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E7D32' opacity='0.3'><path d='M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z'/></svg>");
+  background-size:contain;background-repeat:no-repeat;
+  margin-bottom:8px;
+}
+.review-quote-text{color:#3a4a3c;font-size:14px;font-weight:500;line-height:1.75;font-style:italic}
+.review-quote-meta{margin-top:10px;color:var(--muted);font-size:11.5px;font-weight:600}
+
+/* === 체크 리스트 === */
 .bullet{margin:18px 0 0;padding:0;list-style:none}
-.bullet li{
-  position:relative;padding-left:26px;
-  color:var(--text-sub);
-  font-size:14px;font-weight:600;line-height:1.7;
-  margin-bottom:10px;
-}
+.bullet li{position:relative;padding-left:28px;color:var(--text-body);font-size:14px;font-weight:600;line-height:1.75;margin-bottom:10px}
 .bullet li:last-child{margin-bottom:0}
-.bullet li::before{
-  content:"";position:absolute;left:0;top:9px;
-  width:14px;height:14px;border-radius:4px;
-  background:var(--primary-soft);
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
-  background-size:11px;
-  background-position:center;
-  background-repeat:no-repeat;
-}
+.bullet li::before{content:"";position:absolute;left:0;top:6px;width:18px;height:18px;border-radius:5px;background:var(--primary-soft);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");background-size:12px;background-position:center;background-repeat:no-repeat}
 
-/* === 강조 박스 (녹색) === */
-.highlight-box{
-  margin-top:18px;padding:18px 20px;border-radius:14px;
-  background:linear-gradient(135deg,var(--primary-soft),var(--primary-lighter));
-  border:1px solid rgba(46,125,50,.18);
-  color:var(--primary-dark);
-  font-size:14.5px;font-weight:700;line-height:1.65;
-  letter-spacing:-.015em;
-}
+/* === 강조 박스 === */
+.highlight-box{margin-top:18px;padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,var(--primary-soft),var(--primary-lighter));border:1px solid rgba(46,125,50,.18);color:var(--primary-dark);font-size:14.5px;font-weight:700;line-height:1.7;letter-spacing:-.015em}
 
-/* === 노란 강조 박스 (리플릿 스타일) === */
-.yellow-box{
-  margin-top:18px;padding:18px 20px;
-  background:linear-gradient(135deg,#FFFBEB,#FFF8E1);
-  border-left:4px solid #FFA000;border-radius:12px;
-}
-.yellow-box-text{
-  color:#5D4037;font-size:14px;font-weight:700;line-height:1.65;
-}
+.yellow-box{margin-top:18px;padding:18px 20px;background:linear-gradient(135deg,#FFFBEB,#FFF8E1);border-left:4px solid #FFA000;border-radius:12px}
+.yellow-box-text{color:#5D4037;font-size:14px;font-weight:700;line-height:1.7}
+
+.pink-box{margin-top:18px;padding:18px 20px;background:linear-gradient(135deg,#FCEDE5,#FAEAE0);border-left:4px solid var(--pink-deep);border-radius:12px}
+.pink-box-text{color:#7A4838;font-size:14px;font-weight:700;line-height:1.7}
 
 /* === 비교 표 === */
-.comparison-table{
-  width:100%;margin-top:16px;
-  border-collapse:separate;border-spacing:0;
-  overflow:hidden;border-radius:14px;
-  border:1px solid var(--line);background:#fff;
-}
-.comparison-table th,.comparison-table td{
-  padding:12px 8px;border-bottom:1px solid var(--line);
-  text-align:center;vertical-align:middle;
-  font-size:12.5px;line-height:1.55;
-}
-.comparison-table thead th{
-  background:var(--primary-soft);color:var(--primary-dark);
-  font-weight:800;font-size:13.5px;
-}
-.comparison-table tbody th{
-  width:30%;background:var(--bg-soft);color:#2e4631;
-  font-weight:700;font-size:11.5px;text-align:center;
-}
-.comparison-table td{color:#516053;font-weight:600}
+.comparison-table{width:100%;margin-top:16px;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:#fff}
+.comparison-table th,.comparison-table td{padding:13px 8px;border-bottom:1px solid var(--line-soft);text-align:center;vertical-align:middle;font-size:13px;line-height:1.6}
+.comparison-table thead th{background:var(--primary-soft);color:var(--primary-dark);font-weight:800;font-size:13.5px}
+.comparison-table tbody th{width:30%;background:var(--warm-bg);color:var(--text-strong);font-weight:700;font-size:12px;text-align:center}
+.comparison-table td{color:var(--text-body);font-weight:600}
 .comparison-table tr:last-child th,.comparison-table tr:last-child td{border-bottom:none}
 
-/* === 통계 그리드 (리플릿 검증 박스 스타일) === */
-.proof-box{
-  margin-top:18px;padding:24px 20px;
-  border-radius:18px;
-  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-  color:#fff;
-}
-.proof-title{
-  font-size:13px;font-weight:700;color:#FDD835;
-  letter-spacing:1px;margin-bottom:14px;text-align:center;
-}
+/* === 검증 박스 === */
+.proof-box{margin-top:18px;padding:24px 20px;border-radius:18px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff}
+.proof-title{font-size:13px;font-weight:700;color:#FDD835;letter-spacing:1px;margin-bottom:14px;text-align:center}
 .proof-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.proof-item{
-  padding:14px 4px;text-align:center;
-  background:rgba(255,255,255,.08);
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.12);
-}
-.proof-value{
-  display:block;color:#FDD835;
-  font-size:20px;line-height:1;font-weight:800;letter-spacing:-.02em;
-  margin-bottom:6px;
-}
-.proof-label{
-  display:block;color:rgba(255,255,255,.92);
-  font-size:11px;font-weight:600;line-height:1.4;
-}
+.proof-item{padding:16px 4px;text-align:center;background:rgba(255,255,255,.08);border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+.proof-value{display:block;color:#FDD835;font-size:21px;line-height:1;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.proof-label{display:block;color:rgba(255,255,255,.94);font-size:11px;font-weight:600;line-height:1.45}
 
 /* === Timeline === */
 .timeline{margin-top:16px;display:grid;gap:10px}
-.timeline-item{
-  display:flex;gap:12px;align-items:flex-start;
-  padding:16px 18px;border-radius:14px;
-  background:var(--bg-soft);border:1px solid var(--line);
-}
-.timeline-dot{
-  flex:0 0 auto;width:10px;height:10px;margin-top:7px;
-  border-radius:999px;background:var(--primary);
-  box-shadow:0 0 0 5px rgba(46,125,50,.10);
-}
-.timeline-item strong{
-  display:block;margin-bottom:3px;color:#1f3324;
-  font-size:14px;font-weight:800;letter-spacing:-.015em;
-}
-.timeline-item span{
-  color:var(--muted);font-size:13px;font-weight:500;line-height:1.7;
-}
+.timeline-item{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:14px;background:var(--warm-bg);border:1px solid var(--line-soft)}
+.timeline-dot{flex:0 0 auto;width:10px;height:10px;margin-top:8px;border-radius:999px;background:var(--primary);box-shadow:0 0 0 5px rgba(46,125,50,.12)}
+.timeline-item strong{display:block;margin-bottom:4px;color:var(--text-strong);font-size:14.5px;font-weight:800;letter-spacing:-.015em}
+.timeline-item span{color:var(--text-body);font-size:13.5px;font-weight:500;line-height:1.75}
 
 /* === 범위 카드 === */
 .scope-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
-.scope-card{
-  padding:18px 20px;border-radius:14px;
-  background:linear-gradient(135deg,#FFFBEB,#FFF8E1);
-  border:1px solid rgba(255,160,0,.18);
-}
-.scope-card h3{
-  margin:0 0 6px;color:#7B5800;
-  font-size:14px;font-weight:800;letter-spacing:-.015em;
-}
-.scope-card p{
-  margin:0;color:#6B5D45;
-  font-size:13px;font-weight:500;line-height:1.7;
-}
+.scope-card{padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,#FCEDE5,#FAEAE0);border:1px solid rgba(224,133,112,.20)}
+.scope-card h3{margin:0 0 6px;color:#7A4838;font-size:14.5px;font-weight:800;letter-spacing:-.015em}
+.scope-card p{margin:0;color:#6B5345;font-size:13.5px;font-weight:500;line-height:1.75}
 
 /* === 외부 링크 === */
 .external-links{margin-top:24px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.ext-link{
-  padding:10px 18px;background:#fff;
-  border:1px solid var(--line);border-radius:24px;
-  color:var(--muted);font-size:12px;font-weight:600;text-decoration:none;
-}
+.ext-link{padding:10px 18px;background:#fff;border:1px solid var(--line);border-radius:24px;color:var(--text-body);font-size:12.5px;font-weight:600;text-decoration:none}
+.ext-link:active{transform:scale(.97);background:var(--warm-bg)}
 
 /* === 마지막 CTA === */
-.final-cta{
-  margin-top:22px;padding:36px 24px;
-  border-radius:24px;text-align:center;color:#fff;
-  background:
-    radial-gradient(circle at top right,rgba(255,255,255,.10),transparent 35%),
-    linear-gradient(135deg,var(--primary),var(--primary-dark));
-  box-shadow:0 20px 44px rgba(46,125,50,.22);
-  position:relative;overflow:hidden;
-}
+.final-cta{margin-top:22px;padding:36px 24px;border-radius:24px;text-align:center;color:#fff;background:radial-gradient(circle at top right,rgba(255,255,255,.12),transparent 35%),linear-gradient(135deg,var(--primary),var(--primary-dark));box-shadow:0 20px 44px rgba(46,125,50,.22);position:relative;overflow:hidden}
 .final-cta::before{content:"";position:absolute;top:-40px;left:-40px;width:140px;height:140px;background:rgba(255,255,255,.05);border-radius:50%}
 .final-cta-content{position:relative;z-index:1}
-.final-cta-badge{
-  display:inline-block;padding:5px 14px;
-  background:rgba(255,255,255,.16);
-  color:#FDD835;font-size:11px;font-weight:700;
-  border-radius:16px;margin-bottom:16px;letter-spacing:.5px;
-}
-.final-cta h2{
-  margin:0;font-size:22px;line-height:1.45;letter-spacing:-.035em;font-weight:800;
-}
-.final-cta p{
-  margin:14px 0 22px;
-  color:rgba(255,255,255,.88);
-  font-size:14px;font-weight:500;line-height:1.75;
-}
-.final-cta .btn{flex:1}
-.final-cta .btn-kakao{color:#3C1E1E}
+.final-cta-badge{display:inline-block;padding:5px 14px;background:rgba(255,255,255,.16);color:#FDD835;font-size:11px;font-weight:700;border-radius:16px;margin-bottom:16px;letter-spacing:.5px}
+.final-cta h2{margin:0;font-size:22px;line-height:1.5;letter-spacing:-.035em;font-weight:800}
+.final-cta p{margin:14px 0 22px;color:rgba(255,255,255,.88);font-size:14px;font-weight:500;line-height:1.75}
+.cta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:50px;padding:0 22px;border-radius:14px;border:none;cursor:pointer;font-family:inherit;font-size:14.5px;font-weight:800;letter-spacing:-.02em;transition:transform .15s ease;text-decoration:none;flex:1}
+.btn:active{transform:scale(.98)}
+.btn-kakao{color:#3C1E1E;background:var(--yellow-dark);box-shadow:0 10px 22px rgba(253,216,53,.22)}
 
-/* === Sticky 모바일 하단 CTA === */
-.sticky-mobile{
-  position:fixed;left:12px;right:12px;bottom:12px;z-index:30;
-  padding:8px;border-radius:18px;
-  background:rgba(255,255,255,.94);
-  backdrop-filter:blur(14px);
-  border:1px solid var(--line);
-  box-shadow:0 14px 32px rgba(46,125,50,.16);
-  max-width:520px;margin:0 auto;
-}
-.sticky-mobile a{
-  display:flex;align-items:center;justify-content:center;
-  min-height:46px;border-radius:12px;
-  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
-  color:#fff;font-size:14px;font-weight:800;letter-spacing:-.015em;
-}
+/* === Sticky === */
+.sticky-mobile{position:fixed;left:12px;right:12px;bottom:12px;z-index:30;padding:8px;border-radius:18px;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);box-shadow:0 14px 32px rgba(120,90,40,.18);max-width:520px;margin:0 auto;transition:opacity .3s ease,transform .3s ease}
+.sticky-mobile.hidden{opacity:0;pointer-events:none;transform:translateY(20px)}
+.sticky-mobile a{display:flex;align-items:center;justify-content:center;min-height:46px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;font-size:14px;font-weight:800;letter-spacing:-.015em}
 
 /* === 푸터 === */
-.footer{text-align:center;padding:24px 20px 0;font-size:11px;color:#999;line-height:1.7}
-.footer .brand{font-weight:700;color:#666;display:block;margin-bottom:4px}
+.footer{text-align:center;padding:24px 20px 0;font-size:11.5px;color:#888;line-height:1.7}
+.footer .brand{font-weight:700;color:#666;display:block;margin-bottom:4px;font-size:12.5px}
 
-/* === 애니메이션 === */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .section,.final-cta,.message-card{animation:fadeUp .45s ease both}
-.section:nth-child(2){animation-delay:.04s}
-.section:nth-child(3){animation-delay:.08s}
-.section:nth-child(4){animation-delay:.12s}
 
-/* === 데스크탑 최적화 === */
 @media (min-width:600px){
   .hero-text{padding:38px 32px 12px}
   .hero-title{font-size:30px}
-  .hero-desc{font-size:16px}
   .section{padding:36px 30px}
   .section h2{font-size:24px}
   .message-card{padding:32px 28px}
@@ -453,11 +223,11 @@ a{color:inherit;text-decoration:none}
         이제 <span class="accent">후회 없는<br>선택 기준</span>을 확인하실 차례입니다.
       </h1>
       <p class="hero-desc">
-        여러 브랜드를 비교 중이신 고객님을 위해<br>
-        시공 전 꼭 확인해야 할 <strong>핵심 기준</strong>만 정리했습니다.
+        실제 시공매트 후기 데이터를 분석해,<br>
+        구매 전 가장 많이 고민하시는 <strong>9가지 기준</strong>을 순서대로 정리했습니다.
       </p>
       <div class="hero-chips">
-        <span class="hero-chip">폴더매트 vs 시공매트</span>
+        <span class="hero-chip">층간소음</span>
         <span class="hero-chip">17T vs 22T</span>
         <span class="hero-chip">틈새·마감·청소</span>
       </div>
@@ -470,29 +240,59 @@ a{color:inherit;text-decoration:none}
   <!-- ===== 메시지 카드 ===== -->
   <section class="message-card">
     <h2 class="message-title">
-      고객님이 지금 궁금해하실 내용을<br>
-      <strong>1분 가이드</strong>로 정리했습니다.
+      실제 후기 580건을 분석한<br>
+      <strong>1분 가이드</strong>입니다.
     </h2>
     <p class="message-desc">
       가격만 볼수록 결정은 더 어려워집니다.<br>
-      우리 집에 맞는 선택인지, 오래 써도 괜찮은지부터 확인해보세요.
+      샘플을 받아보신 지금이 가장 중요한 비교 순간입니다.
     </p>
     <div class="message-box">
-      <div class="message-box-title">이 가이드에서 바로 확인할 수 있어요</div>
+      <div class="message-box-title">가장 많이 고민하시는 순서</div>
       <ul>
-        <li>폴더매트와 시공매트의 실제 차이</li>
-        <li>17T와 22T 중 우리 집에 맞는 선택</li>
-        <li>틈새·마감·청소 관리 체크포인트</li>
-        <li>가격보다 먼저 봐야 할 검증 기준</li>
-        <li>우리 집 예상 장수와 상담 연결</li>
+        <li>층간소음, 정말 잡힐까?</li>
+        <li>폴더매트로 충분할까, 시공매트로 가야 할까?</li>
+        <li>매트 사이 틈과 마감, 정말 깔끔할까?</li>
+        <li>17T와 22T 중 우리 집에 맞는 두께</li>
+        <li>거실 분위기와 잘 어울릴까?</li>
+        <li>청소와 관리는 어렵지 않을까?</li>
       </ul>
     </div>
   </section>
 
-  <!-- ===== 섹션 01 ===== -->
+  <!-- ===== 섹션 01: 층간소음 ===== -->
   <section class="section">
     <div class="section-head">
       <span class="section-num">기준 01</span>
+      <h2><em>층간소음,</em><br>어디까지 잡힐 수 있을까요?</h2>
+      <p class="lead">시공매트를 알아보시는 분들이 가장 먼저 고민하는 1순위입니다.</p>
+    </div>
+
+    <div class="split">
+      <div class="info-card">
+        <h3>왜 시공매트를 찾게 될까요</h3>
+        <p>아이가 뛰거나 의자를 끄는 소리, 발망치 소리에서 시작되는 아랫집과의 작은 트러블이 가장 큰 동기입니다.</p>
+      </div>
+      <div class="info-card">
+        <h3>완벽한 차단은 어렵지만</h3>
+        <p>충격 흡수가 좋은 두꺼운 시공매트는 충격을 매트가 흡수해 아랫집 전달음을 줄이는 데 도움이 됩니다.</p>
+      </div>
+    </div>
+
+    <div class="review-quote">
+      <div class="review-quote-text">"새로 이사오신 밑에집 이웃분과 층간소음으로 자꾸 트러블이 생기고, 스트레스를 많이 받았어요."</div>
+      <div class="review-quote-meta">실제 시공 후기 中</div>
+    </div>
+
+    <div class="highlight-box">
+      층간소음이 가장 큰 고민이라면 22T가 더 든든하고, 일상 보행과 난방감을 함께 보신다면 17T도 좋은 선택입니다.
+    </div>
+  </section>
+
+  <!-- ===== 섹션 02: 폴더매트 → 시공매트 ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 02</span>
       <h2><em>폴더매트로 시작해도,</em><br>결국 시공매트를 다시 고민합니다</h2>
       <p class="lead">아이와 반려견의 활동 반경은 생각보다 빠르게 넓어집니다.</p>
     </div>
@@ -503,7 +303,7 @@ a{color:inherit;text-decoration:none}
         <p>"거실 한쪽만 깔면 되지 않을까?"<br>"일단 폴더매트로 시작해볼까?"</p>
       </div>
       <div class="info-card">
-        <h3>하지만 시간이 지나면 달라집니다</h3>
+        <h3>시간이 지나면 달라집니다</h3>
         <p>기고, 걷고, 뛰기 시작하면 복도와 주방까지 생활 동선 전체가 매트 고민의 대상이 됩니다.</p>
       </div>
     </div>
@@ -514,17 +314,48 @@ a{color:inherit;text-decoration:none}
       <li>집 전체가 자연스럽게 이어지는 인테리어를 원하게 됩니다.</li>
     </ul>
 
-    <div class="highlight-box">
-      폴더매트가 나쁜 게 아니라, 아이의 활동 반경이 생각보다 빨리 넓어집니다.
+    <div class="pink-box">
+      <div class="pink-box-text">폴더매트가 나쁜 게 아니라, 아이의 활동 반경이 생각보다 빨리 넓어집니다.</div>
     </div>
   </section>
 
-  <!-- ===== 섹션 02 ===== -->
+  <!-- ===== 섹션 03: 시공품질·마감 (틈새) ===== -->
   <section class="section">
     <div class="section-head">
-      <span class="section-num">기준 02</span>
+      <span class="section-num">기준 03</span>
+      <h2>완성도는 <em>틈새와 마감</em>에서<br>갈립니다</h2>
+      <p class="lead">후기에서 가장 자주 언급되는 만족·불만족 포인트입니다.</p>
+    </div>
+
+    <img class="section-image" src="./assets/welcome/mat-structure.jpg" alt="돌봄매트 구조 - 매트 시공 단면">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>비교할 때 꼭 볼 점</h3>
+        <p>이음선이 과하게 많지 않은지, 벽면과 모서리가 자연스럽게 마감되는지 확인해보세요.</p>
+      </div>
+      <div class="info-card">
+        <h3>돌봄매트가 강조하는 기준</h3>
+        <p>넓은 매트 구성과 꼼꼼한 본사 직접 시공으로 집 전체가 한 공간처럼 이어지는 느낌을 지향합니다.</p>
+      </div>
+    </div>
+
+    <div class="review-quote">
+      <div class="review-quote-text">"이질감이 거의 없고, 바닥재를 새로 시공한 것처럼 깔끔하게 마감된 느낌이었습니다."</div>
+      <div class="review-quote-meta">실제 시공 후기 中</div>
+    </div>
+
+    <div class="yellow-box">
+      <div class="yellow-box-text">시공 직후 예쁜 것보다, 매일 청소할 때 편한지가 더 중요합니다.</div>
+    </div>
+  </section>
+
+  <!-- ===== 섹션 04: 17T vs 22T ===== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">기준 04</span>
       <h2><em>17T vs 22T,</em><br>어떤 두께가 맞을까요?</h2>
-      <p class="lead">무조건 두꺼운 제품보다 우리 집 목적에 맞는 선택이 중요합니다.</p>
+      <p class="lead">두께는 가족 구성과 우선순위에 따라 정해집니다.</p>
     </div>
 
     <img class="section-image" src="./assets/welcome/mat-sizes.jpg" alt="돌봄매트 두께 비교">
@@ -561,41 +392,46 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 섹션 03 ===== -->
+  <!-- ===== 섹션 05: 우리 집 분위기 (NEW) ===== -->
   <section class="section">
     <div class="section-head">
-      <span class="section-num">기준 03</span>
-      <h2>완성도는 <em>틈새와 마감</em>에서<br>갈립니다</h2>
-      <p class="lead">사진으로는 비슷해 보여도, 매일 생활할수록 차이가 체감됩니다.</p>
+      <span class="section-num">기준 05</span>
+      <h2><em>우리 집 분위기</em>에<br>어울리는 매트인지</h2>
+      <p class="lead">실제 후기에서 만족도가 높은 포인트 중 하나가 '집 분위기와 잘 어울리는지'입니다.</p>
     </div>
 
-    <img class="section-image" src="./assets/welcome/mat-structure.jpg" alt="돌봄매트 구조 - 매트 시공 단면">
+    <img class="section-image" src="./assets/welcome/kids-playing.jpg" alt="돌봄매트 시공 사례 - 거실 분위기">
 
     <div class="split">
       <div class="info-card">
-        <h3>비교할 때 꼭 볼 점</h3>
-        <p>이음선이 과하게 많지 않은지, 벽면과 모서리가 자연스럽게 마감되는지 확인해보세요.</p>
+        <h3>색상이 만드는 차이</h3>
+        <p>너무 하얗기만 한 매트는 때가 쉽게 보이고, 너무 어두우면 거실이 답답해 보입니다. 은은한 톤이 가장 무난합니다.</p>
       </div>
       <div class="info-card">
-        <h3>돌봄매트가 강조하는 기준</h3>
-        <p>넓은 매트 구성과 꼼꼼한 본사 직접 시공으로 집 전체가 한 공간처럼 이어지는 느낌을 지향합니다.</p>
+        <h3>공간감</h3>
+        <p>큰 사이즈로 시공한 매트는 거실을 더 넓어 보이게 합니다. 작은 매트가 여러 장 이어진 것보다 자연스럽습니다.</p>
       </div>
     </div>
 
-    <div class="yellow-box">
-      <div class="yellow-box-text">시공 직후 예쁜 것보다, 매일 청소할 때 편한지가 더 중요합니다.</div>
+    <div class="review-quote">
+      <div class="review-quote-text">"너무 하얗지도 않고 은은한 샌드톤이 가미된 베이지 느낌이라 집안 분위기가 훨씬 따뜻하고 고급스러워 보여요."</div>
+      <div class="review-quote-meta">실제 시공 후기 中</div>
+    </div>
+
+    <div class="pink-box">
+      <div class="pink-box-text">샘플을 거실 바닥에 직접 올려두고 가구·벽지와의 색감을 확인해보세요.</div>
     </div>
   </section>
 
-  <!-- ===== 섹션 04 ===== -->
+  <!-- ===== 섹션 06: 청소·관리 ===== -->
   <section class="section">
     <div class="section-head">
-      <span class="section-num">기준 04</span>
+      <span class="section-num">기준 06</span>
       <h2><em>청소·물 흘림·습기,</em><br>관리가 중요합니다</h2>
       <p class="lead">시공매트는 하루 보고 결정하지만, 실제 사용은 몇 년간 이어집니다.</p>
     </div>
 
-    <img class="section-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 - 공기 순환 구조" style="background:#fafbfa;object-fit:contain;padding:14px">
+    <img class="section-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 - 공기 순환 구조" style="background:var(--warm-bg-light);object-fit:contain;padding:14px">
 
     <div class="split">
       <div class="info-card">
@@ -614,19 +450,17 @@ a{color:inherit;text-decoration:none}
     </ul>
   </section>
 
-  <!-- ===== 섹션 05 ===== -->
+  <!-- ===== 섹션 07: 비싸야 프리미엄? ===== -->
   <section class="section">
     <div class="section-head">
-      <span class="section-num">기준 05</span>
+      <span class="section-num">기준 07</span>
       <h2><em>비싸야 프리미엄</em>일까요?</h2>
-      <p class="lead">가격이 높다고 무조건 더 검증된 매트는 아닙니다.</p>
+      <p class="lead">가격은 후기 데이터에서 3순위로 자주 거론되는 중요한 기준입니다.</p>
     </div>
 
-    <p style="margin:0;color:var(--text-sub);font-size:14px;font-weight:500;line-height:1.8">
+    <p style="margin:0;color:var(--text-body);font-size:14px;font-weight:500;line-height:1.85">
       일부 브랜드는 높은 가격을 근거로 "고급"과 "프리미엄"을 이야기합니다. 하지만 정말 중요한 건 <strong style="color:var(--primary-dark);font-weight:800">얼마나 비싼가가 아니라, 어디에서 선택받았는가</strong>입니다.
     </p>
-
-    <img class="section-image" src="./assets/welcome/kids-playing.jpg" alt="돌봄매트 시공 사례 - 거실에서 아이들이 노는 모습">
 
     <div class="proof-box">
       <div class="proof-title">검증된 시공 이력</div>
@@ -651,10 +485,10 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 섹션 06 ===== -->
+  <!-- ===== 섹션 08: 업체의 지속성 ===== -->
   <section class="section">
     <div class="section-head">
-      <span class="section-num">기준 06</span>
+      <span class="section-num">기준 08</span>
       <h2>오래 쓰는 제품이라면<br><em>업체의 지속성</em>도 확인하세요</h2>
       <p class="lead">몇 년 뒤에도 믿고 연락할 수 있는 회사인지가 중요합니다.</p>
     </div>
@@ -688,10 +522,10 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 섹션 07 ===== -->
+  <!-- ===== 섹션 09: 우리 집 몇 장 ===== -->
   <section class="section">
     <div class="section-head">
-      <span class="section-num">기준 07</span>
+      <span class="section-num">기준 09</span>
       <h2><em>우리 집은</em><br>몇 장이 필요할까요?</h2>
       <p class="lead">같은 평형이라도 구조와 시공 범위에 따라 수량은 달라집니다.</p>
     </div>
@@ -719,13 +553,11 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 외부 링크 ===== -->
   <div class="external-links">
     <a href="https://m.site.naver.com/1AWJU" class="ext-link" onclick="gtag('event','cs_welcome_click',{button:'review'})">실시간 리뷰</a>
     <a href="https://m.site.naver.com/1Ac41" class="ext-link" onclick="gtag('event','cs_welcome_click',{button:'cert'})">인증서·테스트</a>
   </div>
 
-  <!-- ===== 마지막 CTA ===== -->
   <section class="final-cta" id="consult">
     <div class="final-cta-content">
       <div class="final-cta-badge">마지막 단계</div>
@@ -737,7 +569,6 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 푸터 ===== -->
   <div class="footer">
     <span class="brand">돌봄매트</span>
     6년간 6,700세대가 선택한 본사 직접 시공<br>
@@ -746,10 +577,24 @@ a{color:inherit;text-decoration:none}
 
 </main>
 
-<!-- Sticky 모바일 하단 CTA -->
-<div class="sticky-mobile">
+<div class="sticky-mobile" id="stickyBar">
   <a href="http://pf.kakao.com/_UMyBK/chat" onclick="gtag('event','cs_welcome_click',{button:'sticky_kakao'})">우리 집 예상 장수 · 상담받기</a>
 </div>
+
+<script>
+(function(){
+  const finalCta = document.getElementById('consult');
+  const sticky = document.getElementById('stickyBar');
+  if(!finalCta || !sticky || !('IntersectionObserver' in window)) return;
+  const obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting) sticky.classList.add('hidden');
+      else sticky.classList.remove('hidden');
+    });
+  },{threshold:0.25});
+  obs.observe(finalCta);
+})();
+</script>
 
 </body>
 </html>
