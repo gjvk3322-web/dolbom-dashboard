@@ -178,6 +178,11 @@ body{
   position:relative;
   text-decoration:none;
   color:inherit;
+  border-radius:8px;
+  transition:transform 0.1s ease, background 0.15s ease;
+}
+.step:active{
+  transform:scale(0.98);
 }
 .step:not(:last-child)::after{
   content:'';
@@ -203,6 +208,39 @@ body{
   position:relative;
   z-index:1;
 }
+
+/* Primary 카드 (1번 - 시작점 강조) */
+.step.primary{
+  background:var(--baby-blue-deep);
+  padding:16px 14px;
+  margin:0 -4px 6px;
+}
+.step.primary::after{
+  display:none;
+}
+.step.primary .step-num{
+  background:#fff;
+  color:var(--baby-blue-deep);
+  font-weight:800;
+}
+.step.primary .step-title{
+  color:#fff;
+  font-size:15px;
+}
+.step.primary .step-desc{
+  color:var(--baby-blue-light);
+}
+.step.primary .step-action{
+  background:#fff;
+  color:var(--baby-blue-deep);
+  font-weight:800;
+  padding:6px 14px;
+  font-size:12px;
+}
+.step.primary:active{
+  background:#4a797d;
+}
+
 .step.highlight .step-num{
   background:var(--primary);
 }
@@ -227,17 +265,29 @@ body{
   line-height:1.4;
 }
 .step-action{
-  background:var(--baby-blue-light);
-  color:var(--baby-blue-deep);
-  padding:5px 12px;
+  background:var(--baby-blue-deep);
+  color:#fff;
+  padding:6px 13px;
   border-radius:14px;
   font-size:11px;
   font-weight:700;
   white-space:nowrap;
+  letter-spacing:-0.2px;
 }
 .step-action.highlight{
   background:var(--primary-light);
   color:var(--primary);
+}
+.step-badge{
+  background:#fff8e6;
+  color:#b87a00;
+  padding:3px 7px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:700;
+  margin-right:6px;
+  white-space:nowrap;
+  letter-spacing:-0.2px;
 }
 
 /* 추가 정보 */
@@ -429,13 +479,13 @@ body{
   <div class="section-title">처음이시라면 이렇게 시작하세요</div>
   <div class="steps">
     
-    <a href="quote.html" class="step" id="stepQuote">
+    <a href="quote.html" class="step primary" id="stepQuote">
       <div class="step-num">1</div>
       <div class="step-content">
         <div class="step-title">우리집 견적 받기</div>
-        <div class="step-desc">평수 입력하면 즉시 가격 확인</div>
+        <div class="step-desc">여기부터 시작하세요</div>
       </div>
-      <div class="step-action">계산</div>
+      <div class="step-action">계산 →</div>
     </a>
 
     <a href="sample.html" class="step" id="stepSample">
@@ -444,7 +494,7 @@ body{
         <div class="step-title">무료 샘플 받기</div>
         <div class="step-desc">직접 만져보고 품질 확인</div>
       </div>
-      <div class="step-action">신청</div>
+      <div class="step-action">신청 →</div>
     </a>
 
     <a href="booking.html" class="step" id="stepBooking">
@@ -453,16 +503,17 @@ body{
         <div class="step-title">시공 예약</div>
         <div class="step-desc">원하는 날짜 선택해 신청</div>
       </div>
-      <div class="step-action">예약</div>
+      <div class="step-action">예약 →</div>
     </a>
 
-    <a href="cs-review-info.html" class="step highlight" id="stepReview">
+    <a href="cs-review-info.html" class="step" id="stepReview">
       <div class="step-num">4</div>
       <div class="step-content">
         <div class="step-title">시공 후기 작성</div>
-        <div class="step-desc">최대 11만원 캐시백</div>
+        <div class="step-desc">시공 완료 후 캐시백</div>
       </div>
-      <div class="step-action highlight">미션</div>
+      <span class="step-badge">11만원</span>
+      <div class="step-action">후기 →</div>
     </a>
 
   </div>
