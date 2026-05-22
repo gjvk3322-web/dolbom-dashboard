@@ -325,9 +325,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <input type="text" id="fReferrer" placeholder="추천인 코드" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text)" />
         </div>
       </div>
-      <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;font-size:13px;font-weight:600;color:#1a1a1a;align-items:center;justify-content:space-between;cursor:pointer" onclick="copyChannel()">
-        <span id="channelText"></span>
-        <span style="font-size:11px;color:var(--accent);font-weight:500">복사</span>
+      <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;align-items:center;justify-content:space-between;gap:8px">
+        <input type="text" id="channelText" style="flex:1;border:none;background:transparent;font-size:13px;font-weight:600;color:#1a1a1a;font-family:inherit;padding:0;outline:none;min-width:0" />
+        <span onclick="copyChannel()" style="font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;white-space:nowrap;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,0.05)">복사</span>
       </div>
     </div>
     <div class="submit-area full" style="display:flex;gap:8px">
@@ -1096,7 +1096,7 @@ function editItem(time,ds,index){
   document.getElementById('fSize').value=item.size||'';
   document.getElementById('fScope').value=item.scope||'';
   document.getElementById('fReferrer').value=item.referrer||'';
-  if(item.channelName){document.getElementById('channelText').textContent=item.channelName;document.getElementById('channelResult').style.display='flex';}else{document.getElementById('channelText').textContent='';document.getElementById('channelResult').style.display='none';}
+  if(item.channelName){document.getElementById('channelText').value=item.channelName;document.getElementById('channelResult').style.display='flex';}else{document.getElementById('channelText').value='';document.getElementById('channelResult').style.display='none';}
   document.getElementById('fProduct1').value=item.product||'';
   document.getElementById('fProduct2').value=item.product||'';
   checkProductMatch();
@@ -1178,7 +1178,7 @@ function submitReservation(){
     isNew:document.getElementById('fIsNew').value,
     size,scope,product:p1,
     referrer:document.getElementById('fReferrer').value.trim(),
-    channelName:(document.getElementById('channelText').textContent||'').trim()
+    channelName:(document.getElementById('channelText').value||'').trim()
   };
   if(editMode) {
     if(!editMode.row){showToast('⏳ 데이터 동기화 중... 잠시 후 다시 시도해주세요');btn.disabled=false;btn.textContent='수정 완료';return;}
@@ -1192,7 +1192,7 @@ function submitReservation(){
     ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
     document.getElementById('productMatch').textContent='';
     document.getElementById('fProduct2').classList.remove('error');
-    document.getElementById('channelText').textContent='';
+    document.getElementById('channelText').value='';
     document.getElementById('channelResult').style.display='none';
     document.getElementById('formSection').classList.remove('show');
     showToast(editMode ? `✅ 예약 수정 완료!` : `✅ ${time} 예약 접수 완료!`);
@@ -1208,6 +1208,7 @@ function generateChannelName(){
   const date=document.getElementById('fDate').value;
   const region=document.getElementById('fRegion').value.trim();
   const product=document.getElementById('fProduct1').value;
+  const productName=product.replace('1m','m').replace('베이지','베지'); // 카톡 채널명 길이 단축: 모던1m17 → 모던m17, 베이지1m17 → 베지m17
   const isExtra=time==='AS'||time==='실측';
   const isMove=time.includes('이전설치');
   if(!time||!date||!region){showToast('⚠️ 시간, 시공일, 지역을 먼저 입력하세요');return;}
@@ -1217,22 +1218,22 @@ function generateChannelName(){
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
   let name;
   if(isExtra){
-    name=product?`${time.toLowerCase()}/${region}/${product})${prefix}`:`${time.toLowerCase()}/${region})${prefix}`;
+    name=product?`${time.toLowerCase()}/${region}/${productName})${prefix}`:`${time.toLowerCase()}/${region})${prefix}`;
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
     if(isMove){
-      name=`${timeCode}2${region}/${product})${prefix}`;
+      name=`${timeCode}2${region}/${productName})${prefix}`;
     } else {
-      name=`${timeCode}/${region}/${product})${prefix}`;
+      name=`${timeCode}/${region}/${productName})${prefix}`;
     }
   }
-  document.getElementById('channelText').textContent=name;
+  document.getElementById('channelText').value=name;
   document.getElementById('channelResult').style.display='flex';
   copyChannel();
 }
 function copyChannel(){
-  const text=document.getElementById('channelText').textContent;
+  const text=document.getElementById('channelText').value;
   navigator.clipboard.writeText(text).then(()=>showToast('📋 채널명 복사됨: '+text)).catch(()=>showToast('복사 실패'));
 }
 
