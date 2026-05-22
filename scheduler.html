@@ -547,7 +547,11 @@ return null}
 
 function hav(a1,n1,a2,n2){const R=6371,x=(a2-a1)*Math.PI/180,y=(n2-n1)*Math.PI/180,z=Math.sin(x/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(y/2)**2;return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z))}
 
-function getOffice(addr){return SOUTH.some(r=>addr.includes(r))?OFF_B:OFF_A}
+// ===== 과거 작업 보호 헬퍼 (한국시간 기준 오늘) =====
+function _todayKST(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function _isPastDate(dateStr){return !!(dateStr&&dateStr<_todayKST())}
+function _isPastJob(jobId){const j=(typeof J!=='undefined'?J:[]).find(x=>x.id===jobId);return j?_isPastDate(j.date):false}
+function getOffice(addr){return OFF_B;} // 부산 앱: 주소 매칭 실패해도 항상 부산 사무실 (안산 좌표 오류 방지)
 
 async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng)*2)}
 
@@ -768,9 +772,11 @@ function teamFairSort(a,b){
 function bumpCnt(members,date){members.forEach(m=>{if(!crossDateCnt._d)crossDateCnt._d={};if(!crossDateCnt._d[m])crossDateCnt._d[m]=new Set();if(!crossDateCnt._d[m].has(date)){crossDateCnt._d[m]=crossDateCnt._d[m]||new Set();crossDateCnt._d[m].add(date);crossDateCnt[m]=(crossDateCnt[m]||0)+1}})}
 
 for(const date of Object.keys(bd).sort()){
+// [추가①] 지난 날짜는 자동배정에서 절대 건드리지 않음 (완료된 과거 작업 보호)
+if(date<_todayKST())continue;
 // 4일 뒤부터만 전체 자동배정 (오늘~3일 후는 확정된 배정 보호)
 const cutoff=new Date();cutoff.setDate(cutoff.getDate()+4);
-const cutoffStr=cutoff.toISOString().slice(0,10);
+const cutoffStr=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
 
 if(date<cutoffStr){
   // 보호 기간: 기존 2인 유지, 1인→2인 보완, 미배정→신규 (SKIP 제외, 공평 분배)
@@ -900,8 +906,9 @@ if(date<cutoffStr){
       if(!A[j.id]&&amTeamInfo.length){
         amTeamInfo.forEach(t=>{
           t._dist2=(t.lastGeo&&pmGeo)?hav(t.lastGeo.lat,t.lastGeo.lng,pmGeo.lat,pmGeo.lng):9999;
+          t._score2=t._dist2+(t.pmCount*15); // [추가⑤] 이미 받은 오후 건수만큼 패널티 → 한 팀 몰림 방지
         });
-        amTeamInfo.sort((a,b)=>a._dist2-b._dist2);
+        amTeamInfo.sort((a,b)=>a._score2-b._score2);
         A[j.id]=[...amTeamInfo[0].team].sort(hdSort);
         amTeamInfo[0].pmCount++;
         return;
@@ -1044,11 +1051,12 @@ renderAll();
 setTimeout(()=>{isAssigning=false},3000);
 }
 
-function resetAssign(){if(!requireAdmin())return;if(!confirm('모든 배정을 초기화할까요?'))return;A={};fbSave('assignments',{});lastAHash=aHash(A);toast('초기화됨','ok');renderAll()}
+function resetAssign(){if(!requireAdmin())return;if(!confirm('미래 배정을 초기화할까요?\n(지난 날짜 작업은 그대로 유지됩니다)'))return;const keep={};Object.keys(A).forEach(id=>{if(_isPastJob(id))keep[id]=A[id]});A=keep;fbSave('assignments',A);lastAHash=aHash(A);toast('초기화됨 (지난 날짜 유지)','ok');renderAll()}
 
 // 수동 배정 (직원 1명)
 function ma(jobId,emp){
 if(!requireAdmin())return;
+if(_isPastJob(jobId)){toast('🔒 지난 날짜 작업은 변경할 수 없어요','ok');return}
 const cur=A[jobId];
 if(cur&&cur.includes(emp)){
 A[jobId]=cur.filter(e=>e!==emp);
@@ -1068,6 +1076,7 @@ toast('✅ 배정 업데이트','ok');renderAll()}
 // 배정 취소 (자동배정 제외 처리)
 function unassign(jobId){
 if(!requireAdmin())return;
+if(_isPastJob(jobId)){toast('🔒 지난 날짜 작업은 변경할 수 없어요','ok');return}
 delete A[jobId];
 SKIP.add(jobId);
 saveSkip();
@@ -2790,6 +2799,7 @@ if(!confirm(msg))return;
 // 확정된 건은 유지, 나머지만 초기화
 const lockedA={};
 LOCK.forEach(id=>{if(A[id])lockedA[id]=A[id]});
+Object.keys(A).forEach(id=>{if(_isPastJob(id))lockedA[id]=A[id]}); // [추가①] 지난 날짜 배정도 그대로 유지
 A=lockedA;
 SKIP=new Set();db.ref('skipJobs').set(null);
 toast('⏳ 재배정 중...','ok');
