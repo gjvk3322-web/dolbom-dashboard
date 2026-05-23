@@ -1488,7 +1488,13 @@ function fillBookingForm(b){
   }
   if(fPhone) fPhone.value=b.phone;
   if(fSize) fSize.value=b.pyung;
-  if(fScope) fScope.value=b.scope;
+  if(fScope){
+    // 시공범위 + 방추가 개수 함께 채우기 (방추가 누락 방지)
+    var scopeText=b.scope||'';
+    var rc=parseInt(b.roomCount)||0;
+    if(rc>0) scopeText+=' + 방추가 '+rc+'개';
+    fScope.value=scopeText;
+  }
   
   // 신축여부, 제품 선택자 자동 매칭 시도
   var fIsNew=document.getElementById('fIsNew');
