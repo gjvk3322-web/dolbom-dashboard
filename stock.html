@@ -361,7 +361,7 @@ async function renderSummary(){
       h+=`</div>`;
     });
     h+=`</div></div>`;
-    h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(45px,auto)) minmax(40px,auto);padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span><span style="color:var(--dim)">파레트</span></div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr repeat(5,minmax(60px,auto)) minmax(80px,auto);padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right;align-items:center"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span><span style="color:var(--dim)">파레트</span><span style="color:var(--accent);font-weight:700">7일후</span></div>`;
     
     prodOrder.forEach(pid=>{
       const colorOrder=prodColors[pid]||[];
@@ -374,79 +374,25 @@ async function renderSummary(){
         const d=cr[key];
         const calc=d.calculated;
         const pal=Math.round(calc/sp*10)/10;
-        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(45px,auto)) minmax(40px,auto);padding:3px 14px;font-size:12px;text-align:right">`;
+        
+        // 7일후 계산: 현재 - 해당 색상의 예약
+        const futKey=key; // "500_모던" 등
+        const futUse=prodColorFuture[futKey]?prodColorFuture[futKey].s:0;
+        const after=calc-futUse;
+        const afterHouses=Math.round(after*(pid==='500'?1:4)/145*10)/10;
+        
+        h+=`<div style="display:grid;grid-template-columns:1fr repeat(5,minmax(60px,auto)) minmax(80px,auto);padding:3px 14px;font-size:12px;text-align:right;align-items:center;min-height:24px">`;
         h+=`<span style="text-align:left"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span>`;
         h+=`<span style="color:var(--dim)">${d.survey.toLocaleString()}</span>`;
-        h+=`<span style="color:var(--orange)">${d.incoming>0?'+'+d.incoming.toLocaleString():''}</span>`;
-        h+=`<span style="color:var(--red)">${d.used>0?'-'+d.used.toLocaleString():''}</span>`;
+        h+=`<span style="color:var(--orange)">${d.incoming>0?'+'+d.incoming.toLocaleString():'–'}</span>`;
+        h+=`<span style="color:var(--red)">${d.used>0?'-'+d.used.toLocaleString():'–'}</span>`;
         h+=`<span style="font-weight:700;color:${calc<0?'var(--red)':'var(--accent)'}">${calc.toLocaleString()}</span>`;
         h+=`<span style="font-size:10px;color:var(--dim)">${pal}P</span>`;
+        h+=`<span style="color:${after<0?'var(--red)':'var(--accent)'}"><span style="font-weight:700">${after.toLocaleString()}</span><br><span style="font-size:9px;color:var(--dim)">(${afterHouses}집)</span></span>`;
         h+=`</div>`;
       });
     });
     
-    // 📅 7일 후 예상 (매트별로 현재/7일후 계산)
-    if(ft>0){
-      h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-      h+=`<div style="padding:12px 14px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700">`;
-      h+=`<span>📅 7일 후 예상</span>`;
-      h+=`<span style="font-weight:400;font-size:11px;color:var(--dim)">파레트 | 집</span>`;
-      h+=`</div>`;
-      
-      // 매트별 예약 합산 (색상 무시)
-      const futByProd={'500':0,'1000_22':0,'1000_17':0};
-      Object.keys(prodColorFuture).forEach(key=>{
-        const [prodKey]=key.split('_'); // "500_모던" → "500"
-        if(futByProd[prodKey]!==undefined){
-          futByProd[prodKey]+=prodColorFuture[key].s;
-        }
-      });
-      
-      // 매트별로 현재/7일후 표시 (집 개수 포함)
-      prodOrder.forEach(pKey=>{
-        const pLabel=prodNames[pKey];
-        const current=cr[pKey]?cr[pKey].calculated:0;
-        const futUse=futByProd[pKey]||0;
-        const after=current-futUse;
-        const afterColor=after<0?'var(--red)':'var(--accent)';
-        
-        // 집 계산 (349줄 로직 동일)
-        const mult=pKey==='500'?1:4;
-        const houses=Math.round(after*mult/145*10)/10;
-        const pallets=(after/(spp[pKey]||288)).toFixed(1);
-        
-        h+=`<div style="display:flex;justify-content:space-between;padding:8px 14px;border-bottom:.5px solid var(--border);font-size:12px">`;
-        h+=`<span>${pLabel}</span>`;
-        h+=`<span style="color:var(--dim);font-size:11px">${current.toLocaleString()} - ${futUse.toLocaleString()} = <span style="font-weight:700;color:${afterColor}">${after.toLocaleString()}장</span> | <span style="color:var(--dim);font-size:10px">${pallets}P · ${houses}집</span></span>`;
-        h+=`</div>`;
-      });
-      
-      h+=`</div>`;
-      
-      // 제품별 부족 경고 (하단 주의사항)
-      const futKeys=Object.keys(prodColorFuture);
-      if(futKeys.length>0){
-        let hasWarning=false;
-        let warningHtml='';
-        futKeys.forEach(key=>{
-          const curStock=cr[key]?cr[key].calculated:0;
-          const futUse=prodColorFuture[key].s;
-          const after=curStock-futUse;
-          if(after<0){
-            hasWarning=true;
-            const cName=key.split('_').slice(-1)[0];
-            const pKey=key.replace('_'+cName,'');
-            const pLabel=prodNames[pKey]||pKey;
-            warningHtml+=`<div style="display:flex;justify-content:space-between;padding:4px 14px;font-size:11px"><span style="color:var(--red)">⚠️ ${pLabel} ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)</span></div>`;
-          }
-        });
-        if(hasWarning){
-          h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--red);border-radius:12px;overflow:hidden">`;
-          h+=warningHtml;
-          h+=`</div>`;
-        }
-      }
-    }
     h+=`</div>`;
   } else {
     // 계산 재고 없으면 Firebase 기반 표시
