@@ -1459,15 +1459,19 @@ function fillBookingForm(b){
   var fSize=document.getElementById('fSize');
   var fScope=document.getElementById('fScope');
   
-  if(fTime){
+  // 슬롯(+오전/오후 예약 자리)을 클릭해 폼을 연 경우엔 fDate/fTime에 그 날짜·시간이 이미 세팅돼 있음.
+  // 이때는 상담으로 조율한 일정이므로 고객 희망일로 덮어쓰지 않고 그대로 유지한다.
+  var slotOpened = !!(fDate && fDate.value);
+
+  if(fTime && !slotOpened){
     // 시간 매칭 (b.time이 "오전 (9~10시)" 같은 형태로 와도 정확히 매칭)
     if(b.time && b.time.indexOf('오후')>=0) fTime.value='오후';
     else if(b.time && b.time.indexOf('오전')>=0) fTime.value='오전';
     else fTime.value='오전'; // 상관없음일 때 기본값
   }
   
-  // 첫 번째 희망일 사용 (있으면)
-  if(fDate&&b.dates&&b.dates.length>0){
+  // 첫 번째 희망일 사용 (슬롯으로 연 게 아니라 폼 날짜가 비어있을 때만)
+  if(fDate && !slotOpened && b.dates && b.dates.length>0){
     var thisYear=new Date().getFullYear();
     var dateParts=b.dates[0].split('/');
     if(dateParts.length===2){
