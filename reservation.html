@@ -638,7 +638,19 @@ function publishSlots(){
     });
   });
   if(Object.keys(updates).length){
-    fbDb.ref('slots').update(updates).catch(function(e){ console.error('슬롯 publish 실패:',e); });
+    var cnt=Object.keys(updates).length;
+    fbDb.ref('slots').update(updates)
+      .then(function(){
+        console.log('✅ 슬롯 기록 완료:',cnt,'일');
+        var si=document.getElementById('syncInfo');
+        if(si) si.textContent += ' · 슬롯 '+cnt+'일 기록✓';
+      })
+      .catch(function(e){
+        console.error('❌ 슬롯 기록 실패:',e);
+        var si=document.getElementById('syncInfo');
+        if(si) si.textContent += ' · ⚠️슬롯기록실패';
+        alert('⚠️ 슬롯 기록 실패\n\n'+(e&&e.message?e.message:e)+'\n\nFirebase 보안 규칙에서 slots 경로가 막혀있을 수 있습니다.');
+      });
   }
 }
 
