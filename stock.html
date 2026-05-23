@@ -316,6 +316,7 @@ async function renderSummary(){
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
 
   const sd=await fetchStockData();
+  if(tab!=='summary')return;  // 🆕 데이터 기다리는 동안 발주 등 다른 탭으로 갔으면 화면 건드리지 않음
   h=renderTabs();
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
@@ -786,7 +787,7 @@ function renderOrder(){
     } else if(row.type==='subtotal'){
       h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;border-top:1px solid #e0e0e0;margin-top:2px">`;
       h+=`<div style="padding:5px 10px;font-size:11px;font-weight:700;color:#888">파레트</div>`;
-      deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:12px;font-weight:700;padding:5px;color:#2E7D32" id="palsub_${d.id}_${row.pid}">0</div>`);
+      deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:11px;font-weight:700;padding:4px 2px;color:#2E7D32;line-height:1.25" id="palsub_${d.id}_${row.pid}">0</div>`);
       h+=`</div>`;
     } else {
       h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px">`;
@@ -865,10 +866,18 @@ function calcMonthlyOrder(){
           pBox+=v;
         });
       });
-      const pPal=pBox>0?Math.ceil(pBox/bppMap[p.id]):0;
+      const bpp=bppMap[p.id];
+      const pPal=pBox>0?Math.ceil(pBox/bpp):0;
       totalPallets+=pPal;
       const subEl=document.getElementById('palsub_'+d.id+'_'+p.id);
-      if(subEl)subEl.textContent=pPal>0?pPal+'P':'0';
+      if(subEl){
+        if(pBox===0){ subEl.textContent='0'; subEl.style.color='#bbb'; }
+        else{
+          const fullP=Math.floor(pBox/bpp), rem=pBox%bpp;
+          if(rem===0){ subEl.textContent=pBox+'박스·'+fullP+'P'; subEl.style.color='#2E7D32'; subEl.title='파레트 딱 맞음 ✓'; }       // 파레트 딱 떨어짐(초록)
+          else{ subEl.textContent=pBox+'박스('+fullP+'P+'+rem+')'; subEl.style.color='#e53935'; subEl.title=rem+'박스 빼면 '+fullP+'P / '+(bpp-rem)+'박스 더하면 '+(fullP+1)+'P (파레트 딱맞음)'; }  // 안 떨어짐→조정 필요(빨강)
+        }
+      }
     });
 
     const maxP=d.loc==='부산'?16:8;
