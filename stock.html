@@ -108,7 +108,7 @@ const TEAMS={
 const CL={'모던':'#3b82f6','마블':'#a855f7','코튼':'#22c55e','베이지':'#d4a574'};
 const TY=['센터','사이드','코너','10T'];
 
-// ═══ PYEONG_DATA (평수별 매트 수량 기준 - expand 기본값) ═══
+// ═══ PYEONG_DATA (cs-quote와 동일 · expand 기준 · scopeIdx 0/1/2) ═══
 const PYEONG_DATA={
   18:{expand:{0:{avg:75},1:{avg:85},2:{avg:95},room:{avg:25}}},
   22:{expand:{0:{avg:90},1:{avg:100},2:{avg:105},room:{avg:25}}},
@@ -125,20 +125,38 @@ const PYEONG_DATA={
 };
 const PYEONG_LIST=[18,22,24,30,33,34,35,39,42,45,48,52];
 
-// 평수→가장 가까운 기준 평수 찾기
-function findNearestPyeong(py){
-  if(!PYEONG_LIST||PYEONG_LIST.length===0)return 35;
-  let nearest=PYEONG_LIST[0];
-  for(let p of PYEONG_LIST){if(Math.abs(p-py)<Math.abs(nearest-py))nearest=p}return nearest;
+// 시공범위 텍스트 → scopeIdx (0=거실복도, 1=거실복도+아일랜드, 2=거실복도+주방)
+function scopeToIdx(scope){
+  const s=String(scope||'').replace(/\s/g,'');
+  if(s.indexOf('주방')>=0)return 2;       // 주방 포함
+  if(s.indexOf('아일랜드')>=0)return 1;   // 아일랜드 포함
+  if(s.indexOf('거실')>=0||s.indexOf('복도')>=0)return 0; // 거실+복도
+  return 2; // 정보 없으면 안전하게 주방포함(최대) 기준 — 재고 부족 방지
 }
 
-// 평수→기본 매트 수량 계산 (expand 기준, scopeIdx=0 기본)
-function calcQtyFromPyeong(py,scopeIdx=0){
-  const nearest=findNearestPyeong(py);
-  const data=PYEONG_DATA[nearest];
-  if(!data||!data.expand)return 145;
-  const scope=data.expand[scopeIdx]||data.expand[0];
-  return scope.avg||145;
+// 평수→매트 수량 (cs-quote 동일 · 인접 평형 선형 보간 · expand 기준)
+function calcQtyFromPyeong(py,scopeIdx){
+  py=parseFloat(py)||34;
+  if(scopeIdx===undefined||scopeIdx===null)scopeIdx=2; // 기본: 거실+복도+주방
+  const et='expand';
+  // 정확히 매칭하는 평형
+  if(PYEONG_DATA[py]&&PYEONG_DATA[py][et][scopeIdx])return PYEONG_DATA[py][et][scopeIdx].avg;
+  // 범위 밖 처리 (최소/최대 평형 비례)
+  if(py<=PYEONG_LIST[0]){const f=PYEONG_LIST[0];return Math.round(PYEONG_DATA[f][et][scopeIdx].avg*(py/f))}
+  const lastP=PYEONG_LIST[PYEONG_LIST.length-1];
+  if(py>=lastP)return Math.round(PYEONG_DATA[lastP][et][scopeIdx].avg*(py/lastP));
+  // 인접 평형 선형 보간
+  let lower=PYEONG_LIST[0],upper=lastP;
+  for(let i=0;i<PYEONG_LIST.length-1;i++){if(PYEONG_LIST[i]<=py&&py<=PYEONG_LIST[i+1]){lower=PYEONG_LIST[i];upper=PYEONG_LIST[i+1];break}}
+  const lv=PYEONG_DATA[lower][et][scopeIdx].avg,uv=PYEONG_DATA[upper][et][scopeIdx].avg;
+  return Math.round(lv+(uv-lv)*((py-lower)/(upper-lower)));
+}
+
+// 제품별 최종 매트 수량 (500=그대로 / 1000=÷4 올림 · cs-quote 동일)
+function calcMatQty(py,scope,product){
+  const base500=calcQtyFromPyeong(py,scopeToIdx(scope));
+  const is1000=String(product||'').indexOf('1000')>=0;
+  return is1000?Math.ceil(base500/4):base500;
 }
 
 const PR=[
@@ -342,12 +360,13 @@ async function renderSummary(){
     const c=j.color||'미정';const key=pid+'_'+c;
     if(!prodColorFuture[key])prodColorFuture[key]={n:0,s:0,sqmList:[]};
     prodColorFuture[key].n++;
-    // j.sqm으로 PYEONG_DATA 기반 수량 계산 (더 정확함)
-    const qtyFromPyeong=calcQtyFromPyeong(j.sqm||34);
+    // 평수+시공범위+제품으로 매트 수량 (1000매트는 ÷4 · cs-quote 동일)
+    const qtyFromPyeong=calcMatQty(j.sqm,j.scope,j.product);
     prodColorFuture[key].s+=qtyFromPyeong;
     prodColorFuture[key].sqmList.push(j.sqm);
   });
-  const ft=sd&&!sd.error?sd.futureTotal||0:0;
+  // ft를 PYEONG_DATA 기반 합계로 통일 (헤더·7일후예상·상세 모두 동일 값 사용)
+  const ft=Object.values(prodColorFuture).reduce((s,v)=>s+v.s,0);
   const fj=sd&&!sd.error?sd.futureJobs||0:0;
   const pj=sd&&!sd.error?sd.pastJobs||0:0;
   const remaining=gs-ft;
@@ -400,7 +419,7 @@ async function renderSummary(){
       h+=`</div>`;
     });
     h+=`</div></div>`;
-    h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(45px,auto)) minmax(40px,auto);padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span><span style="color:var(--dim)">파레트</span></div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(40px,auto)) minmax(34px,auto) minmax(56px,auto);padding:6px 14px;font-size:10px;border-bottom:.5px solid var(--border);text-align:right"><span></span><span style="color:var(--dim)">실사</span><span style="color:var(--orange)">+입고</span><span style="color:var(--red)">-사용</span><span style="color:var(--accent);font-weight:700">= 현재</span><span style="color:var(--dim)">파레트</span><span style="color:var(--accent);font-weight:700">7일후</span></div>`;
     
     prodOrder.forEach(pid=>{
       const colorOrder=prodColors[pid]||[];
@@ -413,20 +432,25 @@ async function renderSummary(){
         const d=cr[key];
         const calc=d.calculated;
         const pal=Math.round(calc/sp*10)/10;
-        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(45px,auto)) minmax(40px,auto);padding:3px 14px;font-size:12px;text-align:right">`;
+        // 7일후 = 현재고 - 7일 예약 사용량 (prodColorFuture는 1000매트 ÷4 반영됨)
+        const futUse=prodColorFuture[key]?prodColorFuture[key].s:0;
+        const after=calc-futUse;
+        const mult=pid==='500'?1:4;
+        const afterHouses=Math.round(after*mult/145*10)/10;
+        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(40px,auto)) minmax(34px,auto) minmax(56px,auto);padding:3px 14px;font-size:12px;text-align:right;align-items:center">`;
         h+=`<span style="text-align:left"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span>`;
         h+=`<span style="color:var(--dim)">${d.survey.toLocaleString()}</span>`;
         h+=`<span style="color:var(--orange)">${d.incoming>0?'+'+d.incoming.toLocaleString():''}</span>`;
         h+=`<span style="color:var(--red)">${d.used>0?'-'+d.used.toLocaleString():''}</span>`;
         h+=`<span style="font-weight:700;color:${calc<0?'var(--red)':'var(--accent)'}">${calc.toLocaleString()}</span>`;
         h+=`<span style="font-size:10px;color:var(--dim)">${pal}P</span>`;
+        h+=`<span style="font-weight:700;color:${after<0?'var(--red)':'var(--accent)'}">${after.toLocaleString()}<br><span style="font-size:9px;font-weight:400;color:var(--dim)">(${afterHouses}집)</span></span>`;
         h+=`</div>`;
       });
     });
     
-    // 7일 후 예상 잔여 (제품별 표시)
+    // 7일 후 부족 경고 (컬럼 표시 + 마이너스 제품만 요약)
     if(ft>0){
-      h+=`<div style="padding:8px 14px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>📅 7일 후 예상</span><span style="color:${calcTotal-ft<0?'var(--red)':'var(--accent)'}">${(calcTotal-ft).toLocaleString()}장 <span style="font-weight:400;font-size:11px;color:var(--red)">(-${ft.toLocaleString()})</span></span></div>`;
       // 제품별 부족 경고
       const futKeys=Object.keys(prodColorFuture);
       if(futKeys.length>0){
@@ -459,8 +483,10 @@ async function renderSummary(){
     sd.futureList.forEach(j=>{
       const pName=j.product.replace('매트','');
       const cDot=j.color?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[j.color]||'#888'};margin-right:3px"></span>`:'';
-      const qtyCalc=calcQtyFromPyeong(j.sqm||34);
-      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${j.sqm}평 · ${cDot}${j.color||''} ${pName}</span><span style="font-weight:600">${qtyCalc}장</span></div>`;
+      const sIdx=scopeToIdx(j.scope);
+      const qtyCalc=calcMatQty(j.sqm,j.scope,j.product);
+      const scopeLabel=['거실복도','거실복도+아일','거실복도+주방'][sIdx];
+      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${j.sqm}평 · ${scopeLabel} · ${cDot}${j.color||''} ${pName}</span><span style="font-weight:600">${qtyCalc}장</span></div>`;
     });
     h+=`</div></div>`;
   }
