@@ -74,7 +74,34 @@ a{color:inherit;text-decoration:none}
 .air-title{margin:0 0 12px;font-size:22px;line-height:1.42;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
 .air-title em{color:var(--primary);font-style:normal;font-weight:800}
 .air-lead{margin:0;color:var(--muted);font-size:14px;font-weight:500;line-height:1.8}
-.air-image{width:100%;border-radius:14px;margin:18px 0 4px;background:var(--warm-bg-light);object-fit:contain;padding:14px}
+.air-image-square{width:100%;max-width:340px;margin:18px auto 0;display:block;border-radius:14px;background:var(--warm-bg-light)}
+.air-video{width:100%;margin-top:18px;border-radius:14px;display:block;background:#141414;aspect-ratio:16/9;object-fit:cover}
+
+/* 사업자등록증 그리드 */
+.biz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 4px}
+.biz-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.biz-card img{width:100%;display:block}
+.biz-label{padding:8px 6px;font-size:11px;font-weight:700;color:var(--primary-dark);text-align:center;background:var(--primary-soft);line-height:1.3}
+
+/* 안전 인증 포인트 */
+.cert-points{display:grid;gap:8px;margin:18px 0 14px}
+.cert-point{padding:14px 16px;border-radius:12px;background:var(--warm-bg);border:1px solid var(--line-soft);border-left:3px solid var(--primary)}
+.cert-point strong{display:block;color:var(--text-strong);font-size:14px;font-weight:800;margin-bottom:3px}
+.cert-point span{color:var(--text-body);font-size:12.5px;font-weight:500;line-height:1.6}
+
+/* 인증서 이미지 그리드 */
+.cert-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px}
+.cert-grid figure{margin:0}
+.cert-grid img{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;display:block}
+.cert-grid figcaption{margin-top:5px;font-size:10px;font-weight:600;color:var(--muted);text-align:center;line-height:1.3}
+
+/* 9가지 기준 디바이더 */
+.divider-card{margin-top:22px;padding:34px 24px;border-radius:22px;text-align:center;color:#fff;background:linear-gradient(135deg,var(--primary-dark),#0d3d12);box-shadow:0 16px 36px rgba(27,94,32,.22)}
+.divider-step{display:inline-block;padding:5px 14px;background:rgba(253,216,53,.18);color:#FDD835;font-size:11px;font-weight:800;border-radius:16px;margin-bottom:14px;letter-spacing:.5px}
+.divider-title{margin:0 0 12px;font-size:23px;line-height:1.45;letter-spacing:-.03em;font-weight:800;color:#fff}
+.divider-title strong{color:#FDD835}
+.divider-desc{margin:0 0 16px;color:rgba(255,255,255,.85);font-size:13.5px;font-weight:500;line-height:1.7}
+.divider-hint{font-size:12px;color:rgba(255,255,255,.62);font-weight:600}
 
 /* === 메시지 카드 === */
 .message-card{margin-top:18px;padding:24px 22px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);text-align:center}
@@ -233,40 +260,93 @@ a{color:inherit;text-decoration:none}
     </div>
   </section>
 
-  <!-- ===== 공기순환 강조 섹션 ===== -->
+  <!-- ===== 차별점 ① 공기순환 ===== -->
   <section class="air-section">
-    <div class="air-badge">돌봄매트의 차별점</div>
+    <div class="air-badge">돌봄매트의 차별점 ①</div>
     <h2 class="air-title">매트 밑 바닥도<br><em>숨 쉬어야</em> 합니다</h2>
     <p class="air-lead">바닥에 공기가 통하지 않으면 습기가 차고, 그게 곰팡이 걱정으로 이어집니다. 돌봄매트는 매트 뒷면의 공기순환 구조로 이 걱정을 줄여줍니다.</p>
+    <img class="air-image-square" src="./assets/welcome/mat-back-clean.png" alt="돌봄매트 뒷면 공기순환 구조">
+  </section>
 
-    <img class="air-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 공기순환 구조">
+  <!-- ===== 차별점 ② 제거 용이성 ===== -->
+  <section class="air-section">
+    <div class="air-badge">돌봄매트의 차별점 ②</div>
+    <h2 class="air-title">나중에 떼어낼 때도<br><em>생각</em>해야 합니다</h2>
+    <p class="air-lead">돌봄매트는 제거가 쉬운 3M 마스킹 테이프를 먼저 붙이고, 그 위에 3M 폼테이프로 벽이 없는 부분만 고정합니다. 거실 중간은 바닥에 부착하지 않아, 나중에 떼어낼 때 손쉽게 제거할 수 있습니다.</p>
+    <video class="air-video" autoplay muted loop playsinline webkit-playsinline preload="auto">
+      <source src="./assets/welcome/mat-removal.mp4" type="video/mp4">
+    </video>
+  </section>
 
-    <div class="split">
-      <div class="info-card">
-        <h3>공기가 흐르는 구조</h3>
-        <p>매트 뒷면의 통로로 공기가 순환되어 바닥에 습기가 덜 차도록 도와줍니다.</p>
+  <!-- ===== 차별점 ③ 오래된 회사 ===== -->
+  <section class="air-section">
+    <div class="air-badge">돌봄매트의 차별점 ③</div>
+    <h2 class="air-title">오래 함께할 수 있는<br><em>회사</em>인지</h2>
+    <p class="air-lead">매트는 한 번 깔면 몇 년을 사용합니다. 시공 이후 AS와 문의까지 생각하면, 갑자기 사라지지 않고 오래 운영해온 회사를 선택하는 것이 안전합니다.</p>
+
+    <div class="biz-grid">
+      <div class="biz-card">
+        <img src="./assets/welcome/biz-busan.png" alt="부산 사업자등록증">
+        <div class="biz-label">부산 본사 · 2020년 개업</div>
       </div>
-      <div class="info-card">
-        <h3>환기 부담을 덜어줍니다</h3>
-        <p>자주 들어내고 환기하는 번거로움 없이 오래 사용할 수 있습니다.</p>
+      <div class="biz-card">
+        <img src="./assets/welcome/biz-gyeonggi.jpg" alt="경기 사업자등록증">
+        <div class="biz-label">경기 지점 · 2021년 개업</div>
       </div>
     </div>
 
     <div class="highlight-box">
-      바닥과 매트 사이, 공기가 흐릅니다.
+      부산·경기 2개 사업장에서 6년째 직접 운영하며, 시공 이후에도 책임지고 있습니다.
     </div>
   </section>
 
-  <!-- ===== 메시지 카드 ===== -->
-  <section class="message-card">
-    <h2 class="message-title">
-      결정 전 꼭 확인하실 <strong>9가지 기준</strong>
-    </h2>
-    <p class="message-desc">관심 있는 기준을 눌러 펼쳐보세요.</p>
+  <!-- ===== 차별점 ④ 안전 인증 ===== -->
+  <section class="air-section">
+    <div class="air-badge">돌봄매트의 차별점 ④</div>
+    <h2 class="air-title">아이가 매일 누울 바닥,<br><em>안전</em>해야 합니다</h2>
+    <p class="air-lead">돌봄매트는 어린이제품 안전 기준 검사를 통과했습니다. 유해물질은 검출되지 않았고, 라돈 수치도 기준보다 훨씬 낮습니다.</p>
+
+    <div class="cert-points">
+      <div class="cert-point">
+        <strong>KC 안전확인 신고</strong>
+        <span>어린이제품 안전 특별법 기준 통과 (유효 2027.07.12)</span>
+      </div>
+      <div class="cert-point">
+        <strong>유해물질 불검출</strong>
+        <span>납·카드뮴·프탈레이트 등 검출되지 않음 (FITI 검사)</span>
+      </div>
+      <div class="cert-point">
+        <strong>라돈 4.1 Bq/㎥</strong>
+        <span>실내공기질 기준치(148) 대비 매우 낮은 수치</span>
+      </div>
+    </div>
+
+    <div class="cert-grid">
+      <figure>
+        <img src="./assets/welcome/cert-kc.jpg" alt="KC 안전확인 신고확인증">
+        <figcaption>안전확인 신고확인증</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/welcome/cert-test.jpg" alt="FITI 검사성적서">
+        <figcaption>검사성적서</figcaption>
+      </figure>
+      <figure>
+        <img src="./assets/welcome/cert-radon.jpg" alt="라돈 검사 결과">
+        <figcaption>라돈 검사 결과</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===== 9가지 기준 디바이더 ===== -->
+  <section class="divider-card">
+    <div class="divider-step">STEP 2 · 비교 가이드</div>
+    <h2 class="divider-title">이제, 후회 없는 선택을 위한<br><strong>9가지 기준</strong></h2>
+    <p class="divider-desc">어떤 브랜드를 고르시든 도움이 되도록, 시공 전 꼭 확인하실 기준을 정리했습니다.</p>
+    <div class="divider-hint">관심 있는 기준을 눌러 펼쳐보세요 ↓</div>
   </section>
 
   <!-- ===== 기준 01 ===== -->
-  <details class="accordion" open>
+  <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 01</span>
       <span class="accordion-title">비싸야 더 좋은 매트일까요?</span>
@@ -552,9 +632,9 @@ a{color:inherit;text-decoration:none}
 
   <section class="final-cta" id="consult">
     <div class="final-cta-content">
-      <div class="final-cta-badge">마지막 단계</div>
-      <h2>샘플까지 받아보셨다면,<br>이제 우리 집에 맞는<br>선택만 남았습니다.</h2>
-      <p>사진 한 장만 보내주셔도<br>예상 장수와 상담 방향을 빠르게 안내해드립니다.</p>
+      <div class="final-cta-badge">지금 바로</div>
+      <h2>늦은 밤에도<br>궁금한 게 있지만<br>못 물어보셨죠?</h2>
+      <p>지금 물어보시면<br>확인하는 대로 바로 답변드리겠습니다!</p>
       <div class="cta-row">
         <a class="btn btn-kakao" href="http://pf.kakao.com/_UMyBK/chat" onclick="gtag('event','cs_welcome_click',{button:'kakao_chat'})">카톡으로 상담받기</a>
       </div>
