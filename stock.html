@@ -609,21 +609,23 @@ const ORDER_CL={'모던':'#9ca3af','마블':'#3b82f6','코튼':'#22c55e','베이
 const ORDER_COLORS={'500':['마블','모던','코튼'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
 const ORDER_SHAPES={'500':['센터','사이드','코너','10T'],'1000_22':['센터','사이드','코너','10T'],'1000_17':['센터','사이드','코너']};
 
+// 🆕 월별 저장 키 — 월마다 따로 보관해서 ◀▶로 이전 발주서를 불러올 수 있음
+function orderKey(){return 'dolbom_order_'+team+'_'+orderYear+'-'+String(orderMonth).padStart(2,'0');}
+
 function initDefaultDeliveries(){
   if(deliveries.length>0)return;
-  // localStorage에서 불러오기
+  // 🆕 현재 보고 있는 월(orderKey)의 저장본 불러오기
   try{
-    const saved=localStorage.getItem('dolbom_order_'+team);
+    const saved=localStorage.getItem(orderKey());
     if(saved){
       const d=JSON.parse(saved);
       deliveries=d.deliveries||[];
       delIdCounter=d.delIdCounter||0;
       orderInputs=d.orderInputs||{};
-      orderMonth=d.orderMonth||new Date().getMonth()+1;
-      orderYear=d.orderYear||new Date().getFullYear();
       if(deliveries.length>0)return;
     }
   }catch(e){}
+  // 저장본이 없는 달이면 기본 배송 7개로 새 발주서 시작
   for(let i=0;i<7;i++){
     const id=++delIdCounter;
     const d=new Date();d.setDate(d.getDate()+7*i);
@@ -633,7 +635,7 @@ function initDefaultDeliveries(){
 
 function saveOrderToStorage(){
   try{
-    localStorage.setItem('dolbom_order_'+team,JSON.stringify({
+    localStorage.setItem(orderKey(),JSON.stringify({  // 🆕 월별 키에 저장
       deliveries,delIdCounter,orderInputs,orderMonth,orderYear
     }));
   }catch(e){}
@@ -647,6 +649,7 @@ function saveOrderDraft(){
 }
 
 function saveOrderInputs(){
+  if(!deliveries.length)return;  // 🆕 월 전환 중(deliveries 비움)엔 저장 스킵 → 다른 월 덮어쓰기 방지
   // 🆕 발주 input이 DOM에 없으면 저장 스킵 (첫 로드 시 빈 데이터 덮어쓰기 방지)
   if(!document.querySelector('#orderSheet input[id^="oc_"]'))return;
   deliveries.forEach(d=>{
@@ -705,10 +708,11 @@ function resetOrder(){
 }
 
 function changeOrderMonth(dir){
-  saveOrderInputs();
+  saveOrderInputs();              // 현재 월 발주서 저장 (월 바꾸기 전)
   orderMonth+=dir;
   if(orderMonth>12){orderMonth=1;orderYear++}
   if(orderMonth<1){orderMonth=12;orderYear--}
+  deliveries=[];delIdCounter=0;orderInputs={};  // 🆕 비우면 renderOrder가 새 월 발주서를 불러옴(없으면 새로)
   renderOrder();
 }
 
