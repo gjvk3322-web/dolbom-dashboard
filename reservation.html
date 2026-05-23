@@ -643,15 +643,14 @@ function publishSlots(){
   if(cnt){
     fbDb.ref('slots').update(updates)
       .then(function(){
-        console.log('✅ 슬롯 기록 완료:',cnt,'일');
-        alert('✅ 슬롯 '+cnt+'일 기록 성공!\n\nFirebase에 정상 저장됐습니다.\n이제 booking 페이지를 강력새로고침(⌘+Shift+R) 해보세요.');
+        console.log('✅ 슬롯 기록 완료:',cnt,'일');  // 평소엔 조용히 콘솔에만
       })
       .catch(function(e){
         console.error('❌ 슬롯 기록 실패:',e);
-        alert('❌ 슬롯 기록 실패\n\n'+(e&&e.message?e.message:e)+'\n\nFirebase 보안 규칙에서 slots 경로가 막혀있을 수 있습니다. 이 메시지를 그대로 알려주세요.');
+        alert('❌ 슬롯 기록 실패\n\n'+(e&&e.message?e.message:e)+'\n\n슬롯이 저장되지 않았습니다. 이 메시지를 알려주세요.');
       });
   } else {
-    alert('⚠️ 기록할 슬롯이 0개입니다.\n\n미래 작업이 없거나, 스케줄 데이터(schedAll)가 비어있습니다.\n부산/경기 둘 다 데이터가 안 들어온 것일 수 있어요.');
+    console.warn('⚠️ 기록할 슬롯이 0개 (미래 작업 없음 또는 데이터 로드 실패)');
   }
 }
 
