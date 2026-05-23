@@ -609,6 +609,37 @@ function setAccentColors(team){
 // ── 데이터 로딩 ──
 function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
 
+// 🆕 booking 캘린더용 슬롯 요약 publish (개인정보 제외 · 시(市)+건수만)
+function publishSlots(){
+  var MEGA=['서울','부산','대구','인천','광주','대전','울산','세종'];
+  function cityOf(addr){
+    var a=String(addr||'').replace(/^\(\d+\)\s*/,'').trim();
+    for(var i=0;i<MEGA.length;i++){ if(a.indexOf(MEGA[i])===0) return MEGA[i]; }
+    var mt=a.match(/([가-힣]+시)/); if(mt) return mt[1].slice(0,-1);
+    var mg=a.match(/([가-힣]+군)/); if(mg) return mg[1].slice(0,-1);
+    return a.slice(0,4)||'?';
+  }
+  var today=new Date(); today.setHours(0,0,0,0);
+  var updates={};
+  ['부산','경기'].forEach(function(region){
+    var sched=schedAll[region]||{};
+    var empCount=(empAll[region]||[]).length;
+    var offs=OFFS_ALL[region]||{};
+    Object.keys(sched).forEach(function(ds){
+      var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return; // 미래만
+      var off=(offs[ds]||[]).length;
+      var ps=Math.floor(Math.max(empCount-off,0)/2); // 팀 수 = (출근직원)/2
+      var am=sched[ds].am||[], pm=sched[ds].pm||[];
+      var amc=[]; // 오전 작업 도시 목록 (오후 이어받기 판정용)
+      am.forEach(function(s){ var c=cityOf(s.address); if(c && amc.indexOf(c)<0) amc.push(c); });
+      updates[region+'_'+ds]={ps:ps, am:am.length, pm:pm.length, amc:amc};
+    });
+  });
+  if(Object.keys(updates).length){
+    fbDb.ref('slots').update(updates).catch(function(e){ console.error('슬롯 publish 실패:',e); });
+  }
+}
+
 async function loadData(){
   showLoading(20);
   document.getElementById('syncInfo').textContent='데이터 로딩 중...';
@@ -652,6 +683,9 @@ async function loadData(){
     renderCalendar();
     renderWeekView();
     if(selectedDate) renderDayDetail(selectedDate);
+
+    // 🆕 booking 캘린더용 슬롯 요약 Firebase 기록
+    publishSlots();
 
     // 2단계: 백그라운드에서 Apps Script → row 번호 매칭 (수정/취소용)
     loadRowNumbers();
