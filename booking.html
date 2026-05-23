@@ -357,6 +357,33 @@ function daySlot(dateStr){
   return {am:amOk, pm:pmOk, full:(!amOk && !pmOk)};
 }
 
+// 🆕 선택한 날짜들에 따라 희망시간 버튼 활성/비활성 (오후만인 날 → 오전 버튼 막기)
+function updateTimeAvail(){
+  var btns=document.querySelectorAll('#timeGroup .opt-btn'); // [0]상관없음 [1]오전 [2]오후
+  if(btns.length<3) return;
+  function setAvail(b,ok){
+    b.style.opacity=ok?'':'0.3';
+    b.style.pointerEvents=ok?'':'none';
+    b.title=ok?'':'선택한 날짜에는 이 시간대가 마감되었습니다';
+    if(!ok) b.classList.remove('active');
+  }
+  // 상관없음 모드 또는 날짜 미선택 → 제한 해제
+  if(dateAny || !selectedDates.length){ setAvail(btns[1],true); setAvail(btns[2],true); return; }
+  var canAM=true, canPM=true;
+  selectedDates.forEach(function(ds){
+    var s=daySlot(ds);
+    if(s){ if(!s.am)canAM=false; if(!s.pm)canPM=false; }  // slot 없으면(정보없음) 제한 안 함
+  });
+  setAvail(btns[1],canAM);  // 오전
+  setAvail(btns[2],canPM);  // 오후
+  // 현재 선택된 시간이 막혔으면 → 상관없음으로 되돌림
+  if((selectedTime.indexOf('오전')>=0&&!canAM)||(selectedTime.indexOf('오후')>=0&&!canPM)){
+    btns.forEach(function(b){b.classList.remove('active')});
+    btns[0].classList.add('active');
+    selectedTime='상관없음';
+  }
+}
+
 // ===== 팀 자동 감지 (2026-05 정책) =====
 //   - BLOCKED_CITY: 시·군 정확 매치로 도로명 충돌 방지 (영동군 등)
 //   - 새 서비스 추가: 충북 진천/음성/증평/괴산, 충남 공주/예산/홍성/보령/태안/청양/부여, 경북 청도/고령/성주/칠곡, 강원 원주
@@ -462,7 +489,7 @@ function toggleDateAny(){dateAny=!dateAny;var btn=document.getElementById('dateA
 
 var calYear,calMonth;
 (function(){var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
-  fbDb.ref('slots').on('value',function(snap){SLOTS=snap.val()||{};renderCal();}); // 🆕 슬롯 실시간 구독
+  fbDb.ref('slots').on('value',function(snap){SLOTS=snap.val()||{};renderCal();updateTimeAvail();}); // 🆕 슬롯 실시간 구독
   renderCal();
 })();
 function changeMonth(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCal()}
@@ -498,7 +525,7 @@ function renderCal(){
   }
 }
 function selectDate(el){var dateStr=el.getAttribute('data-date'),idx=selectedDates.indexOf(dateStr);if(idx>=0){selectedDates.splice(idx,1);el.classList.remove('selected')}else{if(selectedDates.length>=3){showToast('최대 3개까지 선택 가능합니다');return}selectedDates.push(dateStr);el.classList.add('selected');if(dateAny){dateAny=false;document.getElementById('dateAnyBtn').classList.remove('active')}}updateDateDisplay();checkSubmit()}
-function updateDateDisplay(){var display=document.getElementById('selectedDatesDisplay');if(!selectedDates.length){display.innerHTML='';return}var sorted=selectedDates.slice().sort();var tags=sorted.map(function(d,i){var p=d.split('-');return'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#E8F5E9;border-radius:6px;font-size:12px;color:#2E7D32;font-weight:500">'+(i+1)+'순위 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일<span onclick="removeDate(\''+d+'\')" style="cursor:pointer;font-size:14px;color:#999;margin-left:2px">&times;</span></span>'});display.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap">'+tags.join('')+'</div>'}
+function updateDateDisplay(){var display=document.getElementById('selectedDatesDisplay');if(!selectedDates.length){display.innerHTML='';updateTimeAvail();return}var sorted=selectedDates.slice().sort();var tags=sorted.map(function(d,i){var p=d.split('-');return'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#E8F5E9;border-radius:6px;font-size:12px;color:#2E7D32;font-weight:500">'+(i+1)+'순위 '+parseInt(p[1])+'월 '+parseInt(p[2])+'일<span onclick="removeDate(\''+d+'\')" style="cursor:pointer;font-size:14px;color:#999;margin-left:2px">&times;</span></span>'});display.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap">'+tags.join('')+'</div>';updateTimeAvail()}
 function removeDate(dateStr){var idx=selectedDates.indexOf(dateStr);if(idx>=0)selectedDates.splice(idx,1);updateDateDisplay();renderCal();checkSubmit()}
 function selectTime(btn,time){document.querySelectorAll('#timeGroup .opt-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active');selectedTime=time}
 function selectProduct(idx){selectedProduct=idx;selectedColor='';document.querySelectorAll('.prod-card').forEach(function(c,i){c.classList.toggle('active',i===idx)});var cg=document.getElementById('colorGroup');cg.innerHTML='';PRODUCTS[idx].colors.forEach(function(c){var btn=document.createElement('div');btn.className='color-btn';btn.textContent=c;btn.onclick=function(){selectColor(this,c)};cg.appendChild(btn)});checkSubmit()}
