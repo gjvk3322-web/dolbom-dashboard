@@ -336,13 +336,24 @@ function cityOf(addr){
   var mg=a.match(/([가-힣]+군)/); if(mg) return mg[1].slice(0,-1);
   return a.slice(0,4)||'';
 }
-// 🆕 날짜별 오전/오후 가능 판정 (slot 정보 없으면 null → 기존 로직 유지)
+// 🆕 날짜별 오전/오후 가능 판정 (도시별 팀 점유 기반)
 function daySlot(dateStr){
   var s=SLOTS[TEAM+'_'+dateStr];
   if(!s || typeof s.ps!=='number') return null;
-  var amOk = s.am < s.ps;  // 오전 빈 팀 있음
-  // 오후: 오후 슬롯 남고 + (오전에 빈 팀 있거나 OR 같은 도시 오전작업이 있어 이어받기 가능)
-  var pmOk = (s.pm < s.ps) && (s.am < s.ps || (CUST_CITY && s.amc && s.amc.indexOf(CUST_CITY)>=0));
+  var cities=s.cities||{};
+  var used=0;  // 사용 중인 팀 수 (각 도시는 max(오전,오후)팀 필요)
+  for(var c in cities){ used+=Math.max(cities[c].am||0, cities[c].pm||0); }
+  var free=s.ps-used;  // 완전히 빈 팀 수
+  function can(T){
+    var cm=cities[CUST_CITY];
+    if(cm){  // 고객 도시에 이미 작업 중인 팀이 있음
+      var mx=Math.max(cm.am||0, cm.pm||0);
+      if((cm[T]||0)<mx) return true;  // 그 팀의 빈 시간대 활용 (같은 도시라 이동 OK)
+      return free>0;  // 같은 도시 한 건 더 → 빈 팀 필요
+    }
+    return free>0;  // 새 도시 → 빈 팀 있어야 (오전/오후 안 묶인 팀)
+  }
+  var amOk=can('am'), pmOk=can('pm');
   return {am:amOk, pm:pmOk, full:(!amOk && !pmOk)};
 }
 
@@ -472,7 +483,7 @@ function renderCal(){
     var isPast=dt<today;                       // 지난 날짜
     var tooSoon=dt>=today&&dt<minDate;         // 오늘~5일 이내 (마케팅: 임박 예약 차단 / 상관없음 고객은 직원이 자체 배정)
     var isAvail=dt>=minDate&&dow!==0&&!isDateClosed(dateStr)&&!holName&&!slotFull;
-    var isClosed=((isPast||tooSoon)&&dow!==0&&!holName)||isDateClosed(dateStr)||slotFull;  // 🆕 과거+5일 이내 모두 마감
+    var isClosed=(dow!==0)&&(((isPast||tooSoon)&&!holName)||isDateClosed(dateStr)||slotFull);  // 🆕 일요일은 마감 제외(휴무), 나머지 과거+5일+슬롯마감은 마감
     el.className='cal-day';
     if(dow===0||holName)el.className+=' sun';else if(dow===6)el.className+=' sat';
     if(isPast)el.className+=' past';  // 🆕 지난 날짜 흐리게
