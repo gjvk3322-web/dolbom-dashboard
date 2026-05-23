@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>돌봄매트 | 시공 전 꼭 확인해 주세요</title>
+<title>돌봄매트 | 바닥, 걱정되지 않으세요?</title>
 <meta name="description" content="샘플을 받아보신 고객님을 위한 시공매트 비교 가이드">
 <meta name="theme-color" content="#FBF5EC">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
@@ -56,16 +56,25 @@ a{color:inherit;text-decoration:none}
 
 .page{width:min(100%,540px);margin:0 auto;padding:20px 18px 110px}
 
-/* === 헤더 === */
+/* === 헤더 (후킹) === */
 .hero{margin-top:0;border-radius:22px;background:linear-gradient(180deg,#FFF9F0 0%,#FFFCF6 100%);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
-.hero-text{padding:30px 24px 8px}
-.brand-kicker{display:inline-block;color:var(--primary);font-size:13px;font-weight:700;margin-bottom:14px}
-.hero-title{margin:0;font-size:26px;line-height:1.42;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
+.hero-text{padding:32px 24px 8px}
+.brand-kicker{display:inline-block;color:var(--primary);font-size:13px;font-weight:700;margin-bottom:16px}
+.hero-title{margin:0;font-size:27px;line-height:1.4;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
 .hero-title .accent{color:var(--primary)}
-.hero-chips{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 0}
-.hero-chip{padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--primary-dark);font-size:12px;font-weight:700}
-.hero-image-wrap{margin-top:24px}
-.hero-image{width:100%;aspect-ratio:16/10;object-fit:cover}
+.hero-desc{margin:18px 0 0;color:var(--text-body);font-size:14.5px;font-weight:500;line-height:1.8}
+.hero-desc strong{color:var(--primary-dark);font-weight:800}
+.hero-video-wrap{margin-top:24px;position:relative;background:#141414}
+.hero-video{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.hero-video-caption{position:absolute;left:0;right:0;bottom:0;padding:20px 16px 12px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);color:#fff;font-size:12.5px;font-weight:600;text-align:center;letter-spacing:-.01em}
+
+/* === 공기순환 강조 섹션 === */
+.air-section{margin-top:18px;padding:30px 24px;border-radius:20px;background:#fff;border:1px solid rgba(46,125,50,.22);box-shadow:0 10px 30px rgba(46,125,50,.10)}
+.air-badge{display:inline-block;padding:5px 13px;background:var(--yellow-dark);color:#5D4037;font-size:11px;font-weight:800;border-radius:14px;margin-bottom:14px;letter-spacing:.3px}
+.air-title{margin:0 0 12px;font-size:22px;line-height:1.42;letter-spacing:-.035em;font-weight:800;color:var(--text-strong)}
+.air-title em{color:var(--primary);font-style:normal;font-weight:800}
+.air-lead{margin:0;color:var(--muted);font-size:14px;font-weight:500;line-height:1.8}
+.air-image{width:100%;border-radius:14px;margin:18px 0 4px;background:var(--warm-bg-light);object-fit:contain;padding:14px}
 
 /* === 메시지 카드 === */
 .message-card{margin-top:18px;padding:24px 22px;border-radius:20px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);text-align:center}
@@ -74,81 +83,19 @@ a{color:inherit;text-decoration:none}
 .message-desc{margin:0;color:var(--muted);font-size:13.5px;font-weight:500;line-height:1.7}
 
 /* === 아코디언 토글 === */
-.accordion{
-  margin-top:10px;
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:var(--shadow-sm);
-  transition:box-shadow .25s ease,border-color .25s ease;
-}
-.accordion[open]{
-  box-shadow:var(--shadow);
-  border-color:rgba(46,125,50,.18);
-}
-.accordion-trigger{
-  list-style:none;
-  padding:18px 20px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  cursor:pointer;
-  user-select:none;
-  -webkit-user-select:none;
-  font-family:inherit;
-  transition:background .2s;
-}
+.accordion{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow .25s ease,border-color .25s ease}
+.accordion[open]{box-shadow:var(--shadow);border-color:rgba(46,125,50,.18)}
+.accordion-trigger{list-style:none;padding:18px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;-webkit-user-select:none;font-family:inherit;transition:background .2s}
 .accordion-trigger::-webkit-details-marker{display:none}
 .accordion-trigger::marker{content:""}
 .accordion-trigger:active{background:var(--warm-bg-light)}
+.accordion-num{flex-shrink:0;padding:5px 11px;border-radius:8px;background:var(--primary-soft);color:var(--primary-dark);font-size:10.5px;font-weight:800;letter-spacing:1.5px;transition:all .25s ease}
+.accordion[open] .accordion-num{background:var(--primary);color:#fff}
+.accordion-title{flex:1;font-size:15px;font-weight:800;color:var(--text-strong);letter-spacing:-.02em;line-height:1.45}
+.accordion-icon{flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:transform .3s ease,color .25s;border-radius:50%;background:var(--warm-bg)}
+.accordion[open] .accordion-icon{transform:rotate(180deg);background:var(--primary-soft);color:var(--primary)}
+.accordion-body{padding:6px 22px 26px;border-top:1px solid var(--line-soft)}
 
-.accordion-num{
-  flex-shrink:0;
-  padding:5px 11px;
-  border-radius:8px;
-  background:var(--primary-soft);
-  color:var(--primary-dark);
-  font-size:10.5px;
-  font-weight:800;
-  letter-spacing:1.5px;
-  transition:all .25s ease;
-}
-.accordion[open] .accordion-num{
-  background:var(--primary);
-  color:#fff;
-}
-
-.accordion-title{
-  flex:1;
-  font-size:15px;
-  font-weight:800;
-  color:var(--text-strong);
-  letter-spacing:-.02em;
-  line-height:1.45;
-}
-
-.accordion-icon{
-  flex-shrink:0;
-  width:28px;height:28px;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--muted);
-  transition:transform .3s ease,color .25s;
-  border-radius:50%;
-  background:var(--warm-bg);
-}
-.accordion[open] .accordion-icon{
-  transform:rotate(180deg);
-  background:var(--primary-soft);
-  color:var(--primary);
-}
-
-.accordion-body{
-  padding:6px 22px 26px;
-  border-top:1px solid var(--line-soft);
-}
-
-/* 모바일 작은 화면 */
 @media (max-width:380px){
   .accordion-trigger{padding:16px 16px;gap:10px}
   .accordion-title{font-size:14px}
@@ -158,35 +105,24 @@ a{color:inherit;text-decoration:none}
 
 /* === 토글 내부 콘텐츠 === */
 .lead{margin:14px 0 0;color:var(--muted);font-size:13.5px;font-weight:500;line-height:1.8}
-
 .section-image{width:100%;aspect-ratio:5/3;object-fit:cover;border-radius:14px;margin:16px 0 4px;background:var(--warm-bg-light)}
-
-/* info 카드 */
 .split{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
 .info-card{padding:18px 20px;border-radius:14px;background:var(--warm-bg);border:1px solid var(--line-soft)}
 .info-card h3{margin:0 0 6px;color:var(--text-strong);font-size:14.5px;font-weight:800;line-height:1.4;letter-spacing:-.015em}
 .info-card p{margin:0;color:var(--text-body);font-size:13.5px;font-weight:500;line-height:1.8}
-
-/* 후기 인용 박스 */
 .review-quote{margin-top:16px;padding:18px 20px;background:#fff;border-left:3px solid var(--primary);border-radius:0 12px 12px 0;box-shadow:0 4px 12px rgba(0,0,0,.04)}
 .review-quote::before{content:"";display:block;width:22px;height:16px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232E7D32' opacity='0.3'><path d='M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z'/></svg>");background-size:contain;background-repeat:no-repeat;margin-bottom:6px}
 .review-quote-text{color:#3a4a3c;font-size:13.5px;font-weight:500;line-height:1.75;font-style:italic}
 .review-quote-meta{margin-top:8px;color:var(--muted);font-size:11.5px;font-weight:600}
-
-/* 체크 리스트 */
 .bullet{margin:16px 0 0;padding:0;list-style:none}
 .bullet li{position:relative;padding-left:28px;color:var(--text-body);font-size:13.5px;font-weight:600;line-height:1.75;margin-bottom:10px}
 .bullet li:last-child{margin-bottom:0}
 .bullet li::before{content:"";position:absolute;left:0;top:6px;width:18px;height:18px;border-radius:5px;background:var(--primary-soft);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D32' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");background-size:12px;background-position:center;background-repeat:no-repeat}
-
-/* 강조 박스 */
 .highlight-box{margin-top:16px;padding:16px 18px;border-radius:12px;background:linear-gradient(135deg,var(--primary-soft),var(--primary-lighter));border:1px solid rgba(46,125,50,.18);color:var(--primary-dark);font-size:14px;font-weight:700;line-height:1.7;letter-spacing:-.015em}
 .yellow-box{margin-top:16px;padding:16px 18px;background:linear-gradient(135deg,#FFFBEB,#FFF8E1);border-left:4px solid #FFA000;border-radius:12px}
 .yellow-box-text{color:#5D4037;font-size:13.5px;font-weight:700;line-height:1.7}
 .pink-box{margin-top:16px;padding:20px 18px;background:linear-gradient(135deg,#FCEDE5,#FAEAE0);border-left:4px solid var(--pink-deep);border-radius:12px;text-align:center}
 .pink-box-text{color:#7A4838;font-size:14.5px;font-weight:700;line-height:1.8}
-
-/* 검증 박스 */
 .proof-box{margin-top:16px;padding:22px 18px;border-radius:16px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff}
 .proof-title{font-size:12.5px;font-weight:700;color:#FDD835;letter-spacing:1px;margin-bottom:12px;text-align:center}
 .proof-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
@@ -194,7 +130,7 @@ a{color:inherit;text-decoration:none}
 .proof-value{display:block;color:#FDD835;font-size:20px;line-height:1;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
 .proof-label{display:block;color:rgba(255,255,255,.94);font-size:11px;font-weight:600;line-height:1.45}
 
-/* 1M vs 작은 사이즈 슬라이더 */
+/* 슬라이더 */
 .compare-section{margin-top:16px}
 .compare-title{font-size:17px;font-weight:800;color:var(--text-strong);margin-bottom:6px;text-align:center;line-height:1.4;letter-spacing:-.02em}
 .compare-sub{font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center}
@@ -256,11 +192,13 @@ a{color:inherit;text-decoration:none}
 .footer .brand{font-weight:700;color:#666;display:block;margin-bottom:4px;font-size:12.5px}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.final-cta,.message-card,.accordion{animation:fadeUp .4s ease both}
+.final-cta,.message-card,.accordion,.air-section{animation:fadeUp .4s ease both}
 
 @media (min-width:600px){
-  .hero-text{padding:38px 32px 12px}
-  .hero-title{font-size:30px}
+  .hero-text{padding:40px 32px 12px}
+  .hero-title{font-size:31px}
+  .air-section{padding:36px 30px}
+  .air-title{font-size:24px}
   .message-card{padding:28px}
   .message-title{font-size:21px}
   .accordion-title{font-size:16px}
@@ -273,22 +211,49 @@ a{color:inherit;text-decoration:none}
 
 <main class="page">
 
-  <!-- ===== 헤더 ===== -->
+  <!-- ===== 헤더 (곰팡이 후킹) ===== -->
   <section class="hero">
     <div class="hero-text">
       <div class="brand-kicker">[돌봄매트] 시공 전 꼭 확인해 주세요</div>
       <h1 class="hero-title">
-        샘플을 받아보셨다면,<br>
-        이제 <span class="accent">후회 없는<br>선택 기준</span>을 확인하실 차례입니다.
+        매트 깔면,<br>
+        <span class="accent">바닥 걱정</span><br>
+        안 되세요?
       </h1>
-      <div class="hero-chips">
-        <span class="hero-chip">층간소음</span>
-        <span class="hero-chip">1M vs 500mm</span>
-        <span class="hero-chip">틈새·마감·청소</span>
+      <p class="hero-desc">
+        매트 밑에 습기 차고 곰팡이 생길까 걱정되시죠.<br>
+        <strong>돌봄매트는 매트 밑으로 공기가 흐릅니다.</strong>
+      </p>
+    </div>
+    <div class="hero-video-wrap">
+      <video class="hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="./assets/welcome/mat-back.png">
+        <source src="./assets/welcome/air-circulation.mp4" type="video/mp4">
+      </video>
+      <div class="hero-video-caption">매트 뒷면 공기순환 구조 — 바닥과 매트 사이로 공기가 흐릅니다</div>
+    </div>
+  </section>
+
+  <!-- ===== 공기순환 강조 섹션 ===== -->
+  <section class="air-section">
+    <div class="air-badge">돌봄매트의 차별점</div>
+    <h2 class="air-title">매트 밑 바닥도<br><em>숨 쉬어야</em> 합니다</h2>
+    <p class="air-lead">바닥에 공기가 통하지 않으면 습기가 차고, 그게 곰팡이 걱정으로 이어집니다. 돌봄매트는 매트 뒷면의 공기순환 구조로 이 걱정을 줄여줍니다.</p>
+
+    <img class="air-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 공기순환 구조">
+
+    <div class="split">
+      <div class="info-card">
+        <h3>공기가 흐르는 구조</h3>
+        <p>매트 뒷면의 통로로 공기가 순환되어 바닥에 습기가 덜 차도록 도와줍니다.</p>
+      </div>
+      <div class="info-card">
+        <h3>환기 부담을 덜어줍니다</h3>
+        <p>자주 들어내고 환기하는 번거로움 없이 오래 사용할 수 있습니다.</p>
       </div>
     </div>
-    <div class="hero-image-wrap">
-      <img class="hero-image" src="./assets/welcome/kids-drawing-wide.jpg" alt="돌봄매트 실제 시공 사례">
+
+    <div class="highlight-box">
+      바닥과 매트 사이, 공기가 흐릅니다.
     </div>
   </section>
 
@@ -300,43 +265,27 @@ a{color:inherit;text-decoration:none}
     <p class="message-desc">관심 있는 기준을 눌러 펼쳐보세요.</p>
   </section>
 
-  <!-- ===== 기준 01: 비싸야 프리미엄? (기본 열림) ===== -->
+  <!-- ===== 기준 01 ===== -->
   <details class="accordion" open>
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 01</span>
       <span class="accordion-title">비싸야 더 좋은 매트일까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">가격이 높다고 무조건 더 검증된 매트는 아닙니다.</p>
-
       <p style="margin:14px 0 0;color:var(--text-body);font-size:13.5px;font-weight:500;line-height:1.85">
         일부 브랜드는 높은 가격을 근거로 "고급"과 "프리미엄"을 이야기합니다.<br><br>
         하지만 정말 중요한 건 <strong style="color:var(--primary-dark);font-weight:800">얼마나 비싼가가 아니라, 어디에서 선택받았는가</strong>입니다.
       </p>
-
       <div class="proof-box">
         <div class="proof-title">검증된 시공 이력</div>
         <div class="proof-grid">
-          <div class="proof-item">
-            <span class="proof-value">5★</span>
-            <span class="proof-label">5성급 호텔<br>키즈 공간</span>
-          </div>
-          <div class="proof-item">
-            <span class="proof-value">80곳</span>
-            <span class="proof-label">전국 어린이집<br>시공 완료</span>
-          </div>
-          <div class="proof-item">
-            <span class="proof-value">6,700</span>
-            <span class="proof-label">실제 가정<br>시공 세대</span>
-          </div>
+          <div class="proof-item"><span class="proof-value">5★</span><span class="proof-label">5성급 호텔<br>키즈 공간</span></div>
+          <div class="proof-item"><span class="proof-value">80곳</span><span class="proof-label">전국 어린이집<br>시공 완료</span></div>
+          <div class="proof-item"><span class="proof-value">6,700</span><span class="proof-label">실제 가정<br>시공 세대</span></div>
         </div>
       </div>
-
       <div class="highlight-box">
         대리점 마진 0원,<br>
         좋은 제품을 합리적인 가격으로<br>
@@ -345,20 +294,15 @@ a{color:inherit;text-decoration:none}
     </div>
   </details>
 
-  <!-- ===== 기준 02: 청소·관리 ===== -->
+  <!-- ===== 기준 02 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 02</span>
       <span class="accordion-title">청소와 관리는 어렵지 않을까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">시공매트는 하루 보고 결정하지만, 실제 사용은 몇 년간 이어집니다.</p>
-
-      <img class="section-image" src="./assets/welcome/mat-back.png" alt="돌봄매트 뒷면 - 공기 순환 구조" style="background:var(--warm-bg-light);object-fit:contain;padding:14px">
-
       <div class="split">
         <div class="info-card">
           <h3>일상 관리</h3>
@@ -369,25 +313,21 @@ a{color:inherit;text-decoration:none}
           <p>공기 순환 구조와 바닥 습기 관리, 시공 범위 선택까지 함께 살펴봐야 오래 만족합니다.</p>
         </div>
       </div>
-
       <ul class="bullet">
         <li>아이와 반려견이 매일 머무는 바닥일수록 관리 편의성은 중요합니다.</li>
       </ul>
     </div>
   </details>
 
-  <!-- ===== 기준 03: 층간소음 ===== -->
+  <!-- ===== 기준 03 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 03</span>
       <span class="accordion-title">층간소음, 정말 잡힐까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">시공매트를 알아보시는 분들이 가장 많이 고민하는 부분입니다.</p>
-
       <div class="split">
         <div class="info-card">
           <h3>왜 시공매트를 찾게 될까요</h3>
@@ -398,25 +338,21 @@ a{color:inherit;text-decoration:none}
           <p>거실·복도·주방 빈틈 없이 차단합니다. 아이들이 가볍게 뛰는 정도, 발망치는 충분히 잡을 수 있습니다.</p>
         </div>
       </div>
-
       <div class="highlight-box">
         층간소음이 가장 큰 고민이라면 22T가 더 든든하고, 아이 안전과 반려견의 미끄럼방지를 생각하면 17T도 좋은 선택입니다.
       </div>
     </div>
   </details>
 
-  <!-- ===== 기준 04: 폴더매트 vs 시공매트 ===== -->
+  <!-- ===== 기준 04 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 04</span>
       <span class="accordion-title">폴더매트로 충분할까요, 시공매트로 가야 할까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">아이와 반려견의 활동 반경은 생각보다 빠르게 넓어집니다.</p>
-
       <div class="split">
         <div class="info-card">
           <h3>처음에는 이렇게 생각합니다</h3>
@@ -427,14 +363,12 @@ a{color:inherit;text-decoration:none}
           <p>기고, 걷고, 뛰기 시작하면 복도와 주방까지 생활 동선 전체가 매트 고민의 대상이 됩니다.</p>
         </div>
       </div>
-
       <ul class="bullet">
         <li>매트가 없는 곳에서 넘어지는 일이 생깁니다.</li>
         <li>거실만 덮어서는 층간소음 걱정이 완전히 사라지지 않습니다.</li>
         <li>반려견이 거실 어디에서 놀든 미끄러지지 않도록 사각지대 없이 시공됩니다.</li>
         <li>집 전체가 자연스럽게 이어지는 인테리어를 원하게 됩니다.</li>
       </ul>
-
       <div class="pink-box">
         <div class="pink-box-text">
           폴더매트가 나쁜 게 아닙니다.<br>
@@ -445,20 +379,16 @@ a{color:inherit;text-decoration:none}
     </div>
   </details>
 
-  <!-- ===== 기준 05: 시공품질·마감 ===== -->
+  <!-- ===== 기준 05 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 05</span>
       <span class="accordion-title">매트 사이 틈과 마감, 정말 깔끔할까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">사진으로는 비슷해 보여도, 매일 생활할수록 차이가 체감됩니다.</p>
-
       <img class="section-image" src="./assets/welcome/mat-structure.jpg" alt="돌봄매트 구조 - 매트 시공 단면">
-
       <div class="split">
         <div class="info-card">
           <h3>비교할 때 꼭 볼 점</h3>
@@ -469,36 +399,29 @@ a{color:inherit;text-decoration:none}
           <p>넓은 매트 구성과 꼼꼼한 본사 직접 시공으로 집 전체가 한 공간처럼 이어지는 느낌을 지향합니다.</p>
         </div>
       </div>
-
       <div class="review-quote">
         <div class="review-quote-text">"이질감이 거의 없고, 바닥재를 새로 시공한 것처럼 깔끔하게 마감된 느낌이었습니다."</div>
         <div class="review-quote-meta">실제 시공 후기 中</div>
       </div>
-
       <div class="yellow-box">
         <div class="yellow-box-text">시공 직후 예쁜 것보다, 매일 청소할 때 편한지가 더 중요합니다.</div>
       </div>
     </div>
   </details>
 
-  <!-- ===== 기준 06: 1M vs 500mm 사이즈 ===== -->
-  <details class="accordion" id="sizeCompare">
+  <!-- ===== 기준 06: 슬라이더 ===== -->
+  <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 06</span>
       <span class="accordion-title">1M와 500mm, 어떤 사이즈가 맞을까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">사이즈는 시공 마감과 가격, 관리 편의성을 동시에 좌우합니다.</p>
-
       <div class="compare-section">
         <div class="compare-title">이음새가 줄면,<br>바닥이 달라집니다.</div>
         <div class="compare-sub">타사 사이즈를 선택하고 슬라이더를 움직여 보세요</div>
-
         <div class="size-btns" id="sizeBtns"></div>
-
         <div class="compare-box" id="compareBox">
           <div class="compare-layer compare-right" id="rightLayer"></div>
           <div class="compare-layer compare-left" id="leftLayer"></div>
@@ -506,20 +429,15 @@ a{color:inherit;text-decoration:none}
           <span class="compare-label label-right">돌봄매트 1,000mm</span>
           <div class="slider-line" id="sliderLine"></div>
           <div class="slider-handle" id="sliderHandle">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M8.5 8.5L6 11l2.5 2.5M15.5 8.5L18 11l-2.5 2.5" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M8.5 8.5L6 11l2.5 2.5M15.5 8.5L18 11l-2.5 2.5" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>
-
         <div class="size-info">
           <span>타사 <strong id="sizeLeftLabel">500mm</strong></span>
           <span>돌봄매트 <strong>1,000mm</strong></span>
         </div>
-
         <div class="slider-hint">← 좌우로 움직이며 이음새 차이를 비교 →</div>
       </div>
-
       <div class="split">
         <div class="info-card">
           <h3>500mm 매트의 장점</h3>
@@ -530,27 +448,22 @@ a{color:inherit;text-decoration:none}
           <p>이음새가 훨씬 적어 매트 사이 틈이 덜하고, 시공 후 바닥재처럼 깔끔한 마감을 만들어 인테리어 효과가 좋습니다.</p>
         </div>
       </div>
-
       <div class="highlight-box">
         이음새와 인테리어 마감을 우선시한다면 1M, 가격과 부분 교체 편의성을 우선시한다면 500mm가 좋은 선택입니다.
       </div>
     </div>
   </details>
 
-  <!-- ===== 기준 07: 거실 분위기 ===== -->
+  <!-- ===== 기준 07 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 07</span>
       <span class="accordion-title">거실 분위기와 잘 어울릴까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">실제 후기에서 만족도가 높은 포인트 중 하나가 '집 분위기와 잘 어울리는지'입니다.</p>
-
       <img class="section-image" src="./assets/welcome/kids-playing.jpg" alt="돌봄매트 시공 사례 - 거실 분위기">
-
       <div class="split">
         <div class="info-card">
           <h3>색상이 만드는 차이</h3>
@@ -561,72 +474,54 @@ a{color:inherit;text-decoration:none}
           <p>큰 사이즈로 시공한 매트는 거실을 더 넓어 보이게 합니다. 작은 매트가 여러 장 이어진 것보다 자연스럽습니다.</p>
         </div>
       </div>
-
       <div class="review-quote">
         <div class="review-quote-text">"너무 하얗지도 않고 은은한 샌드톤이 가미된 베이지 느낌이라 집안 분위기가 훨씬 따뜻하고 고급스러워 보여요."</div>
         <div class="review-quote-meta">실제 시공 후기 中</div>
       </div>
-
       <div class="pink-box">
         <div class="pink-box-text">샘플을 거실 바닥에 직접 올려두고<br>가구·벽지와의 색감을 확인해보세요.</div>
       </div>
     </div>
   </details>
 
-  <!-- ===== 기준 08: 업체의 지속성 ===== -->
+  <!-- ===== 기준 08 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 08</span>
       <span class="accordion-title">업체의 지속성은 어떨까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">몇 년 뒤에도 믿고 연락할 수 있는 회사인지가 중요합니다.</p>
-
       <div class="timeline">
         <div class="timeline-item">
           <div class="timeline-dot"></div>
-          <div>
-            <strong>2020년 창업, 6년째 운영</strong>
-            <span>짧게 반짝하는 브랜드가 아니라, 시공 경험을 꾸준히 쌓아온 브랜드인지 확인하세요.</span>
-          </div>
+          <div><strong>2020년 창업, 6년째 운영</strong><span>짧게 반짝하는 브랜드가 아니라, 시공 경험을 꾸준히 쌓아온 브랜드인지 확인하세요.</span></div>
         </div>
         <div class="timeline-item">
           <div class="timeline-dot"></div>
-          <div>
-            <strong>본사 직접 시공 경험</strong>
-            <span>고객이 체감하는 만족도는 제품뿐 아니라 현장 시공 품질에서 크게 갈립니다.</span>
-          </div>
+          <div><strong>본사 직접 시공 경험</strong><span>고객이 체감하는 만족도는 제품뿐 아니라 현장 시공 품질에서 크게 갈립니다.</span></div>
         </div>
         <div class="timeline-item">
           <div class="timeline-dot"></div>
-          <div>
-            <strong>시공 이후까지 생각하는 선택</strong>
-            <span>추가 상담, 관리 문의, 시공 후 소통까지 오래 이어질 수 있는지 보는 것이 좋습니다.</span>
-          </div>
+          <div><strong>시공 이후까지 생각하는 선택</strong><span>추가 상담, 관리 문의, 시공 후 소통까지 오래 이어질 수 있는지 보는 것이 좋습니다.</span></div>
         </div>
       </div>
-
       <div class="yellow-box">
         <div class="yellow-box-text">매트는 시공 당일보다, 몇 년 뒤에도 믿고 연락할 수 있는지가 더 중요합니다.</div>
       </div>
     </div>
   </details>
 
-  <!-- ===== 기준 09: 우리 집 몇 장? ===== -->
+  <!-- ===== 기준 09 ===== -->
   <details class="accordion">
     <summary class="accordion-trigger">
       <span class="accordion-num">기준 09</span>
       <span class="accordion-title">우리 집은 몇 장이 필요할까요?</span>
-      <span class="accordion-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
+      <span class="accordion-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </summary>
     <div class="accordion-body">
       <p class="lead">같은 평형이라도 구조와 시공 범위에 따라 수량은 달라집니다.</p>
-
       <div class="split">
         <div class="info-card">
           <h3>이런 정보가 있으면 더 빠릅니다</h3>
@@ -637,7 +532,6 @@ a{color:inherit;text-decoration:none}
           <p>예상 장수, 대략적인 시공 금액, 17T·22T 추천 방향을 빠르게 도와드립니다.</p>
         </div>
       </div>
-
       <div class="scope-grid">
         <div class="scope-card">
           <h3>거실 + 복도</h3>
@@ -694,21 +588,18 @@ a{color:inherit;text-decoration:none}
   obs.observe(finalCta);
 })();
 
-// 아코디언 열림 GA4 추적
+// 아코디언 GA4 추적
 document.querySelectorAll('.accordion').forEach(function(acc){
   acc.addEventListener('toggle', function(){
     if(acc.open){
       var title = acc.querySelector('.accordion-title');
       var num = acc.querySelector('.accordion-num');
-      gtag('event','cs_welcome_accordion_open',{
-        section_num: num ? num.textContent : '',
-        section_title: title ? title.textContent : ''
-      });
+      gtag('event','cs_welcome_accordion_open',{section_num:num?num.textContent:'',section_title:title?title.textContent:''});
     }
   });
 });
 
-// 1M vs 작은 사이즈 비교 슬라이더 (500/600/800)
+// 1M vs 작은 사이즈 슬라이더
 (function(){
   var COMPARE_SIZES = [500, 600, 800];
   var currentCompareSize = 500;
@@ -737,39 +628,26 @@ document.querySelectorAll('.accordion').forEach(function(acc){
     var ratio = currentCompareSize / 1000;
     var lc = Math.round(4 / ratio);
     var lr = Math.round(3 / ratio);
-
     leftLayer.style.gridTemplateColumns = 'repeat(' + lc + ',1fr)';
     leftLayer.style.gridTemplateRows = 'repeat(' + lr + ',1fr)';
     rightLayer.style.gridTemplateColumns = 'repeat(4,1fr)';
     rightLayer.style.gridTemplateRows = 'repeat(3,1fr)';
-
     leftLayer.innerHTML = '';
     rightLayer.innerHTML = '';
-
-    for(var i = 0; i < lc * lr; i++){
-      var c = document.createElement('div');
-      c.className = 'mat-cell';
-      leftLayer.appendChild(c);
-    }
-    for(var j = 0; j < 12; j++){
-      var c2 = document.createElement('div');
-      c2.className = 'mat-cell';
-      rightLayer.appendChild(c2);
-    }
+    for(var i = 0; i < lc * lr; i++){ var c = document.createElement('div'); c.className = 'mat-cell'; leftLayer.appendChild(c); }
+    for(var j = 0; j < 12; j++){ var c2 = document.createElement('div'); c2.className = 'mat-cell'; rightLayer.appendChild(c2); }
   }
-
   buildGrids();
 
   var isDragging = false;
   function updateSlider(x){
     var rect = box.getBoundingClientRect();
-    if(rect.width === 0) return;  // 토글 닫혀있으면 무시
+    if(rect.width === 0) return;
     var pct = Math.max(5, Math.min(95, ((x - rect.left) / rect.width) * 100));
     document.getElementById('sliderHandle').style.left = pct + '%';
     document.getElementById('sliderLine').style.left = pct + '%';
     leftLayer.style.clipPath = 'inset(0 ' + (100-pct) + '% 0 0)';
   }
-
   box.addEventListener('mousedown', function(e){ isDragging = true; updateSlider(e.clientX); });
   document.addEventListener('mousemove', function(e){ if(isDragging) updateSlider(e.clientX); });
   document.addEventListener('mouseup', function(){ isDragging = false; });
