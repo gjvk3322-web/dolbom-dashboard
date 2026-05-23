@@ -627,8 +627,10 @@ function publishSlots(){
     var offs=OFFS_ALL[region]||{};
     Object.keys(sched).forEach(function(ds){
       var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return; // 미래만
-      var off=(offs[ds]||[]).length;
-      var ps=Math.floor(Math.max(empCount-off,0)/2); // 팀 수 = (출근직원)/2
+      var oa=offs[ds];
+      var off=Array.isArray(oa)?oa.length:0;             // 휴무 데이터가 배열 아니면 0
+      var ps=Math.floor(Math.max((empCount||0)-off,0)/2); // 팀 수 = (출근직원)/2
+      if(!isFinite(ps)) ps=0;                            // NaN 방어 (Firebase는 NaN 거부)
       var am=sched[ds].am||[], pm=sched[ds].pm||[];
       // 도시별 오전/오후 작업 수 (한 팀이 같은 도시 오전+오후 처리 가능)
       var cities={};
