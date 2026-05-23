@@ -71,6 +71,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .cal-day.sun{color:#e53935}
 .cal-day.sat{color:#1565C0}
 .cal-day.closed{color:#ccc;position:relative;padding:4px 0 2px}
+.cal-day.past{color:#d8d8d8;cursor:default}
 .closed-label{display:block;font-size:8px;color:#e53935;font-weight:600;line-height:1;margin-top:-1px}
 .notice-box{background:#FFF8E1;border-radius:10px;padding:14px;margin:10px 0}
 .notice-box .title{font-size:13px;font-weight:700;color:#E65100;margin-bottom:8px}
@@ -467,12 +468,14 @@ function renderCal(){
     var dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var slot=daySlot(dateStr);                       // 🆕 슬롯 상태
     var slotFull=!!(slot&&slot.full);                // 🆕 오전·오후 둘 다 마감
-    var isAvail=dt>=minDate&&dow!==0&&!isDateClosed(dateStr)&&!getHolidayName(calYear,calMonth,d)&&!slotFull;
-    var isPast=dt<today;
-    var isClosed=(!isPast&&dt>=today&&dt<minDate&&dow!==0)||isDateClosed(dateStr)||slotFull;  // 🆕 slotFull 반영
     var holName=getHolidayName(calYear,calMonth,d);
+    var isPast=dt<today;                       // 지난 날짜
+    var tooSoon=dt>=today&&dt<minDate;         // 오늘~5일 이내 (마케팅: 임박 예약 차단 / 상관없음 고객은 직원이 자체 배정)
+    var isAvail=dt>=minDate&&dow!==0&&!isDateClosed(dateStr)&&!holName&&!slotFull;
+    var isClosed=((isPast||tooSoon)&&dow!==0&&!holName)||isDateClosed(dateStr)||slotFull;  // 🆕 과거+5일 이내 모두 마감
     el.className='cal-day';
     if(dow===0||holName)el.className+=' sun';else if(dow===6)el.className+=' sat';
+    if(isPast)el.className+=' past';  // 🆕 지난 날짜 흐리게
     if(isAvail){el.className+=' available';el.setAttribute('data-date',dateStr);el.onclick=function(){selectDate(this)}}
     if(isClosed)el.className+=' closed';
     if(dt.getTime()===today.getTime())el.className+=' today';
