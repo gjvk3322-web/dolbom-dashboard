@@ -105,6 +105,7 @@ body {
 .welcome-btn-onnuri { background: #6a1b9a; color: #fff; }   /* 온누리 QR — 퍼플 */
 .welcome-btn-group  { background: #ef6c00; color: #fff; }   /* 공구안내 — 오렌지 */
 .welcome-btn-move   { background: #5d4037; color: #fff; }   /* 이전설치 — 브라운 */
+.welcome-btn-tape   { background: #00897b; color: #fff; }   /* 테이프뜯기 — 청록 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
 .welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
@@ -1160,6 +1161,9 @@ body {
           </button>
           <button class="welcome-btn welcome-btn-move" onclick="copyMoveInstall()">
             📦 <span>이전설치</span>
+          </button>
+          <button class="welcome-btn welcome-btn-tape" onclick="copyTapeRemoval()">
+            🩹 <span>테이프뜯기</span>
           </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
@@ -2638,6 +2642,36 @@ function copyMoveInstall() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 이전설치 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 🩹 테이프 제거 방법 안내 복사
+function copyTapeRemoval() {
+  var text =
+    '안녕하세요, 돌봄매트입니다 😊\n' +
+    '매트 양면테이프 제거 방법 안내드릴게요!\n\n' +
+    '🔥 STEP 1. 열 가하기\n' +
+    '헤어드라이어로 테이프 위를 30초~1분 따뜻하게 데워주세요.\n' +
+    '(손으로 만졌을 때 따뜻한 느낌이면 OK)\n\n' +
+    '✋ STEP 2. 천천히 뜯기\n' +
+    '모서리부터 카드나 손톱으로 살짝 들뜨게 한 뒤,\n' +
+    '45도 각도로 아주 천천히 당겨주세요.\n' +
+    '안될경우 자로 긁으셔야합니다!\n' +
+    '⚠️ 빠르게 당기면 바닥재가 손상될 수 있어요!\n\n' +
+    '🧹 STEP 3. 잔여물 제거\n' +
+    '접착제가 남아있다면 아래 방법을 순서대로 시도해보세요.\n' +
+    '① 다이소 스티커 제거제 사용\n' +
+    '② 식용유 소량 묻혀 문지른 뒤 물티슈로 닦기\n' +
+    '③ 지우개로 문지르기\n\n' +
+    '💡 TIP\n' +
+    '잘 안 떨어지면 열 → 뜯거나 긁기 → 열, 반복해주시면 훨씬 수월해요!\n\n' +
+    '혹시 추가로 궁금한 점 있으시면 편하게 말씀해주세요 🙏';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 테이프 제거 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
