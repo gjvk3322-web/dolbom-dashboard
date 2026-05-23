@@ -665,6 +665,22 @@ function publishSlots(){
   } else {
     console.warn('⚠️ 기록할 슬롯이 0개 (미래 작업 없음 또는 데이터 로드 실패)');
   }
+  cleanOldSlots();  // 🆕 30일 지난 과거 슬롯 정리 (누적 방지)
+}
+
+// 🆕 30일 이전 슬롯 자동 삭제 — 데이터 누적 방지 (과거 슬롯은 booking/reservation 모두 안 씀)
+function cleanOldSlots(){
+  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+  var cutoffStr=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
+  fbDb.ref('slots').once('value').then(function(snap){
+    var all=snap.val()||{}, del={};
+    Object.keys(all).forEach(function(k){
+      var m=k.match(/(\d{4}-\d{2}-\d{2})$/);   // 키: 부산_2026-06-15 → 날짜 추출
+      if(m && m[1]<cutoffStr) del[k]=null;       // 30일 이전이면 삭제 표시
+    });
+    var n=Object.keys(del).length;
+    if(n){ fbDb.ref('slots').update(del).then(function(){ console.log('🧹 과거 슬롯',n,'개 정리 완료'); }); }
+  }).catch(function(e){ console.warn('슬롯 정리 건너뜀:',e); });  // 실패해도 조용히 (필수 아님)
 }
 
 async function loadData(){
