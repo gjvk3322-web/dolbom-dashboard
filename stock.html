@@ -952,7 +952,11 @@ async function saveMonthlyOrder(){
         orderInputs:JSON.parse(JSON.stringify(orderInputs)),totalBox:totalBox});
       hist=hist.slice(0,30);
       localStorage.setItem(hk,JSON.stringify(hist));
-    }catch(e){}
+    }catch(e){
+      // 🆕 조용히 실패하지 않도록 — 저장공간 부족 등이면 사용자에게 알림
+      console.error('이전 발주서 기록 저장 실패:',e);
+      toast('⚠️ 이전 발주서 기록 저장 실패 (저장공간 부족일 수 있어요)');
+    }
   }
 
   // 2. 이미지 저장
@@ -973,6 +977,9 @@ async function saveMonthlyOrder(){
     link.href=canvas.toDataURL();link.click();
     toast('✅ 발주서 저장 + 시트 기록 완료!');
   }catch(e){toast('이미지 저장 실패 (시트 기록은 완료)');console.error(e)}
+  // 🆕 저장 직후 '이전 발주서' 드롭다운을 다시 그려서 방금 저장한 발주서가 바로 목록에 뜨도록 함
+  //    (renderOrder 안에서 입력값을 저장→복원하므로 화면의 입력값은 그대로 유지됨)
+  renderOrder();
 }
 
 function buildTable(pfx,ex){let h='';PR.forEach(p=>{
