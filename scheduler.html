@@ -590,11 +590,14 @@ function calcEmpRouteTotals(jobList){
 let OFFS={}; // {date: Set(이름)} 휴무 데이터
 let DUTY={}; // {date: {이름: 사유}} 예비군/교육 등 (배정제외 but 근무 카운트)
 let hireDate={}; // {이름: '2024-01-15'} 입사일
+let annualTotal={}; // {이름:90} 연차총개수(I열)
+let annualUsedPrev={}; // {이름:30} 기존사용(J열, 4/1 이전)
+let sheetNames=[]; // 팀설정 시트의 직원명단(E 보강용)
 function hdSort(a,b){return(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999')}
 // 팀설정 CSV 파싱 (입사일 추출)
 // A:지역 B:팀번호 C:이름 D:직급 E:색상코드 F:연락처 G:입사일
 function parseTeamConfigCSV(text){
-const lines=text.split('\n');hireDate={};
+const lines=text.split('\n');hireDate={};annualTotal={};annualUsedPrev={};sheetNames=[];
 for(let i=1;i<lines.length;i++){
 const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
@@ -603,7 +606,18 @@ if(!r[2])continue;
 const name=r[2].trim();
 const hd=(r[6]||'').trim();
 if(name&&hd)hireDate[name]=hd;
-}}
+// I열(r[8])=연차총개수, J열(r[9])=기존사용
+if(name){
+  if(!sheetNames.includes(name))sheetNames.push(name);
+  const it=parseFloat((r[8]||'').replace(/[^0-9.\-]/g,''));
+  const ju=parseFloat((r[9]||'').replace(/[^0-9.\-]/g,''));
+  annualTotal[name]=isNaN(it)?0:it;
+  annualUsedPrev[name]=isNaN(ju)?0:ju;
+}
+}
+// 시트 명단으로 E 보강 (누락 직원 자동 추가)
+sheetNames.forEach(n=>{if(!E.includes(n))E.push(n)});
+}
 
 function parseCSV(text){
 const lines=text.split('\n');J=[];
@@ -2455,6 +2469,43 @@ Object.keys(KR_HOLIDAYS).forEach(d=>{if(d.startsWith(ym))result.push({date:parse
 return result;
 }
 
+// ===== 연차 자동 집계 =====
+const ANNUAL_AUTO_START='2026-04-01'; // 휴무 데이터 시작일. 이전은 시트 J열(기존사용).
+function monthRequiredOff(y,m){ // 소정 휴일수(토일+공휴일,중복제거). m:0-based
+  const lastDay=new Date(y,m+1,0).getDate();
+  const startDow=new Date(y,m,1).getDay();
+  const off=new Set();
+  for(let d=1;d<=lastDay;d++){const dow=(startDow+d-1)%7;if(dow===0||dow===6)off.add(d)}
+  getMonthHolidays(y,m).forEach(h=>off.add(h.date));
+  return off.size;
+}
+function monthPureOff(emp,y,m){ // 순수 휴무일수(예비군/교육/출장/훈련=DUTY 제외). m:0-based
+  const lastDay=new Date(y,m+1,0).getDate();
+  const ym=y+'-'+String(m+1).padStart(2,'0');
+  let c=0;
+  for(let d=1;d<=lastDay;d++){
+    const ds=ym+'-'+String(d).padStart(2,'0');
+    if(OFFS[ds]&&OFFS[ds].has(emp)){
+      if(DUTY[ds]&&DUTY[ds][emp])continue; // 예비군/교육 등은 근무로 침
+      c++;
+    }
+  }
+  return c;
+}
+function calcAnnualUsed(emp){ // 4/1~오늘 월별(순수휴무-소정휴일) 양수만 누적
+  if(!emp)return 0;
+  const start=new Date(ANNUAL_AUTO_START);
+  const today=new Date();
+  let total=0;
+  let y=start.getFullYear(), m=start.getMonth();
+  while(y<today.getFullYear()||(y===today.getFullYear()&&m<=today.getMonth())){
+    const ex=monthPureOff(emp,y,m)-monthRequiredOff(y,m);
+    if(ex>0)total+=ex; // 덜 쉰 달은 수당처리 → 연차 무관
+    m++; if(m>11){m=0;y++}
+  }
+  return total;
+}
+
 let mYear,mMonth,monthEmp=null;
 (function(){const n=new Date();mYear=n.getFullYear();mMonth=n.getMonth()})();
 function mMove(d){mMonth+=d;if(mMonth>11){mMonth=0;mYear++}if(mMonth<0){mMonth=11;mYear--}renderMonth();renderFair()}
@@ -2655,9 +2706,16 @@ grid+=`<div class="${cls}">${inner}</div>`;
 }
 
 // 휴무 요약
-const offSummary=`<div style="background:var(--card);border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:center;gap:40px;text-align:center">
+const _aTot=annualTotal[monthEmp]||0;
+const _aPrev=annualUsedPrev[monthEmp]||0;
+const _aAuto=calcAnnualUsed(monthEmp);
+const _aUsed=_aPrev+_aAuto;
+const _aRemain=_aTot-_aUsed;
+const offSummary=`<div style="background:var(--card);border-radius:14px;padding:14px;margin-top:12px;display:flex;justify-content:center;gap:26px;text-align:center;flex-wrap:wrap">
 <div><div style="font-size:20px;font-weight:900;color:var(--dim)">${avgOff}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">이번 달 휴일</div></div>
 <div><div style="font-size:20px;font-weight:900;color:${s.off>avgOff?'var(--red)':s.off<avgOff?'var(--green)':'var(--text)'}">${s.off}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">나의 휴무</div></div>
+<div style="border-left:1px solid var(--line);padding-left:26px"><div style="font-size:20px;font-weight:900;color:var(--yellow)">${_aUsed}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">사용 연차</div></div>
+<div><div style="font-size:20px;font-weight:900;color:${_aRemain<=0?'var(--red)':_aRemain<=3?'var(--orange)':'var(--green)'}">${_aRemain}</div><div style="font-size:10px;color:var(--dim);margin-top:2px">잔여 연차</div></div>
 </div>`;
 
 v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2 style="color:${ec}">${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
