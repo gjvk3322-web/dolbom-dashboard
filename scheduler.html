@@ -325,11 +325,16 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.04.03.35';
+const VER='2026.04.03.36';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
 const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+const SAMPLE_CSV='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1820061412';
+const RECV_CSV_BS='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
+const RECV_CSV_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+let sampleDaily={};
+let recvDaily={};
 let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217';
 let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
 const CSV_TEAM_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735';
@@ -616,6 +621,13 @@ if(name){
 
 function parseCSV(text){
 const lines=text.split('\n');J=[];
+let _recvIdx=-1;
+if(lines.length){
+const h=[];let hc='',hq=false;
+for(let c=0;c<lines[0].length;c++){const ch=lines[0][c];if(ch==='"'){hq=!hq}else if(ch===','&&!hq){h.push(hc.trim().replace(/^"|"$/g,''));hc=''}else{hc+=ch}}
+h.push(hc.trim().replace(/^"|"$/g,''));
+_recvIdx=h.findIndex(x=>x==='접수일'||x==='접수일시');
+}
 for(let i=1;i<lines.length;i++){
 const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
@@ -639,7 +651,55 @@ const id=ds+'_'+r[0]+'_'+(_ph8.length>=8?_ph8:('A'+_akey));
 const csvRow=i; // 시트 기록용 행번호는 별도 보관
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
-J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim()})}}
+const _recv=_recvIdx>=0?(r[_recvIdx]||'').trim():'';
+J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim(),receivedAt:_recv})}}
+
+function accumRecvDaily(text,reset){
+if(reset)recvDaily={};
+const lines=text.split('\n');if(lines.length<2)return;
+const h=[];let hc='',hq=false;
+for(let c=0;c<lines[0].length;c++){const ch=lines[0][c];if(ch==='"'){hq=!hq}else if(ch===','&&!hq){h.push(hc.trim().replace(/^"|"$/g,''));hc=''}else{hc+=ch}}
+h.push(hc.trim().replace(/^"|"$/g,''));
+const idx=h.findIndex(x=>x==='접수일'||x==='접수일시');if(idx<0)return;
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+let rd=(r[idx]||'').trim();if(!rd)continue;
+rd=rd.replace(/\./g,'-').replace(/\s/g,'');
+const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(!m)continue;
+const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+recvDaily[ds]=(recvDaily[ds]||0)+1;
+}}
+async function loadRecvDaily(){
+try{
+const [bs,gg]=await Promise.all([
+fetch(RECV_CSV_BS+'&_='+Date.now()).then(r=>r.text()),
+fetch(RECV_CSV_GG+'&_='+Date.now()).then(r=>r.text())
+]);
+recvDaily={};
+accumRecvDaily(bs,false);
+accumRecvDaily(gg,false);
+if(currentTab==='month'&&!monthEmp)renderMonth();
+}catch(e){console.error('접수일 집계 실패:',e)}
+}
+function parseSampleDaily(text){
+sampleDaily={};
+const lines=text.split('\n');if(lines.length<2)return;
+const h=[];let hc='',hq=false;
+for(let c=0;c<lines[0].length;c++){const ch=lines[0][c];if(ch==='"'){hq=!hq}else if(ch===','&&!hq){h.push(hc.trim().replace(/^"|"$/g,''));hc=''}else{hc+=ch}}
+h.push(hc.trim().replace(/^"|"$/g,''));
+let idx=h.findIndex(x=>x==='접수일시'||x==='접수일');if(idx<0)idx=0;
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+let rd=(r[idx]||'').trim();if(!rd)continue;
+rd=rd.replace(/\./g,'-').replace(/\s/g,'');
+const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(!m)continue;
+const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+sampleDaily[ds]=(sampleDaily[ds]||0)+1;
+}}
 
 // 휴무 CSV 파싱 (A:날짜 B:요일 C~L:이름1~이름10)
 function parseOffCSV(text){
@@ -2605,6 +2665,67 @@ for(let d=1;d<=lastDay;d++){totalAm+=dayData[d].am;totalPm+=dayData[d].pm;totalA
 calTitle=`${mYear}년 ${mMonth+1}월`;
 calSub=`예약 ${totalAm+totalPm}건 (오전${totalAm} 오후${totalPm}) · AS ${totalAs}건`;
 
+// ── 📥 이번 달 접수 현황 (회사 전체 · 접수일 기준 · reservation.html과 동일) ──
+const _prefix=ym; // YYYY-MM
+const _resDaily={},_samDaily={};
+// 시공 접수 = 부산+경기 전체 접수일 기준 (recvDaily)
+Object.keys(recvDaily).forEach(ds=>{if(ds.startsWith(_prefix))_resDaily[ds]=recvDaily[ds];});
+// 샘플 접수 = 전체
+Object.keys(sampleDaily).forEach(ds=>{if(ds.startsWith(_prefix))_samDaily[ds]=sampleDaily[ds];});
+const _totalRes=Object.values(_resDaily).reduce((a,b)=>a+b,0);
+const _totalSam=Object.values(_samDaily).reduce((a,b)=>a+b,0);
+const _td=new Date();const _todayStr=`${_td.getFullYear()}-${String(_td.getMonth()+1).padStart(2,'0')}-${String(_td.getDate()).padStart(2,'0')}`;
+const _todayRes=_resDaily[_todayStr]||0,_todaySam=_samDaily[_todayStr]||0;
+const _hasRecv=_totalRes>0;
+const _activeDays=new Set([...Object.keys(_resDaily),...Object.keys(_samDaily)]).size||1;
+
+// 일별 막대 (해당 월 1일~말일, 접수 있는 날만)
+let _maxV=1;for(let d=1;d<=lastDay;d++){const ds=`${_prefix}-${String(d).padStart(2,'0')}`;_maxV=Math.max(_maxV,_resDaily[ds]||0,_samDaily[ds]||0)}
+let _rows='';
+for(let d=1;d<=lastDay;d++){
+const ds=`${_prefix}-${String(d).padStart(2,'0')}`;
+const rv=_resDaily[ds]||0,sv=_samDaily[ds]||0;
+if(!rv&&!sv)continue;
+const dow=['일','월','화','수','목','금','토'][new Date(ds).getDay()];
+const isToday=ds===_todayStr;const dy=new Date(ds).getDay();
+const dc=isToday?'var(--text)':dy===0?'var(--red)':dy===6?'var(--blue)':'var(--dim)';
+const rW=rv?Math.max(rv/_maxV*100,5):0,sW=sv?Math.max(sv/_maxV*100,5):0;
+_rows+=`<tr>
+<td style="padding:3px 6px 3px 0;text-align:right;white-space:nowrap;color:${dc};font-weight:${isToday?'800':'500'}">${d}일(${dow})</td>
+<td style="padding:3px 4px;text-align:right;font-weight:700;color:${rv?'var(--green)':'var(--dim)'};width:24px">${rv||'-'}</td>
+<td style="padding:3px 4px;text-align:right;font-weight:700;color:${sv?'var(--text)':'var(--dim)'};width:24px">${sv||'-'}</td>
+<td style="padding:3px 0;width:50%"><div style="display:flex;flex-direction:column;gap:2px">
+${rv?`<div style="height:6px;width:${rW}%;background:var(--green);border-radius:2px"></div>`:''}
+${sv?`<div style="height:6px;width:${sW}%;background:var(--dim);border-radius:2px;opacity:.5"></div>`:''}
+</div></td></tr>`;
+}
+
+let statusCard=`<div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
+<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">📥 ${mMonth+1}월 접수 현황 <span style="font-size:10px;font-weight:500;color:var(--dim)">(회사 전체 · 접수일 기준)</span></div>
+<div style="display:flex;gap:10px;margin-bottom:10px">
+  <div style="flex:1;text-align:center;background:rgba(48,209,88,.12);border-radius:10px;padding:10px 6px">
+    <div style="font-size:22px;font-weight:900;color:var(--green)">${_hasRecv?_totalRes:'-'}</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:2px">시공 예약</div>
+  </div>
+  <div style="flex:1;text-align:center;background:rgba(120,120,128,.15);border-radius:10px;padding:10px 6px">
+    <div style="font-size:22px;font-weight:900;color:var(--text)">${_totalSam}</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:2px">샘플 신청</div>
+  </div>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);border-top:1px solid var(--border);padding-top:8px;margin-bottom:6px">
+  <span>오늘: <b style="color:var(--green)">시공 ${_todayRes}</b> · <b style="color:var(--text)">샘플 ${_todaySam}</b></span>
+  <span>일평균 ${(((_totalRes+_totalSam)/_activeDays)).toFixed(1)}건</span>
+</div>`;
+if(_rows){
+statusCard+=`<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:4px">
+<tr style="color:var(--dim);font-weight:600"><td></td><td style="text-align:right;color:var(--green)">시공</td><td style="text-align:right;color:var(--dim)">샘플</td><td></td></tr>
+${_rows}
+<tr style="border-top:1px solid var(--border);font-weight:800"><td style="padding:6px 6px 0 0;text-align:right;color:var(--text)">합계</td><td style="padding:6px 4px 0;text-align:right;color:var(--green)">${_totalRes}</td><td style="padding:6px 4px 0;text-align:right;color:var(--text)">${_totalSam}</td><td></td></tr>
+</table>`;
+}
+if(!_hasRecv)statusCard+=`<div style="font-size:10px;color:var(--yellow);margin-top:8px">⚠️ 시공 접수일 데이터를 불러오는 중이거나 비어있어요. 🔄 최신화를 눌러보세요.</div>`;
+statusCard+=`</div>`;
+
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
 const mHolidays=getMonthHolidays(mYear,mMonth);
@@ -2641,6 +2762,7 @@ sumHtml+=`<div class="mc-emp-row" onclick="mSelectEmp('${e}')" style="cursor:poi
 sumHtml+=`</div>`;
 
 v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2>${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
+${statusCard}
 ${badges}
 <div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
 <div class="mc-grid">${grid}</div>
@@ -2747,6 +2869,8 @@ OFFS={};DUTY={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
+try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){}
+loadRecvDaily();
 try{const tR=await fetch(CSV_TEAM_URL+'&_='+Date.now());const tText=await tR.text();parseTeamConfigCSV(tText)}catch(e){}
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
@@ -2842,6 +2966,8 @@ lastCSVHash=newHash;
 lastCSVRowCount=newRowCount;
 
 parseCSV(text);
+try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){}
+loadRecvDaily();
 
 // 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
 if(isNewReservation&&(Date.now()-lastManualEdit>60000)){
