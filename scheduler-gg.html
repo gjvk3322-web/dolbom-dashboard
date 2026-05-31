@@ -326,7 +326,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.04.03.36';
+const VER='2026.04.03.38';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -667,10 +667,13 @@ const h=[];let hc='',hq=false;
 for(let c=0;c<lines[0].length;c++){const ch=lines[0][c];if(ch==='"'){hq=!hq}else if(ch===','&&!hq){h.push(hc.trim().replace(/^"|"$/g,''));hc=''}else{hc+=ch}}
 h.push(hc.trim().replace(/^"|"$/g,''));
 const idx=h.findIndex(x=>x==='접수일'||x==='접수일시');if(idx<0)return;
+const tIdx=h.findIndex(x=>x==='시간');// 오전/오후만 시공으로 카운트 (AS·실측 제외)
 for(let i=1;i<lines.length;i++){
 const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
 r.push(cur.trim().replace(/^"|"$/g,''));
+const _t=(tIdx>=0?r[tIdx]:r[0])||'';
+if(!(_t.startsWith('오전')||_t.startsWith('오후')))continue; // AS·실측·이전설치 제외
 let rd=(r[idx]||'').trim();if(!rd)continue;
 rd=rd.replace(/\./g,'-').replace(/\s/g,'');
 const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(!m)continue;
@@ -2718,13 +2721,13 @@ ${sv?`<div style="height:6px;width:${sW}%;background:var(--dim);border-radius:2p
 let statusCard=`<div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
 <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">📥 ${mMonth+1}월 접수 현황 <span style="font-size:10px;font-weight:500;color:var(--dim)">(회사 전체 · 접수일 기준)</span></div>
 <div style="display:flex;gap:10px;margin-bottom:10px">
-  <div style="flex:1;text-align:center;background:rgba(48,209,88,.12);border-radius:10px;padding:10px 6px">
+  <div style="flex:1;text-align:left;background:rgba(48,209,88,.12);border-radius:10px;padding:10px 14px">
+    <div style="font-size:10px;color:var(--dim);margin-bottom:2px">시공 예약</div>
     <div style="font-size:22px;font-weight:900;color:var(--green)">${_hasRecv?_totalRes:'-'}</div>
-    <div style="font-size:10px;color:var(--dim);margin-top:2px">시공 예약</div>
   </div>
-  <div style="flex:1;text-align:center;background:rgba(120,120,128,.15);border-radius:10px;padding:10px 6px">
+  <div style="flex:1;text-align:left;background:rgba(120,120,128,.15);border-radius:10px;padding:10px 14px">
+    <div style="font-size:10px;color:var(--dim);margin-bottom:2px">샘플 신청</div>
     <div style="font-size:22px;font-weight:900;color:var(--text)">${_totalSam}</div>
-    <div style="font-size:10px;color:var(--dim);margin-top:2px">샘플 신청</div>
   </div>
 </div>
 <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);border-top:1px solid var(--border);padding-top:8px;margin-bottom:6px">
@@ -2778,12 +2781,12 @@ sumHtml+=`<div class="mc-emp-row" onclick="mSelectEmp('${e}')" style="cursor:poi
 sumHtml+=`</div>`;
 
 v.innerHTML=`<div class="mc-hd"><button class="mc-arrow" onclick="mMove(-1)">‹</button><h2>${calTitle}</h2><button class="mc-arrow" onclick="mMove(1)">›</button></div>
-${statusCard}
 ${badges}
 <div style="text-align:center;margin-bottom:10px;font-size:12px;color:var(--dim)">${calSub}</div>
 <div class="mc-grid">${grid}</div>
 <div class="mc-legend"><span class="lg-job">예약</span><span class="lg-am">오전</span><span class="lg-pm">오후</span><span class="lg-off2">휴무</span></div>
-${sumHtml}`;
+${sumHtml}
+${statusCard}`;
 
 }else{
 // ── 개인 직원 캘린더 ──
