@@ -297,6 +297,9 @@ body {
   font-size: 16px; font-family: 'JetBrains Mono', monospace; text-align: center;
 }
 .dim-input:focus { outline: none; border-color: #2E7D32; }
+.dim-input::-webkit-outer-spin-button,
+.dim-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dim-input[type=number] { -moz-appearance: textfield; }
 .dim-add {
   display: flex; justify-content: center; padding: 8px;
   border: 1.5px dashed #d0cdc6; border-radius: 8px;
@@ -1723,9 +1726,9 @@ function renderRooms() {
     d.innerHTML =
       '<div class="dim-room-head"><span class="dim-room-name">'+r.name+'</span>'+rb+'</div>' +
       '<div class="dim-inputs">' +
-        '<input class="dim-input" type="number" inputmode="numeric" placeholder="가로" value="'+(r.w||'')+'" oninput="updateRoomDim('+r.id+',\'w\',this.value)">' +
+        '<input class="dim-input" type="text" inputmode="numeric" placeholder="가로" value="'+(r.w||'')+'" oninput="this.value=this.value.replace(/[^0-9]/g,\'\'); updateRoomDim('+r.id+',\'w\',this.value)">' +
         '<span style="color:#ccc;font-size:11px">×</span>' +
-        '<input class="dim-input" type="number" inputmode="numeric" placeholder="세로" value="'+(r.h||'')+'" oninput="updateRoomDim('+r.id+',\'h\',this.value)">' +
+        '<input class="dim-input" type="text" inputmode="numeric" placeholder="세로" value="'+(r.h||'')+'" oninput="this.value=this.value.replace(/[^0-9]/g,\'\'); updateRoomDim('+r.id+',\'h\',this.value)">' +
         '<span style="color:#bbb;font-size:10px">mm</span>' +
       '</div>';
     c.appendChild(d);
