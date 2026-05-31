@@ -234,6 +234,9 @@ body {
   text-align: center; font-family: inherit; outline: none; color: #2E7D32; min-width: 0;
 }
 .pyeong-input-box span { font-size: 13px; color: #2E7D32; font-weight: 600; flex-shrink: 0; }
+.pyeong-input-box input::-webkit-outer-spin-button,
+.pyeong-input-box input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pyeong-input-box input[type=number] { -moz-appearance: textfield; }
 .pyeong-quick {
   padding: 0 10px; height: 38px; border: 1px solid #e0ddd6;
   border-radius: 8px; background: #fff; font-size: 12px; font-family: inherit;
@@ -1265,7 +1268,7 @@ body {
       </div>
       <div class="input-row">
         <div class="pyeong-input-box">
-          <input type="number" inputmode="numeric" id="pyeongInput" placeholder="0" oninput="recalculate()">
+          <input type="text" inputmode="numeric" id="pyeongInput" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,''); recalculate()">
           <span>평</span>
         </div>
         <button class="pyeong-quick" onclick="setPyeong(34, this)">34평</button>
@@ -1526,6 +1529,7 @@ var SCOPE_NAMES = ['거실+복도', '거실+복도+아일랜드', '거실+복도
 var DEFAULT_ROOMS = [
   { name:'거실', removable:false },
   { name:'복도', removable:false },
+  { name:'아일랜드', removable:false },
   { name:'주방', removable:false }
 ];
 
