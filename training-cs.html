@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>돌봄매트 CS 상담 교육</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --green:#1F7A52; --green-d:#155c3c; --green-l:#E8F3EC; --green-ll:#F3F9F5;
+    --ink:#1d2721; --sub:#5c6b62; --line:#e3e9e5; --bg:#f6f8f6;
+    --warn-bg:#FFF6E9; --warn-bd:#F0C886; --warn-ink:#8a5a18;
+    --no-bg:#FCEEEE; --no-bd:#E8B4B4; --no-ink:#A33;
+    --tip-bg:#EAF4FB; --tip-bd:#A9D2EC; --tip-ink:#1D5E86;
+    --new-bg:#EEF7E9; --new-bd:#AED596; --new-ink:#3C7B22;
+  }
+  body{font-family:'Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;padding-bottom:60px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto}
+
+  /* 헤더 */
+  .hero{background:linear-gradient(150deg,var(--green) 0%,var(--green-d) 100%);color:#fff;padding:30px 22px 26px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:rgba(255,255,255,.07);border-radius:50%}
+  .hero .kicker{font-size:12px;letter-spacing:3px;opacity:.8;font-weight:600}
+  .hero h1{font-size:25px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
+  .hero p{font-size:13px;opacity:.9;margin-top:8px}
+  .hero .meta{font-size:11px;opacity:.7;margin-top:14px}
+
+  /* 진행률 */
+  .progress-card{background:#fff;margin:-16px 16px 0;border-radius:16px;padding:16px 18px;box-shadow:0 6px 20px rgba(0,0,0,.06);position:relative;z-index:2}
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .progress-top .label{font-size:13px;font-weight:700;color:var(--green)}
+  .progress-top .pct{font-size:20px;font-weight:800;color:var(--ink)}
+  .bar{height:9px;background:var(--green-l);border-radius:6px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#39a06b);border-radius:6px;width:0;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .progress-sub{font-size:11px;color:var(--sub);margin-top:8px;text-align:center}
+
+  /* 섹션 */
+  .sections{padding:18px 16px 0}
+  .sec{background:#fff;border-radius:14px;margin-bottom:11px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden;border:1px solid var(--line)}
+  .sechead{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;user-select:none}
+  .sec.done .sechead{background:var(--green-ll)}
+  .sechead .snum{font-size:13px;font-weight:800;color:var(--green);min-width:26px;height:26px;line-height:26px;text-align:center;background:var(--green-l);border-radius:8px;flex-shrink:0}
+  .sec.done .sechead .snum{background:var(--green);color:#fff}
+  .sechead .tt{flex:1;min-width:0}
+  .sechead .ti{font-size:15.5px;font-weight:700;letter-spacing:-.3px}
+  .sechead .chev{font-size:13px;color:#bbb;transition:transform .3s;flex-shrink:0}
+  .sec.open .sechead .chev{transform:rotate(180deg)}
+  .sec.done .sechead .ti::after{content:" ✓";color:var(--green);font-weight:800;font-size:13px}
+  .secbody{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .secinner{padding:4px 17px 18px}
+
+  .secinner p{font-size:13.5px;color:#39443d;margin:9px 0}
+  .secinner ul{list-style:none;margin:8px 0}
+  .secinner ul li{font-size:13px;color:#39443d;padding:5px 0 5px 18px;position:relative}
+  .secinner ul li::before{content:"";position:absolute;left:3px;top:12px;width:5px;height:5px;border-radius:50%;background:var(--green)}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+  th{background:var(--green-l);color:var(--green-d);font-weight:700;text-align:left;padding:8px 10px}
+  td{border-bottom:1px solid var(--line);padding:8px 10px;color:#39443d;vertical-align:top}
+  tr td:first-child{font-weight:600;white-space:nowrap}
+
+  .notice{border-radius:10px;padding:11px 13px;margin:11px 0;font-size:12.5px;line-height:1.6}
+  .notice .nt{font-weight:800;display:block;margin-bottom:3px;font-size:12.5px}
+  .notice.warn{background:var(--warn-bg);border:1px solid var(--warn-bd)} .notice.warn .nt{color:var(--warn-ink)}
+  .notice.no{background:var(--no-bg);border:1px solid var(--no-bd)} .notice.no .nt{color:var(--no-ink)}
+  .notice.tip{background:var(--tip-bg);border:1px solid var(--tip-bd)} .notice.tip .nt{color:var(--tip-ink)}
+  .notice.new{background:var(--new-bg);border:1px solid var(--new-bd)} .notice.new .nt{color:var(--new-ink)}
+  .notice .nb{color:#46514a}
+
+  .quote{background:#fbfcfb;border-left:4px solid var(--green);border-radius:8px;padding:11px 13px;margin:11px 0}
+  .quote .ql{font-size:11px;font-weight:800;color:var(--green);margin-bottom:6px;letter-spacing:.3px}
+  .quote .qt{font-size:12.5px;color:#2f3a33;white-space:pre-line;line-height:1.7}
+
+  /* 퀴즈 */
+  .quiz{background:var(--green-ll);border-radius:11px;padding:13px 14px;margin:13px 0 4px}
+  .quiz-tag{font-size:10px;font-weight:800;color:var(--green);letter-spacing:1px;margin-bottom:6px}
+  .quiz-q{font-size:13.5px;font-weight:700;margin-bottom:10px}
+  .quiz-opts{display:flex;flex-direction:column;gap:7px}
+  .opt{background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;font-size:13px;cursor:pointer;transition:.15s;text-align:left}
+  .opt:active{transform:scale(.99)}
+  .opt.correct{border-color:var(--green);background:var(--green-l);font-weight:700}
+  .opt.wrong{border-color:var(--no-bd);background:var(--no-bg)}
+  .quiz-ex{font-size:12px;color:var(--sub);margin-top:9px;padding:9px 11px;background:#fff;border-radius:8px;display:none;line-height:1.6}
+  .quiz-ex.show{display:block}
+  .quiz-ex b{color:var(--green)}
+
+  /* 체크리스트 */
+  .checklist{margin:22px 16px;background:#fff;border-radius:16px;padding:20px 18px;box-shadow:0 2px 8px rgba(0,0,0,.04);border:1px solid var(--line)}
+  .checklist h2{font-size:17px;font-weight:800;margin-bottom:4px}
+  .checklist .csub{font-size:12px;color:var(--sub);margin-bottom:14px}
+  .check{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid var(--green-ll);cursor:pointer}
+  .check:last-child{border-bottom:none}
+  .check .box{width:22px;height:22px;border:2px solid var(--green);border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.2s;margin-top:1px}
+  .check.on .box{background:var(--green)}
+  .check .box::after{content:"✓";color:#fff;font-size:13px;font-weight:800;opacity:0;transition:.2s}
+  .check.on .box::after{opacity:1}
+  .check .ctext{font-size:13.5px;color:#39443d;flex:1}
+  .check.on .ctext{color:#9aa69f;text-decoration:line-through}
+
+  /* 완료 배너 */
+  .done-banner{margin:0 16px 24px;background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;border-radius:16px;padding:22px;text-align:center;display:none}
+  .done-banner.show{display:block;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+  .done-banner .big{font-size:30px}
+  .done-banner h3{font-size:18px;font-weight:800;margin:6px 0}
+  .done-banner p{font-size:12.5px;opacity:.9}
+
+  .reset{display:block;margin:0 auto 30px;background:none;border:none;color:#bbb;font-size:11px;text-decoration:underline;cursor:pointer}
+
+  .foot{text-align:center;font-size:10.5px;color:#b3bdb6;padding:0 24px 30px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="kicker">DOLBOM MAT · CS GUIDE</div>
+    <h1>CS 상담 교육</h1>
+    <p>폰으로 보고 익히는 신입 상담원 매뉴얼</p>
+    <div class="meta">맘카페 585건 + 상담 대화 3,085건 분석 · 민석</div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-top">
+      <span class="label">교육 진행률</span>
+      <span class="pct" id="pct">0%</span>
+    </div>
+    <div class="bar"><i id="barfill"></i></div>
+    <div class="progress-sub" id="psub">섹션을 열고 퀴즈를 풀어보세요</div>
+  </div>
+
+  <div class="sections" id="sections"></div>
+
+  <div class="done-banner" id="doneBanner">
+    <div class="big">🎉</div>
+    <h3>1차 교육 완료!</h3>
+    <p>이제 실전이야. 막히면 언제든 민석에게 물어봐!</p>
+  </div>
+
+  <div class="checklist">
+    <h2>✅ 출근 전 체크리스트</h2>
+    <div class="csub">탭해서 하나씩 체크하세요</div>
+    <div id="checklist"></div>
+  </div>
+
+  <button class="reset" id="resetBtn">진행 기록 초기화</button>
+  <div class="foot">본 교육자료는 참고용입니다. 가격·정책·이벤트는 항상 최신 기준(민석 확인)을 우선합니다.</div>
+</div>
+
+<script>
+const DATA = {"SECTIONS":[{"id":"start","num":"0","icon":"🚀","title":"시작하기 전에","blocks":[{"t":"p","v":"이 페이지는 돌봄매트 CS 상담원이 폰에서 보고 익히는 교육용 매뉴얼입니다. 맘카페 고객 글 585건 + 실제 상담 인수인계 대화 3,085건을 분석해 만들었어요. 막히면 혼자 추측하지 말고 민석에게 바로 물어보세요."},{"t":"notice","tone":"warn","title":"딱 하나만 기억하면","v":"가격·이벤트·정책은 자주 바뀝니다. 특히 온누리상품권은 정부 정책에 따라 갑자기 중단될 수 있어요. 안내 전 현재 기준을 꼭 확인하세요."},{"t":"p","v":"아래 섹션을 순서대로 열어보고, 각 섹션 끝의 퀴즈를 풀어보세요. 맨 아래 체크리스트까지 끝내면 1차 교육 완료입니다."}]},{"id":"work","num":"1","icon":"📋","title":"CS의 핵심 업무","blocks":[{"t":"p","v":"실제로 가장 많이 반복되는 업무 순서입니다."},{"t":"table","head":["순위","업무"],"rows":[["1","계약·결제 관리 (견적→예약→예약금→잔금)"],["2","예약·일정 관리 (시공 날짜 조율)"],["3","쿠폰·이벤트 안내 (온누리·첫만남·후기캐시백·공구)"],["4","샘플 발송 (텔레그램 알림대로 우체국 접수)"],["5","카톡 채널 문의 실시간 응대"]]},{"t":"notice","tone":"warn","title":"민석이 가장 강조한 것","v":"\"카톡·전화를 놓치지 말 것.\" 주말·퇴근 후에도 무음으로 켜두고, 들어온 문의는 빠르게·빠짐없이 답하세요. 응대 누락이 제일 큰 문제였습니다."}],"quiz":[{"q":"CS 업무 중 빈도가 가장 높은 핵심 업무는?","opts":["샘플 발송","계약·결제 관리","SNS 관리"],"a":1,"ex":"견적→예약→예약금→잔금으로 이어지는 계약·결제 관리가 가장 핵심입니다."}]},{"id":"product","num":"2","icon":"📦","title":"제품 라인업","blocks":[{"t":"table","head":["제품","장당가","포인트"],"rows":[["1000매트 22T","76,500원","대형·기본 추천. 쿠션감·층간소음 강함"],["1000매트 17T","64,500원","애견 추천. 미끄럼방지+관절보호"],["500매트 22T","16,900원","실속형. 부분 교체 쉬움"]]},{"t":"notice","tone":"new","title":"중요 변경","v":"예전엔 50x50 500매트가 주력이었지만, 지금은 가로세로 1m 1000매트가 출시되어 대형이 기본 추천입니다. 과거 자료의 16,000원은 옛 가격이고 현재 500매트는 16,900원입니다."},{"t":"p","v":"500매트 미끄럼 문의가 자주 옵니다. 아래처럼 안내하세요."},{"t":"quote","label":"500매트 미끄럼 안내","v":"500매트는 처음에는 살짝 미끄러울 수 있는데, 2~3주 정도 사용하시면 미끄럽지 않게 자리잡습니다\n(강아지 미끄럼 방지용은 일주일 동안 하루 2번씩 닦아주시면 효과가 더욱 좋아집니다!)"}],"quiz":[{"q":"현재 기본 추천 제품은?","opts":["500매트 22T","1000매트 22T","퍼즐매트"],"a":1,"ex":"가로세로 1m 1000매트 22T가 신규 주력·기본 추천입니다."},{"q":"500매트가 미끄럽다는 문의에 맞는 안내는?","opts":["환불해드린다","2~3주 쓰면 자리잡아 안 미끄러워진다","제품 불량이다"],"a":1,"ex":"처음엔 살짝 미끄러우나 2~3주 사용하면 자리잡습니다."}]},{"id":"quote","num":"3","icon":"🧮","title":"견적 내는 법","blocks":[{"t":"p","v":"고객이 가장 먼저 묻는 게 \"우리 집 얼마예요?\"입니다. 견적은 cs-quote 페이지로 받으면 평수·범위만 넣어도 자동 계산됩니다."},{"t":"p","v":"평수·범위로 수량을 계산해 범위(~)로 안내합니다."},{"t":"quote","label":"견적 안내 예시 (34평 확장형)","v":"34평 확장형 예상견적\n거실 85장 / 복도 40장 / 주방 35장\n예상 수량 160장~180장\n\n아파트 구조에 따라 수량 차이가 있을 수 있습니다.\n실제 시공 후 들어간 수량에 맞춰 정산됩니다."},{"t":"notice","tone":"warn","title":"자주 한 실수","v":"견적을 너무 적게 내면 나중에 금액 분쟁이 생깁니다. 수량은 넉넉히, 범위로 안내하세요. 1000매트는 500매트 4장 크기라 수량을 약 4로 나눠 환산합니다(계산기에 자동 반영)."},{"t":"notice","tone":"tip","title":"견적 계산기","v":"평수·거실베란다·범위를 넣으면 수량·체감가가 자동 계산되는 cs-quote 페이지가 있습니다. 헷갈리면 이 도구를 쓰고 고객에게도 링크를 보내세요."}],"quiz":[{"q":"견적 수량 안내 시 옳은 방법은?","opts":["최대한 적게 딱 떨어지게","넉넉히 범위(~)로","대충 한 숫자만"],"a":1,"ex":"적게 내면 분쟁이 생깁니다. 넉넉히 범위로 안내하세요."}]},{"id":"sample","num":"4","icon":"📮","title":"샘플 발송 (자동화)","blocks":[{"t":"p","v":"샘플 발송은 텔레그램 자동 알림 + 프로그램 기반으로 운영됩니다."},{"t":"list","v":["고객이 카톡 채널/네이버 폼으로 샘플 신청","매일 오전 11시 30분, 텔레그램으로 \"오늘 몇 개 접수해라\" 알림 → 우체국 접수 (하루 1회)","시공팀에도 텔레그램으로 \"몇 개 발송해라\" 자동 전달"]},{"t":"notice","tone":"tip","title":"포인트","v":"예전처럼 우체국 사이트를 수동 확인·계산하지 않습니다. 텔레그램 알림 개수대로만 처리하면 됩니다. 우체국 접수: 로그인 → 국내소포 → 창구소포 → 창구소포 간편사전접수."}],"quiz":[{"q":"샘플 우체국 접수 알림은 언제, 어떻게 오나?","opts":["아침마다 전화로","오전 11시 30분 텔레그램","직접 계산"],"a":1,"ex":"매일 11시 30분 텔레그램으로 접수 개수가 자동 안내됩니다."}]},{"id":"pay","num":"5","icon":"💳","title":"가격·결제 정책","blocks":[{"t":"p","v":"가장 사고가 많이 난 영역입니다. 정신 바짝 차리세요."},{"t":"table","head":["결제수단","내용"],"rows":[["온누리상품권","7% 할인 + 소득공제 40%. 매출 대부분"],["첫만남 이용권","출산·육아 바우처. 결제 가능"],["카드/이체","현금영수증 가능. 공공기관은 별도 단가·이벤트 미적용"]]},{"t":"notice","tone":"no","title":"더 이상 안내 안 함","v":"동백전·지역화폐는 현재 사용 불가입니다. 과거 자료에 나와도 안내하지 마세요."},{"t":"notice","tone":"warn","title":"온누리 - 꼭 미리 고지","v":"온누리는 정부 정책상 갑자기 중단될 수 있습니다. \"정책상 사용이 불가해질 경우 기존(정상) 가격으로 결제해주셔야 한다\"고 미리 안내하세요."},{"t":"quote","label":"예약금/주의 안내","v":"예약금 20만원 현금 이체 후 잔금 완납 시 전액 환급됩니다.\n작업 중 현장 부재 시, 설치한 부분의 추후 변경은 불가하며 이로 인한 비용은 고객님 부담입니다."},{"t":"list","v":["작업 종료 후 환불 불가 (원칙)","셀프 배송 구매는 교환·환불 불가","클레임은 사진 먼저 요청 → 확인 후 조치. 즉답 환불 금지","미결제·금액 관련은 민석이 직접 관리 (건드리지 말 것)","온누리 결제는 날짜·시간 나오는 영수증으로 받기"]}],"quiz":[{"q":"온누리상품권 현재 할인율은?","opts":["10%","7%","11%"],"a":1,"ex":"현재 7% 할인 + 소득공제 40%입니다."},{"q":"현재 안내하면 안 되는 결제수단은?","opts":["첫만남 이용권","동백전·지역화폐","온누리"],"a":1,"ex":"동백전·지역화폐는 현재 사용 불가입니다."},{"q":"클레임 들어왔을 때 첫 대응은?","opts":["바로 환불 약속","사진 먼저 요청 후 확인","무시"],"a":1,"ex":"사진을 먼저 받아 우리 제품·하자 여부를 확인한 뒤 조치합니다."}]},{"id":"benefit","num":"6","icon":"🎁","title":"혜택·이벤트","blocks":[{"t":"table","head":["혜택","내용"],"rows":[["온누리 할인","7% 할인 + 소득공제 40%"],["첫만남 이용권","출산·육아 바우처 결제"],["샘플박스 쿠폰","샘플박스 안 할인쿠폰"],["후기 캐시백","후기 작성 시 캐시백 (2~3일 뒤 입금, 금액 변동)"],["공동구매","입주자 단톡·카페 모집 시 장당 할인"]]},{"t":"notice","tone":"warn","title":"캐시백 주의","v":"민석: \"잘못 캐시백하면 적자가 크다.\" 후기·추천 캐시백은 반드시 확인 후 지급. 이벤트가 vs 정상가 혼동도 잦으니 기간·조건을 꼭 함께 안내하세요."},{"t":"p","v":"이벤트 명칭이 5주년 → 6주년으로 바뀌었습니다. 과거 자료에 5주년이 보이면 6주년으로 안내하세요."}],"quiz":[{"q":"캐시백 지급 시 옳은 태도는?","opts":["요청하면 바로 지급","반드시 확인 후 지급","자동 지급"],"a":1,"ex":"오지급은 적자로 직결됩니다. 반드시 확인 후 지급하세요."}]},{"id":"customer","num":"7","icon":"💚","title":"고객 심리 (맘카페 분석)","blocks":[{"t":"p","v":"고객 관심사 순위입니다. 이 순서로 마음을 읽으면 대화가 잘 풀려요."},{"t":"list","v":["1순위 시공·마감 품질 (\"칼같은 마감\" \"원래 바닥 같은 일체감\")","2순위 후기·비교 (계약 전 여러 업체 비교)","3순위 층간소음 해결 (\"아랫집 눈치\" 스트레스)","4순위 가격·가성비 (무조건 싼 게 아니라 합리적)","5순위 안전 (미끄럼·낙상)","6순위 청소·관리 편의"]},{"t":"notice","tone":"tip","title":"핵심","v":"고객은 제일 싼 곳이 아니라 \"믿을 수 있고 마감 좋은 합리적인 곳\"을 찾습니다. 가격만 말하지 말고 품질·후기·신뢰를 함께 전하세요."},{"t":"p","v":"자주 비교되는 경쟁사: 크림하우스, 알집매트, 소리잠, 쿠키매트, 파파폼즈. 절대 비방하지 말고 우리 강점으로 전환하세요."},{"t":"list","v":["우리 강점: 빈틈없는 마감 / 원래 바닥 같은 일체감","공기순환통로로 바닥 손상이 없음 (6,700집 시공에도 문제 발생 없음)","후기 많아 신뢰 (네이버 \"돌봄매트\" 검색 유도)","타사보다 저렴한데, 샘플 받아 비교해보면 우리가 더 좋다는 게 핵심","500매트는 1장만 교체 가능해 경제적"]}],"quiz":[{"q":"고객이 가장 만족스러워하는 1순위는?","opts":["가장 싼 가격","시공·마감 품질","빠른 배송"],"a":1,"ex":"시공·마감 품질(\"칼같은 마감\")이 1순위입니다."}]},{"id":"faq","num":"8","icon":"❓","title":"자주 묻는 질문","blocks":[{"t":"p","v":"Q. 셀프로 깔면 안 되나요?"},{"t":"quote","label":"답변","v":"매트 소재 특성상 여름엔 확장되고 겨울엔 수축됩니다. 직접 시공하면 겨울에 벌어져 문제가 생기세요. 전문 시공은 최대한 덜 붙이되, 안 붙이고는 작업이 어렵습니다."},{"t":"p","v":"Q. 층간소음 효과 있어요? → 먼저 \"아랫집 눈치\" 걱정에 공감 → 시공 후 후기로 안심시키기."},{"t":"p","v":"Q. 청소·곰팡이는? → 틈새 없어 청소 편함. 하단 공기순환통로로 습기 빠져 곰팡이 걱정 적음."},{"t":"p","v":"Q. 배송(셀프) 구매도 되나요? → 가능하나 교환·환불 불가. 계절에 따라 벌어질 수 있음도 안내."}],"quiz":[{"q":"셀프 시공을 권하지 않는 이유는?","opts":["비싸서","계절에 따라 매트가 벌어져서","색이 안 예뻐서"],"a":1,"ex":"여름 확장·겨울 수축으로 직접 시공 시 벌어지는 문제가 생깁니다."}]},{"id":"install","num":"9","icon":"🔧","title":"설치비·AS·이전설치","blocks":[{"t":"table","head":["항목","비용"],"rows":[["500매트 99장 이하 시공","시공비 10만원"],["1000매트 24장 이하 시공","시공비 10만원"],["AS 좁은 범위","3만원"],["AS 넓은 범위","5~10만원"],["중문 설치 AS","출장비 3만원 + 추가 매트"],["이전설치","30만원 + 추가 매트 수량"]]},{"t":"notice","tone":"tip","title":"AS 안내 원칙","v":"AS 기간 4개월. 제품 데미지·오염은 AS 불가. \"보통 AS는 거의 없고 대부분 중문 설치로 인한 경우뿐\"이라 안내하고, 중문 AS는 출장비 3만원+추가매트가 든다고 미리 고지."}],"quiz":[{"q":"AS 기간은?","opts":["1개월","4개월","1년"],"a":1,"ex":"AS는 4개월로 진행됩니다."}]},{"id":"team","num":"10","icon":"🤝","title":"시공팀 협업","blocks":[{"t":"notice","tone":"tip","title":"근무 편성이 핵심","v":"시공팀이 너무 힘들지 않도록 근무를 짜는 게 중요합니다. 다만 두탕이 적절하게 있으면 오히려 시공팀이 좋아합니다(수입 측면). 무리한 일정과 적절한 두탕의 균형을 잡으세요."},{"t":"list","v":["도착 연락은 각 팀별 채팅방으로 안내","팀별 오전 작업 종료 시간을 알고 있어야 함 (경기팀은 빨리 끝남 → 대기 사고 주의)","두탕 가능: 오전 먼 거리 + 오후 사무실 근처","두탕 금지: 오전/오후에 40평대 이상 작업이 끼면 금지","고객 소통은 무조건 카톡 채널에 남기기 (팀·민석 확인용)","차량번호는 전날 카톡 채널로 안내","일정 이상하면 별 누르고 민석에게 전달"]},{"t":"notice","tone":"tip","title":"시공 가능 지역","v":"각 사무실(부산·경기)에서 1시간 50분 이내면 작업 가능. 수도권·충남·충북·영남·경북 주요 도시 커버."}],"quiz":[{"q":"두탕 작업을 잡으면 안 되는 경우는?","opts":["오전이 가까울 때","40평대 이상 작업이 낄 때","비 올 때"],"a":1,"ex":"40평대 이상은 적재량·난이도상 두탕 금지입니다."}]},{"id":"cancel","num":"11","icon":"🗓️","title":"예약 변경·취소","blocks":[{"t":"notice","tone":"warn","title":"3일 전 취소·변경 불가","v":"원하시면 비용 20만원 발생. 멘트: \"작업팀 인건비가 25만원 발생되어 부득이하게 비용이 발생합니다, 죄송합니다.\""},{"t":"list","v":["취소 절차: 예약 접수 탭에서 취소 → 카톡 채널명 \"취소\"로 변경 → 별 누르기 → 민석 확인 후 예약금 환불","미결제·금액 관련은 건드리지 말 것 (민석 관리)"]}],"quiz":[{"q":"3일 전 취소 시 안내할 비용은?","opts":["무료","20만원","전액"],"a":1,"ex":"3일 전 취소·변경은 20만원 비용이 발생합니다(인건비 25만원)."}]},{"id":"caution","num":"12","icon":"⚠️","title":"제품·현장 주의사항","blocks":[{"t":"p","v":"황변(색 변함) 방지 — 매트 위에 다른 물건을 오래 두면 그 부분만 색이 달라질 수 있습니다."},{"t":"list","v":["매트 위 다른 매트·전기장판 사용 금지","미끄럼 방지 패드 있는 카페트 금지","같은 고무 재질(화장실 발판 등) 올려두기 주의"]},{"t":"p","v":"방염: 직접 불을 붙여도 잘 안 붙으니 걱정 안 하셔도 된다고 안내. 고압발포 제품이며 고압·저압은 중요하지 않으니 샘플 비교 권유."},{"t":"list","v":["기존 매트·폐기물은 우리가 안 버려줌 → 관리실 문의 안내","기존 매트는 시공 2~3일 전 미리 뜯어 환기","엘리베이터 없는 빌라는 4층까지 가능 (추가비용 없음)","채널명이 우리 양식 아니면 매트 윗면·아랫면 사진으로 우리 제품 확인"]}],"quiz":[{"q":"엘리베이터 없는 빌라는 몇 층까지 가능?","opts":["2층","4층","무제한"],"a":1,"ex":"엘리베이터 없는 빌라는 4층까지 추가비용 없이 가능합니다."}]},{"id":"links","num":"13","icon":"🔗","title":"링크·계정 모음","blocks":[{"t":"table","head":["용도","링크"],"rows":[["예약 접수","my.dolbommat.com/reservation.html"],["견적 페이지","my.dolbommat.com/cs-quote.html"],["시공팀 스케줄","my.dolbommat.com/scheduler.html"],["재고 확인","my.dolbommat.com/stock.html"],["시공팀 인수인계","my.dolbommat.com/training.html"],["우체국","아이디 dolbommaty (비번은 민석에게)"]]},{"t":"notice","tone":"warn","title":"보안","v":"계정 비밀번호는 이 페이지에 적지 않습니다. 민석에게 직접 전달받아 안전하게 보관하세요."}]}],"CHECKLIST":["상담폰은 항상 충전, 주말·퇴근 시 무음 가능","제품 3종 단가 외우기 (76,500 / 64,500 / 16,900)","온누리 7%·소득공제 40%·중단 가능성 숙지","동백전·지역화폐는 안내 안 함을 기억","샘플은 11시 30분 텔레그램 알림대로 우체국 접수","클레임은 사진 먼저 → 확인 후 조치","3일 전 취소 = 20만원 안내 숙지","예약 취소 절차(취소→채널명 변경→별) 익히기"]};
+const LS = 'dolbom_cs_edu_v1';
+let state = loadState();
+
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem(LS)) || {open:{},quiz:{},check:{}}; }
+  catch(e){ return {open:{},quiz:{},check:{}}; }
+}
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(state)); }catch(e){} }
+
+function blockHTML(b){
+  if(b.t==='p') return '<p>'+esc(b.v)+'</p>';
+  if(b.t==='list') return '<ul>'+b.v.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+  if(b.t==='notice') return '<div class="notice '+b.tone+'"><span class="nt">'+esc(b.title)+'</span><span class="nb">'+esc(b.v)+'</span></div>';
+  if(b.t==='quote') return '<div class="quote"><div class="ql">'+esc(b.label)+'</div><div class="qt">'+esc(b.v)+'</div></div>';
+  if(b.t==='table'){
+    let h='<table><tr>'+b.head.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>';
+    h+=b.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('');
+    return h+'</table>';
+  }
+  return '';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function render(){
+  const wrap = document.getElementById('sections');
+  wrap.innerHTML = DATA.SECTIONS.map((s,si)=>{
+    const isOpen = state.open[s.id];
+    const isDone = sectionDone(s);
+    let inner = s.blocks.map(blockHTML).join('');
+    if(s.quiz){
+      inner += s.quiz.map((q,qi)=>{
+        const key = s.id+'_'+qi;
+        const ans = state.quiz[key];
+        const opts = q.opts.map((o,oi)=>{
+          let cls='opt';
+          if(ans!=null){
+            if(oi===q.a) cls+=' correct';
+            else if(oi===ans) cls+=' wrong';
+          }
+          return '<button class="'+cls+'" onclick="answer(\''+s.id+'\','+qi+','+oi+','+q.a+')">'+esc(o)+'</button>';
+        }).join('');
+        return '<div class="quiz"><div class="quiz-tag">QUIZ</div><div class="quiz-q">'+esc(q.q)+'</div><div class="quiz-opts">'+opts+'</div><div class="quiz-ex'+(ans!=null?' show':'')+'"><b>해설</b> '+esc(q.ex)+'</div></div>';
+      }).join('');
+    }
+    return '<div class="sec'+(isOpen?' open':'')+(isDone?' done':'')+'" id="sec-'+s.id+'">'+
+      '<div class="sechead" onclick="toggle(\''+s.id+'\')">'+
+      '<span class="snum">'+s.num+'</span>'+
+      '<span class="tt"><span class="ti">'+esc(s.title)+'</span></span>'+
+      '<span class="chev">▼</span></div>'+
+      '<div class="secbody" id="body-'+s.id+'"><div class="secinner">'+inner+'</div></div></div>';
+  }).join('');
+  // 체크리스트
+  document.getElementById('checklist').innerHTML = DATA.CHECKLIST.map((c,i)=>
+    '<div class="check'+(state.check[i]?' on':'')+'" onclick="toggleCheck('+i+')"><div class="box"></div><div class="ctext">'+esc(c)+'</div></div>'
+  ).join('');
+  // 열린 섹션 높이 복원
+  DATA.SECTIONS.forEach(s=>{ if(state.open[s.id]) expand(s.id); });
+  updateProgress();
+}
+
+function sectionDone(s){
+  if(!state.open[s.id]) return false;
+  if(s.quiz){ for(let i=0;i<s.quiz.length;i++){ if(state.quiz[s.id+'_'+i]==null) return false; } }
+  return true;
+}
+
+function toggle(id){
+  state.open[id] = !state.open[id];
+  save();
+  const sec = document.getElementById('sec-'+id);
+  sec.classList.toggle('open');
+  if(state.open[id]) expand(id); else { document.getElementById('body-'+id).style.maxHeight='0'; }
+  if(sectionDone(DATA.SECTIONS.find(x=>x.id===id))) sec.classList.add('done');
+  updateProgress();
+}
+function expand(id){
+  const body = document.getElementById('body-'+id);
+  if(body) body.style.maxHeight = body.scrollHeight + 'px';
+}
+function answer(sid,qi,oi,correct){
+  const key = sid+'_'+qi;
+  if(state.quiz[key]!=null) return;
+  state.quiz[key]=oi; save();
+  render();
+  setTimeout(()=>{ expand(sid); const e=document.getElementById('sec-'+sid); if(e) e.scrollIntoView({behavior:'smooth',block:'nearest'}); },60);
+}
+function toggleCheck(i){
+  state.check[i]=!state.check[i]; save();
+  render();
+}
+function updateProgress(){
+  let total=0, done=0;
+  DATA.SECTIONS.forEach(s=>{
+    total++; if(state.open[s.id]) done++;
+    if(s.quiz) s.quiz.forEach((q,i)=>{ total++; if(state.quiz[s.id+'_'+i]!=null) done++; });
+  });
+  DATA.CHECKLIST.forEach((c,i)=>{ total++; if(state.check[i]) done++; });
+  const pct = Math.round(done/total*100);
+  document.getElementById('pct').textContent = pct+'%';
+  document.getElementById('barfill').style.width = pct+'%';
+  document.getElementById('psub').textContent = done+' / '+total+' 완료';
+  document.getElementById('doneBanner').classList.toggle('show', pct===100);
+}
+document.getElementById('resetBtn').onclick=function(){
+  if(confirm('진행 기록을 모두 초기화할까요?')){ state={open:{},quiz:{},check:{}}; save(); render(); window.scrollTo(0,0); }
+};
+render();
+</script>
+</body>
+</html>
