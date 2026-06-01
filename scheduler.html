@@ -1082,12 +1082,13 @@ if(unassigned.length){
         const fromGeo=t.lastGeo||OFF_B;
         t._dist=hav(fromGeo.lat,fromGeo.lng,pmGeo.lat,pmGeo.lng);
       });
-      // 0건 팀 우선 (count*15) + GPS 거리 + 누적 공정성
+      // 1순위: 당일 건수 적은 팀(0건 팀 우선) / 2순위: 거리 + 누적 공정성
       allTeamsSorted.sort((a,b)=>{
+        if(a.count!==b.count)return a.count-b.count;
         const cntA=a.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(a.team.length,1);
         const cntB=b.team.reduce((s,m)=>s+(crossDateCnt[m]||0),0)/Math.max(b.team.length,1);
-        const scoreA=a._dist+(a.count*15)+cntA*5;
-        const scoreB=b._dist+(b.count*15)+cntB*5;
+        const scoreA=a._dist+cntA*5;
+        const scoreB=b._dist+cntB*5;
         return scoreA-scoreB;
       });
       const best=allTeamsSorted[0];
