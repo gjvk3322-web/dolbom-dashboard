@@ -56,6 +56,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .done-sub{font-size:14px;color:#888;line-height:1.6}
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:999;transition:transform .3s;white-space:nowrap}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.notice-card{background:linear-gradient(135deg,#FFF9F0 0%,#FFF3E6 100%);border:1.5px solid #F0D9B5;border-radius:14px;padding:18px 20px;margin-bottom:18px}
+.notice-card .notice-title{font-size:14px;font-weight:700;color:#9A6A1F;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.notice-card .notice-body{font-size:13.5px;color:#5a4a32;line-height:1.75;white-space:pre-line}
+.notice-card .notice-sign{font-size:13.5px;font-weight:700;color:#9A6A1F;text-align:right;margin-top:12px}
 </style>
 </head>
 <body>
@@ -85,13 +89,13 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nh
 // ─────────────────────────────────────────
 var EMPLOYEES = [
   // === 부산팀 ===
-  { name: '준형', team: '부산팀', senior: true },   // ← 고참
+  { name: '준형', team: '부산팀' },
   { name: '승재', team: '부산팀' },
-  { name: '윤철', team: '부산팀' },
+  { name: '경필', team: '부산팀' },
   { name: '세욱', team: '부산팀' },
 
   // === 경기팀 ===
-  { name: '민우', team: '경기팀', senior: true },   // ← 고참
+  { name: '민우', team: '경기팀' },
   { name: '현진', team: '경기팀' },
   { name: '형석', team: '경기팀' },
   { name: '경준', team: '경기팀' },
@@ -231,6 +235,10 @@ var DONE_MESSAGE = '이번 주도 수고하셨습니다.\n부족했던 부분은
     <select class="name-select" id="nameSelect" onchange="onNameChange()">
       <option value="">선택</option>
     </select>
+  </div>
+  <div class="notice-card">
+    <div class="notice-body">다들 갑작스러운 변화들로 많이 힘들고, 헷갈리는 부분 이해하고 있습니다.. 스트레스도 받을꺼구요. 그럼에도 우린 젊고 능력있는 사람들로 구성되어있기에 더 나아가고, 그에따른 보상을 해주는 회사가 되어야 더 좋은사람들과 더 오래 일 할 수 있다는것을 알기에.. 힘들지만 ㄱㄱ</div>
+    <div class="notice-sign">민석 올림</div>
   </div>
   <div id="commonItems"></div>
   <div class="senior-section" id="seniorSection">
