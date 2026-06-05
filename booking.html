@@ -600,6 +600,12 @@ function buildBookingImage(){
 // 🆕 예약 신청 (자동 저장 + 카톡 안내)
 // ═══════════════════════════════════════════════════════════════
 function submitBooking(){
+  // 0) 🛡️ 중복(연타·더블클릭) 방지 가드 — 이미 전송 중이면 무시
+  if(window.__bookingSubmitting){
+    showToast('⏳ 예약 신청 처리 중입니다. 잠시만 기다려주세요');
+    return;
+  }
+
   // 1) 미입력 필드 검사 + 스크롤
   var checks=[
     {ok:document.getElementById('name').value.trim(), el:'name', msg:'이름'},
@@ -655,6 +661,7 @@ function submitBooking(){
   }
 
   // 3) 버튼 비활성화 + 로딩 표시
+  window.__bookingSubmitting=true;   // 🛡️ 잠금 ON (연타 방지)
   var btn=document.getElementById('submitBtn');
   btn.disabled=true;
   btn.style.opacity='0.6';
