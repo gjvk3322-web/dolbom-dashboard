@@ -169,6 +169,7 @@ let fbInvData={},fbInRef=null;
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
 const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
 const surveyDateKey=dateKey; // 실사일 = 실제 조사한 날짜 (<=로 당일 작업 자동 제외)
+let invSubmitDate=dateKey; // 🆕 재고조사 제출 날짜 (날짜 칸에서 변경 가능, 기본=오늘)
 let incomingDate=dateKey;
 const urlTeam=new URLSearchParams(window.location.search).get('team');
 const urlTab=new URLSearchParams(window.location.search).get('tab');
@@ -176,7 +177,7 @@ function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 let invDataDate=dateKey; // 현재 보고있는 재고 날짜
 function pickTeam(t){
-  team=t;loc=null;invDataDate=dateKey;
+  team=t;loc=null;invDataDate=dateKey;invSubmitDate=dateKey;
   // URL 업데이트 (새로고침 없이)
   const url=new URL(window.location);url.searchParams.set('team',t);window.history.replaceState({},'',url);
   // 🆕 발주 탭이면 Firebase 응답 기다리지 말고 즉시 렌더 (재고 데이터와 무관)
@@ -241,6 +242,12 @@ function renderTabs(){
   h+=`<div class="tabs"><div class="tab ${tab==='inventory'?'on-inv':''}" onclick="setTab('inventory')">📦 재고조사</div><div class="tab ${tab==='incoming'?'on-in':''}" onclick="setTab('incoming')">📥 입고기록</div><div class="tab ${tab==='summary'?'on-sum':''}" onclick="setTab('summary')">📊 종합</div><div class="tab ${tab==='order'?'on-in':''}" onclick="setTab('order')">📋 발주</div></div>`;
   return h}
 
+function changeInvDate(v){
+  if(!v){invSubmitDate=dateKey;render();return}
+  if(v>dateKey){toast('⚠️ 미래 날짜는 선택할 수 없습니다','error');invSubmitDate=dateKey;render();return}
+  invSubmitDate=v;render();
+}
+
 function renderInventory(){
   const T=TEAMS[team],tc=T.color;
   const isToday=invDataDate===dateKey;
@@ -251,7 +258,7 @@ function renderInventory(){
     const dp=invDataDate.split('-');
     h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp[1]}.${dp[2]} 기준 재고 참고값 (오늘 제출하면 업데이트됩니다)</div>`;
   }
-  h+=`<div style="font-size:11px;color:var(--accent);background:rgba(34,197,94,.08);border:.5px solid rgba(34,197,94,.2);border-radius:8px;padding:8px 12px;margin-bottom:8px">📋 재고조사 기준일: <b>${surveyDateKey}</b> (당일 작업분은 자동 제외)</div>`;
+  h+=`<div style="font-size:11px;color:var(--accent);background:rgba(34,197,94,.08);border:.5px solid rgba(34,197,94,.2);border-radius:8px;padding:8px 12px;margin-bottom:8px">📋 재고조사 기준일: <b>${invSubmitDate}</b> (당일 작업분은 자동 제외)</div>`;
   h+=`<div class="progress"><div class="prog-row"><span>오늘 완료 현황</span><b>${dc} / ${tl}</b></div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(dc/tl*100)}%;background:${tc==='busan'?'var(--red)':'var(--blue)'}"></div></div></div>`;
   h+=`<div class="loc">`;
   T.locs.forEach(l=>{const icon=l==='사무실'?'🏢':'🚛';const dk=fk(l);const d=fbInvData[dk];const isDone=isToday&&d&&d.time;const isOn=loc===l;
@@ -261,13 +268,16 @@ function renderInventory(){
     document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';return}
   document.getElementById('barEl').style.display='block';
   const dk=fk(loc),existing=fbInvData[dk];
+  // 🆕 조사 날짜 선택 칸 (기본=오늘, 미래 선택 불가). 목요일 것을 금요일에 등록하는 경우 등 사용
+  const _isPast=invSubmitDate!==dateKey;
+  h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:13px;color:var(--dim)">📅 조사 날짜:</span><input type="date" id="invDate" value="${invSubmitDate}" max="${dateKey}" onchange="changeInvDate(this.value)" style="padding:6px 10px;background:var(--bg);border:1px solid ${_isPast?'var(--orange)':'var(--border)'};border-radius:8px;color:var(--text);font-size:13px;font-family:inherit">${_isPast?'<span style="font-size:11px;color:var(--orange);font-weight:600">⚠️ 과거 날짜로 저장됩니다</span>':''}</div>`;
   if(isToday&&existing&&existing.time)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--accent);margin-bottom:4px">✅ ${existing.time}에 제출됨</div>`;
   if(!isToday&&existing)h+=`<div style="text-align:center;padding:6px;font-size:12px;color:var(--orange);margin-bottom:4px">⚠️ ${invDataDate} 데이터 참고용 (제출하면 오늘 날짜로 저장)</div>`;
   h+=buildTable('inv',existing);
   if(loc==='사무실'){const pm=(existing&&existing.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
   document.getElementById('app').innerHTML=h;
   document.getElementById('bl').innerHTML=`📍 <b>${team} ${loc}</b>`;
-  const sb=document.getElementById('sbtn');const isWed=new Date().getDay()===3;sb.disabled=!isWed;sb.textContent=isWed?'재고 제출':'수요일에만 제출 가능';sb.className='btn btn-inv';sb.onclick=submitInv;calc('inv')}
+  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='재고 제출';sb.className='btn btn-inv';sb.onclick=submitInv;calc('inv')}
 
 function renderIncoming(){
   let h=renderTabs();
@@ -993,10 +1003,30 @@ function calc(pfx){let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEa
   const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=pb+'박스 / '+pb*p.bpb+'장'});document.getElementById('gt').textContent=g.toLocaleString()}
 
 async function submitInv(){if(!loc||!team)return;
-  // 수요일 체크 (0=일, 3=수)
-  const today=new Date();const dayOfWeek=today.getDay();
-  if(dayOfWeek!==3){toast('⚠️ 재고조사는 매주 수요일에만 제출 가능합니다','error');return}
-  if(!confirm(team+' '+loc+' 재고를 제출하시겠습니까?\n\n제출하면 기존 데이터가 업데이트됩니다.'))return;
+  // 🆕 요일 제한 없음 (아무 요일이나 제출 가능)
+  // 🆕 제출 날짜 = 사용자가 고른 조사 날짜 (기본=오늘). 미래는 차단.
+  const subDate=invSubmitDate||dateKey;
+  if(subDate>dateKey){toast('⚠️ 미래 날짜로는 제출할 수 없습니다','error');return}
+  const _sp=subDate.split('-');const subLabel=parseInt(_sp[1])+'/'+parseInt(_sp[2]);
+  // 선택한 날짜가 속한 주(월~일)에 같은 팀+위치로 이미 제출했는지 검사 → 있으면 확인창
+  const btnEl=document.getElementById('sbtn');
+  let dupInfo=null;
+  try{
+    const td=new Date(subDate+'T00:00:00');const day=td.getDay();
+    // 그 주 월요일 구하기 (일요일=0 → 6일 전, 그 외 day-1일 전)
+    const monday=new Date(td);monday.setDate(td.getDate()-((day+6)%7));
+    const weekDates=[];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);
+      weekDates.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))}
+    for(const wd of weekDates){
+      if(wd===subDate)continue; // 같은 날짜는 같은 경로라 덮어쓰기됨 → 검사 제외
+      const snap=await db.ref('inventory/'+wd+'/'+team+'/'+fk(loc)).get();
+      if(snap.exists()&&snap.val()&&snap.val().time){dupInfo={date:wd,time:snap.val().time};break}
+    }
+  }catch(e){console.warn('주간 중복 검사 실패(무시하고 진행):',e)}
+  if(dupInfo){
+    if(!confirm('⚠️ 같은 주에 이미 제출된 기록이 있습니다.\n\n'+dupInfo.date+' '+dupInfo.time+' 제출됨\n\n그래도 '+subLabel+' 날짜로 새로 제출하시겠습니까?\n(기존 기록은 그대로 남고, 그 주 데이터가 2건이 됩니다)'))return;
+  }
+  if(!confirm(team+' '+loc+' 재고를 '+subLabel+' 날짜로 제출하시겠습니까?\n\n같은 날짜 기존 데이터가 있으면 업데이트됩니다.'))return;
   const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const dm={},items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const v=parseInt(document.getElementById(`inv_${k}`)?.value)||0;dm[k]=v;
     items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
@@ -1007,15 +1037,15 @@ async function submitInv(){if(!loc||!team)return;
   let fbOK=false, gsOK=false, gsResp='';
   // 1) Firebase 저장
   try{
-    await db.ref('inventory/'+dateKey+'/'+team+'/'+fk(loc)).set(fb);
+    await db.ref('inventory/'+subDate+'/'+team+'/'+fk(loc)).set(fb);
     fbOK=true;
   }catch(e){console.error('Firebase 저장 실패:',e);toast('❌ Firebase 저장 실패');btn.disabled=false;btn.textContent='재고 제출';return}
   // 2) 카톡 복사용 텍스트
-  let txt=mm+dd+' '+team+' '+loc+' (기준일:'+surveyDateKey+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
+  let txt=subDate.slice(5).replace('-','')+' '+team+' '+loc+' (기준일:'+subDate+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
   // 3) Apps Script 저장 — await로 응답 확인 (예전: fire-and-forget이라 실패해도 모름)
   try{
-    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:surveyDateKey,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}});
+    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'inventory',team:team,location:loc,date:subDate,items:items,memo:memo}),headers:{'Content-Type':'text/plain'}});
     gsResp=await res.text();
     if(res.ok){
       // success:false도 잡아냄 (Apps Script가 에러를 JSON으로 반환할 수 있음)
@@ -1029,7 +1059,7 @@ async function submitInv(){if(!loc||!team)return;
   console.log('[stock] submitInv 결과:',{team,loc,fbOK,gsOK,itemCount:items.length,nonZeroCount:items.filter(i=>i.qty>0).length,gsResp:gsResp.substring(0,200)});
   if(fbOK&&gsOK){
     stockCache=null; // 🆕 종합 탭 캐시 무효화
-    toast('✅ '+team+' '+loc+' 저장 완료! (시트도 OK · 기준일:'+surveyDateKey+')');
+    toast('✅ '+team+' '+loc+' 저장 완료! (시트도 OK · 기준일:'+subDate+')');
   }else if(fbOK&&!gsOK){
     toast('⚠️ '+loc+' Firebase OK / 시트 저장 실패 — 종합 계산에 반영 안 됨!');
   }
