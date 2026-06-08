@@ -106,6 +106,8 @@ body {
 .welcome-btn-group  { background: #ef6c00; color: #fff; }   /* 공구안내 — 오렌지 */
 .welcome-btn-move   { background: #5d4037; color: #fff; }   /* 이전설치 — 브라운 */
 .welcome-btn-tape   { background: #00897b; color: #fff; }   /* 테이프뜯기 — 청록 */
+.welcome-btn-cert       { background: #455a64; color: #fff; }   /* 인증서 — 블루그레이 */
+.welcome-btn-onnuricard { background: #7b1fa2; color: #fff; }   /* 온누리카드 — 진보라 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
 .welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
@@ -1170,6 +1172,12 @@ body {
           </button>
           <button class="welcome-btn welcome-btn-tape" onclick="copyTapeRemoval()">
             🩹 <span>테이프뜯기</span>
+          </button>
+          <button class="welcome-btn welcome-btn-cert" onclick="copyCertificate()">
+            📜 <span>인증서</span>
+          </button>
+          <button class="welcome-btn welcome-btn-onnuricard" onclick="copyOnnuriCard()">
+            💳 <span>온누리카드</span>
           </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
@@ -2679,6 +2687,38 @@ function copyTapeRemoval() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 테이프 제거 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 📜 인증서 안내 복사
+function copyCertificate() {
+  var text =
+    '안녕하세요 돌봄매트입니다!\n' +
+    '돌봄매트 인증서 관련 내용입니다!\n\n' +
+    'https://app.notion.com/p/dolbommat/8cfdb911ab244413afce98cec363705e';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 인증서 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 💳 온누리카드 등록/사용 안내 복사
+function copyOnnuriCard() {
+  var text =
+    '안녕하세요 돌봄매트입니다!\n' +
+    '온누리카드 등록 및 사용 방법에 관한 내용입니다!\n' +
+    '추후 차액 비대면 결제하실경우 하나, 현대카드는 불가합니다.\n\n' +
+    '사용방법 : https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
+    '유튜브 : https://www.youtube.com/watch?v=cYCwwd_9AR0';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 온누리카드 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
