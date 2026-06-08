@@ -402,7 +402,7 @@ function renderDailyChart(){
   const resDaily={};
   const resDetail={};  // 🆕 접수일별 예약 상세 목록
   ['부산','경기'].forEach(team=>{
-    Object.values(schedAll[team]||{}).forEach(d=>{
+    Object.entries(schedAll[team]||{}).forEach(([workDate,d])=>{  // 🆕 workDate=시공일
       [...d.am,...d.pm].forEach(e=>{
         // 🆕 취소 건 제외 (구분에 '취소' 들어간 경우)
         if((e.category||'').includes('취소'))return;
@@ -413,9 +413,9 @@ function renderDailyChart(){
         const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
         if(!ds.startsWith(prefix))return;
         resDaily[ds]=(resDaily[ds]||0)+1;
-        // 🆕 상세 저장
+        // 🆕 상세 저장 (workDate=시공일 포함)
         if(!resDetail[ds])resDetail[ds]=[];
-        resDetail[ds].push({team,address:e.address||'',size:e.size||'',product:e.product||'',phone:e.phone||''});
+        resDetail[ds].push({team,workDate,time:e.time||'',address:e.address||'',size:e.size||'',product:e.product||'',phone:e.phone||''});
       });
     });
   });
@@ -482,8 +482,18 @@ function renderDailyChart(){
         const prod=item.product?`<span style="color:var(--green);font-weight:600">${item.product}</span>`:'';
         const sz=item.size?` · ${item.size}`:'';
         const ph=item.phone?`<div style="color:var(--text3);font-size:10px;margin-top:1px">📞 ${item.phone}</div>`:'';
+        // 🆕 시공일 표시 (YYYY-MM-DD → M/D + 오전/오후)
+        let workTag='';
+        if(item.workDate){
+          const wm=item.workDate.match(/\d{4}-(\d{1,2})-(\d{1,2})/);
+          if(wm){
+            const slot=item.time?` ${item.time.replace('(이전설치)','')}`:'';
+            workTag=`<span style="font-size:9px;color:#5b21b6;background:#ede9fe;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:3px">🗓 ${parseInt(wm[1])}/${parseInt(wm[2])}${slot} 시공</span>`;
+          }
+        }
         return `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;line-height:1.5">
-          <div>${teamTag} <span style="color:var(--text);font-weight:600">${item.address||'(주소 없음)'}</span></div>
+          <div>${teamTag}${workTag}</div>
+          <div style="color:var(--text);font-weight:600;margin-top:2px">${item.address||'(주소 없음)'}</div>
           <div style="color:var(--text2);margin-top:1px">🏠 ${prod}${sz}</div>
           ${ph}
         </div>`;
