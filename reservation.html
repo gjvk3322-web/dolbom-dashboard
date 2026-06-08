@@ -398,11 +398,14 @@ function renderDailyChart(){
   const prefix=`${currentYear}-${String(currentMonth).padStart(2,'0')}`;
   const dim=new Date(currentYear,currentMonth,0).getDate();
   
-  // 시공 접수일 기준
+  // 시공 접수일 기준 (예약완료 건만 · 취소 제외)
   const resDaily={};
+  const resDetail={};  // 🆕 접수일별 예약 상세 목록
   ['부산','경기'].forEach(team=>{
     Object.values(schedAll[team]||{}).forEach(d=>{
       [...d.am,...d.pm].forEach(e=>{
+        // 🆕 취소 건 제외 (구분에 '취소' 들어간 경우)
+        if((e.category||'').includes('취소'))return;
         let rd=(e.receivedAt||'').trim();if(!rd)return;
         rd=rd.replace(/\./g,'-').replace(/\s/g,'');
         const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -410,6 +413,9 @@ function renderDailyChart(){
         const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
         if(!ds.startsWith(prefix))return;
         resDaily[ds]=(resDaily[ds]||0)+1;
+        // 🆕 상세 저장
+        if(!resDetail[ds])resDetail[ds]=[];
+        resDetail[ds].push({team,address:e.address||'',size:e.size||'',product:e.product||'',phone:e.phone||''});
       });
     });
   });
@@ -452,8 +458,14 @@ function renderDailyChart(){
     const fw=isToday?'800':'500';
     const rW=x.r?Math.max(x.r/maxCnt*100,6):0;
     const sW=x.s?Math.max(x.s/maxCnt*100,6):0;
-    html+=`<tr>
-      <td style="padding:3px 0;color:${dayColor};font-weight:${fw};text-align:right;padding-right:6px;white-space:nowrap">${x.d}일(${dow})</td>
+    // 🆕 시공 건이 있으면 클릭해서 상세 펼침 가능
+    const hasDetail=x.r>0;
+    const rowId='det_'+x.ds;
+    const cursor=hasDetail?'cursor:pointer':'';
+    const toggle=hasDetail?`onclick="toggleResDetail('${rowId}')"`:'';
+    const arrow=hasDetail?`<span id="${rowId}_arw" style="color:var(--text3);font-size:9px;margin-left:3px">▸</span>`:'';
+    html+=`<tr ${toggle} style="${cursor}">
+      <td style="padding:3px 0;color:${dayColor};font-weight:${fw};text-align:right;padding-right:6px;white-space:nowrap">${x.d}일(${dow})${arrow}</td>
       <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.r?'var(--green)':'var(--text3)'}">${x.r||'-'}</td>
       <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.s?'#555':'var(--text3)'}">${x.s||'-'}</td>
       <td style="padding:3px 4px">
@@ -463,6 +475,23 @@ function renderDailyChart(){
         </div>
       </td>
     </tr>`;
+    // 🆕 상세 목록 행 (기본 숨김) — 시공 예약완료 건만
+    if(hasDetail){
+      const list=(resDetail[x.ds]||[]).map(item=>{
+        const teamTag=`<span style="font-size:9px;color:#fff;background:${item.team==='부산'?'#EF6C5A':'#4A90D9'};padding:1px 5px;border-radius:4px;font-weight:600">${item.team}</span>`;
+        const prod=item.product?`<span style="color:var(--green);font-weight:600">${item.product}</span>`:'';
+        const sz=item.size?` · ${item.size}`:'';
+        const ph=item.phone?`<div style="color:var(--text3);font-size:10px;margin-top:1px">📞 ${item.phone}</div>`:'';
+        return `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;line-height:1.5">
+          <div>${teamTag} <span style="color:var(--text);font-weight:600">${item.address||'(주소 없음)'}</span></div>
+          <div style="color:var(--text2);margin-top:1px">🏠 ${prod}${sz}</div>
+          ${ph}
+        </div>`;
+      }).join('');
+      html+=`<tr id="${rowId}" style="display:none"><td colspan="4" style="padding:0">
+        <div style="background:#f1f3f5;border-radius:8px;margin:2px 0 6px">${list}</div>
+      </td></tr>`;
+    }
   });
   
   html+=`<tr style="border-top:1px solid var(--border);font-weight:700">
@@ -473,7 +502,15 @@ function renderDailyChart(){
   </tr></table>`;
   el.innerHTML=html;
 }
-let lastSync='';
+// 🆕 일별 접수 상세 펼침/접힘
+function toggleResDetail(id){
+  const row=document.getElementById(id);
+  const arw=document.getElementById(id+'_arw');
+  if(!row)return;
+  const open=row.style.display==='none';
+  row.style.display=open?'table-row':'none';
+  if(arw)arw.textContent=open?'▾':'▸';
+}
 let CLOSED={};
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const SCHED_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285'};
