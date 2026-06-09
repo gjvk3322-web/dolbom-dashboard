@@ -108,6 +108,7 @@ body {
 .welcome-btn-tape   { background: #00897b; color: #fff; }   /* 테이프뜯기 — 청록 */
 .welcome-btn-cert       { background: #455a64; color: #fff; }   /* 인증서 — 블루그레이 */
 .welcome-btn-onnuricard { background: #7b1fa2; color: #fff; }   /* 온누리카드 — 진보라 */
+.welcome-btn-color      { background: #c2185b; color: #fff; }   /* 색상관련 — 로즈 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
 .welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
@@ -1178,6 +1179,9 @@ body {
           </button>
           <button class="welcome-btn welcome-btn-onnuricard" onclick="copyOnnuriCard()">
             💳 <span>온누리카드</span>
+          </button>
+          <button class="welcome-btn welcome-btn-color" onclick="copyColorInfo()">
+            🎨 <span>색상관련</span>
           </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
@@ -2719,6 +2723,25 @@ function copyOnnuriCard() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 온누리카드 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 🎨 색상관련 안내 복사
+function copyColorInfo() {
+  var text =
+    '안녕하세요 돌봄매트 색상 및 크기 관련 안내입니다!\n\n' +
+    '[크기]\n' +
+    '1,000매트 : 가로세로 1M\n' +
+    '500매트 : 가로세로 50CM\n\n' +
+    '[색상]\n' +
+    '색상은 아래링크에서 확인 가능하세요!\n' +
+    'https://www.dolbommat.com/#casesSection';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 색상관련 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
