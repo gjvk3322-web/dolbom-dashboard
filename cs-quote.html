@@ -2715,11 +2715,16 @@ function copyCertificate() {
 // 💳 온누리카드 등록/사용 안내 복사
 function copyOnnuriCard() {
   var text =
-    '안녕하세요 돌봄매트입니다!\n' +
-    '온누리카드 등록 및 사용 방법에 관한 내용입니다!\n' +
-    '추후 차액 비대면 결제하실경우 하나, 현대카드는 불가합니다.\n\n' +
-    '사용방법 : https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
-    '유튜브 : https://www.youtube.com/watch?v=cYCwwd_9AR0';
+    '[돌봄매트 온누리카드 이용 및 결제 안내]\n\n' +
+    '1. 온누리카드 등록 및 사용 방법 알아보기\n\n' +
+    '* 앱 활용: \'디지털온누리앱\'을 설치하시면 이용 방법을 가장 쉽게 확인하실 수 있습니다.\n' +
+    '* 상세 페이지: https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
+    '* 영상 가이드: https://www.youtube.com/watch?v=cYCwwd_9AR0\n\n' +
+    '2. 잔금 결제 시 유의사항 (중요)\n\n' +
+    '* 기본 결제 방식: 카드 번호와 유효기간(년/월/일)을 알려주시면 결제가 가능합니다.\n' +
+    '* 현대카드 및 하나카드 결제:\n' +
+    '   * 카드 번호 방식으로는 결제가 불가능합니다.\n' +
+    '   * 반드시 실물 카드를 가지고 계셔야 하며, 작업 당일 현장에서 단말기를 통해 직접 결제하셔야 합니다.';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 온누리카드 안내 복사 완료! 카톡에 붙여넣으세요');
