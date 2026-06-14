@@ -351,8 +351,10 @@ firebase.initializeApp({databaseURL:FB_URL});
 const db=firebase.database();
 
 let E=['민우','현진','선재','재문','형석','경준'];
-// 이름 기반 고정 색상 인덱스 (명단 순서와 무관 → 삭제해도 색 안 바뀜)
-function colorIdx(name){if(!name)return 0;let h=0;for(let i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))%1000000007}return h%10;}
+// 직원별 고정 색상 (0파랑 1초록 2노랑 3핑크 4보라 5주황 6청록 7연두 8장미 9틸)
+const FIXED_COLOR={'민우':0,'현진':1,'선재':2,'재문':4,'형석':5,'경준':6};
+// 색상 인덱스: 지정색 우선, 없으면 이름 해시 (명단 순서 무관 → 삭제해도 색 안 바뀜)
+function colorIdx(name){if(!name)return 0;if(FIXED_COLOR[name]!==undefined)return FIXED_COLOR[name];let h=0;for(let i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))%1000000007}return h%10;}
 let teams=[];
 let A={};
 let CF={};  // 출발확인
