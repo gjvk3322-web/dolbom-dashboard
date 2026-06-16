@@ -325,7 +325,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.06.16.40';
+const VER='2026.06.16.41';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -1769,7 +1769,10 @@ return dates}
 const firstDate=jobDates.length?jobDates[0]:todayStr;
 const lastDate=jobDates.length?jobDates[jobDates.length-1]:todayStr;
 // 오늘~마지막날 (과거 포함하려면 firstDate부터)
-const allDatesRange=getAllDates(firstDate,lastDate);
+// [성능개선] 빈 날짜는 그리지 않음 - 일감 있는 날(jobDates) + 오늘만 (아이폰 메모리 해결)
+const _rangeSet=new Set(jobDates);
+_rangeSet.add(todayStr);
+const allDatesRange=[..._rangeSet].sort();
 const futureDates=allDatesRange.filter(d=>d>=todayStr);
 const pastDates=allDatesRange.filter(d=>d<todayStr);
 
@@ -1923,18 +1926,8 @@ return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳
 
 html+=renderDayCards(futureDates,false);
 if(pastDates.length){
-// [성능개선] 과거 일정은 미리 그리지 않고, 버튼 누를 때 그림 (아이폰 메모리 절약)
 window._pastDates=pastDates;
-window._renderPastDays=function(){
-  const box=document.getElementById('pastDays');
-  if(!box)return;
-  if(box.style.display==='none'){
-    if(!box.dataset.rendered){box.innerHTML=renderDayCards(window._pastDates,true);box.dataset.rendered='1';}
-    box.style.display='block';
-  }else{
-    box.style.display='none';
-  }
-};
+window._renderPastDays=function(){const box=document.getElementById('pastDays');if(!box)return;if(box.style.display==='none'){if(!box.dataset.rendered){box.innerHTML=renderDayCards(window._pastDates,true);box.dataset.rendered='1';}box.style.display='block';}else{box.style.display='none';}};
 html+=`<div style="margin:16px 0;text-align:center"><button onclick="window._renderPastDays()" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
 html+=`<div id="pastDays" style="display:none"></div>`};
 
