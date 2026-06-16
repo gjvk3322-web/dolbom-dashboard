@@ -1,6 +1,32 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <!-- ▼▼▼ [임시] 아이폰 에러 진단용 - 원인 확인 후 이 블록 삭제 ▼▼▼ -->
+    <script>
+    (function(){
+      function showErr(title, msg){
+        var box = document.getElementById('__errbox__');
+        if(!box){
+          box = document.createElement('div');
+          box.id = '__errbox__';
+          box.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#fff;color:#c00;font-size:14px;line-height:1.6;padding:16px;word-break:break-all;white-space:pre-wrap;border-bottom:3px solid #c00;max-height:80vh;overflow:auto;font-family:monospace';
+          (document.body||document.documentElement).appendChild(box);
+        }
+        box.textContent += '\n=== ' + title + ' ===\n' + msg + '\n';
+      }
+      window.addEventListener('error', function(e){
+        var m = (e.message||'') + '\n파일: ' + (e.filename||'') + '\n줄: ' + (e.lineno||'') + '  칸: ' + (e.colno||'');
+        if(e.error && e.error.stack){ m += '\n' + e.error.stack; }
+        showErr('에러 발생', m);
+      });
+      window.addEventListener('unhandledrejection', function(e){
+        var r = e.reason;
+        showErr('Promise 에러', (r && r.message ? r.message : String(r)) + (r && r.stack ? '\n'+r.stack : ''));
+      });
+    })();
+    </script>
+    <!-- ▲▲▲ [임시] 진단용 끝 ▲▲▲ -->
+
     <script src="/auth.js"></script>
 
     <!-- 검색엔진 노출 차단 (자동 추가) -->
@@ -326,7 +352,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.06.16.40';
+const VER='2026.04.03.39';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -1936,20 +1962,8 @@ return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳
 
 html+=renderDayCards(futureDates,false);
 if(pastDates.length){
-// [성능개선] 과거 일정은 미리 그리지 않고, 버튼 누를 때 그림 (아이폰 메모리 절약)
-window._pastDates=pastDates;
-window._renderPastDays=function(){
-  const box=document.getElementById('pastDays');
-  if(!box)return;
-  if(box.style.display==='none'){
-    if(!box.dataset.rendered){box.innerHTML=renderDayCards(window._pastDates,true);box.dataset.rendered='1';}
-    box.style.display='block';
-  }else{
-    box.style.display='none';
-  }
-};
-html+=`<div style="margin:16px 0;text-align:center"><button onclick="window._renderPastDays()" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
-html+=`<div id="pastDays" style="display:none"></div>`};
+html+=`<div style="margin:16px 0;text-align:center"><button onclick="document.getElementById('pastDays').style.display=document.getElementById('pastDays').style.display==='none'?'block':'none'" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
+html+=`<div id="pastDays" style="display:none">${renderDayCards(pastDates,true)}</div>`};
 
 document.getElementById('schedView').innerHTML=html}
 

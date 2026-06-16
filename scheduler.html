@@ -325,7 +325,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.04.03.39';
+const VER='2026.06.16.40';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -1923,8 +1923,20 @@ return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳
 
 html+=renderDayCards(futureDates,false);
 if(pastDates.length){
-html+=`<div style="margin:16px 0;text-align:center"><button onclick="document.getElementById('pastDays').style.display=document.getElementById('pastDays').style.display==='none'?'block':'none'" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
-html+=`<div id="pastDays" style="display:none">${renderDayCards(pastDates,true)}</div>`};
+// [성능개선] 과거 일정은 미리 그리지 않고, 버튼 누를 때 그림 (아이폰 메모리 절약)
+window._pastDates=pastDates;
+window._renderPastDays=function(){
+  const box=document.getElementById('pastDays');
+  if(!box)return;
+  if(box.style.display==='none'){
+    if(!box.dataset.rendered){box.innerHTML=renderDayCards(window._pastDates,true);box.dataset.rendered='1';}
+    box.style.display='block';
+  }else{
+    box.style.display='none';
+  }
+};
+html+=`<div style="margin:16px 0;text-align:center"><button onclick="window._renderPastDays()" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
+html+=`<div id="pastDays" style="display:none"></div>`};
 
 document.getElementById('schedView').innerHTML=html}
 

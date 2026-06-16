@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
     <script src="/auth.js"></script>
-
     <!-- 검색엔진 노출 차단 (자동 추가) -->
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <meta name="googlebot" content="noindex, nofollow">
@@ -11,10 +10,10 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>돌봄매트 경기 스케줄러</title>
+<title>돌봄매트 시공 스케줄러</title>
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="manifest" href="./manifest-gg.json">
+<link rel="manifest" href="./manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="돌봄매트">
@@ -198,20 +197,20 @@ html{overflow-x:hidden;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;
 <body>
 <script>
 // 부산 열면 부산으로 기억
-localStorage.setItem('dolbom_region','gg');
+localStorage.setItem('dolbom_region','bs');
 </script>
 
 <div class="hd">
     <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden">
-            <span onclick="localStorage.removeItem('dolbom_region');location.href='./app.html'" style="font-size:18px;cursor:pointer;opacity:.5;flex-shrink:0">🏠</span>
-            <h1 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">돌봄매트 경기 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
+        <div style="display:flex;align-items:center;gap:8px">
+            <span onclick="localStorage.removeItem('dolbom_region');location.href='./app.html'" style="font-size:18px;cursor:pointer;opacity:.5">🏠</span>
+            <h1>돌봄매트 <span style="color:var(--dim);font-weight:400;font-size:12px" id="verTag"></span></h1>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:6px">
             <button class="admin-btn off" id="adminToggle" onclick="toggleAdmin()">🔑</button>
             <div style="display:flex;background:var(--card2);border-radius:10px;padding:2px;gap:2px;white-space:nowrap">
-                <span onclick="localStorage.setItem('dolbom_region','bs');location.href='./scheduler.html'" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;color:var(--dim);cursor:pointer">부산</span>
-                <span style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;background:var(--blue);color:#000;cursor:default">경기</span>
+                <span style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;background:var(--red);color:#fff;cursor:default">부산</span>
+                <span onclick="localStorage.setItem('dolbom_region','gg');location.href='./scheduler-gg.html'" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;color:var(--dim);cursor:pointer">경기</span>
             </div>
         </div>
     </div>
@@ -326,23 +325,23 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.06.16.40';
+const VER='2026.04.03.39';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
-const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
 const CSV_URL_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
 const SAMPLE_CSV='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1820061412';
-const RECV_CSV_BS='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567'; // 부산 시공
-const RECV_CSV_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285'; // 경기 시공
-let sampleDaily={}; // {YYYY-MM-DD: 건수} 샘플 접수 일별
-let recvDaily={};   // {YYYY-MM-DD: 건수} 시공 접수 일별 (부산+경기 전체, 접수일 기준)
-let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
+const RECV_CSV_BS='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
+const RECV_CSV_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+let sampleDaily={};
+let recvDaily={};
+let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217';
 let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
 const CSV_TEAM_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735';
 const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
-const OFF_B={lat:37.3159,lng:126.8233};
+const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
-const SOUTH=['서울','강남','강서','강북','강동','송파','마포','영등포','용산','종로','성동','광진','동작','관악','서초','은평','노원','도봉','성북','중랑','구로','금천','양천','동대문','중구','경기','안산','수원','성남','용인','화성','평택','안양','시흥','김포','파주','고양','부천','광명','군포','의왕','과천','하남','광주','이천','여주','양평','가평','인천','부평','남동','연수','미추홀','계양'];
+const SOUTH=['부산','사상','사하','동래','해운대','연제','남구','북구','서구','중구','동구','금정','강서','기장','김해','양산','울산','창원','경남','경북','대구','마산','진해','밀양','거제','통영','진주','목포','광주','전남','전북','함안','밀양'];
 const DOW=['일','월','화','수','목','금','토'];
 const DOW_CLS=['dow-sun','dow-mon','dow-tue','dow-wed','dow-thu','dow-fri','dow-sat'];
 
@@ -350,9 +349,9 @@ const DOW_CLS=['dow-sun','dow-mon','dow-tue','dow-wed','dow-thu','dow-fri','dow-
 firebase.initializeApp({databaseURL:FB_URL});
 const db=firebase.database();
 
-let E=['민우','현진','선재','재문','형석','경준'];
+let E=['준형','세욱','승재','경필'];
 // 직원별 고정 색상 (0파랑 1초록 2노랑 3핑크 4보라 5주황 6청록 7연두 8장미 9틸)
-const FIXED_COLOR={'민우':0,'현진':1,'선재':2,'재문':4,'형석':5,'경준':7};
+const FIXED_COLOR={'준형':0,'세욱':1,'승재':2,'경필':4};
 // 색상 인덱스: 지정색 우선, 없으면 이름 해시 (명단 순서 무관 → 삭제해도 색 안 바뀜)
 function colorIdx(name){if(!name)return 0;if(FIXED_COLOR[name]!==undefined)return FIXED_COLOR[name];let h=0;for(let i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))%1000000007}return h%10;}
 let teams=[];
@@ -368,8 +367,8 @@ let DC=JSON.parse(localStorage.getItem('s4_dc')||'{}');
 
 // Firebase 실시간 리스너 (배치 렌더링으로 깜빡임 방지)
 let isAssigning=false;
-let lastManualEdit=0; // 수동 배정 후 60초간 자동배정 차단
-let syncStatus='idle'; // idle|syncing|success|error
+let lastManualEdit=0;
+let syncStatus='idle';
 function getSyncBadge(){return syncStatus==='syncing'?'<span style="font-size:9px;color:#FFB300;margin-left:4px">🟡저장중</span>':syncStatus==='success'?'<span style="font-size:9px;color:#4CAF50;margin-left:4px">🟢저장</span>':syncStatus==='error'?'<span style="font-size:9px;color:#e53935;margin-left:4px;cursor:pointer" onclick="syncToSheet()">🔴실패</span>':''}
 
 // ===== 당번 모드 (PIN 잠금) =====
@@ -442,17 +441,15 @@ document.addEventListener('DOMContentLoaded',function(){
 let lastAHash='';
 function aHash(obj){return JSON.stringify(obj||{})}
 let fbLoaded={a:false,lock:false,skip:false};
-let currentTab='sched';
 let fbPending=false;
 function fbRender(){
   if(fbPending||isAssigning)return;
   fbPending=true;
-  setTimeout(()=>{fbPending=false;if(currentTab==='month')renderMonth();
-renderAll()},300);
+  setTimeout(()=>{fbPending=false;renderAll()},300);
 }
-db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
-db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
-db.ref('gg_assignments').on('value',snap=>{
+db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
+db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
+db.ref('assignments').on('value',snap=>{
   if(isAssigning)return;
   const v=snap.val()||{};
   const h=aHash(v);
@@ -460,21 +457,21 @@ db.ref('gg_assignments').on('value',snap=>{
   lastAHash=h;
   A=v;fbLoaded.a=true;fbRender()
 });
-db.ref('gg_confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
-db.ref('gg_distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
+db.ref('confirms').on('value',snap=>{const v=snap.val();if(v)CF=v;else CF={};fbRender()});
+db.ref('distances').on('value',snap=>{const v=snap.val();if(v)DIST=v;else DIST={};});
 // 좌표 캐시를 Firebase에서 로드 → 모든 기기가 같은 좌표 공유
-let _dcTimer=null;function saveDCtoFB(){clearTimeout(_dcTimer);_dcTimer=setTimeout(()=>{db.ref('gg_geocode_cache').set(JSON.stringify(DC))},3000)}
-db.ref('gg_geocode_cache').once('value',snap=>{const v=snap.val();let fbCount=0;if(v){try{const obj=JSON.parse(v);Object.keys(obj).forEach(k=>{if(!DC[k]){DC[k]=obj[k]};fbCount++});localStorage.setItem('s4_dc',JSON.stringify(DC))}catch(e){}}if(Object.keys(DC).length>fbCount){console.log('📍 로컬 캐시가 더 큼 → Firebase 업로드 ('+Object.keys(DC).length+'개)');saveDCtoFB()}});
-db.ref('gg_prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
-db.ref('gg_skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))SKIP=new Set(Object.keys(v));else if(Array.isArray(v))SKIP=new Set(v);else SKIP=new Set();fbLoaded.skip=true;});
-db.ref('gg_lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v)){LOCK=new Set(Object.keys(v));LOCK_REASONS={};Object.keys(v).forEach(k=>{if(typeof v[k]==='string')LOCK_REASONS[k]=v[k]})}else if(Array.isArray(v)){LOCK=new Set(v);LOCK_REASONS={}}else{LOCK=new Set();LOCK_REASONS={}}fbLoaded.lock=true;fbRender()});
+let _dcTimer=null;function saveDCtoFB(){clearTimeout(_dcTimer);_dcTimer=setTimeout(()=>{db.ref('geocode_cache').set(JSON.stringify(DC))},3000)}
+db.ref('geocode_cache').once('value',snap=>{const v=snap.val();let fbCount=0;if(v){try{const obj=JSON.parse(v);Object.keys(obj).forEach(k=>{if(!DC[k]){DC[k]=obj[k]};fbCount++});localStorage.setItem('s4_dc',JSON.stringify(DC))}catch(e){}}if(Object.keys(DC).length>fbCount){console.log('📍 로컬 캐시가 더 큼 → Firebase 업로드 ('+Object.keys(DC).length+'개)');saveDCtoFB()}});
+db.ref('prevJobIds').on('value',snap=>{const v=snap.val();if(v)prevJobIds=new Set(v);});
+db.ref('skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v))SKIP=new Set(Object.keys(v));else if(Array.isArray(v))SKIP=new Set(v);else SKIP=new Set();fbLoaded.skip=true;});
+db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v)){LOCK=new Set(Object.keys(v));LOCK_REASONS={};Object.keys(v).forEach(k=>{if(typeof v[k]==='string')LOCK_REASONS[k]=v[k]})}else if(Array.isArray(v)){LOCK=new Set(v);LOCK_REASONS={}}else{LOCK=new Set();LOCK_REASONS={}}fbLoaded.lock=true;fbRender()});
 
 let VEHICLES={}; // {준형: "804서 6771", ...}
-db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
+db.ref('vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
-function saveLock(){const o={};LOCK.forEach(id=>o[id]=LOCK_REASONS[id]||true);db.ref('gg_lockedJobs').set(Object.keys(o).length?o:null)}
-function saveSkip(){const o={};SKIP.forEach(id=>o[id]=true);db.ref('gg_skipJobs').set(Object.keys(o).length?o:null)}
+function saveLock(){const o={};LOCK.forEach(id=>o[id]=LOCK_REASONS[id]||true);db.ref('lockedJobs').set(Object.keys(o).length?o:null)}
+function saveSkip(){const o={};SKIP.forEach(id=>o[id]=true);db.ref('skipJobs').set(Object.keys(o).length?o:null)}
 
 // 배정 결과를 구글시트에 역기록
 let sheetSyncTimer=null;
@@ -504,7 +501,6 @@ sheetSyncTimer=setTimeout(()=>{
         const rest=crew.filter(e=>e!==sasu);
         busasu=rest.join(',');
       }else{
-        // 다른 팀 조합: 입사일 기준 정렬
         const sorted=[...crew].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
         sasu=sorted[0];
         busasu=sorted.slice(1).join(',');
@@ -524,7 +520,7 @@ sheetSyncTimer=setTimeout(()=>{
   fetch(SHEET_REPORT_URL,{
     method:'POST',
     headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({action:'updateAssignments',data,gid:'1995986285'})
+    body:JSON.stringify({action:'updateAssignments',data,gid:'144225567'})
   }).then(r=>r.text()).then(t=>{
     console.log('[sheet-sync] 응답:',t);
     syncStatus=t.includes('OK')?'success':'error';renderAll();
@@ -538,7 +534,7 @@ sheetSyncTimer=setTimeout(()=>{
 function syncTeamsToSheet(){
   if(!isAdmin)return;
   const teamData=[];
-  teams.forEach((t,i)=>{t.forEach((name,j)=>{teamData.push({region:'경기',teamNum:i+1,name:name,rank:j===0?'사수':'부사수'});});});
+  teams.forEach((t,i)=>{t.forEach((name,j)=>{teamData.push({region:'부산',teamNum:i+1,name:name,rank:j===0?'사수':'부사수'});});});
   fetch(SHEET_REPORT_URL,{
     method:'POST',
     headers:{'Content-Type':'text/plain'},
@@ -563,7 +559,7 @@ function hav(a1,n1,a2,n2){const R=6371,x=(a2-a1)*Math.PI/180,y=(n2-n1)*Math.PI/1
 function _todayKST(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function _isPastDate(dateStr){return !!(dateStr&&dateStr<_todayKST())}
 function _isPastJob(jobId){const j=(typeof J!=='undefined'?J:[]).find(x=>x.id===jobId);return j?_isPastDate(j.date):false}
-function getOffice(addr){return OFF_B;} // 경기 앱: 사무실 안산 한 곳으로 고정
+function getOffice(addr){return OFF_B;} // 부산 앱: 주소 매칭 실패해도 항상 부산 사무실 (안산 좌표 오류 방지)
 
 async function calcDist(addr){const o=getOffice(addr);const c=await geo(addr);if(!c)return 0;return Math.round(hav(o.lat,o.lng,c.lat,c.lng)*2)}
 
@@ -629,7 +625,6 @@ if(name){
 
 function parseCSV(text){
 const lines=text.split('\n');J=[];
-// 헤더행에서 '접수일' 컬럼 위치 찾기 (열이 밀려도 안전). 없으면 -1
 let _recvIdx=-1;
 if(lines.length){
 const h=[];let hc='',hq=false;
@@ -663,7 +658,6 @@ if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
 const _recv=_recvIdx>=0?(r[_recvIdx]||'').trim():'';
 J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim(),receivedAt:_recv})}}
 
-// 시공 CSV(부산/경기) → 접수일 기준 일별 집계. reset=true면 recvDaily 초기화
 function accumRecvDaily(text,reset){
 if(reset)recvDaily={};
 const lines=text.split('\n');if(lines.length<2)return;
@@ -671,20 +665,19 @@ const h=[];let hc='',hq=false;
 for(let c=0;c<lines[0].length;c++){const ch=lines[0][c];if(ch==='"'){hq=!hq}else if(ch===','&&!hq){h.push(hc.trim().replace(/^"|"$/g,''));hc=''}else{hc+=ch}}
 h.push(hc.trim().replace(/^"|"$/g,''));
 const idx=h.findIndex(x=>x==='접수일'||x==='접수일시');if(idx<0)return;
-const tIdx=h.findIndex(x=>x==='시간');// 오전/오후만 시공으로 카운트 (AS·실측 제외)
+const tIdx=h.findIndex(x=>x==='시간');
 for(let i=1;i<lines.length;i++){
 const r=[];let cur='',inQ=false;
 for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
 r.push(cur.trim().replace(/^"|"$/g,''));
 const _t=(tIdx>=0?r[tIdx]:r[0])||'';
-if(!(_t.startsWith('오전')||_t.startsWith('오후')))continue; // AS·실측·이전설치 제외
+if(!(_t.startsWith('오전')||_t.startsWith('오후')))continue;
 let rd=(r[idx]||'').trim();if(!rd)continue;
 rd=rd.replace(/\./g,'-').replace(/\s/g,'');
 const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(!m)continue;
 const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
 recvDaily[ds]=(recvDaily[ds]||0)+1;
 }}
-// 부산+경기 시공 CSV 둘 다 받아 recvDaily 갱신
 async function loadRecvDaily(){
 try{
 const [bs,gg]=await Promise.all([
@@ -697,8 +690,6 @@ accumRecvDaily(gg,false);
 if(currentTab==='month'&&!monthEmp)renderMonth();
 }catch(e){console.error('접수일 집계 실패:',e)}
 }
-
-// 샘플접수 CSV → 일별 건수 집계 (헤더의 '접수일시'/'접수일' 기준)
 function parseSampleDaily(text){
 sampleDaily={};
 const lines=text.split('\n');if(lines.length<2)return;
@@ -850,7 +841,6 @@ E.forEach(e=>{crossDateKm[e]=fairRouteTotals[e]||0});
 function teamCrossKm(members){
   let t=0;members.forEach(m=>{t+=crossDateKm[m]||0});return t/Math.max(members.length,1);
 }
-// ===== 배정 중 누적 건수 (날짜 간 공정성 유지) =====
 const crossDateCnt={};
 E.forEach(e=>{crossDateCnt[e]=fairScore[e]?fairScore[e].wd:0});
 function teamFairSort(a,b){
@@ -1129,20 +1119,19 @@ if(unassigned.length){
 }}
 
 
-fbSave('gg_prevJobIds',J.map(j=>j.id));
-// 변경된 건만 개별 저장 (다른 사용자 배정 덮어쓰기 방지)
+fbSave('prevJobIds',J.map(j=>j.id));
 const _changes={};
 Object.keys(A).forEach(k=>{if(JSON.stringify(A[k])!==JSON.stringify(_snapA[k]))_changes[k]=A[k]});
 Object.keys(_snapA).forEach(k=>{if(!A[k])_changes[k]=null});
-if(Object.keys(_changes).length)db.ref('gg_assignments').update(_changes);
+if(Object.keys(_changes).length)db.ref('assignments').update(_changes);
 lastAHash=aHash(A);syncToSheet();
 //console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
 toast('✅ 자동 배정 완료!','ok');
 renderAll();
-setTimeout(()=>{isAssigning=false},3000); // syncToSheet 디바운스(2초) 완료까지 보호
+setTimeout(()=>{isAssigning=false},3000);
 }
 
-function resetAssign(){if(!requireAdmin())return;if(!confirm('미래 배정을 초기화할까요?\n(지난 날짜 작업은 그대로 유지됩니다)'))return;const keep={};Object.keys(A).forEach(id=>{if(_isPastJob(id))keep[id]=A[id]});A=keep;fbSave('gg_assignments',A);lastAHash=aHash(A);toast('초기화됨 (지난 날짜 유지)','ok');renderAll()}
+function resetAssign(){if(!requireAdmin())return;if(!confirm('미래 배정을 초기화할까요?\n(지난 날짜 작업은 그대로 유지됩니다)'))return;const keep={};Object.keys(A).forEach(id=>{if(_isPastJob(id))keep[id]=A[id]});A=keep;fbSave('assignments',A);lastAHash=aHash(A);toast('초기화됨 (지난 날짜 유지)','ok');renderAll()}
 
 // 수동 배정 (직원 1명)
 function ma(jobId,emp){
@@ -1159,7 +1148,7 @@ A[jobId]=[emp];
 }
 // 수동 배정하면 SKIP 해제
 if(SKIP.has(jobId)){SKIP.delete(jobId);saveSkip()}
-db.ref('gg_assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
+db.ref('assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
 lastManualEdit=Date.now();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('✅ 배정 업데이트','ok');renderAll()}
@@ -1171,7 +1160,7 @@ if(_isPastJob(jobId)){toast('🔒 지난 날짜 작업은 변경할 수 없어�
 delete A[jobId];
 SKIP.add(jobId);
 saveSkip();
-db.ref('gg_assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
+db.ref('assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
 // 재배정 방지: 2초간 자동배정 차단
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
@@ -1314,7 +1303,7 @@ if(typeof reportJobId!=='undefined'&&reportJobId){
   if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
     const _rjob=J.find(jj=>jj.id===reportJobId)||{};
     const sheetRow=(_rjob.csvRow||0)+1;
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'경기',row:sheetRow,date:_rjob.date||'',address:_rjob.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{});
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob.date||'',address:_rjob.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{});
   }
 }
 showCustomerToast('✅ 시공보고서 저장 완료!');
@@ -1450,7 +1439,7 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 const _rjob2=J.find(jj=>jj.id===reportJobId)||{};
 const sheetRow=(_rjob2.csvRow||0)+1;
-fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'경기',row:sheetRow,date:_rjob2.date||'',address:_rjob2.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{})}
+fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob2.date||'',address:_rjob2.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{})}
 
 // 시공보고서 텍스트 복사
 try{navigator.clipboard.writeText(txt).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);})}catch(e){}
@@ -1729,13 +1718,11 @@ const webUrl='https://map.naver.com/v5/search/'+encoded;
 const isAndroid=/Android/i.test(navigator.userAgent);
 
 if(isAndroid){
-  // 안드로이드 공통: intent → 실패 시 1.5초 후 웹 폴백 (삼성/크롬/PWA 모두 대응)
   const intentUrl='intent://search?query='+encoded+'&appname=dolbommat#Intent;scheme=nmap;package=com.nhn.android.nmap;S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
   const start=Date.now();
   location.href=intentUrl;
   setTimeout(()=>{if(Date.now()-start<2000)location.href=webUrl},1500);
 }else{
-  // iOS
   const appUrl='nmap://search?query='+encoded+'&appname=dolbommat';
   const start=Date.now();
   location.href=appUrl;
@@ -1936,20 +1923,8 @@ return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳
 
 html+=renderDayCards(futureDates,false);
 if(pastDates.length){
-// [성능개선] 과거 일정은 미리 그리지 않고, 버튼 누를 때 그림 (아이폰 메모리 절약)
-window._pastDates=pastDates;
-window._renderPastDays=function(){
-  const box=document.getElementById('pastDays');
-  if(!box)return;
-  if(box.style.display==='none'){
-    if(!box.dataset.rendered){box.innerHTML=renderDayCards(window._pastDates,true);box.dataset.rendered='1';}
-    box.style.display='block';
-  }else{
-    box.style.display='none';
-  }
-};
-html+=`<div style="margin:16px 0;text-align:center"><button onclick="window._renderPastDays()" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
-html+=`<div id="pastDays" style="display:none"></div>`};
+html+=`<div style="margin:16px 0;text-align:center"><button onclick="document.getElementById('pastDays').style.display=document.getElementById('pastDays').style.display==='none'?'block':'none'" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
+html+=`<div id="pastDays" style="display:none">${renderDayCards(pastDates,true)}</div>`};
 
 document.getElementById('schedView').innerHTML=html}
 
@@ -1984,11 +1959,11 @@ html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
 document.getElementById('teamView').innerHTML=html;
 initDnD();}
 
-function addTeam(){teams.push([]);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
-function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
-function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
-function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('gg_employees',E);renderTeam();toast(v+' 추가!','ok')}
-function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('gg_employees',E);fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet()}
+function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
 
 // 드래그앤드롭으로 팀 이동 처리
 function moveMember(name,fromType,fromTi,toType,toTi){
@@ -2001,7 +1976,7 @@ if(toType==='team'&&toTi!==undefined){
   if(!teams[toTi].includes(name))teams[toTi].push(name);
 }
 // pool로 이동 = 어디에도 추가 안 함 (제거만)
-fbSave('gg_teams',teams);renderTeam();syncTeamsToSheet();
+fbSave('teams',teams);renderTeam();syncTeamsToSheet();
 toast('✅ '+name+' 이동 완료','ok');
 }
 
@@ -2385,7 +2360,7 @@ function addCar(){
   if(VEHICLES[plate]!==undefined){toast('이미 등록된 차량이에요','ok');return;}
   const next={...VEHICLES};
   next[plate]='';
-  fbSave('gg_vehicles',next);
+  fbSave('vehicles',next);
   toast(plate+' 추가!','ok');
 }
 
@@ -2396,7 +2371,7 @@ function updateDriver(idx){
   const driver=document.getElementById('drv_'+idx).value;
   const next={...VEHICLES};
   next[plate]=driver;
-  fbSave('gg_vehicles',next);
+  fbSave('vehicles',next);
   syncToSheet();renderSched();
   toast(plate+' → '+(driver||'미배정'),'ok');
 }
@@ -2408,9 +2383,8 @@ function quickVehicle(sasu,plate,rows){
     var lockedRows=[];
     rows.forEach(function(r){var job=J.find(function(j){return (j.csvRow||0)+1===r});if(job&&LOCK.has(job.id))lockedRows.push(r)});
     if(lockedRows.length>0){toast('🔒 잠긴 건이 포함되어 변경 불가','error');return;}
-    console.log('[vehicle] rows:',rows,'plate:',plate,'sasu:',sasu);
     var vData=rows.map(function(r){var job=J.find(function(j){return (j.csvRow||0)+1===r});return{row:r,vehicle:plate,date:job?job.date:'',address:job?job.addr:'',phone:job?job.phone:''}});
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:vData,gid:'1995986285'})}).then(r=>r.text()).then(t=>console.log('[vehicle] 응답:',t)).catch(e=>console.log('[vehicle] error:',e));
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:vData,gid:'144225567'})});
     J.forEach(function(j){var ri=(j.csvRow||0)+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
     renderSched();
     toast('🚗 '+sasu+' → '+(plate||'미배정')+' (해당 날짜만)','ok');
@@ -2419,7 +2393,7 @@ function quickVehicle(sasu,plate,rows){
   const next={...VEHICLES};
   Object.keys(next).forEach(function(p){if(next[p]===sasu)next[p]=''});
   if(plate)next[plate]=sasu;
-  fbSave('gg_vehicles',next);
+  fbSave('vehicles',next);
   syncToSheet();renderSched();renderCars();
   toast('🚗 '+sasu+' → '+(plate||'미배정'),'ok');
 }
@@ -2430,13 +2404,12 @@ function deleteCar(idx){
   const plate=plates[idx];
   const next={...VEHICLES};
   delete next[plate];
-  fbSave('gg_vehicles',Object.keys(next).length?next:null);
+  fbSave('vehicles',Object.keys(next).length?next:null);
   toast(plate+' 삭제됨','ok');
 }
 
 // ===== Nav =====
 function sw(n){
-currentTab=n;
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
@@ -2596,7 +2569,7 @@ function calcAnnualUsed(emp){ // 4/1~오늘 월별(순수휴무-소정휴일) �
 function syncAnnualToSheet(){
   try{
     if(typeof SHEET_REPORT_URL==='undefined'||!SHEET_REPORT_URL)return;
-    const REGION='경기';
+    const REGION='부산';
     const list=[];
     E.forEach(name=>{
       if(!name)return;
@@ -2761,7 +2734,6 @@ ${_rows}
 if(!_hasRecv)statusCard+=`<div style="font-size:10px;color:var(--yellow);margin-top:8px">⚠️ 시공 접수일 데이터를 불러오는 중이거나 비어있어요. 🔄 최신화를 눌러보세요.</div>`;
 statusCard+=`</div>`;
 
-
 dowNames.forEach((d,i)=>{grid+=`<div class="mc-dow ${i===0?'sun':i===6?'sat':''}">${d}</div>`;});
 for(let i=0;i<startDow;i++)grid+='<div class="mc-cell empty"></div>';
 const mHolidays=getMonthHolidays(mYear,mMonth);
@@ -2901,7 +2873,7 @@ async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
 try{
 // 휴무 데이터 먼저 로딩
-OFFS={};
+OFFS={};DUTY={};
 if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
@@ -2925,7 +2897,7 @@ A[j.id]=A[j.id].filter(e=>!offs.has(e));
 if(A[j.id].length===0)delete A[j.id];
 if(A[j.id]&&A[j.id].length!==before)changed=true;
 if(!A[j.id])changed=true}});
-if(changed){const _ch={};J.forEach(j=>{const offs=dateOffs[j.date];if(offs&&offs.size){_ch[j.id]=A[j.id]||null}});if(Object.keys(_ch).length)db.ref('gg_assignments').update(_ch);lastAHash=aHash(A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
+if(changed){const _ch={};J.forEach(j=>{const offs=dateOffs[j.date];if(offs&&offs.size){_ch[j.id]=A[j.id]||null}});if(Object.keys(_ch).length)db.ref('assignments').update(_ch);lastAHash=aHash(A);toast('⚠️ 휴무자 배정 자동 해제됨','ok')}
 
 // 1인 배정 자동 수정 + 주소 없는 건 배정 제거
 const realJ=J.filter(j=>!j.offOnly);
@@ -2937,7 +2909,7 @@ if(A[j.id]&&(!j.addr||!j.addr.trim())){_badCh[j.id]=null;delete A[j.id];badAssig
 // 1인 배정은 제거 → 대기로 (단, 시트에서 사수/부사수가 지정된 건은 유지)
 if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){_badCh[j.id]=null;delete A[j.id];badAssign=true}
 });
-if(badAssign){if(Object.keys(_badCh).length)db.ref('gg_assignments').update(_badCh);lastAHash=aHash(A)}
+if(badAssign){if(Object.keys(_badCh).length)db.ref('assignments').update(_badCh);lastAHash=aHash(A)}
 
 // Firebase LOCK/SKIP 로드 대기 (최대 5초)
 if(!fbLoaded.lock||!fbLoaded.skip||!fbLoaded.a){
@@ -2969,7 +2941,7 @@ if(DIST[key]!==undefined)continue;
 const d=await calcDist(j.addr);
 if(d>0){DIST[key]=d;updated=true}
 }
-if(updated)fbSave('gg_distances',DIST);
+if(updated)fbSave('distances',DIST);
 },3000);
 
 // 버전 표시
@@ -2988,7 +2960,7 @@ const sub=document.getElementById('sub');
 if(showToast)sub.textContent='🔄 갱신 중...';
 
 // 휴무 데이터 먼저 갱신
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};parseOffCSV(offText)}catch(e){}}
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
 
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
@@ -3004,6 +2976,8 @@ lastCSVRowCount=newRowCount;
 parseCSV(text);
 try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){}
 loadRecvDaily();
+
+// 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
 if(isNewReservation&&(Date.now()-lastManualEdit>60000)){
 const realJ=J.filter(j=>!j.offOnly&&j.addr&&j.addr.trim());
 const unCnt=realJ.filter(j=>!SKIP.has(j.id)&&!LOCK.has(j.id)&&(!A[j.id]||(A[j.id]&&A[j.id].length===1))).length;
@@ -3031,7 +3005,7 @@ const lockedA={};
 LOCK.forEach(id=>{if(A[id])lockedA[id]=A[id]});
 Object.keys(A).forEach(id=>{if(_isPastJob(id))lockedA[id]=A[id]}); // [추가①] 지난 날짜 배정도 그대로 유지
 A=lockedA;
-SKIP=new Set();db.ref('gg_skipJobs').set(null);
+SKIP=new Set();db.ref('skipJobs').set(null);
 toast('⏳ 재배정 중...','ok');
 await autoAssign();
 toast('✅ 재배정 완료!','ok');
@@ -3065,7 +3039,7 @@ document.getElementById('confirmOkBtn').style.display='none';
 document.getElementById('confirmOverlay').classList.add('show');
 
 try{
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};parseOffCSV(offText)}catch(e){}}
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
 const r=await fetch(CSV_URL+'&_='+Date.now());
 const text=await r.text();
 parseCSV(text);
@@ -3120,7 +3094,7 @@ const team=A[pendingConfirmId]||[];
 // 자재 정보 해시 저장 (나중에 변경 감지용)
 const matHash=job?job.mat.map(m=>m.t+m.q).join(','):'';
 CF[pendingConfirmId]={who:team.join('+'),time:hm,ts:Date.now(),matHash};
-fbSave('gg_confirms',CF);
+fbSave('confirms',CF);
 closeConfirm();
 toast('✅ 출발 확인 완료!','ok');
 renderAll();
@@ -3138,13 +3112,6 @@ const m=html.match(/const VER='([^']+)'/);
 if(m&&m[1]!==VER)document.getElementById('updateBar').style.display='block'
 }).catch(()=>{})
 },5*60*1000);
-
-// PWA 앱 복귀 시 sticky 헤더 재계산
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'){
-    setTimeout(()=>{window.scrollBy(0,1);window.scrollBy(0,-1)},100);
-  }
-});
 </script>
 </body>
 </html>
