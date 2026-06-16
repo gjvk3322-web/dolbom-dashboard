@@ -326,7 +326,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.06.16.40';
+const VER='2026.06.16.DIAG';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -1936,20 +1936,8 @@ return '<div style="padding:4px 16px 2px;font-size:11px;color:var(--yellow)">⏳
 
 html+=renderDayCards(futureDates,false);
 if(pastDates.length){
-// [성능개선] 과거 일정은 미리 그리지 않고, 버튼 누를 때 그림 (아이폰 메모리 절약)
-window._pastDates=pastDates;
-window._renderPastDays=function(){
-  const box=document.getElementById('pastDays');
-  if(!box)return;
-  if(box.style.display==='none'){
-    if(!box.dataset.rendered){box.innerHTML=renderDayCards(window._pastDates,true);box.dataset.rendered='1';}
-    box.style.display='block';
-  }else{
-    box.style.display='none';
-  }
-};
-html+=`<div style="margin:16px 0;text-align:center"><button onclick="window._renderPastDays()" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
-html+=`<div id="pastDays" style="display:none"></div>`};
+html+=`<div style="margin:16px 0;text-align:center"><button onclick="document.getElementById('pastDays').style.display=document.getElementById('pastDays').style.display==='none'?'block':'none'" style="padding:10px 20px;background:var(--card);border:1px solid var(--border);color:var(--dim);border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--font)">📅 지난 일정 (${pastDates.length}일)</button></div>`;
+html+=`<div id="pastDays" style="display:none">${renderDayCards(pastDates,true)}</div>`};
 
 document.getElementById('schedView').innerHTML=html}
 
@@ -2899,15 +2887,26 @@ ${offSummary}`;
 // ===== Init =====
 async function init(){
 document.getElementById('sub').textContent='구글시트 불러오는 중...';
+// ▼▼▼ [임시 진단] 데이터 로딩 단계 화면 표시 ▼▼▼
+function _diag(msg){var b=document.getElementById('__diag__');if(!b){b=document.createElement('div');b.id='__diag__';b.style.cssText='position:fixed;bottom:60px;left:8px;right:8px;z-index:999999;background:#000;color:#0f0;font-size:13px;line-height:1.5;padding:12px;border:2px solid #0f0;border-radius:8px;white-space:pre-wrap;word-break:break-all;max-height:50vh;overflow:auto;font-family:monospace';document.body.appendChild(b);}b.textContent+=msg+'\n';}
+_diag('① init 시작');
+// ▲▲▲ [임시 진단] ▲▲▲
 try{
 // 휴무 데이터 먼저 로딩
 OFFS={};
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
+if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){_diag('휴무로딩 실패:'+e.message)}}
+_diag('② 휴무 로딩 통과');
 
-const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
-try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){}
+const r=await fetch(CSV_URL);const text=await r.text();
+_diag('③ 메인CSV 받음 · 길이='+text.length);
+parseCSV(text);
+_diag('④ parseCSV 완료 · J건수='+(typeof J!=='undefined'?J.length:'undefined'));
+try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){_diag('샘플 실패:'+e.message)}
 loadRecvDaily();
-try{const tR=await fetch(CSV_TEAM_URL+'&_='+Date.now());const tText=await tR.text();parseTeamConfigCSV(tText)}catch(e){}
+try{const tR=await fetch(CSV_TEAM_URL+'&_='+Date.now());const tText=await tR.text();parseTeamConfigCSV(tText)}catch(e){_diag('팀설정 실패:'+e.message)}
+_diag('⑤ 모든 로딩 통과 · 최종 J='+(typeof J!=='undefined'?J.length:'undefined'));
+var _dates=(typeof J!=='undefined')?[...new Set(J.map(function(j){return j.date}))]:[];
+_diag('⑥ 날짜 종류='+_dates.length+'개 · 예시='+_dates.slice(0,3).join(', '));
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
 // 새 일정 감지
@@ -2953,7 +2952,7 @@ const curM=new Date().getMonth()+1;
 const monthJobs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&j.addr&&j.addr.trim()&&(j.time.startsWith('오전')||j.time.startsWith('오후'))});
 const monthAs=realJ.filter(j=>{const d=new Date(j.date);return d.getMonth()+1===curM&&(j.time==='as'||j.time==='AS')});
 document.getElementById('sub').textContent=curM+'월 '+monthJobs.length+'건 · AS '+monthAs.length+'건 · '+E.length+'명 · '+teams.length+'팀 · '+hm+'';
-}catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도'}
+}catch(e){document.getElementById('sub').textContent='⚠️ 연결 실패 · 터치하여 재시도';_diag('❌ 에러발생: '+(e&&e.message?e.message:e)+'\n'+(e&&e.stack?e.stack:''))}
 renderAll()}
 
 init();
