@@ -1196,9 +1196,33 @@ const num=parseInt(v.replace(/[^0-9]/g,''))||0;
 if(num>0)el.value=num.toLocaleString();
 }
 
+let rInstallFeeManual=false;
+function checkInstallFee(color,qty){
+const feeEl=document.getElementById('rInstallFee');
+const warnEl=document.getElementById('rInstallFeeWarn');
+if(!feeEl||!warnEl)return;
+const is500=color.includes('50(');
+const is1000=color.includes('1m');
+let need=false,label='';
+if(is500&&qty>0&&qty<=99){need=true;label='500매트 99장 이하';}
+else if(is1000&&qty>0&&qty<=24){need=true;label='1000매트 24장 이하';}
+if(need){
+const cur=(feeEl.value||'').replace(/[^0-9]/g,'');
+if(!rInstallFeeManual&&(feeEl.value==='X'||feeEl.value==='x'||feeEl.value===''||cur==='100000')){
+feeEl.value='100,000';
+}
+warnEl.style.display='block';
+warnEl.innerHTML=`⚠️ ${label} → 시공비 10만원 받아야 합니다! (실제로 안 받았으면 X로 바꾸세요)`;
+}else{
+warnEl.style.display='none';
+warnEl.innerHTML='';
+if(!rInstallFeeManual&&(feeEl.value||'').replace(/[^0-9]/g,'')==='100000'){feeEl.value='X';}
+}
+}
 function calcReport(){
 const color=document.getElementById('rColor').value;
 const qty=parseInt(document.getElementById('rQty').value)||0;
+checkInstallFee(color,qty);
 const checks=document.querySelectorAll('.rDiscount:checked');
 let coupon=0;checks.forEach(c=>coupon+=parseInt(c.value)||0);const extraD=document.getElementById('rExtraDiscountChk')?.checked?parseInt((document.getElementById('rExtraDiscount')?.value||'0').replace(/[^0-9]/g,''))||0:0;coupon+=extraD;
 const gongguVal=document.getElementById('rGonggu').value;
@@ -1217,6 +1241,7 @@ document.getElementById('rUnpaid').value=(total-paid>0?(total-paid).toLocaleStri
 }
 
 function openReport(jobId){
+rInstallFeeManual=false;
 reportJobId=jobId;const _rj=J.find(jj=>jj.id===jobId)||{};currentChannelName=_rj.channelName||'';currentChatUrl=_rj.chatUrl||'';
 const j=J.find(x=>x.id===jobId);if(!j)return;
 const team=(A[jobId]||[]).join('');
@@ -1226,8 +1251,8 @@ const apt=addr;
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
-let colorVal=j.mat.length?j.mat[0].t:'';if(colorVal==='마블50'||colorVal==='코튼50'||colorVal==='모던50')colorVal=colorVal+'(16000)';
-const colorOpts=['마블50(16000)','코튼50(16000)','모던50(16000)','---','마블50(16900)','코튼50(16900)','모던50(16900)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+let colorVal=j.mat.length?j.mat[0].t:'';if(colorVal==='마블50'||colorVal==='코튼50'||colorVal==='모던50')colorVal=colorVal+'(16900)';
+const colorOpts=['마블50(16900)','코튼50(16900)','모던50(16900)','---','마블50(16000)','코튼50(16000)','모던50(16000)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
 const colorSelect=colorOpts.map(c=>c==='---'?'<option disabled>──────────</option>':`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
 const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
@@ -1253,7 +1278,7 @@ const html=`
 </div>
 <div style="margin:8px 0;border-top:1px dashed var(--border);padding-top:6px;font-size:10px;color:var(--dim);font-weight:600">💰 결제 정보</div>
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
-<span style="${lE}">12. 시공비</span><input id="rInstallFee" value="X" style="${eS}" placeholder="X 또는 금액 입력" oninput="formatFee(this);calcReport()">
+<span style="${lE}">12. 시공비</span><div><input id="rInstallFee" value="X" style="${eS};width:100%;box-sizing:border-box" placeholder="X 또는 금액 입력" oninput="rInstallFeeManual=true;formatFee(this);calcReport()"><div id="rInstallFeeWarn" style="display:none;margin-top:4px;padding:5px 7px;background:#5a1a1a;border:1px solid #c0392b;border-radius:5px;color:#ff8a80;font-size:10px;font-weight:700;line-height:1.3"></div></div>
 <span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option><option value="O3">O (3% 할인)</option></select>
 <span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" id="rExtraDiscountChk" onchange="document.getElementById('rExtraDiscount').style.display=this.checked?'block':'none';if(!this.checked){document.getElementById('rExtraDiscount').value='';};calcReport()">추가할인</label><input id="rExtraDiscount" type="text" inputmode="numeric" placeholder="금액 입력" style="display:none;${eS};width:90px;font-size:10px" oninput="formatFee(this);calcReport()"></div>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
@@ -1275,7 +1300,7 @@ calcReport();
 db.ref('reports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
 if(d.ref)document.getElementById('rRef').value=d.ref;
-if(d.color){const sel=document.getElementById('rColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16000)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
+if(d.color){const sel=document.getElementById('rColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16900)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
 if(d.scope)document.getElementById('rScope').value=d.scope;
 if(d.isNew){const sel=document.getElementById('rNew');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.isNew)sel.selectedIndex=i;}}
 if(d.installFee)document.getElementById('rInstallFee').value=d.installFee;
@@ -1501,8 +1526,8 @@ const apt=addr;
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
-let colorVal=j.mat.length?j.mat[0].t:'';if(colorVal==='마블50'||colorVal==='코튼50'||colorVal==='모던50')colorVal=colorVal+'(16000)';
-const colorOpts=['마블50(16000)','코튼50(16000)','모던50(16000)','---','마블50(16900)','코튼50(16900)','모던50(16900)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+let colorVal=j.mat.length?j.mat[0].t:'';if(colorVal==='마블50'||colorVal==='코튼50'||colorVal==='모던50')colorVal=colorVal+'(16900)';
+const colorOpts=['마블50(16900)','코튼50(16900)','모던50(16900)','---','마블50(16000)','코튼50(16000)','모던50(16000)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
 const colorSelect=colorOpts.map(c=>c==='---'?'<option disabled>──────────</option>':`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
@@ -1550,7 +1575,7 @@ document.getElementById('asReportOverlay').style.display='block';
 calcAsReport();
 db.ref('asReports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
-if(d.color){const sel=document.getElementById('arColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16000)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
+if(d.color){const sel=document.getElementById('arColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16900)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
 if(d.scope)document.getElementById('arScope').value=d.scope;
 if(d.prevWorker){const pw=d.prevWorker.split(', ');if(pw[0]){const sel=document.getElementById('arPrev1');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[0])sel.selectedIndex=i;}}if(pw[1]){const sel=document.getElementById('arPrev2');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[1])sel.selectedIndex=i;}}}
 if(d.content)document.getElementById('arContent').value=d.content;
