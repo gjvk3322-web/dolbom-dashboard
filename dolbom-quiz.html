@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>돌봄매트 직원 퀴즈</title>
+<style>
+  :root{
+    --ink:#1c2b24;
+    --paper:#f3efe4;
+    --moss:#2f6b4f;
+    --moss-deep:#234f3b;
+    --leaf:#5fa97f;
+    --gold:#d9a441;
+    --gold-deep:#b7821f;
+    --coral:#d4654f;
+    --line:rgba(35,79,59,.16);
+    --shadow:0 14px 40px -18px rgba(28,43,36,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(95,169,127,.18), transparent 42%),
+      radial-gradient(circle at 90% 92%, rgba(217,164,65,.16), transparent 40%),
+      var(--paper);
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* 격자 매트 모티프 배경 */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(circle at 50% 40%,#000 0%,transparent 78%);
+    opacity:.5;
+  }
+  .stage{
+    position:relative;z-index:1;
+    width:100%;max-width:560px;
+  }
+  .card{
+    background:rgba(255,253,247,.92);
+    border:1px solid var(--line);
+    border-radius:22px;
+    box-shadow:var(--shadow);
+    padding:38px 32px 34px;
+    backdrop-filter:blur(4px);
+  }
+  .brandbar{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:26px;
+  }
+  .logo-tile{
+    width:34px;height:34px;border-radius:9px;
+    background:
+      linear-gradient(135deg,var(--leaf),var(--moss));
+    position:relative;flex:none;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.35);
+  }
+  .logo-tile::after{
+    content:"";position:absolute;inset:8px;border-radius:3px;
+    border:2px solid rgba(255,255,255,.6);
+  }
+  .brand-name{font-weight:800;letter-spacing:-.3px;font-size:1.02rem}
+  .brand-sub{font-size:.72rem;color:var(--moss);font-weight:600;letter-spacing:.04em}
+
+  .eyebrow{
+    font-size:.72rem;font-weight:700;letter-spacing:.16em;
+    color:var(--gold-deep);text-transform:uppercase;margin-bottom:14px;
+  }
+  h1{
+    font-size:1.6rem;line-height:1.32;letter-spacing:-.5px;
+    font-weight:800;margin-bottom:8px;
+  }
+  .lead{font-size:1rem;line-height:1.6;color:#3c5045;margin-bottom:8px}
+  .note{
+    background:rgba(95,169,127,.12);
+    border:1px solid rgba(47,107,79,.18);
+    border-radius:14px;padding:18px 18px;
+    font-size:.94rem;line-height:1.68;color:#2c4438;margin:20px 0 24px;
+  }
+  .note b{color:var(--moss-deep)}
+  .reward{
+    display:flex;gap:12px;align-items:flex-start;
+    background:linear-gradient(135deg,rgba(217,164,65,.16),rgba(217,164,65,.05));
+    border:1px solid rgba(183,130,31,.3);
+    border-radius:14px;padding:16px 18px;margin:18px 0 6px;
+  }
+  .reward .coin{font-size:1.5rem;line-height:1}
+  .reward p{font-size:.92rem;line-height:1.55;color:#5a4413}
+  .reward b{color:var(--gold-deep)}
+
+  .btn-row{display:flex;gap:12px;margin-top:26px}
+  .btn{
+    flex:1;border:none;cursor:pointer;font-family:inherit;
+    font-size:1rem;font-weight:700;padding:15px 18px;border-radius:13px;
+    transition:transform .12s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .btn:active{transform:translateY(1px) scale(.99)}
+  .btn-yes{
+    background:linear-gradient(135deg,var(--moss),var(--moss-deep));
+    color:#fff;box-shadow:0 8px 20px -8px rgba(35,79,59,.7);
+  }
+  .btn-yes:hover{box-shadow:0 12px 26px -8px rgba(35,79,59,.8)}
+  .btn-no{
+    background:transparent;color:#5a6b61;
+    border:1.5px solid var(--line);
+  }
+  .btn-no:hover{background:rgba(28,43,36,.04)}
+  .btn-full{width:100%}
+
+  /* 타이머 */
+  .timer-wrap{
+    position:fixed;top:16px;right:16px;z-index:5;
+    display:none;align-items:center;gap:9px;
+    background:var(--ink);color:#fff;
+    padding:10px 16px;border-radius:999px;
+    font-variant-numeric:tabular-nums;font-weight:700;
+    box-shadow:0 10px 24px -10px rgba(0,0,0,.5);
+    font-size:.98rem;
+  }
+  .timer-wrap.show{display:flex}
+  .timer-wrap.warn{background:var(--coral);animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.7}}
+  .timer-dot{width:8px;height:8px;border-radius:50%;background:var(--leaf)}
+  .timer-wrap.warn .timer-dot{background:#fff}
+
+  /* 진행 바 */
+  .progress{
+    display:flex;gap:6px;margin-bottom:24px;
+  }
+  .progress span{
+    flex:1;height:6px;border-radius:99px;background:rgba(35,79,59,.13);
+    transition:background .3s;
+  }
+  .progress span.done{background:var(--leaf)}
+  .progress span.current{background:var(--gold)}
+
+  .qhead{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+  .qnum{
+    font-size:.78rem;font-weight:800;letter-spacing:.1em;
+    color:var(--gold-deep);
+  }
+  .qcount{font-size:.78rem;color:#8a988f;margin-left:auto;font-weight:600}
+  .qtext{font-size:1.28rem;line-height:1.45;font-weight:800;letter-spacing:-.4px;margin-bottom:24px}
+
+  .options{display:flex;flex-direction:column;gap:11px}
+  .opt{
+    display:flex;align-items:center;gap:14px;
+    border:1.5px solid var(--line);border-radius:14px;
+    padding:16px 18px;cursor:pointer;background:rgba(255,255,255,.6);
+    font-size:1.02rem;font-weight:600;color:#2c3c33;text-align:left;
+    transition:border-color .15s, background .15s, transform .1s;
+    font-family:inherit;width:100%;
+  }
+  .opt:hover{border-color:var(--leaf);background:rgba(95,169,127,.08)}
+  .opt:active{transform:scale(.995)}
+  .opt .badge{
+    width:30px;height:30px;border-radius:9px;flex:none;
+    background:rgba(47,107,79,.1);color:var(--moss-deep);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:.95rem;
+  }
+  .opt.chosen{border-color:var(--moss);background:rgba(47,107,79,.1)}
+  .opt.chosen .badge{background:var(--moss);color:#fff}
+
+  /* 결과 */
+  .score-ring{
+    width:150px;height:150px;margin:6px auto 22px;position:relative;
+  }
+  .score-ring svg{transform:rotate(-90deg)}
+  .score-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .score-num{font-size:2.6rem;font-weight:800;line-height:1}
+  .score-label{font-size:.78rem;color:#7a887f;font-weight:600;margin-top:2px}
+  .verdict{text-align:center}
+  .verdict h1{margin-bottom:10px}
+  .pass-pill{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 18px;border-radius:999px;font-weight:700;font-size:.92rem;
+    margin-bottom:18px;
+  }
+  .pass-pill.pass{background:rgba(95,169,127,.18);color:var(--moss-deep)}
+  .pass-pill.fail{background:rgba(212,101,79,.15);color:var(--coral)}
+
+  .review{margin-top:24px;text-align:left}
+  .review h3{font-size:.82rem;letter-spacing:.1em;color:#8a988f;text-transform:uppercase;margin-bottom:12px}
+  .rev-item{
+    display:flex;gap:12px;align-items:flex-start;
+    padding:12px 0;border-top:1px solid var(--line);font-size:.92rem;line-height:1.5;
+  }
+  .rev-mark{font-size:1.1rem;flex:none;line-height:1.3}
+  .rev-q{font-weight:700;color:#2c3c33}
+  .rev-a{color:#6a786f;margin-top:3px}
+  .rev-a b{color:var(--moss-deep)}
+
+  .hidden{display:none}
+  .fade{animation:fade .45s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  @media (max-width:480px){
+    .card{padding:30px 22px 28px}
+    h1{font-size:1.4rem}
+    .qtext{font-size:1.15rem}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<div class="timer-wrap" id="timer">
+  <span class="timer-dot"></span>
+  <span id="timerText">30:00</span>
+</div>
+
+<div class="stage">
+
+  <!-- 게이트 1 -->
+  <section class="card fade" id="gate1">
+    <div class="brandbar">
+      <div class="logo-tile"></div>
+      <div>
+        <div class="brand-name">돌봄매트</div>
+        <div class="brand-sub">직원 역량 퀴즈</div>
+      </div>
+    </div>
+    <div class="eyebrow">시작 전 확인</div>
+    <h1>정말 퀴즈를 푸실<br>예정이십니까?</h1>
+    <p class="lead">시작하면 흐름이 이어집니다. 준비되셨을 때 눌러주세요.</p>
+    <div class="btn-row">
+      <button class="btn btn-yes" onclick="go('gate2')">예, 시작할게요</button>
+      <button class="btn btn-no" onclick="bail()">아니오</button>
+    </div>
+  </section>
+
+  <!-- 게이트 2: 규칙 동의 -->
+  <section class="card hidden" id="gate2">
+    <div class="brandbar">
+      <div class="logo-tile"></div>
+      <div>
+        <div class="brand-name">돌봄매트</div>
+        <div class="brand-sub">진행 규칙</div>
+      </div>
+    </div>
+    <div class="eyebrow">규칙 안내</div>
+    <h1>아래 내용에 동의해 주세요</h1>
+    <div class="note">
+      총 <b>10문제 중 8문제 이상</b> 정답 시,<br>
+      두탕 작업에서 <b>1M 매트가 1~2건</b> 있는 경우<br>
+      <b>최대 +2만원</b>이 추가로 지급됩니다.
+    </div>
+    <div class="note">
+      ⏱ 시간 제한은 <b>30분</b>입니다.<br>
+      🔁 응시 기회는 <b>주 1회</b>입니다.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-yes" onclick="go('gate3')">동의합니다</button>
+      <button class="btn btn-no" onclick="bail()">아니오</button>
+    </div>
+  </section>
+
+  <!-- 게이트 3: 타이머 시작 -->
+  <section class="card hidden" id="gate3">
+    <div class="brandbar">
+      <div class="logo-tile"></div>
+      <div>
+        <div class="brand-name">돌봄매트</div>
+        <div class="brand-sub">준비 완료</div>
+      </div>
+    </div>
+    <div class="eyebrow">마지막 단계</div>
+    <h1>시작하시겠습니까?</h1>
+    <p class="lead">‘예’를 누르면 곧바로 <b>30분 타이머</b>가 시작되고<br>1번 문제가 나옵니다.</p>
+    <div class="reward">
+      <span class="coin">🪙</span>
+      <p>8문제 이상 맞히면 <b>두탕 1M 1~2건 시 최대 +2만원</b>!<br>차분히, 그러나 시간 안에 풀어보세요.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-yes" onclick="startQuiz()">예, 시작!</button>
+      <button class="btn btn-no" onclick="bail()">아니오</button>
+    </div>
+  </section>
+
+  <!-- 퀴즈 -->
+  <section class="card hidden" id="quiz">
+    <div class="progress" id="progress"></div>
+    <div class="qhead">
+      <span class="qnum" id="qnum">QUIZ 01</span>
+      <span class="qcount" id="qcount">1 / 10</span>
+    </div>
+    <div class="qtext" id="qtext">문제</div>
+    <div class="options" id="options"></div>
+  </section>
+
+  <!-- 결과 -->
+  <section class="card hidden" id="result"></section>
+
+  <!-- 종료(아니오) -->
+  <section class="card hidden" id="exit">
+    <div class="brandbar">
+      <div class="logo-tile"></div>
+      <div>
+        <div class="brand-name">돌봄매트</div>
+        <div class="brand-sub">다음에 만나요</div>
+      </div>
+    </div>
+    <h1>퀴즈를 종료했어요</h1>
+    <p class="lead">마음이 준비되면 언제든 다시 시작하실 수 있어요.<br>응시 기회는 주 1회라는 점만 기억해 주세요.</p>
+    <button class="btn btn-yes btn-full" style="margin-top:24px" onclick="restart()">처음으로</button>
+  </section>
+
+</div>
+
+<script>
+const QUIZ = [
+  { q:"1000매트 22T 할인 전 금액은?", opts:["74,500원","72,500원","76,500원"], answer:2 },
+  { q:"1000매트 17T 할인 전 금액은?", opts:["72,500원","67,500원","64,500원"], answer:2 },
+  { q:"500매트 17T 할인 전 금액은?", opts:["0원","16,500원","16,900원"], answer:0 },
+  { q:"돌봄매트가 진행하는 이벤트가 아닌 것은?", opts:["계약 후기","3인 공동구매","인스타그램 후기"], answer:1 },
+  { q:"돌봄매트 최초 창업일은?", opts:["2019년","2020년","2021년"], answer:1 },
+  { q:"돌봄매트 층간소음 저감 효과는?", opts:["64%","67%","62%"], answer:2 },
+  { q:"돌봄매트를 설치한 5성급 호텔은?", opts:["조선호텔","롯데호텔","파라다이스 호텔"], answer:2 },
+  { q:"34평 확장형(거실·복도·주방) 1M 설치 장수와 가장 가깝다고 홍보하는 장 수는?", opts:["45장","35장","40장"], answer:2 },
+  { q:"이전 설치 비용 중 가장 정확한 것은?", opts:["30만원","30만원 + 추가 매트 수량","20만원 + 추가 매트 수량"], answer:1 },
+  { q:"키인 결제 시 불가한 카드사는?", opts:["롯데카드","하나카드","삼성카드"], answer:1 }
+];
+const BADGES = ["1","2","3"];
+
+let current = 0;
+let answers = [];
+let timerId = null;
+let remaining = 30*60;
+
+function go(id){
+  document.querySelectorAll('.stage > section').forEach(s=>s.classList.add('hidden'));
+  const el = document.getElementById(id);
+  el.classList.remove('hidden');
+  el.classList.remove('fade'); void el.offsetWidth; el.classList.add('fade');
+  window.scrollTo({top:0});
+}
+function bail(){ go('exit'); }
+function restart(){ current=0; answers=[]; stopTimer(); remaining=30*60; updateTimer(); go('gate1'); }
+
+function startQuiz(){
+  current = 0; answers = [];
+  startTimer();
+  go('quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const item = QUIZ[current];
+  document.getElementById('qnum').textContent = "QUIZ " + String(current+1).padStart(2,'0');
+  document.getElementById('qcount').textContent = (current+1) + " / " + QUIZ.length;
+  document.getElementById('qtext').textContent = item.q;
+
+  // 진행바
+  const prog = document.getElementById('progress');
+  prog.innerHTML = "";
+  QUIZ.forEach((_,i)=>{
+    const s = document.createElement('span');
+    if(i < current) s.className='done';
+    else if(i===current) s.className='current';
+    prog.appendChild(s);
+  });
+
+  const wrap = document.getElementById('options');
+  wrap.innerHTML = "";
+  item.opts.forEach((text, idx)=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = `<span class="badge">${BADGES[idx]}</span><span>${text}</span>`;
+    b.onclick = ()=> choose(idx);
+    wrap.appendChild(b);
+  });
+}
+
+function choose(idx){
+  answers[current] = idx;
+  document.querySelectorAll('#options .opt').forEach((el,i)=>{
+    el.classList.toggle('chosen', i===idx);
+  });
+  setTimeout(()=>{
+    if(current < QUIZ.length - 1){ current++; renderQuestion(); window.scrollTo({top:0}); }
+    else finish();
+  }, 230);
+}
+
+/* 타이머 */
+function startTimer(){
+  remaining = 30*60;
+  document.getElementById('timer').classList.add('show');
+  updateTimer();
+  timerId = setInterval(()=>{
+    remaining--;
+    updateTimer();
+    if(remaining <= 60) document.getElementById('timer').classList.add('warn');
+    if(remaining <= 0){ stopTimer(); finish(true); }
+  }, 1000);
+}
+function stopTimer(){
+  if(timerId) clearInterval(timerId);
+  timerId = null;
+  document.getElementById('timer').classList.remove('show','warn');
+}
+function updateTimer(){
+  const m = Math.floor(Math.max(remaining,0)/60);
+  const s = Math.max(remaining,0)%60;
+  document.getElementById('timerText').textContent =
+    String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+}
+
+function finish(timeUp){
+  stopTimer();
+  let score = 0;
+  QUIZ.forEach((item,i)=>{ if(answers[i] === item.answer) score++; });
+  const pass = score >= 8;
+  const usedMin = 30 - Math.floor(remaining/60);
+
+  const pct = Math.round(score/QUIZ.length*100);
+  const circ = 2*Math.PI*64;
+  const dash = circ * (score/QUIZ.length);
+  const ringColor = pass ? 'var(--moss)' : 'var(--coral)';
+
+  let reviewHtml = "";
+  QUIZ.forEach((item,i)=>{
+    const ok = answers[i] === item.answer;
+    const picked = (answers[i]!=null) ? item.opts[answers[i]] : "무응답";
+    reviewHtml += `
+      <div class="rev-item">
+        <span class="rev-mark">${ok?'✅':'❌'}</span>
+        <div>
+          <div class="rev-q">${i+1}. ${item.q}</div>
+          <div class="rev-a">선택: ${picked}${ok?'':` · 정답: <b>${item.opts[item.answer]}</b>`}</div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('result').innerHTML = `
+    <div class="verdict">
+      <div class="eyebrow" style="text-align:center">${timeUp?'시간 종료':'채점 완료'}</div>
+      <div class="score-ring">
+        <svg width="150" height="150">
+          <circle cx="75" cy="75" r="64" fill="none" stroke="rgba(35,79,59,.12)" stroke-width="12"/>
+          <circle cx="75" cy="75" r="64" fill="none" stroke="${ringColor}" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="${dash} ${circ}"/>
+        </svg>
+        <div class="score-center">
+          <div class="score-num">${score}<span style="font-size:1.1rem;color:#9aa89f">/10</span></div>
+          <div class="score-label">정답 ${pct}%</div>
+        </div>
+      </div>
+      <div class="pass-pill ${pass?'pass':'fail'}">
+        ${pass?'🎉 통과! +2만원 대상':'아쉬워요 · 8문제 이상 필요'}
+      </div>
+      <h1>${pass?'합격입니다!':'다음 주에 다시 도전해요'}</h1>
+      <p class="lead">
+        ${pass
+          ? '두탕 작업에서 1M 매트 1~2건이 있으면 <b>최대 +2만원</b>이 추가됩니다.'
+          : `${score}문제를 맞히셨어요. 8문제 이상이면 보상 대상이 됩니다.`}
+        <br><span style="font-size:.85rem;color:#8a988f">소요 시간 약 ${usedMin}분</span>
+      </p>
+    </div>
+    <div class="review">
+      <h3>문제별 결과</h3>
+      ${reviewHtml}
+    </div>
+    <button class="btn btn-yes btn-full" style="margin-top:24px" onclick="restart()">처음 화면으로</button>
+  `;
+  go('result');
+}
+
+updateTimer();
+</script>
+</body>
+</html>
