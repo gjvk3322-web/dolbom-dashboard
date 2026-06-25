@@ -355,6 +355,7 @@ const FIXED_COLOR={'준형':0,'세욱':1,'승재':2,'경필':4};
 // 색상 인덱스: 지정색 우선, 없으면 이름 해시 (명단 순서 무관 → 삭제해도 색 안 바뀜)
 function colorIdx(name){if(!name)return 0;if(FIXED_COLOR[name]!==undefined)return FIXED_COLOR[name];let h=0;for(let i=0;i<name.length;i++){h=(h*31+name.charCodeAt(i))%1000000007}return h%10;}
 let teams=[];
+let currentTab='sched';
 let A={};
 let CF={};  // 출발확인
 let DIST={};  // 거리 캐시 {주소: km}
@@ -448,7 +449,7 @@ function fbRender(){
   setTimeout(()=>{fbPending=false;renderAll()},300);
 }
 db.ref('employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
-db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v;else teams=[];fbRender()});
+db.ref('teams').on('value',snap=>{const v=snap.val();if(v)teams=v.filter(t=>Array.isArray(t));else teams=[];fbRender()});
 db.ref('assignments').on('value',snap=>{
   if(isAssigning)return;
   const v=snap.val()||{};
@@ -1839,7 +1840,7 @@ return `<div class="daycard" style="opacity:${dimmed?.5:.7};border:${dateBorderW
 
 // 팀별 그룹
 const tm={};const un=[];
-realJobs.forEach(j=>{const t=RA[j.id];if(t&&t.length){const k=[...t].sort().join('+');if(!tm[k])tm[k]={team:t.slice().sort((a,b)=>{const ti=teams.findIndex(tt=>tt.includes(a)&&tt.includes(b));if(ti>=0)return teams[ti].indexOf(a)-teams[ti].indexOf(b);return 0}),jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
+realJobs.forEach(j=>{const t=RA[j.id];if(t&&t.length){const k=[...t].sort().join('+');if(!tm[k])tm[k]={team:t.slice().sort((a,b)=>{const ti=teams.findIndex(tt=>tt&&tt.includes(a)&&tt.includes(b));if(ti>=0)return teams[ti].indexOf(a)-teams[ti].indexOf(b);return 0}),jobs:[]};tm[k].jobs.push(j)}else un.push(j)});
 
 // 팀설정 순번으로 정렬 (일관된 표시 순서)
 const tmArr=Object.values(tm).sort((a,b)=>{
@@ -2440,6 +2441,7 @@ function deleteCar(idx){
 
 // ===== Nav =====
 function sw(n){
+currentTab=n;
 document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
 document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
 document.getElementById('p-'+n).classList.add('on');
