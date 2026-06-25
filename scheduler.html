@@ -1168,7 +1168,7 @@ toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
 
 // 배정 확정(잠금) — 자동배정이 건드리지 않음
 function lockJob(jobId){
-if(!A[jobId]||A[jobId].length<2){toast('2인 배정 후 확정 가능','ok');return}
+if(!A[jobId]||A[jobId].length<1){toast('1인 이상 배정 후 확정 가능','ok');return}
 const reason=prompt('🔒 잠금 사유를 입력해주세요\n(예: 오전만 작업, 개인 일정 등)');
 if(reason===null)return; // 취소
 LOCK.add(jobId);
