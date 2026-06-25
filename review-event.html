@@ -196,10 +196,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
   <div class="reward-header">
     <div class="reward-amount" id="rewardTotal">0원</div>
-    <div class="reward-max">최대 12만원 캐시백</div>
+    <div class="reward-max">최대 13만원 캐시백</div>
   </div>
   <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-  <div class="progress-label" id="progressLabel">0 / 120,000원</div>
+  <div class="progress-label" id="progressLabel">0 / 130,000원</div>
   <div class="paid-info" id="paidInfo">
     <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
     <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
@@ -518,23 +518,37 @@ function toggleChecklist(el){
 // ═════════════════════════════════════════════════════════
 // 탭 0 · 후기 이벤트 (원본 review-event.html 100% 그대로)
 // ═════════════════════════════════════════════════════════
+// 통일 라벨 헬퍼 — 모든 카드가 "어디에 / 무엇을 / 필수" 같은 리듬으로 읽히도록
+// L: 라벨(회색 굵게), 그 뒤 내용. m=필수조건(빨강 강조)
+function _row(label,val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--text3,#9aa0a6)">'+label+'</span><span style="font-size:12.5px;color:var(--text2);font-weight:500;line-height:1.4">'+val+'</span></div>';}
+function _must(val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--red)">필수</span><span style="font-size:12px;color:var(--red);font-weight:600;line-height:1.4">'+val+'</span></div>';}
+
 const MISSIONS=[
   // 1번: 웰컴쿠폰 (계약후기)
-  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',desc:'맘스홀릭 카페 > 돌봄매트 게시판'},
+  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',
+    desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 전 계약 후기 작성')},
   // 2번: 입주자 단톡방
-  {id:'chatroom',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,icon:'💬',tag:'시공 중 업로드',desc:'돌봄매트 설치하고 있다는 후기만 올려주시면 됩니다'},
+  {id:'chatroom',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,icon:'💬',tag:'시공 중 업로드',
+    desc:_row('어디에','입주자 단톡방 (카톡 · 노크타운 등)')+_row('무엇을','설치 중인 사진과 한 줄 후기')},
   // 3번: 시공 당일 후기 ①
-  {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',desc:'맘스홀릭 카페 > 돌봄매트 게시판'},
+  {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',
+    desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 당일 후기 작성')},
   // 4번: 시공 당일 후기 ②
-  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',desc:'셀인 > 자유수다방<br>강사모 > 반려용품 사용후기<br>다이렉트 결혼준비 > 임신·출산·육아<br>위 카페 중 1곳에 작성'},
+  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',
+    desc:_row('어디에','셀인 · 강사모 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
   // 5번: 인스타그램
-  {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',desc:'@dolbomstore 태그 + #돌봄매트 #매트시공 해시태그 필수'},
-  // 5-2번: 쓰레드(Threads) 후기
-  {id:'threads',title:'쓰레드(Threads) 후기',reward:10000,icon:'🧵',desc:'커뮤니티 또는 주제를 <b>시공매트 · 매트시공 · 층간소음매트</b> 중 1곳으로 설정<br>시공 사진과 함께 <b>"돌봄매트로 매트시공 완료했어요!"</b> 처럼 후기 작성<br>해시태그 <b>#돌봄매트 #매트시공</b> 함께 달아주세요'},
+  {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',
+    desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진과 함께 후기 작성')+_must('@dolbomstore 태그 · #돌봄매트 #매트시공')},
+  // 5-2번: 쓰레드 후기
+  {id:'threads',title:'쓰레드 후기',reward:10000,icon:'🧵',
+    desc:_row('어디에','주제 선택 → 시공매트 · 층간소음매트 중 1곳')+_row('무엇을','시공 사진과 함께 "매트시공 완료" 후기')+_must('#돌봄매트 #매트시공')},
   // 6번: 마미톡 (작성하기 버튼 유지 — 안내 페이지 필요)
-  {id:'mamitalk',title:'마미톡 후기',reward:10000,icon:'📱',desc:'마미톡 [육아는 템빨] 카테고리에 후기 작성',keyword:'시공매트, 돌봄매트 필수',link:'mamitalk',linkLabel:'마미톡 앱',customUrl:'go-mamitalk.html'},
+  {id:'mamitalk',title:'마미톡 후기',reward:10000,icon:'📱',
+    desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_must('시공매트 · 돌봄매트 키워드'),
+    link:'mamitalk',linkLabel:'마미톡 앱',customUrl:'go-mamitalk.html'},
   // 7번: 한 달 후 후기
-  {id:'review_month',title:'한 달 후 후기',reward:20000,icon:'📅',desc:'시공 당일 후기와 같은 카페·게시판에 작성'}
+  {id:'review_month',title:'한 달 후 후기',reward:20000,icon:'📅',
+    desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','한 달 사용 후기 작성')}
 ];
 const MAX_REWARD=130000;
 let missionState={};
@@ -588,7 +602,7 @@ function renderMissions(){
     const badgeCls=paid?'done':done?'done':'pending';
     card.innerHTML=`<div class="mission-header" onclick="toggleMission(${idx})">
       <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
-      <div class="mission-info"><h4>${m.title}</h4>${(m.tag||m.tag2)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${m.tag?`<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag}</span>`:''}${m.tag2?`<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag2}</span>`:''}</div>`:''}${m.desc?`<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">${m.desc}</div>`:''}${m.note?`<div style="font-size:11px;color:var(--orange);margin-top:3px;font-weight:600">${m.note}</div>`:''}${m.keyword?`<div style="font-size:10px;color:var(--red);margin-top:3px;font-weight:600">키워드: ${m.keyword}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
+      <div class="mission-info"><h4>${m.title}</h4>${(m.tag||m.tag2)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${m.tag?`<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag}</span>`:''}${m.tag2?`<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag2}</span>`:''}</div>`:''}${m.desc?`<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">${m.desc}</div>`:''}${m.note?`<div style="font-size:11px;color:var(--orange);margin-top:3px;font-weight:600">${m.note}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
       <span class="mission-badge ${badgeCls}" ${paid?'style="background:#e3faf1;color:#20c997"':''}>${badgeText}</span>
     </div>
     <div class="mission-body" id="mbody${idx}">
