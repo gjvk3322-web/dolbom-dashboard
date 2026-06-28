@@ -1180,9 +1180,6 @@ body {
           <button class="welcome-btn welcome-btn-onnuricard" onclick="copyOnnuriCard()">
             💳 <span>온누리카드</span>
           </button>
-          <button class="welcome-btn welcome-btn-color" onclick="copyColorInfo()">
-            🎨 <span>색상관련</span>
-          </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
             ➕ <span>커스텀 추가</span>
@@ -1202,11 +1199,14 @@ body {
           <button class="welcome-btn welcome-btn-booking" onclick="copyBookingUrl()">
             3️⃣ <span>예약 양식</span>
           </button>
-          <button class="welcome-btn welcome-btn-deposit" onclick="copyDeposit()">
-            💳 <span>예약금</span>
-          </button>
           <button class="welcome-btn welcome-btn-time" onclick="copyWorkTime()">
             🕘 <span>오전작업시간</span>
+          </button>
+          <button class="welcome-btn welcome-btn-time" onclick="copyAfternoonWorkTime()">
+            🕒 <span>오후작업시간</span>
+          </button>
+          <button class="welcome-btn welcome-btn-color" onclick="copyColorInfo()">
+            🎨 <span>색상관련</span>
           </button>
         </div>
       </div>
@@ -2543,8 +2543,12 @@ var QUOTE_FORM_DEFAULT_TEXT =
   '감사합니다 💌';
 
 var BOOKING_DEFAULT_TEXT =
-  '아래 링크에서 예약 가능하세요! 😊\n' +
-  'https://my.dolbommat.com/booking.html';
+  '아래 링크에서 주소 입력시\n' +
+  '예약 및 일정 확인 가능하세요! 😊\n' +
+  'https://my.dolbommat.com/booking.html\n\n' +
+  '👉 예약금\n' +
+  '기업은행 030-505520-04-011 허민석(돌봄) 으로\n' +
+  '20만원 입금 해주시면 예약 확정되세요~';
 
 var REVIEW_DEFAULT_TEXT =
   '후기 이벤트는 아래 링크에서 참여 가능합니다 :)\n' +
@@ -2631,6 +2635,17 @@ function copyWorkTime() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 오전작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function copyAfternoonWorkTime() {
+  var text = '오후 작업은 오전 작업 마치고 가능합니다!\n보통 1-3시 방문 예정이며 오전에 정확한 시간 안내 가능할 것 같습니다!';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 오후작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
