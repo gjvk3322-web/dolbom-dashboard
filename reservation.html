@@ -713,6 +713,27 @@ function publishSlots(){
     console.warn('⚠️ 기록할 슬롯이 0개 (미래 작업 없음 또는 데이터 로드 실패)');
   }
   cleanOldSlots();  // 🆕 30일 지난 과거 슬롯 정리 (누적 방지)
+  cleanStaleSlots(updates);  // 🆕 작업·휴무가 빠진 미래 날짜의 '박제된 마감' 슬롯 삭제
+}
+
+// 🆕 작업·휴무가 모두 사라진 미래 날짜의 옛 슬롯 삭제
+//   - publishSlots는 작업 있는 날짜만 덮어쓰므로, 작업이 0건이 된 날짜는 옛 full:true가 그대로 남음
+//   - 이번 계산(validKeys)에 없는 '미래' 슬롯 = 작업·휴무가 빠진 날 → 삭제해서 마감 해제
+function cleanStaleSlots(currentUpdates){
+  var today=new Date(); today.setHours(0,0,0,0);
+  var validKeys=currentUpdates||{};
+  fbDb.ref('slots').once('value').then(function(snap){
+    var all=snap.val()||{}, del={};
+    Object.keys(all).forEach(function(k){
+      var m=k.match(/(\d{4}-\d{2}-\d{2})$/);   // 키: 경기_2026-07-15 → 날짜 추출
+      if(!m) return;
+      var dt=new Date(m[1]); if(isNaN(dt.getTime())||dt<today) return;  // 미래 날짜만
+      if(validKeys[k]) return;                  // 이번에 작업/휴무로 새로 기록된 날은 유지
+      del[k]=null;                              // 작업·휴무 0건인데 슬롯만 남음 → 삭제
+    });
+    var n=Object.keys(del).length;
+    if(n){ fbDb.ref('slots').update(del).then(function(){ console.log('🧹 박제 슬롯',n,'개 해제 완료'); }); }
+  }).catch(function(e){ console.warn('박제 슬롯 정리 건너뜀:',e); });  // 실패해도 조용히 (필수 아님)
 }
 
 // 🆕 30일 이전 슬롯 자동 삭제 — 데이터 누적 방지 (과거 슬롯은 booking/reservation 모두 안 씀)
