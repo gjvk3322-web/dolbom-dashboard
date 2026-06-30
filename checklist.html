@@ -1,4 +1,30 @@
 <!DOCTYPE html>
+<!--
+====================================================================
+[공지 교체 규칙 — 이 파일 작업 시 항상 지킬 것]
+====================================================================
+1. 위치: 아래 두 블록만 손댄다.
+   - <div class="notice-card"> ... </div>   ← 맨 위, "이번 주 새 공지"
+   - <details class="notice-archive"> ... </details>  ← "지난 공지" 접이식 목록
+
+2. 새 공지로 교체할 때 순서:
+   (1) 현재 notice-card 안의 내용(본문+링크+서명) 전체를 복사한다.
+   (2) notice-archive 안, "📂 지난 공지 보기" 바로 아래에
+       새 <details class="archive-item"> 블록을 만들어 맨 위에 끼워 넣는다.
+       - <summary>에 주차 제목을 적는다. 예: 2026년 7월 1주차
+       - 그 안에 (1)에서 복사한 notice-body / notice-sign 을 넣는다.
+       - 링크(<a>...</a>)도 본문 안에 그대로 함께 옮긴다.
+   (3) 맨 위 notice-card 의 notice-body 를 새 공지 내용으로 교체한다.
+       - 링크가 새로 있으면 본문 끝에 <br><br> 뒤에 <a> 태그로 넣는다.
+       - 링크가 없으면 그냥 본문만 넣는다.
+       - notice-sign(서명)은 보낸 사람 이름으로. 기본은 "민석 올림".
+
+3. 주차 표기: "YYYY년 M월 N주차" 형식. 최신이 항상 archive 맨 위.
+
+4. 절대 건드리지 말 것: <div id="commonItems">, senior-section,
+   각종 스크립트, auth.js, CSS 등 나머지 구조는 그대로 둔다.
+====================================================================
+-->
 <html lang="ko">
 <head>
     <script src="/auth.js"></script>
@@ -60,6 +86,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f3ee;min-height:100vh;c
 .notice-card .notice-title{font-size:14px;font-weight:700;color:#9A6A1F;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .notice-card .notice-body{font-size:13.5px;color:#5a4a32;line-height:1.75;white-space:pre-line}
 .notice-card .notice-sign{font-size:13.5px;font-weight:700;color:#9A6A1F;text-align:right;margin-top:12px}
+.notice-archive{margin-bottom:18px}
+.notice-archive>summary{cursor:pointer;font-size:13px;font-weight:700;color:#9A6A1F;list-style:none;padding:10px 14px;background:#FFF9F0;border:1.5px solid #F0D9B5;border-radius:12px;display:flex;align-items:center;gap:6px}
+.notice-archive>summary::-webkit-details-marker{display:none}
+.notice-archive>summary::before{content:'▶';font-size:10px;transition:transform .2s}
+.notice-archive[open]>summary::before{transform:rotate(90deg)}
+.archive-item{margin-top:10px}
+.archive-item>summary{cursor:pointer;font-size:12.5px;font-weight:700;color:#7a5a1f;list-style:none;padding:8px 12px;background:#FFFDF8;border:1px solid #F0D9B5;border-radius:10px}
+.archive-item>summary::-webkit-details-marker{display:none}
+.archive-item>summary::before{content:'＋ ';color:#C8860D}
+.archive-item[open]>summary::before{content:'－ '}
+.archive-item .notice-body{font-size:12.5px;color:#6a5a42;line-height:1.7;white-space:pre-line;padding:10px 12px 4px}
+.archive-item .notice-sign{font-size:12px;font-weight:700;color:#9A6A1F;text-align:right;padding:0 12px 8px}
 </style>
 </head>
 <body>
@@ -239,9 +277,25 @@ var DONE_MESSAGE = '이번 주도 수고하셨습니다.\n부족했던 부분은
     </select>
   </div>
   <div class="notice-card">
-    <div class="notice-body">일을 할 때 아래 링크 내용 생각하면 정말 효율적으로 일 할 수 있습니다!<br>작업, 샘플, 다양한 상황에서!<br>한 번 링크 보시고, 돌봄매트에 대입 해보시면 좋을 것 같습니다.<br><br><a href="https://www.youtube.com/watch?v=jqOU6-sX608" target="_blank" rel="noopener" style="color:#C8860D;font-weight:600;word-break:break-all;text-decoration:underline">▶️ 유튜브 영상 보기</a></div>
+    <div class="notice-body">일이 바쁠수록 어떻게 일할 것인지 전략을 짜면 힘든 일도 조금 힘든 일로 변경 가능할 것 같습니다!<br>혼자 일하는 게 아니고 모두가 같이 일하는 회사이기에, 사수는 부사수를 부사수는 사수를 이해하고 서로 편하게 일할 수 있게 만들고, 먼저 마친 팀은 다음 팀을, 다음 팀은 내일 일찍 올 팀을 생각하면 일할 맛도 날 것 같습니다!<br>다음 한 주는 작업 시 불필요한 동작·행동, 한 번 움직일 때 할 수 있는 추가 행동을 고려해서 일해보시면 좋을 것 같습니다!<br><br><a href="https://www.youtube.com/watch?v=jqOU6-sX608" target="_blank" rel="noopener" style="color:#C8860D;font-weight:600;word-break:break-all;text-decoration:underline">▶️ 유튜브 영상 보기</a></div>
     <div class="notice-sign">민석 올림</div>
   </div>
+  <details class="notice-archive">
+    <summary>📂 지난 공지 보기</summary>
+
+    <details class="archive-item">
+      <summary>2026년 6월 5주차</summary>
+      <div class="notice-body">일이 바쁠수록 어떻게 일할 것인지 전략을 짜면 힘든 일도 조금 힘든 일로 변경 가능할 것 같습니다!<br>혼자 일하는 게 아니고 모두가 같이 일하는 회사이기에, 사수는 부사수를 부사수는 사수를 이해하고 서로 편하게 일할 수 있게 만들고, 먼저 마친 팀은 다음 팀을, 다음 팀은 내일 일찍 올 팀을 생각하면 일할 맛도 날 것 같습니다!<br>다음 한 주는 작업 시 불필요한 동작·행동, 한 번 움직일 때 할 수 있는 추가 행동을 고려해서 일해보시면 좋을 것 같습니다!<br><br><a href="https://www.youtube.com/watch?v=jqOU6-sX608" target="_blank" rel="noopener" style="color:#C8860D;font-weight:600;word-break:break-all;text-decoration:underline">▶️ 유튜브 영상 보기</a></div>
+      <div class="notice-sign">민석 올림</div>
+    </details>
+
+    <details class="archive-item">
+      <summary>2026년 6월 4주차</summary>
+      <div class="notice-body">일을 할 때 아래 링크 내용 생각하면 정말 효율적으로 일 할 수 있습니다!<br>작업, 샘플, 다양한 상황에서!<br>한 번 링크 보시고, 돌봄매트에 대입 해보시면 좋을 것 같습니다.<br><br><a href="https://www.youtube.com/watch?v=jqOU6-sX608" target="_blank" rel="noopener" style="color:#C8860D;font-weight:600;word-break:break-all;text-decoration:underline">▶️ 유튜브 영상 보기</a></div>
+      <div class="notice-sign">민석 올림</div>
+    </details>
+
+  </details>
   <div id="commonItems"></div>
   <div class="senior-section" id="seniorSection">
     <div class="section" style="border:1.5px solid #85B7EB" id="seniorItems">
