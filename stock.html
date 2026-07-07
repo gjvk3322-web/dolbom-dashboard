@@ -177,7 +177,7 @@ function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
 function toast(msg){const t=document.getElementById('toastMsg');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 let invDataDate=dateKey; // 현재 보고있는 재고 날짜
 function pickTeam(t){
-  team=t;loc=null;invDataDate=dateKey;invSubmitDate=dateKey;
+  team=t;loc=null;invDataDate=dateKey;invSubmitDate=dateKey;viewDate=null;
   // URL 업데이트 (새로고침 없이)
   const url=new URL(window.location);url.searchParams.set('team',t);window.history.replaceState({},'',url);
   // 🆕 발주 탭이면 Firebase 응답 기다리지 말고 즉시 렌더 (재고 데이터와 무관)
@@ -219,8 +219,132 @@ async function findRecentInventory(teamName){
   }
   return null;
 }
-function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
-function render(){if(!team)return renderTeamSelect();if(tab==='summary')return renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
+// ═══════ 📅 조사 이력 열람 (2026-07-07 추가) ═══════
+// Firebase inventory/에 날짜별로 쌓여있는 과거 조사를 종합탭에서 골라볼 수 있게.
+let histDates=null;   // 조사가 있었던 날짜 목록 (최신순) · null=아직 안 불러옴
+let viewDate=null;    // null=최신(라이브) / 'YYYY-MM-DD'=과거 조사 보기 모드
+let histCache={};     // 불러온 과거 데이터 캐시 {날짜_팀: data}
+
+async function loadHistDates(){
+  try{
+    // shallow=true → 날짜 키 목록만 가볍게 받아옴 (전체 데이터 안 내려받음)
+    const r=await fetch('https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app/inventory.json?shallow=true');
+    const o=await r.json()||{};
+    histDates=Object.keys(o).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort().reverse();
+  }catch(e){histDates=[]}
+  return histDates;
+}
+async function loadHistData(date){
+  const ck=date+'_'+team;
+  if(histCache[ck]!==undefined)return histCache[ck];
+  try{
+    const snap=await db.ref('inventory/'+date+'/'+team).once('value');
+    const val=snap.val();
+    const has=val&&Object.keys(val).some(k=>val[k]&&val[k].time);
+    histCache[ck]=has?val:null;
+    return histCache[ck];
+  }catch(e){return null}
+}
+function histTotals(data){
+  const t={};const T=TEAMS[team];
+  T.locs.forEach(l=>{const d=data&&data[fk(l)];if(d&&d.data)Object.entries(d.data).forEach(([k,v])=>{t[k]=(t[k]||0)+v})});
+  return t;
+}
+function histDateLabel(ds){
+  const p=ds.split('-');const dw=['일','월','화','수','목','금','토'][new Date(ds).getDay()];
+  return parseInt(p[1])+'/'+parseInt(p[2])+' ('+dw+')';
+}
+function histSelOpts(sel){
+  let o='<option value="">📅 지난 조사 기록 보기...</option>';
+  (histDates||[]).forEach(d=>{o+=`<option value="${d}" ${d===sel?'selected':''}>${histDateLabel(d)}${d===dateKey?' · 오늘':''}</option>`});
+  return o;
+}
+function openHist(date){
+  if(!date){viewDate=null;render();return}
+  viewDate=date;renderHistory();
+}
+async function renderHistory(){
+  document.getElementById('barEl').style.display='none';
+  const T=TEAMS[team];const myDate=viewDate;
+  const idx=histDates.indexOf(viewDate);
+  let h=renderTabs();
+  // 날짜 네비게이션 (‹ 이전조사 · 드롭다운 · 다음조사 ›)
+  const hasOlder=idx>=0&&idx<histDates.length-1, hasNewer=idx>0;
+  h+=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">`;
+  h+=`<div onclick="${hasOlder?`openHist('${histDates[idx+1]}')`:''}" style="padding:8px 14px;background:var(--card);border:.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;opacity:${hasOlder?1:.25}">‹</div>`;
+  h+=`<select onchange="if(this.value)openHist(this.value)" style="flex:1;padding:8px 10px;background:var(--card);border:.5px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit">${histSelOpts(viewDate)}</select>`;
+  h+=`<div onclick="${hasNewer?`openHist('${histDates[idx-1]}')`:''}" style="padding:8px 14px;background:var(--card);border:.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;opacity:${hasNewer?1:.25}">›</div>`;
+  h+=`</div>`;
+  h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600;display:flex;justify-content:space-between;align-items:center"><span>📅 ${histDateLabel(viewDate)} ${team} 조사 기록</span><span onclick="openHist('')" style="cursor:pointer;background:rgba(255,255,255,.08);border-radius:6px;padding:3px 10px;font-size:11px">✕ 최신으로</span></div>`;
+  document.getElementById('app').innerHTML=h+`<div style="text-align:center;padding:16px;color:var(--dim);font-size:12px">📡 불러오는 중...</div>`;
+  const data=await loadHistData(myDate);
+  if(viewDate!==myDate||tab!=='summary')return; // 기다리는 동안 다른 데로 이동했으면 중단
+  if(!data){
+    document.getElementById('app').innerHTML=h+`<div style="text-align:center;padding:30px 16px;color:var(--dim);font-size:13px">이 날짜엔 <b>${team}</b> 조사 기록이 없어요<div style="font-size:11px;margin-top:6px;opacity:.7">‹ › 버튼으로 다른 날짜를 확인해보세요</div></div>`;
+    return;
+  }
+  // 제출 장소 + 시간
+  const submitted=T.locs.filter(l=>{const d=data[fk(l)];return d&&d.time});
+  h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+data[fk(l)].time+')').join(', ')}</span></div>`;
+  // 제품별 총합 그리드 (종합탭과 동일한 모양)
+  const totals=histTotals(data);let gs=0;
+  h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden"><div style="padding:10px 14px;font-size:13px;font-weight:700;border-bottom:.5px solid var(--border)">📦 ${histDateLabel(myDate)} 제출 재고 총합 <span style="color:var(--dim);font-weight:500;font-size:11px">(색상·사이즈별)</span></div><div style="padding:0 14px 10px">`;
+  PR.forEach(p=>{let pB=0;const ls={};
+    T.locs.forEach(l=>{const d=data[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
+    p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum">${pB}박스 / ${pS}장</span></div>`;
+    h+=`<div class="g">`;
+    if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}박스</b></span>`});h+=`</div>`}
+    h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
+    p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
+      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}" title="${v}박스 = ${v*p.bpb}장">${v}</div>`});h+=`</div>`});
+    h+=`</div>`});
+  h+=`<div style="padding:10px 0 4px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:800"><span>총 재고</span><span style="color:var(--accent)">${gs.toLocaleString()}장</span></div>`;
+  h+=`</div></div>`;
+  // 비교 결과가 채워질 자리 + 메모 → 총합을 먼저 화면에 띄움
+  h+=`<div id="histDeltaBox"><div style="text-align:center;padding:10px;font-size:11px;color:var(--dim)">🔀 직전 조사와 비교 중...</div></div>`;
+  const om=data[fk('사무실')]?.memo;
+  if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품 (당시 메모)</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
+  document.getElementById('app').innerHTML=h;
+  // 직전 조사와 비교 (입고·사용이 섞인 순수 실사 변화량)
+  let prevDate=null,prevData=null;
+  for(let i=idx+1;i<histDates.length&&i<=idx+10;i++){
+    const d2=await loadHistData(histDates[i]);
+    if(viewDate!==myDate||tab!=='summary')return;
+    if(d2){prevDate=histDates[i];prevData=d2;break}
+  }
+  const box=document.getElementById('histDeltaBox');
+  if(!box)return;
+  if(prevData){
+    const pt=histTotals(prevData);
+    let pgs=0;PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{pgs+=(pt[p.id+'_'+c+'_'+t]||0)*p.bpb})})});
+    const diff=gs-pgs;const dCol=diff>0?'var(--accent)':diff<0?'var(--red)':'var(--dim)';
+    let dh=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px">`;
+    dh+=`<div style="font-size:13px;font-weight:700;margin-bottom:8px">🔀 직전 조사 대비 <span style="font-size:10px;color:var(--dim);font-weight:400">${histDateLabel(prevDate)} → ${histDateLabel(myDate)} · 입고·사용 포함</span></div>`;
+    dh+=`<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span style="color:var(--dim)">총 재고 변화</span><span style="font-weight:700;color:${dCol}">${pgs.toLocaleString()}장 → ${gs.toLocaleString()}장 (${diff>0?'+':''}${diff.toLocaleString()})</span></div>`;
+    // 제품·색상별 변화 (변화 큰 순 상위)
+    const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트17T'};
+    const rows=[];
+    PR.forEach(p=>{p.colors.forEach(c=>{
+      let cur=0,prv=0;TY.forEach(t=>{cur+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb;prv+=(pt[p.id+'_'+c+'_'+t]||0)*p.bpb});
+      if(cur!==prv)rows.push({name:(prodNameMap[p.id]||p.id)+' '+c,color:c,cur,prv,d:cur-prv});
+    })});
+    rows.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+    rows.slice(0,8).forEach(r=>{
+      const rc=r.d>0?'var(--accent)':'var(--red)';
+      dh+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-top:.5px dashed var(--border)"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[r.color]||'#888'};margin-right:4px"></span>${r.name}</span><span style="color:${rc};font-weight:600">${r.prv.toLocaleString()} → ${r.cur.toLocaleString()} (${r.d>0?'+':''}${r.d.toLocaleString()})</span></div>`;
+    });
+    if(!rows.length)dh+=`<div style="font-size:11px;color:var(--dim);padding:4px 0">변화 없음</div>`;
+    dh+=`</div>`;
+    box.innerHTML=dh;
+  } else {
+    box.innerHTML=`<div style="text-align:center;padding:8px;font-size:11px;color:var(--dim)">비교할 이전 조사 기록이 없어요</div>`;
+  }
+}
+// ═══════ 조사 이력 열람 끝 ═══════
+
+function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;viewDate=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
+function render(){if(!team)return renderTeamSelect();if(tab==='summary')return viewDate?renderHistory():renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
   document.getElementById('barEl').style.display='none';
@@ -310,6 +434,9 @@ async function fetchStockData(){
 
 async function renderSummary(){
   let h=renderTabs();const T=TEAMS[team];
+  // 📅 지난 조사 기록 드롭다운 (처음 열 때 날짜 목록을 백그라운드로 불러옴)
+  if(histDates===null){histDates=[];loadHistDates().then(()=>{const s=document.getElementById('histSel');if(s&&histDates.length)s.innerHTML=histSelOpts('')})}
+  h+=`<select id="histSel" onchange="if(this.value)openHist(this.value)" style="width:100%;padding:8px 10px;margin-bottom:8px;background:var(--card);border:.5px solid var(--border);border-radius:8px;color:var(--dim);font-size:12px;font-family:inherit">${histSelOpts('')}</select>`;
   // 과거 데이터 안내
   if(invDataDate!==dateKey){
     const dp=invDataDate.split('-');
