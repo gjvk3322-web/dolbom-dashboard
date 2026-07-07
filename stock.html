@@ -343,6 +343,89 @@ async function renderHistory(){
 }
 // ═══════ 조사 이력 열람 끝 ═══════
 
+// ═══════ 📈 누적 로스율 + 주별 추이 (2026-07-07 추가) ═══════
+// Apps Script 새 액션 getLossV2 필요. 서버가 아직 업데이트 안 됐으면 조용히 숨김.
+let lossV2Cache={};   // 팀별 응답 캐시
+let lossV2Series=[];  // 그래프 클릭용
+function lv2Show(i){
+  const s=lossV2Series[i];const el=document.getElementById('lv2Detail');
+  if(!s||!el)return;
+  const col=s.loss>0?(Math.abs(s.rate)<=3?'var(--accent)':Math.abs(s.rate)<=8?'var(--orange)':'var(--red)'):'#60a5fa';
+  el.innerHTML=`<div style="margin-top:6px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim)">📅 ${s.from.substring(5).replace('-','/')} → ${s.to.substring(5).replace('-','/')} · 이전 ${s.prevStock.toLocaleString()} +입고 ${s.incoming.toLocaleString()} -판매 ${s.sold.toLocaleString()} = 예상 ${s.expected.toLocaleString()} | 실사 ${s.current.toLocaleString()} → <b style="color:${col}">${s.loss>0?'로스':'잉여'} ${Math.abs(s.loss).toLocaleString()}장 (${s.rate}%)</b>${s.missing>0?` · ⚠️판매미입력 ${s.missing}건`:''}</div>`;
+}
+async function fillLossV2(){
+  const box=document.getElementById('lossV2Box');if(!box)return;
+  const myTeam=team;
+  box.innerHTML=`<div style="text-align:center;padding:8px;font-size:11px;color:var(--dim)">📈 누적 로스율 계산 중...</div>`;
+  let d=lossV2Cache[myTeam];
+  if(!d){
+    try{
+      const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getLossV2',team:myTeam})});
+      d=JSON.parse(await r.text());
+      if(d&&d.success)lossV2Cache[myTeam]=d;
+    }catch(e){d=null}
+  }
+  const box2=document.getElementById('lossV2Box');
+  if(!box2||team!==myTeam||tab!=='summary')return;
+  if(!d||!d.success||!d.cumulative){box2.innerHTML='';return} // 서버 미업데이트/데이터 부족 → 조용히 숨김
+  const c=d.cumulative;
+  lossV2Series=d.series||[];
+  const isLoss=c.loss>0;const absR=Math.abs(c.rate);
+  const sCol=!isLoss?'#60a5fa':absR<=2?'var(--accent)':absR<=5?'var(--orange)':'var(--red)';
+  const sTxt=!isLoss?'실사가 예상보다 많음 (조사 확인 필요)':absR<=2?'정상 범위':absR<=5?'주의':'점검 필요';
+  let h=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+  // 헤더 (클릭하면 상세 펼침)
+  h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('lossV2Detail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:700">📈 누적 로스율 <span style="font-size:10px;color:var(--dim);font-weight:400">· ${c.from.substring(5).replace('-','/')}부터 ${c.weeks}주</span></span><span style="font-size:10px;color:${sCol};font-weight:600">${sTxt}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:800;color:${sCol}">${Math.abs(c.loss).toLocaleString()}장 (${c.rate}%)</span><span class="arrow" style="color:var(--dim);font-size:12px">▸</span></div></div>`;
+  h+=`<div id="lossV2Detail" style="display:none;padding:12px 14px;border-top:.5px solid var(--border);font-size:12px">`;
+  h+=`<div style="color:var(--dim);margin-bottom:8px;font-size:11px">📅 기준일 ${c.from} → 최근 조사 ${c.to}</div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">기준일 재고</span><span>${c.baseStock.toLocaleString()}장</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">+ 누적 입고</span><span style="color:var(--orange)">+${c.incoming.toLocaleString()}장</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">- 누적 판매</span><span style="color:var(--red)">-${c.sold.toLocaleString()}장</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="font-weight:600">있어야 할 재고</span><span style="font-weight:700">${c.expected.toLocaleString()}장</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">최근 실사</span><span>${c.current.toLocaleString()}장</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-weight:700"><span style="color:${sCol}">${isLoss?'누적 로스':'누적 잉여'}</span><span style="color:${sCol}">${Math.abs(c.loss).toLocaleString()}장 (${c.rate}%)</span></div>`;
+  if(c.missing>0)h+=`<div style="margin-top:6px;font-size:10px;color:var(--red)">⚠️ 이 기간 판매갯수 미입력 시공 ${c.missing}건 — 입력하면 로스가 줄어들 수 있어요</div>`;
+  // 제품·색상별 누적 breakdown
+  if(d.cumByProduct&&d.cumByProduct.length){
+    h+=`<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px">`;
+    h+=`<div style="font-weight:700;font-size:11px;margin-bottom:8px">📊 제품·색상별 누적 로스</div>`;
+    const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트17T'};
+    const colorDot={'모던':'#5e9eff','마블':'#c792ea','코튼':'#50c878','베이지':'#e6c875'};
+    const maxAbs=Math.max(...d.cumByProduct.map(p=>Math.abs(p.loss)),1);
+    d.cumByProduct.slice(0,8).forEach(p=>{
+      const parts=p.key.split('_');const color=parts.pop();const pid=parts.join('_');
+      const isL=p.loss>0;const aR=Math.abs(p.rate);
+      const pc=!isL?'#60a5fa':aR<=2?'var(--accent)':aR<=5?'var(--orange)':'var(--red)';
+      h+=`<div style="margin-bottom:6px">`;
+      h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodNameMap[pid]||pid} ${color}</span><span style="color:${pc};font-weight:700">${isL?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)</span></div>`;
+      h+=`<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.abs(p.loss)/maxAbs*100)}%;background:${pc}"></div></div>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  }
+  // 주별 로스 추이 미니 그래프 (막대 누르면 상세)
+  if(lossV2Series.length){
+    h+=`<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px">`;
+    h+=`<div style="font-weight:700;font-size:11px;margin-bottom:8px">📉 주별 로스 추이 <span style="font-size:9px;color:var(--dim);font-weight:400">· 막대를 누르면 상세</span></div>`;
+    h+=`<div style="display:flex;align-items:flex-end;gap:3px;height:52px">`;
+    lossV2Series.forEach((s,i)=>{
+      const aR=Math.abs(s.rate);
+      const bc=s.loss<=0?'#60a5fa':aR<=3?'var(--accent)':aR<=8?'var(--orange)':'var(--red)';
+      const bh=Math.max(4,Math.min(44,aR/15*44));
+      h+=`<div onclick="lv2Show(${i})" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer;height:100%"><div style="width:100%;max-width:26px;height:${bh}px;background:${bc};border-radius:3px 3px 0 0;opacity:.9"></div></div>`;
+    });
+    h+=`</div><div style="display:flex;gap:3px;margin-top:2px">`;
+    lossV2Series.forEach(s=>{const p=s.to.split('-');h+=`<div style="flex:1;text-align:center;font-size:8px;color:var(--dim)">${parseInt(p[1])}/${parseInt(p[2])}</div>`});
+    h+=`</div><div id="lv2Detail"></div>`;
+    h+=`<div style="margin-top:6px;font-size:9px;color:var(--dim)">💡 한 주만 튀고 다음 주 파란색(잉여)이면 그 주 조사를 잘못 셌을 가능성이 커요</div>`;
+    h+=`</div>`;
+  }
+  h+=`<div style="margin-top:8px;padding-top:6px;border-top:.5px solid var(--border);font-size:10px;color:var(--dim);text-align:center">누적 로스율 = 누적 로스 ÷ (기준재고+누적입고) × 100 · 중간 조사 실수는 자동 상쇄</div>`;
+  h+=`</div></div>`;
+  box2.innerHTML=h;
+}
+// ═══════ 누적 로스율 끝 ═══════
+
 function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;viewDate=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
 function render(){if(!team)return renderTeamSelect();if(tab==='summary')return viewDate?renderHistory():renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
@@ -455,6 +538,12 @@ async function renderSummary(){
   const sd=await fetchStockData();
   if(tab!=='summary')return;  // 🆕 데이터 기다리는 동안 발주 등 다른 탭으로 갔으면 화면 건드리지 않음
   h=renderTabs();
+  // 🆕 두 번째 렌더링에도 조사 이력 드롭다운 + 과거 데이터 배너 유지
+  h+=`<select id="histSel" onchange="if(this.value)openHist(this.value)" style="width:100%;padding:8px 10px;margin-bottom:8px;background:var(--card);border:.5px solid var(--border);border-radius:8px;color:var(--dim);font-size:12px;font-family:inherit">${histSelOpts('')}</select>`;
+  if(invDataDate!==dateKey){
+    const dp2=invDataDate.split('-');
+    h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-weight:600">📅 ${dp2[1]}.${dp2[2]} 기준 재고 (오늘 미제출)</div>`;
+  }
   if(pending.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:4px">⏳ 미제출: <span style="color:var(--red);font-weight:700">${pending.join(', ')}</span></div>`;
   if(submitted.length)h+=`<div style="font-size:12px;color:var(--dim);margin-bottom:12px">✅ 제출완료: <span style="color:var(--accent);font-weight:700">${submitted.map(l=>l+' ('+fbInvData[fk(l)].time+')').join(', ')}</span></div>`;
 
@@ -721,6 +810,7 @@ async function renderSummary(){
   } else if(sd&&!sd.error){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:700">📉 로스율</span><span style="font-size:12px;color:var(--dim)">다음주 자동 계산</span></div>`;
   }
+  if(sd&&!sd.error)h+=`<div id="lossV2Box"></div>`; // 🆕 누적 로스율 + 주별 추이가 채워질 자리
 
   // 지난 7일 + 입고 (한 줄씩)
   if(sd&&!sd.error&&pj>0){
@@ -734,7 +824,9 @@ async function renderSummary(){
     h+=`</div></div>`;
   }
   if(sd&&sd.error)h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
-  document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none'}
+  document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
+  fillLossV2(); // 🆕 누적 로스율 + 주별 추이 (백그라운드 로드)
+}
 
 // ===== 발주 탭 (월간 발주서) =====
 let deliveries=[];
