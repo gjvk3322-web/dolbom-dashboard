@@ -968,6 +968,43 @@ function toggleLoc(id){
   renderOrder();
 }
 
+// 🆕 배송 열 드래그로 순서 변경 (값·날짜·위치가 열 통째로 함께 이동)
+let delDragFrom=null;
+function onDelDragStart(e,idx){
+  delDragFrom=idx;
+  saveOrderInputs();  // 드래그 시작 전 현재 입력값을 orderInputs에 확정 저장
+  e.dataTransfer.effectAllowed='move';
+  const col=document.getElementById('delcol_'+idx);
+  if(col)col.style.opacity='0.4';
+}
+function onDelDragOver(e,idx){
+  e.preventDefault();  // drop 허용하려면 필수
+  if(delDragFrom===null||delDragFrom===idx)return;
+  const col=document.getElementById('delcol_'+idx);
+  if(col){col.style.borderColor='#2E7D32';col.style.background='#e8f5e9';}
+}
+function onDelDragLeave(e,idx){
+  const col=document.getElementById('delcol_'+idx);
+  if(col){col.style.borderColor='#c8e6c9';col.style.background='#f0fdf4';}
+}
+function onDelDrop(e,idx){
+  e.preventDefault();
+  if(delDragFrom===null||delDragFrom===idx){delDragFrom=null;return;}
+  // 배열에서 끌던 열을 빼서 놓은 위치에 삽입 (id는 그대로라 입력값이 자동으로 따라옴)
+  const moved=deliveries.splice(delDragFrom,1)[0];
+  deliveries.splice(idx,0,moved);
+  delDragFrom=null;
+  renderOrder();  // 다시 그리면 restoreOrderInputs가 id 기준으로 값 복원
+}
+function onDelDragEnd(e){
+  // 드래그가 취소되어도 하이라이트/투명도 원복
+  delDragFrom=null;
+  deliveries.forEach((_,i)=>{
+    const col=document.getElementById('delcol_'+i);
+    if(col){col.style.opacity='1';col.style.borderColor='#c8e6c9';col.style.background='#f0fdf4';}
+  });
+}
+
 function confirmRemoveDelivery(id){
   if(!confirm('이 배송 칸을 삭제할까요?'))return;
   removeDelivery(id);
@@ -1006,7 +1043,7 @@ function renderOrder(){
   // 배송 헤더 (위치 클릭=토글, 날짜 클릭=달력)
   h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;margin-bottom:4px">`;
   h+=`<div></div>`;
-  deliveries.forEach(d=>{
+  deliveries.forEach((d,idx)=>{
     const locColor=d.loc==='부산'?'#e53935':'#1565c0';
     const locBg=d.loc==='부산'?'#ffebee':'#e3f2fd';
     const dt=new Date(d.date);
@@ -1014,8 +1051,9 @@ function renderOrder(){
     const dayColor=dt.getDay()===0?'#e53935':dt.getDay()===6?'#1565c0':'#555';
     const mm=String(dt.getMonth()+1).padStart(2,'0');
     const dd2=String(dt.getDate()).padStart(2,'0');
-    h+=`<div style="text-align:center;padding:6px 2px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px;position:relative">`;
+    h+=`<div draggable="true" ondragstart="onDelDragStart(event,${idx})" ondragover="onDelDragOver(event,${idx})" ondragleave="onDelDragLeave(event,${idx})" ondrop="onDelDrop(event,${idx})" ondragend="onDelDragEnd(event)" id="delcol_${idx}" style="text-align:center;padding:6px 2px;background:#f0fdf4;border:1px solid #c8e6c9;border-radius:8px;position:relative;transition:border .15s,background .15s">`;
     h+=`<div onclick="confirmRemoveDelivery(${d.id})" title="이 날짜 열 삭제" class="cap-hide" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#fff;border:1.5px solid #ffcdd2;color:#e53935;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.1);z-index:2">✕</div>`;
+    h+=`<div class="cap-hide" title="드래그해서 순서 변경" style="font-size:10px;color:#bbb;line-height:1;margin-bottom:2px;cursor:grab;user-select:none">⋮⋮</div>`;
     h+=`<div onclick="toggleLoc(${d.id})" style="padding:5px 2px;background:${locBg};border:1px solid ${locColor}30;border-radius:6px;color:${locColor};font-size:12px;font-weight:800;cursor:pointer;user-select:none">${d.loc}</div>`;
     h+=`<div onclick="document.getElementById('ddate_${d.id}').showPicker()" style="margin-top:4px;font-size:11px;color:#1a1a1a;font-weight:600;cursor:pointer">${mm}.${dd2} <span style="color:${dayColor}">(${dayName})</span></div>`;
     h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="this.closest('div').querySelector('div:nth-child(2)');calcMonthlyOrder();renderOrder()" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">`;
