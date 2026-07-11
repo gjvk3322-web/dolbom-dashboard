@@ -1127,9 +1127,10 @@ function renderCalendar(){
     const used=sc.am.length+sc.pm.length;
     const ratio=maxPerDay>0?used/maxPerDay:0;
     let dc='dot-gray';
-    if(dow!==0&&!isPast){
-      if(isClosed(ds))dc='dot-red';
+    if(dow!==0){
+      if(isClosed(ds)&&!isPast)dc='dot-red';
       else if(used===0)dc='dot-gray';
+      else if(isPast)dc='dot-gray';        // 지난 날짜는 회색으로 건수만 표시
       else if(ratio>=0.8)dc='dot-red';
       else if(ratio>=0.4)dc='dot-orange';
       else dc='dot-green';
@@ -1137,7 +1138,7 @@ function renderCalendar(){
     if(isClosed(ds)&&!isPast) cls+=' closed';
     // 설치 작업 카운트 (오전+오후 합산, 이전설치 포함 / AS·실측 제외)
     const installCnt=(sc.am||[]).length+(sc.pm||[]).length;
-    const dots=(dow===0||isPast)?'':`<div class="slot-dots">${installCnt>0?`<div class="slot-dot ${dc}" style="width:auto;height:auto;border-radius:3px;font-size:9px;padding:0 3px;color:#fff;line-height:14px">${installCnt}</div>`:isClosed(ds)?`<div class="slot-dot dot-red"></div>`:''}</div>`;
+    const dots=(dow===0)?'':`<div class="slot-dots">${installCnt>0?`<div class="slot-dot ${dc}" style="width:auto;height:auto;border-radius:3px;font-size:9px;padding:0 3px;color:#fff;line-height:14px">${installCnt}</div>`:(isClosed(ds)&&!isPast)?`<div class="slot-dot dot-red"></div>`:''}</div>`;
     h+=`<div class="${cls}" onclick="selectDate('${ds}')">${d}${dots}</div>`;
   }
   const rem=7-((fd+dim)%7);if(rem<7)for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month">${i}</div>`;
