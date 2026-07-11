@@ -1061,9 +1061,12 @@ function searchByKeyword(val){
   const nb=document.getElementById('nearbyCard');const nbl=document.getElementById('nearbyList');
   if(!val.trim()){c.classList.remove('show');nb.style.display='none';renderCalendar();return;}
   const kw=val.trim();
+  // 오늘 이전 날짜는 검색 결과에서 제외
+  const _t=new Date();const todayStr=`${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
   // 기존 검색 (정확 매칭)
   const results=[];
   Object.keys(scheduleData).forEach(ds=>{
+    if(ds<todayStr)return;
     const sc=scheduleData[ds];
     const amM=sc.am.filter(s=>s.address.includes(kw));
     const pmM=sc.pm.filter(s=>s.address.includes(kw));
@@ -1381,8 +1384,13 @@ function generateChannelName(){
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
   let name;
   if(isExtra){
-    // AS·실측은 제품 부분 제외 → 실측/울산)50260724
-    name=`${time.toLowerCase()}/${region})${prefix}`;
+    if(time==='실측'){
+      // 실측은 제품 부분 제외 → 실측/울산)50260724
+      name=`${time.toLowerCase()}/${region})${prefix}`;
+    } else {
+      // AS는 제품명 포함 → as/울산/마블50)50260724
+      name=product?`${time.toLowerCase()}/${region}/${productName})${prefix}`:`${time.toLowerCase()}/${region})${prefix}`;
+    }
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
