@@ -256,7 +256,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="form-grid">
     <div class="fg">
       <label>시간 <span class="req">*</span></label>
-      <select id="fTime"><option value="">선택</option><option value="오전">오전</option><option value="오전(이전설치)">오전(이전설치)</option><option value="오후">오후</option><option value="오후(이전설치)">오후(이전설치)</option><option value="AS">AS</option><option value="실측">실측</option></select>
+      <select id="fTime" onchange="onTimeChange()"><option value="">선택</option><option value="오전">오전</option><option value="오전(이전설치)">오전(이전설치)</option><option value="오후">오후</option><option value="오후(이전설치)">오후(이전설치)</option><option value="AS">AS</option><option value="실측">실측</option></select>
     </div>
     <div class="fg">
       <label>시공일 <span class="req">*</span></label>
@@ -293,6 +293,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <option value="모던1m22">모던1m22</option>
         <option value="베이지1m17">베이지1m17</option>
         <option value="베이지1m22">베이지1m22</option>
+        <option value="실측">실측</option>
         <option value="미정">미정</option>
       </select>
     </div>
@@ -307,6 +308,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <option value="모던1m22">모던1m22</option>
         <option value="베이지1m17">베이지1m17</option>
         <option value="베이지1m22">베이지1m22</option>
+        <option value="실측">실측</option>
         <option value="미정">미정</option>
       </select>
       <div class="product-match" id="productMatch"></div>
@@ -1218,6 +1220,7 @@ function openForm(time,ds){
   const form=document.getElementById('formSection');form.classList.add('show');
   if(time)document.getElementById('fTime').value=time;
   if(ds)document.getElementById('fDate').value=ds;
+  onTimeChange(); // 실측이면 제품 자동 세팅
   form.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -1257,6 +1260,20 @@ function checkProductMatch(){
   if(!p1||!p2){msg.textContent='';sel2.classList.remove('error');return;}
   if(p1===p2){msg.textContent='✓ 제품 일치';msg.className='product-match ok';sel2.classList.remove('error');}
   else{msg.textContent='✗ 제품이 다릅니다! 확인해주세요';msg.className='product-match err';sel2.classList.add('error');}
+}
+
+// 시간을 '실측'으로 고르면 제품 선택을 자동으로 '실측'으로 채움
+function onTimeChange(){
+  const time=document.getElementById('fTime').value;
+  const p1=document.getElementById('fProduct1');
+  const p2=document.getElementById('fProduct2');
+  if(time==='실측'){
+    p1.value='실측';p2.value='실측';
+  } else if(p1.value==='실측'||p2.value==='실측'){
+    // 실측이 아닌 시간으로 바꾸면 실측 제품 초기화
+    p1.selectedIndex=0;p2.selectedIndex=0;
+  }
+  checkProductMatch();
 }
 
 function switchTeam(team){
@@ -1364,7 +1381,8 @@ function generateChannelName(){
   const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
   let name;
   if(isExtra){
-    name=product?`${time.toLowerCase()}/${region}/${productName})${prefix}`:`${time.toLowerCase()}/${region})${prefix}`;
+    // AS·실측은 제품 부분 제외 → 실측/울산)50260724
+    name=`${time.toLowerCase()}/${region})${prefix}`;
   } else {
     const baseTime=time.startsWith('오전')?'오전':'오후';
     const timeCode=baseTime==='오전'?'5':'9';
