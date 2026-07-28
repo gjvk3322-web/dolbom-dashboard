@@ -159,11 +159,15 @@ function calcMatQty(py,scope,product){
   return is1000?Math.ceil(base500/4):base500;
 }
 
+// bpb=1박스당 장수 · bpp=1파레트당 박스수 (규격 변경 시 여기만 수정)
 const PR=[
-  {id:'500',name:'500매트',badge:'22T',bpb:12,colors:['모던','마블','코튼']},
-  {id:'1000_22',name:'1000매트',badge:'22T',bpb:4,colors:['모던','베이지']},
-  {id:'1000_17',name:'1000매트',badge:'17T',bpb:6,colors:['모던','베이지']}
+  {id:'500',name:'500매트',badge:'22T',bpb:12,bpp:24,colors:['모던','마블','코튼']},
+  {id:'1000_22',name:'1000매트',badge:'22T',bpb:4,bpp:16,colors:['모던','베이지']},
+  {id:'1000_17',name:'1000매트',badge:'17T',bpb:6,bpp:14,colors:['모던','베이지']}
 ];
+// ⬇️ PR에서 자동 파생 — 손으로 관리하는 파레트 상수를 없앰 (발주탭·종합탭이 항상 같은 값 사용)
+const BPP=Object.fromEntries(PR.map(p=>[p.id,p.bpp]));        // 1파레트당 박스수
+const SPP=Object.fromEntries(PR.map(p=>[p.id,p.bpb*p.bpp]));  // 1파레트당 장수 (500:288 · 1000_22:64 · 1000_17:84)
 let team=null,loc=null,tab='summary';
 let fbInvData={},fbInRef=null;
 const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0'),dow=['일','월','화','수','목','금','토'][now.getDay()];
@@ -610,7 +614,6 @@ async function renderSummary(){
     Object.values(cr).forEach(d=>{calcTotal+=d.calculated});
     const sdp=surveyDate.split('-');
     
-    const spp={'500':288,'1000_22':72,'1000_17':93};
     const prodColors={'500':['모던','마블','코튼'],'1000_22':['모던','베이지'],'1000_17':['모던','베이지']};
     // 제품별/색상별 소계 계산
     const prodTotals={};
@@ -620,7 +623,7 @@ async function renderSummary(){
       const c=key.split('_').slice(-1)[0];
       if(!prodTotals[pk])prodTotals[pk]={sheets:0,pallets:0};
       prodTotals[pk].sheets+=cr[key].calculated;
-      prodTotals[pk].pallets+=cr[key].calculated/(spp[pk]||288);
+      prodTotals[pk].pallets+=cr[key].calculated/(SPP[pk]||288);
       prodColorCalc[key]=cr[key].calculated;
     });
     
@@ -652,7 +655,7 @@ async function renderSummary(){
       const colorOrder=prodColors[pid]||[];
       const colors=Object.keys(cr).filter(k=>k.startsWith(pid+'_')).map(k=>k.split('_').slice(-1)[0]).sort((a,b)=>{const ia=colorOrder.indexOf(a),ib=colorOrder.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)});
       if(colors.length===0)return;
-      const sp=spp[pid]||288;
+      const sp=SPP[pid]||288;
       h+=`<div style="padding:6px 14px 2px;font-size:11px;font-weight:700;color:var(--dim);border-top:.5px solid var(--border)">${prodNames[pid]||pid} <span style="font-weight:400;font-size:9px">(1P=${sp}장)</span></div>`;
       colors.forEach(c=>{
         const key=pid+'_'+c;
@@ -1062,9 +1065,7 @@ function renderOrder(){
   h+=`</div>`;
 
   // 제품별 행 (코튼 제외)
-  // 1파레트당 박스 수 (한 곳만 수정하면 라벨과 계산이 자동으로 맞춰짐)
-  const bppMap={'500':24,'1000_22':16,'1000_17':14};
-  const palletLabel={};Object.keys(bppMap).forEach(k=>palletLabel[k]=bppMap[k]+'박스 기준');
+  const palletLabel={};Object.keys(BPP).forEach(k=>palletLabel[k]=BPP[k]+'박스 기준');
   const allRows=[];
   PR.forEach(p=>{
     const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
@@ -1074,7 +1075,7 @@ function renderOrder(){
         allRows.push({type:'cell',label:`${c}(${t})`,pid:p.id,color:c,shape:t});
       });
     });
-    allRows.push({type:'subtotal',pid:p.id,bpp:bppMap[p.id]||24});
+    allRows.push({type:'subtotal',pid:p.id,bpp:BPP[p.id]||24});
   });
 
   allRows.forEach(row=>{
@@ -1143,7 +1144,6 @@ function removeDelivery(id){
 }
 
 function calcMonthlyOrder(){
-  const bppMap={'500':24,'1000_22':16,'1000_17':14};
   let grandTotal=0;
 
   deliveries.forEach(d=>{
@@ -1162,7 +1162,7 @@ function calcMonthlyOrder(){
           pBox+=v;
         });
       });
-      const bpp=bppMap[p.id];
+      const bpp=BPP[p.id];
       const pPal=pBox>0?Math.ceil(pBox/bpp):0;
       totalPallets+=pPal;
       const subEl=document.getElementById('palsub_'+d.id+'_'+p.id);
