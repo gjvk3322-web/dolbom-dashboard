@@ -56,7 +56,7 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 .ce{padding:4px 2px}
 .ce input{width:100%;height:34px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:15px;font-weight:700;text-align:center;outline:none;-webkit-appearance:none}
 .ce input:focus{border-color:var(--accent);background:#0a1a0a}
-.ce input::placeholder{color:#2b2b2b;font-weight:400;font-size:12px;font-style:italic;opacity:1}
+.ce input.zero{color:#3a3a3a;font-weight:500}
 .ce input.edit{border-color:#5a4a00;background:#161200}
 .ce input.edit:focus{border-color:var(--orange);background:#1a1400}
 .ce input.filled{border-color:rgba(34,197,94,.55);background:#0a140a;color:#4ade80}
@@ -215,8 +215,6 @@ function pickTeam(t){
     const hasData=Object.keys(val).some(k=>val[k]&&val[k].time);
     if(hasData){
       fbInvData=val;invDataDate=dateKey;
-      // 🆕 오늘 이미 제출된 위치가 있어도, 아직 안 한 위치를 위해 지난 조사값을 따로 불러둠 (참고용)
-      if(prevInvDate===null){prevInvDate='';findRecentInventory(t).then(r=>{if(team!==t)return;if(r){prevInvData=r.data;prevInvDate=r.date;if(tab==='inventory')render()}})}
       if(tab!=='order')render();
     } else {
       // 오늘 데이터 없으면 최근 7일 탐색
@@ -521,21 +519,19 @@ function renderInventory(){
     const _m=document.getElementById('invMemo');if(_m)_keep.memo=_m.value;
   }
   _lastInvLoc=loc;
-  // 🆕 수정모드 판별: "선택한 기준일에 이 위치가 이미 제출된 경우"에만 값을 채워준다.
-  //    지난주 조사값은 절대 입력칸에 채우지 않는다(덮어쓰기 오조사 방지) → 흐린 회색 참고값으로만 표시.
+  // 🆕 수정모드 판별: "선택한 기준일에 이 위치가 이미 제출된 경우"에만 제출값을 채워준다.
+  //    새 조사는 모든 칸 0에서 시작 (지난주 값은 절대 입력칸에 넣지 않음 → 덮어쓰기 오조사 방지)
   const submitted=CUR[dk];
   const isEdit=!!(submitted&&submitted.time);
-  const refD=isEdit?null:(refInvData()[dk]||null);
-  const refDate=refInvDate();
   // 🆕 조사 날짜 선택 칸 (기본=오늘, 미래 선택 불가). 목요일 것을 금요일에 등록하는 경우 등 사용
   const _isPast=invSubmitDate!==dateKey;
   h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:13px;color:var(--dim)">📅 조사 날짜:</span><input type="date" id="invDate" value="${invSubmitDate}" max="${dateKey}" onchange="changeInvDate(this.value)" style="padding:6px 10px;background:var(--bg);border:1px solid ${_isPast?'var(--orange)':'var(--border)'};border-radius:8px;color:var(--text);font-size:13px;font-family:inherit">${_isPast?'<span style="font-size:11px;color:var(--orange);font-weight:600">⚠️ 과거 날짜로 저장됩니다</span>':''}</div>`;
   if(isEdit){
     h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-weight:600;line-height:1.5">✏️ <b>수정 모드</b> — ${invSubmitDate} ${submitted.time}에 제출한 값이 그대로 들어있어요.<br><span style="font-weight:500;opacity:.85">틀린 칸만 고친 뒤 아래 <b>수정 저장</b>을 누르면 덮어쓰기 됩니다.</span></div>`;
   }else{
-    h+=`<div style="font-size:12px;color:var(--dim);background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:8px;line-height:1.5">🆕 <b style="color:var(--text)">새로 조사</b> — 모든 칸이 비어있습니다. 지금 센 수량을 직접 입력하세요.${refD?`<br><span style="opacity:.8">칸 안에 흐리게 보이는 숫자는 <b>${refDate} 조사값(참고용)</b>이며 저장되지 않습니다.</span>`:''}</div>`;
+    h+=`<div style="font-size:12px;color:var(--dim);background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:8px;line-height:1.5">🆕 <b style="color:var(--text)">새로 조사</b> — 모든 칸이 <b>0</b>에서 시작합니다. 재고가 <b style="color:#4ade80">있는 칸만</b> 눌러서 수량을 입력하세요. (칸을 누르면 0이 선택되어 바로 덮어쓸 수 있어요)</div>`;
   }
-  h+=buildTable('inv',isEdit?submitted:null,refD);
+  h+=buildTable('inv',isEdit?submitted:null);
   if(loc==='사무실'){const pm=(isEdit&&submitted.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
   document.getElementById('app').innerHTML=h;
   // 🆕 타이핑 중이던 값 복원 (내가 마지막으로 친 값이 항상 우선)
@@ -1310,11 +1306,11 @@ function buildTable(pfx,ex,ref){let h='';PR.forEach(p=>{
   h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
   p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
     TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;
-      const pv=(ex&&ex.data&&ex.data[k]!==undefined&&ex.data[k]!==null)?ex.data[k]:'';   // 수정모드일 때만 실제 값
-      const rv=(ref&&ref.data&&ref.data[k]!==undefined&&ref.data[k]!==null)?String(ref.data[k]):'';       // 참고용(지난 조사) → 0도 표시해서 모든 칸 통일
-      h+=`<div class="ce ${pfx==='in'?'incoming':''}"><input type="number" inputmode="numeric" min="0" id="${pfx}_${k}" value="${pv}" ${rv?`placeholder="${rv}"`:''} class="${ex?'edit':''}" oninput="calc('${pfx}')"></div>`});h+=`</div>`});h+=`</div>`});return h}
+      // 수정모드: 제출했던 값 그대로 / 새 조사: 모든 칸 0에서 시작 (재고 있는 칸만 바꾸면 됨)
+      const pv=(ex&&ex.data&&ex.data[k]!==undefined&&ex.data[k]!==null)?ex.data[k]:(pfx==='inv'?0:'');
+      h+=`<div class="ce ${pfx==='in'?'incoming':''}"><input type="number" inputmode="numeric" min="0" id="${pfx}_${k}" value="${pv}" class="${ex?'edit':''}" onfocus="this.select()" oninput="calc('${pfx}')"></div>`});h+=`</div>`});h+=`</div>`});return h}
 
-function calc(pfx){let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{const el=document.getElementById(`${pfx}_${p.id}_${c}_${t}`);const v=parseInt(el?.value)||0;pb+=v;if(el)el.classList.toggle('filled',el.value!=='')})});g+=pb*p.bpb;
+function calc(pfx){let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{const el=document.getElementById(`${pfx}_${p.id}_${c}_${t}`);const v=parseInt(el?.value)||0;pb+=v;if(el){el.classList.toggle('filled',v>0);el.classList.toggle('zero',el.value!==''&&v===0)}})});g+=pb*p.bpb;
   const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=pb+'박스 / '+pb*p.bpb+'장'});document.getElementById('gt').textContent=g.toLocaleString()}
 
 async function submitInv(){if(!loc||!team)return;
@@ -1336,7 +1332,7 @@ async function submitInv(){if(!loc||!team)return;
   const _prev=curSubmitData()[fk(loc)];const isEdit=!!(_prev&&_prev.time);
   // 🆕 전부 비어있는(0) 상태로 제출하는 실수 방지
   let _nz=0;PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{if((parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0)>0)_nz++})})});
-  if(_nz===0&&!confirm('⚠️ 입력된 수량이 하나도 없습니다.\n\n전부 0으로 저장하시겠습니까?\n(칸에 흐리게 보이는 숫자는 참고값일 뿐 저장되지 않습니다)'))return;
+  if(_nz===0&&!confirm('⚠️ 0보다 큰 수량이 하나도 없습니다.\n\n정말 전부 0으로 저장하시겠습니까?'))return;
   // 선택한 날짜가 속한 주(월~일)에 같은 팀+위치로 이미 제출했는지 검사 → 있으면 확인창
   const btnEl=document.getElementById('sbtn');
   let dupInfo=null;
