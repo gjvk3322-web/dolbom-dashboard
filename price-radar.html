@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>가격 레이더 · 돌봄매트</title>
+<style>
+:root{
+  --paper:#FBFAF7; --ink:#14181C; --sub:#6E7780; --faint:#9BA3AA;
+  --rule:#E5E2DB; --rule-soft:#F1EFE9;
+  --acc:#2F6D7E; --acc-soft:#E7F0F2; --cut:#A8452F;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  line-height:1.5;-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+.wrap{max-width:1080px;margin:0 auto;padding:26px 18px 80px;}
+
+.head{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:26px;}
+.head h1{font-size:23px;margin:0;letter-spacing:-.7px;font-weight:800;}
+.head p{margin:5px 0 0;color:var(--sub);font-size:13px;max-width:58ch;}
+
+section{margin-bottom:30px;}
+.sh{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--rule);
+  padding-bottom:7px;margin-bottom:15px;}
+.sh .no{font-size:11px;font-weight:800;color:var(--acc);letter-spacing:1px;}
+.sh h2{font-size:15px;margin:0;font-weight:700;letter-spacing:-.3px;}
+.sh span.r{font-size:12px;color:var(--faint);margin-left:auto;text-align:right;}
+
+label{display:block;font-size:10.5px;font-weight:700;color:var(--sub);
+  letter-spacing:.4px;margin-bottom:4px;}
+input,select{width:100%;border:1px solid var(--rule);border-radius:3px;
+  padding:9px 10px;font:inherit;font-size:14px;background:#fff;color:var(--ink);
+  font-variant-numeric:tabular-nums;}
+input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft);}
+.grid{display:grid;gap:10px;margin-bottom:10px;}
+.g5{grid-template-columns:100px 1.5fr 90px 90px 80px;}
+.g4{grid-template-columns:1fr 1fr 1fr auto;}
+@media(max-width:780px){.g5,.g4{grid-template-columns:1fr 1fr;}}
+
+button{font:inherit;cursor:pointer;border-radius:3px;border:1px solid transparent;}
+.btn{background:var(--ink);color:#fff;font-weight:700;padding:10px 20px;font-size:13.5px;}
+.btn.gh{background:#fff;color:var(--ink);border-color:var(--rule);font-weight:600;}
+.btn.gh:hover{border-color:var(--ink);}
+.btn.sm{padding:7px 13px;font-size:12px;}
+#formBox.editing{background:var(--acc-soft);border:1px solid var(--acc);padding:14px;border-radius:4px;}
+
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.room{border:1px solid var(--rule);border-radius:4px;padding:11px 12px;background:#fff;position:relative;}
+.room .rn{border:none;padding:0 0 5px;font-weight:700;font-size:13px;}
+.room .rn:focus{box-shadow:none;}
+.dims{display:flex;align-items:center;gap:5px;}
+.dims input{text-align:center;padding:6px 4px;font-weight:700;color:var(--acc);}
+.dims em{font-style:normal;color:var(--faint);font-size:11px;}
+.rx{position:absolute;top:6px;right:6px;background:none;border:none;color:#C9CDD2;font-size:14px;padding:2px 4px;}
+.rx:hover{color:var(--cut);}
+.area{margin-top:12px;display:flex;align-items:baseline;gap:8px;
+  border-top:2px solid var(--ink);padding-top:10px;}
+.area b{font-size:30px;letter-spacing:-1.5px;line-height:1;}
+.area em{font-style:normal;font-size:12px;color:var(--sub);}
+
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.chip{background:#fff;border:1px solid var(--rule);color:var(--sub);
+  padding:5px 12px;font-size:12px;font-weight:600;border-radius:999px;}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:740px;}
+th{font-size:10.5px;color:var(--sub);text-align:left;padding:0 9px 8px;
+  font-weight:700;letter-spacing:.4px;border-bottom:1px solid var(--ink);}
+th.r,td.r{text-align:right;}
+td{padding:10px 9px;border-bottom:1px solid var(--rule-soft);}
+tr.own td{background:var(--acc-soft);}
+.rk{width:30px;color:var(--faint);font-weight:800;}
+tr.own .rk{color:var(--acc);}
+.nm{font-weight:700;}
+.who{font-size:10px;font-weight:700;color:var(--faint);letter-spacing:.4px;display:block;}
+tr.own .who{color:var(--acc);}
+.spec{color:var(--sub);font-size:11.5px;white-space:nowrap;}
+.was{color:var(--faint);text-decoration:line-through;font-size:11px;display:block;}
+.now{font-weight:700;}
+.fin{font-weight:800;font-size:14px;white-space:nowrap;}
+.cnt{display:block;font-size:11px;color:var(--faint);font-weight:500;}
+.mg{font-size:11.5px;color:var(--sub);white-space:nowrap;}
+.act{white-space:nowrap;text-align:right;}
+.act button{background:none;border:none;color:var(--faint);font-size:11.5px;padding:3px 5px;font-weight:600;}
+.act button:hover{color:var(--acc);}
+.act button.d:hover{color:var(--cut);}
+
+.axis{margin:2px 0;padding:20px 0 22px;position:relative;height:74px;}
+.line{position:absolute;left:0;right:0;top:32px;height:1px;background:var(--rule);}
+.tick{position:absolute;top:24px;width:1px;height:17px;background:#C4C9CE;}
+.tick.own{background:var(--acc);width:2px;height:29px;top:18px;}
+.tick.med{background:var(--ink);height:23px;top:21px;}
+.lbl{position:absolute;font-size:10.5px;color:var(--sub);white-space:nowrap;transform:translateX(-50%);}
+.lbl.t{top:2px;} .lbl.b{top:52px;}
+.lbl.own{color:var(--acc);font-weight:800;}
+
+.strat{display:grid;grid-template-columns:1.05fr 1fr;gap:16px;}
+@media(max-width:820px){.strat{grid-template-columns:1fr;}}
+.box{border:1px solid var(--rule);border-radius:4px;padding:16px;background:#fff;}
+.box h3{margin:0 0 12px;font-size:12.5px;font-weight:800;}
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--rule-soft);font-size:13px;}
+.kv:last-child{border:none;}
+.kv span{color:var(--sub);font-size:12px;flex:none;}
+.kv b{font-weight:800;text-align:right;}
+.big{font-size:26px;letter-spacing:-1px;font-weight:800;line-height:1.2;}
+.big.cut{color:var(--cut);} .big.ok{color:var(--acc);}
+.hint{font-size:12px;color:var(--sub);margin:10px 0 0;line-height:1.55;}
+
+.bars{display:grid;gap:5px;}
+.bar{display:grid;grid-template-columns:118px 1fr;gap:8px;align-items:center;font-size:11.5px;}
+.bar .bn{text-align:right;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.track{display:flex;height:14px;background:var(--rule-soft);}
+.s1{background:#5A6470;} .s2{background:#DDDAD3;}
+.bar.own .s1{background:var(--acc);} .bar.own .bn{color:var(--acc);font-weight:800;}
+.legend{display:flex;gap:15px;font-size:11px;color:var(--sub);margin-top:11px;flex-wrap:wrap;}
+.sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;}
+
+.empty{text-align:center;color:var(--faint);padding:32px;font-size:13px;}
+.foot{display:flex;gap:7px;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--rule);}
+@media print{body{background:#fff;} .foot,.rx,.act,.tools,.btn{display:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="head">
+  <h1>가격 레이더</h1>
+  <p>장당 단가가 아니라 <b>집 한 채를 깔았을 때 고객이 실제로 내는 금액</b>으로 비교합니다. 크기가 제각각인 매트를 공정하게 비교하려면 이 기준이어야 합니다.</p>
+</div>
+
+<section>
+  <div class="sh"><span class="no">01</span><h2>매트 등록</h2><span class="r" id="cnt"></span></div>
+  <div id="formBox">
+    <div class="grid g5">
+      <div><label>구분</label><select id="fType"><option value="comp">경쟁사</option><option value="own">우리회사</option></select></div>
+      <div><label>업체명</label><input id="fName" placeholder="쿠키매트(디노65)"></div>
+      <div><label>가로 mm</label><input id="fW" type="number" inputmode="numeric" placeholder="500"></div>
+      <div><label>세로 mm</label><input id="fL" type="number" inputmode="numeric" placeholder="500"></div>
+      <div><label>두께 T</label><input id="fT" type="number" step="0.1" inputmode="decimal" placeholder="22"></div>
+    </div>
+    <div class="grid g4">
+      <div><label>장당 정상가</label><input id="fN" type="number" inputmode="numeric" placeholder="16900"></div>
+      <div><label>할인·이벤트가 · 없으면 비움</label><input id="fS" type="number" inputmode="numeric" placeholder="14523"></div>
+      <div><label>장당 원가 · 우리 제품만</label><input id="fC" type="number" inputmode="numeric" placeholder="8000"></div>
+      <div style="display:flex;align-items:flex-end;gap:7px">
+        <button class="btn" id="add">추가</button>
+        <button class="btn gh" id="cancel" hidden>취소</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="no">02</span><h2>고객집 실측</h2><span class="r">줄자로 잰 치수를 mm로 입력</span></div>
+  <div class="rooms" id="rooms"></div>
+  <div style="margin-top:10px"><button class="btn gh sm" id="addRoom">공간 추가</button></div>
+  <div class="area"><b id="py">0</b><em>평</em><em id="m2" style="margin-left:auto"></em></div>
+</section>
+
+<section>
+  <div class="sh"><span class="no">03</span><h2>체감 견적 순위</h2><span class="r">최종 결제액이 낮은 순</span></div>
+  <div class="tools" id="filters"></div>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th class="rk">순</th><th>업체명</th><th>규격</th>
+      <th class="r">장당</th><th class="r">정상가 총액</th><th class="r">최종 체감 견적</th>
+      <th class="r">마진</th><th></th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table></div>
+  <div id="none" class="empty" hidden>등록된 매트가 없습니다.</div>
+</section>
+
+<section>
+  <div class="sh"><span class="no">04</span><h2>시장 내 위치</h2><span class="r" id="posNote"></span></div>
+  <div class="axis" id="axis"><div class="line"></div></div>
+</section>
+
+<section>
+  <div class="sh"><span class="no">05</span><h2>가격 전략</h2><span class="r">목표 순위를 정하면 필요한 가격을 역산합니다</span></div>
+  <div class="strat">
+    <div class="box">
+      <h3>목표 순위 역산</h3>
+      <div class="grid" style="grid-template-columns:1fr 92px;margin-bottom:6px">
+        <div><label>우리 제품</label><select id="sProd"></select></div>
+        <div><label>목표 순위</label><input id="sRank" type="number" min="1" value="3"></div>
+      </div>
+      <div id="calc"></div>
+    </div>
+    <div class="box">
+      <h3>현재 포지션 요약</h3>
+      <div id="summary"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="no">06</span><h2>최종 결제액 비교</h2></div>
+  <div class="bars" id="chart"></div>
+  <div class="legend">
+    <span><i class="sw" style="background:#5A6470"></i>실제 결제액</span>
+    <span><i class="sw" style="background:#DDDAD3"></i>할인으로 빠진 금액</span>
+    <span><i class="sw" style="background:#2F6D7E"></i>우리회사</span>
+  </div>
+</section>
+
+<div class="foot">
+  <button class="btn gh sm" id="exp">백업 내보내기</button>
+  <button class="btn gh sm" id="impBtn">백업 불러오기</button>
+  <button class="btn gh sm" onclick="window.print()">PDF로 저장</button>
+  <input type="file" id="imp" accept=".json" hidden>
+</div>
+
+<script>
+const SEED={items:[
+{type:"comp",name:"쿠키매트(디노65)",w:650,l:650,t:23,normal:25900,sale:22650},
+{type:"own",name:"돌봄매트 1m 17T (최종)",w:1000,l:1000,t:17,normal:64500,sale:55300},
+{type:"own",name:"돌봄매트 500 22T (최종)",w:500,l:500,t:22,normal:16900,sale:14523},
+{type:"comp",name:"이끌림매트",w:600,l:600,t:24,normal:21000,sale:null},
+{type:"own",name:"돌봄매트 1m 17T (온누리 제외)",w:1000,l:1000,t:18,normal:64500,sale:59815},
+{type:"comp",name:"조이매트",w:600,l:600,t:21,normal:24090,sale:21900},
+{type:"comp",name:"까사플로아",w:600,l:600,t:22,normal:22000,sale:null},
+{type:"comp",name:"쿠키매트(디노65) 인상후",w:650,l:650,t:23,normal:28900,sale:25650},
+{type:"own",name:"돌봄매트 500 22T (온누리 제외)",w:500,l:500,t:22,normal:16900,sale:15700},
+{type:"comp",name:"끼로코정보매트",w:800,l:800,t:22,normal:42000,sale:40625},
+{type:"comp",name:"라라매트",w:600,l:600,t:2,normal:23500,sale:null},
+{type:"comp",name:"쿠키매트(누리70)",w:700,l:700,t:24,normal:35900,sale:31750},
+{type:"own",name:"돌봄매트 1m 22T (최종)",w:1000,l:1000,t:22,normal:76500,sale:66100},
+{type:"comp",name:"깜꼬",w:700,l:700,t:24,normal:32900,sale:null},
+{type:"comp",name:"쿠키매트(누리70) 후기가",w:700,l:700,t:24,normal:35900,sale:33300},
+{type:"comp",name:"조이매트",w:1000,l:1000,t:24,normal:75900,sale:69000},
+{type:"comp",name:"라라매트",w:600,l:600,t:22,normal:25000,sale:null},
+{type:"comp",name:"키팡매트",w:800,l:800,t:22,normal:47050,sale:44000},
+{type:"comp",name:"폴로리아",w:700,l:700,t:24,normal:33900,sale:null},
+{type:"comp",name:"토리매트",w:700,l:700,t:2.2,normal:34000,sale:null},
+{type:"comp",name:"블루돌핀(컬러기념)",w:1200,l:1200,t:22,normal:119000,sale:101150},
+{type:"own",name:"돌봄매트 1m 22T (온누리 제외)",w:1000,l:1000,t:22,normal:76500,sale:71455},
+{type:"comp",name:"쿠키매트(누리70) 인상후",w:700,l:700,t:24,normal:38900,sale:34750},
+{type:"comp",name:"쿠키매트(루나70)",w:700,l:700,t:24,normal:39900,sale:35480},
+{type:"comp",name:"토리매트",w:800,l:800,t:2.2,normal:47000,sale:null},
+{type:"comp",name:"우아매트",w:800,l:800,t:22,normal:47000,sale:null},
+{type:"comp",name:"아노지오",w:600,l:600,t:21,normal:29700,sale:27000},
+{type:"comp",name:"아이콩콩(카드5%)",w:1200,l:1200,t:24,normal:120000,sale:108000},
+{type:"comp",name:"쿠키매트 디노70(후기까지)",w:700,l:700,t:24,normal:44900,sale:36650},
+{type:"comp",name:"키팡매트",w:800,l:1200,t:22,normal:75000,sale:71000},
+{type:"comp",name:"까사플로아(카드5%)",w:1200,l:1200,t:24,normal:109000,sale:null},
+{type:"comp",name:"조이매트",w:1000,l:1000,t:24,normal:84700,sale:77000},
+{type:"comp",name:"쿠키매트(누리80)",w:800,l:800,t:24,normal:66500,sale:49900},
+{type:"comp",name:"토리매트",w:1000,l:1000,t:22,normal:79000,sale:null},
+{type:"comp",name:"쿠키매트(루나70) 인상후",w:700,l:700,t:24,normal:42900,sale:38480},
+{type:"comp",name:"노라돈매트",w:900,l:900,t:25,normal:62500,sale:null},
+{type:"comp",name:"우아매트",w:1200,l:1200,t:22,normal:118000,sale:null},
+{type:"comp",name:"띠아모매트",w:1000,l:1000,t:22,normal:91300,sale:83000},
+{type:"comp",name:"쿠키매트(누리80) 인상후",w:800,l:800,t:24,normal:89500,sale:52900},
+{type:"comp",name:"콩콩매트",w:1200,l:1200,t:22,normal:150000,sale:120000},
+{type:"comp",name:"블루돌핀",w:1000,l:1000,t:24,normal:89000,sale:84555},
+{type:"comp",name:"쿠키매트(디노70)",w:700,l:700,t:24,normal:45900,sale:41050},
+{type:"comp",name:"소리잠매트",w:1000,l:1000,t:22,normal:99000,sale:85000},
+{type:"comp",name:"니치039",w:1200,l:1200,t:20,normal:133000,sale:124000},
+{type:"comp",name:"제로블럭",w:1200,l:1200,t:20,normal:159000,sale:124000},
+{type:"comp",name:"바오밥매트",w:1000,l:1000,t:21,normal:87000,sale:null},
+{type:"comp",name:"자람매트",w:1200,l:1200,t:22,normal:125000,sale:null},
+{type:"comp",name:"라라매트",w:1200,l:1200,t:2.4,normal:129000,sale:null},
+{type:"comp",name:"아노지오",w:1200,l:1200,t:24,normal:148500,sale:135000},
+{type:"comp",name:"라라매트",w:1200,l:1200,t:22,normal:135000,sale:null},
+{type:"comp",name:"니치039",w:1200,l:1200,t:24,normal:145000,sale:135000},
+{type:"comp",name:"쿠키매트(디노130)",w:1300,l:1300,t:23,normal:169000,sale:151700},
+{type:"comp",name:"꿈비(할인)",w:1000,l:1000,t:22,normal:156000,sale:95900},
+{type:"comp",name:"꿈비",w:1000,l:1000,t:22,normal:95900,sale:null},
+{type:"comp",name:"블루돌핀",w:1200,l:1200,t:22,normal:139000,sale:null},
+{type:"comp",name:"쿠키매트(디노130) 인상후",w:1300,l:1300,t:23,normal:172000,sale:154700},
+{type:"comp",name:"아이폼매트",w:1300,l:1300,t:23,normal:154800,sale:null},
+{type:"comp",name:"알집매트",w:1400,l:700,t:25,normal:94000,sale:null},
+{type:"comp",name:"블루돌핀",w:600,l:600,t:22,normal:39000,sale:null},
+{type:"comp",name:"자연매트",w:1200,l:1200,t:22,normal:195000,sale:null}],
+rooms:[{name:"거실",w:4500,l:4150},{name:"복도",w:1200,l:8200},{name:"주방",w:3500,l:4000}]};
+
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+let data=store.get('pr_v7',null)||JSON.parse(JSON.stringify(SEED));
+let filter='all', editIdx=null;
+const $=s=>document.querySelector(s);
+const won=n=>Math.round(n).toLocaleString('ko-KR')+'원';
+const man=n=>Math.round(n/10000)+'만원';
+const save=()=>store.set('pr_v7',data);
+
+/* 방마다 면적을 매트 1장 면적으로 나눠 올림 → 합산
+   (한 방에서 남은 자투리는 다른 방에 못 쓰기 때문) */
+function sheets(it){
+  const per=(it.w/1000)*(it.l/1000);
+  return per?data.rooms.reduce((s,r)=>s+Math.ceil((r.w/1000)*(r.l/1000)/per),0):0;
+}
+const areaM2=()=>data.rooms.reduce((s,r)=>s+(r.w/1000)*(r.l/1000),0);
+
+function build(){
+  return data.items.map((it,idx)=>{
+    const q=sheets(it),unit=it.sale||it.normal;
+    return {...it,idx,q,unit,fin:q*unit,gross:q*it.normal,
+      margin:it.cost?(unit-it.cost)*q:null,
+      mrate:it.cost?(unit-it.cost)/unit:null};
+  }).sort((a,b)=>a.fin-b.fin);
+}
+function applyFilter(list){
+  return list.filter(r=>{
+    if(filter==='all')return true;
+    if(filter==='own')return r.type==='own';
+    const s=Math.max(r.w,r.l);
+    if(filter==='s')return s<=650;
+    if(filter==='m')return s>650&&s<=900;
+    return s>900;
+  });
+}
+
+function drawRooms(){
+  const box=$('#rooms');box.innerHTML='';
+  data.rooms.forEach((r,i)=>{
+    const d=document.createElement('div');d.className='room';
+    d.innerHTML='<input class="rn" value="'+r.name+'">'+
+      '<div class="dims"><input type="number" inputmode="numeric" value="'+r.w+'"><em>×</em>'+
+      '<input type="number" inputmode="numeric" value="'+r.l+'"><em>mm</em></div>'+
+      '<button class="rx">✕</button>';
+    const ins=d.querySelectorAll('input');
+    ins[0].oninput=()=>{r.name=ins[0].value;save();};
+    const up=()=>{r.w=+ins[1].value||0;r.l=+ins[2].value||0;save();paint();};
+    ins[1].oninput=up;ins[2].oninput=up;
+    d.querySelector('.rx').onclick=()=>{data.rooms.splice(i,1);save();drawRooms();paint();};
+    box.appendChild(d);
+  });
+}
+
+function paint(){
+  const m=areaM2();
+  $('#py').textContent=(m/3.305785).toFixed(1);
+  $('#m2').textContent=m.toFixed(2)+' m²';
+  $('#cnt').textContent='총 '+data.items.length+'개 등록';
+
+  const all=build(), list=applyFilter(all);
+  $('#none').hidden=list.length>0;
+
+  const tb=$('#tb');tb.innerHTML='';
+  list.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    if(r.type==='own')tr.className='own';
+    tr.innerHTML='<td class="rk">'+(i+1)+'</td>'+
+      '<td><span class="who">'+(r.type==='own'?'우리회사':'경쟁사')+'</span><span class="nm">'+r.name+'</span></td>'+
+      '<td class="spec">'+r.w+'×'+r.l+'<br>'+r.t+'T</td>'+
+      '<td class="r">'+(r.sale
+        ?'<span class="was">'+r.normal.toLocaleString()+'</span><span class="now">'+r.sale.toLocaleString()+'</span>'
+        :'<span class="now">'+r.normal.toLocaleString()+'</span>')+'</td>'+
+      '<td class="r" style="color:var(--sub)">'+won(r.gross)+'</td>'+
+      '<td class="r"><span class="fin">'+won(r.fin)+'</span><span class="cnt">'+r.q+'장</span></td>'+
+      '<td class="r mg">'+(r.margin!==null
+        ?won(r.margin)+'<br><span style="color:var(--faint)">'+(r.mrate*100).toFixed(0)+'%</span>':'—')+'</td>'+
+      '<td class="act"><button class="e">수정</button><button class="d">삭제</button></td>';
+    tr.querySelector('.e').onclick=()=>startEdit(r.idx);
+    tr.querySelector('.d').onclick=()=>{if(confirm(r.name+' 삭제할까요?')){data.items.splice(r.idx,1);save();paint();}};
+    tb.appendChild(tr);
+  });
+
+  /* 포지션 축 */
+  const ax=$('#axis');ax.innerHTML='<div class="line"></div>';
+  if(all.length>1){
+    const lo=all[0].fin, hi=all[all.length-1].fin, span=(hi-lo)||1;
+    const med=all[Math.floor(all.length/2)].fin;
+    const pct=v=>((v-lo)/span*92+4);
+    all.forEach(r=>{
+      const t=document.createElement('div');
+      t.className='tick'+(r.type==='own'?' own':'');
+      t.style.left=pct(r.fin)+'%';
+      t.title=r.name+' · '+won(r.fin);
+      ax.appendChild(t);
+    });
+    const mk=document.createElement('div');
+    mk.className='tick med';mk.style.left=pct(med)+'%';ax.appendChild(mk);
+    all.filter(r=>r.type==='own').forEach(r=>{
+      const L=document.createElement('div');
+      L.className='lbl own t';L.style.left=pct(r.fin)+'%';L.textContent=man(r.fin);
+      ax.appendChild(L);
+    });
+    [[4,'최저 '+man(lo)],[pct(med),'중앙값 '+man(med)],[96,'최고 '+man(hi)]].forEach(p=>{
+      const e=document.createElement('div');
+      e.className='lbl b';e.style.left=p[0]+'%';e.textContent=p[1];ax.appendChild(e);
+    });
+    const owns=all.filter(r=>r.type==='own').length;
+    $('#posNote').textContent=owns?('우리 제품 '+owns+'개 · 전체 '+all.length+'개'):'우리 제품 미등록';
+  }
+
+  /* 차트 */
+  const ch=$('#chart');ch.innerHTML='';
+  const max=Math.max.apply(null,list.map(r=>r.gross).concat([1]));
+  list.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='bar'+(r.type==='own'?' own':'');
+    d.innerHTML='<span class="bn" title="'+r.name+'">'+r.name+'</span>'+
+      '<span class="track"><i class="s1" style="width:'+(r.fin/max*100)+'%"></i>'+
+      '<i class="s2" style="width:'+((r.gross-r.fin)/max*100)+'%"></i></span>';
+    ch.appendChild(d);
+  });
+
+  strategy(all);
+}
+
+function strategy(all){
+  const sel=$('#sProd'), prev=sel.value;
+  const owns=data.items.map((it,i)=>({it,i})).filter(x=>x.it.type==='own');
+  sel.innerHTML='';
+  owns.forEach(x=>{
+    const o=document.createElement('option');o.value=x.i;o.textContent=x.it.name;sel.appendChild(o);
+  });
+  if(prev&&owns.some(x=>String(x.i)===prev))sel.value=prev;
+
+  const calc=$('#calc'), sum=$('#summary');
+  if(!owns.length){
+    calc.innerHTML='<p class="hint">구분을 "우리회사"로 해서 제품을 먼저 등록하세요.</p>';
+    sum.innerHTML='';return;
+  }
+
+  const me=all.find(r=>r.idx===+sel.value)||all.find(r=>r.type==='own');
+  const rank=all.findIndex(r=>r.idx===me.idx)+1;
+  const others=all.filter(r=>r.idx!==me.idx);
+  const target=Math.max(1,Math.min(+$('#sRank').value||1,others.length+1));
+  const needFin=(target-1)<others.length?others[target-1].fin-1:others[others.length-1].fin;
+  const needUnit=Math.floor(needFin/me.q);
+  const diff=me.unit-needUnit;
+  const nMargin=me.cost?(needUnit-me.cost)*me.q:null;
+  const nRate=me.cost?(needUnit-me.cost)/needUnit:null;
+
+  calc.innerHTML=
+    '<div class="kv"><span>현재 순위</span><b>'+rank+'위 / '+all.length+'개</b></div>'+
+    '<div class="kv"><span>현재 장당가</span><b>'+won(me.unit)+'</b></div>'+
+    '<div class="kv"><span>현재 체감 견적</span><b>'+won(me.fin)+' · '+me.q+'장</b></div>'+
+    '<div style="margin:14px 0 4px"><div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.4px">'+
+      target+'위가 되려면 장당</div><div class="big '+(diff>0?'cut':'ok')+'">'+won(needUnit)+'</div></div>'+
+    '<div class="kv"><span>현재 대비</span><b style="color:'+(diff>0?'var(--cut)':'var(--acc)')+'">'+
+      (diff>0?'−'+won(diff)+' 인하':'+'+won(-diff)+' 여유')+'</b></div>'+
+    (me.cost?'<div class="kv"><span>그때 마진</span><b>'+won(nMargin)+' · '+(nRate*100).toFixed(0)+'%</b></div>':'')+
+    '<p class="hint">'+(diff>0
+      ?'장당 '+won(diff)+' 내리면 시공 한 건당 '+won(diff*me.q)+'을 덜 받게 됩니다.'
+      :'이미 목표 순위 안입니다. 장당 '+won(-diff)+'까지 올려도 순위가 유지됩니다.')+
+      (me.cost?'':' 원가를 넣으면 마진까지 같이 계산됩니다.')+'</p>';
+
+  const lo=all[0].fin, hi=all[all.length-1].fin, med=all[Math.floor(all.length/2)].fin;
+  const cheaper=all.filter(r=>r.fin<me.fin).length;
+  const same=all.filter(r=>Math.max(r.w,r.l)===Math.max(me.w,me.l)&&r.idx!==me.idx);
+  const sameLo=same.length?Math.min.apply(null,same.map(r=>r.fin)):null;
+
+  sum.innerHTML=
+    '<div class="kv"><span>선택 제품</span><b>'+me.name+'</b></div>'+
+    '<div class="kv"><span>우리보다 싼 제품</span><b>'+cheaper+'개 ('+Math.round(cheaper/all.length*100)+'%)</b></div>'+
+    '<div class="kv"><span>시장 중앙값</span><b>'+won(med)+'</b></div>'+
+    '<div class="kv"><span>중앙값 대비</span><b style="color:'+(me.fin<med?'var(--acc)':'var(--cut)')+'">'+
+      (me.fin<med?'−':'+')+won(Math.abs(me.fin-med))+'</b></div>'+
+    '<div class="kv"><span>시장 범위</span><b>'+man(lo)+' ~ '+man(hi)+'</b></div>'+
+    (sameLo!==null?'<div class="kv"><span>같은 크기 최저가</span><b>'+won(sameLo)+'</b></div>':'')+
+    '<div class="kv"><span>할인으로 빠지는 금액</span><b>'+won(me.gross-me.fin)+'</b></div>'+
+    (me.margin!==null?'<div class="kv"><span>현재 마진</span><b>'+won(me.margin)+' · '+(me.mrate*100).toFixed(0)+'%</b></div>':'');
+}
+
+/* 등록 / 수정 */
+function startEdit(i){
+  const it=data.items[i];editIdx=i;
+  $('#fType').value=it.type;$('#fName').value=it.name;$('#fW').value=it.w;$('#fL').value=it.l;
+  $('#fT').value=it.t;$('#fN').value=it.normal;
+  $('#fS').value=it.sale==null?'':it.sale;$('#fC').value=it.cost==null?'':it.cost;
+  $('#add').textContent='수정 저장';$('#cancel').hidden=false;
+  $('#formBox').classList.add('editing');
+  window.scrollTo({top:0,behavior:'smooth'});$('#fName').focus();
+}
+function resetForm(){
+  editIdx=null;
+  ['#fName','#fW','#fL','#fT','#fN','#fS','#fC'].forEach(id=>$(id).value='');
+  $('#add').textContent='추가';$('#cancel').hidden=true;
+  $('#formBox').classList.remove('editing');
+}
+$('#cancel').onclick=resetForm;
+$('#add').onclick=()=>{
+  const g=id=>$(id).value.trim();
+  if(!g('#fName')||!g('#fW')||!g('#fL')||!g('#fN')){alert('업체명, 가로, 세로, 정상가는 필수입니다.');return;}
+  const obj={type:$('#fType').value,name:g('#fName'),w:+g('#fW'),l:+g('#fL'),t:+g('#fT')||0,
+    normal:+g('#fN'),sale:g('#fS')?+g('#fS'):null,cost:g('#fC')?+g('#fC'):null};
+  if(editIdx!==null)data.items[editIdx]=obj;else data.items.push(obj);
+  resetForm();save();paint();
+};
+$('#addRoom').onclick=()=>{data.rooms.push({name:'새 공간',w:3000,l:3000});save();drawRooms();paint();};
+$('#sProd').onchange=paint;
+$('#sRank').oninput=paint;
+
+[['all','전체'],['own','우리회사'],['s','65cm 이하'],['m','70~90cm'],['l','1m 이상']].forEach((f,n)=>{
+  const b=document.createElement('button');
+  b.className='chip'+(n===0?' on':'');b.textContent=f[1];
+  b.onclick=()=>{filter=f[0];document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+    b.classList.add('on');paint();};
+  $('#filters').appendChild(b);
+});
+
+$('#exp').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='price_radar_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+};
+$('#impBtn').onclick=()=>$('#imp').click();
+$('#imp').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{
+    const j=JSON.parse(rd.result);
+    if(!Array.isArray(j.items))throw 0;
+    data={items:j.items,rooms:(Array.isArray(j.rooms)&&j.rooms.length)?j.rooms:data.rooms};
+    save();drawRooms();paint();
+  }catch(err){alert('가격 레이더 백업 파일이 아닙니다.');}};
+  rd.readAsText(f);e.target.value='';
+};
+
+drawRooms();paint();
+</script>
+</div>
+</body>
+</html>
