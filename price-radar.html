@@ -119,6 +119,11 @@ tr.own .who{color:var(--acc);}
 .legend{display:flex;gap:15px;font-size:11px;color:var(--sub);margin-top:11px;flex-wrap:wrap;}
 .sw{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px;}
 
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+  color:var(--sub);border:1px solid var(--rule);border-radius:999px;padding:4px 11px;background:#fff;}
+.sync i{width:7px;height:7px;border-radius:50%;background:#C4C9CE;}
+.sync.ok i{background:var(--acc);} .sync.ok{color:var(--acc);border-color:var(--acc-soft);}
+.sync.err i{background:var(--cut);} .sync.err{color:var(--cut);}
 .empty{text-align:center;color:var(--faint);padding:32px;font-size:13px;}
 .foot{display:flex;gap:7px;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--rule);}
 @media print{body{background:#fff;} .foot,.rx,.act,.tools,.btn{display:none!important;}}
@@ -128,7 +133,10 @@ tr.own .who{color:var(--acc);}
 <div class="wrap">
 
 <div class="head">
-  <h1>가격 레이더</h1>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <h1>가격 레이더</h1>
+    <span class="sync" id="sync"><i></i><span id="syncTxt">연결 중</span></span>
+  </div>
   <p>장당 단가가 아니라 <b>집 한 채를 깔았을 때 고객이 실제로 내는 금액</b>으로 비교합니다. 크기가 제각각인 매트를 공정하게 비교하려면 이 기준이어야 합니다.</p>
 </div>
 
@@ -215,6 +223,8 @@ tr.own .who{color:var(--acc);}
   <input type="file" id="imp" accept=".json" hidden>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 const SEED={items:[
 {type:"comp",name:"쿠키매트(디노65)",w:650,l:650,t:23,normal:25900,sale:22650},
@@ -286,7 +296,62 @@ let filter='all', editIdx=null;
 const $=s=>document.querySelector(s);
 const won=n=>Math.round(n).toLocaleString('ko-KR')+'원';
 const man=n=>Math.round(n/10000)+'만원';
-const save=()=>store.set('pr_v7',data);
+
+/* ── Firebase 동기화 ──────────────────────────────
+   같은 데이터를 어느 기기에서 열어도 똑같이 보입니다.
+   인터넷이 끊기면 이 브라우저에 저장해뒀다가 다시 연결될 때 올라갑니다. */
+firebase.initializeApp({databaseURL:'https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app'});
+const REF=firebase.database().ref('priceRadar');
+let mine='', timer=null, ready=false;
+
+function status(txt,cls){
+  const el=$('#sync');el.className='sync'+(cls?' '+cls:'');$('#syncTxt').textContent=txt;
+}
+/* Firebase는 값이 null인 항목을 지우므로, 비교할 때 미리 똑같이 맞춰둡니다 */
+function clean(o){
+  return JSON.stringify({
+    items:(o.items||[]).map(it=>{
+      const c={};Object.keys(it).forEach(k=>{if(it[k]!==null&&it[k]!==undefined)c[k]=it[k];});return c;
+    }),
+    rooms:o.rooms||[]
+  });
+}
+const snapshot=()=>clean(data);
+
+function save(){
+  store.set('pr_v7',data);            // 오프라인 대비 로컬 사본
+  if(!ready) return;
+  status('저장 중');
+  clearTimeout(timer);
+  timer=setTimeout(()=>{
+    mine=snapshot();
+    REF.set({items:data.items,rooms:data.rooms,updated:Date.now()})
+      .then(()=>status('저장됨','ok'))
+      .catch(()=>status('저장 실패 · 백업 내보내기 권장','err'));
+  },500);
+}
+
+REF.on('value',snap=>{
+  const v=snap.val();
+  ready=true;
+  if(!v){                              // 서버에 아무것도 없으면 지금 데이터를 올림
+    mine=snapshot();
+    REF.set({items:data.items,rooms:data.rooms,updated:Date.now()})
+      .then(()=>status('저장됨','ok')).catch(()=>status('연결 실패','err'));
+    return;
+  }
+  const incoming={items:v.items||[],rooms:(v.rooms&&v.rooms.length)?v.rooms:data.rooms};
+  const s=clean(incoming);
+  if(s===mine){status('저장됨','ok');return;}   // 내가 방금 올린 것
+  mine=s;
+  data=incoming;
+  store.set('pr_v7',data);
+  drawRooms();paint();
+  status('동기화됨','ok');
+},()=>{
+  status('오프라인 · 이 기기에만 저장됨','err');
+  ready=false;
+});
 
 /* 방마다 면적을 매트 1장 면적으로 나눠 올림 → 합산
    (한 방에서 남은 자투리는 다른 방에 못 쓰기 때문) */
