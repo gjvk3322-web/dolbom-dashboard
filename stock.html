@@ -762,6 +762,24 @@ async function renderSummary(){
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('futureDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📅 다음 7일 예약 <span style="color:var(--red)">-${ft.toLocaleString()}장</span></span><span style="font-size:12px;color:var(--dim)">${fj}건 <span class="arrow">▸</span></span></div>`;
     h+=`<div id="futureDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
+    // 🆕 제품별 요약 (건수 · 예상 장수)
+    {
+      const colorOrd=['모던','베이지','마블','코튼','미정'];
+      h+=`<div style="padding:10px 10px 8px;margin-top:10px;background:rgba(255,255,255,.03);border:.5px solid var(--border);border-radius:10px">`;
+      h+=`<div style="font-size:10px;color:var(--dim);font-weight:700;margin-bottom:5px">📦 제품별 요약</div>`;
+      prodOrder.forEach(pid=>{
+        const keys=Object.keys(prodColorFuture)
+          .filter(k=>{const cN=k.split('_').slice(-1)[0];return k.slice(0,k.length-cN.length-1)===pid})
+          .sort((a,b)=>{const ca=a.split('_').slice(-1)[0],cb=b.split('_').slice(-1)[0];const ia=colorOrd.indexOf(ca),ib=colorOrd.indexOf(cb);return (ia<0?99:ia)-(ib<0?99:ib)});
+        keys.forEach(key=>{
+          const c=key.split('_').slice(-1)[0];
+          const d=prodColorFuture[key];
+          const dot=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>`;
+          h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:12px"><span>${dot}${c} ${(prodNames[pid]||pid).replace('매트','')}</span><span style="color:var(--dim)">${d.n}건 · <span style="font-weight:700;color:var(--text)">${d.s.toLocaleString()}장</span></span></div>`;
+        });
+      });
+      h+=`</div>`;
+    }
     sd.futureList.forEach(j=>{
       const pName=j.product.replace('매트','');
       const cDot=j.color?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[j.color]||'#888'};margin-right:3px"></span>`:'';
