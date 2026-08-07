@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <script src="/auth.js"></script>
+
+    <!-- 검색엔진 노출 차단 (자동 추가) -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta name="naverbot" content="noindex, nofollow">
+    <meta name="yeti" content="noindex, nofollow">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>돌봄매트 예약 접수</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f8fa;--card:#ffffff;--text:#191f28;--text2:#4e5968;--text3:#8b95a1;
+  --border:#e5e8eb;
+  --busan:#e8736c;--busan-light:#fdf0ef;--busan-dark:#d45a53;
+  --gyeonggi:#5b9bd5;--gyeonggi-light:#edf4fb;--gyeonggi-dark:#4a87bf;
+  --green:#20c997;--green-light:#e3faf1;
+  --red:#f04452;--red-light:#fff0f1;
+  --orange:#f59f00;--orange-light:#fff8e6;
+  --accent:var(--busan);--accent-light:var(--busan-light);--accent-dark:var(--busan-dark);
+  --radius:14px;--shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:100px;max-width:1600px;margin:0 auto;}
+
+.header{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;position:sticky;top:0;z-index:100;transition:background .3s;}
+.header.busan{background:var(--busan);}
+.header.gyeonggi{background:var(--gyeonggi);}
+.header h1{font-size:17px;font-weight:700;flex:1;color:#fff;}
+.team-toggle{display:flex;background:rgba(255,255,255,0.22);border-radius:10px;padding:3px;}
+.team-btn{padding:6px 16px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,0.75);border-radius:8px;transition:all .2s;font-family:inherit;}
+.team-btn.active{background:rgba(255,255,255,0.95);color:var(--text);}
+.phone-link{margin-left:8px;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 12px;background:rgba(255,255,255,0.22);border-radius:10px;color:#fff;text-decoration:none;font-size:13px;font-weight:600;transition:all .2s;}
+.phone-link:hover{background:rgba(255,255,255,0.35);transform:translateY(-1px);}
+.phone-link:active{transform:scale(0.95);}
+.phone-link .pl-icon{font-size:15px;}
+
+.loading-bar{height:3px;background:var(--accent);position:fixed;top:0;left:0;z-index:200;transition:width .3s;border-radius:0 2px 2px 0;}
+
+.search-bar{margin:12px 16px 0;position:relative;}
+.search-bar input{width:100%;padding:12px 14px 12px 38px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text);box-shadow:var(--shadow);}
+.search-bar input:focus{outline:none;border-color:var(--accent);}
+.search-bar .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text3);}
+.search-results{background:var(--card);margin:8px 16px;border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);display:none;}
+.search-results.show{display:block;animation:fadeUp .3s ease;}
+.search-results h4{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;}
+.sri{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .1s;margin-bottom:4px;}
+.sri:hover{background:#f2f4f6;}
+.sr-date{font-size:13px;font-weight:600;}
+.sr-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;}
+.sr-am{background:var(--orange-light);color:#92400e;}
+.sr-pm{background:var(--accent-light);color:var(--accent);}
+
+.card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+.team-bar{height:3px;margin:-20px -20px 16px;border-radius:var(--radius) var(--radius) 0 0;transition:background .3s;}
+.team-bar.busan{background:linear-gradient(90deg,var(--busan),#f0a8a3);}
+.team-bar.gyeonggi{background:linear-gradient(90deg,var(--gyeonggi),#9ec5e8);}
+
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cal-header h2{font-size:17px;font-weight:700;}
+.cal-nav{display:flex;gap:6px;}
+.cal-nav button{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;}
+.cal-nav button:active{background:#f2f4f6;transform:scale(0.95);}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:6px;}
+.cal-weekdays span{font-size:12px;color:var(--text3);font-weight:600;padding:6px 0;}
+.cal-weekdays span:first-child{color:var(--red);}
+.cal-weekdays span:last-child{color:var(--gyeonggi);}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s;gap:1px;user-select:none;}
+.cal-day:active{transform:scale(0.93);}
+.cal-day.today{outline:2px solid var(--accent);outline-offset:-2px;}
+.cal-day.selected{background:var(--accent);color:#fff;}
+.cal-day.selected .slot-dot{background:rgba(255,255,255,0.6);}
+.cal-day.other-month{color:#d5d8dc;pointer-events:none;}
+.cal-day.past{color:#ccc;}
+.cal-day.highlight{background:#fff3cd;outline:2px solid var(--orange);outline-offset:-2px;}
+.cal-day.closed{background:#e5e8eb;color:var(--text3);text-decoration:line-through;}
+.slot-dots{display:flex;gap:2px;margin-top:1px;}
+.slot-dot{width:5px;height:5px;border-radius:50%;}
+.dot-green{background:var(--green);}.dot-orange{background:var(--orange);}.dot-red{background:var(--red);}.dot-gray{background:#ddd;}
+.cal-legend{display:flex;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-weight:500;}
+.legend-dot{width:7px;height:7px;border-radius:50%;}
+
+.sync-info{text-align:center;font-size:11px;color:var(--text3);margin-top:8px;}
+
+.day-detail{display:none;}
+.day-detail.show{display:block;animation:fadeUp .3s ease;}
+.detail-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:6px;}
+.detail-header h3{font-size:16px;font-weight:700;}
+.detail-badges{display:flex;gap:6px;flex-wrap:wrap;}
+.badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;}
+.badge-accent{background:var(--accent-light);color:var(--accent);}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-red{background:var(--red-light);color:var(--red);}
+.badge-close{background:#f2f4f6;color:var(--text3);cursor:pointer;border:1px solid var(--border);font-family:inherit;transition:all .15s;}
+.badge-close:hover{background:#e5e8eb;}
+.badge-close.closed{background:var(--text);color:#fff;border-color:var(--text);}
+
+.schedule-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sched-col-title{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;letter-spacing:0.5px;}
+.sched-item{background:#f8f9fb;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:3px solid var(--accent);}
+.sched-item .area{font-weight:600;font-size:13px;}
+.sched-item .info{font-size:11px;color:var(--text3);margin-top:3px;}
+.sched-empty{border:1.5px dashed var(--green);border-radius:10px;padding:14px;text-align:center;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.sched-empty:hover{background:var(--green-light);}
+.sched-empty:active{transform:scale(0.97);}
+
+.form-section{display:none;}
+.form-section.show{display:block;animation:fadeUp .4s ease;}
+.form-title{font-size:14px;font-weight:700;margin-bottom:10px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fg{display:flex;flex-direction:column;gap:3px;}
+.fg.full{grid-column:1/-1;}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);}
+.fg label .req{color:var(--red);}
+.fg input,.fg select{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--card);color:var(--text);transition:border .2s;-webkit-appearance:none;appearance:none;}
+.fg select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
+.fg select.error{border-color:var(--red);background-color:var(--red-light);}
+.product-match{font-size:11px;margin-top:2px;font-weight:600;}
+.product-match.ok{color:var(--green);}
+.product-match.err{color:var(--red);}
+
+.submit-area{margin-top:20px;}
+.submit-btn{width:100%;padding:10px;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;}
+.submit-btn.busan{background:var(--busan);}.submit-btn.busan:active{background:var(--busan-dark);}
+.submit-btn.gyeonggi{background:var(--gyeonggi);}.submit-btn.gyeonggi:active{background:var(--gyeonggi-dark);}
+.submit-btn:active{transform:scale(0.98);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+.refresh-btn{position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:100;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.refresh-btn:active{transform:scale(0.9);}
+.refresh-btn.spinning{animation:spin .8s ease;}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:200;transition:transform .3s ease;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:400px){.card{margin:8px 10px;padding:16px;}.form-grid{grid-template-columns:1fr;}}
+.wk-row{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0eb;align-items:flex-start;cursor:pointer}
+.wk-row:last-child{border-bottom:none}
+.wk-row:active{background:#f9f9f6;border-radius:6px}
+.wk-date{min-width:60px;font-size:13px;font-weight:600;color:var(--text);flex-shrink:0}
+.wk-date small{display:block;font-size:10px;font-weight:400;color:var(--text3)}
+.wk-addr{flex:1;font-size:11px;color:var(--text2);line-height:1.5}
+.wk-addr span{display:inline-block;background:#f0f0eb;padding:1px 5px;border-radius:4px;margin:1px 1px;font-size:9px;white-space:nowrap}
+.wk-addr .wk-am{background:#E3F2FD;color:#1565C0}
+.wk-addr .wk-pm{background:#FFF3E0;color:#E65100}
+.wk-addr .wk-as{background:#FFEBEE;color:#C62828}
+.wk-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;flex-shrink:0;white-space:nowrap}
+.wk-badge.full{background:#FFEBEE;color:#C62828}
+.wk-badge.avail{background:#E8F5E9;color:#2E7D32}
+.wk-badge.off-badge{background:rgba(248,113,113,.12);color:#C62828;font-size:9px;margin-top:2px;display:inline-block}
+.wk-empty{color:var(--text3);font-size:11px;text-align:center;padding:16px}
+.nb-row{padding:8px 0;border-bottom:1px solid #f0f0eb;cursor:pointer}
+.nb-row:last-child{border-bottom:none}
+.nb-row:active{background:#f9f9f6;border-radius:6px}
+.nb-date{font-size:12px;font-weight:600;color:var(--text)}
+.nb-match{font-size:11px;color:var(--text2);margin-top:2px}
+.nb-match b{color:var(--accent,#2E7D32)}
+.nb-tip{background:#FFF8E1;border:1px solid #FFE082;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:11px;color:#E65100;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar" style="width:0%"></div>
+
+<div class="header busan" id="header">
+  <h1 id="headerTitle">예약 접수 · 부산</h1>
+  <div class="team-toggle">
+    <button class="team-btn active" onclick="switchTeam('부산')">부산</button>
+    <button class="team-btn" onclick="switchTeam('경기')">경기</button>
+  </div>
+  <a href="cs-phone.html" class="phone-link" title="상담전화 기록">
+    <span class="pl-icon">📞</span>
+    <span>상담</span>
+  </a>
+</div>
+
+<div class="search-bar">
+  <span class="si">🔍</span>
+  <input type="text" id="regionSearch" placeholder="주소/지역 검색" oninput="searchByKeyword(this.value)" />
+</div>
+<div class="search-results" id="searchResults">
+  <h4 id="searchTitle"></h4>
+  <div id="searchList"></div>
+</div>
+
+<div style="display:flex;gap:12px;align-items:flex-start;padding:0 12px">
+  <!-- 1열: 캘린더 -->
+  <div class="card" style="flex:0 0 300px;margin:0;margin-top:12px">
+    <div class="team-bar busan" id="teamBar"></div>
+    <div class="cal-header">
+      <h2 id="calTitle"></h2>
+      <div class="cal-nav"><button onclick="changeMonth(-1)">‹</button><button onclick="changeMonth(1)">›</button></div>
+    </div>
+    <div class="cal-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    <div class="cal-days" id="calDays"></div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>여유</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>보통</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>마감</div>
+    </div>
+    <div class="sync-info" id="syncInfo">데이터 로딩 중...</div>
+    <div id="dailyChart" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"></div>
+  </div>
+  <!-- 2열: 2주 일정 -->
+  <div class="card" style="flex:0 0 220px;min-width:200px;margin:0;margin-top:12px;max-height:calc(100vh - 180px);overflow-y:auto">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;position:sticky;top:0;background:#fff;padding:4px 0;z-index:1">📋 전체 일정</div>
+    <div id="weekList"></div>
+    <div id="nearbyCard" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e3">
+      <h3 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">📍 근접 매칭 결과</h3>
+      <div id="nearbyList"></div>
+    </div>
+  </div>
+  <!-- 3열: 상세 + 접수 -->
+  <div style="flex:1;min-width:440px;max-height:calc(100vh - 180px);overflow-y:auto;margin-top:12px">
+
+<!-- 🆕 신규 예약 영역 (booking.html에서 자동 들어온 데이터) -->
+<div class="card" id="newBookingsSection" style="margin:0 0 12px 0;padding:14px;border:2px solid #FF9800;background:linear-gradient(135deg,#FFF8E1,#FFFFFF)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="font-size:14px;font-weight:700;color:#E65100">
+      🆕 신규 예약 접수 <span id="newBookingCount" style="background:#E65100;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:6px">0</span>
+    </div>
+    <button onclick="loadNewBookings()" style="padding:4px 10px;border:1px solid #FF9800;background:#fff;color:#E65100;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">🔄 새로고침</button>
+  </div>
+  <div id="newBookingsList" style="max-height:340px;overflow-y:auto">
+    <div style="text-align:center;color:#999;font-size:12px;padding:20px">로딩 중...</div>
+  </div>
+</div>
+
+<div class="card day-detail" id="dayDetail" style="margin:0 0 12px 0;padding:14px">
+  <div class="detail-header">
+    <h3 id="detailDate"></h3>
+    <div class="detail-badges" id="detailBadges"></div>
+  </div>
+  <div class="schedule-cols">
+    <div><div class="sched-col-title" id="amTitle">☀️ 오전</div><div id="amSlots"></div></div>
+    <div><div class="sched-col-title" id="pmTitle">🌙 오후</div><div id="pmSlots"></div></div>
+  </div>
+  <div class="schedule-cols" style="margin-top:6px">
+    <div><div class="sched-col-title">🔧 AS</div><div id="asSlots"></div></div>
+    <div><div class="sched-col-title">📏 실측</div><div id="msSlots"></div></div>
+  </div>
+</div>
+
+<div class="card form-section" id="formSection" style="margin:0 0 12px 0;padding:14px">
+  <div class="form-title" id="formTitle">📝 새 예약 접수</div>
+  <div class="form-grid">
+    <div class="fg">
+      <label>시간 <span class="req">*</span></label>
+      <select id="fTime" onchange="onTimeChange()"><option value="">선택</option><option value="오전">오전</option><option value="오전(이전설치)">오전(이전설치)</option><option value="오후">오후</option><option value="오후(이전설치)">오후(이전설치)</option><option value="AS">AS</option><option value="실측">실측</option></select>
+    </div>
+    <div class="fg">
+      <label>시공일 <span class="req">*</span></label>
+      <input type="date" id="fDate" />
+    </div>
+    <div class="fg full">
+      <label>주소 (동호수 포함) <span class="req">*</span></label>
+      <input type="text" id="fAddress" />
+    </div>
+    <div class="fg full">
+      <label>연락처</label>
+      <input type="tel" id="fPhone" />
+    </div>
+    <div class="fg">
+      <label>신축여부</label>
+      <select id="fIsNew"><option value="">선택</option><option value="신축">신축</option><option value="구축">구축</option></select>
+    </div>
+    <div class="fg">
+      <label>평수 <span class="req">*</span></label>
+      <input type="number" id="fSize" />
+    </div>
+    <div class="fg full">
+      <label>시공범위 <span class="req">*</span></label>
+      <input type="text" id="fScope" />
+    </div>
+    <div class="fg">
+      <label>제품 선택 <span class="req">*</span></label>
+      <select id="fProduct1" onchange="checkProductMatch()">
+        <option value="">선택</option>
+        <option value="마블50">마블50</option>
+        <option value="코튼50">코튼50</option>
+        <option value="모던50">모던50</option>
+        <option value="모던1m17">모던1m17</option>
+        <option value="모던1m22">모던1m22</option>
+        <option value="베이지1m17">베이지1m17</option>
+        <option value="베이지1m22">베이지1m22</option>
+        <option value="실측">실측</option>
+        <option value="미정">미정</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>제품 확인 <span class="req">*</span></label>
+      <select id="fProduct2" onchange="checkProductMatch()">
+        <option value="">다시 선택</option>
+        <option value="마블50">마블50</option>
+        <option value="코튼50">코튼50</option>
+        <option value="모던50">모던50</option>
+        <option value="모던1m17">모던1m17</option>
+        <option value="모던1m22">모던1m22</option>
+        <option value="베이지1m17">베이지1m17</option>
+        <option value="베이지1m22">베이지1m22</option>
+        <option value="실측">실측</option>
+        <option value="미정">미정</option>
+      </select>
+      <div class="product-match" id="productMatch"></div>
+    </div>
+    <div class="fg full" style="margin-top:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block">📋 카톡 채널명 생성</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="fRegion" placeholder="지역명" maxlength="2" style="flex:1;max-width:100px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text)">
+            <button type="button" onclick="generateChannelName()" style="padding:11px 14px;border:1.5px solid var(--accent);border-radius:10px;background:var(--accent-light);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">생성</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block">추천인</label>
+          <input type="text" id="fReferrer" placeholder="추천인 코드" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text)" />
+        </div>
+      </div>
+      <div id="channelResult" style="display:none;margin-top:6px;padding:8px 12px;background:#f0f7ff;border-radius:8px;align-items:center;justify-content:space-between;gap:8px">
+        <input type="text" id="channelText" style="flex:1;border:none;background:transparent;font-size:13px;font-weight:600;color:#1a1a1a;font-family:inherit;padding:0;outline:none;min-width:0" />
+        <span onclick="copyChannel()" style="font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;white-space:nowrap;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,0.05)">복사</span>
+      </div>
+    </div>
+    <div class="submit-area full" style="display:flex;gap:8px">
+      <button class="submit-btn busan" id="submitBtn" onclick="submitReservation()" style="flex:1">예약 접수하기</button>
+      <button class="submit-btn" id="confirmMsgBtn" onclick="copyReservationConfirm()" style="flex:1;background:#FEE500;color:#1a1a1a">확정 메시지</button>
+      <button class="submit-btn" id="cancelBtn" onclick="cancelReservation()" style="display:none;flex:1;background:#e53935">예약 취소</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+<button class="refresh-btn" id="refreshBtn" onclick="refreshData()" title="새로고침">↻</button>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
+firebase.initializeApp({databaseURL:FB_URL});
+const fbDb=firebase.database();
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+
+let currentTeam='부산',currentYear=new Date().getFullYear(),currentMonth=new Date().getMonth()+1,selectedDate=null;
+let scheduleData={};
+let schedAll={부산:{},경기:{}};
+let empAll={부산:[],경기:[]};
+let OFFS_ALL={부산:{},경기:{}};
+let employees=[];
+let highlightDates=[];
+
+function getMonthJobCount(year,month){
+  const prefix=`${year}-${String(month).padStart(2,'0')}`;
+  let cnt=0;
+  ['부산','경기'].forEach(team=>{
+    Object.keys(schedAll[team]||{}).forEach(date=>{
+      if(date.startsWith(prefix)){
+        const d=schedAll[team][date];
+        cnt+=d.am.length+d.pm.length;
+      }
+    });
+  });
+  return cnt;
+}
+function parseSampleDaily(text){
+  sampleDaily={};
+  const rows=csvToObjects(text);
+  rows.forEach(r=>{
+    let rd=(r['접수일시']||r['접수일']||'').trim();if(!rd)return;
+    rd=rd.replace(/\./g,'-').replace(/\s/g,'');
+    const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(!m)return;
+    const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+    sampleDaily[ds]=(sampleDaily[ds]||0)+1;
+  });
+}
+
+function updateSyncInfo(){
+  const cnt=getMonthJobCount(currentYear,currentMonth);
+  document.getElementById('syncInfo').textContent=`마지막 동기화: ${lastSync} · ${currentMonth}월 시공 ${cnt}건`;
+  renderDailyChart();
+}
+
+function renderDailyChart(){
+  const el=document.getElementById('dailyChart');if(!el)return;
+  const prefix=`${currentYear}-${String(currentMonth).padStart(2,'0')}`;
+  const dim=new Date(currentYear,currentMonth,0).getDate();
+  
+  // 시공 접수일 기준 (예약완료 건만 · 취소 제외)
+  const resDaily={};
+  const resDetail={};  // 🆕 접수일별 예약 상세 목록
+  ['부산','경기'].forEach(team=>{
+    Object.entries(schedAll[team]||{}).forEach(([workDate,d])=>{  // 🆕 workDate=시공일
+      [...d.am,...d.pm].forEach(e=>{
+        // 🆕 취소 건 제외 (구분에 '취소' 들어간 경우)
+        if((e.category||'').includes('취소'))return;
+        let rd=(e.receivedAt||'').trim();if(!rd)return;
+        rd=rd.replace(/\./g,'-').replace(/\s/g,'');
+        const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if(!m)return;
+        const ds=`${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+        if(!ds.startsWith(prefix))return;
+        resDaily[ds]=(resDaily[ds]||0)+1;
+        // 🆕 상세 저장 (workDate=시공일 포함)
+        if(!resDetail[ds])resDetail[ds]=[];
+        resDetail[ds].push({team,workDate,time:e.time||'',address:e.address||'',size:e.size||'',product:e.product||'',phone:e.phone||''});
+      });
+    });
+  });
+  
+  // 샘플 접수
+  const samDaily={};
+  Object.keys(sampleDaily).forEach(ds=>{if(ds.startsWith(prefix))samDaily[ds]=sampleDaily[ds];});
+  
+  // 해당 월 1일~말일 (전체 표시)
+  const days=[];
+  const today=new Date();const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const todayNum=todayStr.startsWith(prefix)?today.getDate():dim;
+  for(let d=1;d<=dim;d++){
+    const ds=`${prefix}-${String(d).padStart(2,'0')}`;
+    days.push({d,ds,r:resDaily[ds]||0,s:samDaily[ds]||0});
+  }
+  
+  const maxCnt=Math.max(...days.map(x=>Math.max(x.r,x.s)),1);
+  const totalRes=days.reduce((a,x)=>a+x.r,0);
+  const totalSam=days.reduce((a,x)=>a+x.s,0);
+  
+  const active=days.filter(x=>x.r||x.s);
+  if(!active.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">접수 데이터 없음</div>';return;}
+  
+  let html=`<div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px">📊 ${currentMonth}월 일별 접수</div>
+  <table style="width:100%;border-collapse:collapse;font-size:10px">
+    <tr style="color:var(--text3);font-weight:600">
+      <td style="padding:2px 0;width:52px"></td>
+      <td style="padding:2px 4px;text-align:right;width:28px;color:var(--green)">시공</td>
+      <td style="padding:2px 4px;text-align:right;width:28px;color:#555">샘플</td>
+      <td></td>
+    </tr>`;
+  
+  active.forEach(x=>{
+    const dow=['일','월','화','수','목','금','토'][new Date(x.ds).getDay()];
+    const isToday=x.ds===todayStr;
+    const isSun=new Date(x.ds).getDay()===0;
+    const isSat=new Date(x.ds).getDay()===6;
+    const dayColor=isToday?'var(--primary)':isSun?'var(--red)':isSat?'var(--primary)':'var(--text2)';
+    const fw=isToday?'800':'500';
+    const rW=x.r?Math.max(x.r/maxCnt*100,6):0;
+    const sW=x.s?Math.max(x.s/maxCnt*100,6):0;
+    // 🆕 시공 건이 있으면 클릭해서 상세 펼침 가능
+    const hasDetail=x.r>0;
+    const rowId='det_'+x.ds;
+    const cursor=hasDetail?'cursor:pointer':'';
+    const toggle=hasDetail?`onclick="toggleResDetail('${rowId}')"`:'';
+    const arrow=hasDetail?`<span id="${rowId}_arw" style="color:var(--text3);font-size:9px;margin-left:3px">▸</span>`:'';
+    html+=`<tr ${toggle} style="${cursor}">
+      <td style="padding:3px 0;color:${dayColor};font-weight:${fw};text-align:right;padding-right:6px;white-space:nowrap">${x.d}일(${dow})${arrow}</td>
+      <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.r?'var(--green)':'var(--text3)'}">${x.r||'-'}</td>
+      <td style="padding:3px 4px;text-align:right;font-weight:600;color:${x.s?'#555':'var(--text3)'}">${x.s||'-'}</td>
+      <td style="padding:3px 4px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          ${x.r?`<div style="height:7px;width:${rW}%;background:var(--green);border-radius:2px"></div>`:''}
+          ${x.s?`<div style="height:7px;width:${sW}%;background:#555;border-radius:2px;opacity:.45"></div>`:''}
+        </div>
+      </td>
+    </tr>`;
+    // 🆕 상세 목록 행 (기본 숨김) — 시공 예약완료 건만
+    if(hasDetail){
+      const list=(resDetail[x.ds]||[]).map(item=>{
+        const teamTag=`<span style="font-size:9px;color:#fff;background:${item.team==='부산'?'#EF6C5A':'#4A90D9'};padding:1px 5px;border-radius:4px;font-weight:600">${item.team}</span>`;
+        const prod=item.product?`<span style="color:var(--green);font-weight:600">${item.product}</span>`:'';
+        const sz=item.size?` · ${item.size}`:'';
+        const ph=item.phone?`<div style="color:var(--text3);font-size:10px;margin-top:1px">📞 ${item.phone}</div>`:'';
+        // 🆕 시공일 표시 (YYYY-MM-DD → M/D + 오전/오후)
+        let workTag='';
+        if(item.workDate){
+          const wm=item.workDate.match(/\d{4}-(\d{1,2})-(\d{1,2})/);
+          if(wm){
+            const slot=item.time?` ${item.time.replace('(이전설치)','')}`:'';
+            workTag=`<span style="font-size:9px;color:#5b21b6;background:#ede9fe;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:3px">🗓 ${parseInt(wm[1])}/${parseInt(wm[2])}${slot} 시공</span>`;
+          }
+        }
+        return `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;line-height:1.5">
+          <div>${teamTag}${workTag}</div>
+          <div style="color:var(--text);font-weight:600;margin-top:2px">${item.address||'(주소 없음)'}</div>
+          <div style="color:var(--text2);margin-top:1px">🏠 ${prod}${sz}</div>
+          ${ph}
+        </div>`;
+      }).join('');
+      html+=`<tr id="${rowId}" style="display:none"><td colspan="4" style="padding:0">
+        <div style="background:#f1f3f5;border-radius:8px;margin:2px 0 6px">${list}</div>
+      </td></tr>`;
+    }
+  });
+  
+  html+=`<tr style="border-top:1px solid var(--border);font-weight:700">
+    <td style="padding:6px 0;text-align:right;padding-right:6px;color:var(--text)">합계</td>
+    <td style="padding:6px 4px;text-align:right;color:var(--green)">${totalRes}</td>
+    <td style="padding:6px 4px;text-align:right;color:#555">${totalSam}</td>
+    <td></td>
+  </tr></table>`;
+  el.innerHTML=html;
+}
+// 🆕 일별 접수 상세 펼침/접힘
+function toggleResDetail(id){
+  const row=document.getElementById(id);
+  const arw=document.getElementById(id+'_arw');
+  if(!row)return;
+  const open=row.style.display==='none';
+  row.style.display=open?'table-row':'none';
+  if(arw)arw.textContent=open?'▾':'▸';
+}
+let CLOSED={};
+const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
+const SCHED_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285'};
+const OFF_CSV={부산:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217',경기:'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653'};
+const SAMPLE_CSV='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1820061412';
+let sampleDaily={};
+let OFFS={};
+let rowMapReady=false;
+
+// 범용 CSV → 객체배열 파서 (헤더행 기반)
+function csvToObjects(text){
+  const lines=text.split('\n');
+  if(lines.length<2) return [];
+  // 헤더 파싱
+  const headers=parseCSVLine(lines[0]);
+  const result=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const vals=parseCSVLine(lines[i]);
+    const obj={};
+    headers.forEach((h,idx)=>{obj[h]=vals[idx]||'';});
+    obj._csvRow=i+1; // 시트 행번호 (헤더=1행, 데이터=2행부터)
+    result.push(obj);
+  }
+  return result;
+}
+function parseCSVLine(line){
+  const r=[];let cur='',inQ=false;
+  for(let c=0;c<line.length;c++){
+    const ch=line[c];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur='';}
+    else{cur+=ch;}
+  }
+  r.push(cur.trim().replace(/^"|"$/g,''));
+  return r;
+}
+function parseOffCSV(text){
+  OFFS={};const lines=text.split('\n');
+  for(let i=1;i<lines.length;i++){
+    const r=[];let cur='',inQ=false;
+    for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+    r.push(cur.trim().replace(/^"|"$/g,''));
+    if(!r[0])continue;
+    let ds=r[0].trim();
+    if(ds.match(/^\d{8}$/))ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+    if(ds.includes('T'))ds=ds.substring(0,10);
+    if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){const p=ds.split('-');ds=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}
+    if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue;
+    for(let ci=2;ci<r.length;ci++){ // 🆕 10명 제한 해제 (직원 증가 대응)
+      if(!r[ci]||!r[ci].trim())continue;
+      let nm=r[ci].trim().replace(/^(예비군|교육|출장|훈련):/,'');
+      if(nm){if(!OFFS[ds])OFFS[ds]=new Set();OFFS[ds].add(nm);}
+    }
+  }
+}
+async function loadEmployeesFromCSV(){
+  try{
+    const res=await fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735&_='+Date.now());
+    const text=await res.text();
+    const lines=text.split('\n');
+    empAll={부산:[],경기:[]};
+    for(let i=1;i<lines.length;i++){
+      const r=[];let cur='',inQ=false;
+      for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+      r.push(cur.trim().replace(/^"|"$/g,''));
+      if(!r[2])continue;
+      const region=(r[0]||'').trim();
+      const name=r[2].trim();
+      if(region==='부산')empAll['부산'].push({name,team:'부산'});
+      else if(region==='경기')empAll['경기'].push({name,team:'경기'});
+    }
+  }catch(e){console.error('직원CSV로드실패:',e);}
+}
+async function loadHolidays(){
+  try{
+    const [resBS,resGG]=await Promise.all([
+      fetch(OFF_CSV['부산']+'&_='+Date.now()),
+      fetch(OFF_CSV['경기']+'&_='+Date.now())
+    ]);
+    const [tBS,tGG]=await Promise.all([resBS.text(),resGG.text()]);
+    OFFS_ALL['부산']=parseOffCSVTo(tBS);
+    OFFS_ALL['경기']=parseOffCSVTo(tGG);
+    OFFS=OFFS_ALL[currentTeam];
+  }catch(e){}
+  renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);
+}
+function parseOffCSVTo(text){
+  const result={};const lines=text.split('\n');
+  for(let i=1;i<lines.length;i++){
+    const r=[];let cur='',inQ=false;
+    for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+    r.push(cur.trim().replace(/^"|"$/g,''));
+    if(!r[0])continue;
+    let ds=r[0].trim();
+    if(ds.match(/^\d{8}$/))ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+    if(ds.includes('T'))ds=ds.substring(0,10);
+    if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){const p=ds.split('-');ds=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}
+    if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue;
+    for(let ci=2;ci<r.length;ci++){ // 🆕 10명 제한 해제 (직원 증가 대응)
+      if(!r[ci]||!r[ci].trim())continue;
+      let nm=r[ci].trim().replace(/^(예비군|교육|출장|훈련):/,'');
+      if(nm){if(!result[ds])result[ds]=new Set();result[ds].add(nm);}
+    }
+  }
+  return result;
+}
+
+// Firebase 실시간 마감 리스너
+fbDb.ref('closedDates').on('value',snap=>{
+  const v=snap.val();
+  if(v)CLOSED=v;else CLOSED={};
+  renderCalendar();
+  if(selectedDate) renderDayDetail(selectedDate);
+});
+
+// ── 🆕 스케줄러와 동일한 Firebase 명단·팀 구성 구독 (단일 소스) ──
+let FB_EMP={부산:null,경기:null};   // 스케줄러 직원 명단 (문자열 배열)
+let FB_TEAMS={부산:null,경기:null}; // 스케줄러 팀 구성 [[이름,...],...]
+function _rosterRefresh(){renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);}
+fbDb.ref('employees').on('value',snap=>{const v=snap.val();FB_EMP['부산']=(Array.isArray(v)&&v.length)?v:null;_rosterRefresh();});
+fbDb.ref('gg_employees').on('value',snap=>{const v=snap.val();FB_EMP['경기']=(Array.isArray(v)&&v.length)?v:null;_rosterRefresh();});
+fbDb.ref('teams').on('value',snap=>{const v=snap.val();FB_TEAMS['부산']=Array.isArray(v)?v.filter(t=>Array.isArray(t)&&t.length):null;_rosterRefresh();});
+fbDb.ref('gg_teams').on('value',snap=>{const v=snap.val();FB_TEAMS['경기']=Array.isArray(v)?v.filter(t=>Array.isArray(t)&&t.length):null;_rosterRefresh();});
+
+// 🆕 지역·날짜별 실제 출근 인원 / 가용 팀(크루) 수 계산
+// - 명단: Firebase(스케줄러) 우선, 없으면 팀설정 CSV fallback
+// - 팀 수: 팀 구성 기준(3인 1팀도 1팀으로 계산), 팀별 잔여 1인끼리는 유동 페어링
+function getCapacity(region,ds){
+  const roster=FB_EMP[region]||((empAll[region]||[]).map(e=>e.name));
+  const oa=(OFFS_ALL[region]||{})[ds];
+  // 🆕 스케줄러와 동일한 유연 매칭: 정확 일치 → 성 제거 → 포함 (예: "김현진" → "현진")
+  const offSet=new Set();
+  if(oa){(oa.forEach?[...oa]:(Array.isArray(oa)?oa:[])).forEach(raw=>{
+    const n=String(raw).trim();if(!n)return;
+    if(roster.indexOf(n)>=0){offSet.add(n);return;}
+    if(n.length>=3){const short=n.slice(1);if(roster.indexOf(short)>=0){offSet.add(short);return;}}
+    const found=roster.find(e=>n.indexOf(e)>=0);if(found)offSet.add(found);
+  });}
+  const isOff=n=>offSet.has(n);
+  const working=roster.filter(n=>!isOff(n));
+  const tms=FB_TEAMS[region];
+  let crews;
+  if(tms&&tms.length){
+    let full=0,singles=0;const inTeam=new Set();
+    tms.forEach(t=>{
+      t.forEach(m=>inTeam.add(m));
+      const avail=t.filter(m=>roster.indexOf(m)>=0&&!isOff(m)).length;
+      if(avail>=2)full++;else if(avail===1)singles++;
+    });
+    working.forEach(n=>{if(!inTeam.has(n))singles++;}); // 팀 미배정 직원도 페어링 풀에 포함
+    crews=full+Math.floor(singles/2);
+  }else{
+    crews=Math.floor(working.length/2); // 팀 구성 정보 없으면 기존 방식
+  }
+  return {workers:working.length,crews:crews};
+}
+
+function isClosed(ds){return !!CLOSED[currentTeam+'_'+ds];}
+function toggleClose(ds){
+  const key=currentTeam+'_'+ds;
+  const next={...CLOSED};
+  if(next[key]){delete next[key]}else{next[key]=true}
+  fbDb.ref('closedDates').set(next);
+  renderCalendar();
+  renderDayDetail(ds);
+}
+
+function setAccentColors(team){
+  const r=document.documentElement;
+  if(team==='부산'){r.style.setProperty('--accent','var(--busan)');r.style.setProperty('--accent-light','var(--busan-light)');r.style.setProperty('--accent-dark','var(--busan-dark)');}
+  else{r.style.setProperty('--accent','var(--gyeonggi)');r.style.setProperty('--accent-light','var(--gyeonggi-light)');r.style.setProperty('--accent-dark','var(--gyeonggi-dark)');}
+}
+
+// ── 데이터 로딩 ──
+function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
+
+// 🆕 booking 캘린더용 슬롯 요약 publish (개인정보 제외 · 시(市)+건수만)
+function publishSlots(){
+  var MEGA=['서울','부산','대구','인천','광주','대전','울산','세종'];
+  function cityOf(addr){
+    var a=String(addr||'').replace(/^\(\d+\)\s*/,'').trim();
+    for(var i=0;i<MEGA.length;i++){ if(a.indexOf(MEGA[i])===0) return MEGA[i]; }
+    var mt=a.match(/([가-힣]+시)/); if(mt) return mt[1].slice(0,-1);
+    var mg=a.match(/([가-힣]+군)/); if(mg) return mg[1].slice(0,-1);
+    return a.slice(0,4)||'?';
+  }
+  var today=new Date(); today.setHours(0,0,0,0);
+  var updates={};
+  ['부산','경기'].forEach(function(region){
+    var sched=schedAll[region]||{};
+    Object.keys(sched).forEach(function(ds){
+      var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return; // 미래만
+      var ps=getCapacity(region,ds).crews; // 🆕 스케줄러 명단·팀 구성 기준 팀 수
+      if(!isFinite(ps)) ps=0;              // NaN 방어
+      var am=sched[ds].am||[], pm=sched[ds].pm||[];
+      // 도시별 오전/오후 작업 수 (한 팀이 같은 도시 오전+오후 처리 가능)
+      var cities={};
+      am.forEach(function(s){ var c=cityOf(s.address)||'?'; if(!cities[c])cities[c]={am:0,pm:0}; cities[c].am++; });
+      pm.forEach(function(s){ var c=cityOf(s.address)||'?'; if(!cities[c])cities[c]={am:0,pm:0}; cities[c].pm++; });
+      updates[region+'_'+ds]={ps:ps, cities:cities};
+    });
+  });
+  // 🆕 전원 휴무로 팀이 0인 미래 날짜도 마감 발행 (작업 0건이어도 막아야 함)
+  ['부산','경기'].forEach(function(region){
+    var offs2=OFFS_ALL[region]||{};
+    Object.keys(offs2).forEach(function(ds){
+      if(updates[region+'_'+ds]) return;  // 이미 작업 있는 날은 처리됨
+      var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return;  // 미래만
+      var ps2=getCapacity(region,ds).crews; // 🆕 스케줄러 명단·팀 구성 기준
+      if(ps2===0) updates[region+'_'+ds]={ps:0, cities:{}};  // 팀 0 → 마감
+    });
+  });
+  var cnt=Object.keys(updates).length;
+  if(cnt){
+    fbDb.ref('slots').update(updates)
+      .then(function(){
+        console.log('✅ 슬롯 기록 완료:',cnt,'일');  // 평소엔 조용히 콘솔에만
+      })
+      .catch(function(e){
+        console.error('❌ 슬롯 기록 실패:',e);
+        alert('❌ 슬롯 기록 실패\n\n'+(e&&e.message?e.message:e)+'\n\n슬롯이 저장되지 않았습니다. 이 메시지를 알려주세요.');
+      });
+  } else {
+    console.warn('⚠️ 기록할 슬롯이 0개 (미래 작업 없음 또는 데이터 로드 실패)');
+  }
+  cleanOldSlots();  // 🆕 30일 지난 과거 슬롯 정리 (누적 방지)
+  cleanStaleSlots(updates);  // 🆕 작업·휴무가 빠진 미래 날짜의 '박제된 마감' 슬롯 삭제
+}
+
+// 🆕 작업·휴무가 모두 사라진 미래 날짜의 옛 슬롯 삭제
+//   - publishSlots는 작업 있는 날짜만 덮어쓰므로, 작업이 0건이 된 날짜는 옛 full:true가 그대로 남음
+//   - 이번 계산(validKeys)에 없는 '미래' 슬롯 = 작업·휴무가 빠진 날 → 삭제해서 마감 해제
+function cleanStaleSlots(currentUpdates){
+  var today=new Date(); today.setHours(0,0,0,0);
+  var validKeys=currentUpdates||{};
+  fbDb.ref('slots').once('value').then(function(snap){
+    var all=snap.val()||{}, del={};
+    Object.keys(all).forEach(function(k){
+      var m=k.match(/(\d{4}-\d{2}-\d{2})$/);   // 키: 경기_2026-07-15 → 날짜 추출
+      if(!m) return;
+      var dt=new Date(m[1]); if(isNaN(dt.getTime())||dt<today) return;  // 미래 날짜만
+      if(validKeys[k]) return;                  // 이번에 작업/휴무로 새로 기록된 날은 유지
+      del[k]=null;                              // 작업·휴무 0건인데 슬롯만 남음 → 삭제
+    });
+    var n=Object.keys(del).length;
+    if(n){ fbDb.ref('slots').update(del).then(function(){ console.log('🧹 박제 슬롯',n,'개 해제 완료'); }); }
+  }).catch(function(e){ console.warn('박제 슬롯 정리 건너뜀:',e); });  // 실패해도 조용히 (필수 아님)
+}
+
+// 🆕 30일 이전 슬롯 자동 삭제 — 데이터 누적 방지 (과거 슬롯은 booking/reservation 모두 안 씀)
+function cleanOldSlots(){
+  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+  var cutoffStr=cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
+  fbDb.ref('slots').once('value').then(function(snap){
+    var all=snap.val()||{}, del={};
+    Object.keys(all).forEach(function(k){
+      var m=k.match(/(\d{4}-\d{2}-\d{2})$/);   // 키: 부산_2026-06-15 → 날짜 추출
+      if(m && m[1]<cutoffStr) del[k]=null;       // 30일 이전이면 삭제 표시
+    });
+    var n=Object.keys(del).length;
+    if(n){ fbDb.ref('slots').update(del).then(function(){ console.log('🧹 과거 슬롯',n,'개 정리 완료'); }); }
+  }).catch(function(e){ console.warn('슬롯 정리 건너뜀:',e); });  // 실패해도 조용히 (필수 아님)
+}
+
+async function loadData(){
+  showLoading(20);
+  document.getElementById('syncInfo').textContent='데이터 로딩 중...';
+  try{
+    // 1단계: CSV 3건 + 휴무 2건 모두 병렬 로딩 (Apps Script 안 거침 → 빠름)
+    const [schedBS,schedGG,empRes,offBS,offGG,sampleRes] = await Promise.all([
+      fetch(SCHED_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(SCHED_CSV['경기']+'&_='+Date.now()).then(r=>r.text()),
+      fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735&_='+Date.now()).then(r=>r.text()),
+      fetch(OFF_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(OFF_CSV['경기']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(SAMPLE_CSV+'&_='+Date.now()).then(r=>r.text()).catch(()=>'')
+    ]);
+    showLoading(60);
+
+    // 스케줄 파싱
+    const bsRows=csvToObjects(schedBS);
+    const ggRows=csvToObjects(schedGG);
+    parseScheduleDataTo(bsRows,'부산');
+    parseScheduleDataTo(ggRows,'경기');
+    showLoading(80);
+
+    // 직원 파싱
+    parseEmployeeCSV(empRes);
+
+    // 휴무 파싱
+    OFFS_ALL['부산']=parseOffCSVTo(offBS);
+    OFFS_ALL['경기']=parseOffCSVTo(offGG);
+    OFFS=OFFS_ALL[currentTeam];
+
+    // 샘플접수 일별 파싱
+    if(sampleRes){parseSampleDaily(sampleRes);}
+
+    // 현재 팀 동기화
+    scheduleData=schedAll[currentTeam];
+    employees=empAll[currentTeam];
+    lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    updateSyncInfo();
+    showLoading(100);
+    setTimeout(()=>showLoading(0),500);
+    renderCalendar();
+    renderWeekView();
+    if(selectedDate) renderDayDetail(selectedDate);
+
+    // 🆕 booking 캘린더용 슬롯 요약 Firebase 기록
+    publishSlots();
+
+    // 2단계: 백그라운드에서 Apps Script → row 번호 매칭 (수정/취소용)
+    loadRowNumbers();
+  }catch(err){
+    console.error('loadData CSV error:',err);
+    // CSV 실패 시 기존 Apps Script 방식으로 폴백
+    console.log('CSV 실패, Apps Script 폴백...');
+    await loadDataFallback();
+  }
+}
+
+// CSV 실패 시 기존 Apps Script GET 폴백
+async function loadDataFallback(){
+  try{
+    showLoading(30);
+    document.getElementById('syncInfo').textContent='데이터 로딩 중 (폴백)...';
+    const [resBS,resGG]=await Promise.all([
+      fetch(API_URL+'?type=schedule&team='+encodeURIComponent('부산')),
+      fetch(API_URL+'?type=schedule&team='+encodeURIComponent('경기'))
+    ]);
+    showLoading(70);
+    const [jsonBS,jsonGG]=await Promise.all([resBS.json(),resGG.json()]);
+    showLoading(90);
+    parseScheduleDataTo(jsonBS.schedules||jsonBS.rows||[],'부산');
+    parseScheduleDataTo(jsonGG.schedules||jsonGG.rows||[],'경기');
+    await loadEmployeesFromCSV();
+    scheduleData=schedAll[currentTeam];
+    employees=empAll[currentTeam];
+    lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    updateSyncInfo();
+    showLoading(100);setTimeout(()=>showLoading(0),500);
+    renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);
+    rowMapReady=true; // 폴백은 row 포함
+  }catch(err2){
+    document.getElementById('syncInfo').textContent='데이터 로딩 실패: '+err2.message;
+    showLoading(0);showToast('⚠️ 로딩 실패: '+err2.message);
+  }
+}
+
+// 직원 CSV 파싱 (기존 loadEmployeesFromCSV를 동기화 버전으로)
+function parseEmployeeCSV(text){
+  const lines=text.split('\n');
+  empAll={부산:[],경기:[]};
+  for(let i=1;i<lines.length;i++){
+    const r=parseCSVLine(lines[i]);
+    if(!r[2])continue;
+    const region=(r[0]||'').trim();
+    const name=r[2].trim();
+    if(region==='부산')empAll['부산'].push({name,team:'부산'});
+    else if(region==='경기')empAll['경기'].push({name,team:'경기'});
+  }
+}
+
+// 백그라운드: Apps Script에서 row 번호 가져와 기존 데이터에 매칭
+function loadRowNumbers(){
+  rowMapReady=false;
+  Promise.all([
+    fetch(API_URL+'?type=schedule&team='+encodeURIComponent('부산')).then(r=>r.json()).catch(()=>null),
+    fetch(API_URL+'?type=schedule&team='+encodeURIComponent('경기')).then(r=>r.json()).catch(()=>null)
+  ]).then(([jsonBS,jsonGG])=>{
+    if(jsonBS) mergeRowNumbers(jsonBS.schedules||jsonBS.rows||[],'부산');
+    if(jsonGG) mergeRowNumbers(jsonGG.schedules||jsonGG.rows||[],'경기');
+    rowMapReady=true;
+    console.log('Row 번호 매칭 완료');
+  }).catch(()=>{console.warn('Row 번호 로딩 실패 - 수정/취소 시 재시도됩니다');});
+}
+
+function mergeRowNumbers(apiRows,team){
+  const sd=schedAll[team];
+  apiRows.forEach(r=>{
+    const time=(r['시간']||'').trim();
+    let dateStr='';const rawDate=r['시공일']||'';
+    if(rawDate){const d=new Date(rawDate);if(!isNaN(d.getTime()))dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;else dateStr=String(rawDate).substring(0,10);}
+    if(!dateStr||!time||!sd[dateStr])return;
+    const addr=(r['주소']||'').trim();
+    const slot=time.includes('오전')?'am':time.includes('오후')?'pm':time==='AS'?'as':time==='실측'?'ms':null;
+    if(!slot)return;
+    const match=sd[dateStr][slot].find(e=>{
+      if(e.time!==time)return false;
+      // 🆕 전화번호 우선 매칭 (같은 단지 동호수만 다른 건 구분)
+      const ep=(e.phone||'').replace(/[^0-9]/g,''),rp=(r['연락처']||'').toString().replace(/[^0-9]/g,'');
+      if(ep.length>=8&&rp.length>=8)return ep.slice(-8)===rp.slice(-8);
+      return e.address.trim()===addr;
+    });
+    if(match) match.row=r.row;
+  });
+}
+
+function parseScheduleDataTo(rows,team){
+  const sd={};
+  rows.forEach(r=>{
+    const time=(r['시간']||'').trim();
+    let dateStr='';const rawDate=r['시공일']||'';
+    if(rawDate){const d=new Date(rawDate);if(!isNaN(d.getTime()))dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;else dateStr=String(rawDate).substring(0,10);}
+    if(!dateStr||!time)return;
+    if(!sd[dateStr])sd[dateStr]={am:[],pm:[],as:[],ms:[]};
+    const entry={time,category:r['구분']||'',address:r['주소']||'',product:r['제품']||'',phone:r['연락처']||'',isNew:r['신축여부']||'',size:r['평수']||'',scope:r['시공범위']||'',qty:r['수량']||'',sasu:r['사수']||'',busasu:r['부사수']||'',car:r['차량번호']||'',referrer:r['추천인']||'',channelName:r['채널명']||'',row:r.row||r._csvRow,receivedAt:r['접수일']||''};
+    if(time==='오전'||time==='오전(이전설치)')sd[dateStr].am.push(entry);
+    else if(time==='오후'||time==='오후(이전설치)')sd[dateStr].pm.push(entry);
+    else if(time==='AS')sd[dateStr].as.push(entry);
+    else if(time==='실측')sd[dateStr].ms.push(entry);
+  });
+  schedAll[team]=sd;
+}
+function parseScheduleData(rows){
+  scheduleData={};
+  rows.forEach(r=>{
+    const time = (r['시간']||'').trim();
+    let dateStr = '';
+    const rawDate = r['시공일']||'';
+    if(rawDate){
+      const d = new Date(rawDate);
+      if(!isNaN(d.getTime())){
+        dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      } else {
+        dateStr = String(rawDate).substring(0,10);
+      }
+    }
+    if(!dateStr || !time) return;
+    if(!scheduleData[dateStr]) scheduleData[dateStr]={am:[],pm:[],as:[],ms:[]};
+    const entry = {
+      time: time,
+      category: r['구분']||'',
+      address: r['주소']||'',
+      product: r['제품']||'',
+      phone: r['연락처']||'',
+      isNew: r['신축여부']||'',
+      size: r['평수']||'',
+      scope: r['시공범위']||'',
+      qty: r['수량']||'',
+      sasu: r['사수']||'',
+      busasu: r['부사수']||'',
+      car: r['차량번호']||'',
+      referrer: r['추천인']||'',
+      channelName: r['채널명']||'',
+      row: r.row,
+      receivedAt: r['접수일']||''
+    };
+    if(time==='오전'||time==='오전(이전설치)') scheduleData[dateStr].am.push(entry);
+    else if(time==='오후'||time==='오후(이전설치)') scheduleData[dateStr].pm.push(entry);
+    else if(time==='AS') scheduleData[dateStr].as.push(entry);
+    else if(time==='실측') scheduleData[dateStr].ms.push(entry);
+  });
+}
+
+function refreshData(){
+  const btn=document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  loadData().finally(()=>setTimeout(()=>btn.classList.remove('spinning'),800));
+}
+
+// ── 근접 지역 매핑 ──
+const NEARBY={
+  // 경기 동부
+  여주:['이천','광주시','양평','용인','성남'],이천:['여주','광주시','양평','용인','안성'],양평:['여주','이천','남양주','가평'],
+  // 경기 남부
+  수원:['화성','오산','용인','안양','의왕'],화성:['수원','오산','평택','안산'],평택:['화성','오산','안성','천안','아산'],안성:['평택','이천','용인'],
+  오산:['수원','화성','평택'],용인:['수원','이천','성남','광주시'],
+  // 경기 북부
+  의정부:['남양주','양주','구리','노원','도봉'],남양주:['구리','의정부','양평','하남'],양주:['의정부','동두천','파주'],
+  구리:['남양주','하남','광진','강동'],고양:['파주','김포','은평','마포'],파주:['고양','김포','양주'],
+  // 경기 서부
+  인천:['부천','시흥','김포','안산'],부천:['인천','김포','광명','시흥'],김포:['인천','부천','고양','파주'],
+  시흥:['인천','안산','광명','부천'],안산:['시흥','화성','수원'],광명:['부천','시흥','금천','구로'],
+  // 서울 권역
+  강동:['하남','구리','송파','광진'],송파:['강동','강남','하남','성남'],강남:['서초','송파','성남','용인'],서초:['강남','과천','성남'],
+  노원:['도봉','의정부','중랑','강북'],강서:['김포','부천','영등포','마포'],
+  // 충남
+  서산:['당진','태안','홍성','예산'],천안:['아산','평택','세종','당진'],아산:['천안','당진','평택'],당진:['서산','아산','천안'],
+  세종:['천안','대전','청주'],청주:['세종','천안','충주','대전'],충주:['청주','이천','여주'],
+  // 부산/경남
+  부산:['양산','김해','울산','창원'],울산:['부산','양산','경주'],양산:['부산','울산','김해','밀양'],
+  김해:['부산','양산','창원'],창원:['김해','진주','거제','밀양'],
+  대구:['경산','구미','칠곡','성주','고령'],경산:['대구','영천','청도'],포항:['경주','영덕','울진'],
+};
+function findNearby(keyword){
+  const kw=keyword.trim();
+  const near=new Set();near.add(kw);
+  if(NEARBY[kw])NEARBY[kw].forEach(n=>near.add(n));
+  // 역방향도 찾기
+  Object.keys(NEARBY).forEach(k=>{if(NEARBY[k].includes(kw))near.add(k);});
+  return [...near];
+}
+
+// ── 주간 일정 요약 ──
+let weekViewOpen=true;
+let currentView='cal';
+function renderWeekView(){
+  const el=document.getElementById('weekList');if(!el)return;
+  const today=new Date();
+  const sd=schedAll[currentTeam]||{};
+  const offs=OFFS_ALL[currentTeam]||{};
+  const emps=empAll[currentTeam]||[];
+  let h='';
+  function sa(a){var m=a.match(/([\uAC00-\uD7AF]+[\uc2dc\uAD6C\uAD70])/g);return m?m.slice(0,2).join(' '):a.substring(0,12);}
+  var RM={'\uBD80\uC0B0':1,'\uC591\uC0B0':1,'\uAE40\uD574':1,'\uCC3D\uC6D0':2,'\uC9C4\uC8FC':2,'\uAC70\uC81C':2,'\uD1B5\uC601':2,'\uBC00\uC591':2,'\uD568\uC548':2,'\uB9C8\uC0B0':2,'\uC0AC\uCC9C':2,'\uB300\uAD6C':3,'\uACBD\uC0B0':3,'\uCE60\uACE4':3,'\uAD6C\uBBF8':4,'\uD3EC\uD56D':5,'\uC6B8\uC0B0':6,'\uC6B8\uC8FC':6,'\uC11C\uC6B8':10,'\uAC15\uB3D9':10,'\uC1A1\uD30C':10,'\uAC15\uB0A8':10,'\uC11C\uCD08':10,'\uAC15\uC11C':10,'\uC601\uB4F1\uD3EC':10,'\uB9C8\uD3EC':10,'\uB178\uC6D0':10,'\uC131\uB3D9':10,'\uB3D9\uB300\uBB38':10,'\uC911\uB791':10,'\uAD11\uC9C4':10,'\uC6A9\uC0B0':10,'\uC885\uB85C':10,'\uC911\uAD6C':10,'\uC131\uBD81':10,'\uAC15\uBD81':10,'\uB3C4\uBD09':10,'\uC740\uD3C9':10,'\uC11C\uB300\uBB38':10,'\uB3D9\uC791':10,'\uAD00\uC545':10,'\uAE08\uCC9C':10,'\uAD6C\uB85C':10,'\uC591\uCC9C':10,'\uC778\uCC9C':11,'\uBBF8\uCD94\uD640':11,'\uACC4\uC591':11,'\uBD80\uCC9C':11,'\uAE40\uD3EC':12,'\uACE0\uC591':12,'\uD30C\uC8FC':12,'\uC218\uC6D0':13,'\uD654\uC131':13,'\uC624\uC0B0':13,'\uD3C9\uD0DD':14,'\uC548\uC131':14,'\uC6A9\uC778':15,'\uC131\uB0A8':15,'\uAD11\uC8FC\uC2DC':15,'\uC774\uCC9C':16,'\uC5EC\uC8FC':16,'\uC591\uD3C9':16,'\uC758\uC815\uBD80':17,'\uB0A8\uC591\uC8FC':17,'\uAD6C\uB9AC':17,'\uD558\uB0A8':17,'\uC2DC\uD765':18,'\uC548\uC0B0':18,'\uAD11\uBA85':18,'\uC548\uC591':19,'\uAD70\uD3EC':19,'\uC758\uC655':19,'\uACFC\uCC9C':19,'\uCC9C\uC548':20,'\uC544\uC0B0':20,'\uB2F9\uC9C4':21,'\uC11C\uC0B0':21};
+  function rg(a){for(var k in RM){if(a.includes(k))return RM[k];}return 99;}
+  // 오늘 이후 모든 날짜 수집
+  var todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var allDates=Object.keys(sd).filter(function(ds){return ds>=todayStr;}).sort();
+  // 빈 날짜도 채우기 (오늘~마지막 날짜)
+  if(allDates.length>0){
+    var last=new Date(allDates[allDates.length-1]);
+    var dateSet=new Set(allDates);
+    for(var dd=new Date(today);dd<=last;dd.setDate(dd.getDate()+1)){
+      var dds=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+      if(!dateSet.has(dds))allDates.push(dds);
+    }
+    allDates.sort();
+  }
+  allDates.forEach(function(ds){
+    var d=new Date(ds+'T00:00:00');
+    if(d.getDay()===0){h+='<div class="wk-row" style="opacity:.4;pointer-events:none;padding:6px 0;border-bottom:1px solid #e0e0e0"><span style="font-size:13px;font-weight:700;color:var(--text3)">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span><span style="font-size:10px;color:var(--text3);margin-left:8px">\uC77C\uC694\uC77C \uD734\uBB34</span></div>';return;}
+    var sc=sd[ds]||{am:[],pm:[],as:[],ms:[]};
+    var offNames=offs[ds]?[...offs[ds]]:[];
+    var amRemain=Math.max(0,getCapacity(currentTeam,ds).crews-sc.am.length); // 🆕 팀 구성 기준
+    var closed=typeof isClosed==='function'&&isClosed(ds);
+    var am=sc.am.map(function(s){return{l:sa(s.address),r:rg(s.address)};}).sort(function(a,b){return a.r-b.r;});
+    var pm=sc.pm.map(function(s){return{l:sa(s.address),r:rg(s.address),t:'pm'};});
+    var as=(sc.as||[]).map(function(s){return{l:'AS '+sa(s.address),r:rg(s.address),t:'as'};});
+    var ms=(sc.ms||[]).map(function(s){return{l:'\uC2E4\uCE21 '+sa(s.address),r:rg(s.address),t:'ms'};});
+    var right=[].concat(pm,as,ms);
+    var used={};
+    var pairs=[];
+    // 1차: 같은 권역 먼저 매칭 (distance 0)
+    am.forEach(function(a,ai){
+      var best=-1;
+      right.forEach(function(p,idx){if(used[idx])return;if(p.r===a.r&&best<0)best=idx;});
+      if(best>=0){pairs.push({am:a,pm:right[best],ai:ai});used[best]=true;}
+    });
+    // 2차: 근접 권역 매칭 (distance 1-3)
+    am.forEach(function(a,ai){
+      if(pairs.some(function(p){return p.ai===ai;}))return;
+      var best=-1,bd=999;
+      right.forEach(function(p,idx){if(used[idx])return;var dist=Math.abs(p.r-a.r);if(dist<bd){bd=dist;best=idx;}});
+      if(best>=0&&bd<=3){pairs.push({am:a,pm:right[best],ai:ai});used[best]=true;}
+      else{pairs.push({am:a,pm:null,ai:ai});}
+    });
+    // 정렬: AM 원래 순서대로
+    pairs.sort(function(a,b){return(a.ai||0)-(b.ai||0);});
+    right.forEach(function(p,idx){if(!used[idx])pairs.push({am:null,pm:p});});
+    h+='<div class="wk-row" onclick="selectDate(\''+ds+'\')" style="flex-direction:column;gap:2px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<div style="display:flex;align-items:center;gap:8px"><span style="font-size:15px;font-weight:700">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span>';
+    if(offNames.length>0)h+='<span style="font-size:10px;color:#C62828">\uD734\uBB34 '+offNames.length+'</span>';
+    h+='</div><div class="wk-badge '+(closed?'full':'avail')+'">'+(closed?'\uB9C8\uAC10':'\uC794\uC5EC'+amRemain)+'</div></div>';
+    if(pairs.length===0){h+='<span style="color:var(--text3);font-size:10px">\uC608\uC57D \uC5C6\uC74C</span>';}
+    else{pairs.forEach(function(p){
+      h+='<div style="display:flex;gap:6px;min-height:18px">';
+      h+='<div class="wk-addr" style="flex:1">';
+      if(p.am)h+='<span class="wk-am">'+p.am.l+'</span>';
+      h+='</div><div class="wk-addr" style="flex:1">';
+      if(p.pm){var cls=p.pm.t==='pm'?'wk-pm':p.pm.t==='ms'?'wk-as" style="background:#E8F5E9;color:#2E7D32':'wk-as';h+='<span class="'+cls+'">'+p.pm.l+'</span>';}
+      h+='</div></div>';
+    });}
+    h+='</div>';
+  });
+  if(!h)h='<div class="wk-empty">\uB370\uC774\uD130 \uC5C6\uC74C</div>';
+  el.innerHTML=h;
+}
+
+// ── 검색 + 근접 매칭 ──
+function searchByKeyword(val){
+  const c=document.getElementById('searchResults');const t=document.getElementById('searchTitle');const l=document.getElementById('searchList');highlightDates=[];
+  const nb=document.getElementById('nearbyCard');const nbl=document.getElementById('nearbyList');
+  if(!val.trim()){c.classList.remove('show');nb.style.display='none';renderCalendar();return;}
+  const kw=val.trim();
+  // 오늘 이전 날짜는 검색 결과에서 제외
+  const _t=new Date();const todayStr=`${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+  // 기존 검색 (정확 매칭)
+  const results=[];
+  Object.keys(scheduleData).forEach(ds=>{
+    if(ds<todayStr)return;
+    const sc=scheduleData[ds];
+    const amM=sc.am.filter(s=>s.address.includes(kw));
+    const pmM=sc.pm.filter(s=>s.address.includes(kw));
+    if(amM.length>0||pmM.length>0){results.push({date:ds,am:amM,pm:pmM});highlightDates.push(ds);}
+  });
+  renderCalendar();
+  if(results.length===0){t.textContent=`"${kw}" 결과 없음`;l.innerHTML='<div style="font-size:13px;color:var(--text3)">검색 결과가 없어요</div>';}
+  else{t.textContent=`"${kw}" ${results.length}일`;const dn=['일','월','화','수','목','금','토'];l.innerHTML=results.sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{const[y,m,d]=r.date.split('-').map(Number);const dow=dn[new Date(y,m-1,d).getDay()];const slots=[];if(r.am.length)slots.push(`<span class="sr-badge sr-am">오전 ${r.am.length}</span>`);if(r.pm.length)slots.push(`<span class="sr-badge sr-pm">오후 ${r.pm.length}</span>`);return`<div class="sri" onclick="selectDate('${r.date}')"><div class="sr-date">${m}/${d}(${dow})</div><div>${slots.join(' ')}</div></div>`;}).join('');}
+  c.classList.add('show');
+
+  // 근접 매칭
+  const nearAreas=findNearby(kw);
+  if(nearAreas.length>1){
+    const nearResults=[];
+    const today=new Date();const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    Object.keys(scheduleData).sort().forEach(ds=>{
+      if(ds<todayStr)return;
+      const sc=scheduleData[ds];
+      const all=[...sc.am,...sc.pm,...(sc.as||[]),...(sc.ms||[])];
+      const matches=all.filter(s=>nearAreas.some(a=>s.address.includes(a)));
+      if(matches.length>0)nearResults.push({date:ds,jobs:matches});
+    });
+    if(nearResults.length>0){
+      const dn=['일','월','화','수','목','금','토'];
+      let nh=`<div class="nb-tip">💡 <b>${kw}</b> 근처 지역: ${nearAreas.filter(a=>a!==kw).join(', ')}</div>`;
+      nearResults.slice(0,10).forEach(r=>{
+        const[y,m,d]=r.date.split('-').map(Number);const dow=dn[new Date(y,m-1,d).getDay()];
+        const maxS=getCapacity(currentTeam,r.date).crews*2; // 🆕 팀 구성 기준
+        const sc=scheduleData[r.date]||{am:[],pm:[]};const used=sc.am.length+sc.pm.length;const remain=Math.max(0,maxS-used);
+        nh+=`<div class="nb-row" onclick="selectDate('${r.date}')">`;
+        nh+=`<div class="nb-date">${m}/${d}(${dow}) · 잔여 ${remain}건</div>`;
+        nh+=`<div class="nb-match">${r.jobs.map(j=>'<b>'+j.address.substring(0,20)+'</b> ('+j.time+')').join(', ')}</div>`;
+        nh+=`</div>`;
+      });
+      nbl.innerHTML=nh;nb.style.display='block';
+    }else{nb.style.display='none';}
+  }else{nb.style.display='none';}
+}
+
+// ── 캘린더 ──
+function renderCalendar(){
+  const cal=document.getElementById('calDays');if(!cal)return;document.getElementById('calTitle').textContent=`${currentYear}년 ${currentMonth}월`;
+  const fd=new Date(currentYear,currentMonth-1,1).getDay();const dim=new Date(currentYear,currentMonth,0).getDate();const pd=new Date(currentYear,currentMonth-1,0).getDate();
+  const today=new Date();const tStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  let h='';
+  for(let i=0;i<fd;i++)h+=`<div class="cal-day other-month">${pd-fd+i+1}</div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=`${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(currentYear,currentMonth-1,d).getDay();
+    const isPast=new Date(currentYear,currentMonth-1,d)<new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    let cls='cal-day';if(ds===tStr)cls+=' today';if(ds===selectedDate)cls+=' selected';if(isPast)cls+=' past';if(highlightDates.includes(ds)&&ds!==selectedDate)cls+=' highlight';
+    const maxPerDay=getCapacity(currentTeam,ds).crews*2; // 🆕 스케줄러 명단·팀 구성 기준
+    const sc=scheduleData[ds]||{am:[],pm:[]};
+    const used=sc.am.length+sc.pm.length;
+    const ratio=maxPerDay>0?used/maxPerDay:0;
+    let dc='dot-gray';
+    if(dow!==0){
+      if(isClosed(ds)&&!isPast)dc='dot-red';
+      else if(used===0)dc='dot-gray';
+      else if(isPast)dc='dot-gray';        // 지난 날짜는 회색으로 건수만 표시
+      else if(ratio>=0.8)dc='dot-red';
+      else if(ratio>=0.4)dc='dot-orange';
+      else dc='dot-green';
+    }
+    if(isClosed(ds)&&!isPast) cls+=' closed';
+    // 설치 작업 카운트 (오전+오후 합산, 이전설치 포함 / AS·실측 제외)
+    const installCnt=(sc.am||[]).length+(sc.pm||[]).length;
+    const dots=(dow===0)?'':`<div class="slot-dots">${installCnt>0?`<div class="slot-dot ${dc}" style="width:auto;height:auto;border-radius:3px;font-size:9px;padding:0 3px;color:#fff;line-height:14px">${installCnt}</div>`:(isClosed(ds)&&!isPast)?`<div class="slot-dot dot-red"></div>`:''}</div>`;
+    h+=`<div class="${cls}" onclick="selectDate('${ds}')">${d}${dots}</div>`;
+  }
+  const rem=7-((fd+dim)%7);if(rem<7)for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month">${i}</div>`;
+  cal.innerHTML=h;
+}
+
+function changeMonth(d){currentMonth+=d;if(currentMonth>12){currentMonth=1;currentYear++;}if(currentMonth<1){currentMonth=12;currentYear--;}selectedDate=null;document.getElementById('dayDetail').classList.remove('show');document.getElementById('formSection').classList.remove('show');renderCalendar();updateSyncInfo();}
+
+function selectDate(ds){selectedDate=ds;renderCalendar();renderDayDetail(ds);}
+
+function renderDayDetail(ds){
+  const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
+  const sc=scheduleData[ds]||{am:[],pm:[]};
+  const offNames=OFFS[ds]?[...OFFS[ds]]:[];
+  const cap=getCapacity(currentTeam,ds); // 🆕 스케줄러 명단·팀 구성 기준
+  const teamCount=cap.workers;
+  const maxPS=cap.crews;
+  const totalUsed=sc.am.length+sc.pm.length;
+  const totalR=Math.max(0,maxPS*2-totalUsed);
+
+  document.getElementById('detailDate').innerHTML=`${m}월 ${d}일 (${dn[dow]}) <button class="badge badge-close${isClosed(ds)?' closed':''}" onclick="toggleClose('${ds}')">${isClosed(ds)?'마감 해제':'마감'}</button>`;
+  let badgeHtml=`<span class="badge badge-accent">출근 ${teamCount}명 · ${maxPS}팀</span><span class="badge ${totalR===0&&totalUsed>0?'badge-red':'badge-green'}">잔여 ${totalR}건</span>`;
+  if(offNames.length>0) badgeHtml+=`<span class="badge" style="background:rgba(248,113,113,.15);color:#C62828;font-size:10px">휴무: ${offNames.join(', ')}</span>`;
+  document.getElementById('detailBadges').innerHTML=badgeHtml;
+
+  const amRemain = maxPS - sc.am.length;
+  const pmRemain = maxPS - sc.pm.length;
+
+  let amH='';
+  sc.am.forEach((s,i)=>{
+    const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
+    const moveTag = (s.category||'').includes('이전설치')?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전설치</span>':'';
+    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
+  });
+  if(amRemain>0 && !isClosed(ds)) amH+=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
+  if(!sc.am.length && !isClosed(ds)) amH=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
+  if(isClosed(ds) && !sc.am.length) amH='<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px;">마감</div>';
+  document.getElementById('amSlots').innerHTML=amH;
+
+  let pmH='';
+  sc.pm.forEach((s,i)=>{
+    const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
+    const moveTag = (s.category||'').includes('이전설치')?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전설치</span>':'';
+    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
+  });
+  if(pmRemain>0 && !isClosed(ds)) pmH+=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
+  if(!sc.pm.length && !isClosed(ds)) pmH=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
+  if(isClosed(ds) && !sc.pm.length) pmH='<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px;">마감</div>';
+  document.getElementById('pmSlots').innerHTML=pmH;
+
+  // 오전/오후 잔여 표시
+  document.getElementById('amTitle').innerHTML=`☀️ 오전 <span style="font-size:11px;color:${amRemain>0?'var(--green)':'var(--red)'};">(${amRemain>0?amRemain+'건 가능':'마감'})</span>`;
+  document.getElementById('pmTitle').innerHTML=`🌙 오후 <span style="font-size:11px;color:${pmRemain>0?'var(--green)':'var(--red)'};">(${pmRemain>0?pmRemain+'건 가능':'마감'})</span>`;
+
+  // AS 슬롯 (마감 무관, 항상 접수 가능)
+  let asH='';
+  (sc.as||[]).forEach((s,i)=>{
+    asH+=`<div class="sched-item" onclick="editItem('AS','${ds}',${i})" style="cursor:pointer;border-left-color:var(--orange)"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
+  });
+  asH+=`<div class="sched-empty" onclick="openForm('AS','${ds}')">+ AS 접수</div>`;
+  document.getElementById('asSlots').innerHTML=asH;
+
+  // 실측 슬롯 (마감 무관, 항상 접수 가능)
+  let msH='';
+  (sc.ms||[]).forEach((s,i)=>{
+    msH+=`<div class="sched-item" onclick="editItem('실측','${ds}',${i})" style="cursor:pointer;border-left-color:var(--gyeonggi)"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
+  });
+  msH+=`<div class="sched-empty" onclick="openForm('실측','${ds}')">+ 실측 접수</div>`;
+  document.getElementById('msSlots').innerHTML=msH;
+
+  document.getElementById('dayDetail').classList.add('show');
+}
+
+// ── 폼 ──
+let editMode=null; // null=새 예약, {time,date,index,row}=수정모드
+
+function openForm(time,ds){
+  editMode=null;
+  document.getElementById('formTitle').textContent='📝 새 예약 접수';
+  document.getElementById('submitBtn').textContent='예약 접수하기';
+  document.getElementById('cancelBtn').style.display='none';
+  const form=document.getElementById('formSection');form.classList.add('show');
+  if(time)document.getElementById('fTime').value=time;
+  if(ds)document.getElementById('fDate').value=ds;
+  onTimeChange(); // 실측이면 제품 자동 세팅
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function editItem(time,ds,index){
+  const sc=scheduleData[ds]||{am:[],pm:[],as:[],ms:[]};
+  const items=time==='오전'?sc.am:time==='오후'?sc.pm:time==='AS'?(sc.as||[]):(sc.ms||[]);
+  const item=items[index];
+  if(!item)return;
+  editMode={time,date:ds,index,row:item.row,address:item.address||'',phone:item.phone||'',origTime:item.time||time};
+  document.getElementById('formTitle').textContent='✏️ 예약 수정';
+  document.getElementById('submitBtn').textContent='수정 완료';
+  document.getElementById('cancelBtn').style.display='block';
+  const form=document.getElementById('formSection');form.classList.add('show');
+  // 폼 초기화 후 기존 데이터 채우기
+  ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
+  ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
+  document.getElementById('fTime').value=item.time||time;
+  document.getElementById('fDate').value=ds;
+  document.getElementById('fAddress').value=item.address||'';
+  document.getElementById('fPhone').value=item.phone||'';
+  document.getElementById('fIsNew').value=item.isNew||'';
+  document.getElementById('fSize').value=item.size||'';
+  document.getElementById('fScope').value=item.scope||'';
+  document.getElementById('fReferrer').value=item.referrer||'';
+  if(item.channelName){document.getElementById('channelText').value=item.channelName;document.getElementById('channelResult').style.display='flex';}else{document.getElementById('channelText').value='';document.getElementById('channelResult').style.display='none';}
+  document.getElementById('fProduct1').value=item.product||'';
+  document.getElementById('fProduct2').value=item.product||'';
+  checkProductMatch();
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function checkProductMatch(){
+  const p1=document.getElementById('fProduct1').value;
+  const p2=document.getElementById('fProduct2').value;
+  const msg=document.getElementById('productMatch');
+  const sel2=document.getElementById('fProduct2');
+  if(!p1||!p2){msg.textContent='';sel2.classList.remove('error');return;}
+  if(p1===p2){msg.textContent='✓ 제품 일치';msg.className='product-match ok';sel2.classList.remove('error');}
+  else{msg.textContent='✗ 제품이 다릅니다! 확인해주세요';msg.className='product-match err';sel2.classList.add('error');}
+}
+
+// 시간을 '실측'으로 고르면 제품 선택을 자동으로 '실측'으로 채움
+function onTimeChange(){
+  const time=document.getElementById('fTime').value;
+  const p1=document.getElementById('fProduct1');
+  const p2=document.getElementById('fProduct2');
+  if(time==='실측'){
+    p1.value='실측';p2.value='실측';
+  } else if(p1.value==='실측'||p2.value==='실측'){
+    // 실측이 아닌 시간으로 바꾸면 실측 제품 초기화
+    p1.selectedIndex=0;p2.selectedIndex=0;
+  }
+  checkProductMatch();
+}
+
+function switchTeam(team){
+  currentTeam=team;
+  scheduleData=schedAll[team]||{};
+  employees=empAll[team]||[];
+  OFFS=OFFS_ALL[team]||{};
+  document.querySelectorAll('.team-btn').forEach(b=>b.classList.toggle('active',b.textContent===team));
+  document.getElementById('header').className='header '+(team==='부산'?'busan':'gyeonggi');
+  document.getElementById('teamBar').className='team-bar '+(team==='부산'?'busan':'gyeonggi');
+  document.getElementById('submitBtn').className='submit-btn '+(team==='부산'?'busan':'gyeonggi');
+  document.getElementById('headerTitle').textContent='예약 접수 · '+team;
+  setAccentColors(team);highlightDates=[];
+  document.getElementById('regionSearch').value='';
+  document.getElementById('searchResults').classList.remove('show');
+  document.getElementById('nearbyCard').style.display='none';
+  document.getElementById('dayDetail').classList.remove('show');
+  document.getElementById('formSection').classList.remove('show');
+  renderCalendar();
+  renderWeekView();
+}
+
+function cancelReservation(){
+  if(!editMode||!editMode.row){
+    if(!rowMapReady){showToast('⏳ 데이터 동기화 중... 잠시 후 다시 시도해주세요');return;}
+    showToast('⚠️ 취소할 예약이 없습니다');return;
+  }
+  if(!confirm('정말로 이 예약을 취소하시겠습니까?\n삭제된 예약은 복구할 수 없습니다.')){return;}
+  const btn=document.getElementById('cancelBtn');btn.disabled=true;btn.textContent='취소 중...';
+  fetch(API_URL,{
+    method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'cancelV2',team:currentTeam,row:editMode.row,date:editMode.date,address:editMode.address,phone:editMode.phone,time:editMode.origTime||editMode.time})
+  }).then(r=>r.text().catch(()=>'')).then(txt=>{
+    if(String(txt).indexOf('mismatch')>=0){ // 🆕 대상 행 검증 실패 → 삭제 안 함
+      showToast('⚠️ 대상 예약을 찾지 못해 취소하지 않았습니다. 새로고침 후 다시 시도해주세요');
+      loadData();
+      return;
+    }
+    document.getElementById('formSection').classList.remove('show');
+    showToast('✅ 예약이 취소되었습니다');
+    editMode=null;
+    loadData();
+  }).catch(()=>{showToast('⚠️ 취소 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 취소';});
+}
+
+function submitReservation(){
+  const time=document.getElementById('fTime').value;
+  const date=document.getElementById('fDate').value;
+  const address=document.getElementById('fAddress').value;
+  const size=document.getElementById('fSize').value;
+  const scope=document.getElementById('fScope').value;
+  const p1=document.getElementById('fProduct1').value;
+  const p2=document.getElementById('fProduct2').value;
+
+  if(!time||!date||!address||!size||!scope||!p1||!p2){showToast('⚠️ 필수 항목을 모두 입력해주세요');return;}
+  if(isClosed(date)){showToast('⚠️ 해당 날짜는 예약이 마감되었습니다');return;}
+  if(p1!==p2){showToast('⚠️ 제품을 한 번 더 확인해주세요!');document.getElementById('fProduct2').classList.add('error');return;}
+
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
+
+  const isMove=time.includes('이전설치');
+  const cleanTime=isMove?(time.startsWith('오전')?'오전':'오후'):time;
+  const category=isMove?'이전설치':'';
+
+  const payload={
+    type: editMode ? 'updateV2' : 'reservation',
+    team:currentTeam,
+    time:cleanTime,category,date,address,
+    phone:document.getElementById('fPhone').value,
+    isNew:document.getElementById('fIsNew').value,
+    size,scope,product:p1,
+    referrer:document.getElementById('fReferrer').value.trim(),
+    channelName:(document.getElementById('channelText').value||'').trim()
+  };
+  if(editMode) {
+    if(!editMode.row){showToast('⏳ 데이터 동기화 중... 잠시 후 다시 시도해주세요');btn.disabled=false;btn.textContent='수정 완료';return;}
+    payload.row = editMode.row;
+    payload.origAddress = editMode.address;   // 🆕 서버측 행 검증용 원본값
+    payload.origPhone = editMode.phone;
+    payload.origTime = editMode.origTime || editMode.time;
+  }
+
+  fetch(API_URL,{
+    method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)
+  }).then(r=>r.text().catch(()=>'')).then(txt=>{
+    if(String(txt).indexOf('mismatch')>=0){ // 🆕 서버가 대상 행 검증 실패 → 아무것도 안 씀
+      showToast('⚠️ 대상 예약을 찾지 못해 저장하지 않았습니다. 새로고침 후 다시 시도해주세요');
+      loadData();
+      return;
+    }
+    ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
+    ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
+    document.getElementById('productMatch').textContent='';
+    document.getElementById('fProduct2').classList.remove('error');
+    document.getElementById('channelText').value='';
+    document.getElementById('channelResult').style.display='none';
+    document.getElementById('formSection').classList.remove('show');
+    showToast(editMode ? `✅ 예약 수정 완료!` : `✅ ${time} 예약 접수 완료!`);
+    editMode=null;
+    // 2초 후 데이터 새로고침
+    setTimeout(()=>loadData(),2000);
+  }).catch(()=>{showToast('⚠️ 전송 실패');}).finally(()=>{btn.disabled=false;btn.textContent='예약 접수하기';});
+}
+
+// ── 카톡 채널명 생성 ──
+function generateChannelName(){
+  const time=document.getElementById('fTime').value;
+  const date=document.getElementById('fDate').value;
+  const region=document.getElementById('fRegion').value.trim();
+  const product=document.getElementById('fProduct1').value;
+  const productName=product.replace('1m','m').replace('베이지','베지'); // 카톡 채널명 길이 단축: 모던1m17 → 모던m17, 베이지1m17 → 베지m17
+  const isExtra=time==='AS'||time==='실측';
+  const isMove=time.includes('이전설치');
+  if(!time||!date||!region){showToast('⚠️ 시간, 시공일, 지역을 먼저 입력하세요');return;}
+  if(!isExtra&&!product){showToast('⚠️ 제품을 먼저 선택하세요');return;}
+  if(region.length>2){showToast('⚠️ 지역명은 2글자까지만 가능해요');return;}
+  const ds=date.replace(/-/g,'');
+  const prefix=currentTeam==='경기'?'5'+ds.slice(1):ds;
+  let name;
+  if(isExtra){
+    if(time==='실측'){
+      // 실측은 제품 부분 제외 → 실측/울산)50260724
+      name=`${time.toLowerCase()}/${region})${prefix}`;
+    } else {
+      // AS는 제품명 포함 → as/울산/마블50)50260724
+      name=product?`${time.toLowerCase()}/${region}/${productName})${prefix}`:`${time.toLowerCase()}/${region})${prefix}`;
+    }
+  } else {
+    const baseTime=time.startsWith('오전')?'오전':'오후';
+    const timeCode=baseTime==='오전'?'5':'9';
+    if(isMove){
+      name=`${timeCode}2${region}/${productName})${prefix}`;
+    } else {
+      name=`${timeCode}/${region}/${productName})${prefix}`;
+    }
+  }
+  document.getElementById('channelText').value=name;
+  document.getElementById('channelResult').style.display='flex';
+  copyChannel();
+}
+function copyChannel(){
+  const text=document.getElementById('channelText').value;
+  navigator.clipboard.writeText(text).then(()=>showToast('📋 채널명 복사됨: '+text)).catch(()=>showToast('복사 실패'));
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ── 초기화 ──
+const _urlParams = new URLSearchParams(window.location.search);
+const _initRegion = _urlParams.get('region');
+if(_initRegion === '경기') {
+  setAccentColors('경기');
+  currentTeam = '경기';
+} else {
+  setAccentColors('부산');
+}
+const now=new Date();currentYear=now.getFullYear();currentMonth=now.getMonth()+1;
+renderCalendar();
+loadData().then(function(){
+  if(_initRegion === '경기') switchTeam('경기');
+  // 🆕 신규 예약 영역 초기 로드
+  loadNewBookings();
+}).catch(function(){});
+
+// 🆕 30초마다 자동 새로고침
+setInterval(loadNewBookings, 30000);
+
+// ═══════════════════════════════════════════════════════════════
+// 🆕 신규 예약 관리 함수들 (5단계 booking.html 연동)
+// ═══════════════════════════════════════════════════════════════
+
+function loadNewBookings(){
+  fetch(API_URL+'?type=bookings')
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(!data.success){
+        document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">조회 실패</div>';
+        return;
+      }
+      renderNewBookings(data.bookings||[]);
+    })
+    .catch(function(){
+      document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">네트워크 오류</div>';
+    });
+}
+
+function renderNewBookings(bookings){
+  document.getElementById('newBookingCount').textContent=bookings.length;
+  var section=document.getElementById('newBookingsSection');
+  if(bookings.length===0){
+    section.style.display='none';
+    return;
+  }
+  section.style.display='block';
+  
+  var html=bookings.map(function(b){
+    var phoneFormatted=b.phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+    var datesStr=b.dates&&b.dates.length>0?b.dates.join(', '):'상관없음';
+    var roomStr=b.roomCount>0?' / 방추가 '+b.roomCount+'개':'';
+    
+    // 🆕 상태별 카드 스타일 + 버튼 분기
+    var isDeposited=b.status==='입금완료';
+    var cardStyle=isDeposited?
+      'background:linear-gradient(135deg,#E8F5E9,#fff);border:2px solid #2E7D32;':
+      'background:#fff;border:1px solid #FFE0B2;';
+    var statusBadge=isDeposited?
+      '<div style="font-size:11px;background:#2E7D32;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">💰 입금완료</div>':
+      '<div style="font-size:11px;color:#999">📋 '+b.submittedAt+'</div>';
+    
+    // 🆕 상태별 버튼
+    var buttons='';
+    if(isDeposited){
+      // 입금완료 상태: [확인 메시지] [폼에 채우기] [예약완료]
+      buttons='<button onclick="copyConfirmMessage('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#FEE500;color:#1a1a1a;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">확인 메시지</button>'+
+              '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+              '<button onclick="updateBookingStatus('+b.rowNumber+',\'예약완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:linear-gradient(135deg,#FF6F00,#E65100);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🎉 예약완료</button>';
+    } else {
+      // 신규접수 상태: [확인 메시지] [입금완료] [폼에 채우기] [취소]
+      buttons='<button onclick="copyConfirmMessage('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#FEE500;color:#1a1a1a;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">확인 메시지</button>'+
+              '<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
+              '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+              '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>';
+    }
+    
+    return '<div id="bookingCard_'+b.rowNumber+'" style="'+cardStyle+'border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;transition:all 0.5s ease">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
+        statusBadge+
+        (b.channel?'<div style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:8px">'+b.channel+'</div>':'')+
+      '</div>'+
+      '<div style="font-weight:700;color:#1a1a1a;margin-bottom:4px">'+b.name+' <span style="color:#666;font-weight:normal;font-size:11px">'+phoneFormatted+'</span></div>'+
+      '<div style="color:#555;line-height:1.5;margin-bottom:4px">📍 '+b.address+(b.dongHo?' '+b.dongHo:'')+'</div>'+
+      '<div style="color:#555;line-height:1.5;margin-bottom:4px">📅 희망일: <strong>'+datesStr+'</strong> · '+b.time+'</div>'+
+      '<div style="color:#555;line-height:1.5;margin-bottom:4px">🏠 '+b.pyung+'평 / '+b.product+' '+(b.color?'('+b.color+')':'')+roomStr+'</div>'+
+      '<div style="color:#555;line-height:1.5;margin-bottom:8px">✏️ '+b.scope+'</div>'+
+      (b.memo?'<div style="background:#FFF3E0;padding:6px 8px;border-radius:6px;font-size:11px;color:#666;margin-bottom:8px">💬 '+b.memo+'</div>':'')+
+      '<div style="display:flex;gap:4px" data-row="'+b.rowNumber+'">'+
+        buttons+
+      '</div>'+
+    '</div>';
+  }).join('');
+  
+  document.getElementById('newBookingsList').innerHTML=html;
+}
+
+// 🆕 예약 확정 메시지 복사 (새 예약 폼 기준 - 시공일 확정 후)
+function copyReservationConfirm(){
+  // 폼 값 가져오기
+  var time=document.getElementById('fTime').value.trim();
+  var date=document.getElementById('fDate').value.trim();
+  var address=document.getElementById('fAddress').value.trim();
+  var phone=document.getElementById('fPhone').value.replace(/[^0-9]/g,'');
+  var isNew=document.getElementById('fIsNew').value.trim();
+  var size=document.getElementById('fSize').value.trim();
+  var scope=document.getElementById('fScope').value.trim();
+  var product=document.getElementById('fProduct1').value.trim();
+  
+  // 필수 입력 검증
+  if(!time||!date||!address||!phone||!size||!product){
+    alert('⚠️ 폼을 먼저 작성해주세요!\n\n필요한 항목:\n· 시간\n· 시공일\n· 주소\n· 연락처\n· 평수\n· 제품');
+    return;
+  }
+  
+  // 전화번호 포맷
+  var phoneFormatted=phone;
+  if(phone.length===11) phoneFormatted=phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+  else if(phone.length===10) phoneFormatted=phone.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3');
+  
+  // 날짜 포맷 (2026-05-15 → 5월 15일 (목))
+  var dateObj=new Date(date);
+  var weekDays=['일','월','화','수','목','금','토'];
+  var dateFormatted=(dateObj.getMonth()+1)+'월 '+dateObj.getDate()+'일 ('+weekDays[dateObj.getDay()]+')';
+  
+  // 🆕 시간대 자동 변환 (이전설치는 일반 시간대로 표시)
+  var timeFormatted=time;
+  if(time==='오전'||time==='오전(이전설치)'){
+    timeFormatted='오전 (9~10시 방문)';
+  } else if(time==='오후'||time==='오후(이전설치)'){
+    timeFormatted='오후 (오전 작업 마치고 방문)';
+  }
+  
+  // 제품명 한글화 (모던1m17 → 모던화이트 1M 17T)
+  var productMap={
+    '마블50':'마블 (500size 22T)',
+    '코튼50':'코튼 (500size 22T)',
+    '모던50':'모던화이트 (500size 22T)',
+    '모던1m17':'모던화이트 1M 17T',
+    '모던1m22':'모던화이트 1M 22T',
+    '베이지1m17':'베이지 1M 17T',
+    '베이지1m22':'베이지 1M 22T'
+  };
+  var productName=productMap[product]||product;
+  
+  // 메시지 조립
+  var text='🎉 예약이 확정되었습니다!\n\n';
+  text+='📋 시공 정보\n';
+  text+='· 시공일: '+dateFormatted+'\n';
+  text+='· '+timeFormatted+'\n';
+  text+='· 주소: '+address+'\n';
+  text+='· 연락처: '+phoneFormatted+'\n';
+  text+='· '+size+'평'+(isNew?' / '+isNew:'')+' / '+productName+'\n';
+  text+='· 시공범위: '+scope+'\n\n';
+  text+='✨ 본사 직영 시공팀 2명이 방문하여 약 3~4시간 소요됩니다.\n\n';
+  text+='궁금하신 점은 언제든 카카오톡 채널로 문의 주세요!\n\n';
+  text+='👉 시공가이드 & 후기이벤트 참여 링크입니다!\n';
+  text+='https://my.dolbommat.com/review-event.html?phone='+phone+'&tab=before\n\n';
+  text+='👉 온누리상품권 카드 결제 안내\n';
+  text+='https://m.site.naver.com/2aZqy';
+  
+  // 클립보드 복사
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 예약 확정 메시지 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){
+      fallbackCopyText(text);
+    });
+  } else {
+    fallbackCopyText(text);
+  }
+}
+
+// 🆕 고객 본인 확인용 메시지 복사 (카톡 채널에 붙여넣기용)
+function copyConfirmMessage(b){
+  var phoneFormatted=b.phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
+  var datesStr=b.dates&&b.dates.length>0?b.dates.join(', '):'상관없음';
+  var roomStr=b.roomCount>0?' / 방추가 '+b.roomCount+'개':'';
+  
+  var text='[돌봄매트] 예약 신청 확인 안내드립니다 :)\n\n';
+  text+='📋 신청 내역\n';
+  text+='· 이름: '+b.name+' / 연락처: '+phoneFormatted+'\n';
+  text+='· 주소: '+b.address+(b.dongHo?' '+b.dongHo:'')+'\n';
+  text+='· 희망일: '+datesStr+' · '+b.time+'\n';
+  text+='· '+b.pyung+'평 / '+b.product+(b.color?' ('+b.color+')':'')+roomStr+'\n';
+  text+='· 시공범위: '+b.scope+'\n';
+  if(b.memo) text+='· 추가요청: '+b.memo+'\n';
+  text+='\n위 내용이 맞으시면 예약금 입금 주시면 예약 확정되세요! 변경 있으시면 말씀 주시면 빠르게 수정하겠습니다 :)\n\n';
+  text+='👉 예약금 기업은행 030-505520-04-011 허민석(돌봄) 으로 20만원 입금 해주시면 예약 확정되세요~\n';
+  text+='* 온누리상품권 결제시 예약금은 완납 후 다시 돌려드려요!';
+  
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      alert('✅ '+b.name+' 고객님의 확인 메시지가 복사되었습니다!\n카카오톡 채널방에 붙여넣어 주세요.');
+    }).catch(function(){
+      fallbackCopyText(text);
+    });
+  } else {
+    fallbackCopyText(text);
+  }
+}
+
+function fallbackCopyText(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.position='fixed';
+  ta.style.opacity='0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{document.execCommand('copy');alert('✅ 확인 메시지가 복사되었습니다!');}catch(e){alert('❌ 복사 실패. 직접 복사해주세요.');}
+  document.body.removeChild(ta);
+}
+
+function fillBookingForm(b){
+  // 폼에 채우기 - 기존 새 예약 접수 폼에 자동 입력
+  var fTime=document.getElementById('fTime');
+  var fDate=document.getElementById('fDate');
+  var fAddress=document.getElementById('fAddress');
+  var fPhone=document.getElementById('fPhone');
+  var fSize=document.getElementById('fSize');
+  var fScope=document.getElementById('fScope');
+  
+  // 슬롯(+오전/오후 예약 자리)을 클릭해 폼을 연 경우엔 fDate/fTime에 그 날짜·시간이 이미 세팅돼 있음.
+  // 이때는 상담으로 조율한 일정이므로 고객 희망일로 덮어쓰지 않고 그대로 유지한다.
+  var slotOpened = !!(fDate && fDate.value);
+
+  if(fTime && !slotOpened){
+    // 시간 매칭 (b.time이 "오전 (9~10시)" 같은 형태로 와도 정확히 매칭)
+    if(b.time && b.time.indexOf('오후')>=0) fTime.value='오후';
+    else if(b.time && b.time.indexOf('오전')>=0) fTime.value='오전';
+    else fTime.value='오전'; // 상관없음일 때 기본값
+  }
+  
+  // 첫 번째 희망일 사용 (슬롯으로 연 게 아니라 폼 날짜가 비어있을 때만)
+  if(fDate && !slotOpened && b.dates && b.dates.length>0){
+    var thisYear=new Date().getFullYear();
+    var dateParts=b.dates[0].split('/');
+    if(dateParts.length===2){
+      var mm=dateParts[0].padStart(2,'0');
+      var dd=dateParts[1].padStart(2,'0');
+      fDate.value=thisYear+'-'+mm+'-'+dd;
+    }
+  }
+  
+  if(fAddress){
+    var fullAddr=b.address;
+    if(b.dongHo) fullAddr+=' '+b.dongHo;
+    fAddress.value=fullAddr;
+  }
+  if(fPhone) fPhone.value=b.phone;
+  if(fSize) fSize.value=b.pyung;
+  if(fScope){
+    // 시공범위 + 방추가 개수 함께 채우기 (방추가 누락 방지)
+    var scopeText=b.scope||'';
+    var rc=parseInt(b.roomCount)||0;
+    if(rc>0) scopeText+=' + 방추가 '+rc+'개';
+    fScope.value=scopeText;
+  }
+  
+  // 신축여부, 제품 선택자 자동 매칭 시도
+  var fIsNew=document.getElementById('fIsNew');
+  if(fIsNew&&b.memo&&b.memo.indexOf('신축')>=0) fIsNew.value='신축';
+  
+  // 폼 영역으로 스크롤
+  var formSection=document.getElementById('formSection');
+  if(formSection){
+    formSection.scrollIntoView({behavior:'smooth',block:'start'});
+    formSection.style.boxShadow='0 0 0 3px #1976D2';
+    setTimeout(function(){formSection.style.boxShadow=''},2000);
+  }
+  
+  alert('✅ 폼에 자동 입력 완료!\n\n시공일과 신축여부 등 추가 정보를 확인해서 완성해주세요.');
+}
+
+function updateBookingStatus(rowNumber,status,name){
+  // 🆕 상태별 확인 메시지
+  var msg='';
+  if(status==='입금완료') msg=name+' 고객님의 예약을 [입금완료]로 처리할까요?\n\n* 입금 확인 후 폼에 채워서 시공 일정에 추가하세요.';
+  else if(status==='예약완료') msg=name+' 고객님의 예약을 [예약완료]로 처리할까요?\n\n* 시공 일정 등록까지 완료된 건만 클릭하세요.';
+  else msg=name+' 고객님의 예약을 [취소]할까요?';
+  
+  if(!confirm(msg)) return;
+  
+  var card=document.getElementById('bookingCard_'+rowNumber);
+  
+  // 🆕 입금완료: 카드 유지하고 새로고침으로 상태만 업데이트 (UI 갱신)
+  // 예약완료/취소: 카드 사라짐
+  var willDisappear=(status==='예약완료'||status==='취소');
+  
+  // 즉시 시각적 피드백
+  if(card){
+    if(status==='입금완료'){
+      // 카드 색깔 즉시 변경 (서버 응답 전)
+      card.style.background='linear-gradient(135deg,#E8F5E9,#fff)';
+      card.style.border='2px solid #2E7D32';
+      // 모든 버튼 비활성화 (응답 기다리는 동안)
+      var btns=card.querySelectorAll('button');
+      btns.forEach(function(b){b.disabled=true;b.style.opacity='0.5';b.style.cursor='wait'});
+    } else if(status==='예약완료'){
+      card.style.background='linear-gradient(135deg,#FFE0B2,#FFD180)';
+      card.style.border='2px solid #FF6F00';
+      var overlay=document.createElement('div');
+      overlay.style.cssText='text-align:center;font-size:20px;color:#E65100;font-weight:800;margin-bottom:6px';
+      overlay.textContent='🎉 예약완료!';
+      card.insertBefore(overlay,card.firstChild);
+      var btns=card.querySelectorAll('button');
+      btns.forEach(function(b){b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed'});
+    } else {
+      // 취소
+      card.style.background='#f5f5f5';
+      card.style.opacity='0.5';
+      card.style.textDecoration='line-through';
+      var overlay=document.createElement('div');
+      overlay.style.cssText='text-align:center;font-size:18px;color:#999;font-weight:700;margin-bottom:6px';
+      overlay.textContent='❌ 취소됨';
+      card.insertBefore(overlay,card.firstChild);
+      var btns=card.querySelectorAll('button');
+      btns.forEach(function(b){b.disabled=true;b.style.opacity='0.4';b.style.cursor='not-allowed'});
+    }
+  }
+  
+  fetch(API_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'bookingStatus',rowNumber:rowNumber,status:status})
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.success){
+      if(willDisappear&&card){
+        // 예약완료/취소: 1.5초 후 사라짐
+        setTimeout(function(){
+          card.style.maxHeight='0';
+          card.style.padding='0';
+          card.style.margin='0';
+          card.style.opacity='0';
+          setTimeout(loadNewBookings,500);
+        },1500);
+      } else {
+        // 입금완료: 즉시 새로고침 (카드는 다시 렌더링되며 입금완료 UI로)
+        setTimeout(loadNewBookings,300);
+      }
+    }else{
+      alert('⚠️ 실패: '+(data.error||'알 수 없는 오류'));
+      // 실패 시 원상 복구
+      loadNewBookings();
+    }
+  })
+  .catch(function(){
+    alert('⚠️ 네트워크 오류');
+    loadNewBookings();
+  });
+}
+</script>
+</body>
+</html>
