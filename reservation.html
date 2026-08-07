@@ -572,7 +572,7 @@ function parseOffCSV(text){
     if(ds.includes('T'))ds=ds.substring(0,10);
     if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){const p=ds.split('-');ds=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}
     if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue;
-    for(let ci=2;ci<=11;ci++){
+    for(let ci=2;ci<r.length;ci++){ // 🆕 10명 제한 해제 (직원 증가 대응)
       if(!r[ci]||!r[ci].trim())continue;
       let nm=r[ci].trim().replace(/^(예비군|교육|출장|훈련):/,'');
       if(nm){if(!OFFS[ds])OFFS[ds]=new Set();OFFS[ds].add(nm);}
@@ -622,7 +622,7 @@ function parseOffCSVTo(text){
     if(ds.includes('T'))ds=ds.substring(0,10);
     if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){const p=ds.split('-');ds=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}
     if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue;
-    for(let ci=2;ci<=11;ci++){
+    for(let ci=2;ci<r.length;ci++){ // 🆕 10명 제한 해제 (직원 증가 대응)
       if(!r[ci]||!r[ci].trim())continue;
       let nm=r[ci].trim().replace(/^(예비군|교육|출장|훈련):/,'');
       if(nm){if(!result[ds])result[ds]=new Set();result[ds].add(nm);}
@@ -638,6 +638,48 @@ fbDb.ref('closedDates').on('value',snap=>{
   renderCalendar();
   if(selectedDate) renderDayDetail(selectedDate);
 });
+
+// ── 🆕 스케줄러와 동일한 Firebase 명단·팀 구성 구독 (단일 소스) ──
+let FB_EMP={부산:null,경기:null};   // 스케줄러 직원 명단 (문자열 배열)
+let FB_TEAMS={부산:null,경기:null}; // 스케줄러 팀 구성 [[이름,...],...]
+function _rosterRefresh(){renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);}
+fbDb.ref('employees').on('value',snap=>{const v=snap.val();FB_EMP['부산']=(Array.isArray(v)&&v.length)?v:null;_rosterRefresh();});
+fbDb.ref('gg_employees').on('value',snap=>{const v=snap.val();FB_EMP['경기']=(Array.isArray(v)&&v.length)?v:null;_rosterRefresh();});
+fbDb.ref('teams').on('value',snap=>{const v=snap.val();FB_TEAMS['부산']=Array.isArray(v)?v.filter(t=>Array.isArray(t)&&t.length):null;_rosterRefresh();});
+fbDb.ref('gg_teams').on('value',snap=>{const v=snap.val();FB_TEAMS['경기']=Array.isArray(v)?v.filter(t=>Array.isArray(t)&&t.length):null;_rosterRefresh();});
+
+// 🆕 지역·날짜별 실제 출근 인원 / 가용 팀(크루) 수 계산
+// - 명단: Firebase(스케줄러) 우선, 없으면 팀설정 CSV fallback
+// - 팀 수: 팀 구성 기준(3인 1팀도 1팀으로 계산), 팀별 잔여 1인끼리는 유동 페어링
+function getCapacity(region,ds){
+  const roster=FB_EMP[region]||((empAll[region]||[]).map(e=>e.name));
+  const oa=(OFFS_ALL[region]||{})[ds];
+  // 🆕 스케줄러와 동일한 유연 매칭: 정확 일치 → 성 제거 → 포함 (예: "김현진" → "현진")
+  const offSet=new Set();
+  if(oa){(oa.forEach?[...oa]:(Array.isArray(oa)?oa:[])).forEach(raw=>{
+    const n=String(raw).trim();if(!n)return;
+    if(roster.indexOf(n)>=0){offSet.add(n);return;}
+    if(n.length>=3){const short=n.slice(1);if(roster.indexOf(short)>=0){offSet.add(short);return;}}
+    const found=roster.find(e=>n.indexOf(e)>=0);if(found)offSet.add(found);
+  });}
+  const isOff=n=>offSet.has(n);
+  const working=roster.filter(n=>!isOff(n));
+  const tms=FB_TEAMS[region];
+  let crews;
+  if(tms&&tms.length){
+    let full=0,singles=0;const inTeam=new Set();
+    tms.forEach(t=>{
+      t.forEach(m=>inTeam.add(m));
+      const avail=t.filter(m=>roster.indexOf(m)>=0&&!isOff(m)).length;
+      if(avail>=2)full++;else if(avail===1)singles++;
+    });
+    working.forEach(n=>{if(!inTeam.has(n))singles++;}); // 팀 미배정 직원도 페어링 풀에 포함
+    crews=full+Math.floor(singles/2);
+  }else{
+    crews=Math.floor(working.length/2); // 팀 구성 정보 없으면 기존 방식
+  }
+  return {workers:working.length,crews:crews};
+}
 
 function isClosed(ds){return !!CLOSED[currentTeam+'_'+ds];}
 function toggleClose(ds){
@@ -672,14 +714,10 @@ function publishSlots(){
   var updates={};
   ['부산','경기'].forEach(function(region){
     var sched=schedAll[region]||{};
-    var empCount=(empAll[region]||[]).length;
-    var offs=OFFS_ALL[region]||{};
     Object.keys(sched).forEach(function(ds){
       var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return; // 미래만
-      var oa=offs[ds];
-      var off=oa?(typeof oa.size==='number'?oa.size:(Array.isArray(oa)?oa.length:0)):0;  // Set이면 size, 배열이면 length
-      var ps=Math.floor(Math.max((empCount||0)-off,0)/2); // 팀 수 = (출근직원)/2
-      if(!isFinite(ps)) ps=0;                            // NaN 방어
+      var ps=getCapacity(region,ds).crews; // 🆕 스케줄러 명단·팀 구성 기준 팀 수
+      if(!isFinite(ps)) ps=0;              // NaN 방어
       var am=sched[ds].am||[], pm=sched[ds].pm||[];
       // 도시별 오전/오후 작업 수 (한 팀이 같은 도시 오전+오후 처리 가능)
       var cities={};
@@ -690,14 +728,11 @@ function publishSlots(){
   });
   // 🆕 전원 휴무로 팀이 0인 미래 날짜도 마감 발행 (작업 0건이어도 막아야 함)
   ['부산','경기'].forEach(function(region){
-    var ec=(empAll[region]||[]).length;
     var offs2=OFFS_ALL[region]||{};
     Object.keys(offs2).forEach(function(ds){
       if(updates[region+'_'+ds]) return;  // 이미 작업 있는 날은 처리됨
       var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return;  // 미래만
-      var oa=offs2[ds];
-      var off=oa?(typeof oa.size==='number'?oa.size:(Array.isArray(oa)?oa.length:0)):0;
-      var ps2=Math.floor(Math.max((ec||0)-off,0)/2);
+      var ps2=getCapacity(region,ds).crews; // 🆕 스케줄러 명단·팀 구성 기준
       if(ps2===0) updates[region+'_'+ds]={ps:0, cities:{}};  // 팀 0 → 마감
     });
   });
@@ -1008,8 +1043,7 @@ function renderWeekView(){
     if(d.getDay()===0){h+='<div class="wk-row" style="opacity:.4;pointer-events:none;padding:6px 0;border-bottom:1px solid #e0e0e0"><span style="font-size:13px;font-weight:700;color:var(--text3)">'+String(d.getMonth()+1)+'/'+String(d.getDate())+'</span><span style="font-size:10px;color:var(--text3);margin-left:8px">\uC77C\uC694\uC77C \uD734\uBB34</span></div>';return;}
     var sc=sd[ds]||{am:[],pm:[],as:[],ms:[]};
     var offNames=offs[ds]?[...offs[ds]]:[];
-    var activeCount=Math.max((emps.length||4)-offNames.length,0);
-    var amRemain=Math.max(0,Math.floor(activeCount/2)-sc.am.length);
+    var amRemain=Math.max(0,getCapacity(currentTeam,ds).crews-sc.am.length); // 🆕 팀 구성 기준
     var closed=typeof isClosed==='function'&&isClosed(ds);
     var am=sc.am.map(function(s){return{l:sa(s.address),r:rg(s.address)};}).sort(function(a,b){return a.r-b.r;});
     var pm=sc.pm.map(function(s){return{l:sa(s.address),r:rg(s.address),t:'pm'};});
@@ -1094,8 +1128,7 @@ function searchByKeyword(val){
       let nh=`<div class="nb-tip">💡 <b>${kw}</b> 근처 지역: ${nearAreas.filter(a=>a!==kw).join(', ')}</div>`;
       nearResults.slice(0,10).forEach(r=>{
         const[y,m,d]=r.date.split('-').map(Number);const dow=dn[new Date(y,m-1,d).getDay()];
-        const totalEmp=employees.length||4;const offCnt=OFFS[r.date]?OFFS[r.date].size:0;
-        const active=Math.max(totalEmp-offCnt,0);const maxS=Math.floor(active/2)*2;
+        const maxS=getCapacity(currentTeam,r.date).crews*2; // 🆕 팀 구성 기준
         const sc=scheduleData[r.date]||{am:[],pm:[]};const used=sc.am.length+sc.pm.length;const remain=Math.max(0,maxS-used);
         nh+=`<div class="nb-row" onclick="selectDate('${r.date}')">`;
         nh+=`<div class="nb-date">${m}/${d}(${dow}) · 잔여 ${remain}건</div>`;
@@ -1112,7 +1145,6 @@ function renderCalendar(){
   const cal=document.getElementById('calDays');if(!cal)return;document.getElementById('calTitle').textContent=`${currentYear}년 ${currentMonth}월`;
   const fd=new Date(currentYear,currentMonth-1,1).getDay();const dim=new Date(currentYear,currentMonth,0).getDate();const pd=new Date(currentYear,currentMonth-1,0).getDate();
   const today=new Date();const tStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const teamCount = employees.length || 4;
   let h='';
   for(let i=0;i<fd;i++)h+=`<div class="cal-day other-month">${pd-fd+i+1}</div>`;
   for(let d=1;d<=dim;d++){
@@ -1120,9 +1152,7 @@ function renderCalendar(){
     const dow=new Date(currentYear,currentMonth-1,d).getDay();
     const isPast=new Date(currentYear,currentMonth-1,d)<new Date(today.getFullYear(),today.getMonth(),today.getDate());
     let cls='cal-day';if(ds===tStr)cls+=' today';if(ds===selectedDate)cls+=' selected';if(isPast)cls+=' past';if(highlightDates.includes(ds)&&ds!==selectedDate)cls+=' highlight';
-    const offCnt=OFFS[ds]?OFFS[ds].size:0;
-    const activeCount=Math.max(teamCount-offCnt,0);
-    const maxPerDay=Math.floor(activeCount/2)*2;
+    const maxPerDay=getCapacity(currentTeam,ds).crews*2; // 🆕 스케줄러 명단·팀 구성 기준
     const sc=scheduleData[ds]||{am:[],pm:[]};
     const used=sc.am.length+sc.pm.length;
     const ratio=maxPerDay>0?used/maxPerDay:0;
@@ -1152,16 +1182,15 @@ function selectDate(ds){selectedDate=ds;renderCalendar();renderDayDetail(ds);}
 function renderDayDetail(ds){
   const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
   const sc=scheduleData[ds]||{am:[],pm:[]};
-  const totalEmp=employees.length||4;
   const offNames=OFFS[ds]?[...OFFS[ds]]:[];
-  const activeCount=totalEmp-offNames.length;
-  const teamCount=Math.max(activeCount,0);
-  const maxPS=Math.floor(teamCount/2);
+  const cap=getCapacity(currentTeam,ds); // 🆕 스케줄러 명단·팀 구성 기준
+  const teamCount=cap.workers;
+  const maxPS=cap.crews;
   const totalUsed=sc.am.length+sc.pm.length;
   const totalR=Math.max(0,maxPS*2-totalUsed);
 
   document.getElementById('detailDate').innerHTML=`${m}월 ${d}일 (${dn[dow]}) <button class="badge badge-close${isClosed(ds)?' closed':''}" onclick="toggleClose('${ds}')">${isClosed(ds)?'마감 해제':'마감'}</button>`;
-  let badgeHtml=`<span class="badge badge-accent">출근 ${teamCount}명</span><span class="badge ${totalR===0&&totalUsed>0?'badge-red':'badge-green'}">잔여 ${totalR}건</span>`;
+  let badgeHtml=`<span class="badge badge-accent">출근 ${teamCount}명 · ${maxPS}팀</span><span class="badge ${totalR===0&&totalUsed>0?'badge-red':'badge-green'}">잔여 ${totalR}건</span>`;
   if(offNames.length>0) badgeHtml+=`<span class="badge" style="background:rgba(248,113,113,.15);color:#C62828;font-size:10px">휴무: ${offNames.join(', ')}</span>`;
   document.getElementById('detailBadges').innerHTML=badgeHtml;
 

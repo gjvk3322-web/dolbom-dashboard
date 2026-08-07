@@ -746,8 +746,8 @@ if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
   ds=parts[0]+'-'+parts[1].padStart(2,'0')+'-'+parts[2].padStart(2,'0');
 }
 if(!ds.match(/^\d{4}-\d{2}-\d{2}$/))continue; // 유효한 날짜만
-// C~L열 (r[2]~r[11]) 모든 이름 읽기
-for(let ci=2;ci<=11;ci++){
+// C열 이후 모든 이름 읽기 (🆕 10명 제한 해제, 직원 증가 대응)
+for(let ci=2;ci<r.length;ci++){
   if(!r[ci]||!r[ci].trim())continue;
   const raw=r[ci].trim();
   // 예비군:이름, 교육:이름, 출장:이름 등 접두어 처리
