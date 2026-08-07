@@ -671,7 +671,8 @@ function getCapacity(region,ds){
     tms.forEach(t=>{
       t.forEach(m=>inTeam.add(m));
       const avail=t.filter(m=>roster.indexOf(m)>=0&&!isOff(m)).length;
-      if(avail>=2)full++;else if(avail===1)singles++;
+      if(avail>=2){full++;singles+=avail-2;} // 🆕 3인 팀 잉여 인원은 다른 잔여 인원과 페어링 가능
+      else if(avail===1)singles++;
     });
     working.forEach(n=>{if(!inTeam.has(n))singles++;}); // 팀 미배정 직원도 페어링 풀에 포함
     crews=full+Math.floor(singles/2);
