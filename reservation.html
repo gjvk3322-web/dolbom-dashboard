@@ -1277,7 +1277,10 @@ function editItem(time,ds,index){
   // 폼 초기화 후 기존 데이터 채우기
   ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
   ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
-  document.getElementById('fTime').value=item.time||time;
+  // 🆕 이전설치 예약이면 '오전(이전설치)' 형태로 복원 (수정 저장 시 구분이 지워지는 버그 방지)
+  let displayTime=item.time||time;
+  if((item.category||'').includes('이전설치')&&(displayTime==='오전'||displayTime==='오후'))displayTime+='(이전설치)';
+  document.getElementById('fTime').value=displayTime;
   document.getElementById('fDate').value=ds;
   document.getElementById('fAddress').value=item.address||'';
   document.getElementById('fPhone').value=item.phone||'';
@@ -1369,7 +1372,7 @@ function submitReservation(){
   const p2=document.getElementById('fProduct2').value;
 
   if(!time||!date||!address||!size||!scope||!p1||!p2){showToast('⚠️ 필수 항목을 모두 입력해주세요');return;}
-  if(isClosed(date)){showToast('⚠️ 해당 날짜는 예약이 마감되었습니다');return;}
+  if(isClosed(date)&&(!editMode||editMode.date!==date)){showToast('⚠️ 해당 날짜는 예약이 마감되었습니다');return;}
   if(p1!==p2){showToast('⚠️ 제품을 한 번 더 확인해주세요!');document.getElementById('fProduct2').classList.add('error');return;}
 
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
