@@ -1394,6 +1394,7 @@ function submitReservation(){
     payload.origAddress = editMode.address;   // 🆕 서버측 행 검증용 원본값
     payload.origPhone = editMode.phone;
     payload.origTime = editMode.origTime || editMode.time;
+    payload.origDate = editMode.date;         // 🆕 시공일을 바꿔도 원본 행을 찾도록 원본 날짜 전달
   }
 
   fetch(API_URL,{
