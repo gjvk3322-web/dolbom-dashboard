@@ -109,6 +109,7 @@ body {
 .welcome-btn-cert       { background: #455a64; color: #fff; }   /* 인증서 — 블루그레이 */
 .welcome-btn-onnuricard { background: #7b1fa2; color: #fff; }   /* 온누리카드 — 진보라 */
 .welcome-btn-color      { background: #c2185b; color: #fff; }   /* 색상관련 — 로즈 */
+.welcome-btn-pantry     { background: #3949ab; color: #fff; }   /* 팬트리 — 인디고 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
 .welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
@@ -1179,6 +1180,9 @@ body {
           </button>
           <button class="welcome-btn welcome-btn-onnuricard" onclick="copyOnnuriCard()">
             💳 <span>온누리카드</span>
+          </button>
+          <button class="welcome-btn welcome-btn-pantry" onclick="copyPantry()">
+            🚪 <span>팬트리 안내</span>
           </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
@@ -2537,23 +2541,27 @@ var QUOTE_FORM_DEFAULT_TEXT =
   '아래 내용을 작성해주시면 빠르게 견적 안내 드리겠습니다😊\n\n' +
   '아파트 명 :\n' +
   '평 수 :\n' +
-  '거실베란다 여부 :\n' +
+  '거실 베란다 확장 여부 :\n' +
   '시공 범위 :\n' +
+  '희망 시공 시기 :\n' +
   '궁금하신 내용 :\n\n' +
   '언제든 카카오톡 채널로 문의 주시면\n' +
   '최대한 빠른 답변 드리겠습니다!\n' +
   '감사합니다 💌';
 
 var BOOKING_DEFAULT_TEXT =
-  '아래 링크에서 주소 입력시\n' +
-  '예약 및 일정 확인 가능하세요! 😊\n' +
+  '아래 링크에서 주소 입력하시면\n' +
+  '예약 및 일정 확인하실 수 있어요! 😊\n' +
   'https://my.dolbommat.com/booking.html\n\n' +
   '👉 예약금\n' +
-  '기업은행 030-505520-04-011 허민석(돌봄) 으로\n' +
-  '20만원 입금 해주시면 예약 확정되세요~';
+  '기업은행 030-505520-04-011 허민석(돌봄)\n' +
+  '20만원 입금해주시면 예약 확정됩니다~\n' +
+  '입금 후 입금자명 알려주시면 바로 확정 처리해드릴게요!';
 
 var REVIEW_DEFAULT_TEXT =
-  '후기 이벤트는 아래 링크에서 참여 가능합니다 :)\n' +
+  '📸 후기 남기고 혜택 받아가세요!\n' +
+  '후기 이벤트 참여하시면 최대 13만원 상당 혜택을 드려요 🎁\n\n' +
+  '👉 참여하기\n' +
   'https://my.dolbommat.com/review-event.html';
 
 function getWelcomeText() {
@@ -2633,7 +2641,7 @@ function copyOnnuriQR() {
 }
 
 function copyWorkTime() {
-  var text = '보통 작업은 9:00-10:00시 시작 되시며 오후 12-2시 마무리 되실 것 같습니다!';
+  var text = '보통 오전 9~10시 사이 시작해서\n오후 12~2시쯤 마무리됩니다! 😊';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 오전작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
@@ -2644,7 +2652,7 @@ function copyWorkTime() {
 }
 
 function copyAfternoonWorkTime() {
-  var text = '오후 작업은 오전 작업 마치고 가능합니다!\n보통 1-3시 방문 예정이며 오전에 정확한 시간 안내 가능할 것 같습니다!';
+  var text = '오후 작업은 오전 작업 마치는 대로 진행됩니다!\n보통 오후 1~3시 방문 예정이며,\n정확한 시간은 당일 오전에 안내드릴게요 😊';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 오후작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
@@ -2695,7 +2703,6 @@ function copyTapeRemoval() {
     '✋ STEP 2. 천천히 뜯기\n' +
     '모서리부터 카드나 손톱으로 살짝 들뜨게 한 뒤,\n' +
     '45도 각도로 아주 천천히 당겨주세요.\n' +
-    '안될경우 자로 긁으셔야합니다!\n' +
     '⚠️ 빠르게 당기면 바닥재가 손상될 수 있어요!\n\n' +
     '🧹 STEP 3. 잔여물 제거\n' +
     '접착제가 남아있다면 아래 방법을 순서대로 시도해보세요.\n' +
@@ -2703,7 +2710,8 @@ function copyTapeRemoval() {
     '② 식용유 소량 묻혀 문지른 뒤 물티슈로 닦기\n' +
     '③ 지우개로 문지르기\n\n' +
     '💡 TIP\n' +
-    '잘 안 떨어지면 열 → 뜯거나 긁기 → 열, 반복해주시면 훨씬 수월해요!\n\n' +
+    '잘 안 떨어지면 열 → 뜯기 → 열, 반복해주시면 훨씬 수월해요!\n' +
+    '그래도 안 될 경우엔 자로 살살 긁어서 제거해주세요.\n\n' +
     '혹시 추가로 궁금한 점 있으시면 편하게 말씀해주세요 🙏';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
@@ -2717,9 +2725,10 @@ function copyTapeRemoval() {
 // 📜 인증서 안내 복사
 function copyCertificate() {
   var text =
-    '안녕하세요 돌봄매트입니다!\n' +
-    '돌봄매트 인증서 관련 내용입니다!\n\n' +
-    'https://app.notion.com/p/dolbommat/8cfdb911ab244413afce98cec363705e';
+    '안녕하세요, 돌봄매트입니다 😊\n' +
+    'KC 인증, 유해물질 전항목 불검출 시험성적서 등\n' +
+    '돌봄매트의 인증서를 아래 링크에서 확인하실 수 있어요!\n\n' +
+    '👉 https://app.notion.com/p/dolbommat/8cfdb911ab244413afce98cec363705e';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 인증서 안내 복사 완료! 카톡에 붙여넣으세요');
@@ -2732,16 +2741,15 @@ function copyCertificate() {
 // 💳 온누리카드 등록/사용 안내 복사
 function copyOnnuriCard() {
   var text =
-    '[돌봄매트 온누리카드 이용 및 결제 안내]\n\n' +
-    '1. 온누리카드 등록 및 사용 방법 알아보기\n\n' +
-    '* 앱 활용: \'디지털온누리앱\'을 설치하시면 이용 방법을 가장 쉽게 확인하실 수 있습니다.\n' +
-    '* 상세 페이지: https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
-    '* 영상 가이드: https://www.youtube.com/watch?v=cYCwwd_9AR0\n\n' +
-    '2. 잔금 결제 시 유의사항 (중요)\n\n' +
-    '* 기본 결제 방식: 카드 번호와 유효기간(년/월/일)을 알려주시면 결제가 가능합니다.\n' +
-    '* 현대카드 및 하나카드 결제:\n' +
-    '   * 카드 번호 방식으로는 결제가 불가능합니다.\n' +
-    '   * 반드시 실물 카드를 가지고 계셔야 하며, 작업 당일 현장에서 단말기를 통해 직접 결제하셔야 합니다.';
+    '💳 온누리카드 이용 및 결제 안내\n\n' +
+    '1️⃣ 등록·사용 방법\n' +
+    '✔️ \'디지털온누리\' 앱을 설치하시면 가장 쉽게 확인하실 수 있어요\n' +
+    '✔️ 상세 안내: https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
+    '✔️ 영상 가이드: https://www.youtube.com/watch?v=cYCwwd_9AR0\n\n' +
+    '2️⃣ 잔금 결제 시 유의사항 (중요)\n' +
+    '✔️ 온누리카드 결제는 작업 당일 현장에서\n' +
+    '   단말기로 직접 결제하시는 걸 권장드려요\n' +
+    '✔️ 특히 현대카드·하나카드는 현장 실물카드 결제만 가능합니다';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 온누리카드 안내 복사 완료! 카톡에 붙여넣으세요');
@@ -2757,14 +2765,14 @@ function copyColorInfo() {
     '안녕하세요, 돌봄매트입니다 😊\n' +
     '문의주신 매트 크기와 색상 안내드립니다.\n\n' +
     '[크기 안내]\n' +
-    '✅ 1,000매트\n\n' +
-    '* 사이즈: 가로 1m × 세로 1m\n' +
-    '* 두께: 1.7cm / 2.2cm 선택 가능\n' +
-    '* 색상: 모던, 베이지\n\n' +
-    '✅ 500매트\n\n' +
-    '* 사이즈: 가로 50cm × 세로 50cm\n' +
-    '* 두께: 2.2cm\n' +
-    '* 색상: 모던, 마블\n\n' +
+    '✅ 1,000매트\n' +
+    '· 사이즈: 가로 1m × 세로 1m\n' +
+    '· 두께: 1.7cm / 2.2cm 선택 가능\n' +
+    '· 색상: 모던, 베이지\n\n' +
+    '✅ 500매트\n' +
+    '· 사이즈: 가로 50cm × 세로 50cm\n' +
+    '· 두께: 2.2cm\n' +
+    '· 색상: 모던, 마블\n\n' +
     '[색상 안내] 색상은 아래 링크에서 실제 시공 사례와 함께 확인하실 수 있습니다.\n' +
     '👉 https://www.dolbommat.com/#casesSection\n' +
     '보시고 마음에 드시는 색상이 있으시면 말씀해주세요. 공간 분위기에 맞춰 추천도 도와드리겠습니다 😊';
@@ -2781,9 +2789,9 @@ function copyColorInfo() {
 function copyGroupBuy() {
   var text =
     '👥 5인 공구 안내\n\n' +
-    '5인 공구는 맘스홀릭에서 쉽게 모집하실 수 있으세요! 😊\n\n' +
-    '✔️ 같이하실 분 휴대폰 뒷자리만 알려주시면 적용되세요\n' +
-    '✔️ 지역, 일정 모두 상관없으세요\n' +
+    '5인 공구는 맘스홀릭에서 쉽게 모집하실 수 있어요! 😊\n\n' +
+    '✔️ 같이하실 분 휴대폰 뒷자리만 알려주시면 적용됩니다\n' +
+    '✔️ 지역, 일정 모두 상관없어요\n' +
     '✔️ 모집하신 분들이 각자 저희 카카오톡 채널로 오셔서\n' +
     '   "같이하실 분 휴대폰 뒷자리"를 알려주시면 됩니다!\n\n' +
     '편하게 5명 모으시고 알려만 주시면\n' +
@@ -2791,6 +2799,26 @@ function copyGroupBuy() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 공구 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 🚪 팬트리(붙박이장) 시공 안내 복사
+function copyPantry() {
+  var text =
+    '🚪 팬트리(붙박이장) 시공 안내\n\n' +
+    '팬트리 문 위·아래 공간이 충분하면\n' +
+    '현장에서 경첩을 조정해 문 높이를 맞춘 후 설치해드려요!\n\n' +
+    '공간이 부족한 경우에는\n' +
+    '✔️ 팬트리 전용 매트로 시공하거나\n' +
+    '✔️ 해당 부분만 비워두고 시공해드리고 있어요 😊\n\n' +
+    '📷 실제 시공 사진은 아래에서 확인하실 수 있어요!\n' +
+    '👉 https://m.site.naver.com/2egFF';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 팬트리 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
