@@ -2531,7 +2531,7 @@ var WELCOME_DEFAULT_TEXT =
   '✔️ 5성급 호텔 키즈라운지 시공\n\n' +
   '아이의 안전부터 이웃을 생각한 층간소음까지.\n' +
   '돌봄매트가 편안한 일상을 만들어드립니다.\n\n' +
-  '✍️돌봄매트 실시간 후기 \n' +
+  '돌봄매트 실시간 후기\n' +
   '👉 https://m.site.naver.com/2cZKR\n\n' +
   '🎬 바닥손상 없는 공기순환통로\n' +
   '👉 https://my.dolbommat.com/video-air.html';
@@ -2559,10 +2559,9 @@ var BOOKING_DEFAULT_TEXT =
   '입금 후 입금자명 알려주시면 바로 확정 처리해드릴게요!';
 
 var REVIEW_DEFAULT_TEXT =
-  '📸 후기 남기고 혜택 받아가세요!\n' +
-  '후기 이벤트 참여하시면 최대 13만원 상당 혜택을 드려요 🎁\n\n' +
-  '👉 참여하기\n' +
-  'https://my.dolbommat.com/review-event.html';
+  '후기 이벤트 참여하시면\n' +
+  '최대 13만원 상당 혜택을 드려요!\n\n' +
+  '👉 https://my.dolbommat.com/review-event.html';
 
 function getWelcomeText() {
   return localStorage.getItem('dolbom_welcome_text') || WELCOME_DEFAULT_TEXT;
@@ -2702,8 +2701,7 @@ function copyTapeRemoval() {
     '(손으로 만졌을 때 따뜻한 느낌이면 OK)\n\n' +
     '✋ STEP 2. 천천히 뜯기\n' +
     '모서리부터 카드나 손톱으로 살짝 들뜨게 한 뒤,\n' +
-    '45도 각도로 아주 천천히 당겨주세요.\n' +
-    '⚠️ 빠르게 당기면 바닥재가 손상될 수 있어요!\n\n' +
+    '45도 각도로 아주 천천히 당겨주세요.\n\n' +
     '🧹 STEP 3. 잔여물 제거\n' +
     '접착제가 남아있다면 아래 방법을 순서대로 시도해보세요.\n' +
     '① 다이소 스티커 제거제 사용\n' +
@@ -2741,15 +2739,15 @@ function copyCertificate() {
 // 💳 온누리카드 등록/사용 안내 복사
 function copyOnnuriCard() {
   var text =
-    '💳 온누리카드 이용 및 결제 안내\n\n' +
-    '1️⃣ 등록·사용 방법\n' +
-    '✔️ \'디지털온누리\' 앱을 설치하시면 가장 쉽게 확인하실 수 있어요\n' +
-    '✔️ 상세 안내: https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
-    '✔️ 영상 가이드: https://www.youtube.com/watch?v=cYCwwd_9AR0\n\n' +
-    '2️⃣ 잔금 결제 시 유의사항 (중요)\n' +
-    '✔️ 온누리카드 결제는 작업 당일 현장에서\n' +
-    '   단말기로 직접 결제하시는 걸 권장드려요\n' +
-    '✔️ 특히 현대카드·하나카드는 현장 실물카드 결제만 가능합니다';
+    '[온누리카드 이용 및 결제 안내]\n\n' +
+    '1. 등록·사용 방법\n' +
+    '· \'디지털온누리\' 앱을 설치하시면 가장 쉽게 확인하실 수 있어요\n' +
+    '· 상세 안내: https://www.onnuri-mall.co.kr/custom/onnuriCouponVC\n' +
+    '· 영상 가이드: https://www.youtube.com/watch?v=cYCwwd_9AR0\n\n' +
+    '2. 잔금 결제 시 유의사항 (중요)\n' +
+    '· 온누리카드 결제는 작업 당일 현장에서\n' +
+    '  단말기로 직접 결제하시는 걸 권장드려요\n' +
+    '· 특히 현대카드·하나카드는 현장 실물카드 결제만 가능합니다';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 온누리카드 안내 복사 완료! 카톡에 붙여넣으세요');
@@ -2808,13 +2806,13 @@ function copyGroupBuy() {
 // 🚪 팬트리(붙박이장) 시공 안내 복사
 function copyPantry() {
   var text =
-    '🚪 팬트리(붙박이장) 시공 안내\n\n' +
+    '[팬트리(붙박이장) 시공 안내]\n\n' +
     '팬트리 문 위·아래 공간이 충분하면\n' +
     '현장에서 경첩을 조정해 문 높이를 맞춘 후 설치해드려요!\n\n' +
     '공간이 부족한 경우에는\n' +
-    '✔️ 팬트리 전용 매트로 시공하거나\n' +
-    '✔️ 해당 부분만 비워두고 시공해드리고 있어요 😊\n\n' +
-    '📷 실제 시공 사진은 아래에서 확인하실 수 있어요!\n' +
+    '· 팬트리 전용 매트로 시공하거나\n' +
+    '· 해당 부분만 비워두고 시공해드리고 있어요.\n\n' +
+    '실제 시공 사진은 아래에서 확인하실 수 있어요!\n' +
     '👉 https://m.site.naver.com/2egFF';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
