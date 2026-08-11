@@ -637,20 +637,52 @@ async function renderSummary(){
   // 데이터 계산
   const prodColorStock={};
   PR.forEach(p=>{p.colors.forEach(c=>{let s=0;TY.forEach(t=>{s+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb});if(s>0)prodColorStock[p.id+'_'+c]=s})});
-  const prodColorFuture={};
+  // 🆕 예약 날짜 파싱 (MM/DD 또는 YYYY-MM-DD → 오늘 기준 며칠 후인지)
+  function futureDayDiff(dateStr){
+    if(!dateStr)return 999;
+    const today=new Date();today.setHours(0,0,0,0);
+    let y=today.getFullYear(),m,d;
+    const s=String(dateStr).trim();
+    if(/^\d{4}-\d{1,2}-\d{1,2}/.test(s)){const p=s.split('-');y=+p[0];m=+p[1];d=+p[2];}
+    else{const p=s.split('/');if(p.length<2)return 999;m=+p[0];d=+p[1];}
+    let dt=new Date(y,m-1,d);
+    // MM/DD 형식일 때 연말→연초 넘어가는 경우 보정 (예: 오늘 12/28, 예약 01/05)
+    if(!/^\d{4}/.test(s)&&(dt-today)/86400000<-180)dt=new Date(y+1,m-1,d);
+    return Math.round((dt-today)/86400000);
+  }
+  // 🆕 futureList를 7일/20일 구간으로 분리 (Code.gs가 20일치를 보내줘도 7일 카드는 그대로 유지)
+  const future7List=[],future20List=[];
   if(sd&&sd.futureList)sd.futureList.forEach(j=>{
-    const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
-    const c=j.color||'미정';const key=pid+'_'+c;
-    if(!prodColorFuture[key])prodColorFuture[key]={n:0,s:0,sqmList:[]};
-    prodColorFuture[key].n++;
-    // 평수+시공범위+제품으로 매트 수량 (1000매트는 ÷4 · cs-quote 동일)
-    const qtyFromPyeong=calcMatQty(j.sqm,j.scope,j.product);
-    prodColorFuture[key].s+=qtyFromPyeong;
-    prodColorFuture[key].sqmList.push(j.sqm);
+    const diff=futureDayDiff(j.date);
+    if(diff<0||diff>20)return;
+    future20List.push(j);
+    if(diff<=7)future7List.push(j);
   });
+  // 🆕 이전설치 = 기존 매트 이동이라 보충분만 소모 → 500매트 기준 10장 고정 (1000매트는 ÷4 올림 = 3장)
+  function isReinstallJob(j){return !!j.reinstall||String(j.category||'').indexOf('이전설치')>=0;}
+  function reinstallQty(product){return String(product||'').indexOf('1000')>=0?3:10;}
+  function jobQty(j){return isReinstallJob(j)?reinstallQty(j.product):calcMatQty(j.sqm,j.scope,j.product);}
+  function buildFutureAgg(list){
+    const agg={};
+    list.forEach(j=>{
+      const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
+      const c=j.color||'미정';const key=pid+'_'+c;
+      if(!agg[key])agg[key]={n:0,s:0,sqmList:[]};
+      agg[key].n++;
+      // 평수+시공범위+제품으로 매트 수량 (1000매트는 ÷4 · cs-quote 동일) · 이전설치는 고정 10장(500기준)
+      const qtyFromPyeong=jobQty(j);
+      agg[key].s+=qtyFromPyeong;
+      agg[key].sqmList.push(j.sqm);
+    });
+    return agg;
+  }
+  const prodColorFuture=buildFutureAgg(future7List);      // 7일 (기존 로직·7일후 컬럼·부족경고 유지)
+  const prodColorFuture20=buildFutureAgg(future20List);   // 🆕 20일 (발주용)
   // ft를 PYEONG_DATA 기반 합계로 통일 (헤더·7일후예상·상세 모두 동일 값 사용)
   const ft=Object.values(prodColorFuture).reduce((s,v)=>s+v.s,0);
-  const fj=sd&&!sd.error?sd.futureJobs||0:0;
+  const ft20=Object.values(prodColorFuture20).reduce((s,v)=>s+v.s,0);
+  const fj=future7List.length;
+  const fj20=future20List.length;
   const pj=sd&&!sd.error?sd.pastJobs||0:0;
   const remaining=gs-ft;
 
@@ -757,38 +789,53 @@ async function renderSummary(){
     h+=`</div>`;
   }
 
-  // 다음 7일 예약 (접기/펼치기)
-  if(sd&&!sd.error&&sd.futureList&&sd.futureList.length>0){
-    h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('futureDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📅 다음 7일 예약 <span style="color:var(--red)">-${ft.toLocaleString()}장</span></span><span style="font-size:12px;color:var(--dim)">${fj}건 <span class="arrow">▸</span></span></div>`;
-    h+=`<div id="futureDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
-    // 🆕 제품별 요약 (건수 · 예상 장수)
+  // 📅 예약 카드 공통 렌더링 (7일 / 20일) — 제품별 요약 + 장수 비중 % + 상세 목록
+  function renderFutureCard(title,detailId,list,agg,total,jobs){
+    if(!list.length)return '';
+    let c='';
+    c+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
+    c+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('${detailId}');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">${title} <span style="color:var(--red)">-${total.toLocaleString()}장</span></span><span style="font-size:12px;color:var(--dim)">${jobs}건 <span class="arrow">▸</span></span></div>`;
+    c+=`<div id="${detailId}" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
+    // 제품별 요약 (건수 · 예상 장수 · 장수 기준 비중 %)
     {
       const colorOrd=['모던','베이지','마블','코튼','미정'];
-      h+=`<div style="padding:10px 10px 8px;margin-top:10px;background:rgba(255,255,255,.03);border:.5px solid var(--border);border-radius:10px">`;
-      h+=`<div style="font-size:10px;color:var(--dim);font-weight:700;margin-bottom:5px">📦 제품별 요약</div>`;
+      c+=`<div style="padding:10px 10px 8px;margin-top:10px;background:rgba(255,255,255,.03);border:.5px solid var(--border);border-radius:10px">`;
+      c+=`<div style="font-size:10px;color:var(--dim);font-weight:700;margin-bottom:5px">📦 제품별 요약 <span style="font-weight:400">· %는 전체 ${total.toLocaleString()}장 중 비중</span></div>`;
       prodOrder.forEach(pid=>{
-        const keys=Object.keys(prodColorFuture)
+        const keys=Object.keys(agg)
           .filter(k=>{const cN=k.split('_').slice(-1)[0];return k.slice(0,k.length-cN.length-1)===pid})
           .sort((a,b)=>{const ca=a.split('_').slice(-1)[0],cb=b.split('_').slice(-1)[0];const ia=colorOrd.indexOf(ca),ib=colorOrd.indexOf(cb);return (ia<0?99:ia)-(ib<0?99:ib)});
         keys.forEach(key=>{
-          const c=key.split('_').slice(-1)[0];
-          const d=prodColorFuture[key];
-          const dot=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>`;
-          h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:12px"><span>${dot}${c} ${(prodNames[pid]||pid).replace('매트','')}</span><span style="color:var(--dim)">${d.n}건 · <span style="font-weight:700;color:var(--text)">${d.s.toLocaleString()}장</span></span></div>`;
+          const cn=key.split('_').slice(-1)[0];
+          const d=agg[key];
+          const pct=total>0?Math.round(d.s/total*100):0;
+          const dot=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[cn]||'#888'};margin-right:4px"></span>`;
+          c+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:12px"><span>${dot}${cn} ${(prodNames[pid]||pid).replace('매트','')}</span><span style="color:var(--dim)">${d.n}건 · <span style="font-weight:700;color:var(--text)">${d.s.toLocaleString()}장</span> · <span style="font-weight:700;color:var(--accent)">${pct}%</span></span></div>`;
         });
       });
-      h+=`</div>`;
+      c+=`</div>`;
     }
-    sd.futureList.forEach(j=>{
+    list.forEach(j=>{
       const pName=j.product.replace('매트','');
       const cDot=j.color?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[j.color]||'#888'};margin-right:3px"></span>`:'';
       const sIdx=scopeToIdx(j.scope);
-      const qtyCalc=calcMatQty(j.sqm,j.scope,j.product);
+      const qtyCalc=jobQty(j);
+      const reTag=isReinstallJob(j)?`<span style="color:var(--orange);font-weight:700">이전설치</span> · `:'';
       const scopeLabel=['거실복도','거실복도+아일','거실복도+주방'][sIdx];
-      h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${j.sqm}평 · ${scopeLabel} · ${cDot}${j.color||''} ${pName}</span><span style="font-weight:600">${qtyCalc}장</span></div>`;
+      c+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${reTag}${j.sqm}평 · ${scopeLabel} · ${cDot}${j.color||''} ${pName}</span><span style="font-weight:600">${qtyCalc}장</span></div>`;
     });
-    h+=`</div></div>`;
+    c+=`</div></div>`;
+    return c;
+  }
+
+  // 다음 7일 예약 (기존 유지)
+  h+=renderFutureCard('📅 다음 7일 예약','futureDetail',future7List,prodColorFuture,ft,fj);
+  // 🆕 다음 20일 예약 (발주용 · 매일 그 날 기준 20일 안 작업)
+  h+=renderFutureCard('🗓️ 다음 20일 예약','futureDetail20',future20List,prodColorFuture20,ft20,fj20);
+  // 🆕 Code.gs가 아직 7일치만 보내는 경우 안내
+  if(future20List.length>0&&future20List.length===future7List.length&&sd&&sd.futureList){
+    const maxDiff=Math.max(...future20List.map(j=>futureDayDiff(j.date)));
+    if(maxDiff<=7)h+=`<div style="font-size:10px;color:var(--dim);padding:4px 14px">ℹ️ 현재 서버가 7일치 예약만 보내주고 있어요. Code.gs의 getStock 기간을 20일로 늘리면 20일 카드가 완전해집니다.</div>`;
   }
 
   // 로스율
