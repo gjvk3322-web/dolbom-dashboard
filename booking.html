@@ -353,7 +353,7 @@ function daySlot(dateStr){
     }
     return free>0;  // 새 도시 → 빈 팀 있어야 (오전/오후 안 묶인 팀)
   }
-  var amOk=can('am'), pmOk=can('pm');
+  var amOk=!s.amClosed&&can('am'), pmOk=!s.pmClosed&&can('pm');  // 🆕 회의 등 차단 시 해당 시간대 전체 마감
   return {am:amOk, pm:pmOk, full:(!amOk && !pmOk)};
 }
 
