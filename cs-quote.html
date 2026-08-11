@@ -110,6 +110,7 @@ body {
 .welcome-btn-onnuricard { background: #7b1fa2; color: #fff; }   /* 온누리카드 — 진보라 */
 .welcome-btn-color      { background: #c2185b; color: #fff; }   /* 색상관련 — 로즈 */
 .welcome-btn-pantry     { background: #3949ab; color: #fff; }   /* 팬트리 — 인디고 */
+.welcome-btn-as         { background: #ef6c00; color: #fff; }   /* AS 접수 — 오렌지 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
 .welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
@@ -1183,6 +1184,9 @@ body {
           </button>
           <button class="welcome-btn welcome-btn-pantry" onclick="copyPantry()">
             🚪 <span>팬트리 안내</span>
+          </button>
+          <button class="welcome-btn welcome-btn-as" onclick="copyAsIntake()">
+            🔧 <span>AS 접수 안내</span>
           </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
@@ -2817,6 +2821,27 @@ function copyPantry() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 팬트리 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 🔧 AS 접수 안내 복사 — 증상·사진 요청 양식
+function copyAsIntake() {
+  var text =
+    '안녕하세요, 돌봄매트입니다 😊\n' +
+    '불편을 드려 죄송합니다.\n' +
+    '빠른 확인을 위해 아래 내용을 남겨주세요!\n\n' +
+    '증상 (벌어짐·들뜸 등) :\n' +
+    '발생 위치 (거실·복도·주방 등) :\n\n' +
+    '사진도 함께 보내주시면 정확한 확인이 가능해요!\n' +
+    '· 문제 부위를 가까이에서 1장\n' +
+    '· 주변 공간이 함께 보이게 멀리서 1장\n\n' +
+    '확인 후 조치 방법과 방문 일정을 빠르게 안내드릴게요!';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ AS 접수 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
