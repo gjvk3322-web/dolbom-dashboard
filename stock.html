@@ -609,9 +609,10 @@ async function renderSummary(){
   const _dateLabel=_dParts.length===3
     ?`${parseInt(_dParts[1])}/${parseInt(_dParts[2])}(${_dowArr[new Date(invDataDate||dateKey).getDay()]})`
     :(invDataDate||'');
+  const _svStart=h.length; // 🆕 제출 총합 카드를 실시간 재고 카드 아래로 옮기기 위해 시작점 기록
   h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-  h+=`<div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('surveyDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📦 ${_dateLabel} 제출 재고 총합 <span style="color:var(--dim);font-weight:500;font-size:11px">(색상·사이즈별)</span></span><span style="font-size:12px;color:var(--dim)"><span class="arrow">▾</span></span></div>`;
-  h+=`<div id="surveyDetail" style="display:block;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
+  h+=`<div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('surveyDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">📦 ${_dateLabel} 제출 재고 총합 <span style="color:var(--dim);font-weight:500;font-size:11px">(색상·사이즈별)</span></span><span style="font-size:12px;color:var(--dim)"><span class="arrow">▸</span></span></div>`;
+  h+=`<div id="surveyDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
@@ -633,6 +634,7 @@ async function renderSummary(){
 
   const om=fbInvData[fk('사무실')]?.memo;
   if(om)h+=`<div class="memo-sec"><div class="memo-hd">📋 사무실 필요용품</div><div class="memo-bd" style="font-size:13px;line-height:1.6">${om}</div></div>`;
+  const surveyCard=h.slice(_svStart);h=h.slice(0,_svStart); // 🆕 총합 카드는 실시간 재고 카드 뒤에 붙임
 
   // 데이터 계산
   const prodColorStock={};
@@ -711,8 +713,10 @@ async function renderSummary(){
       prodColorCalc[key]=cr[key].calculated;
     });
     
+    const _now=new Date();const _hh=String(_now.getHours()).padStart(2,'0');const _mm=String(_now.getMinutes()).padStart(2,'0');
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:14px;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:10px;text-align:center">📊 ${team} 현재 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 기준)</span></div>`;
+    h+=`<div style="padding:14px;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:2px;text-align:center">📊 ${team} 실시간 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 + 입고 − 시공보고 사용분)</span></div>`;
+    h+=`<div style="font-size:10px;color:var(--dim);margin-bottom:10px;text-align:center;opacity:.7">${_hh}:${_mm} 갱신 · <span onclick="render()" style="cursor:pointer;text-decoration:underline">🔄 새로고침</span> · 5분마다 자동 갱신</div>`;
     h+=`<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">`;
     prodOrder.forEach(pid=>{
       const pt=prodTotals[pid]||{sheets:0,pallets:0};
@@ -788,6 +792,7 @@ async function renderSummary(){
     h+=`<div style="padding:16px 14px;text-align:center"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고 (실사 기준)</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
     h+=`</div>`;
   }
+  h+=surveyCard; // 🆕 제출 재고 총합 카드는 실시간 재고 아래에
 
   // 📅 예약 카드 공통 렌더링 (7일 / 20일) — 제품별 요약 + 장수 비중 % + 상세 목록
   function renderFutureCard(title,detailId,list,agg,total,jobs){
@@ -1505,6 +1510,11 @@ window.addEventListener('wheel',function(e){
   const a=document.activeElement;
   if(a&&a.tagName==='INPUT'&&a.type==='number')a.blur();
 },{passive:true});
+
+// 🆕 실시간 재고 자동 갱신 — 종합 탭(현재 화면)일 때만 5분마다 새로 불러옴
+setInterval(function(){
+  if(team&&tab==='summary'&&!viewDate)render();
+},5*60*1000);
 </script>
 </body>
 </html>
