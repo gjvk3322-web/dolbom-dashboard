@@ -801,11 +801,13 @@ async function renderSummary(){
     c+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     c+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('${detailId}');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><span style="font-size:13px;font-weight:700">${title} <span style="color:var(--red)">-${total.toLocaleString()}장</span></span><span style="font-size:12px;color:var(--dim)">${jobs}건 <span class="arrow">▸</span></span></div>`;
     c+=`<div id="${detailId}" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
-    // 제품별 요약 (건수 · 예상 장수 · 장수 기준 비중 %)
+    // 제품별 요약 (건수 · 예상 장수 · 비중은 1000매트 환산 기준: 500매트는 ÷4)
     {
       const colorOrd=['모던','베이지','마블','코튼','미정'];
+      const eqOf=(k,s)=>k.slice(0,4)==='500_'?s/4:s; // 🆕 500매트는 면적이 1/4 → 1000매트 환산
+      const totalEq=Object.keys(agg).reduce((s,k)=>s+eqOf(k,agg[k].s),0);
       c+=`<div style="padding:10px 10px 8px;margin-top:10px;background:rgba(255,255,255,.03);border:.5px solid var(--border);border-radius:10px">`;
-      c+=`<div style="font-size:10px;color:var(--dim);font-weight:700;margin-bottom:5px">📦 제품별 요약 <span style="font-weight:400">· %는 전체 ${total.toLocaleString()}장 중 비중</span></div>`;
+      c+=`<div style="font-size:10px;color:var(--dim);font-weight:700;margin-bottom:5px">📦 제품별 요약 <span style="font-weight:400">· %는 1000매트 환산 기준 비중 (500매트=¼)</span></div>`;
       prodOrder.forEach(pid=>{
         const keys=Object.keys(agg)
           .filter(k=>{const cN=k.split('_').slice(-1)[0];return k.slice(0,k.length-cN.length-1)===pid})
@@ -813,7 +815,7 @@ async function renderSummary(){
         keys.forEach(key=>{
           const cn=key.split('_').slice(-1)[0];
           const d=agg[key];
-          const pct=total>0?Math.round(d.s/total*100):0;
+          const pct=totalEq>0?Math.round(eqOf(key,d.s)/totalEq*100):0; // 🆕 환산 기준 비중
           const dot=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[cn]||'#888'};margin-right:4px"></span>`;
           c+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:12px"><span>${dot}${cn} ${(prodNames[pid]||pid).replace('매트','')}</span><span style="color:var(--dim)">${d.n}건 · <span style="font-weight:700;color:var(--text)">${d.s.toLocaleString()}장</span> · <span style="font-weight:700;color:var(--accent)">${pct}%</span></span></div>`;
         });
