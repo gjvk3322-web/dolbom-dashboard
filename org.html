@@ -123,6 +123,42 @@
   .raci-row input.mark{flex:1;min-width:52px;text-align:center}
   .hint{font-size:11px;color:var(--muted);line-height:1.5}
 
+  /* 캘린더 */
+  .cal-controls{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .cal-controls b{font-size:16px;min-width:110px;text-align:center}
+  .cal-legend{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px}
+  .cal-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
+  .lg-todo{background:#B9C4BF}.lg-doing{background:var(--accent)}.lg-done{background:#D7E4DD}.lg-late{background:var(--bad)}
+  .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:6px 0}
+  .cal-head span:first-child{color:var(--bad)}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line);gap:1px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
+  .cal-cell{background:#fff;min-height:96px;padding:6px;cursor:pointer;transition:background .1s}
+  .cal-cell:hover{background:#F7FBF9}
+  .cal-cell.other{background:#FAFBFA;color:#C2CBC7}
+  .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px}
+  .cal-cell.today .d{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px}
+  .cal-cell.sun .d{color:var(--bad)}
+  .cal-pill{display:block;font-size:11px;line-height:1.35;padding:2px 6px;border-radius:6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .cal-pill.todo{background:#EEF2F0;color:#5B6763}
+  .cal-pill.doing{background:var(--tint);color:var(--accent-deep)}
+  .cal-pill.done{background:#F2F6F4;color:#A6B2AD;text-decoration:line-through}
+  .cal-pill.late{background:#FCEBEB;color:var(--bad)}
+  .cal-more{font-size:11px;color:var(--muted)}
+  /* 칸반 */
+  .kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  .kcol{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:12px}
+  .kcol h3{margin:2px 4px 10px;font-size:14px;color:#5B6763}
+  .kcol.done h3{color:var(--accent-deep)}
+  .kcount{color:var(--muted);font-weight:600;font-size:12px}
+  .kcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(33,43,54,.04)}
+  .kcard .t{font-weight:700;font-size:13.5px;line-height:1.45}
+  .kcard .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:12px;color:var(--muted);align-items:center}
+  .kcard .due{font-weight:600}
+  .kcard .due.overdue{color:var(--bad);font-weight:800}
+  .kcard .memo{font-size:12px;color:#6C7873;margin-top:6px;line-height:1.5;white-space:pre-wrap}
+  .kcard .krow{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
+  .kcard .move{display:flex;gap:4px}
+  .kcol.done .kcard{opacity:.62}
   @media (max-width:820px){
     .app{grid-template-columns:1fr}
     aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px}
@@ -132,6 +168,10 @@
     main{padding:18px 16px}
     h1{font-size:22px}
     .modal-body{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr}
+    .cal-cell{min-height:66px;padding:4px}
+    .cal-pill{font-size:10px;padding:1px 4px}
+    .cal-legend{display:none}
   }
 </style>
 </head>
@@ -145,6 +185,8 @@
       <button data-view="overview" class="active">대표 대시보드</button>
       <button data-view="departments">부서별 업무</button>
       <button data-view="people">직원별 업무</button>
+      <button data-view="calendar">프로젝트 캘린더</button>
+      <button data-view="tasks">팀 할 일</button>
       <button data-view="decision">의사결정 권한</button>
       <button data-view="raci">RACI</button>
       <button data-view="weekly">주간 운영회의</button>
@@ -201,6 +243,46 @@
         <select id="deptFilter"><option value="">전체 부서</option></select>
       </div>
       <div class="grid people-grid" id="peopleGrid" style="margin-top:14px"></div>
+    </section>
+
+    <!-- 프로젝트 캘린더 -->
+    <section id="calendar" class="section">
+      <div class="topbar">
+        <div>
+          <h1>프로젝트 캘린더</h1>
+          <div class="lead">팀 할 일과 프로젝트를 마감일 기준으로 봅니다. 날짜를 클릭하면 그 날짜로 바로 추가됩니다.</div>
+        </div>
+        <button class="btn primary" id="addTaskBtn2">항목 추가</button>
+      </div>
+      <div class="cal-controls">
+        <button class="mini-btn" id="calPrev">◀</button>
+        <b id="calLabel"></b>
+        <button class="mini-btn" id="calNext">▶</button>
+        <button class="mini-btn" id="calToday">오늘</button>
+        <span class="cal-legend"><i class="lg-todo"></i>대기 <i class="lg-doing"></i>진행 중 <i class="lg-done"></i>완료 <i class="lg-late"></i>지연</span>
+      </div>
+      <div class="cal-head" id="calHead"></div>
+      <div class="cal-grid" id="calGrid"></div>
+    </section>
+
+    <!-- 팀 할 일 -->
+    <section id="tasks" class="section">
+      <div class="topbar">
+        <div>
+          <h1>팀 할 일</h1>
+          <div class="lead">대기 → 진행 중 → 완료. 카드의 ◀ ▶로 상태를 옮깁니다. 마감이 지난 미완료 건은 빨간색으로 표시됩니다.</div>
+        </div>
+        <button class="btn primary" id="addTaskBtn">할 일 추가</button>
+      </div>
+      <div class="toolbar">
+        <select id="taskDeptFilter"><option value="">전체 팀</option></select>
+        <input id="taskSearch" placeholder="제목 또는 담당자 검색">
+      </div>
+      <div class="kanban" style="margin-top:14px">
+        <div class="kcol"><h3>대기 <span class="kcount" id="cnt-todo"></span></h3><div id="col-todo"></div></div>
+        <div class="kcol"><h3>진행 중 <span class="kcount" id="cnt-doing"></span></h3><div id="col-doing"></div></div>
+        <div class="kcol done"><h3>완료 <span class="kcount" id="cnt-done"></span></h3><div id="col-done"></div></div>
+      </div>
     </section>
 
     <!-- 의사결정 -->
@@ -357,6 +439,23 @@
   </form>
 </dialog>
 
+<!-- 할 일 모달 -->
+<dialog id="taskModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong id="taskModalTitle">할 일 추가</strong><button class="mini-btn" onclick="taskModal.close()">닫기</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="taskId">
+      <div class="field full"><label>제목 *</label><input id="tTitle" placeholder="예: 9월 맘카페 공동구매 오픈"></div>
+      <div class="field"><label>팀</label><select id="tDept"><option value="">공통</option></select></div>
+      <div class="field"><label>담당자</label><input id="tAssignee" placeholder="예: 준형"></div>
+      <div class="field"><label>상태</label><select id="tStatus"><option value="todo">대기</option><option value="doing">진행 중</option><option value="done">완료</option></select></div>
+      <div class="field"><label>마감일</label><input type="date" id="tDue"></div>
+      <div class="field full"><label>메모</label><textarea id="tMemo"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="taskModal.close()">취소</button><button class="btn primary" id="saveTaskBtn">저장</button></div>
+  </form>
+</dialog>
+
 <!-- 회의 모달 -->
 <dialog id="meetingModal">
   <form method="dialog" onsubmit="return false">
@@ -492,6 +591,7 @@ function renderAll(){
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   renderKpis(); renderDepartments(); renderPeople(); renderDeptOptions();
   renderTiers(); renderDecisionTable(); renderRaci(); renderMeetings();
+  renderCalendar(); renderTasks();
 }
 
 function renderKpis(){
@@ -533,6 +633,12 @@ function renderDeptOptions(){
   $("deptFilter").innerHTML = `<option value="">전체 부서</option>` + opts;
   $("deptFilter").value = cur;
   $("pDept").innerHTML = opts;
+  const curT = $("taskDeptFilter").value;
+  $("taskDeptFilter").innerHTML = `<option value="">전체 팀</option>` + opts;
+  $("taskDeptFilter").value = curT;
+  const curTD = $("tDept").value;
+  $("tDept").innerHTML = `<option value="">공통</option>` + opts;
+  $("tDept").value = curTD;
 }
 
 function renderPeople(){
@@ -852,6 +958,125 @@ $("saveRaciBtn").onclick = () => {
   const prev = (data.raci || {})[$("raciId").value] || {};
   orgRef.child("raci/" + id).set({ title, cols, rows, order: prev.order || nextOrder(data.raci) });
   raciModal.close();
+};
+
+/* ───────── 팀 할 일 & 캘린더 ───────── */
+const STATUS_LABEL = {todo:"대기", doing:"진행 중", done:"완료"};
+const STATUS_NEXT = {todo:"doing", doing:"done"};
+const STATUS_PREV = {done:"doing", doing:"todo"};
+const todayStr = () => new Date().toISOString().slice(0,10);
+const isOverdue = t => t.due && t.status !== "done" && t.due < todayStr();
+let calBase = new Date(); calBase.setDate(1);
+
+function taskList(){ return entries(data.tasks); }
+
+function renderTasks(){
+  const f = $("taskDeptFilter").value || "";
+  const q = ($("taskSearch").value || "").toLowerCase();
+  const list = taskList().filter(t =>
+    (!f || t.dept === f) &&
+    (!q || (t.title + " " + (t.assignee||"")).toLowerCase().includes(q))
+  ).sort((a,b) => (a.due||"9999").localeCompare(b.due||"9999") || (a.createdAt||0)-(b.createdAt||0));
+
+  ["todo","doing","done"].forEach(st => {
+    const items = list.filter(t => t.status === st);
+    $("cnt-" + st).textContent = items.length;
+    $("col-" + st).innerHTML = items.map(t => {
+      const dept = t.dept && (data.departments||{})[t.dept]?.name;
+      const over = isOverdue(t);
+      return `<div class="kcard">
+        <div class="t">${esc(t.title)}</div>
+        <div class="meta">
+          ${dept ? `<span class="chip">${esc(dept)}</span>` : ""}
+          ${t.assignee ? `<span>👤 ${esc(t.assignee)}</span>` : ""}
+          ${t.due ? `<span class="due ${over?"overdue":""}">${over?"⚠ ":""}${esc(t.due.slice(5))}까지</span>` : ""}
+        </div>
+        ${t.memo ? `<div class="memo">${esc(t.memo)}</div>` : ""}
+        <div class="krow">
+          <span class="move">
+            ${STATUS_PREV[st] ? `<button class="mini-btn" onclick="moveTask('${t.id}','${STATUS_PREV[st]}')">◀ ${STATUS_LABEL[STATUS_PREV[st]]}</button>` : ""}
+            ${STATUS_NEXT[st] ? `<button class="mini-btn" onclick="moveTask('${t.id}','${STATUS_NEXT[st]}')">${STATUS_LABEL[STATUS_NEXT[st]]} ▶</button>` : ""}
+          </span>
+          <span>
+            <button class="mini-btn" onclick="editTask('${t.id}')">수정</button>
+            <button class="mini-btn" onclick="deleteTask('${t.id}')">삭제</button>
+          </span>
+        </div>
+      </div>`;
+    }).join("") || `<div class="hint" style="padding:6px 4px">없음</div>`;
+  });
+}
+
+function renderCalendar(){
+  const y = calBase.getFullYear(), m = calBase.getMonth();
+  $("calLabel").textContent = `${y}년 ${m+1}월`;
+  $("calHead").innerHTML = ["일","월","화","수","목","금","토"].map(d=>`<span>${d}</span>`).join("");
+  const first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - first.getDay());
+  const byDate = {};
+  taskList().forEach(t => { if(t.due) (byDate[t.due] = byDate[t.due] || []).push(t); });
+  const cells = [];
+  const tStr = todayStr();
+  for (let i = 0; i < 42; i++){
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const ds = d.toISOString().slice(0,10);
+    const other = d.getMonth() !== m;
+    const items = (byDate[ds] || []).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    const shown = items.slice(0,3);
+    cells.push(`<div class="cal-cell ${other?"other":""} ${ds===tStr?"today":""} ${d.getDay()===0?"sun":""}" onclick="openTaskForDate('${ds}')">
+      <div class="d">${d.getDate()}</div>
+      ${shown.map(t => `<span class="cal-pill ${isOverdue(t)?"late":t.status}" onclick="event.stopPropagation();editTask('${t.id}')">${esc(t.title)}</span>`).join("")}
+      ${items.length > 3 ? `<span class="cal-more">+${items.length-3}건</span>` : ""}
+    </div>`);
+  }
+  $("calGrid").innerHTML = cells.join("");
+}
+$("calPrev").onclick = () => { calBase.setMonth(calBase.getMonth()-1); renderCalendar(); };
+$("calNext").onclick = () => { calBase.setMonth(calBase.getMonth()+1); renderCalendar(); };
+$("calToday").onclick = () => { calBase = new Date(); calBase.setDate(1); renderCalendar(); };
+$("taskDeptFilter").addEventListener("change", renderTasks);
+$("taskSearch").addEventListener("input", renderTasks);
+
+const taskModal = $("taskModal");
+function openTaskModal(prefillDate){
+  $("taskModalTitle").textContent = "할 일 추가";
+  $("taskId").value = "";
+  $("tTitle").value = ""; $("tDept").value = ""; $("tAssignee").value = "";
+  $("tStatus").value = "todo"; $("tDue").value = prefillDate || ""; $("tMemo").value = "";
+  taskModal.showModal();
+}
+window.openTaskForDate = ds => openTaskModal(ds);
+$("addTaskBtn").onclick = () => openTaskModal();
+$("addTaskBtn2").onclick = () => openTaskModal();
+window.editTask = id => {
+  const t = (data.tasks || {})[id]; if (!t) return;
+  $("taskModalTitle").textContent = "할 일 수정";
+  $("taskId").value = id;
+  $("tTitle").value = t.title || ""; $("tDept").value = t.dept || "";
+  $("tAssignee").value = t.assignee || ""; $("tStatus").value = t.status || "todo";
+  $("tDue").value = t.due || ""; $("tMemo").value = t.memo || "";
+  taskModal.showModal();
+};
+window.deleteTask = id => {
+  const t = (data.tasks || {})[id]; if (!t) return;
+  if (!confirm(`'${t.title}' 항목을 삭제할까요?`)) return;
+  orgRef.child("tasks/" + id).remove();
+};
+window.moveTask = (id, st) => orgRef.child("tasks/" + id + "/status").set(st);
+$("saveTaskBtn").onclick = () => {
+  const title = $("tTitle").value.trim();
+  if (!title) return alert("제목은 필수입니다.");
+  const id = $("taskId").value || newId("t_");
+  const prev = (data.tasks || {})[$("taskId").value] || {};
+  orgRef.child("tasks/" + id).set({
+    title,
+    dept: $("tDept").value,
+    assignee: $("tAssignee").value.trim(),
+    status: $("tStatus").value,
+    due: $("tDue").value,
+    memo: $("tMemo").value.trim(),
+    createdAt: prev.createdAt || Date.now()
+  });
+  taskModal.close();
 };
 
 /* ───────── 주간회의 CRUD ───────── */
