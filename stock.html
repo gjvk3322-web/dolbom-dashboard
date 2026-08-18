@@ -786,19 +786,20 @@ async function renderSummary(){
           return (pi<0?99:pi)*100+(ci<0?99:ci);
         };
         futKeys.slice().sort((a,b)=>sortKey(a)-sortKey(b)).forEach(key=>{
+          const cName=key.split('_').slice(-1)[0];
+          if(cName==='미정')return; // 제품/색상 미정 건은 발주 경고가 아니라 아래 [색상 미정 예약] 카드에서 처리
           const curStock=cr[key]?cr[key].calculated:0;
           const futUse=prodColorFuture[key].s;
           const after=curStock-futUse;
-          const cName=key.split('_').slice(-1)[0];
           const pKey=key.replace('_'+cName,'');
           const pLabel=prodNames[pKey]||pKey;
-          // 최소 발주량 = 20일 버틸 양(예약 페이스 × [리드타임13+주기7]) − 현재고 → 박스 올림
+          // 최소 발주량 = 리드타임 13일 버틸 양(예약 페이스 × 13) − 현재고 → 박스 올림 (도착 전 펑크 방지 최소치)
           const prInfo=PR.find(p=>p.id===pKey)||{bpb:4,bpp:16};
-          const minSheets=Math.max(0,Math.ceil(futUse/7*20-curStock));
+          const minSheets=Math.max(0,Math.ceil(futUse/7*13-curStock));
           const minBoxes=Math.ceil(minSheets/prInfo.bpb);
           const minPal=Math.round(minBoxes/prInfo.bpp*10)/10;
           const minTxt=minBoxes>0?` · 최소 +${minBoxes}박스(${minPal}P)`:'';
-          const minTip='예약페이스 '+Math.round(futUse/7*10)/10+'장/일 × 20일(리드타임13+주기7) − 현재고 '+curStock.toLocaleString()+' = '+minSheets.toLocaleString()+'장 ※ 오는 중인 발주는 미반영 — 입고 예정 있으면 그만큼 빼기';
+          const minTip='예약페이스 '+Math.round(futUse/7*10)/10+'장/일 × 13일(리드타임) − 현재고 '+curStock.toLocaleString()+' = '+minSheets.toLocaleString()+'장 ※ 도착 전 펑크 방지 최소치 · 오는 중인 발주 미반영 — 입고 예정 있으면 그만큼 빼기';
           if(after<0){
             h+=`<div title="${minTip}" style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--red)">🔴 ${pLabel} ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)${minTxt}</span></div>`;
           } else if(futUse>0&&after<futUse*2){
@@ -814,6 +815,32 @@ async function renderSummary(){
     h+=`<div style="padding:16px 14px;text-align:center"><div style="font-size:12px;color:var(--dim);margin-bottom:4px">${team} 전체 재고 (실사 기준)</div><div style="font-size:28px;font-weight:800;color:var(--accent)">${gs.toLocaleString()}<span style="font-size:14px;font-weight:500;color:var(--dim);margin-left:4px">장</span></div></div>`;
     h+=`</div>`;
   }
+  // 🎨 색상/제품 미정 예약 카드 — 시공일 임박 순, 내일까지는 빨강 (☎ 색상 확정 연락 필요)
+  {
+    const undecided=future20List.filter(j=>!j.color||j.color==='미정'||String(j.product||'').indexOf('미정')>=0)
+      .slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    if(undecided.length){
+      const urgentN=undecided.filter(j=>futureDayDiff(j.date)<=1).length;
+      h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid ${urgentN?'rgba(255,69,58,.45)':'var(--border)'};border-radius:12px;overflow:hidden">`;
+      h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('undecidedList');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'">`;
+      h+=`<span style="font-size:13px;font-weight:700">🎨 색상 미정 예약 <span style="color:var(--orange)">${undecided.length}건</span>${urgentN?` <span style="color:var(--red)">· 내일까지 ${urgentN}건 ☎</span>`:''}</span><span style="font-size:12px;color:var(--dim)">색상 확정 연락 필요 <span class="arrow">${urgentN?'▾':'▸'}</span></span></div>`;
+      h+=`<div id="undecidedList" style="display:${urgentN?'block':'none'};padding:4px 14px 10px;border-top:.5px solid var(--border)">`;
+      undecided.forEach(j=>{
+        const dDiff=futureDayDiff(j.date);
+        const urgent=dDiff<=1;
+        const dLabel=dDiff===0?'오늘':(dDiff===1?'내일':'D-'+dDiff);
+        const sIdx2=scopeToIdx(j.scope);
+        const scopeL=['거실복도','거실복도+아일','거실복도+주방'][sIdx2];
+        h+=`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:.5px dashed var(--border);font-size:12px;${urgent?'color:var(--red);font-weight:700':''}">`;
+        h+=`<span style="flex-shrink:0">${urgent?'☎ ':''}${String(j.date).substring(5)} <span style="font-size:10px;${urgent?'':'color:var(--dim)'}">(${dLabel})</span></span>`;
+        h+=`<span style="flex:1;text-align:right;${urgent?'':'color:var(--dim)'}">${j.sqm}평 · ${scopeL} · ${String(j.product||'미정').replace('매트','')}</span>`;
+        h+=`</div>`;
+      });
+      h+=`<div style="margin-top:6px;font-size:10px;color:var(--dim)">💡 시공스케줄 시트에서 날짜·평수로 찾아 색상 확정 후 U열(색상) 입력 → 재고 계산에 자동 반영</div>`;
+      h+=`</div></div>`;
+    }
+  }
+
   h+=surveyCard; // 🆕 제출 재고 총합 카드는 실시간 재고 아래에
 
   // 📅 예약 카드 공통 렌더링 (7일 / 20일) — 제품별 요약 + 장수 비중 % + 상세 목록
