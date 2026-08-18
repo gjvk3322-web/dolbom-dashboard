@@ -755,14 +755,19 @@ async function renderSummary(){
         const after=calc-futUse;
         const mult=pid==='500'?1:4;
         const afterHouses=Math.round(after*mult/145*10)/10;
-        h+=`<div style="display:grid;grid-template-columns:1fr repeat(4,minmax(40px,auto)) minmax(34px,auto) minmax(56px,auto);padding:3px 14px;font-size:12px;text-align:right;align-items:center">`;
-        h+=`<span style="text-align:left"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}</span>`;
+        // 🚦 7일후 신호등: 🔴 부족(음수) / 🟠 리드타임 위험(다음 2주분 미만, 예약이 있을 때만)
+        const danger=after<0, warn=!danger&&futUse>0&&after<futUse*2;
+        const rowBg=danger?'background:rgba(229,57,53,.12);':(warn?'background:rgba(255,152,0,.10);':'');
+        const afterColor=danger?'var(--red)':(warn?'var(--orange)':'var(--accent)');
+        const flag=danger?' 🔴':(warn?' 🟠':'');
+        h+=`<div title="${danger?'예약만으로 7일 내 부족':(warn?'2주 내 소진 예상 — 발주 필요 (리드타임 13일)':'')}" style="display:grid;grid-template-columns:1fr repeat(4,minmax(40px,auto)) minmax(34px,auto) minmax(56px,auto);padding:3px 14px;font-size:12px;text-align:right;align-items:center;${rowBg}border-radius:6px">`;
+        h+=`<span style="text-align:left"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[c]||'#888'};margin-right:4px"></span>${c}${flag}</span>`;
         h+=`<span style="color:var(--dim)">${d.survey.toLocaleString()}</span>`;
         h+=`<span style="color:var(--orange)">${d.incoming>0?'+'+d.incoming.toLocaleString():''}</span>`;
         h+=`<span style="color:var(--red)">${d.used>0?'-'+d.used.toLocaleString():''}</span>`;
         h+=`<span style="font-weight:700;color:${calc<0?'var(--red)':'var(--accent)'}">${calc.toLocaleString()}</span>`;
         h+=`<span style="font-size:10px;color:var(--dim)">${pal}P</span>`;
-        h+=`<span style="font-weight:700;color:${after<0?'var(--red)':'var(--accent)'}">${after.toLocaleString()}<br><span style="font-size:9px;font-weight:400;color:var(--dim)">(${afterHouses}집)</span></span>`;
+        h+=`<span style="font-weight:700;color:${afterColor}">${after.toLocaleString()}<br><span style="font-size:9px;font-weight:400;color:var(--dim)">(${afterHouses}집)</span></span>`;
         h+=`</div>`;
       });
     });
@@ -780,7 +785,9 @@ async function renderSummary(){
           const pKey=key.replace('_'+cName,'');
           const pLabel=prodNames[pKey]||pKey;
           if(after<0){
-            h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--red)">⚠️ ${pLabel} ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)</span></div>`;
+            h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--red)">🔴 ${pLabel} ${cName}</span><span style="color:var(--red)">${curStock.toLocaleString()} -${futUse.toLocaleString()} = ${after.toLocaleString()} (부족!)</span></div>`;
+          } else if(futUse>0&&after<futUse*2){
+            h+=`<div style="display:flex;justify-content:space-between;padding:2px 14px;font-size:11px"><span style="color:var(--orange)">🟠 ${pLabel} ${cName}</span><span style="color:var(--orange)">7일후 ${after.toLocaleString()}장 — 2주 내 소진 예상, 발주 필요</span></div>`;
           }
         });
       }
@@ -1137,6 +1144,159 @@ function confirmRemoveDelivery(id){
   removeDelivery(id);
 }
 
+// ═══════════════════════════════════════════════════════
+// 🤖 AI 발주 초안 — 수식 기반 (사용량·재고·미도착·예약으로 계산)
+//  숫자 근거는 각 칸 툴팁에 표시 · 채워진 값은 보라색 → 수정하면 해제
+// ═══════════════════════════════════════════════════════
+const SHAPE_RATIO={'500':{'센터':.80,'사이드':.17,'코너':.03},'1000_22':{'센터':.74,'사이드':.23,'코너':.03},'1000_17':{'센터':.74,'사이드':.23,'코너':.03}};
+const LOC2TEAM={'부산':'부산','안산':'경기'};
+const AI_LEAD=13;          // 발주→도착 리드타임 (발주기록 중앙값)
+const AI_OVER_DAYS=45;     // 도착 후 보유일수 경고 기준
+
+function aiTouched(el){ if(el&&el.dataset&&el.dataset.ai){el.dataset.ai='';el.style.color='#1a1a1a';el.style.fontWeight='700';} }
+
+async function aiDraftOrder(){
+  const btn=document.getElementById('aiDraftBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ 계산 중...';}
+  const box=document.getElementById('aiDraftBox');
+  try{
+    saveOrderInputs();
+    // 1) 데이터 수집: 사용량+미도착(신규 API) / 현재고+예약(기존 getStock)
+    const [sugR,stB,stG]=await Promise.all([
+      fetch(SCRIPT_URL+'?type=orderSuggest').then(r=>r.json()),
+      fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:'부산'})}).then(r=>r.json()),
+      fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:'경기'})}).then(r=>r.json())
+    ]);
+    if(!sugR.success)throw new Error(sugR.error||'orderSuggest 실패 (Code.gs 라우팅 확인)');
+    window._aiData={sug:sugR,stock:{'부산':(stB&&stB.calcResult)||{},'경기':(stG&&stG.calcResult)||{}}};
+    if(!window._aiExcl)window._aiExcl=new Set();
+    aiCompute();
+  }catch(e){
+    console.error(e);
+    const box2=document.getElementById('aiDraftBox');
+    if(box2)box2.innerHTML='<div style="margin:0 0 14px;padding:10px 14px;background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;font-size:12px;color:#b91c1c">AI 초안 실패: '+(e.message||e)+'</div>';
+    toast('초안 생성 실패');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🤖 AI 초안';}
+  }
+}
+
+// 미도착 발주 한 건 제외/포함 토글 → 캐시된 데이터로 즉시 재계산 (재조회 없음)
+function aiTogglePipe(idx){
+  if(!window._aiExcl)window._aiExcl=new Set();
+  if(window._aiExcl.has(idx))window._aiExcl.delete(idx);else window._aiExcl.add(idx);
+  aiCompute();
+}
+
+function aiCompute(){
+  const box=document.getElementById('aiDraftBox');
+  {
+    const sugR=window._aiData.sug;
+    const stock=window._aiData.stock;
+    const usage=sugR.usage||{};
+    // 미도착: 제외 토글 반영해서 상세에서 다시 합산
+    const detail=sugR.pipelineDetail||[];
+    const pipe={'부산':{},'경기':{}};
+    detail.forEach((it,i)=>{
+      if(window._aiExcl.has(i))return;
+      pipe[it.team][it.sku]=(pipe[it.team][it.sku]||0)+it.sheets;
+    });
+    // 기존에 AI가 채운 칸 초기화 (사용자 수정분은 dataset.ai 없음 → 유지)
+    document.querySelectorAll('#orderSheet input[id^="oc_"]').forEach(el=>{
+      if(el.dataset.ai){el.value='';el.dataset.ai='';el.style.color='#1a1a1a';el.style.fontWeight='700';el.title='';}
+    });
+
+    // 2) 지역별 배송 열 정리 (날짜순)
+    const today=new Date();today.setHours(0,0,0,0);
+    const byLoc={'부산':[],'안산':[]};
+    deliveries.forEach(d=>{const dt=new Date(d.date);if(!isNaN(dt))byLoc[d.loc].push({id:d.id,dt:dt});});
+    Object.values(byLoc).forEach(a=>a.sort((x,y)=>x.dt-y.dt));
+
+    const report=[];let filled=0;
+    Object.keys(byLoc).forEach(locName=>{
+      const teamName=LOC2TEAM[locName];
+      const cols2=byLoc[locName];
+      if(!cols2.length)return;
+      // 열 간격: 이번 열 → 다음 열까지 (마지막 열은 +7일)
+      const gaps=cols2.map((c,i)=>{
+        const nxt=i<cols2.length-1?cols2[i+1].dt:new Date(c.dt.getTime()+7*864e5);
+        return Math.max(1,Math.round((nxt-c.dt)/864e5));
+      });
+      const lastCover=new Date(cols2[cols2.length-1].dt.getTime()+7*864e5);
+      const horizon=Math.max(7,Math.round((lastCover-today)/864e5));
+
+      PR.forEach(p=>{
+        (ORDER_COLORS[p.id]||[]).forEach(c=>{
+          const sku=p.id+'_'+c;
+          const u=(usage[teamName]||{})[sku]||{perDay:0,wkSd:0};
+          const cur=((stock[teamName]||{})[sku]||{}).calculated||0;
+          const pl=(pipe[teamName]||{})[sku]||0;
+          const safety=Math.round(0.85*(u.wkSd||0)); // ≈ z1.65 × 일σ × √리드타임
+          const need=Math.max(0,Math.round(u.perDay*horizon+safety-cur-pl));
+          const landDays=u.perDay>0?Math.round((cur+pl+need)/u.perDay):null;
+          // 리포트 (0 제안 사유 포함)
+          report.push({team:teamName,sku:sku,name:p.name+' '+p.badge+' '+c,perDay:u.perDay,cur:cur,pl:pl,need:need,landDays:landDays});
+          if(need<=0)return;
+          // 3) 열 배분 (간격 비례) → 형태 비율 → 박스 반올림
+          const gapSum=gaps.reduce((s,g)=>s+g,0);
+          cols2.forEach((col,i)=>{
+            const allocSheets=need*gaps[i]/gapSum;
+            const allocBoxes=allocSheets/p.bpb;
+            if(allocBoxes<0.5)return;
+            let centerB=Math.round(allocBoxes*SHAPE_RATIO[p.id]['센터']);
+            let sideB=Math.round(allocBoxes*SHAPE_RATIO[p.id]['사이드']);
+            let cornerB=Math.round(allocBoxes*SHAPE_RATIO[p.id]['코너']);
+            if(centerB+sideB+cornerB===0)centerB=Math.max(1,Math.round(allocBoxes));
+            const why='🤖 AI 초안 근거 ('+teamName+' '+sku+')\n일사용 '+u.perDay+'장 × '+horizon+'일 + 안전 '+safety+'\n− 현재고 '+cur+' − 입고예정 '+pl+' = 필요 '+need+'장\n이 열 배분: '+Math.round(allocSheets)+'장('+gaps[i]+'일치)';
+            [['센터',centerB],['사이드',sideB],['코너',cornerB]].forEach(pair=>{
+              const el=document.getElementById('oc_'+col.id+'_'+p.id+'_'+c+'_'+pair[0]);
+              if(!el||pair[1]<=0)return;
+              el.value=pair[1];
+              el.dataset.ai='1';
+              el.style.color='#7c3aed';el.style.fontWeight='800';
+              el.title=why;
+              filled++;
+            });
+          });
+        });
+      });
+    });
+
+    calcMonthlyOrder();saveOrderInputs();
+
+    // 4) 요약 카드
+    if(box){
+      let h2='<div style="margin:0 0 14px;padding:12px 14px;background:#f5f3ff;border:1.5px solid #ddd6fe;border-radius:10px;font-size:12px;color:#333">';
+      h2+='<div style="font-weight:800;color:#7c3aed;margin-bottom:6px">🤖 AI 초안 완료 · '+filled+'칸 입력 <span style="font-weight:500;color:#888">(보라색 숫자 = 초안 · 수정하면 해제 · 칸에 마우스 올리면 근거)</span></div>';
+      const warns=report.filter(r=>r.landDays!=null&&r.landDays>AI_OVER_DAYS&&(r.cur+r.pl)>0);
+      const zeros=report.filter(r=>r.need<=0&&r.perDay>0&&r.landDays!=null&&r.landDays>30);
+      const lows=report.filter(r=>r.need>0&&r.perDay>0&&r.cur/Math.max(r.perDay,0.1)<AI_LEAD);
+      if(lows.length)h2+='<div style="margin:3px 0">⚠️ <b>재고 타이트</b> (리드타임 '+AI_LEAD+'일 미만 보유): '+lows.map(r=>r.team+' '+r.name+' '+Math.round(r.cur/Math.max(r.perDay,0.1))+'일치').join(' · ')+'</div>';
+      if(zeros.length)h2+='<div style="margin:3px 0">✅ <b>발주 불필요</b> (재고+입고예정 30일치 초과): '+zeros.map(r=>r.team+' '+r.name+' '+r.landDays+'일치').join(' · ')+'</div>';
+      if(warns.length)h2+='<div style="margin:3px 0;color:#e53935">🔴 <b>과잉 주의</b> (도착 시 '+AI_OVER_DAYS+'일치 초과): '+warns.map(r=>r.team+' '+r.name+' '+r.landDays+'일치').join(' · ')+'</div>';
+      h2+='<div style="margin-top:6px;font-size:10px;color:#999">기준: 최근 8주 사용('+sugR.generatedAt+' 계산) · 현재고=getStock · 미도착=최근 28일 발주 중 배송예정 미래분 · 형태 비율 1000: 74/23/3 · 500: 80/17/3</div>';
+      h2+='</div>';
+      box.innerHTML=h2;
+    }
+    // 미도착 발주 내역 (체크 해제 = 이번 계산에서 제외)
+    if(box){
+      let ph='';
+      if(detail.length){
+        ph+='<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #ddd6fe"><div style="font-weight:700;color:#555;margin-bottom:4px">📦 계산에 반영된 미도착 발주 <span style="font-weight:500;color:#999">(수정·취소된 발주면 클릭해서 제외 → 즉시 재계산)</span></div>';
+        detail.forEach((it,i)=>{
+          const off=window._aiExcl.has(i);
+          ph+='<span onclick="aiTogglePipe('+i+')" style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;border-radius:6px;cursor:pointer;border:1px solid '+(off?'#e0e0e0':'#c4b5fd')+';background:'+(off?'#fafafa':'#fff')+';color:'+(off?'#bbb':'#333')+';'+(off?'text-decoration:line-through;':'')+'" title="발주기록 '+it.row+'행">'+it.team+' '+it.sku.replace(/_/g,' ')+' '+it.sheets+'장 <span style="color:#999">('+it.ordered+'발주→'+it.eta+'예정)</span></span>';
+        });
+        ph+='</div>';
+      } else {
+        ph+='<div style="margin-top:6px;color:#999">📦 반영된 미도착 발주 없음 — 오는 중인 물량이 있는데 안 보이면 발주기록의 배송예정일이 과거로 남아있는 거야 (그 만큼 초안이 과다해짐)</div>';
+      }
+      box.querySelector('div').insertAdjacentHTML('beforeend', ph);
+    }
+    toast('🤖 초안 '+filled+'칸 입력 완료');
+  }
+}
+
 function renderOrder(){
   saveOrderInputs();
   initDefaultDeliveries();
@@ -1160,9 +1320,12 @@ function renderOrder(){
   h+=`</div>`;
   h+=`<div style="display:flex;gap:8px;align-items:center">`;
   h+=histSel;  // 🆕 이전 발주서 불러오기
+  h+=`<button id="aiDraftBtn" onclick="aiDraftOrder()" style="padding:8px 14px;background:#fff;color:#7c3aed;border:1.5px solid #ddd6fe;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🤖 AI 초안</button>`;
   h+=`<button onclick="resetOrder()" style="padding:8px 14px;background:#fff;color:#e53935;border:1.5px solid #ffcdd2;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🗑 초기화</button>`;
   h+=`<button onclick="addDelivery();renderOrder()" style="padding:8px 14px;background:#2E7D32;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">+ 배송 추가</button>`;
   h+=`</div></div>`;
+
+  h+=`<div id="aiDraftBox"></div>`;
 
   const cols=deliveries.length;
   const gcols=`130px repeat(${cols},minmax(90px,1fr))`;
@@ -1218,7 +1381,7 @@ function renderOrder(){
         const cellBg=d.loc==='부산'?'#fff5f5':'#f0f7ff';
         const cellBorder=d.loc==='부산'?'#f5c6c6':'#c6d9f5';
         const focusBg=d.loc==='부산'?'#ffe8e8':'#e0eeff';
-        h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="calcMonthlyOrder();saveOrderDraft()" style="width:100%;height:32px;background:${cellBg};border:1.5px solid ${cellBorder};border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='${d.loc==='부산'?'#e53935':'#1565c0'}';this.style.background='${focusBg}'" onblur="this.style.borderColor='${cellBorder}';this.style.background='${cellBg}'"></div>`;
+        h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="aiTouched(this);calcMonthlyOrder();saveOrderDraft()" style="width:100%;height:32px;background:${cellBg};border:1.5px solid ${cellBorder};border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='${d.loc==='부산'?'#e53935':'#1565c0'}';this.style.background='${focusBg}'" onblur="this.style.borderColor='${cellBorder}';this.style.background='${cellBg}'"></div>`;
       });
       h+=`</div>`;
     }
