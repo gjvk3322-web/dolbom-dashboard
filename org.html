@@ -111,6 +111,9 @@
   .rule b{display:block;margin-bottom:5px;color:var(--accent-deep)}
   .footer-note{margin-top:20px;color:var(--muted);font-size:12px}
 
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#212B36;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  .toast.bad{background:var(--bad)}
   dialog{background:#fff;color:var(--text);border:1px solid var(--line);border-radius:20px;padding:0;width:min(680px,94vw);max-height:90vh;box-shadow:0 16px 48px rgba(33,43,54,.16)}
   dialog::backdrop{background:rgba(33,43,54,.4)}
   .modal-head{display:flex;justify-content:space-between;align-items:center;padding:17px 20px;border-bottom:1px solid var(--line)}
@@ -242,9 +245,10 @@
       <button data-view="raci">RACI</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="rules">운영 원칙</button>
+      <button data-view="logs">활동 기록</button>
       <button data-view="tools">도구 모음</button>
     </nav>
-    <div class="side-foot">모든 수정은 즉시 전 직원 화면에 반영됩니다.</div>
+    <div class="side-foot"><span id="whoami" style="display:block;margin-bottom:6px;font-weight:700;color:#5B6763"></span>모든 수정은 즉시 전 직원 화면에 반영됩니다.</div>
   </aside>
 
   <main>
@@ -255,7 +259,8 @@
           <h1>대표 대시보드</h1>
           <div class="lead">대표는 직원의 모든 업무를 직접 관리하지 않습니다. 핵심 숫자, 막힌 의사결정, 주요 리스크만 확인합니다.</div>
         </div>
-        <span style="display:flex;gap:8px">
+        <span style="display:flex;gap:8px;align-items:center">
+          <span id="kpiStatus" class="hint" style="white-space:nowrap"></span>
           <button class="btn" onclick="loadLiveKPI();loadHistory()">숫자 새로고침 ↻</button>
           <a class="btn" href="cs-cockpit.html" target="_blank" rel="noopener" style="text-decoration:none">조종실 열기 ↗</a>
           <button class="btn primary" id="editKpiBtn">회사 KPI 수정</button>
@@ -417,6 +422,22 @@
       <div class="footer-note">권장 운영 주기: 매주 KPI 확인 · 매월 부서 리뷰 · 매분기 업무분장 재설계</div>
     </section>
 
+    <!-- 활동 기록 -->
+    <section id="logs" class="section">
+      <div class="topbar">
+        <div>
+          <h1>활동 기록</h1>
+          <div class="lead">누가 언제 무엇을 바꿨는지 최근 100건을 기록합니다. 삭제된 항목은 아래 휴지통에서 복구할 수 있습니다.</div>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>시각</th><th>사용자</th><th>동작</th><th>내용</th></tr></thead>
+        <tbody id="logList"></tbody>
+      </table></div>
+      <div class="section-title"><h2>🗑 휴지통 (삭제된 항목)</h2></div>
+      <div class="grid" id="trashList" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))"></div>
+    </section>
+
     <!-- 도구 모음 -->
     <section id="tools" class="section">
       <div class="topbar">
@@ -430,6 +451,19 @@
     </section>
   </main>
 </div>
+
+<!-- 사용자 선택 모달 -->
+<dialog id="userModal">
+  <div class="modal-head"><strong>누구세요?</strong></div>
+  <div class="modal-body" style="grid-template-columns:1fr">
+    <div class="hint">수정·삭제 기록에 이름이 남습니다. 본인 이름을 선택해 주세요. (이 기기에 저장됩니다)</div>
+    <div id="userChoices" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    <div class="field"><label>목록에 없으면 직접 입력</label>
+      <div style="display:flex;gap:8px"><input id="userCustom" placeholder="이름"><button class="btn primary" id="userCustomBtn" style="white-space:nowrap">확인</button></div>
+    </div>
+  </div>
+</dialog>
+<div id="toast" class="toast"></div>
 
 <!-- 직원 모달 -->
 <dialog id="personModal">
@@ -675,15 +709,8 @@ setTimeout(() => {
 orgRef.on("value", snap => {
   const v = snap.val();
   if (!v) {
-    if (!seeding) { seeding = true; orgRef.set(seedData); }
+    $("syncText").textContent = "⚠ 데이터가 비어 있습니다 — 대표에게 알리고 백업 복구를 진행하세요";
     return;
-  }
-  if (!v.tools && !toolsSeeding) { toolsSeeding = true; orgRef.child("tools").set(TOOLS_SEED); return; }
-  if (v.tools && !v.toolsCleanup1 && !toolsCleaning) {
-    toolsCleaning = true;
-    const upd = { toolsCleanup1: true };
-    ["tl03","tl04","tl07","tl10","tl12","tl15","tl19","tl22","tl23"].forEach(id => { if (v.tools[id]) upd["tools/" + id] = null; });
-    orgRef.update(upd); return;
   }
   data = v;
   renderAll();
@@ -692,15 +719,108 @@ orgRef.on("value", snap => {
   console.error(err);
 });
 
+/* ───────── 사용자 식별 · 활동 로그 · 휴지통 ───────── */
+const userModal = $("userModal");
+function currentUser(){ return localStorage.getItem("orgUser") || ""; }
+function ensureUser(){
+  if (currentUser() || !data) return;
+  const names = entries(data.people).sort(byOrder).map(p => p.name).filter(n => n && !n.startsWith("("));
+  const box = $("userChoices");
+  box.innerHTML = names.map(n => `<button class="btn" onclick="pickUser('${esc(n)}')">${esc(n)}</button>`).join("");
+  if (!userModal.open) userModal.showModal();
+}
+window.pickUser = n => { localStorage.setItem("orgUser", n); userModal.close(); renderWho(); };
+$("userCustomBtn").onclick = () => {
+  const n = $("userCustom").value.trim();
+  if (n) pickUser(n);
+};
+function renderWho(){
+  const el = $("whoami");
+  if (el) el.textContent = currentUser() ? `👤 ${currentUser()}` : "";
+}
+function showToast(msg, bad){
+  let t = $("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (bad ? " bad" : "");
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.className = "toast", 2600);
+}
+async function safeWrite(label, fn, btn){
+  const old = btn ? btn.textContent : "";
+  try {
+    if (btn){ btn.disabled = true; btn.textContent = "저장 중…"; }
+    await fn();
+    showToast(label + " 저장 완료");
+    return true;
+  } catch(e){
+    console.error(label, e);
+    alert(label + " 저장에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+    return false;
+  } finally {
+    if (btn){ btn.disabled = false; btn.textContent = old; }
+  }
+}
+function logAction(act, what){
+  orgRef.child("logs/" + newId("lg_")).set({ t: Date.now(), by: currentUser() || "?", act, what }).catch(()=>{});
+}
+async function softDelete(node, id, label){
+  const item = ((data[node]) || {})[id];
+  if (!item) return false;
+  try {
+    await orgRef.child("trash/" + node + "__" + id).set({ node, id, label, data: item, deletedAt: Date.now(), deletedBy: currentUser() || "?" });
+    await orgRef.child(node + "/" + id).remove();
+    logAction("삭제", label);
+    showToast(`'${label}' 삭제됨 — 활동 기록에서 복구할 수 있습니다`);
+    return true;
+  } catch(e){
+    alert("삭제에 실패했습니다. 인터넷 연결을 확인해 주세요.");
+    return false;
+  }
+}
+window.restoreTrash = async key => {
+  const tr = (data.trash || {})[key]; if (!tr) return;
+  try {
+    await orgRef.child(tr.node + "/" + tr.id).set(tr.data);
+    await orgRef.child("trash/" + key).remove();
+    logAction("복구", tr.label);
+    showToast(`'${tr.label}' 복구 완료`);
+  } catch(e){ alert("복구에 실패했습니다."); }
+};
+window.purgeTrash = async key => {
+  const tr = (data.trash || {})[key]; if (!tr) return;
+  if (!confirm(`'${tr.label}' 항목을 영구 삭제할까요? 복구할 수 없습니다.`)) return;
+  await orgRef.child("trash/" + key).remove().catch(()=>{});
+  logAction("영구삭제", tr.label);
+};
+function renderLogs(){
+  const logs = entries(data.logs).sort((a,b) => (b.t||0) - (a.t||0)).slice(0, 100);
+  const fmt = t => { const d = new Date(t); return `${String(d.getMonth()+1)}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+  $("logList").innerHTML = logs.map(l => `
+    <tr><td style="white-space:nowrap">${fmt(l.t)}</td><td>${esc(l.by)}</td>
+    <td>${l.act === "삭제" ? `<b style="color:var(--bad)">삭제</b>` : esc(l.act)}</td><td>${esc(l.what)}</td></tr>`).join("")
+    || `<tr><td colspan="4" class="hint">아직 기록이 없습니다.</td></tr>`;
+  const trash = entries(data.trash).sort((a,b) => (b.deletedAt||0) - (a.deletedAt||0));
+  $("trashList").innerHTML = trash.map(tr => `
+    <div class="pitem">
+      <div class="pi-top"><span class="pi-title">${esc(tr.label)}</span></div>
+      <div class="pi-meta"><span>${esc(tr.deletedBy)} 삭제 · ${fmt(tr.deletedAt)}</span></div>
+      <div class="pi-actions">
+        <button class="mini-btn" onclick="restoreTrash('${tr.id}')">복구</button>
+        <button class="mini-btn" onclick="purgeTrash('${tr.id}')">영구 삭제</button>
+      </div>
+    </div>`).join("") || `<div class="hint">휴지통이 비어 있습니다.</div>`;
+}
+
 /* ───────── 렌더링 ───────── */
 function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderRaci, renderMeetings,
-   renderCalendar, renderTasks, renderTools].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
+  ensureUser(); renderWho();
 }
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec";
@@ -724,8 +844,15 @@ async function loadLiveKPI(){
         const t = cRes.data.reduce((a, r) => ({s: a.s + (r.sample||0), i: a.i + (r.installed||0)}), {s:0, i:0});
         liveKPI.convRate = t.s > 0 ? (t.i / t.s * 100).toFixed(1) : null;
       }
+      liveKPI.at = new Date();
     }
-  } catch(e){ console.error("라이브 KPI 로드 실패:", e); }
+    const st = $("kpiStatus");
+    if (st) st.textContent = liveKPI ? `KPI ${String(liveKPI.at.getHours()).padStart(2,"0")}:${String(liveKPI.at.getMinutes()).padStart(2,"0")} 갱신` : "KPI 갱신 실패 — 수동 값 표시 중";
+  } catch(e){
+    console.error("라이브 KPI 로드 실패:", e);
+    const st = $("kpiStatus");
+    if (st) st.textContent = "KPI 갱신 실패" + (liveKPI ? ` — ${String(liveKPI.at.getHours()).padStart(2,"0")}:${String(liveKPI.at.getMinutes()).padStart(2,"0")} 값 표시 중` : "");
+  }
   if (data) renderKpis();
 }
 loadLiveKPI();
@@ -742,7 +869,10 @@ const HIST_META = {
 async function loadHistory(){
   try {
     const fRes = await fetch(APPS_SCRIPT_URL + "?type=monthlyFunnel").then(r => r.json()).catch(() => null);
-    if (!fRes || !fRes.success && !Array.isArray(fRes.data)) return;
+    if (!fRes || !fRes.success || !Array.isArray(fRes.data)){
+      $("histChart").innerHTML = '<div class="hint">월별 데이터를 불러오지 못했습니다. 숫자 새로고침을 눌러 다시 시도해 주세요.</div>';
+      return;
+    }
     const funnel = (fRes.data || []).map(m => ({
       ym: String(m.month || ""),
       sample: parseInt(m.sample) || 0,
@@ -755,7 +885,8 @@ async function loadHistory(){
     const curYm = todayStr().slice(0, 7);
     const cacheSnap = await orgRef.child("statsCache").once("value");
     const cache = cacheSnap.val() || {};
-    const need = funnel.map(m => m.ym).filter(ym => ym === curYm || cache[ym] === undefined);
+    const recent = new Set(funnel.slice(-3).map(x => x.ym));
+    const need = funnel.map(m => m.ym).filter(ym => recent.has(ym) || cache[ym] === undefined);
     const fetched = await Promise.all(need.map(ym =>
       fetch(`${APPS_SCRIPT_URL}?type=monthStats&month=${encodeURIComponent(ym)}`)
         .then(r => r.json()).then(j => ({ym, rev: (j && j.success && j.data && j.data.revenue) ? (j.data.revenue.total || 0) : null}))
@@ -831,8 +962,9 @@ function renderKpis(){
       `<div class="card"><div class="label">월 샘플 접수</div><div class="value">${num(L.samples).toLocaleString()}<span style="font-size:14px">건</span></div><div class="meta">${esc(hint)}</div></div>` +
       (L.convRate ? `<div class="card"><div class="label">샘플→시공 전환율</div><div class="value">${L.convRate}<span style="font-size:14px">%</span></div><div class="meta">채널 전체 누적</div></div>` : "");
   }
-  // 라이브 연동이 되면 수동 카드는 값이 입력된 것만 표시 (빈 "-" 자리표시는 숨김)
-  const manual = toArr(data.kpis).filter(k => !liveKPI || (k.value && k.value !== "-"));
+  // 라이브와 중복되는 수동 카드만 숨기고, 계약률·A/S율 같은 나머지는 항상 표시
+  const liveCovered = ["월 매출","월 시공","월 시공건수","월 신규 문의","월 예약 접수","월 샘플 접수"];
+  const manual = toArr(data.kpis).filter(k => !liveKPI || !liveCovered.includes((k.label || "").trim()));
   $("kpiCards").innerHTML = live + manual.map(k => `
     <div class="card">
       <div class="label">${esc(k.label)}</div>
@@ -870,7 +1002,9 @@ function renderDeptOptions(){
   const cur = $("deptFilter").value;
   $("deptFilter").innerHTML = `<option value="">전체 부서</option>` + opts;
   $("deptFilter").value = cur;
+  const curPD = $("pDept").value;
   $("pDept").innerHTML = opts;
+  if (curPD && [...$("pDept").options].some(o => o.value === curPD)) $("pDept").value = curPD;
   const curT = $("taskDeptFilter").value;
   $("taskDeptFilter").innerHTML = `<option value="">전체 팀</option>` + opts;
   $("taskDeptFilter").value = curT;
@@ -1011,15 +1145,15 @@ window.editPerson = id => {
 };
 window.deletePerson = id => {
   const p = (data.people || {})[id]; if (!p) return;
-  if (!confirm(`${p.name} 님을 삭제할까요? 전 직원 화면에서 삭제됩니다.`)) return;
-  orgRef.child("people/" + id).remove();
+  if (!confirm(`${p.name} 님을 삭제할까요? 활동 기록의 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("people", id, "직원: " + p.name);
 };
-$("savePersonBtn").onclick = () => {
+$("savePersonBtn").onclick = async () => {
   const name = $("pName").value.trim(), role = $("pRole").value.trim();
   if (!name || !role) return alert("이름과 직무는 필수입니다.");
   const id = $("personId").value || newId("p_");
   const prev = (data.people || {})[$("personId").value] || {};
-  orgRef.child("people/" + id).set({
+  const payload = {
     name, role,
     dept: $("pDept").value, manager: $("pManager").value.trim(),
     mission: $("pMission").value.trim(),
@@ -1028,8 +1162,11 @@ $("savePersonBtn").onclick = () => {
     canDecide: lines($("pCan").value),
     notMine: lines($("pNot").value),
     order: prev.order || nextOrder(data.people)
-  });
-  personModal.close();
+  };
+  if (await safeWrite("직원", () => orgRef.child("people/" + id).set(payload), $("savePersonBtn"))){
+    logAction($("personId").value ? "수정" : "추가", "직원: " + name);
+    personModal.close();
+  }
 };
 
 /* ───────── 부서 CRUD ───────── */
@@ -1050,19 +1187,24 @@ window.deleteDept = id => {
   const d = (data.departments || {})[id]; if (!d) return;
   const used = entries(data.people).filter(p => p.dept === id).length;
   if (used > 0) return alert(`이 부서에 소속된 직원이 ${used}명 있습니다. 직원의 부서를 먼저 옮긴 뒤 삭제하세요.`);
-  if (!confirm(`'${d.name}' 부서를 삭제할까요?`)) return;
-  orgRef.child("departments/" + id).remove();
+  const usedTasks = entries(data.tasks).filter(t => t.dept === id && t.status !== "done").length;
+  if (usedTasks > 0) return alert(`이 부서에 미완료 프로젝트가 ${usedTasks}건 있습니다. 프로젝트의 팀을 먼저 옮기거나 완료 처리해 주세요.`);
+  if (!confirm(`'${d.name}' 부서를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("departments", id, "부서: " + d.name);
 };
-$("saveDeptBtn").onclick = () => {
+$("saveDeptBtn").onclick = async () => {
   const name = $("dName").value.trim();
   if (!name) return alert("부서명은 필수입니다.");
   const id = $("deptId").value || newId("d_");
   const prev = (data.departments || {})[$("deptId").value] || {};
-  orgRef.child("departments/" + id).set({
+  const payload = {
     name, mission: $("dMission").value.trim(), kpi: $("dKpi").value.trim(),
     order: prev.order || nextOrder(data.departments)
-  });
-  deptModal.close();
+  };
+  if (await safeWrite("부서", () => orgRef.child("departments/" + id).set(payload), $("saveDeptBtn"))){
+    logAction($("deptId").value ? "수정" : "추가", "부서: " + name);
+    deptModal.close();
+  }
 };
 
 /* ───────── 회사 KPI ───────── */
@@ -1074,14 +1216,16 @@ $("editKpiBtn").onclick = () => {
   `).join("");
   kpiModal.showModal();
 };
-$("saveKpiBtn").onclick = () => {
+$("saveKpiBtn").onclick = async () => {
   const kpis = toArr(data.kpis).map((k, i) => ({
     label: document.querySelector(`[data-kl="${i}"]`).value,
     value: document.querySelector(`[data-kv="${i}"]`).value,
     meta: k.meta || ""
   }));
-  orgRef.child("kpis").set(kpis);
-  kpiModal.close();
+  if (await safeWrite("회사 KPI", () => orgRef.child("kpis").set(kpis), $("saveKpiBtn"))){
+    logAction("수정", "회사 KPI");
+    kpiModal.close();
+  }
 };
 
 /* ───────── 의사결정 3단계 ───────── */
@@ -1093,13 +1237,15 @@ $("editTiersBtn").onclick = () => {
   $("tCeo").value = toArr(t.ceo).join("\n");
   tierModal.showModal();
 };
-$("saveTiersBtn").onclick = () => {
-  orgRef.child("decisionTiers").set({
+$("saveTiersBtn").onclick = async () => {
+  if (await safeWrite("의사결정 기준", () => orgRef.child("decisionTiers").set({
     staff: lines($("tStaff").value),
     lead: lines($("tLead").value),
     ceo: lines($("tCeo").value)
-  });
-  tierModal.close();
+  }), $("saveTiersBtn"))){
+    logAction("수정", "의사결정 3단계 기준");
+    tierModal.close();
+  }
 };
 
 /* ───────── 권한 분장표 CRUD ───────── */
@@ -1120,19 +1266,22 @@ window.editDecision = id => {
 };
 window.deleteDecision = id => {
   const r = (data.decisionTable || {})[id]; if (!r) return;
-  if (!confirm(`'${r.task}' 항목을 삭제할까요?`)) return;
-  orgRef.child("decisionTable/" + id).remove();
+  if (!confirm(`'${r.task}' 항목을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("decisionTable", id, "권한: " + r.task);
 };
-$("saveDecisionBtn").onclick = () => {
+$("saveDecisionBtn").onclick = async () => {
   const task = $("dcTask").value.trim();
   if (!task) return alert("업무명은 필수입니다.");
   const id = $("decisionId").value || newId("dc_");
   const prev = (data.decisionTable || {})[$("decisionId").value] || {};
-  orgRef.child("decisionTable/" + id).set({
+  const payload = {
     task, staff: $("dcStaff").value.trim(), lead: $("dcLead").value.trim(), ceo: $("dcCeo").value.trim(),
     order: prev.order || nextOrder(data.decisionTable)
-  });
-  decisionModal.close();
+  };
+  if (await safeWrite("권한 항목", () => orgRef.child("decisionTable/" + id).set(payload), $("saveDecisionBtn"))){
+    logAction($("decisionId").value ? "수정" : "추가", "권한: " + task);
+    decisionModal.close();
+  }
 };
 
 /* ───────── RACI CRUD ───────── */
@@ -1177,10 +1326,10 @@ window.editRaci = id => {
 };
 window.deleteRaci = id => {
   const t = (data.raci || {})[id]; if (!t) return;
-  if (!confirm(`'${t.title}' RACI 표를 삭제할까요?`)) return;
-  orgRef.child("raci/" + id).remove();
+  if (!confirm(`'${t.title}' RACI 표를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("raci", id, "RACI: " + t.title);
 };
-$("saveRaciBtn").onclick = () => {
+$("saveRaciBtn").onclick = async () => {
   const title = $("rTitle").value.trim();
   const cols = $("rCols").value.split(",").map(x => x.trim()).filter(Boolean);
   if (!title || !cols.length) return alert("표 제목과 담당 열은 필수입니다.");
@@ -1189,13 +1338,19 @@ $("saveRaciBtn").onclick = () => {
     marks: [...row.querySelectorAll(".mark")].slice(0, cols.length).map(i => i.value.trim())
   })).filter(r => r.task);
   if (!rows.length) return alert("행을 1개 이상 입력하세요.");
-  // A가 없는 행 경고 (강제하진 않음)
-  const noA = rows.filter(r => !r.marks.some(m => m.includes("A"))).map(r => r.task);
-  if (noA.length && !confirm(`최종책임자 A가 없는 행이 있습니다: ${noA.join(", ")}\n이대로 저장할까요?`)) return;
+  // 기호 검증 + A는 행마다 정확히 1명
+  const norm = v => (v || "").trim().toUpperCase();
+  const validMark = /^(|R|A|C|I|R\/A|A\/R)$/;
+  const bad = rows.filter(r => toArr(r.marks).some(m => !validMark.test(norm(m))));
+  if (bad.length) return alert(`R, A, C, I, R/A 만 입력할 수 있습니다.\n확인 필요: ${bad.map(r => r.task).join(", ")}`);
+  const badA = rows.filter(r => toArr(r.marks).filter(m => norm(m).includes("A")).length !== 1).map(r => r.task);
+  if (badA.length) return alert(`각 업무에는 최종책임자 A가 정확히 1명이어야 합니다.\n확인 필요: ${badA.join(", ")}`);
   const id = $("raciId").value || newId("r_");
   const prev = (data.raci || {})[$("raciId").value] || {};
-  orgRef.child("raci/" + id).set({ title, cols, rows, order: prev.order || nextOrder(data.raci) });
-  raciModal.close();
+  if (await safeWrite("RACI 표", () => orgRef.child("raci/" + id).set({ title, cols, rows, order: prev.order || nextOrder(data.raci) }), $("saveRaciBtn"))){
+    logAction($("raciId").value ? "수정" : "추가", "RACI: " + title);
+    raciModal.close();
+  }
 };
 
 /* ───────── 팀 할 일 & 캘린더 ───────── */
@@ -1307,12 +1462,17 @@ function renderCalendar(){
   const first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - first.getDay());
   const tStr = todayStr();
   // 날짜별 세그먼트 (기간 막대)
+  const viewStart = fmtD(start);
+  const viewEnd = addDays(viewStart, 41);
   const byDate = {};
   taskList().forEach(t => {
     if (!t.due) return;
-    const s = (t.start && t.start <= t.due) ? t.start : t.due;
-    for (let ds = s; ds <= t.due; ds = addDays(ds, 1)){
-      (byDate[ds] = byDate[ds] || []).push({t, isStart: ds === s, isEnd: ds === t.due});
+    const ts = (t.start && t.start <= t.due) ? t.start : t.due;
+    if (t.due < viewStart || ts > viewEnd) return; // 화면 밖 업무 제외
+    const s = ts < viewStart ? viewStart : ts;
+    const e = t.due > viewEnd ? viewEnd : t.due;
+    for (let ds = s; ds <= e; ds = addDays(ds, 1)){
+      (byDate[ds] = byDate[ds] || []).push({t, isStart: ds === ts, isEnd: ds === t.due});
     }
   });
   const cells = [];
@@ -1348,6 +1508,8 @@ window.calDrag = (e, id, mode, grabDs) => {
   calDragInfo = {id, mode, grabDs};
   e.dataTransfer.effectAllowed = "move";
   try { e.dataTransfer.setData("text/plain", id); } catch(_){}
+  if (e.currentTarget && e.currentTarget.addEventListener)
+    e.currentTarget.addEventListener("dragend", () => { calDragInfo = null; }, { once: true });
 };
 window.calDrop = (e, dropDs) => {
   e.preventDefault();
@@ -1394,26 +1556,32 @@ window.editTask = id => {
 };
 window.deleteTask = id => {
   const t = (data.tasks || {})[id]; if (!t) return;
-  if (!confirm(`'${t.title}' 항목을 삭제할까요?`)) return;
-  orgRef.child("tasks/" + id).remove();
+  if (!confirm(`'${t.title}' 항목을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("tasks", id, "프로젝트: " + t.title);
 };
 window.moveTask = (id, st) => orgRef.child("tasks/" + id + "/status").set(st);
-$("saveTaskBtn").onclick = () => {
+$("saveTaskBtn").onclick = async () => {
   const title = $("tTitle").value.trim();
   if (!title) return alert("제목은 필수입니다.");
+  const sVal = $("tStart").value, dVal = $("tDue").value;
+  if (sVal && !dVal) return alert("시작일을 입력했다면 마감일도 입력해 주세요.");
+  if (sVal && dVal && sVal > dVal) return alert("시작일은 마감일보다 늦을 수 없습니다.");
   const id = $("taskId").value || newId("t_");
   const prev = (data.tasks || {})[$("taskId").value] || {};
-  orgRef.child("tasks/" + id).set({
+  const payload = {
     title,
     dept: $("tDept").value,
     assignee: $("tAssignee").value.trim(),
     status: $("tStatus").value,
-    start: $("tStart").value && $("tDue").value && $("tStart").value < $("tDue").value ? $("tStart").value : "",
-    due: $("tDue").value,
+    start: sVal && dVal && sVal < dVal ? sVal : "",
+    due: dVal,
     memo: $("tMemo").value.trim(),
     createdAt: prev.createdAt || Date.now()
-  });
-  taskModal.close();
+  };
+  if (await safeWrite("프로젝트", () => orgRef.child("tasks/" + id).set(payload), $("saveTaskBtn"))){
+    logAction($("taskId").value ? "수정" : "추가", "프로젝트: " + title);
+    taskModal.close();
+  }
 };
 
 /* ───────── 도구 모음 ───────── */
@@ -1480,19 +1648,27 @@ window.editTool = id => {
 };
 window.deleteTool = id => {
   const t = (data.tools || {})[id]; if (!t) return;
-  if (!confirm(`'${t.name}' 링크를 삭제할까요?`)) return;
-  orgRef.child("tools/" + id).remove();
+  if (!confirm(`'${t.name}' 링크를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("tools", id, "링크: " + t.name);
 };
-$("saveToolBtn").onclick = () => {
+$("saveToolBtn").onclick = async () => {
   const name = $("tlName").value.trim(), url = $("tlUrl").value.trim();
   if (!name || !url) return alert("이름과 주소는 필수입니다.");
+  const low = url.toLowerCase().replace(/\s/g, "");
+  if (low.startsWith("javascript:") || low.startsWith("data:") || low.startsWith("vbscript:") || url.startsWith("//"))
+    return alert("허용되지 않는 주소 형식입니다. https:// 주소 또는 내부 파일명(예: stock.html)만 입력해 주세요.");
+  if (/^[a-z]+:/i.test(url) && !/^https:/i.test(url))
+    return alert("외부 주소는 https:// 로 시작해야 합니다.");
   const id = $("toolId").value || newId("tl_");
   const prev = (data.tools || {})[$("toolId").value] || {};
-  orgRef.child("tools/" + id).set({
+  const payload = {
     name, url, group: $("tlGroup").value, desc: $("tlDesc").value.trim(),
     order: prev.order || nextOrder(data.tools)
-  });
-  toolModal.close();
+  };
+  if (await safeWrite("링크", () => orgRef.child("tools/" + id).set(payload), $("saveToolBtn"))){
+    logAction($("toolId").value ? "수정" : "추가", "링크: " + name);
+    toolModal.close();
+  }
 };
 
 /* ───────── 주간회의 CRUD ───────── */
@@ -1515,21 +1691,23 @@ window.editMeeting = id => {
 };
 window.deleteMeeting = id => {
   const m = (data.weekly || {})[id]; if (!m) return;
-  if (!confirm(`${m.date} 회의 기록을 삭제할까요?`)) return;
-  orgRef.child("weekly/" + id).remove();
+  if (!confirm(`${m.date} 회의 기록을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("weekly", id, "회의: " + m.date);
 };
-$("saveMeetingBtn").onclick = () => {
+$("saveMeetingBtn").onclick = async () => {
   const date = $("mDate").value;
   if (!date) return alert("회의 날짜는 필수입니다.");
   const id = $("meetingId").value || newId("w_");
-  orgRef.child("weekly/" + id).set({
+  if (await safeWrite("회의 기록", () => orgRef.child("weekly/" + id).set({
     date,
     numbers: $("mNumbers").value.trim(),
     gap: $("mGap").value.trim(),
     issues: $("mIssues").value.trim(),
     owner: $("mOwner").value.trim()
-  });
-  meetingModal.close();
+  }), $("saveMeetingBtn"))){
+    logAction($("meetingId").value ? "수정" : "추가", "회의: " + date);
+    meetingModal.close();
+  }
 };
 </script>
 </body>
