@@ -149,6 +149,10 @@
   .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px}
   .cal-cell.today .d{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px}
   .cal-cell.sun .d{color:var(--bad)}
+  .cal-pill{position:relative;cursor:grab}
+  .cal-pill .hdl{position:absolute;left:1px;top:0;bottom:0;display:flex;align-items:center;font-style:normal;font-size:9px;opacity:.55;cursor:ew-resize;padding:0 1px}
+  .cal-pill .hdl.r{left:auto;right:1px}
+  .cal-pill:hover .hdl{opacity:1}
   .cal-pill{display:block;font-size:11px;line-height:1.35;padding:2px 6px;border-radius:6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
   .cal-pill.todo{background:#EEF2F0;color:#5B6763}
   .cal-pill.doing{background:var(--tint);color:var(--accent-deep)}
@@ -475,8 +479,9 @@
       <input type="hidden" id="taskId">
       <div class="field full"><label>제목 *</label><input id="tTitle" placeholder="예: 9월 맘카페 공동구매 오픈"></div>
       <div class="field"><label>팀</label><select id="tDept"><option value="">공통</option></select></div>
-      <div class="field"><label>담당자</label><input id="tAssignee" placeholder="예: 준형"></div>
+      <div class="field"><label>담당자</label><input id="tAssignee"></div>
       <div class="field"><label>상태</label><select id="tStatus"><option value="todo">대기</option><option value="doing">진행 중</option><option value="done">완료</option></select></div>
+      <div class="field"><label>시작일 (기간 업무일 때)</label><input type="date" id="tStart"></div>
       <div class="field"><label>마감일</label><input type="date" id="tDue"></div>
       <div class="field full"><label>메모</label><textarea id="tMemo"></textarea></div>
     </div>
@@ -624,6 +629,12 @@ orgRef.on("value", snap => {
     return;
   }
   if (!v.tools && !toolsSeeding) { toolsSeeding = true; orgRef.child("tools").set(TOOLS_SEED); return; }
+  if (v.tools && !v.toolsCleanup1 && !toolsCleaning) {
+    toolsCleaning = true;
+    const upd = { toolsCleanup1: true };
+    ["tl03","tl04","tl07","tl10","tl12","tl15","tl19","tl22","tl23"].forEach(id => { if (v.tools[id]) upd["tools/" + id] = null; });
+    orgRef.update(upd); return;
+  }
   data = v;
   renderAll();
 }, err => {
@@ -1049,10 +1060,20 @@ $("saveRaciBtn").onclick = () => {
 };
 
 /* ───────── 팀 할 일 & 캘린더 ───────── */
+const DEPT_PALETTE = ["#00B173","#5B8DEF","#F2994A","#9B51E0","#EB5757","#2D9CDB","#B8860B","#BB6BD9"];
+function deptColor(deptId){
+  if (!deptId) return "#8A959E";
+  const ids = entries(data.departments).sort(byOrder).map(d => d.id);
+  const i = ids.indexOf(deptId);
+  return i >= 0 ? DEPT_PALETTE[i % DEPT_PALETTE.length] : "#8A959E";
+}
 const STATUS_LABEL = {todo:"대기", doing:"진행 중", done:"완료"};
 const STATUS_NEXT = {todo:"doing", doing:"done"};
 const STATUS_PREV = {done:"doing", doing:"todo"};
-const todayStr = () => new Date().toISOString().slice(0,10);
+const fmtD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const todayStr = () => fmtD(new Date());
+const addDays = (ds, n) => { const [y,m,d] = ds.split("-").map(Number); const dt = new Date(y, m-1, d + n); return fmtD(dt); };
+const diffDays = (a, b) => { const [y1,m1,d1]=a.split("-").map(Number),[y2,m2,d2]=b.split("-").map(Number); return Math.round((new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000); };
 const isOverdue = t => t.due && t.status !== "done" && t.due < todayStr();
 let calBase = new Date(); calBase.setDate(1);
 
@@ -1072,7 +1093,7 @@ function renderTasks(){
     $("col-" + st).innerHTML = items.map(t => {
       const dept = t.dept && (data.departments||{})[t.dept]?.name;
       const over = isOverdue(t);
-      return `<div class="kcard">
+      return `<div class="kcard" style="border-left:3px solid ${deptColor(t.dept)}">
         <div class="t">${esc(t.title)}</div>
         <div class="meta">
           ${dept ? `<span class="chip">${esc(dept)}</span>` : ""}
@@ -1099,25 +1120,75 @@ function renderCalendar(){
   const y = calBase.getFullYear(), m = calBase.getMonth();
   $("calLabel").textContent = `${y}년 ${m+1}월`;
   $("calHead").innerHTML = ["일","월","화","수","목","금","토"].map(d=>`<span>${d}</span>`).join("");
+  // 범례: 팀 색상
+  const legend = entries(data.departments).sort(byOrder).map(d =>
+    `<i style="background:${deptColor(d.id)}"></i>${esc(d.name)}`).join(" ") +
+    ` <i style="background:#8A959E"></i>공통 <i style="background:var(--bad)"></i>지연`;
+  const legEl = document.querySelector(".cal-legend");
+  if (legEl) legEl.innerHTML = legend;
+
   const first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - first.getDay());
-  const byDate = {};
-  taskList().forEach(t => { if(t.due) (byDate[t.due] = byDate[t.due] || []).push(t); });
-  const cells = [];
   const tStr = todayStr();
+  // 날짜별 세그먼트 (기간 막대)
+  const byDate = {};
+  taskList().forEach(t => {
+    if (!t.due) return;
+    const s = (t.start && t.start <= t.due) ? t.start : t.due;
+    for (let ds = s; ds <= t.due; ds = addDays(ds, 1)){
+      (byDate[ds] = byDate[ds] || []).push({t, isStart: ds === s, isEnd: ds === t.due});
+    }
+  });
+  const cells = [];
   for (let i = 0; i < 42; i++){
-    const d = new Date(start); d.setDate(start.getDate() + i);
-    const ds = d.toISOString().slice(0,10);
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const ds = fmtD(d);
     const other = d.getMonth() !== m;
-    const items = (byDate[ds] || []).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-    const shown = items.slice(0,3);
-    cells.push(`<div class="cal-cell ${other?"other":""} ${ds===tStr?"today":""} ${d.getDay()===0?"sun":""}" onclick="openTaskForDate('${ds}')">
+    const segs = (byDate[ds] || []).sort((a,b) => (a.t.createdAt||0) - (b.t.createdAt||0));
+    const shown = segs.slice(0, 3);
+    cells.push(`<div class="cal-cell ${other?"other":""} ${ds===tStr?"today":""} ${d.getDay()===0?"sun":""}"
+        onclick="openTaskForDate('${ds}')" ondragover="event.preventDefault()" ondrop="calDrop(event,'${ds}')">
       <div class="d">${d.getDate()}</div>
-      ${shown.map(t => `<span class="cal-pill ${isOverdue(t)?"late":t.status}" onclick="event.stopPropagation();editTask('${t.id}')">${esc(t.title)}</span>`).join("")}
-      ${items.length > 3 ? `<span class="cal-more">+${items.length-3}건</span>` : ""}
+      ${shown.map(sg => {
+        const t = sg.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
+        const style = `background:${c}22;color:${late?"var(--bad)":c};border-left:${sg.isStart?`3px solid ${late?"var(--bad)":c}`:"0"};` +
+          `border-radius:${sg.isStart?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isStart?"6px":"0"};${done?"opacity:.45;text-decoration:line-through;":""}`;
+        return `<span class="cal-pill" draggable="true" style="${style}"
+          ondragstart="calDrag(event,'${t.id}','move','${ds}')"
+          onclick="event.stopPropagation();editTask('${t.id}')">` +
+          (sg.isStart ? `<i class="hdl" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','l','${ds}')">⟨</i>` : "") +
+          `${sg.isStart ? (late?"⚠ ":"") + esc(t.title) : "&nbsp;"}` +
+          (sg.isEnd ? `<i class="hdl r" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','r','${ds}')">⟩</i>` : "") +
+        `</span>`;
+      }).join("")}
+      ${segs.length > 3 ? `<span class="cal-more">+${segs.length-3}건</span>` : ""}
     </div>`);
   }
   $("calGrid").innerHTML = cells.join("");
 }
+let calDragInfo = null;
+window.calDrag = (e, id, mode, grabDs) => {
+  calDragInfo = {id, mode, grabDs};
+  e.dataTransfer.effectAllowed = "move";
+  try { e.dataTransfer.setData("text/plain", id); } catch(_){}
+};
+window.calDrop = (e, dropDs) => {
+  e.preventDefault();
+  if (!calDragInfo) return;
+  const t = (data.tasks || {})[calDragInfo.id];
+  if (!t || !t.due) { calDragInfo = null; return; }
+  const s = (t.start && t.start <= t.due) ? t.start : t.due;
+  let newS = s, newE = t.due;
+  if (calDragInfo.mode === "move"){
+    const delta = diffDays(calDragInfo.grabDs, dropDs);
+    newS = addDays(s, delta); newE = addDays(t.due, delta);
+  } else if (calDragInfo.mode === "l"){
+    newS = dropDs <= t.due ? dropDs : t.due;
+  } else if (calDragInfo.mode === "r"){
+    newE = dropDs >= s ? dropDs : s;
+  }
+  calDragInfo = null;
+  orgRef.child("tasks/" + t.id).update({ start: newS === newE ? "" : newS, due: newE });
+};
 $("calPrev").onclick = () => { calBase.setMonth(calBase.getMonth()-1); renderCalendar(); };
 $("calNext").onclick = () => { calBase.setMonth(calBase.getMonth()+1); renderCalendar(); };
 $("calToday").onclick = () => { calBase = new Date(); calBase.setDate(1); renderCalendar(); };
@@ -1129,7 +1200,7 @@ function openTaskModal(prefillDate){
   $("taskModalTitle").textContent = "할 일 추가";
   $("taskId").value = "";
   $("tTitle").value = ""; $("tDept").value = ""; $("tAssignee").value = "";
-  $("tStatus").value = "todo"; $("tDue").value = prefillDate || ""; $("tMemo").value = "";
+  $("tStatus").value = "todo"; $("tStart").value = ""; $("tDue").value = prefillDate || ""; $("tMemo").value = "";
   taskModal.showModal();
 }
 window.openTaskForDate = ds => openTaskModal(ds);
@@ -1141,7 +1212,7 @@ window.editTask = id => {
   $("taskId").value = id;
   $("tTitle").value = t.title || ""; $("tDept").value = t.dept || "";
   $("tAssignee").value = t.assignee || ""; $("tStatus").value = t.status || "todo";
-  $("tDue").value = t.due || ""; $("tMemo").value = t.memo || "";
+  $("tStart").value = t.start || ""; $("tDue").value = t.due || ""; $("tMemo").value = t.memo || "";
   taskModal.showModal();
 };
 window.deleteTask = id => {
@@ -1160,6 +1231,7 @@ $("saveTaskBtn").onclick = () => {
     dept: $("tDept").value,
     assignee: $("tAssignee").value.trim(),
     status: $("tStatus").value,
+    start: $("tStart").value && $("tDue").value && $("tStart").value < $("tDue").value ? $("tStart").value : "",
     due: $("tDue").value,
     memo: $("tMemo").value.trim(),
     createdAt: prev.createdAt || Date.now()
@@ -1169,31 +1241,23 @@ $("saveTaskBtn").onclick = () => {
 
 /* ───────── 도구 모음 ───────── */
 let toolsSeeding = false;
+let toolsCleaning = false;
 const TOOL_GROUPS = ["시공·운영","CS·상담","마케팅","교육·기타","고객용 페이지"];
 const TOOLS_SEED = {
   tl01:{name:"부산 스케줄러", url:"scheduler.html", group:"시공·운영", desc:"부산 시공 일정 배정", order:1},
   tl02:{name:"경기 스케줄러", url:"scheduler-gg.html", group:"시공·운영", desc:"경기 시공 일정 배정", order:2},
-  tl03:{name:"예약 접수", url:"reservation.html", group:"시공·운영", desc:"신규 예약 등록", order:3},
-  tl04:{name:"재고 관리", url:"stock.html", group:"시공·운영", desc:"재고 현황·발주 초안", order:4},
   tl05:{name:"부산 재고조사", url:"inventory.html", group:"시공·운영", desc:"부산 차량 주간 재고조사", order:5},
   tl06:{name:"경기 재고조사", url:"inventory-gg.html", group:"시공·운영", desc:"경기 차량 주간 재고조사", order:6},
-  tl07:{name:"입고 기록", url:"incoming.html", group:"시공·운영", desc:"자재 입고 등록", order:7},
   tl08:{name:"차량점검", url:"vehicle-check.html", group:"시공·운영", desc:"차량 점검 체크", order:8},
   tl09:{name:"주간 점검", url:"checklist.html", group:"시공·운영", desc:"금요일 주간 체크리스트", order:9},
-  tl10:{name:"매트 배치 프로그램", url:"matlayout.html", group:"시공·운영", desc:"도면 그리기·재단 계산", order:10},
   tl11:{name:"시공 체크리스트", url:"guide.html", group:"시공·운영", desc:"현장 시공 가이드", order:11},
-  tl12:{name:"CS 조종실", url:"cs-cockpit.html", group:"CS·상담", desc:"상담 업무 허브", order:20},
   tl13:{name:"상담 견적 (직원용)", url:"cs-quote.html", group:"CS·상담", desc:"상담 중 견적 산출", order:21},
   tl14:{name:"상담 로그", url:"cs-phone.html", group:"CS·상담", desc:"전화 상담 기록", order:22},
-  tl15:{name:"자동 견적", url:"auto-quote.html", group:"CS·상담", desc:"고객 셀프 견적", order:23},
   tl16:{name:"마케팅 대시보드", url:"marketing.html", group:"마케팅", desc:"마케팅 현황", order:30},
   tl17:{name:"입주아파트 마케팅", url:"apt-marketing.html", group:"마케팅", desc:"입주 단지 관리", order:31},
   tl18:{name:"가격 레이더", url:"price-radar.html", group:"마케팅", desc:"경쟁사 가격 추적", order:32},
-  tl19:{name:"콘텐츠 풀", url:"cs-pool.html", group:"마케팅", desc:"콘텐츠 소재 모음", order:33},
   tl20:{name:"신입 시공 교육", url:"training.html", group:"교육·기타", desc:"시공 신입 교육 자료", order:40},
   tl21:{name:"CS 상담 교육", url:"training-cs.html", group:"교육·기타", desc:"상담 신입 교육 자료", order:41},
-  tl22:{name:"직원 퀴즈", url:"dolbom-quiz.html", group:"교육·기타", desc:"교육 확인 퀴즈", order:42},
-  tl23:{name:"회의 보드", url:"meeting.html", group:"교육·기타", desc:"회의 안건·기록", order:43},
   tl24:{name:"아이디어 보드", url:"feedback.html", group:"교육·기타", desc:"개선제안 등록", order:44},
   tl25:{name:"시공 예약 (고객)", url:"booking.html", group:"고객용 페이지", desc:"고객이 보는 예약 화면", order:50},
   tl26:{name:"무료 샘플 신청", url:"sample.html", group:"고객용 페이지", desc:"샘플 신청 화면", order:51},
@@ -1259,7 +1323,7 @@ const meetingModal = $("meetingModal");
 $("addMeetingBtn").onclick = () => {
   $("meetingModalTitle").textContent = "회의 기록 추가";
   $("meetingId").value = "";
-  $("mDate").value = new Date().toISOString().slice(0, 10);
+  $("mDate").value = todayStr();
   ["mNumbers","mGap","mIssues","mOwner"].forEach(id => $(id).value = "");
   meetingModal.showModal();
 };
