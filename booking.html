@@ -611,6 +611,23 @@ function submitBooking(){
     return;
   }
 
+  // 🛡️ 10분 내 재제출 방지 (새로고침 후 같은 번호로 다시 제출하는 경우) · 2026-08-20
+  try{
+    var __doneRaw=localStorage.getItem('dolbom_booking_done');
+    if(__doneRaw){
+      var __done=JSON.parse(__doneRaw);
+      var __curPhone=document.getElementById('phone').value.trim().replace(/[^0-9]/g,'');
+      if(__done.phone&&__curPhone.length>=8&&__done.phone.slice(-8)===__curPhone.slice(-8)&&(Date.now()-__done.at)<10*60*1000){
+        showToast('✅ 이미 접수된 예약입니다! 이미지를 카카오톡으로 보내주세요');
+        if(savedCanvasDataUrl){
+          document.getElementById('imgOverlay').classList.add('show');
+          document.body.style.overflow='hidden';
+        }
+        return;
+      }
+    }
+  }catch(e){}
+
   // 1) 미입력 필드 검사 + 스크롤
   var checks=[
     {ok:document.getElementById('name').value.trim(), el:'name', msg:'이름'},
@@ -714,6 +731,11 @@ function submitBooking(){
   .then(function(r){return r.text()})
   .then(function(t){
     var res={};try{res=JSON.parse(t)}catch(e){}
+    // 🛡️ 자동저장 draft 삭제 + 성공 기록 (새로고침 재제출 방지) · 2026-08-20
+    try{
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.setItem('dolbom_booking_done',JSON.stringify({phone:phone,at:Date.now()}));
+    }catch(e){}
     // 🆕 성공/실패 관계없이 이미지 저장 + 텍스트 복사 흐름으로 (검증된 방식)
     btn.textContent='✅ 예약 신청 완료!';
     btn.style.background='linear-gradient(135deg,#2E7D32,#1B5E20)';
