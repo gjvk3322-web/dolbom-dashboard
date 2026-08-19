@@ -123,6 +123,17 @@
   .raci-row input.mark{flex:1;min-width:52px;text-align:center}
   .hint{font-size:11px;color:var(--muted);line-height:1.5}
 
+  /* 도구 모음 */
+  .tool-group{margin-bottom:24px}
+  .tool-group h2{font-size:15px;margin:0 0 10px;color:#5B6763}
+  .tool-group h2::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:1px}
+  .tool-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .tool-card{display:block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;text-decoration:none;color:var(--text);box-shadow:0 1px 2px rgba(33,43,54,.04);transition:border-color .12s, transform .12s}
+  .tool-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .tool-card .n{font-weight:700;font-size:14px}
+  .tool-card .n::after{content:" ↗";color:var(--accent);font-size:12px}
+  .tool-card .ds{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .tool-card .tools-actions{margin-top:8px;display:flex;gap:5px;justify-content:flex-end}
   /* 캘린더 */
   .cal-controls{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
   .cal-controls b{font-size:16px;min-width:110px;text-align:center}
@@ -191,6 +202,7 @@
       <button data-view="raci">RACI</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="rules">운영 원칙</button>
+      <button data-view="tools">도구 모음</button>
     </nav>
     <div class="side-foot">모든 수정은 즉시 전 직원 화면에 반영됩니다.</div>
   </aside>
@@ -203,7 +215,11 @@
           <h1>대표 대시보드</h1>
           <div class="lead">대표는 직원의 모든 업무를 직접 관리하지 않습니다. 핵심 숫자, 막힌 의사결정, 주요 리스크만 확인합니다.</div>
         </div>
-        <button class="btn primary" id="editKpiBtn">회사 KPI 수정</button>
+        <span style="display:flex;gap:8px">
+          <button class="btn" onclick="loadLiveKPI()">숫자 새로고침 ↻</button>
+          <a class="btn" href="cs-cockpit.html" target="_blank" rel="noopener" style="text-decoration:none">조종실 열기 ↗</a>
+          <button class="btn primary" id="editKpiBtn">회사 KPI 수정</button>
+        </span>
       </div>
       <div class="mission">
         <small>COMPANY MISSION — 클릭해서 수정</small>
@@ -346,6 +362,18 @@
       </div>
       <div class="footer-note">권장 운영 주기: 매주 KPI 확인 · 매월 부서 리뷰 · 매분기 업무분장 재설계</div>
     </section>
+
+    <!-- 도구 모음 -->
+    <section id="tools" class="section">
+      <div class="topbar">
+        <div>
+          <h1>도구 모음</h1>
+          <div class="lead">돌봄매트에서 직접 만든 프로그램들입니다. 클릭하면 새 탭으로 열립니다.</div>
+        </div>
+        <button class="btn primary" id="addToolBtn">링크 추가</button>
+      </div>
+      <div id="toolGroups"></div>
+    </section>
   </main>
 </div>
 
@@ -453,6 +481,23 @@
       <div class="field full"><label>메모</label><textarea id="tMemo"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="taskModal.close()">취소</button><button class="btn primary" id="saveTaskBtn">저장</button></div>
+  </form>
+</dialog>
+
+<!-- 도구 링크 모달 -->
+<dialog id="toolModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong id="toolModalTitle">링크 추가</strong><button class="mini-btn" onclick="toolModal.close()">닫기</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="toolId">
+      <div class="field full"><label>이름 *</label><input id="tlName" placeholder="예: 부산 스케줄러"></div>
+      <div class="field full"><label>주소 *</label><input id="tlUrl" placeholder="예: scheduler.html 또는 https://..."></div>
+      <div class="field"><label>그룹</label><select id="tlGroup">
+        <option>시공·운영</option><option>CS·상담</option><option>마케팅</option><option>교육·기타</option><option>고객용 페이지</option>
+      </select></div>
+      <div class="field"><label>설명 (한 줄)</label><input id="tlDesc"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="toolModal.close()">취소</button><button class="btn primary" id="saveToolBtn">저장</button></div>
   </form>
 </dialog>
 
@@ -578,6 +623,7 @@ orgRef.on("value", snap => {
     if (!seeding) { seeding = true; orgRef.set(seedData); }
     return;
   }
+  if (!v.tools && !toolsSeeding) { toolsSeeding = true; orgRef.child("tools").set(TOOLS_SEED); return; }
   data = v;
   renderAll();
 }, err => {
@@ -591,11 +637,53 @@ function renderAll(){
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   renderKpis(); renderDepartments(); renderPeople(); renderDeptOptions();
   renderTiers(); renderDecisionTable(); renderRaci(); renderMeetings();
-  renderCalendar(); renderTasks();
+  renderCalendar(); renderTasks(); renderTools();
 }
 
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec";
+let liveKPI = null;
+const num = x => (x && typeof x === "object") ? (x.total || 0) : (x || 0);
+const man = x => Math.round(x / 10000).toLocaleString();
+
+async function loadLiveKPI(){
+  try {
+    const [mRes, cRes] = await Promise.all([
+      fetch(APPS_SCRIPT_URL + "?type=monthStats").then(r => r.json()).catch(() => null),
+      fetch(APPS_SCRIPT_URL + "?type=conversionStats").then(r => r.json()).catch(() => null)
+    ]);
+    if (mRes && mRes.success && mRes.data){
+      liveKPI = {
+        month: mRes.month, days: mRes.daysPassed, cur: mRes.isCurrentMonth,
+        revenue: mRes.data.revenue || {}, installs: mRes.data.installs || {},
+        reservations: mRes.data.reservations, samples: mRes.data.samples
+      };
+      if (cRes && cRes.success && Array.isArray(cRes.data)){
+        const t = cRes.data.reduce((a, r) => ({s: a.s + (r.sample||0), i: a.i + (r.installed||0)}), {s:0, i:0});
+        liveKPI.convRate = t.s > 0 ? (t.i / t.s * 100).toFixed(1) : null;
+      }
+    }
+  } catch(e){ console.error("라이브 KPI 로드 실패:", e); }
+  if (data) renderKpis();
+}
+loadLiveKPI();
+
 function renderKpis(){
-  $("kpiCards").innerHTML = toArr(data.kpis).map(k => `
+  let live = "";
+  if (liveKPI){
+    const L = liveKPI;
+    const mLabel = L.month ? parseInt(L.month.substring(5)) + "월" : "이번 달";
+    const hint = L.cur ? `${mLabel} · ${L.days}일차 · 실시간` : `${mLabel} · 실시간`;
+    const sub = o => (o && o.busan !== undefined) ? `부산 ${man(o.busan)} · 경기 ${man(o.gyeonggi)}` : hint;
+    live =
+      `<div class="card"><div class="label">월 매출</div><div class="value">${man(num(L.revenue))}<span style="font-size:14px">만원</span></div><div class="meta">${esc(sub(L.revenue))}</div></div>` +
+      `<div class="card"><div class="label">월 시공</div><div class="value">${num(L.installs).toLocaleString()}<span style="font-size:14px">건</span></div><div class="meta">${L.installs.busan !== undefined ? `부산 ${num({total:L.installs.busan})} · 경기 ${num({total:L.installs.gyeonggi})}건` : esc(hint)}</div></div>` +
+      `<div class="card"><div class="label">월 예약 접수</div><div class="value">${num(L.reservations).toLocaleString()}<span style="font-size:14px">건</span></div><div class="meta">${esc(hint)}</div></div>` +
+      `<div class="card"><div class="label">월 샘플 접수</div><div class="value">${num(L.samples).toLocaleString()}<span style="font-size:14px">건</span></div><div class="meta">${esc(hint)}</div></div>` +
+      (L.convRate ? `<div class="card"><div class="label">샘플→시공 전환율</div><div class="value">${L.convRate}<span style="font-size:14px">%</span></div><div class="meta">채널 전체 누적</div></div>` : "");
+  }
+  // 라이브 연동이 되면 수동 카드는 값이 입력된 것만 표시 (빈 "-" 자리표시는 숨김)
+  const manual = toArr(data.kpis).filter(k => !liveKPI || (k.value && k.value !== "-"));
+  $("kpiCards").innerHTML = live + manual.map(k => `
     <div class="card">
       <div class="label">${esc(k.label)}</div>
       <div class="value">${esc(k.value)}</div>
@@ -1077,6 +1165,93 @@ $("saveTaskBtn").onclick = () => {
     createdAt: prev.createdAt || Date.now()
   });
   taskModal.close();
+};
+
+/* ───────── 도구 모음 ───────── */
+let toolsSeeding = false;
+const TOOL_GROUPS = ["시공·운영","CS·상담","마케팅","교육·기타","고객용 페이지"];
+const TOOLS_SEED = {
+  tl01:{name:"부산 스케줄러", url:"scheduler.html", group:"시공·운영", desc:"부산 시공 일정 배정", order:1},
+  tl02:{name:"경기 스케줄러", url:"scheduler-gg.html", group:"시공·운영", desc:"경기 시공 일정 배정", order:2},
+  tl03:{name:"예약 접수", url:"reservation.html", group:"시공·운영", desc:"신규 예약 등록", order:3},
+  tl04:{name:"재고 관리", url:"stock.html", group:"시공·운영", desc:"재고 현황·발주 초안", order:4},
+  tl05:{name:"부산 재고조사", url:"inventory.html", group:"시공·운영", desc:"부산 차량 주간 재고조사", order:5},
+  tl06:{name:"경기 재고조사", url:"inventory-gg.html", group:"시공·운영", desc:"경기 차량 주간 재고조사", order:6},
+  tl07:{name:"입고 기록", url:"incoming.html", group:"시공·운영", desc:"자재 입고 등록", order:7},
+  tl08:{name:"차량점검", url:"vehicle-check.html", group:"시공·운영", desc:"차량 점검 체크", order:8},
+  tl09:{name:"주간 점검", url:"checklist.html", group:"시공·운영", desc:"금요일 주간 체크리스트", order:9},
+  tl10:{name:"매트 배치 프로그램", url:"matlayout.html", group:"시공·운영", desc:"도면 그리기·재단 계산", order:10},
+  tl11:{name:"시공 체크리스트", url:"guide.html", group:"시공·운영", desc:"현장 시공 가이드", order:11},
+  tl12:{name:"CS 조종실", url:"cs-cockpit.html", group:"CS·상담", desc:"상담 업무 허브", order:20},
+  tl13:{name:"상담 견적 (직원용)", url:"cs-quote.html", group:"CS·상담", desc:"상담 중 견적 산출", order:21},
+  tl14:{name:"상담 로그", url:"cs-phone.html", group:"CS·상담", desc:"전화 상담 기록", order:22},
+  tl15:{name:"자동 견적", url:"auto-quote.html", group:"CS·상담", desc:"고객 셀프 견적", order:23},
+  tl16:{name:"마케팅 대시보드", url:"marketing.html", group:"마케팅", desc:"마케팅 현황", order:30},
+  tl17:{name:"입주아파트 마케팅", url:"apt-marketing.html", group:"마케팅", desc:"입주 단지 관리", order:31},
+  tl18:{name:"가격 레이더", url:"price-radar.html", group:"마케팅", desc:"경쟁사 가격 추적", order:32},
+  tl19:{name:"콘텐츠 풀", url:"cs-pool.html", group:"마케팅", desc:"콘텐츠 소재 모음", order:33},
+  tl20:{name:"신입 시공 교육", url:"training.html", group:"교육·기타", desc:"시공 신입 교육 자료", order:40},
+  tl21:{name:"CS 상담 교육", url:"training-cs.html", group:"교육·기타", desc:"상담 신입 교육 자료", order:41},
+  tl22:{name:"직원 퀴즈", url:"dolbom-quiz.html", group:"교육·기타", desc:"교육 확인 퀴즈", order:42},
+  tl23:{name:"회의 보드", url:"meeting.html", group:"교육·기타", desc:"회의 안건·기록", order:43},
+  tl24:{name:"아이디어 보드", url:"feedback.html", group:"교육·기타", desc:"개선제안 등록", order:44},
+  tl25:{name:"시공 예약 (고객)", url:"booking.html", group:"고객용 페이지", desc:"고객이 보는 예약 화면", order:50},
+  tl26:{name:"무료 샘플 신청", url:"sample.html", group:"고객용 페이지", desc:"샘플 신청 화면", order:51},
+  tl27:{name:"맞춤 견적", url:"quote.html", group:"고객용 페이지", desc:"고객 견적 화면", order:52},
+  tl28:{name:"홈페이지", url:"index.html", group:"고객용 페이지", desc:"메인 랜딩", order:53}
+};
+
+function renderTools(){
+  const list = entries(data.tools).sort(byOrder);
+  $("toolGroups").innerHTML = TOOL_GROUPS.map(g => {
+    const items = list.filter(t => t.group === g);
+    if (!items.length) return "";
+    return `<div class="tool-group">
+      <h2>${esc(g)}</h2>
+      <div class="tool-grid">${items.map(t => `
+        <a class="tool-card" href="${esc(t.url)}" target="_blank" rel="noopener">
+          <div class="n">${esc(t.name)}</div>
+          ${t.desc ? `<div class="ds">${esc(t.desc)}</div>` : ""}
+          <div class="tools-actions">
+            <button class="mini-btn" onclick="event.preventDefault();event.stopPropagation();editTool('${t.id}')">수정</button>
+            <button class="mini-btn" onclick="event.preventDefault();event.stopPropagation();deleteTool('${t.id}')">삭제</button>
+          </div>
+        </a>`).join("")}
+      </div>
+    </div>`;
+  }).join("") || `<div class="lead">등록된 링크가 없습니다.</div>`;
+}
+
+const toolModal = $("toolModal");
+$("addToolBtn").onclick = () => {
+  $("toolModalTitle").textContent = "링크 추가";
+  $("toolId").value = ""; $("tlName").value = ""; $("tlUrl").value = "";
+  $("tlGroup").value = "시공·운영"; $("tlDesc").value = "";
+  toolModal.showModal();
+};
+window.editTool = id => {
+  const t = (data.tools || {})[id]; if (!t) return;
+  $("toolModalTitle").textContent = "링크 수정";
+  $("toolId").value = id;
+  $("tlName").value = t.name || ""; $("tlUrl").value = t.url || "";
+  $("tlGroup").value = t.group || "시공·운영"; $("tlDesc").value = t.desc || "";
+  toolModal.showModal();
+};
+window.deleteTool = id => {
+  const t = (data.tools || {})[id]; if (!t) return;
+  if (!confirm(`'${t.name}' 링크를 삭제할까요?`)) return;
+  orgRef.child("tools/" + id).remove();
+};
+$("saveToolBtn").onclick = () => {
+  const name = $("tlName").value.trim(), url = $("tlUrl").value.trim();
+  if (!name || !url) return alert("이름과 주소는 필수입니다.");
+  const id = $("toolId").value || newId("tl_");
+  const prev = (data.tools || {})[$("toolId").value] || {};
+  orgRef.child("tools/" + id).set({
+    name, url, group: $("tlGroup").value, desc: $("tlDesc").value.trim(),
+    order: prev.order || nextOrder(data.tools)
+  });
+  toolModal.close();
 };
 
 /* ───────── 주간회의 CRUD ───────── */
