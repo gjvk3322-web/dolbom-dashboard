@@ -134,6 +134,18 @@
   .tool-card .n::after{content:" ↗";color:var(--accent);font-size:12px}
   .tool-card .ds{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
   .tool-card .tools-actions{margin-top:8px;display:flex;gap:5px;justify-content:flex-end}
+  /* 월별 추이 */
+  .hist-tabs{display:flex;gap:6px}
+  .hist-tab.active{background:var(--tint);color:var(--accent-deep);border-color:var(--accent);font-weight:700}
+  .hist-chart{display:flex;align-items:flex-end;gap:8px;height:190px;padding-top:24px}
+  .hbar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+  .hbar .v{font-size:11px;font-weight:800;color:#4B5652;margin-bottom:4px;white-space:nowrap}
+  .hbar .bar{width:100%;max-width:44px;background:#CFE9DD;border-radius:7px 7px 3px 3px;transition:height .25s}
+  .hbar.cur .bar{background:var(--accent)}
+  .hbar .m{font-size:11px;color:var(--muted);margin-top:6px;white-space:nowrap}
+  .hbar.cur .m{color:var(--accent-deep);font-weight:800}
+  .mom-up{color:var(--accent-deep);font-weight:700}
+  .mom-down{color:var(--bad);font-weight:700}
   /* 프로젝트 보드 */
   .pb-wrap{display:grid;grid-template-columns:1fr 330px;gap:20px;align-items:start}
   .pb-side{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:14px;position:sticky;top:14px}
@@ -244,7 +256,7 @@
           <div class="lead">대표는 직원의 모든 업무를 직접 관리하지 않습니다. 핵심 숫자, 막힌 의사결정, 주요 리스크만 확인합니다.</div>
         </div>
         <span style="display:flex;gap:8px">
-          <button class="btn" onclick="loadLiveKPI()">숫자 새로고침 ↻</button>
+          <button class="btn" onclick="loadLiveKPI();loadHistory()">숫자 새로고침 ↻</button>
           <a class="btn" href="cs-cockpit.html" target="_blank" rel="noopener" style="text-decoration:none">조종실 열기 ↗</a>
           <button class="btn primary" id="editKpiBtn">회사 KPI 수정</button>
         </span>
@@ -254,6 +266,21 @@
         <strong contenteditable="true" id="companyMission"></strong>
       </div>
       <div class="grid kpis" id="kpiCards"></div>
+      <div class="section-title"><h2>월별 추이</h2>
+        <span class="hist-tabs">
+          <button class="mini-btn hist-tab active" data-metric="revenue">매출</button>
+          <button class="mini-btn hist-tab" data-metric="installed">시공</button>
+          <button class="mini-btn hist-tab" data-metric="sample">문의</button>
+        </span>
+      </div>
+      <div class="card" style="padding:18px">
+        <div class="hist-chart" id="histChart"><div class="hint">불러오는 중…</div></div>
+      </div>
+      <div class="section-title"><h2>월별 상세</h2></div>
+      <div class="table-wrap" style="margin-bottom:22px"><table>
+        <thead><tr><th>월</th><th>매출</th><th>시공</th><th>문의(샘플)</th><th>예약</th><th>매출 전월비</th></tr></thead>
+        <tbody id="histBody"><tr><td colspan="6" class="hint">불러오는 중…</td></tr></tbody>
+      </table></div>
       <div class="section-title"><h2>부서별 핵심 상태</h2></div>
       <div class="table-wrap"><table>
         <thead><tr><th>부서</th><th>존재 이유</th><th>KPI</th><th>인원</th></tr></thead>
@@ -669,9 +696,11 @@ orgRef.on("value", snap => {
 function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
-  renderKpis(); renderDepartments(); renderPeople(); renderDeptOptions();
-  renderTiers(); renderDecisionTable(); renderRaci(); renderMeetings();
-  renderCalendar(); renderTasks(); renderTools();
+  [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
+   renderTiers, renderDecisionTable, renderRaci, renderMeetings,
+   renderCalendar, renderTasks, renderTools].forEach(fn => {
+    try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
+  });
 }
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec";
@@ -700,6 +729,93 @@ async function loadLiveKPI(){
   if (data) renderKpis();
 }
 loadLiveKPI();
+
+/* ───────── 월별 추이 (조종실 API + Firebase 캐시) ───────── */
+let hist = null;           // [{ym, label, revenue, installed, sample, reserved, live}]
+let histMetric = "revenue";
+const HIST_META = {
+  revenue:  {label:"매출",  unit:"만원", val: r => Math.round((r.revenue||0)/10000)},
+  installed:{label:"시공",  unit:"건",   val: r => r.installed||0},
+  sample:   {label:"문의",  unit:"건",   val: r => r.sample||0}
+};
+
+async function loadHistory(){
+  try {
+    const fRes = await fetch(APPS_SCRIPT_URL + "?type=monthlyFunnel").then(r => r.json()).catch(() => null);
+    if (!fRes || !fRes.success && !Array.isArray(fRes.data)) return;
+    const funnel = (fRes.data || []).map(m => ({
+      ym: String(m.month || ""),
+      sample: parseInt(m.sample) || 0,
+      reserved: parseInt(m.reserved) || 0,
+      installed: parseInt(m.installed) || 0
+    })).filter(m => /^\d{4}-\d{2}$/.test(m.ym)).slice(-12);
+    if (!funnel.length) return;
+
+    // 매출: 지난 달들은 Firebase 캐시, 이번 달만 매번 조회
+    const curYm = todayStr().slice(0, 7);
+    const cacheSnap = await orgRef.child("statsCache").once("value");
+    const cache = cacheSnap.val() || {};
+    const need = funnel.map(m => m.ym).filter(ym => ym === curYm || cache[ym] === undefined);
+    const fetched = await Promise.all(need.map(ym =>
+      fetch(`${APPS_SCRIPT_URL}?type=monthStats&month=${encodeURIComponent(ym)}`)
+        .then(r => r.json()).then(j => ({ym, rev: (j && j.success && j.data && j.data.revenue) ? (j.data.revenue.total || 0) : null}))
+        .catch(() => ({ym, rev: null}))
+    ));
+    const upd = {};
+    fetched.forEach(f => { if (f.rev !== null){ cache[f.ym] = f.rev; upd["statsCache/" + f.ym] = f.rev; } });
+    if (Object.keys(upd).length) orgRef.update(upd);
+
+    hist = funnel.map(m => ({
+      ...m,
+      label: parseInt(m.ym.slice(5)) + "월",
+      year: m.ym.slice(0, 4),
+      revenue: cache[m.ym] || 0,
+      cur: m.ym === curYm
+    }));
+    renderHistory();
+  } catch(e){ console.error("월별 추이 로드 실패:", e); }
+}
+loadHistory();
+
+function renderHistory(){
+  if (!hist || !hist.length) return;
+  const meta = HIST_META[histMetric];
+  const vals = hist.map(h => meta.val(h));
+  const max = Math.max(...vals, 1);
+  $("histChart").innerHTML = hist.map((h, i) => {
+    const v = vals[i];
+    const pct = Math.max(3, Math.round(v / max * 100));
+    const yearMark = (i === 0 || h.year !== hist[i-1].year) ? `'${h.year.slice(2)} ` : "";
+    return `<div class="hbar ${h.cur ? "cur" : ""}" title="${h.ym} · ${meta.label} ${v.toLocaleString()}${meta.unit}">
+      <span class="v">${v.toLocaleString()}</span>
+      <div class="bar" style="height:${pct}%"></div>
+      <span class="m">${yearMark}${h.label}</span>
+    </div>`;
+  }).join("");
+  const rows = [...hist].reverse();
+  $("histBody").innerHTML = rows.map((h, i) => {
+    const prev = rows[i+1];
+    let mom = "-";
+    if (prev && prev.revenue > 0){
+      const p = ((h.revenue - prev.revenue) / prev.revenue * 100).toFixed(1);
+      mom = p >= 0 ? `<span class="mom-up">▲ ${p}%</span>` : `<span class="mom-down">▼ ${Math.abs(p)}%</span>`;
+    }
+    return `<tr${h.cur ? ' style="background:#F1FBF6"' : ""}>
+      <td><b>${h.ym}${h.cur ? " (진행 중)" : ""}</b></td>
+      <td>${Math.round(h.revenue/10000).toLocaleString()}만원</td>
+      <td>${h.installed.toLocaleString()}건</td>
+      <td>${h.sample.toLocaleString()}건</td>
+      <td>${h.reserved.toLocaleString()}건</td>
+      <td>${mom}</td>
+    </tr>`;
+  }).join("");
+}
+document.querySelectorAll(".hist-tab").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".hist-tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  histMetric = b.dataset.metric;
+  renderHistory();
+});
 
 function renderKpis(){
   let live = "";
@@ -1267,7 +1383,6 @@ function openTaskModal(prefillDate){
 }
 window.openTaskForDate = ds => openTaskModal(ds);
 $("addTaskBtn").onclick = () => openTaskModal();
-$("addTaskBtn2").onclick = () => openTaskModal();
 window.editTask = id => {
   const t = (data.tasks || {})[id]; if (!t) return;
   $("taskModalTitle").textContent = "할 일 수정";
