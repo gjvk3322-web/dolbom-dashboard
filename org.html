@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>돌봄매트 조직 운영</title>
 <script src="auth.js"></script>
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
 <style>
   :root{
     --bg:#FFFFFF; --bg2:#F7F9F8; --panel:#FFFFFF; --panel2:#F2F6F4; --line:#E6EBE9;
@@ -456,10 +457,17 @@
 <dialog id="userModal">
   <div class="modal-head"><strong>누구세요?</strong></div>
   <div class="modal-body" style="grid-template-columns:1fr">
-    <div class="hint">수정·삭제 기록에 이름이 남습니다. 본인 이름을 선택해 주세요. (이 기기에 저장됩니다)</div>
-    <div id="userChoices" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-    <div class="field"><label>목록에 없으면 직접 입력</label>
-      <div style="display:flex;gap:8px"><input id="userCustom" placeholder="이름"><button class="btn primary" id="userCustomBtn" style="white-space:nowrap">확인</button></div>
+    <div id="kakaoStep">
+      <div class="hint" style="margin-bottom:10px">수정·삭제 기록에 이름이 남습니다. 카카오로 본인 확인 후 이용해 주세요.</div>
+      <button id="kakaoLoginBtn" style="width:100%;padding:13px;border:0;border-radius:12px;background:#FEE500;color:#191919;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit">💬 카카오로 시작하기</button>
+      <div class="hint" id="kakaoErr" style="margin-top:8px;color:var(--bad)"></div>
+    </div>
+    <div id="nameStep" style="display:none">
+      <div class="hint" style="margin-bottom:10px" id="nameStepHint">본인 이름을 선택해 주세요. (최초 1회만, 카카오 계정과 연결됩니다)</div>
+      <div id="userChoices" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div class="field" style="margin-top:10px"><label>목록에 없으면 직접 입력</label>
+        <div style="display:flex;gap:8px"><input id="userCustom" placeholder="이름"><button class="btn primary" id="userCustomBtn" style="white-space:nowrap">확인</button></div>
+      </div>
     </div>
   </div>
 </dialog>
@@ -721,15 +729,81 @@ orgRef.on("value", snap => {
 
 /* ───────── 사용자 식별 · 활동 로그 · 휴지통 ───────── */
 const userModal = $("userModal");
+/* ── 카카오 로그인 (수준 1: 신원 확인) ──
+   KAKAO_JS_KEY가 비어 있으면 기존 이름 선택 방식으로 동작 */
+const KAKAO_JS_KEY = "c44abf1242c39c67225e77d7fb7b76bc"; // 카카오 JavaScript 키 (웹 노출용 키 — 도메인 제한으로 보호됨)
+let kakaoReady = false;
+try {
+  if (KAKAO_JS_KEY.length > 10 && window.Kakao && !Kakao.isInitialized()){
+    Kakao.init(KAKAO_JS_KEY);
+    kakaoReady = true;
+  }
+} catch(e){ console.error("카카오 초기화 실패:", e); }
+
+let pendingKakao = null; // {id, nick} 로그인 후 이름 연결 대기
+
 function currentUser(){ return localStorage.getItem("orgUser") || ""; }
+
+function showNameStep(hint){
+  $("kakaoStep").style.display = "none";
+  $("nameStep").style.display = "block";
+  if (hint) $("nameStepHint").textContent = hint;
+  const names = entries(data.people).sort(byOrder).map(p => p.name).filter(n => n && !n.startsWith("("));
+  $("userChoices").innerHTML = names.map(n => `<button class="btn" onclick="pickUser('${esc(n)}')">${esc(n)}</button>`).join("");
+}
+
 function ensureUser(){
   if (currentUser() || !data) return;
-  const names = entries(data.people).sort(byOrder).map(p => p.name).filter(n => n && !n.startsWith("("));
-  const box = $("userChoices");
-  box.innerHTML = names.map(n => `<button class="btn" onclick="pickUser('${esc(n)}')">${esc(n)}</button>`).join("");
+  if (kakaoReady){
+    $("kakaoStep").style.display = "block";
+    $("nameStep").style.display = "none";
+  } else {
+    showNameStep("본인 이름을 선택해 주세요. (이 기기에 저장됩니다)");
+  }
   if (!userModal.open) userModal.showModal();
 }
-window.pickUser = n => { localStorage.setItem("orgUser", n); userModal.close(); renderWho(); };
+
+$("kakaoLoginBtn").onclick = () => {
+  if (!kakaoReady) return showNameStep();
+  Kakao.Auth.login({
+    scope: "profile_nickname",
+    success: () => {
+      Kakao.API.request({
+        url: "/v2/user/me",
+        success: res => {
+          const kid = String(res.id);
+          const nick = (res.properties && res.properties.nickname) || "";
+          const mapped = (data.kakaoMap || {})[kid];
+          if (mapped && mapped.name){
+            // 이미 연결된 계정 → 자동 인식
+            localStorage.setItem("orgUser", mapped.name);
+            localStorage.setItem("orgKakaoId", kid);
+            userModal.close(); renderWho();
+            showToast(`${mapped.name}님, 카카오 인증 완료`);
+          } else {
+            pendingKakao = {id: kid, nick};
+            showNameStep(`카카오 인증 완료 (${nick}). 본인 이름을 선택하면 이 계정과 연결됩니다.`);
+          }
+        },
+        fail: () => { $("kakaoErr").textContent = "정보를 가져오지 못했습니다. 다시 시도해 주세요."; }
+      });
+    },
+    fail: () => { $("kakaoErr").textContent = "카카오 로그인에 실패했습니다. 다시 시도해 주세요."; }
+  });
+};
+
+window.pickUser = async n => {
+  localStorage.setItem("orgUser", n);
+  if (pendingKakao){
+    localStorage.setItem("orgKakaoId", pendingKakao.id);
+    try {
+      await orgRef.child("kakaoMap/" + pendingKakao.id).set({ name: n, nick: pendingKakao.nick, at: Date.now() });
+      logAction("연결", `${n} ↔ 카카오(${pendingKakao.nick})`);
+    } catch(e){ console.error(e); }
+    pendingKakao = null;
+  }
+  userModal.close(); renderWho();
+};
 $("userCustomBtn").onclick = () => {
   const n = $("userCustom").value.trim();
   if (n) pickUser(n);
