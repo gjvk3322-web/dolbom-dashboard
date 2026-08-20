@@ -370,6 +370,11 @@ async function renderHistory(){
 // ═══════ 조사 이력 열람 끝 ═══════
 
 // ═══════ 📈 누적 로스율 + 주별 추이 (2026-07-07 추가) ═══════
+// 💸 장당 총원가 (매입+박스+필름) — 로스를 돈으로 환산해 표시 (2026-08-21)
+const LOSS_UNIT_COST={'500':9333,'1000_17':33467,'1000_22':39725};
+function lossCostWon(pid,sheets){return (LOSS_UNIT_COST[pid]||0)*sheets;}
+function fmtManwon(w){return w>=10000?Math.round(w/10000).toLocaleString()+'만원':Math.round(w).toLocaleString()+'원';}
+function shortageCost(list){return (list||[]).filter(p=>p.loss>0).reduce((t,p)=>{const parts=p.key.split('_');parts.pop();return t+lossCostWon(parts.join('_'),p.loss)},0);}
 // Apps Script 새 액션 getLossV2 필요. 서버가 아직 업데이트 안 됐으면 조용히 숨김.
 let lossV2Cache={};   // 팀별 응답 캐시
 let lossV2Series=[];  // 그래프 클릭용
@@ -422,11 +427,17 @@ async function fillLossV2(){
       const parts=p.key.split('_');const color=parts.pop();const pid=parts.join('_');
       const isL=p.loss>0;const aR=Math.abs(p.rate);
       const pc=!isL?'#60a5fa':aR<=2?'var(--accent)':aR<=5?'var(--orange)':'var(--red)';
+      const costTag=isL?` <span style="font-size:9px;opacity:.85">≈ -${fmtManwon(lossCostWon(pid,p.loss))}</span>`:'';
       h+=`<div style="margin-bottom:6px">`;
-      h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodNameMap[pid]||pid} ${color}</span><span style="color:${pc};font-weight:700">${isL?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)</span></div>`;
+      h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodNameMap[pid]||pid} ${color}</span><span style="color:${pc};font-weight:700">${isL?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)${costTag}</span></div>`;
       h+=`<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.abs(p.loss)/maxAbs*100)}%;background:${pc}"></div></div>`;
       h+=`</div>`;
     });
+    const cumShortCost=shortageCost(d.cumByProduct);
+    if(cumShortCost>0){
+      h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>💸 부족분 원가 합계</span><span style="font-size:13px">약 ${fmtManwon(cumShortCost)}</span></div>`;
+      h+=`<div style="margin-top:4px;font-size:9px;color:var(--dim)">매트 1장 원가: 1000 22T ${LOSS_UNIT_COST['1000_22'].toLocaleString()}원 · 1000 17T ${LOSS_UNIT_COST['1000_17'].toLocaleString()}원 · 500매트 ${LOSS_UNIT_COST['500'].toLocaleString()}원 — 파손·분실 1장이 그대로 비용입니다</div>`;
+    }
     h+=`</div>`;
   }
   // 주별 로스 추이 미니 그래프 (막대 누르면 상세)
@@ -957,12 +968,17 @@ async function renderSummary(){
         else if(absP<=10)pColor='var(--orange)';
         else pColor='var(--red)';
         const barW=Math.min(100,Math.abs(p.loss)/maxAbs*100);
+        const costTagW=isLossP?` <span style="font-size:9px;opacity:.85">≈ -${fmtManwon(lossCostWon(pid,p.loss))}</span>`:'';
         h+=`<div style="margin-bottom:6px">`;
-        h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodName} ${color}</span><span style="color:${pColor};font-weight:700">${isLossP?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)</span></div>`;
+        h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodName} ${color}</span><span style="color:${pColor};font-weight:700">${isLossP?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)${costTagW}</span></div>`;
         h+=`<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${barW}%;background:${pColor}"></div></div>`;
         h+=`<div style="font-size:9px;color:var(--dim);margin-top:2px">이전 ${p.prev.toLocaleString()} ${p.incoming>0?'+ 입고 '+p.incoming.toLocaleString():''} - 판매 ${p.sold.toLocaleString()} = 예상 ${p.expected.toLocaleString()} | 실사 ${p.current.toLocaleString()}</div>`;
         h+=`</div>`;
       });
+      const wkShortCost=shortageCost(ld.lossByProduct);
+      if(wkShortCost>0){
+        h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>💸 이번 주 부족분 원가</span><span style="font-size:13px">약 ${fmtManwon(wkShortCost)}</span></div>`;
+      }
       h+=`</div>`;
     }
     
