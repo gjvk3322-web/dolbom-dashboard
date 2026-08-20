@@ -435,7 +435,8 @@ async function fillLossV2(){
     });
     const cumShortCost=shortageCost(d.cumByProduct);
     if(cumShortCost>0){
-      h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>💸 부족분 원가 합계</span><span style="font-size:13px">약 ${fmtManwon(cumShortCost)}</span></div>`;
+      const teamLabelC=myTeam==='경기'?'경기도':myTeam;
+      h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>${teamLabelC} 누적 부족한 매트 매입 원가</span><span style="font-size:13px">-${fmtManwon(cumShortCost)}</span></div>`;
       h+=`<div style="margin-top:4px;font-size:9px;color:var(--dim)">매트 1장 원가: 1000 22T ${LOSS_UNIT_COST['1000_22'].toLocaleString()}원 · 1000 17T ${LOSS_UNIT_COST['1000_17'].toLocaleString()}원 · 500매트 ${LOSS_UNIT_COST['500'].toLocaleString()}원 — 파손·분실 1장이 그대로 비용입니다</div>`;
     }
     h+=`</div>`;
@@ -977,7 +978,8 @@ async function renderSummary(){
       });
       const wkShortCost=shortageCost(ld.lossByProduct);
       if(wkShortCost>0){
-        h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>💸 이번 주 부족분 원가</span><span style="font-size:13px">약 ${fmtManwon(wkShortCost)}</span></div>`;
+        const teamLabelW=team==='경기'?'경기도':team;
+        h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>${teamLabelW} 이번 주 부족한 매트 매입 원가</span><span style="font-size:13px">-${fmtManwon(wkShortCost)}</span></div>`;
       }
       h+=`</div>`;
     }
