@@ -375,6 +375,16 @@ const LOSS_UNIT_COST={'500':9333,'1000_17':33467,'1000_22':39725};
 function lossCostWon(pid,sheets){return (LOSS_UNIT_COST[pid]||0)*sheets;}
 function fmtManwon(w){return w>=10000?Math.round(w/10000).toLocaleString()+'만원':Math.round(w).toLocaleString()+'원';}
 function shortageCost(list){return (list||[]).filter(p=>p.loss>0).reduce((t,p)=>{const parts=p.key.split('_');parts.pop();return t+lossCostWon(parts.join('_'),p.loss)},0);}
+// 🆕 1000매트 / 500매트 구분 부족분 원가
+function shortageCostSplit(list){
+  const r={m1000:0,m500:0};
+  (list||[]).filter(p=>p.loss>0).forEach(p=>{
+    const parts=p.key.split('_');parts.pop();const pid=parts.join('_');
+    const w=lossCostWon(pid,p.loss);
+    if(pid==='500')r.m500+=w;else r.m1000+=w;
+  });
+  return r;
+}
 // Apps Script 새 액션 getLossV2 필요. 서버가 아직 업데이트 안 됐으면 조용히 숨김.
 let lossV2Cache={};   // 팀별 응답 캐시
 let lossV2Series=[];  // 그래프 클릭용
@@ -436,7 +446,11 @@ async function fillLossV2(){
     const cumShortCost=shortageCost(d.cumByProduct);
     if(cumShortCost>0){
       const teamLabelC=myTeam==='경기'?'경기도':myTeam;
-      h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>${teamLabelC} 누적 부족한 매트 매입 원가</span><span style="font-size:13px">-${fmtManwon(cumShortCost)}</span></div>`;
+      const spC=shortageCostSplit(d.cumByProduct);
+      h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px">`;
+      h+=`<div style="font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>${teamLabelC} 누적 부족한 매트 매입 원가</span><span style="font-size:13px">-${fmtManwon(cumShortCost)}</span></div>`;
+      h+=`<div style="margin-top:5px;padding-top:5px;border-top:.5px dashed rgba(255,69,58,.25);font-size:10px;display:flex;justify-content:space-between"><span style="color:var(--dim)">1000매트 <b style="color:${spC.m1000>0?'var(--red)':'var(--accent)'}">${spC.m1000>0?'-'+fmtManwon(spC.m1000):'0원'}</b></span><span style="color:var(--dim)">500매트 <b style="color:${spC.m500>0?'var(--red)':'var(--accent)'}">${spC.m500>0?'-'+fmtManwon(spC.m500):'0원'}</b></span></div>`;
+      h+=`</div>`;
       h+=`<div style="margin-top:4px;font-size:9px;color:var(--dim)">매트 1장 원가: 1000 22T ${LOSS_UNIT_COST['1000_22'].toLocaleString()}원 · 1000 17T ${LOSS_UNIT_COST['1000_17'].toLocaleString()}원 · 500매트 ${LOSS_UNIT_COST['500'].toLocaleString()}원 — 파손·분실 1장이 그대로 비용입니다</div>`;
     }
     h+=`</div>`;
@@ -979,7 +993,11 @@ async function renderSummary(){
       const wkShortCost=shortageCost(ld.lossByProduct);
       if(wkShortCost>0){
         const teamLabelW=team==='경기'?'경기도':team;
-        h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px;font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>${teamLabelW} 이번 주 부족한 매트 매입 원가</span><span style="font-size:13px">-${fmtManwon(wkShortCost)}</span></div>`;
+        const spW=shortageCostSplit(ld.lossByProduct);
+        h+=`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,69,58,.08);border:.5px solid rgba(255,69,58,.25);border-radius:8px">`;
+        h+=`<div style="font-size:11px;font-weight:700;color:var(--red);display:flex;justify-content:space-between;align-items:center"><span>${teamLabelW} 이번 주 부족한 매트 매입 원가</span><span style="font-size:13px">-${fmtManwon(wkShortCost)}</span></div>`;
+        h+=`<div style="margin-top:5px;padding-top:5px;border-top:.5px dashed rgba(255,69,58,.25);font-size:10px;display:flex;justify-content:space-between"><span style="color:var(--dim)">1000매트 <b style="color:${spW.m1000>0?'var(--red)':'var(--accent)'}">${spW.m1000>0?'-'+fmtManwon(spW.m1000):'0원'}</b></span><span style="color:var(--dim)">500매트 <b style="color:${spW.m500>0?'var(--red)':'var(--accent)'}">${spW.m500>0?'-'+fmtManwon(spW.m500):'0원'}</b></span></div>`;
+        h+=`</div>`;
       }
       h+=`</div>`;
     }
