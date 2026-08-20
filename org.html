@@ -168,7 +168,8 @@
   .st-done{background:#E7EDEA;color:#9AA6A0}
   .pi-meta{font-size:12px;color:var(--muted);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap}
   .pi-meta .overdue{color:var(--bad);font-weight:800}
-  .pi-actions{display:flex;gap:5px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap}
+  .pi-actions{display:none;gap:5px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap}
+  .pi-actions.open{display:flex}
   .pitem.done{opacity:.6}
   .pitem.done .pi-title{text-decoration:line-through}
   details.pdone summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:700;margin-top:14px}
@@ -182,7 +183,7 @@
   .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:6px 0}
   .cal-head span:first-child{color:var(--bad)}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line);gap:1px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
-  .cal-cell{background:#fff;min-height:100px;padding:6px 6px 4px;cursor:pointer;transition:background .1s}
+  .cal-cell{background:#fff;min-height:124px;padding:6px 6px 4px;cursor:pointer;transition:background .1s}
   .cal-cell:hover{background:#F7FBF9}
   .cal-cell.other{background:#FAFBFA;color:#C2CBC7}
   .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px}
@@ -238,7 +239,7 @@
     <div class="sub">누가 어떤 결과를 책임지고,<br>어디까지 결정할 수 있는가</div>
     <div class="sync" id="syncBadge"><span class="dot"></span><span id="syncText">연결 중…</span></div>
     <nav id="nav">
-      <button data-view="overview" class="active">대표 대시보드</button>
+      <button data-view="overview" class="active">대시보드</button>
       <button data-view="departments">부서별 업무</button>
       <button data-view="people">직원별 업무</button>
       <button data-view="calendar">프로젝트 보드</button>
@@ -257,13 +258,12 @@
     <section id="overview" class="section active">
       <div class="topbar">
         <div>
-          <h1>대표 대시보드</h1>
-          <div class="lead">대표는 직원의 모든 업무를 직접 관리하지 않습니다. 핵심 숫자, 막힌 의사결정, 주요 리스크만 확인합니다.</div>
+          <h1>대시보드</h1>
+          <div class="lead">핵심 숫자, 막힌 의사결정, 주요 리스크를 한눈에 확인합니다.</div>
         </div>
         <span style="display:flex;gap:8px;align-items:center">
           <span id="kpiStatus" class="hint" style="white-space:nowrap"></span>
           <button class="btn" onclick="loadLiveKPI();loadHistory()">숫자 새로고침 ↻</button>
-          <a class="btn" href="cs-cockpit.html" target="_blank" rel="noopener" style="text-decoration:none">조종실 열기 ↗</a>
           <button class="btn primary" id="editKpiBtn">회사 KPI 수정</button>
         </span>
       </div>
@@ -623,69 +623,6 @@ const db = firebase.database();
 const orgRef = db.ref("org");
 
 /* ───────── 초기 시드 데이터 (Firebase가 비어있을 때 1회만 기록) ───────── */
-const seedData = {
-  mission: "아이와 가족의 생활 공간을 더 안전하고 편안하게 만든다.",
-  kpis: [
-    {label:"월 시공건수", value:"-", meta:"목표 400건"},
-    {label:"월 신규 문의", value:"-", meta:"마케팅"},
-    {label:"계약률", value:"-", meta:"CS"},
-    {label:"A/S율", value:"-", meta:"시공 품질"},
-    {label:"월 매출", value:"-", meta:"목표 대비"}
-  ],
-  departments: {
-    d1:{name:"대표/경영", mission:"회사 방향과 자원 배분을 결정하고, 대표 없이도 돌아가는 시스템을 만든다.", kpi:"매출 · 영업이익 · 현금흐름", order:1},
-    d2:{name:"마케팅팀", mission:"시공 리드를 예측 가능하게, 합리적인 비용으로 지속 확보한다.", kpi:"문의수 · 문의당 비용 · 전환율", order:2},
-    d3:{name:"CS·운영", mission:"문의 → 견적 → 계약 → 시공 배정이 막힘없이 흐르게 한다.", kpi:"응답속도 · 계약률 · 취소율", order:3},
-    d4:{name:"부산 시공팀", mission:"부산·경남권 고객에게 일정한 품질의 시공 경험을 제공한다.", kpi:"시공건수 · A/S율 · 생산성", order:4},
-    d5:{name:"경기 시공팀", mission:"수도권 고객에게 일정한 품질의 시공 경험을 제공한다.", kpi:"시공건수 · A/S율 · 생산성", order:5}
-  },
-  people: {
-    p01:{name:"대장", role:"대표", dept:"d1", manager:"-", mission:"회사가 대표의 직접 개입 없이도 성장하는 구조를 만든다.", responsibilities:["전략·방향 설정","손익·현금 관리","핵심 채용","가격·신제품·투자 의사결정"], kpis:["매출","영업이익률","부서 목표 달성률"], canDecide:["가격 정책","투자","신사업","핵심 채용"], notMine:["일반 고객상담","단순 광고 수정","일상 스케줄 조정"], order:1},
-    p02:{name:"(광고·데이터)", role:"광고 집행·데이터 분석", dept:"d2", manager:"대장", mission:"광고비 효율을 높여 신규 문의를 늘린다.", responsibilities:["광고 집행·예산 관리","주간 성과 리포트","경쟁사·키워드 분석"], kpis:["문의수","문의당 비용"], canDecide:["저성과 광고 중단","소재 교체","소규모 예산 이동"], notMine:["광고 총예산 확정","가격 안내"], order:2},
-    p03:{name:"(퍼포먼스)", role:"퍼포먼스 마케터", dept:"d2", manager:"대장", mission:"고객이 돌봄매트를 신뢰하고 선택하게 만드는 콘텐츠 자산을 쌓는다.", responsibilities:["콘텐츠 기획·제작","시공 현장 촬영 요청 운영","후기·사례 관리"], kpis:["콘텐츠 유입 문의","월 콘텐츠 발행 수"], canDecide:["콘텐츠 주제·게시 일정","기본 편집"], notMine:["광고 예산 승인","일반 고객 상담"], order:3},
-    p04:{name:"(상담)", role:"CS 상담", dept:"d3", manager:"대장", mission:"문의 고객이 정확한 정보를 받고 계약까지 자연스럽게 이동하게 한다.", responsibilities:["상담·견적 안내","예약·일정 배정","미결 고객 추적"], kpis:["최초 응답속도","상담→계약률","취소율"], canDecide:["표준 범위 안내","예약 변경"], notMine:["가격 정책 변경","고액 보상 결정"], order:4},
-    p05:{name:"준형", role:"사수 (부산1)", dept:"d4", manager:"대장", mission:"부산1팀 시공을 무결점으로 완수하고 부사수를 성장시킨다.", responsibilities:["일일 시공 총괄·품질 최종 확인","시공보고서 제출","부사수 교육","현장 고객 응대"], kpis:["월 시공건수","A/S율"], canDecide:["현장 시공 순서·방법","경미한 현장 이슈 대응"], notMine:["가격 안내 확정","고액 보상 결정"], order:5},
-    p06:{name:"승재", role:"부사수 (부산1)", dept:"d4", manager:"준형", mission:"부산1 차량의 자재와 시공 준비 상태를 항상 완벽하게 유지한다.", responsibilities:["시공 보조","차량 자재 재고조사(주 1회)","자재 상하차·정리"], kpis:["재고조사 정확도","시공 보조 숙련도"], canDecide:["차량 내 자재 정리 방식"], notMine:["시공 품질 최종 판단"], order:6},
-    p07:{name:"세욱", role:"사수 (부산2)", dept:"d4", manager:"대장", mission:"부산2팀 시공을 무결점으로 완수하고 부사수를 성장시킨다.", responsibilities:["일일 시공 총괄·품질 최종 확인","시공보고서 제출","부사수 교육","현장 고객 응대"], kpis:["월 시공건수","A/S율"], canDecide:["현장 시공 순서·방법","경미한 현장 이슈 대응"], notMine:["가격 안내 확정","고액 보상 결정"], order:7},
-    p08:{name:"경필", role:"부사수 (부산2)", dept:"d4", manager:"세욱", mission:"부산2 차량의 자재와 시공 준비 상태를 항상 완벽하게 유지한다.", responsibilities:["시공 보조","차량 자재 재고조사(주 1회)","자재 상하차·정리"], kpis:["재고조사 정확도","시공 보조 숙련도"], canDecide:["차량 내 자재 정리 방식"], notMine:["시공 품질 최종 판단"], order:8},
-    p09:{name:"민우", role:"사수 (경기1)", dept:"d5", manager:"대장", mission:"경기1팀 시공을 무결점으로 완수하고 부사수를 성장시킨다.", responsibilities:["일일 시공 총괄·품질 최종 확인","시공보고서 제출","부사수 교육","현장 고객 응대"], kpis:["월 시공건수","A/S율"], canDecide:["현장 시공 순서·방법","경미한 현장 이슈 대응"], notMine:["가격 안내 확정","고액 보상 결정"], order:9},
-    p10:{name:"현진", role:"부사수 (경기1)", dept:"d5", manager:"민우", mission:"경기1 차량의 자재와 시공 준비 상태를 항상 완벽하게 유지한다.", responsibilities:["시공 보조","차량 자재 재고조사(주 1회)","자재 상하차·정리"], kpis:["재고조사 정확도","시공 보조 숙련도"], canDecide:["차량 내 자재 정리 방식"], notMine:["시공 품질 최종 판단"], order:10},
-    p11:{name:"선재", role:"사수 (경기2)", dept:"d5", manager:"대장", mission:"경기2팀 시공을 무결점으로 완수하고 부사수를 성장시킨다.", responsibilities:["일일 시공 총괄·품질 최종 확인","시공보고서 제출","부사수 교육","현장 고객 응대"], kpis:["월 시공건수","A/S율"], canDecide:["현장 시공 순서·방법","경미한 현장 이슈 대응"], notMine:["가격 안내 확정","고액 보상 결정"], order:11},
-    p12:{name:"형석", role:"부사수 (경기2)", dept:"d5", manager:"선재", mission:"경기2 차량의 자재와 시공 준비 상태를 항상 완벽하게 유지한다.", responsibilities:["시공 보조","차량 자재 재고조사(주 1회)","자재 상하차·정리"], kpis:["재고조사 정확도","시공 보조 숙련도"], canDecide:["차량 내 자재 정리 방식"], notMine:["시공 품질 최종 판단"], order:12},
-    p13:{name:"재문", role:"사수 (경기3)", dept:"d5", manager:"대장", mission:"경기3팀 시공을 무결점으로 완수하고 부사수를 성장시킨다.", responsibilities:["일일 시공 총괄·품질 최종 확인","시공보고서 제출","부사수 교육","현장 고객 응대"], kpis:["월 시공건수","A/S율"], canDecide:["현장 시공 순서·방법","경미한 현장 이슈 대응"], notMine:["가격 안내 확정","고액 보상 결정"], order:13},
-    p14:{name:"경준", role:"부사수 (경기3)", dept:"d5", manager:"재문", mission:"경기3 차량의 자재와 시공 준비 상태를 항상 완벽하게 유지한다.", responsibilities:["시공 보조","차량 자재 재고조사(주 1회)","자재 상하차·정리"], kpis:["재고조사 정확도","시공 보조 숙련도"], canDecide:["차량 내 자재 정리 방식"], notMine:["시공 품질 최종 판단"], order:14}
-  },
-  decisionTiers: {
-    staff:["일상적인 고객 응대","광고 소재 교체","저성과 광고 중단","현장 시공 순서·방법 판단","기준 내 일반 A/S 접수"],
-    lead:["팀 스케줄 조정","일반 재시공 판단","팀 업무 재배분","기준을 벗어나는 현장 대응"],
-    ceo:["제품 가격 변경","월 광고 총예산의 큰 폭 변경","신제품·신사업 결정","채용 최종 결정","고액 보상·대규모 구매"]
-  },
-  decisionTable: {
-    dc1:{task:"일상 업무 처리", staff:"결정", lead:"공유", ceo:"-", order:1},
-    dc2:{task:"팀 스케줄 조정", staff:"의견", lead:"결정", ceo:"-", order:2},
-    dc3:{task:"일반 A/S 재시공", staff:"접수/실행", lead:"결정", ceo:"공유", order:3},
-    dc4:{task:"제품 가격 변경", staff:"의견", lead:"검토", ceo:"결정", order:4},
-    dc5:{task:"신규 광고 채널 진입", staff:"제안", lead:"검토", ceo:"결정", order:5}
-  },
-  raci: {
-    r1:{title:"A/S 처리", cols:["CS","시공 사수","시공 부사수","대표"], rows:[
-      {task:"A/S 접수", marks:["R/A","I","",""]},
-      {task:"사진·내용 확인", marks:["R","C","","A"]},
-      {task:"현장 판단·재시공", marks:["I","R/A","R","I"]},
-      {task:"고액 보상", marks:["C","C","","A"]},
-      {task:"재발 방지", marks:["C","R","","A"]}
-    ], order:1},
-    r2:{title:"시공 현장 촬영 콘텐츠", cols:["마케팅","시공 사수","시공 부사수","대표"], rows:[
-      {task:"촬영 요청 등록", marks:["R/A","I","",""]},
-      {task:"현장 촬영", marks:["C","R/A","R",""]},
-      {task:"편집·발행", marks:["R/A","","","I"]},
-      {task:"성과 리뷰", marks:["R","I","","A"]}
-    ], order:2}
-  },
-  weekly: {},
-  seededAt: new Date().toISOString()
-};
-
 /* ───────── 상태 & 유틸 ───────── */
 let data = null;
 const $ = id => document.getElementById(id);
@@ -711,7 +648,6 @@ db.ref(".info/connected").on("value", s => {
   $("syncText").textContent = on ? "실시간 공유 중" : "오프라인 — 재연결 중";
 });
 
-let seeding = false;
 setTimeout(() => {
   if (!data) $("syncText").textContent = "연결이 늦어지고 있어요 — 배포된 주소(my.dolbommat.com)에서 열었는지 확인해 주세요";
 }, 8000);
@@ -1491,14 +1427,17 @@ function renderTasks(){
     return `<div class="pitem ${t.status==="done"?"done":""}" style="border-left:3px solid ${c}">
       <div class="pi-top">
         <span class="pi-title">${esc(t.title)}</span>
-        <button class="st-chip st-${t.status||"todo"}" title="클릭하면 상태가 바뀝니다" onclick="cycleStatus('${t.id}')">${STATUS_LABEL[t.status]||"대기"}</button>
+        <span style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+          <button class="mini-btn" onclick="toggleTaskMenu('${t.id}')">관리</button>
+          <button class="st-chip st-${t.status||"todo"}" title="클릭하면 상태가 바뀝니다" onclick="cycleStatus('${t.id}')">${STATUS_LABEL[t.status]||"대기"}</button>
+        </span>
       </div>
       <div class="pi-meta">
         ${dept ? `<span style="color:${c};font-weight:700">${esc(dept)}</span>` : `<span>공통</span>`}
         ${t.assignee ? `<span>${esc(t.assignee)}</span>` : ""}
         ${range ? `<span class="${over?"overdue":""}">${range}${dday(t)}</span>` : ""}
       </div>
-      <div class="pi-actions">
+      <div class="pi-actions" id="act_${t.id}">
         <button class="mini-btn" onclick="startPlace('${t.id}')">${t.due ? "날짜 변경" : "일정 잡기"}</button>
         <button class="mini-btn" onclick="editTask('${t.id}')">수정</button>
         <button class="mini-btn" onclick="deleteTask('${t.id}')">삭제</button>
@@ -1513,6 +1452,10 @@ function renderTasks(){
     `<div class="pgroup"><b>일정 잡힘 (${dated.length})</b>${dated.map(item).join("") || `<div class="hint">아이디어 카드의 일정 잡기를 눌러보세요.</div>`}</div>` +
     (done.length ? `<details class="pdone"><summary>완료 ${done.length}건 보기</summary>${done.map(item).join("")}</details>` : "");
 }
+window.toggleTaskMenu = id => {
+  const el = $("act_" + id);
+  if (el) el.classList.toggle("open");
+};
 window.cycleStatus = id => {
   const t = (data.tasks || {})[id]; if (!t) return;
   const next = {todo:"doing", doing:"done", done:"todo"}[t.status] || "doing";
@@ -1558,7 +1501,7 @@ function renderCalendar(){
   // 범례: 팀 색상
   const legend = entries(data.departments).sort(byOrder).map(d =>
     `<i style="background:${deptColor(d.id)}"></i>${esc(d.name)}`).join(" ") +
-    ` <i style="background:#8A959E"></i>공통 <i style="background:var(--bad)"></i>지연`;
+    ` <i style="background:#8A959E"></i>공통 <i style="background:#fff;box-shadow:inset 0 0 0 2px var(--bad)"></i>지연(테두리)`;
   const legEl = document.querySelector(".cal-legend");
   if (legEl) legEl.innerHTML = legend;
 
@@ -1590,8 +1533,9 @@ function renderCalendar(){
       <div class="d">${d.getDate()}</div>
       ${shown.map(sg => {
         const t = sg.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
-        const bg = done ? "#E3E9E6" : (late ? "var(--bad)" : c);
+        const bg = done ? "#E3E9E6" : c;
         const style = `background:${bg};color:${done?"#98A49E":"#fff"};` +
+          (late && !done ? "box-shadow:inset 0 0 0 2px var(--bad);" : "") +
           `margin-left:${sg.isStart?"0":"-7px"};margin-right:${sg.isEnd?"0":"-7px"};` +
           `border-radius:${sg.isStart?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isStart?"6px":"0"};${done?"text-decoration:line-through;":""}`;
         const showLabel = sg.isStart || d.getDay() === 0;
@@ -1691,31 +1635,7 @@ $("saveTaskBtn").onclick = async () => {
 };
 
 /* ───────── 도구 모음 ───────── */
-let toolsSeeding = false;
-let toolsCleaning = false;
 const TOOL_GROUPS = ["시공·운영","CS·상담","마케팅","교육·기타","고객용 페이지"];
-const TOOLS_SEED = {
-  tl01:{name:"부산 스케줄러", url:"scheduler.html", group:"시공·운영", desc:"부산 시공 일정 배정", order:1},
-  tl02:{name:"경기 스케줄러", url:"scheduler-gg.html", group:"시공·운영", desc:"경기 시공 일정 배정", order:2},
-  tl05:{name:"부산 재고조사", url:"inventory.html", group:"시공·운영", desc:"부산 차량 주간 재고조사", order:5},
-  tl06:{name:"경기 재고조사", url:"inventory-gg.html", group:"시공·운영", desc:"경기 차량 주간 재고조사", order:6},
-  tl08:{name:"차량점검", url:"vehicle-check.html", group:"시공·운영", desc:"차량 점검 체크", order:8},
-  tl09:{name:"주간 점검", url:"checklist.html", group:"시공·운영", desc:"금요일 주간 체크리스트", order:9},
-  tl11:{name:"시공 체크리스트", url:"guide.html", group:"시공·운영", desc:"현장 시공 가이드", order:11},
-  tl13:{name:"상담 견적 (직원용)", url:"cs-quote.html", group:"CS·상담", desc:"상담 중 견적 산출", order:21},
-  tl14:{name:"상담 로그", url:"cs-phone.html", group:"CS·상담", desc:"전화 상담 기록", order:22},
-  tl16:{name:"마케팅 대시보드", url:"marketing.html", group:"마케팅", desc:"마케팅 현황", order:30},
-  tl17:{name:"입주아파트 마케팅", url:"apt-marketing.html", group:"마케팅", desc:"입주 단지 관리", order:31},
-  tl18:{name:"가격 레이더", url:"price-radar.html", group:"마케팅", desc:"경쟁사 가격 추적", order:32},
-  tl20:{name:"신입 시공 교육", url:"training.html", group:"교육·기타", desc:"시공 신입 교육 자료", order:40},
-  tl21:{name:"CS 상담 교육", url:"training-cs.html", group:"교육·기타", desc:"상담 신입 교육 자료", order:41},
-  tl24:{name:"아이디어 보드", url:"feedback.html", group:"교육·기타", desc:"개선제안 등록", order:44},
-  tl25:{name:"시공 예약 (고객)", url:"booking.html", group:"고객용 페이지", desc:"고객이 보는 예약 화면", order:50},
-  tl26:{name:"무료 샘플 신청", url:"sample.html", group:"고객용 페이지", desc:"샘플 신청 화면", order:51},
-  tl27:{name:"맞춤 견적", url:"quote.html", group:"고객용 페이지", desc:"고객 견적 화면", order:52},
-  tl28:{name:"홈페이지", url:"index.html", group:"고객용 페이지", desc:"메인 랜딩", order:53}
-};
-
 function renderTools(){
   const list = entries(data.tools).sort(byOrder);
   $("toolGroups").innerHTML = TOOL_GROUPS.map(g => {
