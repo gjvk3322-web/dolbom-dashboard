@@ -246,7 +246,7 @@
       <button data-view="raci">RACI</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="rules">운영 원칙</button>
-      <button data-view="logs">활동 기록</button>
+      <button data-view="logs">활동 기록 🔒</button>
       <button data-view="tools">도구 모음</button>
     </nav>
     <div class="side-foot"><span id="whoami" style="display:block;margin-bottom:6px;font-weight:700;color:#5B6763"></span>모든 수정은 즉시 전 직원 화면에 반영됩니다.</div>
@@ -464,8 +464,8 @@
     </div>
     <div id="nameStep" style="display:none">
       <div class="hint" style="margin-bottom:10px" id="nameStepHint">본인 이름을 선택해 주세요. (최초 1회만, 카카오 계정과 연결됩니다)</div>
-      <div id="userChoices" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-      <div class="field" style="margin-top:10px"><label>목록에 없으면 직접 입력</label>
+      <div id="userChoices" style="display:none"></div>
+      <div class="field" style="margin-top:10px"><label>본인 이름 입력 (실명)</label>
         <div style="display:flex;gap:8px"><input id="userCustom" placeholder="이름"><button class="btn primary" id="userCustomBtn" style="white-space:nowrap">확인</button></div>
       </div>
     </div>
@@ -748,8 +748,7 @@ function showNameStep(hint){
   $("kakaoStep").style.display = "none";
   $("nameStep").style.display = "block";
   if (hint) $("nameStepHint").textContent = hint;
-  const names = entries(data.people).sort(byOrder).map(p => p.name).filter(n => n && !n.startsWith("("));
-  $("userChoices").innerHTML = names.map(n => `<button class="btn" onclick="pickUser('${esc(n)}')">${esc(n)}</button>`).join("");
+  $("userChoices").style.display = "none";
 }
 
 function ensureUser(){
@@ -1182,8 +1181,25 @@ function renderMeetings(){
 }
 
 /* ───────── 네비게이션 ───────── */
-$("nav").addEventListener("click", e => {
+const ADMIN_HASH = "75992a5ac67ff644d3063976c2effd10bdd93fcc109798e3d5c1acf2e530d01a";
+async function sha256(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function checkAdmin(){
+  if (sessionStorage.getItem("orgAdmin") === "1") return true;
+  const pw = prompt("관리자 비밀번호를 입력하세요");
+  if (pw === null) return false;
+  if (await sha256(pw.trim()) === ADMIN_HASH){
+    sessionStorage.setItem("orgAdmin", "1");
+    return true;
+  }
+  alert("비밀번호가 올바르지 않습니다.");
+  return false;
+}
+$("nav").addEventListener("click", async e => {
   if (!e.target.matches("button")) return;
+  if (e.target.dataset.view === "logs" && !(await checkAdmin())) return;
   document.querySelectorAll("#nav button").forEach(b => b.classList.remove("active"));
   e.target.classList.add("active");
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
