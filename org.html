@@ -96,10 +96,6 @@
   .decision-card.t2{border-top:3px solid var(--warn)} .decision-card.t2 h3{color:var(--warn)}
   .decision-card.t3{border-top:3px solid var(--bad)} .decision-card.t3 h3{color:var(--bad)}
 
-  .raci-block{margin-bottom:28px}
-  .raci-block td:not(:first-child),.raci-block th:not(:first-child){text-align:center}
-  .mark-A{color:var(--bad);font-weight:800} .mark-R{color:var(--accent-deep);font-weight:700}
-  .mark-C{color:var(--warn);font-weight:600} .mark-I{color:var(--muted)}
 
   .meeting-card h3{margin:0;font-size:15px}
   .meeting-card .when{color:var(--accent-deep);font-size:12.5px;margin:3px 0 12px;font-weight:700}
@@ -122,9 +118,6 @@
   .modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
   .field label{display:block;font-size:12px;color:#5B6763;margin-bottom:6px;font-weight:700}
   .field.full{grid-column:1/-1}
-  .raci-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
-  .raci-row input.task{flex:2}
-  .raci-row input.mark{flex:1;min-width:52px;text-align:center}
   .hint{font-size:11px;color:var(--muted);line-height:1.5}
 
   /* 도구 모음 */
@@ -138,6 +131,24 @@
   .tool-card .n::after{content:" ↗";color:var(--accent);font-size:12px}
   .tool-card .ds{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
   .tool-card .tools-actions{margin-top:8px;display:flex;gap:5px;justify-content:flex-end}
+
+  .form-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+  .fchip{border:1.5px solid #DDE5E1;background:#fff;color:var(--muted);padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600}
+  .fchip.on{background:var(--accent);border-color:transparent;color:#fff}
+  .fchip:hover:not(.on){border-color:var(--accent);color:var(--accent-deep)}
+  .form-card{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(33,43,54,.04);overflow:hidden}
+  .form-card.open{border-color:#C6E9DB}
+  .form-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:14px 16px;cursor:pointer}
+  .form-head:hover{background:#FAFCFB}
+  .form-title{font-size:15px;margin-left:4px}
+  .form-purpose{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .form-arrow{color:var(--muted);font-size:13px;padding-top:3px}
+  .form-body{padding:2px 16px 14px;border-top:1px dashed var(--line)}
+  .form-sub{font-size:11px;font-weight:800;color:var(--accent-deep);letter-spacing:.5px;margin:13px 0 6px}
+  .form-guide{margin:0;padding-left:20px;font-size:13.5px;line-height:1.8;color:#3C4843}
+  .form-pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 14px;font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;margin:0}
+  .form-actions{display:flex;gap:5px;justify-content:flex-end;align-items:center;margin-top:10px}
+  .form-meta{font-size:11.5px;color:var(--muted);margin-right:auto}
   /* 월별 추이 */
   .hist-tabs{display:flex;gap:6px}
   .hist-tab.active{background:var(--tint);color:var(--accent-deep);border-color:var(--accent);font-weight:700}
@@ -248,19 +259,36 @@
   ul.okr-kids>li:only-child{padding-top:26px}
   ul.okr-kids>li:only-child::before,ul.okr-kids>li:only-child::after{display:none}
   ul.okr-kids>li:only-child::after{content:"";display:block;position:absolute;top:0;left:50%;width:2px;height:26px;background:#C6D2CC;border:0;border-radius:0}
-  .okr-owner{font-weight:800;font-size:14px;margin-bottom:8px;letter-spacing:-.2px}
-  .okr-owner.ceo{color:var(--accent)}
+  .okr-owner{font-weight:800;font-size:14px;margin-bottom:8px;letter-spacing:-.2px;color:var(--tc,var(--text))}
   .okr-box{width:270px;background:#fff;border:1.5px solid #C6D2CC;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.05);text-align:left}
-  .okr-box .obj-head{background:#66716C;color:#fff;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
-  .okr-box.ceo .obj-head{background:var(--accent)}
+  .okr-box .obj-head{background:var(--tc,#66716C);color:#fff;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
   .okr-box .obj-title{padding:10px 12px;font-weight:800;font-size:14px;line-height:1.45;border-bottom:1px solid #EEF3F0}
   .okr-box .kr-label{padding:8px 12px 2px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1px}
   .okr-box .kr-item{padding:6px 12px;font-size:12.5px;line-height:1.5}
   .okr-box .kr-item+.kr-item{border-top:1px dashed #EEF3F0}
   .okr-box .kr-pills{margin-top:4px;display:flex;gap:3px}
   .okr-box .kr-pills button{padding:1px 6px;font-size:10px;border:1px solid #D9E2DD;border-radius:8px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
-  .okr-box .kr-pills button.on{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+  .okr-box .kr-pills button.on{background:var(--tc,var(--accent));color:#fff;border-color:transparent;font-weight:700}
   .okr-box .obj-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#FAFCFB;border-top:1px solid #EEF3F0;font-size:11px;color:var(--muted)}
+  .okr-viewtabs{display:flex;border:1.5px solid #DDE5E1;border-radius:999px;overflow:hidden;background:#fff}
+  .okr-viewtabs button{border:0;background:transparent;padding:7px 16px;font-size:13px;font-weight:600;color:var(--muted)}
+  .okr-viewtabs button.on{background:var(--accent);color:#fff;font-weight:700}
+  .okp-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
+  .okp-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 17px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
+  .okp-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px}
+  .okp-name{font-weight:800;font-size:16px;letter-spacing:-.3px}
+  .okp-avg{font-weight:800;font-size:22px;letter-spacing:-.5px}
+  .okp-sub{font-size:12px;color:var(--muted);margin-bottom:11px}
+  .okp-bar{height:7px;background:#EEF3F0;border-radius:99px;overflow:hidden;margin-bottom:13px}
+  .okp-bar>i{display:block;height:100%;border-radius:99px}
+  .okp-obj{padding:9px 0;border-top:1px dashed #EEF3F0}
+  .okp-obj-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .okp-obj-title{font-size:13px;font-weight:600;line-height:1.5;flex:1}
+  .okp-obj-pct{font-size:12.5px;font-weight:800;white-space:nowrap}
+  .okp-obj .team{font-size:11px;color:var(--muted);margin-top:2px}
+  .okp-fb{margin-top:7px;background:var(--panel2);border-radius:9px;padding:8px 10px;font-size:12.5px;line-height:1.6;color:#3C4843}
+  .okp-fb b{color:var(--accent-deep);font-size:11px;display:block;margin-bottom:2px}
+  .okp-fb-btn{margin-top:6px}
 </style>
 </head>
 <body>
@@ -276,7 +304,7 @@
       <button data-view="calendar">프로젝트 보드</button>
       <button data-view="okr">OKR</button>
       <button data-view="decision">의사결정 권한</button>
-      <button data-view="raci">RACI</button>
+      <button data-view="forms">서류 서식</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="rules">운영 원칙</button>
       <button data-view="logs">활동 기록 (관리자)</button>
@@ -407,8 +435,15 @@
           <button class="btn primary" id="addOkrBtn">목표 추가</button>
         </div>
       </div>
-      <div id="okrCount" class="lead" style="margin-bottom:12px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div id="okrCount" class="lead"></div>
+        <div class="okr-viewtabs">
+          <button id="okrViewTree" class="on">캐스케이드</button>
+          <button id="okrViewPeople">담당자별</button>
+        </div>
+      </div>
       <div id="okrTree"></div>
+      <div id="okrPeople" style="display:none"></div>
     </section>
 
     <section id="decision" class="section">
@@ -427,16 +462,17 @@
       </table></div>
     </section>
 
-    <!-- RACI -->
-    <section id="raci" class="section">
+    <!-- 서류 서식 -->
+    <section id="forms" class="section">
       <div class="topbar">
         <div>
-          <h1>RACI</h1>
-          <div class="lead">부서를 넘나드는 업무용. <b class="mark-R">R</b>=실행, <b class="mark-A">A</b>=최종책임(1명), <b class="mark-C">C</b>=협의, <b class="mark-I">I</b>=공유.</div>
+          <h1>서류 서식</h1>
+          <div class="lead">회사에서 쓰는 서류의 표준 양식 모음. 카드를 누르면 작성 방법과 양식 본문이 열리고, <b>양식 복사</b> 버튼으로 그대로 복사해 쓸 수 있습니다.</div>
         </div>
-        <button class="btn primary" id="addRaciBtn">RACI 표 추가</button>
+        <button class="btn primary" id="addFormBtn">서식 추가</button>
       </div>
-      <div id="raciList"></div>
+      <div class="form-filters" id="formFilters"></div>
+      <div id="formList"></div>
     </section>
 
     <!-- 주간회의 -->
@@ -594,21 +630,21 @@
   </form>
 </dialog>
 
-<!-- RACI 모달 -->
-<dialog id="raciModal">
+<!-- 서식 모달 -->
+<dialog id="formModal">
   <form method="dialog" onsubmit="return false">
-    <div class="modal-head"><strong id="raciModalTitle">RACI 표 추가</strong><button class="mini-btn" onclick="raciModal.close()">닫기</button></div>
+    <div class="modal-head"><strong id="formModalTitle">서식 추가</strong><button class="mini-btn" onclick="formModal.close()">닫기</button></div>
     <div class="modal-body" style="grid-template-columns:1fr">
-      <input type="hidden" id="raciId">
-      <div class="field"><label>표 제목 *</label><input id="rTitle" placeholder="예: A/S 처리"></div>
-      <div class="field"><label>담당 열 (쉼표 구분) *</label><input id="rCols" placeholder="예: CS, 시공 사수, 시공 부사수, 대표"></div>
-      <div class="field">
-        <label>행 — 업무별 R / A / C / I 입력 (A는 행마다 1명)</label>
-        <div id="raciRows"></div>
-        <button class="mini-btn" id="addRaciRowBtn" type="button" style="margin-top:6px">+ 행 추가</button>
+      <input type="hidden" id="formId">
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+        <div class="field"><label>서식 이름 *</label><input id="fTitle" placeholder="예: AS 접수 양식"></div>
+        <div class="field"><label>분류</label><input id="fCat" list="fCatList" placeholder="예: 시공 / CS / 마케팅"><datalist id="fCatList"></datalist></div>
       </div>
+      <div class="field"><label>용도 — 언제 쓰는 서류인지</label><input id="fPurpose" placeholder="예: 고객이 AS를 요청했을 때 상담원이 접수하며 작성"></div>
+      <div class="field"><label>작성 방법 — 한 줄에 하나씩</label><textarea id="fGuide" placeholder="예:&#10;증상은 고객 표현 그대로 적기&#10;근접 사진 1장 + 전경 사진 1장 필수&#10;시공일자는 시트에서 확인 후 기입"></textarea></div>
+      <div class="field"><label>양식 본문 * — 직원이 복사해서 채워 넣는 틀</label><textarea id="fTemplate" style="min-height:180px;font-family:ui-monospace,Menlo,monospace;font-size:13px" placeholder="[AS 접수]&#10;고객명:&#10;시공일:&#10;증상:&#10;발생 위치:&#10;사진: 근접 / 전경"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn" onclick="raciModal.close()">취소</button><button class="btn primary" id="saveRaciBtn">저장</button></div>
+    <div class="modal-foot"><button class="btn" onclick="formModal.close()">취소</button><button class="btn primary" id="saveFormBtn">저장</button></div>
   </form>
 </dialog>
 
@@ -701,13 +737,6 @@ const entries = obj => Object.entries(obj || {}).map(([id, v]) => ({id, ...v}));
 const byOrder = (a, b) => (a.order || 0) - (b.order || 0);
 const nextOrder = obj => Math.max(0, ...entries(obj).map(x => x.order || 0)) + 1;
 const newId = p => p + Date.now().toString(36);
-const markClass = m => {
-  if (!m) return "";
-  if (m.includes("A")) return "mark-A";
-  if (m.includes("R")) return "mark-R";
-  if (m.includes("C")) return "mark-C";
-  return "mark-I";
-};
 
 /* ───────── Firebase 연결 & 실시간 구독 ───────── */
 db.ref(".info/connected").on("value", s => {
@@ -895,7 +924,7 @@ function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
-   renderTiers, renderDecisionTable, renderRaci, renderMeetings,
+   renderTiers, renderDecisionTable, renderForms, renderMeetings,
    renderCalendar, renderTasks, renderTools, renderLogs, renderOkr].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
@@ -1143,30 +1172,57 @@ function renderDecisionTable(){
     </tr>`).join("") || `<tr><td colspan="5" class="lead">항목이 없습니다.</td></tr>`;
 }
 
-function renderRaci(){
-  $("raciList").innerHTML = entries(data.raci).sort(byOrder).map(t => {
-    const cols = toArr(t.cols);
-    const rows = toArr(t.rows);
-    return `<div class="raci-block">
-      <div class="section-title">
-        <h2>${esc(t.title)}</h2>
-        <span>
-          <button class="mini-btn" onclick="editRaci('${t.id}')">수정</button>
-          <button class="mini-btn" onclick="deleteRaci('${t.id}')">삭제</button>
-        </span>
+let formCatFilter = "전체";
+let openForms = {};
+function renderForms(){
+  const all = entries(data.forms).sort(byOrder);
+  const cats = [...new Set(all.map(f => (f.cat || "기타").trim() || "기타"))];
+  $("formFilters").innerHTML = ["전체", ...cats].map(c =>
+    `<button class="fchip ${c === formCatFilter ? "on" : ""}" data-c="${esc(c)}">${esc(c)}${c === "전체" ? ` ${all.length}` : ""}</button>`).join("");
+  $("formFilters").querySelectorAll(".fchip").forEach(b => b.onclick = () => setFormCat(b.dataset.c));
+  const list = all.filter(f => formCatFilter === "전체" || ((f.cat || "기타").trim() || "기타") === formCatFilter);
+  const fmt = t => { if (!t) return ""; const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()}`; };
+  $("formList").innerHTML = list.map(f => {
+    const open = !!openForms[f.id];
+    const guide = lines(f.guide || "");
+    return `<div class="form-card ${open ? "open" : ""}">
+      <div class="form-head" onclick="toggleForm('${f.id}')">
+        <div>
+          <span class="chip">${esc((f.cat || "기타").trim() || "기타")}</span>
+          <b class="form-title">${esc(f.title)}</b>
+          <div class="form-purpose">${esc(f.purpose || "")}</div>
+        </div>
+        <span class="form-arrow">${open ? "▾" : "▸"}</span>
       </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>업무</th>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead>
-        <tbody>${rows.map(r => `
-          <tr><td>${esc(r.task)}</td>${cols.map((_, i) => {
-            const m = toArr(r.marks)[i] || "";
-            return `<td class="${markClass(m)}">${esc(m) || "-"}</td>`;
-          }).join("")}</tr>`).join("")}
-        </tbody>
-      </table></div>
+      ${open ? `<div class="form-body">
+        ${guide.length ? `<div class="form-sub">작성 방법</div><ol class="form-guide">${guide.map(g => `<li>${esc(g)}</li>`).join("")}</ol>` : ""}
+        <div class="form-sub">양식 본문</div>
+        <pre class="form-pre" id="ftpl_${f.id}">${esc(f.template || "")}</pre>
+        <div class="form-actions">
+          <span class="form-meta">${f.updatedBy ? esc(f.updatedBy) + " · " + fmt(f.updatedAt) + " 수정" : ""}</span>
+          <button class="mini-btn" onclick="copyForm('${f.id}', this)">📋 양식 복사</button>
+          <button class="mini-btn" onclick="editForm('${f.id}')">수정</button>
+          <button class="mini-btn" onclick="deleteForm('${f.id}')">삭제</button>
+        </div>
+      </div>` : ""}
     </div>`;
-  }).join("") || `<div class="lead">RACI 표가 없습니다. 부서 간 마찰이 생기는 업무부터 추가하세요.</div>`;
+  }).join("") || `<div class="lead">등록된 서식이 없습니다. 자주 쓰는 보고·접수 양식부터 추가하세요.</div>`;
 }
+window.setFormCat = c => { formCatFilter = c; renderForms(); };
+window.toggleForm = id => { openForms[id] = !openForms[id]; renderForms(); };
+window.copyForm = async (id, btn) => {
+  const f = (data.forms || {})[id]; if (!f) return;
+  try {
+    await navigator.clipboard.writeText(f.template || "");
+  } catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = f.template || ""; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  const old = btn.textContent; btn.textContent = "✓ 복사됨";
+  setTimeout(() => btn.textContent = old, 1500);
+  showToast(`'${f.title}' 양식이 복사되었습니다`);
+};
 
 function renderMeetings(){
   const list = entries(data.weekly).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
@@ -1380,72 +1436,50 @@ $("saveDecisionBtn").onclick = async () => {
   }
 };
 
-/* ───────── RACI CRUD ───────── */
-const raciModal = $("raciModal");
-function raciRowHtml(task = "", marks = [], colCount = 4){
-  const cells = Array.from({length: colCount}, (_, i) =>
-    `<input class="mark" placeholder="R/A/C/I" value="${esc(marks[i] || "")}">`).join("");
-  return `<div class="raci-row">
-    <input class="task" placeholder="업무" value="${esc(task)}">
-    ${cells}
-    <button class="mini-btn" type="button" onclick="this.parentElement.remove()">✕</button>
-  </div>`;
+/* ───────── 서류 서식 CRUD ───────── */
+const formModal = $("formModal");
+function fillCatDatalist(){
+  const cats = [...new Set(entries(data.forms).map(f => (f.cat || "").trim()).filter(Boolean))];
+  $("fCatList").innerHTML = cats.map(c => `<option value="${esc(c)}">`).join("");
 }
-function currentColCount(){ return lines($("rCols").value.split(",").join("\n")).length || 4; }
-$("addRaciRowBtn").onclick = () => {
-  $("raciRows").insertAdjacentHTML("beforeend", raciRowHtml("", [], currentColCount()));
+$("addFormBtn").onclick = () => {
+  $("formModalTitle").textContent = "서식 추가";
+  $("formId").value = ""; $("fTitle").value = ""; $("fCat").value = "";
+  $("fPurpose").value = ""; $("fGuide").value = ""; $("fTemplate").value = "";
+  fillCatDatalist();
+  formModal.showModal();
 };
-$("rCols").addEventListener("change", () => {
-  // 열 수가 바뀌면 기존 행 값 유지한 채 칸 수를 맞춤
-  const n = currentColCount();
-  const rows = [...$("raciRows").querySelectorAll(".raci-row")].map(row => ({
-    task: row.querySelector(".task").value,
-    marks: [...row.querySelectorAll(".mark")].map(i => i.value)
-  }));
-  $("raciRows").innerHTML = rows.map(r => raciRowHtml(r.task, r.marks, n)).join("");
-});
-$("addRaciBtn").onclick = () => {
-  $("raciModalTitle").textContent = "RACI 표 추가";
-  $("raciId").value = ""; $("rTitle").value = ""; $("rCols").value = "";
-  $("raciRows").innerHTML = raciRowHtml("", [], 4) + raciRowHtml("", [], 4);
-  raciModal.showModal();
+window.editForm = id => {
+  const f = (data.forms || {})[id]; if (!f) return;
+  $("formModalTitle").textContent = "서식 수정";
+  $("formId").value = id;
+  $("fTitle").value = f.title || ""; $("fCat").value = f.cat || "";
+  $("fPurpose").value = f.purpose || ""; $("fGuide").value = f.guide || "";
+  $("fTemplate").value = f.template || "";
+  fillCatDatalist();
+  formModal.showModal();
 };
-window.editRaci = id => {
-  const t = (data.raci || {})[id]; if (!t) return;
-  $("raciModalTitle").textContent = "RACI 표 수정";
-  $("raciId").value = id;
-  $("rTitle").value = t.title || "";
-  const cols = toArr(t.cols);
-  $("rCols").value = cols.join(", ");
-  $("raciRows").innerHTML = toArr(t.rows).map(r => raciRowHtml(r.task, toArr(r.marks), cols.length)).join("");
-  raciModal.showModal();
+window.deleteForm = id => {
+  const f = (data.forms || {})[id]; if (!f) return;
+  if (!confirm(`'${f.title}' 서식을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("forms", id, "서식: " + f.title);
 };
-window.deleteRaci = id => {
-  const t = (data.raci || {})[id]; if (!t) return;
-  if (!confirm(`'${t.title}' RACI 표를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
-  softDelete("raci", id, "RACI: " + t.title);
-};
-$("saveRaciBtn").onclick = async () => {
-  const title = $("rTitle").value.trim();
-  const cols = $("rCols").value.split(",").map(x => x.trim()).filter(Boolean);
-  if (!title || !cols.length) return alert("표 제목과 담당 열은 필수입니다.");
-  const rows = [...$("raciRows").querySelectorAll(".raci-row")].map(row => ({
-    task: row.querySelector(".task").value.trim(),
-    marks: [...row.querySelectorAll(".mark")].slice(0, cols.length).map(i => i.value.trim())
-  })).filter(r => r.task);
-  if (!rows.length) return alert("행을 1개 이상 입력하세요.");
-  // 기호 검증 + A는 행마다 정확히 1명
-  const norm = v => (v || "").trim().toUpperCase();
-  const validMark = /^(|R|A|C|I|R\/A|A\/R)$/;
-  const bad = rows.filter(r => toArr(r.marks).some(m => !validMark.test(norm(m))));
-  if (bad.length) return alert(`R, A, C, I, R/A 만 입력할 수 있습니다.\n확인 필요: ${bad.map(r => r.task).join(", ")}`);
-  const badA = rows.filter(r => toArr(r.marks).filter(m => norm(m).includes("A")).length !== 1).map(r => r.task);
-  if (badA.length) return alert(`각 업무에는 최종책임자 A가 정확히 1명이어야 합니다.\n확인 필요: ${badA.join(", ")}`);
-  const id = $("raciId").value || newId("r_");
-  const prev = (data.raci || {})[$("raciId").value] || {};
-  if (await safeWrite("RACI 표", () => orgRef.child("raci/" + id).set({ title, cols, rows, order: prev.order || nextOrder(data.raci) }), $("saveRaciBtn"))){
-    logAction($("raciId").value ? "수정" : "추가", "RACI: " + title);
-    raciModal.close();
+$("saveFormBtn").onclick = async () => {
+  const title = $("fTitle").value.trim();
+  const template = $("fTemplate").value;
+  if (!title || !template.trim()) return alert("서식 이름과 양식 본문은 필수입니다.");
+  const id = $("formId").value || newId("f_");
+  const prev = (data.forms || {})[$("formId").value] || {};
+  const rec = {
+    title, cat: $("fCat").value.trim(), purpose: $("fPurpose").value.trim(),
+    guide: $("fGuide").value, template,
+    order: prev.order || nextOrder(data.forms),
+    updatedAt: Date.now(), updatedBy: currentUser() || "?"
+  };
+  if (await safeWrite("서식", () => orgRef.child("forms/" + id).set(rec), $("saveFormBtn"))){
+    logAction($("formId").value ? "수정" : "추가", "서식: " + title);
+    openForms[id] = true;
+    formModal.close();
   }
 };
 
@@ -1834,6 +1868,18 @@ function okrProgress(o){
   return Math.round(krs.reduce((s, _, i) => s + (Number(p[i]) || 0), 0) / krs.length);
 }
 
+function okrColor(owner){
+  const name = (owner || "").trim();
+  if (!name || name === "대표") return "var(--accent)";
+  // 부서명과 일치하면 프로젝트 보드와 같은 팀 색 사용
+  const dept = entries(data.departments).find(d => (d.name || "").trim() === name);
+  if (dept) return deptColor(dept.id);
+  // 부서 목록에 없는 이름은 이름 해시로 고정 색 배정 (같은 이름 = 항상 같은 색)
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const pal = DEPT_PALETTE.slice(1); // 대표 그린은 제외
+  return pal[h % pal.length];
+}
 function renderOkr(){
   fillQuarterSelects();
   const all = entries(data.okr).filter(o => o.quarter === okrQ);
@@ -1849,8 +1895,9 @@ function renderOkr(){
     const prog = okrProgress(o);
     const krs = toArr(o.krs);
     const isCeo = o.owner === "대표";
-    return `<div style="display:flex;flex-direction:column;align-items:center">
-      <div class="okr-owner ${isCeo ? "ceo" : ""}">${esc(o.owner)}</div>
+    const col = okrColor(o.owner);
+    return `<div style="display:flex;flex-direction:column;align-items:center;--tc:${col}">
+      <div class="okr-owner">${esc(o.owner)}</div>
       <div class="okr-box ${isCeo ? "ceo" : ""}">
         <div class="obj-head"><span>목표</span><span>${prog}%</span></div>
         <div class="obj-title">${esc(o.title)}</div>
@@ -1867,6 +1914,7 @@ function renderOkr(){
     return `<li>${box(o)}${c.length ? `<ul class="okr-kids">${c.map(node).join("")}</ul>` : ""}</li>`;
   };
   $("okrTree").innerHTML = roots.length ? `<div class="okr-scroll"><ul class="okr-root">${roots.map(node).join("")}</ul></div>` : "";
+  if (typeof okrView !== "undefined" && okrView === "people") renderOkrPeople();
 }
 
 window.setKrProgress = (id, idx, v) => {
@@ -1874,7 +1922,69 @@ window.setKrProgress = (id, idx, v) => {
   orgRef.child("okr/" + id + "/updatedBy").set(currentUser() || "?");
 };
 
-$("okrQuarter").onchange = e => { okrQ = e.target.value; renderOkr(); };
+let okrView = "tree";
+$("okrViewTree").onclick = () => setOkrView("tree");
+$("okrViewPeople").onclick = () => setOkrView("people");
+function setOkrView(v){
+  okrView = v;
+  $("okrViewTree").classList.toggle("on", v === "tree");
+  $("okrViewPeople").classList.toggle("on", v === "people");
+  $("okrTree").style.display = v === "tree" ? "" : "none";
+  $("okrPeople").style.display = v === "people" ? "" : "none";
+  if (v === "people") renderOkrPeople();
+}
+function renderOkrPeople(){
+  const all = entries(data.okr).filter(o => o.quarter === okrQ);
+  const byPerson = {};
+  all.forEach(o => {
+    const name = (o.lead || o.by || "?").trim() || "?";
+    (byPerson[name] = byPerson[name] || []).push(o);
+  });
+  const fmt = t => { if (!t) return ""; const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()}`; };
+  const people = Object.entries(byPerson).map(([name, objs]) => {
+    const avg = Math.round(objs.reduce((s, o) => s + okrProgress(o), 0) / objs.length);
+    const krN = objs.reduce((s, o) => s + toArr(o.krs).length, 0);
+    return {name, objs, avg, krN};
+  }).sort((a, b) => b.avg - a.avg || a.name.localeCompare(b.name));
+  const avgColor = v => v >= 70 ? "var(--good)" : v >= 40 ? "var(--warn)" : "var(--bad)";
+  $("okrPeople").innerHTML = people.length ? `<div class="okp-grid">${people.map(p => `
+    <div class="okp-card">
+      <div class="okp-head"><span class="okp-name">${esc(p.name)}</span><span class="okp-avg" style="color:${avgColor(p.avg)}">${p.avg}%</span></div>
+      <div class="okp-sub">목표 ${p.objs.length}개 · 핵심결과 ${p.krN}개 평균 달성률</div>
+      <div class="okp-bar"><i style="width:${p.avg}%;background:${avgColor(p.avg)}"></i></div>
+      ${p.objs.map(o => {
+        const prog = okrProgress(o);
+        const fb = o.feedback;
+        return `<div class="okp-obj">
+          <div class="okp-obj-top">
+            <span class="okp-obj-title">${esc(o.title)}</span>
+            <span class="okp-obj-pct" style="color:${avgColor(prog)}">${prog}%</span>
+          </div>
+          <div class="team">${esc(o.owner || "")}</div>
+          ${fb && fb.text ? `<div class="okp-fb"><b>피드백 · ${esc(fb.by || "")} ${fmt(fb.at)}</b>${esc(fb.text)}</div>` : ""}
+          <div class="pi-actions open okp-fb-btn"><button class="mini-btn" onclick="okrFeedback('${o.id}')">${fb && fb.text ? "피드백 수정" : "✍ 피드백 남기기"}</button></div>
+        </div>`;
+      }).join("")}
+    </div>`).join("")}</div>`
+    : `<div class="lead">${qLabel(okrQ)}에 등록된 목표가 없습니다.</div>`;
+}
+window.okrFeedback = async id => {
+  const o = (data.okr || {})[id]; if (!o) return;
+  const prev = (o.feedback && o.feedback.text) || "";
+  const text = prompt(`'${o.title}' 피드백 (비우고 확인하면 삭제됩니다)`, prev);
+  if (text === null) return;
+  try {
+    if (text.trim()){
+      await orgRef.child("okr/" + id + "/feedback").set({ text: text.trim(), by: currentUser() || "?", at: Date.now() });
+      logAction("피드백", "OKR: " + o.title);
+      showToast("피드백 저장 완료");
+    } else if (prev){
+      await orgRef.child("okr/" + id + "/feedback").remove();
+      logAction("피드백 삭제", "OKR: " + o.title);
+    }
+  } catch(e){ alert("저장에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+};
+$("okrQuarter").onchange = e => { okrQ = e.target.value; renderOkr(); if (okrView === "people") renderOkrPeople(); };
 
 const krClean = t => String(t || "").replace(/^\s*\d+\s*[\.\)]\s*/, "").trim();
 const escA = t => esc(t).replace(/"/g, "&quot;");
