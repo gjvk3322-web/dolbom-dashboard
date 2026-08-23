@@ -239,7 +239,7 @@
   ul.okr-kids{position:relative;padding-top:26px}
   ul.okr-kids::before{content:"";position:absolute;top:0;left:50%;width:2px;height:26px;background:#C6D2CC}
   ul.okr-kids>li{position:relative;padding:26px 14px 0}
-  ul.okr-kids>li::before,ul.okr-kids>li::after{content:"";position:absolute;top:26px;right:50%;width:50%;height:26px;border-top:2px solid #C6D2CC;box-sizing:border-box}
+  ul.okr-kids>li::before,ul.okr-kids>li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:26px;border-top:2px solid #C6D2CC;box-sizing:border-box}
   ul.okr-kids>li::after{right:auto;left:50%;border-left:2px solid #C6D2CC}
   ul.okr-kids>li:first-child::before{border:0}
   ul.okr-kids>li:last-child::after{border-left:0}
@@ -670,6 +670,7 @@
       <input type="hidden" id="okrId">
       <div class="field"><label>분기 *</label><select id="oQuarter"></select></div>
       <div class="field"><label>소유 주체 *</label><select id="oOwner"></select></div>
+      <div class="field"><label>담당자</label><select id="oLead"></select></div>
       <div class="field full"><label>목표 (Objective) *</label><input id="oTitle" placeholder="목표를 입력하세요 (방향)"></div>
       <div class="field full"><label>핵심결과 (Key Results) — 한 줄에 하나씩, 2~4개 권장</label><textarea id="oKrs" rows="4" placeholder="한 줄에 하나씩 — 측정 가능한 숫자로"></textarea></div>
       <div class="field full"><label>상위 핵심결과 연결 (선택)</label><select id="oParent"><option value="">없음 — 최상위 목표</option></select>
@@ -1831,9 +1832,7 @@ function renderOkr(){
   fillQuarterSelects();
   const all = entries(data.okr).filter(o => o.quarter === okrQ);
   const n = all.length;
-  $("okrCount").innerHTML = n
-    ? `${qLabel(okrQ)} 목표 <b>${n}개</b> ${n > 5 ? '<span style="color:var(--bad);font-weight:700">— 5개 초과! 집중을 위해 줄이는 것을 권장합니다</span>' : (n < 3 && okrQ === curQuarter() ? '<span style="color:var(--warn)">— 3~5개가 적당합니다</span>' : "")}`
-    : `${qLabel(okrQ)}에 등록된 목표가 없습니다. ${okrQ === curQuarter() ? "[목표 추가]로 이번 분기 목표를 세우세요. (권장 3~5개)" : ""}`;
+  $("okrCount").innerHTML = n ? `${qLabel(okrQ)} 목표 <b>${n}개</b>` : `${qLabel(okrQ)}에 등록된 목표가 없습니다.`;
 
   const kids = {};
   all.forEach(o => { if (o.parent && o.parent.objId){ (kids[o.parent.objId] = kids[o.parent.objId] || []).push(o); } });
@@ -1853,7 +1852,7 @@ function renderOkr(){
         ${krs.map((kr, i) => `<div class="kr-item">${i + 1}. ${esc(kr)}
           <div class="kr-pills">${[0,25,50,75,100].map(v => `<button class="${(Number((o.progress||{})[i])||0)===v?"on":""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("")}</div>
         </div>`).join("")}
-        <div class="obj-foot"><span>작성 ${esc(o.by || "?")}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span></div>
+        <div class="obj-foot"><span>${o.lead ? '담당 <b style="color:var(--text)">' + esc(o.lead) + '</b> · ' : ""}작성 ${esc(o.by || "?")}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span></div>
       </div>
     </div>`;
   };
@@ -1874,7 +1873,9 @@ $("okrQuarter").onchange = e => { okrQ = e.target.value; renderOkr(); };
 function fillOkrModal(){
   $("oQuarter").innerHTML = okrQuarterList().map(q => `<option value="${q}">${qLabel(q)}</option>`).join("");
   const depts = entries(data.departments).sort(byOrder).map(d => d.name);
-  $("oOwner").innerHTML = ["대표", ...depts].map(d => `<option>${esc(d)}</option>`).join("");
+  $("oOwner").innerHTML = '<option value="">선택</option>' + ["대표", ...depts].map(d => `<option>${esc(d)}</option>`).join("");
+  const ppl = entries(data.people).sort(byOrder).map(p => p.name).filter(Boolean);
+  $("oLead").innerHTML = '<option value="">미지정</option>' + ppl.map(p => `<option>${esc(p)}</option>`).join("");
 }
 function fillParentOptions(excludeId){
   const opts = entries(data.okr).filter(o => o.quarter === $("oQuarter").value && o.id !== excludeId)
@@ -1883,12 +1884,11 @@ function fillParentOptions(excludeId){
 }
 
 $("addOkrBtn").onclick = () => {
-  const n = entries(data.okr).filter(o => o.quarter === okrQ).length;
-  if (n >= 5 && !confirm("이번 분기 목표가 이미 " + n + "개입니다. OKR은 3~5개 집중이 원칙이에요. 그래도 추가할까요?")) return;
   $("okrModalTitle").textContent = "목표 추가";
   $("okrId").value = "";
   fillOkrModal();
   $("oQuarter").value = okrQ;
+  $("oOwner").value = ""; $("oLead").value = "";
   $("oTitle").value = ""; $("oKrs").value = "";
   fillParentOptions("");
   okrModal.showModal();
@@ -1902,6 +1902,7 @@ window.editOkr = id => {
   fillOkrModal();
   $("oQuarter").value = o.quarter;
   $("oOwner").value = o.owner;
+  $("oLead").value = o.lead || "";
   $("oTitle").value = o.title || "";
   $("oKrs").value = toArr(o.krs).join("\n");
   fillParentOptions(id);
@@ -1916,6 +1917,7 @@ window.deleteOkr = id => {
 $("saveOkrBtn").onclick = async () => {
   const title = $("oTitle").value.trim();
   const krs = lines($("oKrs").value);
+  if (!$("oOwner").value) return alert("소유 주체를 선택해주세요.");
   if (!title) return alert("목표를 입력해주세요.");
   if (!krs.length) return alert("핵심결과를 한 줄 이상 입력해주세요.");
   const id = $("okrId").value || newId("o_");
@@ -1924,6 +1926,7 @@ $("saveOkrBtn").onclick = async () => {
   const payload = {
     quarter: $("oQuarter").value,
     owner: $("oOwner").value,
+    lead: $("oLead").value || null,
     title, krs,
     parent: pv ? { objId: pv.split("|")[0], krIdx: Number(pv.split("|")[1]) } : null,
     progress: prev.progress || {},
