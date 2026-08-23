@@ -671,10 +671,10 @@
       <div class="field"><label>분기 *</label><select id="oQuarter"></select></div>
       <div class="field"><label>소유 주체 *</label><select id="oOwner"></select></div>
       <div class="field"><label>담당자</label><select id="oLead"></select></div>
-      <div class="field full"><label>목표 (Objective) *</label><input id="oTitle" placeholder="목표를 입력하세요 (방향)"></div>
-      <div class="field full"><label>핵심결과 (Key Results) — 한 줄에 하나씩, 2~4개 권장</label><textarea id="oKrs" rows="4" placeholder="한 줄에 하나씩 — 측정 가능한 숫자로"></textarea></div>
       <div class="field full"><label>상위 핵심결과 연결 (선택)</label><select id="oParent"><option value="">없음 — 최상위 목표</option></select>
         <div class="lead" style="margin-top:4px;font-size:12px">상위 목표의 핵심결과를 이 목표가 책임진다는 뜻입니다. 연결하면 트리로 이어져 보입니다.</div></div>
+      <div class="field full"><label>목표 (Objective) *</label><input id="oTitle" placeholder="목표를 입력하세요 (방향)"></div>
+      <div class="field full"><label>핵심결과 (Key Results) — 한 줄에 하나씩, 2~4개 권장</label><textarea id="oKrs" rows="4" placeholder="한 줄에 하나씩 — 측정 가능한 숫자로"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="okrModal.close()">취소</button><button class="btn primary" id="saveOkrBtn">저장</button></div>
   </form>
@@ -1874,7 +1874,7 @@ function fillOkrModal(){
   $("oQuarter").innerHTML = okrQuarterList().map(q => `<option value="${q}">${qLabel(q)}</option>`).join("");
   const depts = entries(data.departments).sort(byOrder).map(d => d.name);
   $("oOwner").innerHTML = '<option value="">선택</option>' + ["대표", ...depts].map(d => `<option>${esc(d)}</option>`).join("");
-  const ppl = entries(data.people).sort(byOrder).map(p => p.name).filter(Boolean);
+  const ppl = entries(data.people).sort(byOrder).map(p => p.name).filter(n => n && !String(n).trim().startsWith("("));
   $("oLead").innerHTML = '<option value="">미지정</option>' + ppl.map(p => `<option>${esc(p)}</option>`).join("");
 }
 function fillParentOptions(excludeId){
@@ -1888,7 +1888,9 @@ $("addOkrBtn").onclick = () => {
   $("okrId").value = "";
   fillOkrModal();
   $("oQuarter").value = okrQ;
-  $("oOwner").value = ""; $("oLead").value = "";
+  $("oOwner").value = "";
+  const me = currentUser() || "";
+  $("oLead").value = [...$("oLead").options].some(op => op.value === me) ? me : "";
   $("oTitle").value = ""; $("oKrs").value = "";
   fillParentOptions("");
   okrModal.showModal();
