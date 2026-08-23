@@ -287,7 +287,6 @@
   .ceo-add{border:1.5px dashed #C9DED3;background:transparent;color:var(--accent-deep);font-weight:700;font-size:13.5px;border-radius:16px;min-height:110px;display:flex;align-items:center;justify-content:center}
   .ceo-add:hover{background:var(--tint);border-color:var(--accent)}
   .ceo-item.sel{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,177,115,.18);background:linear-gradient(180deg,#F1FBF6,#E4F7EE)}
-  .focus-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--tint);border:1px solid #C9EADC;border-radius:12px;padding:9px 14px;margin-bottom:16px;font-size:12.5px;color:var(--accent-deep);font-weight:600}
   .ceo-body{border-top:1px dashed #E0EFE7;padding:4px 15px 12px}
   .ceo-kr{padding:9px 0;font-size:13.5px;line-height:1.55}
   .ceo-kr+.ceo-kr{border-top:1px dashed #EEF3F0}
@@ -2069,9 +2068,9 @@ function renderOkr(){
   const fbar = $("okrDetail");
   if (focusObj && okrView === "tree"){
     fbar.style.display = "";
-    fbar.innerHTML = `<div class="focus-bar"><span>이 목표의 캐스케이드만 보는 중 — 카드를 다시 누르면 전체로 돌아갑니다</span>
-      <span style="display:flex;gap:6px"><button class="mini-btn" onclick="addSupportOkr('${focusObj.id}',0)">+ 서포트 목표 추가</button>
-      <button class="mini-btn" onclick="clearOkrFocus()">전체 보기</button></span></div>`;
+    fbar.innerHTML = `<div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:14px">
+      <button class="mini-btn" onclick="addSupportOkr('${focusObj.id}',0)">+ 서포트 목표 추가</button>
+      <button class="mini-btn" onclick="clearOkrFocus()">전체 보기</button></div>`;
   } else { fbar.style.display = "none"; fbar.innerHTML = ""; }
   if (typeof okrView !== "undefined" && okrView === "people") renderOkrPeople();
 }
