@@ -1897,6 +1897,23 @@ $("addKrBtn").onclick = () => {
   if (arr.length >= 6) return;
   arr.push(""); setKrRows(arr);
 };
+
+// 모달 안 input에서 Enter → 닫힘 방지 (전 모달 공통). OKR KR 칸에서는 다음 칸 이동/추가
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const el = e.target;
+  if (el.tagName !== "INPUT" || !el.closest("dialog")) return;
+  e.preventDefault();
+  if (el.classList.contains("okr-kr-input")){
+    const inputs = [...document.querySelectorAll(".okr-kr-input")];
+    const i = inputs.indexOf(el);
+    if (i === inputs.length - 1){
+      if (inputs.length < 6){ const arr = getKrRowsRaw(); arr.push(""); setKrRows(arr); }
+      const ni = [...document.querySelectorAll(".okr-kr-input")];
+      if (ni[i + 1]) ni[i + 1].focus();
+    } else inputs[i + 1].focus();
+  }
+});
 function fillOkrModal(){
   $("oQuarter").innerHTML = okrQuarterList().map(q => `<option value="${q}">${qLabel(q)}</option>`).join("");
   const depts = entries(data.departments).sort(byOrder).map(d => d.name);
@@ -1976,6 +1993,14 @@ $("saveOkrBtn").onclick = async () => {
     updatedBy: $("okrId").value ? (currentUser() || "?") : null,
     updatedAt: Date.now()
   };
+  // 수정 시 이전 버전을 휴지통에 자동 백업 → 잘못 고쳐도 복구(롤백) 가능
+  if ($("okrId").value && prev.title){
+    await orgRef.child("trash/okr__" + id + "__v" + Date.now()).set({
+      node: "okr", id: id,
+      label: "OKR 수정 전 버전: " + prev.owner + " · " + prev.title,
+      data: prev, deletedAt: Date.now(), deletedBy: (currentUser() || "?") + " 수정"
+    }).catch(() => {});
+  }
   if (await safeWrite("OKR", () => orgRef.child("okr/" + id).set(payload), $("saveOkrBtn"))){
     logAction($("okrId").value ? "수정" : "추가", "OKR: " + payload.owner + " · " + title);
     okrQ = payload.quarter;
