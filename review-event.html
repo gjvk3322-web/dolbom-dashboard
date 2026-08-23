@@ -273,6 +273,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
   </div>
 
+  <div id="holdBanner" style="display:none;margin:0 0 12px 0;padding:14px 16px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:12px">
+    <div style="font-size:14px;font-weight:800;color:#9a3412;margin-bottom:4px">⏸ 캐시백 지급이 잠시 보류되었어요</div>
+    <div id="holdReasonText" style="font-size:13px;color:#7c2d12;line-height:1.6;margin-bottom:6px"></div>
+    <div style="font-size:12px;color:#9a3412">확인이 필요한 부분이 있어요. 카카오톡 채널로 문의 주시면 빠르게 도와드릴게요 🙏</div>
+  </div>
   <button class="cashback-btn" id="cashbackBtn" onclick="requestCashback()" disabled>캐시백 받기</button>
 
 </div>
@@ -554,6 +559,7 @@ const MAX_REWARD=130000;
 let missionState={};
 let paidTotal=0;
 let payStatus='';
+let holdReason=''; // 🆕 지급 보류 사유 (시트 Q열)
 
 function initMissions(){MISSIONS.forEach(m=>{if(!missionState[m.id])missionState[m.id]={done:false,url:'',submittedAt:''};});renderMissions();}
 
@@ -588,7 +594,15 @@ function renderMissions(){
     }
   }
   const btn=document.getElementById('cashbackBtn');
-  if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
+  // 🆕 보류 상태: 배너 표시 + 신청 버튼 잠금
+  const hb=document.getElementById('holdBanner');
+  if(holdReason){
+    hb.style.display='block';
+    document.getElementById('holdReasonText').textContent=holdReason;
+    btn.disabled=true;btn.textContent='⏸ 지급 보류 중 — 위 안내를 확인해 주세요';
+  } else if(hb.style.display!=='none'){hb.style.display='none';}
+  if(holdReason){}
+  else if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
   else if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
   else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';}
   else if(earned>0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
@@ -680,6 +694,7 @@ async function submitMission(idx){
 function checkCashbackReady(){renderMissions();}
 
 async function requestCashback(){
+  if(holdReason){showToast('지급 보류 중입니다 — 카카오톡 채널로 문의해 주세요');return;}
   if(!document.getElementById('cashbackConsent').checked){showToast('개인정보 수집에 동의해 주세요');return;}
   const bank=document.getElementById('accBank').value,name=document.getElementById('accName').value.trim(),num=document.getElementById('accNum').value.trim();
   if(!bank||!name||!num){showToast('계좌 정보를 모두 입력해 주세요');return;}
@@ -788,6 +803,8 @@ function restoreInspectionFromLocal(){
 async function loadData(){
   if(!PHONE){document.getElementById('loadingOverlay').style.display='none';return;}
   // 후기이벤트 데이터 (원본 그대로)
+  // 🆕 보류 여부 조회 (병렬 — 실패해도 페이지는 정상 동작)
+  const holdP=fetch(API_URL+'?type=reviewHold&phone='+encodeURIComponent(PHONE)).then(r=>r.json()).then(d=>{if(d&&d.hold)holdReason=d.reason||'확인이 필요한 접수 건이 있어요.';}).catch(()=>{});
   try{
     const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
     const data=await res.json();
@@ -805,6 +822,7 @@ async function loadData(){
   // 검수 상태 (시공 후 탭용) · 서버 호출 비활성화 (불필요한 19.6초 지연 제거)
   // localStorage 기반으로 작동하므로 서버 조회 불필요
   restoreInspectionFromLocal();
+  await holdP; // 🆕 보류 조회 완료 대기
   document.getElementById('loadingOverlay').style.display='none';
   renderMissions();
 }
