@@ -1806,6 +1806,8 @@ $("saveMeetingBtn").onclick = async () => {
 
 /* ───────── OKR (분기별 목표·핵심결과, 캐스케이드) ───────── */
 const okrModal = $("okrModal");
+const OKR_ADMINS = ["민석"]; // 삭제 권한: 작성자 본인 + 이 명단
+const canDeleteOkr = o => { const me = currentUser(); return me && (me === o.by || OKR_ADMINS.includes(me)); };
 const curQuarter = () => { const d = new Date(); return d.getFullYear() + "-Q" + (Math.floor(d.getMonth() / 3) + 1); };
 const qLabel = q => q.replace("-Q", "년 ") + "분기";
 let okrQ = curQuarter();
@@ -1855,7 +1857,7 @@ function renderOkr(){
         ${krs.map((kr, i) => `<div class="kr-item">${i + 1}. ${esc(krClean(kr))}
           <div class="kr-pills">${[0,25,50,75,100].map(v => `<button class="${(Number((o.progress||{})[i])||0)===v?"on":""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("")}</div>
         </div>`).join("")}
-        <div class="obj-foot"><span>${o.lead && o.lead !== o.by ? '담당 <b style="color:var(--text)">' + esc(o.lead) + '</b> · 작성 ' + esc(o.by || "?") : '담당 <b style="color:var(--text)">' + esc(o.lead || o.by || "?") + '</b>'}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span></div>
+        <div class="obj-foot"><span>${o.lead && o.lead !== o.by ? '담당 <b style="color:var(--text)">' + esc(o.lead) + '</b> · 작성 ' + esc(o.by || "?") : '담당 <b style="color:var(--text)">' + esc(o.lead || o.by || "?") + '</b>'}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button>${canDeleteOkr(o) ? ` <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button>` : ""}</span></div>
       </div>
     </div>`;
   };
@@ -1948,6 +1950,7 @@ window.editOkr = id => {
 };
 window.deleteOkr = id => {
   const o = (data.okr || {})[id]; if (!o) return;
+  if (!canDeleteOkr(o)){ alert("삭제는 작성자 본인 또는 대표만 할 수 있어요."); return; }
   if (!confirm(`[${o.owner}] ${o.title} 목표를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("okr", id, "OKR: " + o.owner + " · " + o.title);
 };
