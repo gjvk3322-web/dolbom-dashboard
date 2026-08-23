@@ -230,6 +230,37 @@
     .cal-pill{font-size:10px;padding:1px 4px}
     .cal-legend{display:none}
   }
+
+  /* ── OKR 캐스케이드 트리 (조직도 연결선) ── */
+  .okr-scroll{overflow-x:auto;padding:10px 4px 30px}
+  ul.okr-root,ul.okr-kids{display:flex;justify-content:center;list-style:none;margin:0;padding:0}
+  ul.okr-root{gap:56px;align-items:flex-start;min-width:min-content;padding:6px}
+  ul.okr-root>li,ul.okr-kids>li{display:flex;flex-direction:column;align-items:center}
+  ul.okr-kids{position:relative;padding-top:26px}
+  ul.okr-kids::before{content:"";position:absolute;top:0;left:50%;width:2px;height:26px;background:#C6D2CC}
+  ul.okr-kids>li{position:relative;padding:26px 14px 0}
+  ul.okr-kids>li::before,ul.okr-kids>li::after{content:"";position:absolute;top:26px;right:50%;width:50%;height:26px;border-top:2px solid #C6D2CC;box-sizing:border-box}
+  ul.okr-kids>li::after{right:auto;left:50%;border-left:2px solid #C6D2CC}
+  ul.okr-kids>li:first-child::before{border:0}
+  ul.okr-kids>li:last-child::after{border-left:0}
+  ul.okr-kids>li:last-child::before{border-right:2px solid #C6D2CC;border-radius:0 10px 0 0}
+  ul.okr-kids>li:first-child::after{border-radius:10px 0 0 0}
+  ul.okr-kids>li:only-child{padding-top:26px}
+  ul.okr-kids>li:only-child::before,ul.okr-kids>li:only-child::after{display:none}
+  ul.okr-kids>li:only-child::after{content:"";display:block;position:absolute;top:0;left:50%;width:2px;height:26px;background:#C6D2CC;border:0;border-radius:0}
+  .okr-owner{font-weight:800;font-size:14px;margin-bottom:8px;letter-spacing:-.2px}
+  .okr-owner.ceo{color:var(--accent)}
+  .okr-box{width:270px;background:#fff;border:1.5px solid #C6D2CC;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.05);text-align:left}
+  .okr-box .obj-head{background:#66716C;color:#fff;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+  .okr-box.ceo .obj-head{background:var(--accent)}
+  .okr-box .obj-title{padding:10px 12px;font-weight:800;font-size:14px;line-height:1.45;border-bottom:1px solid #EEF3F0}
+  .okr-box .kr-label{padding:8px 12px 2px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1px}
+  .okr-box .kr-item{padding:6px 12px;font-size:12.5px;line-height:1.5}
+  .okr-box .kr-item+.kr-item{border-top:1px dashed #EEF3F0}
+  .okr-box .kr-pills{margin-top:4px;display:flex;gap:3px}
+  .okr-box .kr-pills button{padding:1px 6px;font-size:10px;border:1px solid #D9E2DD;border-radius:8px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
+  .okr-box .kr-pills button.on{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+  .okr-box .obj-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#FAFCFB;border-top:1px solid #EEF3F0;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -639,10 +670,10 @@
       <input type="hidden" id="okrId">
       <div class="field"><label>분기 *</label><select id="oQuarter"></select></div>
       <div class="field"><label>소유 주체 *</label><select id="oOwner"></select></div>
-      <div class="field full"><label>목표 (Objective) *</label><input id="oTitle" placeholder="예: 하자 없는 시공 — 하자AS율 2% 이하"></div>
-      <div class="field full"><label>핵심결과 (Key Results) — 한 줄에 하나씩, 2~4개 권장</label><textarea id="oKrs" rows="4" placeholder="시공하자 월 3건 이하&#10;AS 재방문 없이 1회 처리율 90%"></textarea></div>
+      <div class="field full"><label>목표 (Objective) *</label><input id="oTitle" placeholder="목표를 입력하세요 (방향)"></div>
+      <div class="field full"><label>핵심결과 (Key Results) — 한 줄에 하나씩, 2~4개 권장</label><textarea id="oKrs" rows="4" placeholder="한 줄에 하나씩 — 측정 가능한 숫자로"></textarea></div>
       <div class="field full"><label>상위 핵심결과 연결 (선택)</label><select id="oParent"><option value="">없음 — 최상위 목표</option></select>
-        <div class="lead" style="margin-top:4px;font-size:12px">상위 목표의 KR을 이 목표가 책임진다는 뜻입니다. 책의 캐스케이드 구조 그대로.</div></div>
+        <div class="lead" style="margin-top:4px;font-size:12px">상위 목표의 핵심결과를 이 목표가 책임진다는 뜻입니다. 연결하면 트리로 이어져 보입니다.</div></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="okrModal.close()">취소</button><button class="btn primary" id="saveOkrBtn">저장</button></div>
   </form>
@@ -1809,39 +1840,28 @@ function renderOkr(){
   const roots = all.filter(o => !(o.parent && o.parent.objId && all.some(x => x.id === o.parent.objId)))
                    .sort((a, b) => (a.owner === "대표" ? -1 : 1) - (b.owner === "대표" ? -1 : 1) || (a.at || 0) - (b.at || 0));
 
-  const pills = (o, i) => [0, 25, 50, 75, 100].map(v =>
-    `<button class="mini-btn" style="padding:2px 7px;font-size:11px;${(Number((o.progress || {})[i]) || 0) === v ? "background:var(--accent);color:#fff;border-color:transparent" : ""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("");
-
-  const card = (o, depth) => {
+  const box = o => {
     const prog = okrProgress(o);
     const krs = toArr(o.krs);
-    const parentInfo = o.parent && o.parent.objId ? (() => {
-      const p = (data.okr || {})[o.parent.objId];
-      const kr = p ? toArr(p.krs)[o.parent.krIdx] : null;
-      return p ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">↳ <b>${esc(p.owner)}</b>의 핵심결과 「${esc(kr || "")}」에서 이어짐</div>` : "";
-    })() : "";
-    return `<div class="card" style="margin:0 0 12px ${depth * 34}px;${depth ? "border-left:3px solid var(--accent)" : ""}">
-      ${parentInfo}
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-        <div>
-          <span class="mini-btn" style="pointer-events:none;background:${o.owner === "대표" ? "var(--accent)" : "var(--chip)"};color:${o.owner === "대표" ? "#fff" : "var(--text)"};border-color:transparent;font-weight:700">${esc(o.owner)}</span>
-          <h3 style="display:inline;margin-left:8px;font-size:16px">${esc(o.title)}</h3>
-        </div>
-        <div style="min-width:120px;text-align:right">
-          <div style="font-weight:800;color:${prog >= 70 ? "var(--good)" : prog >= 40 ? "var(--warn)" : "var(--muted)"}">${prog}%</div>
-          <div style="height:6px;background:var(--chip);border-radius:4px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${prog}%;background:var(--accent)"></div></div>
-        </div>
+    const isCeo = o.owner === "대표";
+    return `<div style="display:flex;flex-direction:column;align-items:center">
+      <div class="okr-owner ${isCeo ? "ceo" : ""}">${esc(o.owner)}</div>
+      <div class="okr-box ${isCeo ? "ceo" : ""}">
+        <div class="obj-head"><span>목표</span><span>${prog}%</span></div>
+        <div class="obj-title">${esc(o.title)}</div>
+        <div class="kr-label">핵심결과</div>
+        ${krs.map((kr, i) => `<div class="kr-item">${i + 1}. ${esc(kr)}
+          <div class="kr-pills">${[0,25,50,75,100].map(v => `<button class="${(Number((o.progress||{})[i])||0)===v?"on":""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("")}</div>
+        </div>`).join("")}
+        <div class="obj-foot"><span>작성 ${esc(o.by || "?")}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span></div>
       </div>
-      <div style="margin-top:10px;display:grid;gap:6px">
-        ${krs.map((kr, i) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;padding:6px 8px;background:var(--tint);border-radius:8px"><span>KR${i + 1}. ${esc(kr)}</span><span style="white-space:nowrap">${pills(o, i)}</span></div>`).join("")}
-      </div>
-      <div class="actions" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-        <span style="font-size:11px;color:var(--muted)">작성 ${esc(o.by || "?")}${o.updatedBy ? " · 수정 " + esc(o.updatedBy) : ""}</span>
-        <span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span>
-      </div>
-    </div>` + (kids[o.id] || []).sort((a, b) => (a.at || 0) - (b.at || 0)).map(c => card(c, depth + 1)).join("");
+    </div>`;
   };
-  $("okrTree").innerHTML = roots.map(o => card(o, 0)).join("");
+  const node = o => {
+    const c = (kids[o.id] || []).sort((a, b) => (a.at || 0) - (b.at || 0));
+    return `<li>${box(o)}${c.length ? `<ul class="okr-kids">${c.map(node).join("")}</ul>` : ""}</li>`;
+  };
+  $("okrTree").innerHTML = roots.length ? `<div class="okr-scroll"><ul class="okr-root">${roots.map(node).join("")}</ul></div>` : "";
 }
 
 window.setKrProgress = (id, idx, v) => {
