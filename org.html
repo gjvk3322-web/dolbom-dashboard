@@ -2013,35 +2013,16 @@ function renderOkrDetail(){
   const all = entries(data.okr).filter(x => x.quarter === okrQ);
   const ceos = all.filter(x => (x.owner || "").trim() === "대표").sort((a, b) => (a.at || 0) - (b.at || 0));
   const num = ceos.findIndex(x => x.id === o.id) + 1;
-  const krs = toArr(o.krs);
+  const withId = {...o, id: okrDetailId};
   $("okrDetail").innerHTML = `
-    <button class="btn okrd-back" onclick="closeOkrDetail()">← OKR 전체 보기</button>
-    <div class="okrd-head">
-      ${num ? `<span class="ceo-badge">회사 목표 ${num}</span>` : ""}
-      <span class="okrd-title">${esc(o.title)}</span>
-      <span class="okrd-pct">${okrProgress(o)}%</span>
-      <span class="okrd-meta">담당 <b style="color:var(--text)">${esc(o.lead || o.by || "?")}</b> · 핵심결과별 진행률을 누르면 바로 갱신됩니다 <button class="mini-btn" onclick="editOkr('${o.id}')" style="margin-left:6px">목표 수정</button></span>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn" onclick="closeOkrDetail()">← OKR 전체 보기</button>
+      <span style="display:flex;align-items:center;gap:10px">
+        ${num ? `<span class="ceo-badge">회사 목표 ${num}</span>` : ""}
+        <button class="btn primary" onclick="addSupportOkr('${okrDetailId}',0)">+ 서포트 목표 추가</button>
+      </span>
     </div>
-    ${krs.map((kr, i) => {
-      const linked = all.filter(c => c.parent && c.parent.objId === o.id && Number(c.parent.krIdx) === i)
-                        .sort((a, b) => (a.at || 0) - (b.at || 0));
-      const my = Number((o.progress || {})[i]) || 0;
-      return `<div class="okrd-kr">
-        <div class="okrd-kr-top">
-          <span class="okrd-kr-title">KR${i + 1}. ${esc(krClean(kr))}</span>
-          <span class="kr-pills">${[0,25,50,75,100].map(v => `<button class="${my === v ? "on" : ""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("")}</span>
-        </div>
-        <div class="okrd-sub">이 핵심결과를 서포트하는 목표</div>
-        ${linked.length ? linked.map(c => `<div class="dlink">
-            <span class="dot" style="background:${okrColor(c.owner)}"></span>
-            <span class="own" style="color:${okrColor(c.owner)}">${esc(c.owner)}</span>
-            <span class="t">${esc(c.title)}</span>
-            <span class="pc">${okrProgress(c)}%</span>
-            <button class="mini-btn" onclick="editOkr('${c.id}')">수정</button>
-          </div>`).join("") : `<div class="dlink-none">아직 없습니다 — 팀 목표를 여기에 연결해 주세요.</div>`}
-        <button class="mini-btn" onclick="addSupportOkr('${o.id}',${i})">+ 서포트 목표 추가</button>
-      </div>`;
-    }).join("")}`;
+    ${okrTreeHtml([withId], all)}`;
 }
 window.addSupportOkr = (objId, krIdx) => {
   $("okrModalTitle").textContent = "목표 추가";
@@ -2056,17 +2037,9 @@ window.addSupportOkr = (objId, krIdx) => {
   updateParentPreview();
   okrModal.showModal();
 };
-function renderOkr(){
-  fillQuarterSelects();
-  const all = entries(data.okr).filter(o => o.quarter === okrQ);
-  const n = all.length;
-  $("okrCount").innerHTML = n ? `${qLabel(okrQ)} 목표 <b>${n}개</b>` : `${qLabel(okrQ)}에 등록된 목표가 없습니다.`;
-
+function okrTreeHtml(roots, all){
   const kids = {};
   all.forEach(o => { if (o.parent && o.parent.objId){ (kids[o.parent.objId] = kids[o.parent.objId] || []).push(o); } });
-  const roots = all.filter(o => !(o.parent && o.parent.objId && all.some(x => x.id === o.parent.objId)))
-                   .sort((a, b) => (a.owner === "대표" ? -1 : 1) - (b.owner === "대표" ? -1 : 1) || (a.at || 0) - (b.at || 0));
-
   const box = o => {
     const prog = okrProgress(o);
     const krs = toArr(o.krs);
@@ -2089,7 +2062,16 @@ function renderOkr(){
     const c = (kids[o.id] || []).sort((a, b) => (a.at || 0) - (b.at || 0));
     return `<li>${box(o)}${c.length ? `<ul class="okr-kids">${c.map(node).join("")}</ul>` : ""}</li>`;
   };
-  $("okrTree").innerHTML = roots.length ? `<div class="okr-scroll"><ul class="okr-root">${roots.map(node).join("")}</ul></div>` : "";
+  return `<div class="okr-scroll"><ul class="okr-root">${roots.map(node).join("")}</ul></div>`;
+}
+function renderOkr(){
+  fillQuarterSelects();
+  const all = entries(data.okr).filter(o => o.quarter === okrQ);
+  const n = all.length;
+  $("okrCount").innerHTML = n ? `${qLabel(okrQ)} 목표 <b>${n}개</b>` : `${qLabel(okrQ)}에 등록된 목표가 없습니다.`;
+  const roots = all.filter(o => !(o.parent && o.parent.objId && all.some(x => x.id === o.parent.objId)))
+                   .sort((a, b) => (a.owner === "대표" ? -1 : 1) - (b.owner === "대표" ? -1 : 1) || (a.at || 0) - (b.at || 0));
+  $("okrTree").innerHTML = roots.length ? okrTreeHtml(roots, all) : "";
   if (okrDetailId){ renderOkrDetail(); return; }
   renderOkrCeo();
   if (typeof okrView !== "undefined" && okrView === "people") renderOkrPeople();
