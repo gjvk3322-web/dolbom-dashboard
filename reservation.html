@@ -264,7 +264,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="fg full" id="fAsTypeGroup" style="display:none">
       <label>AS 유형 <span class="req">*</span></label>
-      <select id="fAsType"><option value="">선택</option><option value="하자AS">하자AS (제품·시공 하자)</option><option value="연장시공">연장시공 (추가 설치)</option><option value="유상수리">유상수리 (고객 과실 등)</option><option value="기타">기타</option></select>
+      <select id="fAsType"><option value="">선택</option><option value="제품하자">제품하자 (매트 자체 문제)</option><option value="시공하자">시공하자 (시공 문제)</option><option value="유상수리">유상수리 (연장시공·고객 과실 등)</option><option value="기타">기타</option></select>
     </div>
     <div class="fg full">
       <label id="fAddrLabel">주소 (동호수 포함) <span class="req">*</span></label>
@@ -1263,7 +1263,7 @@ function renderDayDetail(ds){
   // AS 슬롯 (마감 무관, 항상 접수 가능)
   let asH='';
   (sc.as||[]).forEach((s,i)=>{
-    const asTag=s.category?`<span style="font-size:10px;background:${s.category==='하자AS'?'#fdecea':'#fff8e1'};color:${s.category==='하자AS'?'#c62828':'#92400e'};padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">${s.category}</span>`:''; // 🆕 AS 유형 배지
+    const asTag=s.category?`<span style="font-size:10px;background:${s.category.indexOf('하자')>=0?'#fdecea':'#fff8e1'};color:${s.category.indexOf('하자')>=0?'#c62828':'#92400e'};padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">${s.category}</span>`:''; // 🆕 AS 유형 배지
     asH+=`<div class="sched-item" onclick="editItem('AS','${ds}',${i})" style="cursor:pointer;border-left-color:var(--orange)"><div class="area">${s.address||'주소 없음'}${asTag}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
   });
   asH+=`<div class="sched-empty" onclick="openForm('AS','${ds}')">+ AS 접수</div>`;
