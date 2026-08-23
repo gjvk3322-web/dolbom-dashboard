@@ -877,14 +877,15 @@ function renderLogs(){
     <tr><td style="white-space:nowrap">${fmt(l.t)}</td><td>${esc(l.by)}</td>
     <td>${l.act === "삭제" ? `<b style="color:var(--bad)">삭제</b>` : esc(l.act)}</td><td>${esc(l.what)}</td></tr>`).join("")
     || `<tr><td colspan="4" class="hint">아직 기록이 없습니다.</td></tr>`;
-  const trash = entries(data.trash).sort((a,b) => (b.deletedAt||0) - (a.deletedAt||0));
+  // 휴지통: 저장 키(node__id)를 보존해야 복구 가능 (entries()는 내부 id 필드가 키를 덮어써서 사용 불가)
+  const trash = Object.entries(data.trash || {}).map(([key, v]) => ({key, ...v})).sort((a,b) => (b.deletedAt||0) - (a.deletedAt||0));
   $("trashList").innerHTML = trash.map(tr => `
     <div class="pitem">
       <div class="pi-top"><span class="pi-title">${esc(tr.label)}</span></div>
       <div class="pi-meta"><span>${esc(tr.deletedBy)} 삭제 · ${fmt(tr.deletedAt)}</span></div>
-      <div class="pi-actions">
-        <button class="mini-btn" onclick="restoreTrash('${tr.id}')">복구</button>
-        <button class="mini-btn" onclick="purgeTrash('${tr.id}')">영구 삭제</button>
+      <div class="pi-actions open">
+        <button class="mini-btn" onclick="restoreTrash('${tr.key}')">복구</button>
+        <button class="mini-btn" onclick="purgeTrash('${tr.key}')">영구 삭제</button>
       </div>
     </div>`).join("") || `<div class="hint">휴지통이 비어 있습니다.</div>`;
 }
