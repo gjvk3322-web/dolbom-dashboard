@@ -262,6 +262,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <label>시공일 <span class="req">*</span></label>
       <input type="date" id="fDate" />
     </div>
+    <div class="fg full" id="fAsTypeGroup" style="display:none">
+      <label>AS 유형 <span class="req">*</span></label>
+      <select id="fAsType"><option value="">선택</option><option value="하자AS">하자AS (제품·시공 하자)</option><option value="연장시공">연장시공 (추가 설치)</option><option value="유상수리">유상수리 (고객 과실 등)</option><option value="기타">기타</option></select>
+    </div>
     <div class="fg full">
       <label id="fAddrLabel">주소 (동호수 포함) <span class="req">*</span></label>
       <input type="text" id="fAddress" />
@@ -1259,7 +1263,8 @@ function renderDayDetail(ds){
   // AS 슬롯 (마감 무관, 항상 접수 가능)
   let asH='';
   (sc.as||[]).forEach((s,i)=>{
-    asH+=`<div class="sched-item" onclick="editItem('AS','${ds}',${i})" style="cursor:pointer;border-left-color:var(--orange)"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
+    const asTag=s.category?`<span style="font-size:10px;background:${s.category==='하자AS'?'#fdecea':'#fff8e1'};color:${s.category==='하자AS'?'#c62828':'#92400e'};padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">${s.category}</span>`:''; // 🆕 AS 유형 배지
+    asH+=`<div class="sched-item" onclick="editItem('AS','${ds}',${i})" style="cursor:pointer;border-left-color:var(--orange)"><div class="area">${s.address||'주소 없음'}${asTag}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}</div></div>`;
   });
   asH+=`<div class="sched-empty" onclick="openForm('AS','${ds}')">+ AS 접수</div>`;
   document.getElementById('asSlots').innerHTML=asH;
@@ -1302,12 +1307,16 @@ function editItem(time,ds,index){
   const form=document.getElementById('formSection');form.classList.add('show');
   // 폼 초기화 후 기존 데이터 채우기
   ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
-  ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
+  ['fTime','fIsNew','fProduct1','fProduct2','fAsType'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
   // 🆕 이전설치 예약이면 '오전(이전설치)' 형태로 복원 (수정 저장 시 구분이 지워지는 버그 방지)
   let displayTime=item.time||time;
   if((item.category||'').includes('이전설치')&&(displayTime==='오전'||displayTime==='오후'))displayTime+='(이전설치)';
   else if(isBlockedItem(item)&&(displayTime==='오전'||displayTime==='오후'))displayTime+=' 차단'; // 🆕 차단 건 복원
   document.getElementById('fTime').value=displayTime;
+  // 🆕 AS 건이면 유형 드롭다운 표시 + 저장된 구분 복원 (수정 저장 시 구분 유지)
+  const isAsEdit=(displayTime==='AS');
+  document.getElementById('fAsTypeGroup').style.display=isAsEdit?'':'none';
+  if(isAsEdit)document.getElementById('fAsType').value=item.category||'';
   document.getElementById('fDate').value=ds;
   // 🆕 차단 건이면 이유칸 모드로: 마커 뗀 사유만 표시
   if(isBlockedItem(item)){
@@ -1350,6 +1359,9 @@ function setAddrLabel(block){ // 🆕 주소 라벨 ↔ 이유 라벨 전환
 }
 function onTimeChange(){
   const time=document.getElementById('fTime').value;
+  // 🆕 AS 선택 시 AS 유형 드롭다운 표시 (KPI용 구분 저장)
+  document.getElementById('fAsTypeGroup').style.display=(time==='AS')?'':'none';
+  if(time!=='AS')document.getElementById('fAsType').selectedIndex=0;
   const p1=document.getElementById('fProduct1');
   const p2=document.getElementById('fProduct2');
   const fAddr=document.getElementById('fAddress');
@@ -1439,12 +1451,13 @@ function submitReservation(){
   if(!time||!date||(!address&&!isBlock)||!size||!scope||!p1||!p2){showToast('⚠️ 필수 항목을 모두 입력해주세요');return;}
   if(isClosed(date)&&(!editMode||editMode.date!==date)){showToast('⚠️ 해당 날짜는 예약이 마감되었습니다');return;}
   if(p1!==p2){showToast('⚠️ 제품을 한 번 더 확인해주세요!');document.getElementById('fProduct2').classList.add('error');return;}
+  if(time==='AS'&&!document.getElementById('fAsType').value){showToast('⚠️ AS 유형을 선택해주세요');return;} // 🆕 KPI용 구분 필수
 
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
 
   const isMove=time.includes('이전설치');
   const cleanTime=(isMove||isBlock)?(time.startsWith('오전')?'오전':'오후'):time;
-  const category=isMove?'이전설치':'';
+  const category=isMove?'이전설치':(time==='AS'?document.getElementById('fAsType').value:''); // 🆕 AS 유형을 구분 열에 저장
   // 🆕 차단이면 이유칸 내용 앞에 마커를 붙여 저장 (파싱·booking 마감 인식용)
   let finalAddress=address;
   if(isBlock&&!isBlockedItem({address:finalAddress})){
@@ -1479,7 +1492,8 @@ function submitReservation(){
       return;
     }
     ['fPhone','fAddress','fSize','fScope','fReferrer'].forEach(id=>{document.getElementById(id).value='';});
-    ['fTime','fIsNew','fProduct1','fProduct2'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
+    ['fTime','fIsNew','fProduct1','fProduct2','fAsType'].forEach(id=>{document.getElementById(id).selectedIndex=0;});
+    document.getElementById('fAsTypeGroup').style.display='none'; // 🆕
     document.getElementById('productMatch').textContent='';
     document.getElementById('fProduct2').classList.remove('error');
     document.getElementById('channelText').value='';
