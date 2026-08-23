@@ -289,6 +289,24 @@
   .ceo-links{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap}
   .ceo-links .lk{font-size:11.5px;border-radius:999px;padding:3px 10px;font-weight:700;color:#fff}
   .ceo-links .none{font-size:11.5px;color:var(--muted)}
+  .okrd-back{margin-bottom:16px}
+  .okrd-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(180deg,#F1FBF6,#E9F8F1);border:1px solid #D4EFE3;border-radius:16px;padding:16px 18px;margin-bottom:18px}
+  .okrd-title{font-size:19px;font-weight:800;letter-spacing:-.4px;flex:1;min-width:200px}
+  .okrd-pct{font-size:22px;font-weight:800;color:var(--accent-deep)}
+  .okrd-meta{font-size:12px;color:var(--muted);width:100%}
+  .okrd-kr{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px;margin-bottom:12px}
+  .okrd-kr-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .okrd-kr-title{font-weight:700;font-size:14.5px;line-height:1.55;flex:1}
+  .okrd-kr .kr-pills{display:flex;gap:4px}
+  .okrd-kr .kr-pills button{padding:2px 8px;font-size:11px;border:1px solid #D9E2DD;border-radius:8px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
+  .okrd-kr .kr-pills button.on{background:var(--accent);color:#fff;border-color:transparent;font-weight:700}
+  .okrd-sub{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px;margin:12px 0 7px}
+  .dlink{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--line);border-radius:11px;margin-bottom:6px;font-size:13px}
+  .dlink .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .dlink .t{flex:1;font-weight:600;line-height:1.45}
+  .dlink .own{font-size:11.5px;font-weight:800;white-space:nowrap}
+  .dlink .pc{font-weight:800;font-size:12.5px;white-space:nowrap}
+  .dlink-none{font-size:12.5px;color:var(--muted);padding:2px 0 6px}
   .okp-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
   .okp-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 17px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
   .okp-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px}
@@ -453,7 +471,7 @@
           <button class="btn primary" id="addOkrBtn">목표 추가</button>
         </div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div id="okrBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         <div id="okrCount" class="lead"></div>
         <div class="okr-viewtabs">
           <button id="okrViewTree" class="on">캐스케이드</button>
@@ -461,6 +479,7 @@
         </div>
       </div>
       <div id="okrCeoSummary"></div>
+      <div id="okrDetail" style="display:none"></div>
       <div id="okrTree"></div>
       <div id="okrPeople" style="display:none"></div>
     </section>
@@ -1957,36 +1976,86 @@ function okrColor(owner){
   const pal = DEPT_PALETTE.slice(1); // 대표 그린은 제외
   return pal[h % pal.length];
 }
-let okrCeoOpen = {};
-window.toggleCeoObj = id => { okrCeoOpen[id] = !okrCeoOpen[id]; renderOkrCeo(); };
+window.openOkrDetail = id => { okrDetailId = id; renderOkrDetail(); };
 function renderOkrCeo(){
   const box = $("okrCeoSummary"); if (!box) return;
   const all = entries(data.okr).filter(o => o.quarter === okrQ);
   const ceos = all.filter(o => (o.owner || "").trim() === "대표").sort((a, b) => (a.at || 0) - (b.at || 0));
   if (!ceos.length){ box.innerHTML = ""; return; }
   box.innerHTML = `<div class="ceo-sum">${ceos.map((o, n) => {
-    const open = !!okrCeoOpen[o.id];
     const prog = okrProgress(o);
-    const krs = toArr(o.krs);
     return `<div class="ceo-item">
-      <div class="ceo-head" onclick="toggleCeoObj('${o.id}')">
-        <span class="ceo-badge">대표 목표 ${n + 1}</span>
+      <div class="ceo-head" onclick="openOkrDetail('${o.id}')">
+        <span class="ceo-badge">회사 목표 ${n + 1}</span>
         <span class="ceo-title">${esc(o.title)}</span>
         <span class="ceo-pct">${prog}%</span>
-        <span class="ceo-arrow">${open ? "▾" : "▸"}</span>
+        <span class="ceo-arrow">›</span>
       </div>
-      ${open ? `<div class="ceo-body">${krs.map((kr, i) => {
-        const linked = all.filter(c => c.parent && c.parent.objId === o.id && Number(c.parent.krIdx) === i);
-        return `<div class="ceo-kr">
-          <div class="krline"><span>KR${i + 1}. ${esc(krClean(kr))}</span><b>${Number((o.progress||{})[i]) || 0}%</b></div>
-          <div class="ceo-links">${linked.length
-            ? linked.map(c => `<span class="lk" style="background:${okrColor(c.owner)}">${esc(c.owner)} · ${esc(c.title)}</span>`).join("")
-            : `<span class="none">아직 이 핵심결과를 서포트하는 팀 목표가 없습니다</span>`}</div>
-        </div>`;
-      }).join("")}</div>` : ""}
     </div>`;
   }).join("")}</div>`;
 }
+let okrDetailId = null;
+window.closeOkrDetail = () => {
+  okrDetailId = null;
+  $("okrDetail").style.display = "none";
+  $("okrCeoSummary").style.display = "";
+  $("okrBar").style.display = "";
+  setOkrView(okrView);
+};
+function renderOkrDetail(){
+  const o = okrDetailId ? (data.okr || {})[okrDetailId] : null;
+  if (!o || o.quarter !== okrQ){ if (okrDetailId) closeOkrDetail(); return; }
+  $("okrCeoSummary").style.display = "none";
+  $("okrBar").style.display = "none";
+  $("okrTree").style.display = "none";
+  $("okrPeople").style.display = "none";
+  $("okrDetail").style.display = "";
+  const all = entries(data.okr).filter(x => x.quarter === okrQ);
+  const ceos = all.filter(x => (x.owner || "").trim() === "대표").sort((a, b) => (a.at || 0) - (b.at || 0));
+  const num = ceos.findIndex(x => x.id === o.id) + 1;
+  const krs = toArr(o.krs);
+  $("okrDetail").innerHTML = `
+    <button class="btn okrd-back" onclick="closeOkrDetail()">← OKR 전체 보기</button>
+    <div class="okrd-head">
+      ${num ? `<span class="ceo-badge">회사 목표 ${num}</span>` : ""}
+      <span class="okrd-title">${esc(o.title)}</span>
+      <span class="okrd-pct">${okrProgress(o)}%</span>
+      <span class="okrd-meta">담당 <b style="color:var(--text)">${esc(o.lead || o.by || "?")}</b> · 핵심결과별 진행률을 누르면 바로 갱신됩니다 <button class="mini-btn" onclick="editOkr('${o.id}')" style="margin-left:6px">목표 수정</button></span>
+    </div>
+    ${krs.map((kr, i) => {
+      const linked = all.filter(c => c.parent && c.parent.objId === o.id && Number(c.parent.krIdx) === i)
+                        .sort((a, b) => (a.at || 0) - (b.at || 0));
+      const my = Number((o.progress || {})[i]) || 0;
+      return `<div class="okrd-kr">
+        <div class="okrd-kr-top">
+          <span class="okrd-kr-title">KR${i + 1}. ${esc(krClean(kr))}</span>
+          <span class="kr-pills">${[0,25,50,75,100].map(v => `<button class="${my === v ? "on" : ""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("")}</span>
+        </div>
+        <div class="okrd-sub">이 핵심결과를 서포트하는 목표</div>
+        ${linked.length ? linked.map(c => `<div class="dlink">
+            <span class="dot" style="background:${okrColor(c.owner)}"></span>
+            <span class="own" style="color:${okrColor(c.owner)}">${esc(c.owner)}</span>
+            <span class="t">${esc(c.title)}</span>
+            <span class="pc">${okrProgress(c)}%</span>
+            <button class="mini-btn" onclick="editOkr('${c.id}')">수정</button>
+          </div>`).join("") : `<div class="dlink-none">아직 없습니다 — 팀 목표를 여기에 연결해 주세요.</div>`}
+        <button class="mini-btn" onclick="addSupportOkr('${o.id}',${i})">+ 서포트 목표 추가</button>
+      </div>`;
+    }).join("")}`;
+}
+window.addSupportOkr = (objId, krIdx) => {
+  $("okrModalTitle").textContent = "목표 추가";
+  $("okrId").value = "";
+  fillOkrModal();
+  $("oQuarter").value = okrQ;
+  $("oOwner").value = "";
+  $("oTitle").value = "";
+  setKrRows(["", ""]);
+  fillParentOptions("");
+  $("oParent").value = objId + "|" + krIdx;
+  updateParentPreview();
+  okrModal.showModal();
+};
 function renderOkr(){
   fillQuarterSelects();
   const all = entries(data.okr).filter(o => o.quarter === okrQ);
@@ -2021,6 +2090,7 @@ function renderOkr(){
     return `<li>${box(o)}${c.length ? `<ul class="okr-kids">${c.map(node).join("")}</ul>` : ""}</li>`;
   };
   $("okrTree").innerHTML = roots.length ? `<div class="okr-scroll"><ul class="okr-root">${roots.map(node).join("")}</ul></div>` : "";
+  if (okrDetailId){ renderOkrDetail(); return; }
   renderOkrCeo();
   if (typeof okrView !== "undefined" && okrView === "people") renderOkrPeople();
 }
@@ -2035,6 +2105,7 @@ $("okrViewTree").onclick = () => setOkrView("tree");
 $("okrViewPeople").onclick = () => setOkrView("people");
 function setOkrView(v){
   okrView = v;
+  if (okrDetailId){ okrDetailId = null; $("okrDetail").style.display = "none"; $("okrCeoSummary").style.display = ""; $("okrBar").style.display = ""; }
   $("okrViewTree").classList.toggle("on", v === "tree");
   $("okrViewPeople").classList.toggle("on", v === "people");
   $("okrTree").style.display = v === "tree" ? "" : "none";
@@ -2092,7 +2163,7 @@ window.okrFeedback = async id => {
     }
   } catch(e){ alert("저장에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
 };
-$("okrQuarter").onchange = e => { okrQ = e.target.value; renderOkr(); if (okrView === "people") renderOkrPeople(); };
+$("okrQuarter").onchange = e => { okrQ = e.target.value; if (okrDetailId) closeOkrDetail(); renderOkr(); if (okrView === "people") renderOkrPeople(); };
 
 const krClean = t => String(t || "").replace(/^\s*\d+\s*[\.\)]\s*/, "").trim();
 const escA = t => esc(t).replace(/"/g, "&quot;");
