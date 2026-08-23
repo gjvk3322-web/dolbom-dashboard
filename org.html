@@ -670,8 +670,8 @@
       <input type="hidden" id="okrId">
       <div class="field"><label>분기 *</label><select id="oQuarter"></select></div>
       <div class="field"><label>소유 주체 *</label><select id="oOwner"></select></div>
-      <div class="field"><label>담당자</label><select id="oLead"></select></div>
       <div class="field full"><label>상위 핵심결과 연결 (선택)</label><select id="oParent"><option value="">없음 — 최상위 목표</option></select>
+        <div id="oParentPreview" style="display:none;margin-top:8px;padding:10px 12px;background:var(--tint,#F2F7F4);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;font-size:12.5px;line-height:1.6"></div>
         <div class="lead" style="margin-top:4px;font-size:12px">상위 목표의 핵심결과를 이 목표가 책임진다는 뜻입니다. 연결하면 트리로 이어져 보입니다.</div></div>
       <div class="field full"><label>목표 (Objective) *</label><input id="oTitle" placeholder="목표를 입력하세요 (방향)"></div>
       <div class="field full"><label>핵심결과 (Key Results) — 2~4개 권장</label>
@@ -1855,7 +1855,7 @@ function renderOkr(){
         ${krs.map((kr, i) => `<div class="kr-item">${i + 1}. ${esc(krClean(kr))}
           <div class="kr-pills">${[0,25,50,75,100].map(v => `<button class="${(Number((o.progress||{})[i])||0)===v?"on":""}" onclick="setKrProgress('${o.id}',${i},${v})">${v}</button>`).join("")}</div>
         </div>`).join("")}
-        <div class="obj-foot"><span>${o.lead ? '담당 <b style="color:var(--text)">' + esc(o.lead) + '</b> · ' : ""}작성 ${esc(o.by || "?")}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span></div>
+        <div class="obj-foot"><span>${o.lead && o.lead !== o.by ? '담당 <b style="color:var(--text)">' + esc(o.lead) + '</b> · 작성 ' + esc(o.by || "?") : '담당 <b style="color:var(--text)">' + esc(o.lead || o.by || "?") + '</b>'}</span><span><button class="mini-btn" onclick="editOkr('${o.id}')">수정</button> <button class="mini-btn" onclick="deleteOkr('${o.id}')">삭제</button></span></div>
       </div>
     </div>`;
   };
@@ -1898,8 +1898,18 @@ function fillOkrModal(){
   $("oQuarter").innerHTML = okrQuarterList().map(q => `<option value="${q}">${qLabel(q)}</option>`).join("");
   const depts = entries(data.departments).sort(byOrder).map(d => d.name);
   $("oOwner").innerHTML = '<option value="">선택</option>' + ["대표", ...depts].map(d => `<option>${esc(d)}</option>`).join("");
-  const ppl = entries(data.people).sort(byOrder).map(p => p.name).filter(n => n && !String(n).trim().startsWith("("));
-  $("oLead").innerHTML = '<option value="">미지정</option>' + ppl.map(p => `<option>${esc(p)}</option>`).join("");
+}
+function updateParentPreview(){
+  const pv = $("oParent").value;
+  const box = $("oParentPreview");
+  if (!pv){ box.style.display = "none"; box.innerHTML = ""; return; }
+  const [pid, ki] = pv.split("|");
+  const p = (data.okr || {})[pid];
+  if (!p){ box.style.display = "none"; return; }
+  const kr = krClean(toArr(p.krs)[Number(ki)] || "");
+  box.innerHTML = `<div style="font-weight:800;margin-bottom:2px"><span style="color:var(--accent)">${esc(p.owner)}</span>의 목표 — ${esc(p.title)}</div>
+    <div>이 목표가 책임질 핵심결과: <b>KR${Number(ki) + 1}. ${esc(kr)}</b></div>`;
+  box.style.display = "block";
 }
 function fillParentOptions(excludeId){
   const opts = entries(data.okr).filter(o => o.quarter === $("oQuarter").value && o.id !== excludeId)
@@ -1913,14 +1923,14 @@ $("addOkrBtn").onclick = () => {
   fillOkrModal();
   $("oQuarter").value = okrQ;
   $("oOwner").value = "";
-  const me = currentUser() || "";
-  $("oLead").value = [...$("oLead").options].some(op => op.value === me) ? me : "";
   $("oTitle").value = "";
   setKrRows(["", ""]);
   fillParentOptions("");
+  updateParentPreview();
   okrModal.showModal();
 };
-$("oQuarter") && ($("oQuarter").onchange = () => fillParentOptions($("okrId").value));
+$("oQuarter") && ($("oQuarter").onchange = () => { fillParentOptions($("okrId").value); updateParentPreview(); });
+$("oParent").onchange = updateParentPreview;
 
 window.editOkr = id => {
   const o = (data.okr || {})[id]; if (!o) return;
@@ -1929,11 +1939,11 @@ window.editOkr = id => {
   fillOkrModal();
   $("oQuarter").value = o.quarter;
   $("oOwner").value = o.owner;
-  $("oLead").value = o.lead || "";
   $("oTitle").value = o.title || "";
   setKrRows(toArr(o.krs).map(krClean));
   fillParentOptions(id);
   $("oParent").value = o.parent && o.parent.objId ? o.parent.objId + "|" + o.parent.krIdx : "";
+  updateParentPreview();
   okrModal.showModal();
 };
 window.deleteOkr = id => {
@@ -1953,7 +1963,7 @@ $("saveOkrBtn").onclick = async () => {
   const payload = {
     quarter: $("oQuarter").value,
     owner: $("oOwner").value,
-    lead: $("oLead").value || null,
+    lead: prev.lead || currentUser() || null,
     title, krs,
     parent: pv ? { objId: pv.split("|")[0], krIdx: Number(pv.split("|")[1]) } : null,
     progress: prev.progress || {},
