@@ -270,9 +270,10 @@
   .okr-box .kr-pills button{padding:1px 6px;font-size:10px;border:1px solid #D9E2DD;border-radius:8px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
   .okr-box .kr-pills button.on{background:var(--tc,var(--accent));color:#fff;border-color:transparent;font-weight:700}
   .okr-box .obj-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#FAFCFB;border-top:1px solid #EEF3F0;font-size:11px;color:var(--muted)}
-  .okr-viewtabs{display:flex;border:1.5px solid #DDE5E1;border-radius:999px;overflow:hidden;background:#fff}
-  .okr-viewtabs button{border:0;background:transparent;padding:7px 16px;font-size:13px;font-weight:600;color:var(--muted)}
-  .okr-viewtabs button.on{background:var(--accent);color:#fff;font-weight:700}
+  .okr-viewtabs{display:inline-flex;flex:none;width:fit-content;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+  .okr-viewtabs button{border:0;background:transparent;padding:7px 20px;font-size:13.5px;font-weight:600;color:var(--muted);border-radius:999px;white-space:nowrap}
+  .okr-viewtabs button.on{background:#fff;color:var(--accent-deep);font-weight:800;box-shadow:0 1px 4px rgba(33,43,54,.14)}
+  .okr-viewtabs button:hover:not(.on){color:var(--text)}
   .ceo-sum{margin-bottom:20px}
   .ceo-item{background:#fff;border:1px solid #C9EADC;border-radius:14px;margin-bottom:8px;overflow:hidden}
   .ceo-head{display:flex;align-items:center;gap:11px;padding:12px 15px;cursor:pointer}
@@ -281,6 +282,8 @@
   .ceo-title{font-weight:800;font-size:14.5px;flex:1;letter-spacing:-.2px}
   .ceo-pct{font-weight:800;font-size:14px;color:var(--accent-deep)}
   .ceo-arrow{color:var(--muted);font-size:12px}
+  .ceo-add{width:100%;border:1.5px dashed #C9DED3;background:transparent;color:var(--accent-deep);font-weight:700;font-size:13px;border-radius:14px;padding:11px;text-align:center}
+  .ceo-add:hover{background:var(--tint);border-color:var(--accent)}
   .ceo-body{border-top:1px dashed #E0EFE7;padding:4px 15px 12px}
   .ceo-kr{padding:9px 0;font-size:13.5px;line-height:1.55}
   .ceo-kr+.ceo-kr{border-top:1px dashed #EEF3F0}
@@ -1981,7 +1984,6 @@ function renderOkrCeo(){
   const box = $("okrCeoSummary"); if (!box) return;
   const all = entries(data.okr).filter(o => o.quarter === okrQ);
   const ceos = all.filter(o => (o.owner || "").trim() === "대표").sort((a, b) => (a.at || 0) - (b.at || 0));
-  if (!ceos.length){ box.innerHTML = ""; return; }
   box.innerHTML = `<div class="ceo-sum">${ceos.map((o, n) => {
     const prog = okrProgress(o);
     return `<div class="ceo-item">
@@ -1992,8 +1994,22 @@ function renderOkrCeo(){
         <span class="ceo-arrow">›</span>
       </div>
     </div>`;
-  }).join("")}</div>`;
+  }).join("")}
+  <button class="ceo-add" onclick="addCompanyOkr()">+ 회사 목표 추가</button></div>`;
 }
+window.addCompanyOkr = () => {
+  $("okrModalTitle").textContent = "회사 목표 추가";
+  $("okrId").value = "";
+  fillOkrModal();
+  $("oQuarter").value = okrQ;
+  $("oOwner").value = "대표";
+  $("oTitle").value = "";
+  setKrRows(["", ""]);
+  fillParentOptions("");
+  $("oParent").value = "";
+  updateParentPreview();
+  okrModal.showModal();
+};
 let okrDetailId = null;
 window.closeOkrDetail = () => {
   okrDetailId = null;
