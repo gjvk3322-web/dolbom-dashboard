@@ -273,6 +273,22 @@
   .okr-viewtabs{display:flex;border:1.5px solid #DDE5E1;border-radius:999px;overflow:hidden;background:#fff}
   .okr-viewtabs button{border:0;background:transparent;padding:7px 16px;font-size:13px;font-weight:600;color:var(--muted)}
   .okr-viewtabs button.on{background:var(--accent);color:#fff;font-weight:700}
+  .ceo-sum{margin-bottom:20px}
+  .ceo-item{background:#fff;border:1px solid #C9EADC;border-radius:14px;margin-bottom:8px;overflow:hidden}
+  .ceo-head{display:flex;align-items:center;gap:11px;padding:12px 15px;cursor:pointer}
+  .ceo-head:hover{background:#F6FCF9}
+  .ceo-badge{background:var(--accent);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .ceo-title{font-weight:800;font-size:14.5px;flex:1;letter-spacing:-.2px}
+  .ceo-pct{font-weight:800;font-size:14px;color:var(--accent-deep)}
+  .ceo-arrow{color:var(--muted);font-size:12px}
+  .ceo-body{border-top:1px dashed #E0EFE7;padding:4px 15px 12px}
+  .ceo-kr{padding:9px 0;font-size:13.5px;line-height:1.55}
+  .ceo-kr+.ceo-kr{border-top:1px dashed #EEF3F0}
+  .ceo-kr .krline{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .ceo-kr .krline b{color:var(--accent-deep);font-size:12px;white-space:nowrap}
+  .ceo-links{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap}
+  .ceo-links .lk{font-size:11.5px;border-radius:999px;padding:3px 10px;font-weight:700;color:#fff}
+  .ceo-links .none{font-size:11.5px;color:var(--muted)}
   .okp-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
   .okp-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 17px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
   .okp-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px}
@@ -289,6 +305,8 @@
   .okp-fb{margin-top:7px;background:var(--panel2);border-radius:9px;padding:8px 10px;font-size:12.5px;line-height:1.6;color:#3C4843}
   .okp-fb b{color:var(--accent-deep);font-size:11px;display:block;margin-bottom:2px}
   .okp-fb-btn{margin-top:6px}
+  .form-files{display:flex;gap:6px;flex-wrap:wrap}
+  .form-files a{text-decoration:none;display:inline-flex;align-items:center;gap:3px}
 </style>
 </head>
 <body>
@@ -442,6 +460,7 @@
           <button id="okrViewPeople">담당자별</button>
         </div>
       </div>
+      <div id="okrCeoSummary"></div>
       <div id="okrTree"></div>
       <div id="okrPeople" style="display:none"></div>
     </section>
@@ -642,7 +661,11 @@
       </div>
       <div class="field"><label>용도 — 언제 쓰는 서류인지</label><input id="fPurpose" placeholder="예: 고객이 AS를 요청했을 때 상담원이 접수하며 작성"></div>
       <div class="field"><label>작성 방법 — 한 줄에 하나씩</label><textarea id="fGuide" placeholder="예:&#10;증상은 고객 표현 그대로 적기&#10;근접 사진 1장 + 전경 사진 1장 필수&#10;시공일자는 시트에서 확인 후 기입"></textarea></div>
-      <div class="field"><label>양식 본문 * — 직원이 복사해서 채워 넣는 틀</label><textarea id="fTemplate" style="min-height:180px;font-family:ui-monospace,Menlo,monospace;font-size:13px" placeholder="[AS 접수]&#10;고객명:&#10;시공일:&#10;증상:&#10;발생 위치:&#10;사진: 근접 / 전경"></textarea></div>
+      <div class="field"><label>서식 파일 — hwp·한글·엑셀·PDF 등 (여러 개 가능, 파일당 10MB 이하)</label>
+        <input type="file" id="fFiles" multiple accept=".hwp,.hwpx,.doc,.docx,.xls,.xlsx,.pdf,.txt,.zip">
+        <div id="fFileList" style="margin-top:6px"></div>
+      </div>
+      <div class="field"><label>양식 본문 — 카톡·텔레그램에 복붙해 쓰는 텍스트 틀 (파일이 있으면 생략 가능)</label><textarea id="fTemplate" style="min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:13px" placeholder="[AS 접수]&#10;고객명:&#10;시공일:&#10;증상:&#10;발생 위치:&#10;사진: 근접 / 전경"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="formModal.close()">취소</button><button class="btn primary" id="saveFormBtn">저장</button></div>
   </form>
@@ -1196,11 +1219,12 @@ function renderForms(){
       </div>
       ${open ? `<div class="form-body">
         ${guide.length ? `<div class="form-sub">작성 방법</div><ol class="form-guide">${guide.map(g => `<li>${esc(g)}</li>`).join("")}</ol>` : ""}
-        <div class="form-sub">양식 본문</div>
-        <pre class="form-pre" id="ftpl_${f.id}">${esc(f.template || "")}</pre>
+        ${toArr(f.files).length ? `<div class="form-sub">서식 파일</div><div class="form-files">${toArr(f.files).map(fl => `<a class="mini-btn" href="${esc(fl.url)}" target="_blank" rel="noopener">⬇ ${esc(fl.name)}${fl.size ? ` <span style="color:var(--muted)">(${fmtSize(fl.size)})</span>` : ""}</a>`).join("")}</div>` : ""}
+        ${(f.template || "").trim() ? `<div class="form-sub">양식 본문</div>
+        <pre class="form-pre">${esc(f.template)}</pre>` : ""}
         <div class="form-actions">
           <span class="form-meta">${f.updatedBy ? esc(f.updatedBy) + " · " + fmt(f.updatedAt) + " 수정" : ""}</span>
-          <button class="mini-btn" onclick="copyForm('${f.id}', this)">📋 양식 복사</button>
+          ${(f.template || "").trim() ? `<button class="mini-btn" onclick="copyForm('${f.id}', this)">📋 양식 복사</button>` : ""}
           <button class="mini-btn" onclick="editForm('${f.id}')">수정</button>
           <button class="mini-btn" onclick="deleteForm('${f.id}')">삭제</button>
         </div>
@@ -1438,6 +1462,39 @@ $("saveDecisionBtn").onclick = async () => {
 
 /* ───────── 서류 서식 CRUD ───────── */
 const formModal = $("formModal");
+let formFiles = []; // 저장 대기 중인 첨부 목록: 기존 {name,url,size} 또는 신규 {name,size,file:File}
+const fmtSize = b => b >= 1048576 ? (b/1048576).toFixed(1) + "MB" : Math.max(1, Math.round(b/1024)) + "KB";
+function renderFFileList(){
+  $("fFileList").innerHTML = formFiles.map((f, i) =>
+    `<span class="chip" style="display:inline-flex;align-items:center;gap:6px">${esc(f.name)} (${fmtSize(f.size || 0)})
+      <a style="cursor:pointer;font-weight:800" onclick="removeFFile(${i})">✕</a></span>`).join("")
+    || `<span class="hint" style="font-size:12px;color:var(--muted)">첨부된 파일이 없습니다.</span>`;
+}
+window.removeFFile = i => { formFiles.splice(i, 1); renderFFileList(); };
+$("fFiles").onchange = e => {
+  for (const file of e.target.files){
+    if (file.size > 10 * 1048576){ alert(`'${file.name}'은 10MB를 넘어 첨부할 수 없습니다.`); continue; }
+    formFiles.push({ name: file.name, size: file.size, file });
+  }
+  e.target.value = "";
+  renderFFileList();
+};
+const readB64 = file => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(String(r.result).split(",")[1]);
+  r.onerror = () => rej(new Error("파일 읽기 실패"));
+  r.readAsDataURL(file);
+});
+async function uploadFormFile(f){
+  const b64 = await readB64(f.file);
+  const resp = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({ type: "formUpload", filename: f.name, mimeType: f.file.type || "application/octet-stream", data: b64 })
+  });
+  const j = await resp.json();
+  if (!j || !j.ok || !j.url) throw new Error((j && j.error) || "업로드 실패");
+  return { name: f.name, size: f.size, url: j.url };
+}
 function fillCatDatalist(){
   const cats = [...new Set(entries(data.forms).map(f => (f.cat || "").trim()).filter(Boolean))];
   $("fCatList").innerHTML = cats.map(c => `<option value="${esc(c)}">`).join("");
@@ -1446,6 +1503,7 @@ $("addFormBtn").onclick = () => {
   $("formModalTitle").textContent = "서식 추가";
   $("formId").value = ""; $("fTitle").value = ""; $("fCat").value = "";
   $("fPurpose").value = ""; $("fGuide").value = ""; $("fTemplate").value = "";
+  formFiles = []; renderFFileList();
   fillCatDatalist();
   formModal.showModal();
 };
@@ -1456,6 +1514,8 @@ window.editForm = id => {
   $("fTitle").value = f.title || ""; $("fCat").value = f.cat || "";
   $("fPurpose").value = f.purpose || ""; $("fGuide").value = f.guide || "";
   $("fTemplate").value = f.template || "";
+  formFiles = toArr(f.files).map(x => ({ name: x.name, size: x.size, url: x.url }));
+  renderFFileList();
   fillCatDatalist();
   formModal.showModal();
 };
@@ -1467,16 +1527,33 @@ window.deleteForm = id => {
 $("saveFormBtn").onclick = async () => {
   const title = $("fTitle").value.trim();
   const template = $("fTemplate").value;
-  if (!title || !template.trim()) return alert("서식 이름과 양식 본문은 필수입니다.");
+  if (!title) return alert("서식 이름은 필수입니다.");
+  if (!template.trim() && !formFiles.length) return alert("서식 파일 또는 양식 본문 중 하나는 있어야 합니다.");
+  const btn = $("saveFormBtn");
+  const files = [];
+  try {
+    btn.disabled = true;
+    for (let i = 0; i < formFiles.length; i++){
+      const f = formFiles[i];
+      if (f.url){ files.push({ name: f.name, size: f.size || 0, url: f.url }); continue; }
+      btn.textContent = `업로드 중… (${i + 1}/${formFiles.length})`;
+      files.push(await uploadFormFile(f));
+    }
+  } catch(e){
+    console.error(e);
+    btn.disabled = false; btn.textContent = "저장";
+    return alert("파일 업로드에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+  }
+  btn.textContent = "저장";
   const id = $("formId").value || newId("f_");
   const prev = (data.forms || {})[$("formId").value] || {};
   const rec = {
     title, cat: $("fCat").value.trim(), purpose: $("fPurpose").value.trim(),
-    guide: $("fGuide").value, template,
+    guide: $("fGuide").value, template, files,
     order: prev.order || nextOrder(data.forms),
     updatedAt: Date.now(), updatedBy: currentUser() || "?"
   };
-  if (await safeWrite("서식", () => orgRef.child("forms/" + id).set(rec), $("saveFormBtn"))){
+  if (await safeWrite("서식", () => orgRef.child("forms/" + id).set(rec), btn)){
     logAction($("formId").value ? "수정" : "추가", "서식: " + title);
     openForms[id] = true;
     formModal.close();
@@ -1880,6 +1957,36 @@ function okrColor(owner){
   const pal = DEPT_PALETTE.slice(1); // 대표 그린은 제외
   return pal[h % pal.length];
 }
+let okrCeoOpen = {};
+window.toggleCeoObj = id => { okrCeoOpen[id] = !okrCeoOpen[id]; renderOkrCeo(); };
+function renderOkrCeo(){
+  const box = $("okrCeoSummary"); if (!box) return;
+  const all = entries(data.okr).filter(o => o.quarter === okrQ);
+  const ceos = all.filter(o => (o.owner || "").trim() === "대표").sort((a, b) => (a.at || 0) - (b.at || 0));
+  if (!ceos.length){ box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="ceo-sum">${ceos.map((o, n) => {
+    const open = !!okrCeoOpen[o.id];
+    const prog = okrProgress(o);
+    const krs = toArr(o.krs);
+    return `<div class="ceo-item">
+      <div class="ceo-head" onclick="toggleCeoObj('${o.id}')">
+        <span class="ceo-badge">대표 목표 ${n + 1}</span>
+        <span class="ceo-title">${esc(o.title)}</span>
+        <span class="ceo-pct">${prog}%</span>
+        <span class="ceo-arrow">${open ? "▾" : "▸"}</span>
+      </div>
+      ${open ? `<div class="ceo-body">${krs.map((kr, i) => {
+        const linked = all.filter(c => c.parent && c.parent.objId === o.id && Number(c.parent.krIdx) === i);
+        return `<div class="ceo-kr">
+          <div class="krline"><span>KR${i + 1}. ${esc(krClean(kr))}</span><b>${Number((o.progress||{})[i]) || 0}%</b></div>
+          <div class="ceo-links">${linked.length
+            ? linked.map(c => `<span class="lk" style="background:${okrColor(c.owner)}">${esc(c.owner)} · ${esc(c.title)}</span>`).join("")
+            : `<span class="none">아직 이 핵심결과를 서포트하는 팀 목표가 없습니다</span>`}</div>
+        </div>`;
+      }).join("")}</div>` : ""}
+    </div>`;
+  }).join("")}</div>`;
+}
 function renderOkr(){
   fillQuarterSelects();
   const all = entries(data.okr).filter(o => o.quarter === okrQ);
@@ -1914,6 +2021,7 @@ function renderOkr(){
     return `<li>${box(o)}${c.length ? `<ul class="okr-kids">${c.map(node).join("")}</ul>` : ""}</li>`;
   };
   $("okrTree").innerHTML = roots.length ? `<div class="okr-scroll"><ul class="okr-root">${roots.map(node).join("")}</ul></div>` : "";
+  renderOkrCeo();
   if (typeof okrView !== "undefined" && okrView === "people") renderOkrPeople();
 }
 
@@ -1962,7 +2070,7 @@ function renderOkrPeople(){
           </div>
           <div class="team">${esc(o.owner || "")}</div>
           ${fb && fb.text ? `<div class="okp-fb"><b>피드백 · ${esc(fb.by || "")} ${fmt(fb.at)}</b>${esc(fb.text)}</div>` : ""}
-          <div class="pi-actions open okp-fb-btn"><button class="mini-btn" onclick="okrFeedback('${o.id}')">${fb && fb.text ? "피드백 수정" : "✍ 피드백 남기기"}</button></div>
+          <div class="pi-actions open okp-fb-btn"><button class="mini-btn" onclick="okrFeedback('${o.id}')">${fb && fb.text ? "피드백 수정" : "피드백 남기기"}</button></div>
         </div>`;
       }).join("")}
     </div>`).join("")}</div>`
