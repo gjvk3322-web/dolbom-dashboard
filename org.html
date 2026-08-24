@@ -392,28 +392,18 @@
 
   /* ── 조직도 ── */
   #orgChartWrap{overflow-x:auto;padding:10px 2px 26px}
-  .oc-ceo-row{display:flex;justify-content:center}
-  .oc-ceo{min-width:200px;text-align:center;background:var(--tint);border:1.5px solid var(--accent);border-radius:14px;padding:14px 22px}
-  .oc-ceo .nm{font-weight:800;font-size:16px}
-  .oc-ceo .rl{font-size:12px;color:var(--accent-deep);font-weight:700;margin-top:2px}
-  .oc-stem{width:2px;height:24px;background:#CBD8D2;margin:0 auto}
-  .oc-depts{display:flex;justify-content:center;align-items:flex-start;min-width:max-content;margin:0 auto}
-  .oc-col{position:relative;padding:24px 10px 0;min-width:230px}
-  .oc-col::before,.oc-col::after{content:"";position:absolute;top:0;width:50%;height:24px}
-  .oc-col::before{left:0;border-top:2px solid #CBD8D2}
-  .oc-col::after{right:0;border-top:2px solid #CBD8D2}
-  .oc-col:first-child::before{border-top:0}
-  .oc-col:last-child::after{border-top:0}
-  .oc-col.only::before,.oc-col.only::after{border-top:0}
-  .oc-stub{position:absolute;top:0;left:calc(50% - 1px);height:24px;border-left:2px solid #CBD8D2}
+  .oc-depts{display:flex;justify-content:center;align-items:flex-start;gap:16px;min-width:max-content;margin:0 auto}
+  .oc-col{min-width:230px}
   .oc-dept{border-radius:13px;padding:11px 14px;color:#fff;font-weight:800;text-align:center;box-shadow:0 2px 8px rgba(33,43,54,.08)}
   .oc-dept .cnt{font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
   .oc-members{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-  .oc-person{background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:9px 12px;cursor:pointer;transition:box-shadow .12s}
-  .oc-person:hover{box-shadow:0 3px 12px rgba(33,43,54,.12)}
+  .oc-person{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:8px 8px 8px 12px}
+  .oc-pinfo{flex:1;min-width:0}
   .oc-person .nm{font-weight:700;font-size:13.5px}
   .oc-person .rl{font-size:11.5px;color:var(--muted);margin-top:1px}
-  .oc-sub{margin-left:16px;padding-left:12px;border-left:2px dashed #D6DEDA;display:flex;flex-direction:column;gap:8px}
+  .oc-updown{display:flex;flex-direction:column;gap:2px}
+  .oc-updown button{border:1px solid #DDE5E1;background:#fff;color:var(--muted);border-radius:7px;font-size:9px;line-height:1;padding:4px 7px}
+  .oc-updown button:hover{color:var(--accent);border-color:var(--accent)}
   .oc-empty{font-size:12px;color:var(--muted);text-align:center;padding:10px 0}
 </style>
 </head>
@@ -614,7 +604,7 @@
       <div class="topbar">
         <div>
           <h1>조직도</h1>
-          <div class="lead">부서·직원 데이터로 <b>자동 생성</b>됩니다. 직속 책임자가 같은 부서 사람이면 그 아래로 연결됩니다. 카드를 누르면 그 사람의 업무분장으로 이동합니다.</div>
+          <div class="lead">부서·직원 데이터로 <b>자동 생성</b>됩니다. 이름 옆 <b>▲▼</b>로 서열 순서를 조정할 수 있습니다 (위가 높은 서열).</div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn" onclick="$('addDeptBtn').click()">부서 추가</button>
@@ -874,7 +864,7 @@
       <div class="field"><label>이름 *</label><input id="pName"></div>
       <div class="field"><label>직무 *</label><input id="pRole" placeholder="예: 사수 (부산1)"></div>
       <div class="field"><label>부서</label><select id="pDept"></select></div>
-      <div class="field"><label>직속 책임자</label><input id="pManager"></div>
+      <div class="field" style="display:none"><label>직속 책임자</label><input id="pManager"></div>
       <div class="field full"><label>Mission — 이 사람이 책임지는 결과 한 줄</label><textarea id="pMission"></textarea></div>
       <div class="field full"><label>핵심 책임 (줄바꿈 구분)</label><textarea id="pResp"></textarea></div>
       <div class="field full"><label>KPI (줄바꿈 구분)</label><textarea id="pKpis"></textarea></div>
@@ -1441,7 +1431,7 @@ function renderPeople(){
     const ul = arr => toArr(arr).map(x => `<li>${esc(x)}</li>`).join("") || `<li class="no">-</li>`;
     return `<div class="card person">
       <h3>${esc(p.name)}</h3>
-      <div class="role">${esc(dept)} · ${esc(p.role)}${p.manager && p.manager !== "-" ? ` · 직속: ${esc(p.manager)}` : ""}</div>
+      <div class="role">${esc(dept)} · ${esc(p.role)}</div>
       <p><b>Mission</b><br>${esc(p.mission)}</p>
       <div class="label">핵심 책임</div><ul>${ul(p.responsibilities)}</ul>
       <div class="label">KPI</div><div>${toArr(p.kpis).map(x => `<span class="chip">${esc(x)}</span>`).join("") || "-"}</div>
@@ -2681,67 +2671,48 @@ function renderOrgChart(){
   const el = $("orgChartWrap"); if (!el) return;
   const depts = entries(data.departments).sort(byOrder);
   const people = entries(data.people).sort(byOrder);
-  const ceo = people.find(p => (p.role || "").includes("대표")) || null;
   const deptIds = new Set(depts.map(d => d.id));
-  const rest = people.filter(p => (!ceo || p.id !== ceo.id));
-  const unassigned = rest.filter(p => !deptIds.has(p.dept));
+  const members = people.filter(p => !(p.role || "").includes("대표"));
+  const unassigned = members.filter(p => !deptIds.has(p.dept));
 
-  const personCard = (p, color) => `
-    <div class="oc-person" style="border-left-color:${color}" onclick="ocGoPerson('${esc(p.name)}')" title="업무분장 보기">
-      <div class="nm">${esc(p.name)}</div>
-      <div class="rl">${esc(p.role || "")}</div>
-    </div>`;
-
-  const memberTree = (members, color) => {
-    const names = new Set(members.map(m => (m.name || "").trim()));
-    const kids = {};
-    members.forEach(m => {
-      const mg = (m.manager || "").trim();
-      const key = (names.has(mg) && mg !== (m.name || "").trim()) ? mg : "";
-      (kids[key] = kids[key] || []).push(m);
-    });
-    const seen = new Set();
-    const rec = m => {
-      if (seen.has(m.id)) return "";
-      seen.add(m.id);
-      const sub = (kids[(m.name || "").trim()] || []).map(rec).join("");
-      return personCard(m, color) + (sub ? `<div class="oc-sub">${sub}</div>` : "");
-    };
-    let html = (kids[""] || []).map(rec).join("");
-    // 순환 참조 등으로 못 그린 사람은 평면으로 표시
-    members.filter(m => !seen.has(m.id)).forEach(m => html += personCard(m, color));
-    return html;
-  };
-
-  const col = (title, color, members, extraClass) => `
-    <div class="oc-col${extraClass || ""}">
-      <div class="oc-stub"></div>
-      <div class="oc-dept" style="background:${color}">${esc(title)}<div class="cnt">${members.length}명</div></div>
-      <div class="oc-members">${members.length ? memberTree(members, color) : `<div class="oc-empty">아직 배정된 직원이 없습니다</div>`}</div>
-    </div>`;
-
-  const cols = depts.map(d => col(d.name, okrColor(d.name), rest.filter(p => p.dept === d.id)));
-  if (unassigned.length) cols.push(col("미배정", "#8B96A3", unassigned));
-  const only = cols.length === 1 ? " only" : "";
-
-  el.innerHTML = (depts.length || people.length) ? `
-    <div class="oc-ceo-row">
-      <div class="oc-ceo">
-        <div class="nm">${esc(ceo ? ceo.name : "대표")}</div>
-        <div class="rl">${esc(ceo ? (ceo.role || "대표") : "대표")}</div>
+  const personCard = (p, color, showRole) => `
+    <div class="oc-person" style="border-left-color:${color}">
+      <div class="oc-pinfo">
+        <div class="nm">${esc(p.name)}</div>
+        ${showRole && p.role ? `<div class="rl">${esc(p.role)}</div>` : ""}
       </div>
-    </div>
-    <div class="oc-stem"></div>
-    <div class="oc-depts">${cols.map(c => only ? c.replace('class="oc-col"', 'class="oc-col only"') : c).join("")}</div>`
+      <div class="oc-updown">
+        <button title="서열 올리기" onclick="ocMove('${p.id}',-1)">▲</button>
+        <button title="서열 내리기" onclick="ocMove('${p.id}',1)">▼</button>
+      </div>
+    </div>`;
+
+  const col = (title, color, list, showRole) => `
+    <div class="oc-col">
+      <div class="oc-dept" style="background:${color}">${esc(title)}<div class="cnt">${list.length}명</div></div>
+      <div class="oc-members">${list.length ? list.map(p => personCard(p, color, showRole)).join("") : `<div class="oc-empty">아직 배정된 직원이 없습니다</div>`}</div>
+    </div>`;
+
+  const cols = depts.map(d => col(d.name, okrColor(d.name), members.filter(p => p.dept === d.id), !(d.name || "").includes("시공")));
+  if (unassigned.length) cols.push(col("미배정", "#8B96A3", unassigned, true));
+
+  el.innerHTML = cols.length
+    ? `<div class="oc-depts">${cols.join("")}</div>`
     : `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">부서와 직원을 추가하면 조직도가 자동으로 그려집니다.</div>`;
 }
-window.ocGoPerson = name => {
-  $("searchInput").value = name;
-  $("deptFilter").value = "";
-  renderPeople();
-  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === "people"));
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  $("people").classList.add("active");
+window.ocMove = async (id, dir) => {
+  const p = (data.people || {})[id]; if (!p) return;
+  const sibs = entries(data.people).filter(x => x.dept === p.dept && !(x.role || "").includes("대표")).sort(byOrder);
+  const idx = sibs.findIndex(x => x.id === id);
+  const j = idx + dir;
+  if (idx < 0 || j < 0 || j >= sibs.length) return;
+  // 같은 부서 안에서 순서값을 깔끔하게 다시 매긴 뒤 두 사람 자리를 교환
+  const orders = {};
+  sibs.forEach((x, i) => orders[x.id] = (i + 1) * 10);
+  const t = orders[sibs[idx].id]; orders[sibs[idx].id] = orders[sibs[j].id]; orders[sibs[j].id] = t;
+  try {
+    await Promise.all(Object.entries(orders).map(([pid, o]) => orgRef.child("people/" + pid + "/order").set(o)));
+  } catch(e){ alert("순서 변경에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
 };
 </script>
 <script>
