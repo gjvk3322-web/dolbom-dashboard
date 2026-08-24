@@ -2130,7 +2130,7 @@ function addrCoord(addr){
     const g=GEO[city];
     let best=null;
     for(const dn in g.d){ if(a.includes(dn)&&(!best||dn.length>best.length))best=dn; }
-    if(best)return{name:city.replace(/구$/,'')+' '+best,c:g.d[best]};
+    if(best){const cb=city.replace(/구$/,'');return{name:best===cb?cb:cb+' '+best,c:g.d[best]};}
     const r0=addrRegion(a); // 읍면동 못 찾으면 수동 세부 지역(마산·진해 등)이 더 정밀할 수 있음
     if(r0&&REGION_SUB[r0])return{name:r0,c:REGION_SUB[r0].c};
     return{name:city,c:g.c};
@@ -2207,12 +2207,46 @@ function bestAssignment(date,newAddr,newSlot){
 function routeCheckable(time){
   return time&&!isBlockTime(time)&&time!=='AS'&&time!=='실측'&&!time.includes('이전설치');
 }
+const isAsMs=time=>time==='AS'||time==='실측';
+// AS·실측: 그 날 전체 일정(오전·오후·AS·실측) 중 가장 가까운 작업까지의 이동시간 (참고용, 접수 차단 없음)
+function nearestJobCheck(date,newAddr){
+  const myPt=addrCoord(newAddr);
+  if(!myPt)return {level:'na'};
+  const sc=scheduleData[date]||{};
+  const jobs=[
+    ...(sc.am||[]).map(s=>({...s,slot:'오전'})),...(sc.pm||[]).map(s=>({...s,slot:'오후'})),
+    ...(sc.as||[]).map(s=>({...s,slot:'AS'})),...(sc.ms||[]).map(s=>({...s,slot:'실측'}))
+  ].filter(s=>!isBlockedItem(s));
+  let best=null;
+  jobs.forEach(j=>{
+    const pt=addrCoord(j.address);
+    if(!pt)return;
+    const t=coordTravel(myPt.c,pt.c);
+    if(t!==null&&(!best||t<best.min))best={min:t,slot:j.slot,region:pt.name,addr:String(j.address||'').substring(0,16)};
+  });
+  return {region:myPt.name,best,count:jobs.length};
+}
 function updateDistHint(){
   const el=document.getElementById('distHint');if(!el)return;
   const date=document.getElementById('fDate').value;
   const addr=document.getElementById('fAddress').value;
   const time=document.getElementById('fTime').value;
-  if(!date||!addr.trim()||!routeCheckable(time)){el.style.display='none';return;}
+  if(!date||!addr.trim()||(!routeCheckable(time)&&!isAsMs(time))){el.style.display='none';return;}
+  const paintAs=(bg,bd,fg,html)=>{el.style.background=bg;el.style.border='1.5px solid '+bd;el.style.color=fg;el.innerHTML=html;el.style.display='block';};
+  if(isAsMs(time)){ // AS·실측: 차단 없이 근접 일정 안내만
+    const nc=nearestJobCheck(date,addr);
+    if(nc.level==='na'){
+      if(addr.trim().length>=5)paintAs('#F5F5F0','#D9D9D2','#7a7a70','ℹ️ 지역을 인식하지 못했어요 — 주소에 시/군명을 포함해 주세요');
+      else el.style.display='none';
+      return;
+    }
+    if(!nc.best){paintAs('#F5F5F0','#D9D9D2','#7a7a70',`ℹ️ <b>${nc.region}</b> — 이 날 다른 일정이 없어 단독 이동입니다`);return;}
+    const info=`가장 가까운 일정: ${nc.best.slot} ${nc.best.region}(${nc.best.addr}) · 약 <b>${nc.best.min}분</b>`;
+    if(nc.best.min<=ROUTE_CFG.good)paintAs('#E8F5E9','#A5D6A7','#1B5E20',`🟢 <b>${nc.region}</b> — ${info} · 이 날 끼워 넣기 좋아요`);
+    else if(nc.best.min<=ROUTE_CFG.check)paintAs('#FFF8E1','#F9A825','#8D6E00',`🟡 <b>${nc.region}</b> — ${info}`);
+    else paintAs('#FFF3E0','#FB8C00','#B25000',`🟠 <b>${nc.region}</b> — ${info}<br>이 날 일정과 모두 멉니다. 가까운 작업이 있는 다른 날짜도 확인해 보세요`);
+    return;
+  }
   const slot=time.startsWith('오전')?'오전':'오후';
   const chk=bestAssignment(date,addr,slot);
   const paint=(bg,bd,fg,html)=>{el.style.background=bg;el.style.border='1.5px solid '+bd;el.style.color=fg;el.innerHTML=html;el.style.display='block';};
