@@ -469,6 +469,20 @@
       </table></div>
       </div>
 
+      <div class="dash-sec" data-dash="cohort" data-cat="mkt">
+      <div class="section-title"><h2>샘플 전환 추이 (접수 시점별)</h2>
+        <span style="display:flex;gap:6px;align-items:center">
+          <button class="mini-btn cohort-tab active" data-mode="week">주별</button>
+          <button class="mini-btn cohort-tab" data-mode="month">월별</button>
+        </span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>샘플 접수</th><th style="text-align:right">샘플</th><th style="text-align:right">예약 · 예약률</th><th style="text-align:right">시공 · 시공률</th></tr></thead>
+        <tbody id="cohortBody"><tr><td colspan="4" class="hint">불러오는 중…</td></tr></tbody>
+      </table></div>
+      <div class="hint" style="margin:-14px 0 22px">회색 행은 접수 30일 미만 — 아직 전환 진행 중이라 수치가 계속 오릅니다 (90%가 26일 내 결정). 박스 교체 등 액션 전후 주차를 비교하세요.</div>
+      </div>
+
       <div class="dash-sec" data-dash="realconv" data-cat="mkt">
       <div class="section-title"><h2>진짜 샘플 &rarr; 예약 전환 (휴대폰 매칭)</h2><span class="hint" id="realconvUpdate"></span></div>
       <div class="card" style="padding:18px 20px">
@@ -2422,14 +2436,17 @@ $("saveOkrBtn").onclick = async () => {
 /* ═══════════ 경영 데이터 대시보드 (조종실·시트 연동) ═══════════ */
 const DASH_LABELS = {
   hist:"월별 추이·상세", deptStatus:"부서별 핵심 상태", today:"오늘 실시간",
-  channels:"채널별 전환", realconv:"진짜 전환(휴대폰 매칭)", products:"제품별 판매",
+  channels:"채널별 전환", cohort:"샘플 전환 추이", realconv:"진짜 전환(휴대폰 매칭)", products:"제품별 판매",
   phone:"상담 전화", review:"후기·알림톡", adrank:"광고 순위·경쟁사",
   soomgo:"숨고 유입", apt:"입주아파트", stock:"재고 요약",
   asStats:"AS 현황", teamStats:"팀별 실적", custFunnel:"고객 풀퍼널"
 };
+/* 숨김 설정은 개인(브라우저)별 — localStorage 저장, 다른 직원 화면에 영향 없음 */
 let dashPrefs = {};
+try { dashPrefs = JSON.parse(localStorage.getItem("orgDashHidden") || "{}"); } catch(e){}
+const saveDashPrefs = () => localStorage.setItem("orgDashHidden", JSON.stringify(dashPrefs));
 
-/* 숨기기 버튼 주입 + Firebase 설정 구독 */
+/* 숨기기 버튼 주입 */
 document.querySelectorAll(".dash-sec").forEach(sec => {
   const key = sec.dataset.dash;
   const title = sec.querySelector(".section-title");
@@ -2440,10 +2457,6 @@ document.querySelectorAll(".dash-sec").forEach(sec => {
     b.onclick = () => hideDash(key);
     title.appendChild(b);
   }
-});
-orgRef.child("dashSections").on("value", s => {
-  dashPrefs = s.val() || {};
-  applyDashPrefs();
 });
 
 /* 보기 전환 (전체/시공/마케팅) — 개인 설정, localStorage 저장 */
@@ -2458,6 +2471,7 @@ document.querySelectorAll("#dashFilter button").forEach(b => {
   };
 });
 const catVisible = c => dashCat === "all" || c === "common" || c === dashCat;
+applyDashPrefs();
 
 function applyDashPrefs(){
   let hiddenChips = "";
@@ -2480,12 +2494,14 @@ function applyDashPrefs(){
   document.getElementById("dashHiddenChips").innerHTML = hiddenChips;
 }
 function hideDash(key){
-  orgRef.child("dashSections/" + key).set(false);
-  logAction("숨김", "대시보드 섹션: " + (DASH_LABELS[key] || key));
+  dashPrefs[key] = false;
+  saveDashPrefs();
+  applyDashPrefs();
 }
 function showDash(key){
-  orgRef.child("dashSections/" + key).remove();
-  logAction("복원", "대시보드 섹션: " + (DASH_LABELS[key] || key));
+  delete dashPrefs[key];
+  saveDashPrefs();
+  applyDashPrefs();
 }
 
 const manWon = n => Math.round((n || 0) / 10000).toLocaleString();
@@ -2533,6 +2549,39 @@ async function dashChannels(){
       document.getElementById("convUpdated").textContent = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")} 갱신`;
     }
   } catch(e){ document.getElementById("convBody").innerHTML = '<tr><td colspan="5" class="hint">전환 데이터를 불러오지 못했습니다.</td></tr>'; }
+}
+
+/* ── 샘플 코호트 전환 (접수 시점별) ── */
+let cohortMode = "week";
+document.querySelectorAll(".cohort-tab").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".cohort-tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  cohortMode = b.dataset.mode;
+  dashCohort();
+});
+async function dashCohort(){
+  const body = document.getElementById("cohortBody");
+  body.innerHTML = '<tr><td colspan="4" class="hint">불러오는 중…</td></tr>';
+  try{
+    const j = await fetch(`${APPS_SCRIPT_URL}?type=sampleCohort&mode=${cohortMode}`).then(r => r.json());
+    if (!j.success) throw j.error || 0;
+    const rows = (j.cohorts || []).slice().reverse(); // 최신이 위로
+    const maxRate = Math.max(...rows.map(c => c.installRate), 1);
+    body.innerHTML = rows.map(c => {
+      const style = c.maturing ? ' style="color:#9AA5A0;background:#FAFBFA"' : "";
+      const barW = c.sample > 0 ? (c.installRate / maxRate * 100).toFixed(0) : 0;
+      return `<tr${style}>
+        <td><b>${esc(c.label)}</b>${c.maturing ? ' <span class="hint">(진행 중)</span>' : ""}</td>
+        <td style="text-align:right">${c.sample}</td>
+        <td style="text-align:right">${c.reserved} · <b>${c.reserveRate}%</b></td>
+        <td style="text-align:right">
+          <span style="display:inline-block;width:70px;height:7px;background:#EFF3F1;border-radius:4px;margin-right:8px;vertical-align:middle;overflow:hidden"><span style="display:block;width:${barW}%;height:100%;background:${c.maturing ? '#C9DED3' : 'var(--accent)'}"></span></span>${c.installed} · <b>${c.installRate}%</b>
+        </td>
+      </tr>`;
+    }).join("") || '<tr><td colspan="4" class="hint">데이터 없음</td></tr>';
+  } catch(e){
+    body.innerHTML = '<tr><td colspan="4" class="hint">코호트 데이터를 불러오지 못했습니다 — Code.gs에 sampleCohort 라우팅 추가가 필요할 수 있어요.</td></tr>';
+  }
 }
 
 /* ── 진짜 전환 (휴대폰 매칭) ── */
@@ -2809,7 +2858,7 @@ async function dashCust(){
 
 /* ── 로드 트리거 ── */
 function loadDashAll(){
-  [dashToday, dashChannels, dashRealConv, dashProducts, dashPhone, dashReview,
+  [dashToday, dashChannels, dashCohort, dashRealConv, dashProducts, dashPhone, dashReview,
    dashAdRank, dashSoomgo, dashApt, dashStock, dashAs, dashTeam, dashCust].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name, e); }
   });
