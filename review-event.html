@@ -177,9 +177,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .guide-item ul li strong{color:#7A5C10}
 
 /* ═══ 스텝형 미션 UI (2026-08-24 개편) ═══ */
-.step-dots{display:flex;gap:6px;overflow-x:auto;padding:14px 16px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.step-dots::-webkit-scrollbar{display:none}
-.step-dot{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;padding:7px 6px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .15s}
+.step-dots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:14px 16px 6px}
+.step-dot{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:7px 4px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .15s}
 .step-dot .ic{font-size:15px;line-height:1}
 .step-dot .lb{font-size:9.5px;font-weight:700;color:var(--text3);white-space:nowrap}
 .step-dot.current{border-color:var(--primary);background:var(--primary-light)}
@@ -1050,8 +1049,6 @@ function renderDots(){
     d.onclick=()=>gotoStep(i);
     wrap.appendChild(d);
   });
-  const cur=wrap.children[curStep];
-  if(cur&&cur.scrollIntoView)cur.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
 
 function missionCardHTML(mIdx){
