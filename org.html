@@ -1841,6 +1841,10 @@ $("saveFormBtn").onclick = async () => {
 const DEPT_PALETTE = ["#00B173","#5B8DEF","#F2994A","#9B51E0","#EB5757","#2D9CDB","#B8860B","#BB6BD9"];
 function deptColor(deptId){
   if (!deptId) return "#8A959E";
+  // 팀 고정 색: 부산 = 빨강, 경기 = 파랑 (조직도·OKR·프로젝트 보드 공통)
+  const nm = (((data.departments || {})[deptId] || {}).name || "");
+  if (nm.includes("부산")) return "#EB5757";
+  if (nm.includes("경기")) return "#5B8DEF";
   const ids = entries(data.departments).sort(byOrder).map(d => d.id);
   const i = ids.indexOf(deptId);
   return i >= 0 ? DEPT_PALETTE[i % DEPT_PALETTE.length] : "#8A959E";
