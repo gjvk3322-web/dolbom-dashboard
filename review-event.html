@@ -222,8 +222,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .step-dot.lock{opacity:.45;cursor:pointer}
 
 /* 설문 위저드 (한 화면 한 질문) */
-.svy-head{text-align:center;padding:22px 16px 8px}
-.svy-title{font-size:19px;font-weight:800;color:var(--text)}
+.svy-head{text-align:center;padding:10px 16px 4px}
+.svy-title{font-size:16px;font-weight:800;color:var(--text)}
 .svy-sub2{font-size:12.5px;color:var(--text3);margin-top:4px}
 .svy-prog-row{display:flex;align-items:center;gap:10px;margin:14px 4px 0}
 .svy-prog-bar{flex:1;height:6px;background:#e9ecef;border-radius:6px;overflow:hidden}
@@ -343,7 +343,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <div class="svy-prog-bar"><div class="svy-prog-fill" id="svyProgFill"></div></div>
           <span class="svy-prog-text" id="svyProgText">1 / 7</span>
         </div>
-        <button class="svy-back-link" onclick="gotoStep(0)">후기 이벤트로 돌아가기</button>
+
       </div>
       <div class="svy-card" id="svyCard"></div>
       <div class="svy-nav" id="svyNav"></div>
@@ -829,11 +829,7 @@ function renderStep(){
   updateSummary();
   renderDots();
   const st=STEPS[curStep];
-  // 설문 진행 중엔 설문 전용 화면 (상단 요약/스텝 숨김)
-  const svyMode=(st.type==='survey'&&!surveyDone);
-  document.getElementById('topSummary').style.display=svyMode?'none':'block';
-  document.getElementById('stepDots').style.display=svyMode?'none':'flex';
-  document.getElementById('stepCounter').style.display=svyMode?'none':'block';
+
   const mp=document.getElementById('missionPanel');
   const sw=document.getElementById('surveyStepWrap');
   const fw=document.getElementById('finalStepWrap');
