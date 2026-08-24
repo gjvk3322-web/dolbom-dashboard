@@ -1075,6 +1075,14 @@ try {
 let pendingKakao = null; // {id, nick} 로그인 후 이름 연결 대기
 
 function currentUser(){ return localStorage.getItem("orgUser") || ""; }
+/* ── 삭제 권한: 작성자 본인 + 관리자 ── */
+const ADMINS = ["민석"];
+const isAdminUser = () => ADMINS.includes(currentUser());
+function canDeleteItem(item){
+  const me = currentUser();
+  return !!me && (ADMINS.includes(me) || (item && item.by === me));
+}
+const DEL_DENY_MSG = "삭제 권한이 없습니다. 작성자 본인 또는 관리자만 삭제할 수 있어요.";
 
 function showNameStep(hint){
   $("kakaoStep").style.display = "none";
@@ -1598,6 +1606,7 @@ window.editPerson = id => {
 };
 window.deletePerson = id => {
   const p = (data.people || {})[id]; if (!p) return;
+  if (!isAdminUser()) return alert("직원 삭제는 관리자만 할 수 있어요.");
   if (!confirm(`${p.name} 님을 삭제할까요? 활동 기록의 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("people", id, "직원: " + p.name);
 };
@@ -1638,6 +1647,7 @@ window.editDept = id => {
 };
 window.deleteDept = id => {
   const d = (data.departments || {})[id]; if (!d) return;
+  if (!isAdminUser()) return alert("부서 삭제는 관리자만 할 수 있어요.");
   const used = entries(data.people).filter(p => p.dept === id).length;
   if (used > 0) return alert(`이 부서에 소속된 직원이 ${used}명 있습니다. 직원의 부서를 먼저 옮긴 뒤 삭제하세요.`);
   const usedTasks = entries(data.tasks).filter(t => t.dept === id && t.status !== "done").length;
@@ -1719,6 +1729,7 @@ window.editDecision = id => {
 };
 window.deleteDecision = id => {
   const r = (data.decisionTable || {})[id]; if (!r) return;
+  if (!canDeleteItem(r)) return alert(DEL_DENY_MSG);
   if (!confirm(`'${r.task}' 항목을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("decisionTable", id, "권한: " + r.task);
 };
@@ -1798,6 +1809,7 @@ window.editForm = id => {
 };
 window.deleteForm = id => {
   const f = (data.forms || {})[id]; if (!f) return;
+  if (!canDeleteItem(f)) return alert(DEL_DENY_MSG);
   if (!confirm(`'${f.title}' 서식을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("forms", id, "서식: " + f.title);
 };
@@ -2067,6 +2079,7 @@ window.editTask = id => {
 };
 window.deleteTask = id => {
   const t = (data.tasks || {})[id]; if (!t) return;
+  if (!canDeleteItem(t)) return alert(DEL_DENY_MSG);
   if (!confirm(`'${t.title}' 항목을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("tasks", id, "프로젝트: " + t.title);
 };
@@ -2135,6 +2148,7 @@ window.editTool = id => {
 };
 window.deleteTool = id => {
   const t = (data.tools || {})[id]; if (!t) return;
+  if (!canDeleteItem(t)) return alert(DEL_DENY_MSG);
   if (!confirm(`'${t.name}' 링크를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("tools", id, "링크: " + t.name);
 };
@@ -2183,6 +2197,7 @@ window.editMeeting = id => {
 };
 window.deleteMeeting = id => {
   const m = (data.weekly || {})[id]; if (!m) return;
+  if (!canDeleteItem(m)) return alert(DEL_DENY_MSG);
   if (!confirm(`${m.date} 회의 기록을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("weekly", id, "회의: " + m.date);
 };
@@ -2202,7 +2217,7 @@ $("saveMeetingBtn").onclick = async () => {
 
 /* ───────── OKR (분기별 목표·핵심결과, 캐스케이드) ───────── */
 const okrModal = $("okrModal");
-const OKR_ADMINS = ["민석"]; // 삭제 권한: 작성자 본인 + 이 명단
+const OKR_ADMINS = ADMINS; // 삭제 권한: 작성자 본인 + 관리자 명단(공통)
 const canDeleteOkr = o => { const me = currentUser(); return me && (me === o.by || OKR_ADMINS.includes(me)); };
 const curQuarter = () => { const d = new Date(); return d.getFullYear() + "-Q" + (Math.floor(d.getMonth() / 3) + 1); };
 const qLabel = q => q.replace("-Q", "년 ") + "분기";
@@ -2618,6 +2633,7 @@ $("saveManualBtn").onclick = async e => {
 };
 window.delManual = async id => {
   const it = (data.manual || {})[id]; if (!it) return;
+  if (!canDeleteItem(it)) return alert(DEL_DENY_MSG);
   const kids = entries(data.manual).filter(i => i.parentId === id);
   if (kids.length) return alert("하위 상황이 " + kids.length + "개 있습니다. 하위 상황을 먼저 삭제하거나 수정에서 다른 곳으로 옮겨 주세요.");
   if (!confirm(`'${it.title}' 단계를 삭제할까요? (활동 기록에서 복구 가능)`)) return;
@@ -2662,7 +2678,9 @@ $("saveManualPointBtn").onclick = async e => {
 $("delManualPointBtn").onclick = async () => {
   const mid = $("manualPointMid").value, pid = $("manualPointPid").value;
   const p = ((((data.manual || {})[mid]) || {}).points || {})[pid];
-  if (!p || !confirm("이 핵심포인트를 삭제할까요?")) return;
+  if (!p) return;
+  if (!canDeleteItem(p)) return alert(DEL_DENY_MSG);
+  if (!confirm("이 핵심포인트를 삭제할까요?")) return;
   try {
     await orgRef.child("manual/" + mid + "/points/" + pid).remove();
     logAction("삭제", "핵심포인트: " + (p.text || "").slice(0, 30));
