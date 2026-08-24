@@ -663,7 +663,7 @@
       <div class="topbar">
         <div>
           <h1>주간 운영회의</h1>
-          <div class="lead">회의는 보고가 아니라 문제 해결용입니다. 숫자 → 차이 → 문제 → 담당자/기한, 네 가지만 기록하고 끝냅니다.</div>
+          <div class="lead">회의에서 어떤 이야기를 했는지 기록해 전 직원과 공유합니다.</div>
         </div>
         <button class="btn primary" id="addMeetingBtn">회의 기록 추가</button>
       </div>
@@ -877,10 +877,7 @@
     <div class="modal-body">
       <input type="hidden" id="meetingId">
       <div class="field full"><label>회의 날짜 *</label><input type="date" id="mDate"></div>
-      <div class="field full"><label>1. 숫자 — 지난주 핵심 KPI</label><textarea id="mNumbers"></textarea></div>
-      <div class="field full"><label>2. 목표 대비 차이 — 부족한 이유</label><textarea id="mGap"></textarea></div>
-      <div class="field full"><label>3. 핵심 문제 1~3개</label><textarea id="mIssues"></textarea></div>
-      <div class="field full"><label>4. 담당자 / 기한 — 누가 / 언제까지 / 무엇을</label><textarea id="mOwner"></textarea></div>
+      <div class="field full"><label>회의 내용 — 어떤 이야기를 했고, 무엇을 하기로 했는지</label><textarea id="mContent" rows="12" style="min-height:260px"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="meetingModal.close()">취소</button><button class="btn primary" id="saveMeetingBtn">저장</button></div>
   </form>
@@ -1419,15 +1416,17 @@ function renderMeetings(){
     <div class="card meeting-card">
       <h3>주간 운영회의</h3>
       <div class="when">${esc(m.date)}</div>
-      ${field("1. 숫자", m.numbers)}
-      ${field("2. 목표 대비 차이", m.gap)}
-      ${field("3. 핵심 문제", m.issues)}
-      ${field("4. 담당자 / 기한", m.owner)}
+      ${m.content ? `<div class="meeting-field"><div>${esc(m.content)}</div></div>` : (
+        field("1. 숫자", m.numbers) +
+        field("2. 목표 대비 차이", m.gap) +
+        field("3. 핵심 문제", m.issues) +
+        field("4. 담당자 / 기한", m.owner)
+      )}
       <div class="actions">
         <button class="mini-btn" onclick="editMeeting('${m.id}')">수정</button>
         <button class="mini-btn" onclick="deleteMeeting('${m.id}')">삭제</button>
       </div>
-    </div>`).join("") || `<div class="lead">아직 회의 기록이 없습니다. 매주 4가지만 기록하세요: 숫자 → 차이 → 문제 → 담당자/기한.</div>`;
+    </div>`).join("") || `<div class="lead">아직 회의 기록이 없습니다. 회의 날짜와 내용을 남겨 전 직원과 공유하세요.</div>`;
 }
 
 /* ───────── 네비게이션 ───────── */
@@ -2047,7 +2046,7 @@ $("addMeetingBtn").onclick = () => {
   $("meetingModalTitle").textContent = "회의 기록 추가";
   $("meetingId").value = "";
   $("mDate").value = todayStr();
-  ["mNumbers","mGap","mIssues","mOwner"].forEach(id => $(id).value = "");
+  $("mContent").value = "";
   meetingModal.showModal();
 };
 window.editMeeting = id => {
@@ -2055,8 +2054,13 @@ window.editMeeting = id => {
   $("meetingModalTitle").textContent = "회의 기록 수정";
   $("meetingId").value = id;
   $("mDate").value = m.date || "";
-  $("mNumbers").value = m.numbers || ""; $("mGap").value = m.gap || "";
-  $("mIssues").value = m.issues || ""; $("mOwner").value = m.owner || "";
+  // 예전 4칸 형식 기록은 하나의 내용으로 합쳐서 편집
+  $("mContent").value = m.content || [
+    m.numbers && "[숫자]\n" + m.numbers,
+    m.gap && "[목표 대비 차이]\n" + m.gap,
+    m.issues && "[핵심 문제]\n" + m.issues,
+    m.owner && "[담당자/기한]\n" + m.owner
+  ].filter(Boolean).join("\n\n");
   meetingModal.showModal();
 };
 window.deleteMeeting = id => {
@@ -2068,12 +2072,10 @@ $("saveMeetingBtn").onclick = async () => {
   const date = $("mDate").value;
   if (!date) return alert("회의 날짜는 필수입니다.");
   const id = $("meetingId").value || newId("w_");
+  const content = $("mContent").value.trim();
+  if (!content) return alert("회의 내용을 입력해 주세요.");
   if (await safeWrite("회의 기록", () => orgRef.child("weekly/" + id).set({
-    date,
-    numbers: $("mNumbers").value.trim(),
-    gap: $("mGap").value.trim(),
-    issues: $("mIssues").value.trim(),
-    owner: $("mOwner").value.trim()
+    date, content
   }), $("saveMeetingBtn"))){
     logAction($("meetingId").value ? "수정" : "추가", "회의: " + date);
     meetingModal.close();
