@@ -390,20 +390,34 @@
     .mn-branch + .mn-branch::before,.mn-branch + .mn-branch::after{display:none}
   }
 
-  /* ── 조직도 ── */
+  /* ── 조직도 (트리형 · 드래그 정렬) ── */
   #orgChartWrap{overflow-x:auto;padding:10px 2px 26px}
-  .oc-depts{display:flex;justify-content:center;align-items:flex-start;gap:16px;min-width:max-content;margin:0 auto}
+  .oc-tree{min-width:max-content;margin:0 auto}
+  .oc-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start}
+  .oc-ceo-cell{display:flex;flex-direction:column;align-items:center}
+  .oc-ceo{width:230px;border-radius:13px;padding:13px 14px;text-align:center;color:#fff;font-weight:800;font-size:15px;background:var(--accent);box-shadow:0 2px 10px rgba(0,177,115,.28)}
+  .oc-ceo .rl{font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
+  .oc-trunk{width:2px;flex:1;min-height:30px;background:#C9DED3}
+  .oc-exec{display:flex;align-items:flex-start;justify-self:start}
+  .oc-exec-line{width:46px;height:2px;flex:0 0 46px;background:#C9DED3;margin-top:26px}
+  .oc-depts{display:flex;justify-content:center;align-items:flex-start}
+  .oc-branch{position:relative;padding:26px 8px 0}
+  .oc-branch::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:#C9DED3}
+  .oc-branch::after{content:"";position:absolute;top:0;left:50%;width:2px;height:26px;background:#C9DED3;margin-left:-1px}
+  .oc-branch:first-child::before{left:50%}
+  .oc-branch:last-child::before{right:50%}
+  .oc-branch:only-child::before{display:none}
   .oc-col{min-width:230px}
   .oc-dept{border-radius:13px;padding:11px 14px;color:#fff;font-weight:800;text-align:center;box-shadow:0 2px 8px rgba(33,43,54,.08)}
   .oc-dept .cnt{font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
-  .oc-members{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-  .oc-person{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:8px 8px 8px 12px}
+  .oc-members{margin-top:12px;display:flex;flex-direction:column;gap:8px;border-radius:12px;min-height:24px}
+  .oc-members.drop-on{background:#F1FAF5;outline:1.5px dashed #9AD6BC;outline-offset:3px}
+  .oc-person{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:8px 10px 8px 8px;cursor:grab;user-select:none;-webkit-user-select:none}
+  .oc-person.dragging{opacity:.45;cursor:grabbing;box-shadow:0 6px 16px rgba(33,43,54,.2)}
+  .oc-grip{color:#B7C2BD;font-size:14px;line-height:1;padding:2px 1px;cursor:grab;touch-action:none}
   .oc-pinfo{flex:1;min-width:0}
   .oc-person .nm{font-weight:700;font-size:13.5px}
   .oc-person .rl{font-size:11.5px;color:var(--muted);margin-top:1px}
-  .oc-updown{display:flex;flex-direction:column;gap:2px}
-  .oc-updown button{border:1px solid #DDE5E1;background:#fff;color:var(--muted);border-radius:7px;font-size:9px;line-height:1;padding:4px 7px}
-  .oc-updown button:hover{color:var(--accent);border-color:var(--accent)}
   .oc-empty{font-size:12px;color:var(--muted);text-align:center;padding:10px 0}
 </style>
 </head>
@@ -604,7 +618,7 @@
       <div class="topbar">
         <div>
           <h1>조직도</h1>
-          <div class="lead">부서·직원 데이터로 <b>자동 생성</b>됩니다. 이름 옆 <b>▲▼</b>로 서열 순서를 조정할 수 있습니다 (위가 높은 서열).</div>
+          <div class="lead">부서·직원 데이터로 <b>자동 생성</b>됩니다. 이름 카드를 <b>마우스로 끌어(드래그)</b> 같은 팀 안에서 서열 순서를 조정할 수 있습니다 (위가 높은 서열).</div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn" onclick="$('addDeptBtn').click()">부서 추가</button>
@@ -1054,10 +1068,76 @@ orgRef.on("value", snap => {
   }
   data = v;
   renderAll();
+  runReorg202608();
 }, err => {
   $("syncText").textContent = "연결 실패 — 새로고침 해주세요";
   console.error(err);
 });
+
+/* ───────── 1회성 조직 정비 (2026-08 팀설정 시트 기준) ─────────
+   최초 1회만 실행되고 org/migrations 에 완료 표시를 남깁니다.
+   시트에 없는 사람(대표 포함)은 건드리지 않습니다. 완료 후 이 블록은 지워도 됩니다. */
+const REORG_KEY = "reorg202608";
+const REORG_SHEET = {
+  "민우": { team:"exec",  role:"경영팀",        joined:"2022-12-31" },
+  "현진": { team:"gg",    role:"사수 (경기1)",   joined:"2023-09-26" },
+  "세욱": { team:"busan", role:"부사수 (부산1)", joined:"2025-03-06" },
+  "재문": { team:"gg",    role:"부사수 (경기1)", joined:"2025-04-02" },
+  "형석": { team:"gg",    role:"부사수 (경기2)", joined:"2026-03-11" },
+  "경준": { team:"gg",    role:"부사수 (경기3)", joined:"2026-03-11" },
+  "선재": { team:"gg",    role:"사수 (경기2)",   joined:"2026-04-01" },
+  "경필": { team:"busan", role:"사수 (부산2)",   joined:"2026-06-02" },
+  "영호": { team:"busan", role:"사수 (부산3)",   joined:"2026-06-09" },
+  "승민": { team:"gg",    role:"사수 (경기3)",   joined:"2026-06-16" },
+  "승현": { team:"busan", role:"부사수 (부산3)", joined:"2026-07-01" },
+  "신입": { team:"gg",    role:"부사수 (경기1)", joined:"2026-07-28" },
+  "신영": { team:"busan", role:"부사수 (부산2)", joined:"2026-08-01" }
+};
+let reorgTried = false;
+async function runReorg202608(){
+  if (reorgTried || !data) return;
+  reorgTried = true;
+  if ((data.migrations || {})[REORG_KEY]) return; // 이미 완료됨
+  try {
+    const depts = entries(data.departments);
+    const findDept = kw => (depts.find(d => (d.name || "").includes(kw)) || {}).id || "";
+    const teamIds = { exec: findDept("경영"), busan: findDept("부산"), gg: findDept("경기") };
+    const upd = {};
+    if (!teamIds.exec){ // 경영팀이 없으면 생성
+      teamIds.exec = newId("d_");
+      upd["departments/" + teamIds.exec] = { name: "경영팀", order: 5 };
+    }
+    if (!teamIds.busan || !teamIds.gg){ console.error("정비 중단: 시공팀 부서를 찾지 못함"); return; }
+
+    const byName = {};
+    entries(data.people).forEach(p => byName[p.name] = p);
+
+    // 1) 시트 명단 → 기존 매칭 or 신규, 2) 팀별 입사일 오름차순 서열
+    const items = Object.entries(REORG_SHEET).map(([name, s], i) => {
+      const p = byName[name];
+      return { name, s, id: p ? p.id : newId("p_") + i.toString(36), isNew: !p };
+    });
+    const buckets = { exec:[], busan:[], gg:[] };
+    items.forEach(it => buckets[it.s.team].push(it));
+    Object.values(buckets).forEach(list => {
+      list.sort((a, b) => a.s.joined.localeCompare(b.s.joined));
+      list.forEach((it, i) => it.order = (i + 1) * 10);
+    });
+    items.forEach(it => {
+      if (it.isNew){
+        upd["people/" + it.id] = { name: it.name, role: it.s.role, dept: teamIds[it.s.team], manager: "", mission: "", joined: it.s.joined, order: it.order };
+      } else {
+        upd["people/" + it.id + "/dept"] = teamIds[it.s.team];
+        upd["people/" + it.id + "/role"] = it.s.role;
+        upd["people/" + it.id + "/joined"] = it.s.joined;
+        upd["people/" + it.id + "/order"] = it.order;
+      }
+    });
+    upd["migrations/" + REORG_KEY] = { t: Date.now(), by: currentUser() || "자동" };
+    await orgRef.update(upd);
+    logAction("정비", "팀설정 시트 기준 팀·서열 자동 정리 (입사일 순, 민우 경영팀 이동, 신규 " + items.filter(x => x.isNew).length + "명)");
+  } catch(e){ console.error("조직 정비 실패:", e); reorgTried = false; }
+}
 
 /* ───────── 사용자 식별 · 활동 로그 · 휴지통 ───────── */
 const userModal = $("userModal");
@@ -2688,54 +2768,122 @@ $("delManualPointBtn").onclick = async () => {
   } catch(e){ alert("삭제에 실패했습니다."); }
 };
 
-/* ───────── 조직도 (부서·직원 데이터 자동 생성) ───────── */
+/* ───────── 조직도 (트리형 · 대표 상단, 경영팀 우측 · 드래그 정렬) ───────── */
 function renderOrgChart(){
   const el = $("orgChartWrap"); if (!el) return;
   const depts = entries(data.departments).sort(byOrder);
   const people = entries(data.people).sort(byOrder);
   const deptIds = new Set(depts.map(d => d.id));
+  const ceo = people.find(p => (p.role || "").includes("대표"));
   const members = people.filter(p => !(p.role || "").includes("대표"));
   const unassigned = members.filter(p => !deptIds.has(p.dept));
 
-  const personCard = (p, color, showRole) => `
-    <div class="oc-person" style="border-left-color:${color}">
+  // home = 카드가 속한 목록 키(같은 목록 안에서만 드래그 이동 허용)
+  const personCard = (p, color, showRole, home) => `
+    <div class="oc-person" draggable="true" data-pid="${p.id}" data-home="${esc(home)}" style="border-left-color:${color}">
+      <span class="oc-grip" title="끌어서 순서 변경">⠿</span>
       <div class="oc-pinfo">
         <div class="nm">${esc(p.name)}</div>
         ${showRole && p.role ? `<div class="rl">${esc(p.role)}</div>` : ""}
       </div>
-      <div class="oc-updown">
-        <button title="서열 올리기" onclick="ocMove('${p.id}',-1)">▲</button>
-        <button title="서열 내리기" onclick="ocMove('${p.id}',1)">▼</button>
-      </div>
     </div>`;
 
-  const col = (title, color, list, showRole) => `
+  const colInner = (title, color, list, showRole, home) => `
     <div class="oc-col">
       <div class="oc-dept" style="background:${color}">${esc(title)}<div class="cnt">${list.length}명</div></div>
-      <div class="oc-members">${list.length ? list.map(p => personCard(p, color, showRole)).join("") : `<div class="oc-empty">아직 배정된 직원이 없습니다</div>`}</div>
+      <div class="oc-members" data-home="${esc(home)}">${list.length ? list.map(p => personCard(p, color, showRole, home)).join("") : `<div class="oc-empty">아직 배정된 직원이 없습니다</div>`}</div>
     </div>`;
 
-  const cols = depts.map(d => col(d.name, okrColor(d.name), members.filter(p => p.dept === d.id), !(d.name || "").includes("시공")));
-  if (unassigned.length) cols.push(col("미배정", "#8B96A3", unassigned, true));
+  const isExec = d => (d.name || "").includes("경영");
+  const execDept = depts.find(isExec);
+  const lower = depts.filter(d => !isExec(d));
 
-  el.innerHTML = cols.length
-    ? `<div class="oc-depts">${cols.join("")}</div>`
-    : `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">부서와 직원을 추가하면 조직도가 자동으로 그려집니다.</div>`;
+  const branches = lower.map(d =>
+    `<div class="oc-branch">${colInner(d.name, okrColor(d.name), members.filter(p => p.dept === d.id), !(d.name || "").includes("시공"), d.id)}</div>`);
+  if (unassigned.length)
+    branches.push(`<div class="oc-branch">${colInner("미배정", "#8B96A3", unassigned, true, "__un__")}</div>`);
+
+  if (!depts.length && !ceo){
+    el.innerHTML = `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">부서와 직원을 추가하면 조직도가 자동으로 그려집니다.</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="oc-tree">
+      <div class="oc-top">
+        <div></div>
+        <div class="oc-ceo-cell">
+          <div class="oc-ceo">${esc(ceo ? ceo.name : "대표")}<div class="rl">대표</div></div>
+          ${branches.length ? `<div class="oc-trunk"></div>` : ""}
+        </div>
+        <div class="oc-exec">${execDept
+          ? `<div class="oc-exec-line"></div>${colInner(execDept.name, okrColor(execDept.name), members.filter(p => p.dept === execDept.id), true, execDept.id)}`
+          : ""}</div>
+      </div>
+      ${branches.length ? `<div class="oc-depts">${branches.join("")}</div>` : ""}
+    </div>`;
+  bindOcDrag(el);
 }
-window.ocMove = async (id, dir) => {
-  const p = (data.people || {})[id]; if (!p) return;
-  const sibs = entries(data.people).filter(x => x.dept === p.dept && !(x.role || "").includes("대표")).sort(byOrder);
-  const idx = sibs.findIndex(x => x.id === id);
-  const j = idx + dir;
-  if (idx < 0 || j < 0 || j >= sibs.length) return;
-  // 같은 부서 안에서 순서값을 깔끔하게 다시 매긴 뒤 두 사람 자리를 교환
-  const orders = {};
-  sibs.forEach((x, i) => orders[x.id] = (i + 1) * 10);
-  const t = orders[sibs[idx].id]; orders[sibs[idx].id] = orders[sibs[j].id]; orders[sibs[j].id] = t;
-  try {
-    await Promise.all(Object.entries(orders).map(([pid, o]) => orgRef.child("people/" + pid + "/order").set(o)));
-  } catch(e){ alert("순서 변경에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
-};
+
+/* 드래그 정렬 — 같은 팀 목록 안에서만 위/아래 이동, 놓으면 순서 저장 */
+let ocDragEl = null;
+function ocPlaceCard(zone, y){
+  const cards = [...zone.querySelectorAll(".oc-person:not(.dragging)")];
+  const next = cards.find(c => y < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
+  if (next) zone.insertBefore(ocDragEl, next);
+  else zone.appendChild(ocDragEl);
+}
+async function ocFinishDrag(){
+  if (!ocDragEl) return;
+  const card = ocDragEl; ocDragEl = null;
+  card.classList.remove("dragging");
+  document.querySelectorAll(".oc-members.drop-on").forEach(z => z.classList.remove("drop-on"));
+  const zone = card.closest(".oc-members"); if (!zone) return;
+  const upd = {};
+  zone.querySelectorAll(".oc-person").forEach((c, i) => upd["people/" + c.dataset.pid + "/order"] = (i + 1) * 10);
+  if (!Object.keys(upd).length) return;
+  try { await orgRef.update(upd); }
+  catch(e){ alert("순서 저장에 실패했습니다. 인터넷 연결을 확인해 주세요."); renderOrgChart(); }
+}
+function bindOcDrag(root){
+  root.querySelectorAll(".oc-person").forEach(card => {
+    card.addEventListener("dragstart", e => {
+      ocDragEl = card; card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", card.dataset.pid); } catch(_){}
+    });
+    card.addEventListener("dragend", ocFinishDrag);
+    // 휴대폰: 손잡이(⠿)를 눌러 끌기
+    const grip = card.querySelector(".oc-grip");
+    if (grip){
+      grip.addEventListener("touchstart", () => { ocDragEl = card; card.classList.add("dragging"); }, {passive:true});
+      grip.addEventListener("touchmove", e => {
+        if (!ocDragEl) return;
+        const t = e.touches[0];
+        const over = document.elementFromPoint(t.clientX, t.clientY);
+        const zone = over && over.closest ? over.closest(".oc-members") : null;
+        if (zone && zone.dataset.home === ocDragEl.dataset.home){
+          e.preventDefault();
+          zone.classList.add("drop-on");
+          ocPlaceCard(zone, t.clientY);
+        }
+      }, {passive:false});
+      grip.addEventListener("touchend", ocFinishDrag);
+      grip.addEventListener("touchcancel", ocFinishDrag);
+    }
+  });
+  root.querySelectorAll(".oc-members").forEach(zone => {
+    zone.addEventListener("dragover", e => {
+      if (!ocDragEl || zone.dataset.home !== ocDragEl.dataset.home) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      zone.classList.add("drop-on");
+      ocPlaceCard(zone, e.clientY);
+    });
+    zone.addEventListener("dragleave", () => zone.classList.remove("drop-on"));
+    zone.addEventListener("drop", e => e.preventDefault());
+  });
+}
 </script>
 <script>
 /* ═══════════ 경영 데이터 대시보드 (조종실·시트 연동) ═══════════ */
