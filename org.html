@@ -332,16 +332,22 @@
   .form-files{display:flex;gap:6px;flex-wrap:wrap}
   .form-files a{text-decoration:none;display:inline-flex;align-items:center;gap:3px}
   /* ── 경영 데이터 섹션 (숨기기 가능) ── */
+  .dash-filter{display:inline-flex;gap:0;margin:2px 0 20px;background:#EFF3F1;border-radius:12px;padding:4px}
+  .dash-filter button{border:none;background:transparent;padding:8px 22px;border-radius:9px;font-size:13.5px;font-weight:650;color:#5B6763;cursor:pointer;font-family:inherit}
+  .dash-filter button.active{background:#fff;color:var(--accent-deep);box-shadow:0 1px 4px rgba(33,43,54,.1);font-weight:750}
+  .dash-group{margin:30px 0 4px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--accent-deep)}
   .dash-sec{position:relative}
-  .dash-sec.hidden{display:none}
+  .dash-sec.hidden,.dash-sec.cat-off,.dash-group.cat-off{display:none}
+  .dash-sec .table-wrap td{padding-top:11px;padding-bottom:11px;line-height:1.5}
   .dash-hide{margin-left:auto;opacity:.55}
   .dash-hide:hover{opacity:1}
   .dash-chip{display:inline-flex;align-items:center;gap:5px;margin:2px 6px 2px 0;padding:5px 11px;background:#fff;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:650;color:#3D4844;cursor:pointer}
   .dash-chip:hover{border-color:var(--accent);color:var(--accent-deep)}
-  .rowbar{padding:6px 0}
-  .rowbar-top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
-  .rowbar-name{font-weight:650;color:#3D4844}
-  .rowbar-val{color:#5B6763}
+  .rowbar{padding:9px 0}
+  .rowbar+.rowbar{border-top:1px solid #F4F7F5}
+  .rowbar-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:6px;gap:12px}
+  .rowbar-name{font-weight:650;color:#3D4844;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rowbar-val{color:#5B6763;white-space:nowrap;flex-shrink:0}
   .rowbar-track{height:8px;background:#EFF3F1;border-radius:4px;overflow:hidden}
   .rowbar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s}
   .rowbar-fill.gold{background:#E2A93B}
@@ -395,7 +401,19 @@
         <strong contenteditable="true" id="companyMission"></strong>
       </div>
       <div class="grid kpis" id="kpiCards"></div>
-      <div class="dash-sec" data-dash="hist">
+      <!-- 보기 전환: 전체 / 시공 / 마케팅 -->
+      <div class="dash-filter" id="dashFilter">
+        <button data-cat="all" class="active">전체</button>
+        <button data-cat="ops">시공</button>
+        <button data-cat="mkt">마케팅</button>
+      </div>
+
+      <div class="dash-sec" data-dash="today" data-cat="common">
+      <div class="section-title"><h2>오늘 실시간</h2><span class="hint" id="todayHint"></span></div>
+      <div class="grid kpis" id="todayCards"><div class="hint">불러오는 중…</div></div>
+      </div>
+
+      <div class="dash-sec" data-dash="hist" data-cat="common">
       <div class="section-title"><h2>월별 추이</h2>
         <span class="hist-tabs">
           <button class="mini-btn hist-tab active" data-metric="revenue">매출</button>
@@ -413,23 +431,37 @@
       </table></div>
       </div><!-- /hist -->
 
-      <div class="dash-sec" data-dash="deptStatus">
-      <div class="section-title"><h2>부서별 핵심 상태</h2></div>
+      <div class="dash-group" data-cat="ops">시공 운영</div>
+
+      <div class="dash-sec" data-dash="teamStats" data-cat="ops">
+      <div class="section-title"><h2>팀별 실적 (이번달)</h2><span class="hint" id="teamHint"></span></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>부서</th><th>존재 이유</th><th>KPI</th><th>인원</th></tr></thead>
-        <tbody id="deptStatusBody"></tbody>
+        <thead><tr><th>팀원</th><th>지역</th><th style="text-align:right">시공 건수</th><th style="text-align:right">매출 합계</th><th style="text-align:right">건당 평균</th></tr></thead>
+        <tbody id="teamBody"><tr><td colspan="5" class="hint">불러오는 중…</td></tr></tbody>
       </table></div>
-      </div><!-- /deptStatus -->
-
-      <!-- ════ 경영 데이터 (조종실·시트 연동) — 각 섹션은 '숨기기'로 뺄 수 있음 ════ -->
-
-      <div class="dash-sec" data-dash="today">
-      <div class="section-title"><h2>오늘 실시간</h2><span class="hint" id="todayHint"></span></div>
-      <div class="grid kpis" id="todayCards"><div class="hint">불러오는 중…</div></div>
       </div>
 
-      <div class="dash-sec" data-dash="channels">
-      <div class="section-title"><h2>채널별 전환 (샘플→예약→시공)</h2><span class="hint" id="convUpdated"></span></div>
+      <div class="dash-sec" data-dash="asStats" data-cat="ops">
+      <div class="section-title"><h2>AS 현황</h2><span class="hint" id="asHint"></span></div>
+      <div class="grid kpis" id="asCards"><div class="hint">불러오는 중…</div></div>
+      </div>
+
+      <div class="dash-sec" data-dash="products" data-cat="ops">
+      <div class="section-title"><h2>제품별 판매</h2>
+        <select id="productMonth" class="mini-btn" style="cursor:pointer"></select>
+      </div>
+      <div class="card" style="padding:18px 20px"><div id="productRows" class="hint">불러오는 중…</div></div>
+      </div>
+
+      <div class="dash-sec" data-dash="stock" data-cat="ops">
+      <div class="section-title"><h2>재고 요약</h2><span class="hint">기준: stock.html 종합(실사+입고&minus;사용)</span></div>
+      <div class="grid kpis" id="stockCards"><div class="hint">불러오는 중…</div></div>
+      </div>
+
+      <div class="dash-group" data-cat="mkt">마케팅 · 유입</div>
+
+      <div class="dash-sec" data-dash="channels" data-cat="mkt">
+      <div class="section-title"><h2>채널별 전환 (샘플 &rarr; 예약 &rarr; 시공)</h2><span class="hint" id="convUpdated"></span></div>
       <div class="table-wrap"><table>
         <thead><tr><th>채널</th><th style="text-align:right">샘플</th><th style="text-align:right">예약</th><th style="text-align:right">시공 · 전환율</th><th style="text-align:right">평균매출</th></tr></thead>
         <tbody id="convBody"><tr><td colspan="5" class="hint">불러오는 중…</td></tr></tbody>
@@ -437,40 +469,41 @@
       </table></div>
       </div>
 
-      <div class="dash-sec" data-dash="realconv">
-      <div class="section-title"><h2>진짜 샘플→예약 전환 (휴대폰 매칭)</h2><span class="hint" id="realconvUpdate"></span></div>
-      <div class="card" style="padding:16px">
-        <div class="grid kpis" id="realconvStats" style="margin-bottom:12px"></div>
-        <div id="realconvDist" style="display:flex;flex-direction:column;gap:6px"></div>
-        <div id="realconvTiming" class="hint" style="margin-top:10px"></div>
+      <div class="dash-sec" data-dash="realconv" data-cat="mkt">
+      <div class="section-title"><h2>진짜 샘플 &rarr; 예약 전환 (휴대폰 매칭)</h2><span class="hint" id="realconvUpdate"></span></div>
+      <div class="card" style="padding:18px 20px">
+        <div class="grid kpis" id="realconvStats" style="margin-bottom:14px"></div>
+        <div id="realconvDist" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div id="realconvTiming" class="hint" style="margin-top:12px"></div>
       </div>
       </div>
 
-      <div class="dash-sec" data-dash="products">
-      <div class="section-title"><h2>제품별 판매</h2>
-        <select id="productMonth" class="mini-btn" style="cursor:pointer"></select>
-      </div>
-      <div class="card" style="padding:16px"><div id="productRows" class="hint">불러오는 중…</div></div>
+      <div class="dash-sec" data-dash="custFunnel" data-cat="mkt">
+      <div class="section-title"><h2>고객 풀퍼널 (유입페이지 기준)</h2><span class="hint" id="custHint"></span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>유입페이지</th><th style="text-align:right">유입</th><th style="text-align:right">샘플</th><th style="text-align:right">예약</th><th style="text-align:right">완공</th><th style="text-align:right">매출 합계</th></tr></thead>
+        <tbody id="custBody"><tr><td colspan="6" class="hint">불러오는 중…</td></tr></tbody>
+      </table></div>
       </div>
 
-      <div class="dash-sec" data-dash="phone">
+      <div class="dash-sec" data-dash="phone" data-cat="mkt">
       <div class="section-title"><h2>상담 전화 (이번달)</h2></div>
       <div class="grid kpis" id="phoneCards"><div class="hint">불러오는 중…</div></div>
-      <div id="phoneAlert" style="display:none;margin:-6px 0 18px;padding:10px 14px;border-radius:12px;font-size:12.5px;font-weight:650"></div>
+      <div id="phoneAlert" style="display:none;margin:-6px 0 18px;padding:11px 15px;border-radius:12px;font-size:12.5px;font-weight:650"></div>
       </div>
 
-      <div class="dash-sec" data-dash="review">
+      <div class="dash-sec" data-dash="review" data-cat="mkt">
       <div class="section-title"><h2>후기이벤트 · 알림톡</h2></div>
       <div class="grid kpis" id="reviewCards"><div class="hint">불러오는 중…</div></div>
-      <div class="card" style="padding:16px"><div id="reviewMissions" class="hint">불러오는 중…</div></div>
+      <div class="card" style="padding:18px 20px"><div id="reviewMissions" class="hint">불러오는 중…</div></div>
       </div>
 
-      <div class="dash-sec" data-dash="adrank">
+      <div class="dash-sec" data-dash="adrank" data-cat="mkt">
       <div class="section-title"><h2>네이버 광고 순위 · 경쟁사</h2><span class="hint" id="adrankUpdate"></span></div>
-      <div class="card" style="padding:16px"><div id="adrankContent" class="hint">불러오는 중…</div></div>
+      <div class="card" style="padding:18px 20px"><div id="adrankContent" class="hint">불러오는 중…</div></div>
       </div>
 
-      <div class="dash-sec" data-dash="soomgo">
+      <div class="dash-sec" data-dash="soomgo" data-cat="mkt">
       <div class="section-title"><h2>숨고 유입</h2>
         <select id="soomgoDays" class="mini-btn" style="cursor:pointer">
           <option value="7">최근 7일</option><option value="30" selected>최근 30일</option><option value="90">최근 90일</option>
@@ -479,7 +512,7 @@
       <div class="grid kpis" id="soomgoCards"><div class="hint">불러오는 중…</div></div>
       </div>
 
-      <div class="dash-sec" data-dash="apt">
+      <div class="dash-sec" data-dash="apt" data-cat="mkt">
       <div class="section-title"><h2>입주아파트 파이프라인</h2><span class="hint" id="aptHint"></span></div>
       <div class="grid kpis" id="aptCards" style="margin-bottom:12px"></div>
       <div class="table-wrap"><table>
@@ -488,29 +521,11 @@
       </table></div>
       </div>
 
-      <div class="dash-sec" data-dash="stock">
-      <div class="section-title"><h2>재고 요약</h2><span class="hint">기준: stock.html 종합(실사+입고−사용)</span></div>
-      <div class="grid kpis" id="stockCards"><div class="hint">불러오는 중…</div></div>
-      </div>
-
-      <div class="dash-sec" data-dash="asStats">
-      <div class="section-title"><h2>AS 현황</h2><span class="hint" id="asHint"></span></div>
-      <div class="grid kpis" id="asCards"><div class="hint">불러오는 중…</div></div>
-      </div>
-
-      <div class="dash-sec" data-dash="teamStats">
-      <div class="section-title"><h2>팀별 실적 (이번달 · 시공보고 기준)</h2><span class="hint" id="teamHint"></span></div>
+      <div class="dash-sec" data-dash="deptStatus" data-cat="common">
+      <div class="section-title"><h2>부서별 핵심 상태</h2></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>팀원</th><th>지역</th><th style="text-align:right">시공 건수</th><th style="text-align:right">매출 합계</th><th style="text-align:right">건당 평균</th></tr></thead>
-        <tbody id="teamBody"><tr><td colspan="5" class="hint">불러오는 중…</td></tr></tbody>
-      </table></div>
-      </div>
-
-      <div class="dash-sec" data-dash="custFunnel">
-      <div class="section-title"><h2>고객 풀퍼널 (유입페이지 기준)</h2><span class="hint" id="custHint"></span></div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>유입페이지</th><th style="text-align:right">유입</th><th style="text-align:right">샘플</th><th style="text-align:right">예약</th><th style="text-align:right">완공</th><th style="text-align:right">매출 합계</th></tr></thead>
-        <tbody id="custBody"><tr><td colspan="6" class="hint">불러오는 중…</td></tr></tbody>
+        <thead><tr><th>부서</th><th>존재 이유</th><th>KPI</th><th>인원</th></tr></thead>
+        <tbody id="deptStatusBody"></tbody>
       </table></div>
       </div>
 
@@ -2428,13 +2443,35 @@ orgRef.child("dashSections").on("value", s => {
   dashPrefs = s.val() || {};
   applyDashPrefs();
 });
+
+/* 보기 전환 (전체/시공/마케팅) — 개인 설정, localStorage 저장 */
+let dashCat = localStorage.getItem("orgDashCat") || "all";
+document.querySelectorAll("#dashFilter button").forEach(b => {
+  b.classList.toggle("active", b.dataset.cat === dashCat);
+  b.onclick = () => {
+    dashCat = b.dataset.cat;
+    localStorage.setItem("orgDashCat", dashCat);
+    document.querySelectorAll("#dashFilter button").forEach(x => x.classList.toggle("active", x === b));
+    applyDashPrefs();
+  };
+});
+const catVisible = c => dashCat === "all" || c === "common" || c === dashCat;
+
 function applyDashPrefs(){
   let hiddenChips = "";
   document.querySelectorAll(".dash-sec").forEach(sec => {
     const key = sec.dataset.dash;
     const hidden = dashPrefs[key] === false;
     sec.classList.toggle("hidden", hidden);
+    sec.classList.toggle("cat-off", !catVisible(sec.dataset.cat || "common"));
     if (hidden) hiddenChips += `<span class="dash-chip" onclick="showDash('${key}')">${DASH_LABELS[key] || key} <b>+</b></span>`;
+  });
+  document.querySelectorAll(".dash-group").forEach(g => {
+    const cat = g.dataset.cat;
+    // 해당 그룹에 보이는 섹션이 하나도 없으면 그룹 헤더도 숨김
+    const anyVisible = [...document.querySelectorAll(`.dash-sec[data-cat="${cat}"]`)]
+      .some(s => !s.classList.contains("hidden") && !s.classList.contains("cat-off"));
+    g.classList.toggle("cat-off", !catVisible(cat) || !anyVisible);
   });
   const bar = document.getElementById("dashHiddenBar");
   bar.style.display = hiddenChips ? "block" : "none";
@@ -2450,16 +2487,18 @@ function showDash(key){
 }
 
 const manWon = n => Math.round((n || 0) / 10000).toLocaleString();
+const _num = v => parseFloat(String(v == null ? "" : v).replace(/[^0-9.\-]/g, "")) || 0;
+const _avgRev = v => { const n = _num(v); return n > 0 ? Math.round(n/10000) + "만" : "-"; };
 const dashCard = (label, value, unit, meta) =>
   `<div class="card"><div class="label">${label}</div><div class="value">${value}<span style="font-size:14px">${unit || ""}</span></div><div class="meta">${meta || ""}</div></div>`;
-const CH_ICON = {'지인추천':'🥇','블로그':'💎','맘카페':'👩','네이버검색':'🔍','인스타':'📱','재시공':'🔁','기타':'❓','당근마켓':'🥕','AI검색':'🆕'};
+
 
 /* ── 오늘 실시간 ── */
 async function dashToday(){
   try{
     const j = await fetch(APPS_SCRIPT_URL + "?type=todayStats").then(r => r.json());
-    if (!j.success || !j.data) throw 0;
-    const d = j.data;
+    if (!j.success) throw 0;
+    const d = j; // todayStats는 최상위에 revenue/installs/samples/reservations 반환
     document.getElementById("todayCards").innerHTML =
       dashCard("오늘 매출", manWon(num(d.revenue)), "만원") +
       dashCard("오늘 시공", num(d.installs).toLocaleString(), "건") +
@@ -2476,13 +2515,13 @@ async function dashChannels(){
     if (!j.success || !j.data) throw 0;
     j.data.sort((a,b) => (b.installed - a.installed) || (b.installRate - a.installRate) || (b.sample - a.sample));
     document.getElementById("convBody").innerHTML = j.data.map(r => `<tr>
-      <td>${CH_ICON[r.channel] || '•'} ${esc(r.channel)}</td>
+      <td><b>${esc(r.channel)}</b></td>
       <td style="text-align:right">${r.sample}</td>
       <td style="text-align:right">${r.reserved}</td>
       <td style="text-align:right"><b>${r.installed}</b> · ${r.installRate}%</td>
-      <td style="text-align:right">${r.avgRevenue > 0 ? Math.round(r.avgRevenue/10000) + "만" : "-"}</td>
+      <td style="text-align:right">${_avgRev(r.avgRevenue)}</td>
     </tr>`).join("");
-    const t = j.data.reduce((a,r) => ({s:a.s+r.sample, r:a.r+r.reserved, i:a.i+r.installed, rev:a.rev+r.avgRevenue*r.installed}), {s:0,r:0,i:0,rev:0});
+    const t = j.data.reduce((a,r) => ({s:a.s+r.sample, r:a.r+r.reserved, i:a.i+r.installed, rev:a.rev+_num(r.avgRevenue)*r.installed}), {s:0,r:0,i:0,rev:0});
     document.getElementById("convFoot").innerHTML = `<tr style="background:#F1FBF6;font-weight:700">
       <td>합계</td><td style="text-align:right">${t.s}</td><td style="text-align:right">${t.r}</td>
       <td style="text-align:right">${t.i} · ${t.s > 0 ? (t.i/t.s*100).toFixed(1) : 0}%</td>
@@ -2507,13 +2546,13 @@ async function dashRealConv(){
     const maxPct = Math.max(...dist.map(x => parseFloat(String(x.pct||"").replace("%","")) || 0), 1);
     document.getElementById("realconvDist").innerHTML = dist.map(x => {
       const pct = parseFloat(String(x.pct||"").replace("%","")) || 0;
-      return `<div style="display:flex;align-items:center;gap:8px;font-size:12px">
-        <div style="width:64px;color:#5B6763;flex-shrink:0">${esc(x.label)}</div>
+      return `<div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+        <div style="width:70px;color:#5B6763;flex-shrink:0;font-weight:600">${esc(x.label)}</div>
         <div class="rowbar-track" style="flex:1"><div class="rowbar-fill" style="width:${(pct/maxPct*100).toFixed(1)}%"></div></div>
-        <div style="width:84px;text-align:right">${x.count || "-"} · <b>${x.pct || "-"}</b></div></div>`;
+        <div style="width:96px;text-align:right;flex-shrink:0">${x.count || "-"} · <b>${x.pct || "-"}</b></div></div>`;
     }).join("");
     if (d.timing) document.getElementById("realconvTiming").innerHTML =
-      `💡 <b>1차 push:</b> ${esc(d.timing.first || "-")} · <b>2차 push:</b> ${esc(d.timing.second || "-")} · <b>포기:</b> ${esc(d.timing.giveup || "-")}`;
+      `<b>1차 push:</b> ${esc(d.timing.first || "-")} &nbsp;·&nbsp; <b>2차 push:</b> ${esc(d.timing.second || "-")} &nbsp;·&nbsp; <b>포기:</b> ${esc(d.timing.giveup || "-")}`;
     if (d.updateTime) document.getElementById("realconvUpdate").textContent = d.updateTime + " 기준";
   } catch(e){ document.getElementById("realconvDist").innerHTML = '<div class="hint">전환 분석 데이터를 불러오지 못했습니다.</div>'; }
 }
@@ -2547,13 +2586,14 @@ function renderProducts(){
   }).sort((a,b) => b.adj - a.adj);
   if (!rows.length){ document.getElementById("productRows").innerHTML = '<div class="hint">해당 월 판매 데이터가 없습니다.</div>'; return; }
   const total = rows.reduce((s,r) => s + r.adj, 0);
+  const PRODUCT_NAMES = {"모던1m22":"모던 1M 22T","모던1m17":"모던 1M 17T","베이지1m22":"베이지 1M 22T","베이지1m17":"베이지 1M 17T","모던50":"모던 500","마블50":"마블 500","코튼50":"코튼 500"};
   document.getElementById("productRows").innerHTML = rows.map(r => {
     const pct = total > 0 ? Math.round(r.adj/total*100) : 0;
     return `<div class="rowbar">
-      <div class="rowbar-top"><span class="rowbar-name">${esc(r.colorCode || "")} <span style="font-weight:500;color:#8A948F">${esc(r.color || "")} ${esc(r.thickness || "")}</span></span>
+      <div class="rowbar-top"><span class="rowbar-name">${esc(PRODUCT_NAMES[r.colorCode] || r.colorCode || "")}</span>
       <span class="rowbar-val"><b>${r.adj.toLocaleString()}집</b> (${pct}%) · ${(r.qty||0).toLocaleString()}장</span></div>
       <div class="rowbar-track"><div class="rowbar-fill" style="width:${pct}%"></div></div></div>`;
-  }).join("") + `<div class="hint" style="margin-top:8px">합계 ${total.toLocaleString()}집 · 시공스케줄 직접 카운팅 기준</div>`;
+  }).join("") + `<div class="hint" style="margin-top:10px">합계 ${total.toLocaleString()}집 · 시공스케줄 직접 카운팅 기준</div>`;
 }
 
 /* ── 상담 전화 ── */
@@ -2573,8 +2613,8 @@ async function dashPhone(){
       al.style.background = cbRate >= 50 ? "#FCF6E9" : "#FBF0F0";
       al.style.color = cbRate >= 50 ? "#A97817" : "#B23B37";
       al.textContent = cbRate >= 50
-        ? `⚡ 이번달 콜백률 ${cbRate}% — 개선 여지 있음`
-        : `🚨 이번달 콜백률 ${cbRate}% — 놓친 고객 ${m.missed - (m.callback||0)}명 회수 안 됨`;
+        ? `이번달 콜백률 ${cbRate}% — 개선 여지 있음`
+        : `이번달 콜백률 ${cbRate}% — 놓친 고객 ${m.missed - (m.callback||0)}명 회수 안 됨`;
     } else al.style.display = "none";
   } catch(e){ document.getElementById("phoneCards").innerHTML = '<div class="hint">상담 전화 데이터를 불러오지 못했습니다.</div>'; }
 }
@@ -2591,9 +2631,9 @@ async function dashReview(){
       cards += dashCard("이번달 후기 참여", rj.participants, "명", `지급완료 ${rj.paid}명`) +
                dashCard("월 후기 지출", Math.round(rj.monthlySpend/10000).toLocaleString(), "만원", `예산 ${rj.budgetRate}%`);
       const lines = [
-        {key:"contract", name:"🥇 계약 후기", cls:""}, {key:"instagram", name:"📱 인스타 팔로우", cls:""},
-        {key:"chatroom", name:"💬 카톡방 참여", cls:""}, {key:"review1", name:"✍️ 첫날 후기", cls:"gold"},
-        {key:"review2", name:"📸 한달 후기", cls:"red"}
+        {key:"contract", name:"계약 후기", cls:""}, {key:"instagram", name:"인스타 팔로우", cls:""},
+        {key:"chatroom", name:"카톡방 참여", cls:""}, {key:"review1", name:"첫날 후기", cls:"gold"},
+        {key:"review2", name:"한달 후기", cls:"red"}
       ];
       document.getElementById("reviewMissions").innerHTML = lines.map(l => {
         const pct = (rj.missions || {})[l.key] || 0, cnt = (rj.missionCount || {})[l.key] || 0;
@@ -2645,15 +2685,15 @@ async function dashAdRank(){
     });
     const compSorted = Object.entries(comp).sort((a,b) => b[1] - a[1]);
     el.innerHTML =
-      `<div class="grid kpis" style="margin-bottom:12px">${dashCard("⭐ 1위", top1, "개")}${dashCard("✅ TOP 3", top3, "개")}${dashCard("❌ 미노출", none, "개")}</div>` +
+      `<div class="grid kpis" style="margin-bottom:14px">${dashCard("1위 키워드", top1, "개")}${dashCard("TOP 3", top3, "개")}${dashCard("미노출", none, "개")}</div>` +
       sorted.map(r => {
         const rank = (r[3]||"").trim();
         let cls = "none", label = "미노출";
         if (rank && rank !== "미노출"){ const n = parseInt(rank); cls = n === 1 ? "top" : n <= 3 ? "mid" : ""; label = n + "위"; }
-        return `<div class="adr-row ${cls}"><span class="adr-name">${esc(r[2])}${label === "1위" ? " ⭐" : ""}</span><span class="hint">${r[4]||0}개 광고</span><span class="adr-pos">${label}</span></div>`;
+        return `<div class="adr-row ${cls}"><span class="adr-name">${esc(r[2])}</span><span class="hint">${r[4]||0}개 광고</span><span class="adr-pos">${label}</span></div>`;
       }).join("") +
-      (compSorted.length ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12.5px">
-        <b>⚔️ 메인 경쟁사:</b> ${esc(compSorted[0][0])} (${compSorted[0][1]}/${latest.length}개 키워드)
+      (compSorted.length ? `<div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.7">
+        <b>메인 경쟁사:</b> ${esc(compSorted[0][0])} (${compSorted[0][1]}/${latest.length}개 키워드 노출)
         ${compSorted.length > 1 ? ` · 기타: ${compSorted.slice(1,5).map(c => esc(c[0])).join(", ")}` : ""}</div>` : "");
     document.getElementById("adrankUpdate").textContent = `${last[0]} ${last[1]} 기준 · ${latest.length}개 키워드`;
   } catch(e){ el.innerHTML = '<div class="hint">광고 순위 데이터를 불러오지 못했습니다.</div>'; }
