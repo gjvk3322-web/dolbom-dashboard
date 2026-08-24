@@ -268,7 +268,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="fg full">
       <label id="fAddrLabel">주소 (동호수 포함) <span class="req">*</span></label>
-      <input type="text" id="fAddress" />
+      <input type="text" id="fAddress" oninput="updateDistHint()" />
+      <div id="distHint" style="display:none;margin-top:6px;padding:9px 12px;border-radius:9px;font-size:12.5px;line-height:1.55"></div>
     </div>
     <div class="fg full">
       <label>연락처</label>
@@ -1453,6 +1454,19 @@ function submitReservation(){
   if(p1!==p2){showToast('⚠️ 제품을 한 번 더 확인해주세요!');document.getElementById('fProduct2').classList.add('error');return;}
   if(time==='AS'&&!document.getElementById('fAsType').value){showToast('⚠️ AS 유형을 선택해주세요');return;} // 🆕 KPI용 구분 필수
 
+  // 🆕 같은 날 이동 동선 검증 (최선 배치 기준, 차단·AS·실측·이전설치 제외)
+  if(routeCheckable(time)){
+    const slot=time.startsWith('오전')?'오전':'오후';
+    const chk=bestAssignment(date,address,slot);
+    if(chk.level==='red'&&!window.__routeOk){
+      openRouteOverlay(chk,{team:currentTeam,date,time});return;
+    }
+    if(window.__routeOk){
+      window.__routeOk=false;
+      try{fbDb.ref('routeOverrides').push({...(window.__routeOvr||{}),address:String(address).substring(0,40),t:Date.now()});}catch(e){}
+    }
+  }
+
   const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='전송 중...';
 
   const isMove=time.includes('이전설치');
@@ -1901,6 +1915,180 @@ function updateBookingStatus(rowNumber,status,name){
     alert('⚠️ 네트워크 오류');
     loadNewBookings();
   });
+}
+
+/* ───────── 같은 날 이동 동선 검증 (최선 배치 기준) ───────── */
+// 기준값 — 여기 숫자만 바꾸면 전체 반영 (분)
+const ROUTE_CFG={good:30,check:45,warn:60,detour:1.3,speedKmh:70};
+const REGION_COORD={
+  수원:[37.263,127.028],화성:[37.199,126.831],오산:[37.149,127.077],평택:[36.992,127.112],안성:[37.008,127.279],용인:[37.241,127.177],
+  이천:[37.272,127.435],여주:[37.298,127.637],양평:[37.491,127.487],광주시:[37.429,127.255],성남:[37.420,127.126],하남:[37.539,127.214],
+  남양주:[37.636,127.216],구리:[37.594,127.129],의정부:[37.738,127.033],양주:[37.785,127.045],동두천:[37.903,127.060],파주:[37.760,126.780],고양:[37.658,126.832],가평:[37.831,127.510],포천:[37.895,127.200],연천:[38.096,127.075],원주:[37.342,127.920],
+  김포:[37.615,126.715],인천:[37.456,126.705],부천:[37.503,126.766],시흥:[37.380,126.803],안산:[37.322,126.831],광명:[37.478,126.864],안양:[37.394,126.957],의왕:[37.345,126.968],군포:[37.361,126.935],과천:[37.429,126.987],
+  강동구:[37.530,127.124],송파:[37.514,127.106],강남:[37.517,127.047],서초:[37.484,127.033],노원:[37.654,127.056],도봉:[37.669,127.047],강북구:[37.640,127.026],중랑:[37.607,127.093],광진:[37.538,127.082],영등포:[37.526,126.896],구로:[37.495,126.888],금천:[37.457,126.895],마포:[37.566,126.902],은평:[37.603,126.929],
+  종로:[37.573,126.979],용산:[37.532,126.990],성동:[37.563,127.037],동대문:[37.574,127.040],성북:[37.589,127.017],서대문:[37.579,126.937],양천:[37.517,126.867],동작:[37.512,126.940],관악:[37.478,126.952],서울:[37.566,126.978],
+  천안:[36.815,127.114],아산:[36.790,127.002],당진:[36.890,126.646],서산:[36.785,126.450],태안:[36.745,126.298],홍성:[36.601,126.665],예산:[36.681,126.845],세종:[36.480,127.289],청주:[36.642,127.489],충주:[36.991,127.926],대전:[36.350,127.385],진천:[36.855,127.436],음성:[36.940,127.690],증평:[36.785,127.581],괴산:[36.815,127.787],공주:[36.447,127.119],보령:[36.333,126.613],청양:[36.459,126.802],부여:[36.276,126.910],논산:[36.187,127.099],계룡:[36.274,127.249],
+  부산:[35.180,129.075],양산:[35.335,129.037],김해:[35.228,128.889],울산:[35.539,129.311],창원:[35.228,128.681],밀양:[35.504,128.746],진주:[35.180,128.108],거제:[34.880,128.621],경주:[35.856,129.225],통영:[34.854,128.433],사천:[35.004,128.064],함안:[35.272,128.406],창녕:[35.544,128.492],거창:[35.687,127.909],합천:[35.567,128.166],의령:[35.322,128.262],남해:[34.838,127.893],하동:[35.067,127.751],산청:[35.416,127.873],함양:[35.520,127.725],고성:[34.973,128.322],
+  대구:[35.871,128.601],경산:[35.825,128.741],구미:[36.120,128.344],칠곡:[35.995,128.402],김천:[36.140,128.114],고령:[35.726,128.263],성주:[35.919,128.283],포항:[36.019,129.343],영천:[35.973,128.939],청도:[35.647,128.734]
+};
+// 넓은 시·군의 세부 지역 — 주소에 이 지명이 있으면 시 중심점 대신 이 좌표 사용
+// p: 오인식 방지를 위해 주소에 상위 도시명이 함께 있어야만 인정하는 지명
+const REGION_SUB={
+  // 화성 (동서 40km)
+  동탄:{c:[37.200,127.074]},향남:{c:[37.134,126.917],p:'화성'},봉담:{c:[37.216,126.949],p:'화성'},
+  송산면:{c:[37.212,126.741]},서신:{c:[37.163,126.669],p:'화성'},우정:{c:[37.076,126.816],p:'화성'},마도:{c:[37.190,126.740],p:'화성'},
+  // 용인
+  수지:{c:[37.322,127.098]},기흥:{c:[37.275,127.116]},처인:{c:[37.234,127.201],p:'용인'},백암:{c:[37.088,127.371],p:'용인'},
+  // 청주
+  오창:{c:[36.716,127.429]},오송:{c:[36.620,127.327]},
+  // 평택·파주
+  안중:{c:[36.986,126.930],p:'평택'},팽성:{c:[36.960,127.113],p:'평택'},문산:{c:[37.855,126.785],p:'파주'},운정:{c:[37.727,126.755]},
+  // 인천·안산 (섬·신도시)
+  송도:{c:[37.382,126.656]},청라:{c:[37.534,126.648]},검단:{c:[37.601,126.660]},영종:{c:[37.493,126.542],p:'인천'},대부도:{c:[37.238,126.593]},
+  // 부산·울산 외곽
+  기장:{c:[35.245,129.222]},정관:{c:[35.322,129.183]},언양:{c:[35.567,129.121]},진해:{c:[35.150,128.660]},
+  // 광역시 동명 구·세부 지역 구분
+  강서구:{c:[37.551,126.850],p:'서울'},명지:{c:[35.095,128.910],p:'부산'},해운대:{c:[35.163,129.164]},
+  달성:{c:[35.774,128.431],p:'대구'},현풍:{c:[35.694,128.454]}
+};
+const REGION_KEYS=Object.keys(REGION_COORD).sort((a,b)=>b.length-a.length);
+const SUB_KEYS=Object.keys(REGION_SUB).sort((a,b)=>b.length-a.length);
+const ALL_COORD=k=>REGION_SUB[k]?REGION_SUB[k].c:REGION_COORD[k];
+function addrRegion(addr){
+  const a=String(addr||'');
+  // 1순위: 세부 지명 (동탄, 서신, 오창 등) — p가 있으면 상위 도시명도 함께 있어야 인정
+  for(const k of SUB_KEYS){
+    if(!a.includes(k))continue;
+    const p=REGION_SUB[k].p;
+    if(!p||a.includes(p))return k;
+  }
+  // 2순위: 시·군 단위
+  for(const k of REGION_KEYS){ if(a.includes(k)) return k; }
+  return null;
+}
+function regionDistKm(r1,r2){
+  if(!r1||!r2||!ALL_COORD(r1)||!ALL_COORD(r2)) return null;
+  const [la1,lo1]=ALL_COORD(r1),[la2,lo2]=ALL_COORD(r2);
+  const R=6371,rad=x=>x*Math.PI/180;
+  const dLa=rad(la2-la1),dLo=rad(lo2-lo1);
+  const h=Math.sin(dLa/2)**2+Math.cos(rad(la1))*Math.cos(rad(la2))*Math.sin(dLo/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h)));
+}
+function travelMin(r1,r2){
+  const d=regionDistKm(r1,r2);
+  return d===null?null:Math.round(d*ROUTE_CFG.detour/ROUTE_CFG.speedKmh*60);
+}
+function routeLevel(min){
+  if(min===null)return 'na';
+  if(min<=ROUTE_CFG.good)return 'green';
+  if(min<=ROUTE_CFG.check)return 'yellow';
+  if(min<ROUTE_CFG.warn)return 'orange';
+  return 'red';
+}
+// 그 날 오전·오후 작업(새 예약 포함)을 팀 수 안에서 가장 유리하게 짝지었을 때,
+// 새 예약이 감당해야 하는 이동시간을 계산
+function bestAssignment(date,newAddr,newSlot){
+  const myR=addrRegion(newAddr);
+  if(!myR)return {level:'na',region:null};
+  const sc=scheduleData[date]||{am:[],pm:[]};
+  const mk=(arr,slot)=>(arr||[]).filter(s=>!isBlockedItem(s)).map(s=>({slot,region:addrRegion(s.address),addr:String(s.address||'').substring(0,16)}));
+  let ams=mk(sc.am,'오전'),pms=mk(sc.pm,'오후');
+  const me={slot:newSlot,region:myR,addr:'새 예약',isNew:true};
+  if(newSlot==='오전')ams=ams.concat([me]);else pms=pms.concat([me]);
+  let crews=1;try{crews=Math.max(1,((getCapacity(currentTeam,date)||{}).crews)||1);}catch(e){}
+  const n=Math.max(crews,ams.length,pms.length);
+  // 상대편 슬롯이 비어 있으면 짝 자체가 없음 → 이동 부담 없음
+  if(ams.length===0||pms.length===0)return {level:'green',region:myR,pair:null,min:0};
+  if(n>6){ // 안전장치: 조합이 너무 많으면 가장 가까운 상대 기준(낙관적)으로만 판단
+    const opp=(newSlot==='오전'?pms:ams).filter(x=>!x.isNew&&x.region);
+    if(opp.length<Math.max(crews,1))return {level:'green',region:myR,pair:null,min:0};
+    let bm=null,bp=null;opp.forEach(o=>{const t=travelMin(myR,o.region);if(t!==null&&(bm===null||t<bm)){bm=t;bp=o;}});
+    return {level:routeLevel(bm),region:myR,pair:bp,min:bm};
+  }
+  const A=ams.slice();while(A.length<n)A.push(null);
+  const P=pms.slice();while(P.length<n)P.push(null);
+  const perms=l=>l.length<=1?[l]:l.flatMap((x,i)=>perms(l.slice(0,i).concat(l.slice(i+1))).map(r=>[x].concat(r)));
+  let best=null;
+  for(const perm of perms(P)){
+    let mx=0,myMin=0,myPair=null;
+    for(let i=0;i<n;i++){
+      const a=A[i],p=perm[i];
+      if(!a||!p)continue;
+      const t=travelMin(a.region,p.region);
+      const tv=t===null?0:t;
+      if(tv>mx)mx=tv;
+      if(a.isNew||p.isNew){myMin=tv;myPair=a.isNew?p:a;}
+    }
+    if(best===null||mx<best.mx||(mx===best.mx&&myMin<best.myMin))best={mx,myMin,myPair};
+  }
+  return {level:routeLevel(best.myMin),region:myR,pair:best.myPair,min:best.myMin};
+}
+function routeCheckable(time){
+  return time&&!isBlockTime(time)&&time!=='AS'&&time!=='실측'&&!time.includes('이전설치');
+}
+function updateDistHint(){
+  const el=document.getElementById('distHint');if(!el)return;
+  const date=document.getElementById('fDate').value;
+  const addr=document.getElementById('fAddress').value;
+  const time=document.getElementById('fTime').value;
+  if(!date||!addr.trim()||!routeCheckable(time)){el.style.display='none';return;}
+  const slot=time.startsWith('오전')?'오전':'오후';
+  const chk=bestAssignment(date,addr,slot);
+  const paint=(bg,bd,fg,html)=>{el.style.background=bg;el.style.border='1.5px solid '+bd;el.style.color=fg;el.innerHTML=html;el.style.display='block';};
+  if(chk.level==='na'){
+    if(addr.trim().length>=5)paint('#F5F5F0','#D9D9D2','#7a7a70','ℹ️ 지역을 인식하지 못했어요 — 주소에 시/군명(예: 화성시, 청주시)을 포함해 주세요');
+    else el.style.display='none';
+    return;
+  }
+  if(!chk.pair){paint('#E8F5E9','#A5D6A7','#1B5E20',`🟢 <b>${chk.region}</b> — 이 날은 빈 팀 배정이 가능해 이동 부담이 없어요`);return;}
+  const info=`${chk.pair.slot} ${chk.pair.region}(${chk.pair.addr}) ↔ 새 예약 <b>${chk.region}</b> · 예상 이동 약 <b>${chk.min}분</b>`;
+  if(chk.level==='green')paint('#E8F5E9','#A5D6A7','#1B5E20','🟢 동선 좋음 — '+info);
+  else if(chk.level==='yellow')paint('#FFF8E1','#F9A825','#8D6E00','🟡 확인 필요 — '+info);
+  else if(chk.level==='orange')paint('#FFF3E0','#FB8C00','#B25000','🟠 동선 비추천 — '+info+'<br>가능하면 다른 날짜를 먼저 확인해 주세요');
+  else paint('#FDECEA','#E53935','#B71C1C','🔴 동선 위험 — '+info+'<br>회사 권장 이동시간('+ROUTE_CFG.warn+'분)을 초과합니다. 다른 날짜를 권해 주세요');
+}
+document.getElementById('fDate').addEventListener('change',updateDistHint);
+document.getElementById('fTime').addEventListener('change',updateDistHint);
+
+/* ── 동선 위험 강행 시 사유 기록 오버레이 ── */
+window.__routeOk=false;window.__routeOvr=null;
+function openRouteOverlay(chk,ctx){
+  let ov=document.getElementById('routeOverlay');
+  if(!ov){
+    ov=document.createElement('div');ov.id='routeOverlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:420px;width:100%;padding:20px;font-size:14px;line-height:1.6">
+      <div style="font-size:16px;font-weight:800;color:#B71C1C;margin-bottom:8px">🚨 이동 동선 재확인</div>
+      <div id="routeOvBody" style="margin-bottom:14px"></div>
+      <div style="font-weight:700;margin-bottom:6px">그래도 접수하려면 사유를 선택해 주세요</div>
+      <div id="routeOvReasons" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+        ${['고객 일정 변경 불가','다른 팀·차량으로 배정 예정','AS·실측 일정 연계','관리자 확인함','기타'].map((r,i)=>`<label style="display:flex;gap:8px;align-items:center;font-size:13.5px"><input type="radio" name="routeOvR" value="${r}" style="width:auto">${r}</label>`).join('')}
+      </div>
+      <input type="text" id="routeOvEtc" placeholder="기타 사유 입력" style="display:none;width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:9px;font-size:13px;margin-bottom:10px">
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="routeOvCancel" style="flex:1;padding:12px;border:1.5px solid #ddd;background:#fff;border-radius:10px;font-weight:700;cursor:pointer">날짜 조정하기</button>
+        <button id="routeOvGo" style="flex:1;padding:12px;border:none;background:#E53935;color:#fff;border-radius:10px;font-weight:700;cursor:pointer">사유 선택 후 접수</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.addEventListener('change',e=>{if(e.target.name==='routeOvR')document.getElementById('routeOvEtc').style.display=e.target.value==='기타'?'block':'none';});
+    document.getElementById('routeOvCancel').onclick=()=>{ov.style.display='none';showToast('접수를 보류했어요. 날짜를 조정해 주세요');};
+    document.getElementById('routeOvGo').onclick=()=>{
+      const sel=document.querySelector('input[name=routeOvR]:checked');
+      if(!sel){showToast('⚠️ 사유를 선택해 주세요');return;}
+      let reason=sel.value;
+      if(reason==='기타'){const etc=document.getElementById('routeOvEtc').value.trim();if(!etc){showToast('⚠️ 기타 사유를 입력해 주세요');return;}reason='기타: '+etc;}
+      window.__routeOvr={...(window.__routeCtx||{}),reason};
+      window.__routeOk=true;ov.style.display='none';
+      submitReservation();
+    };
+  }
+  window.__routeCtx={team:ctx.team,date:ctx.date,time:ctx.time,region:chk.region,pairSlot:chk.pair?chk.pair.slot:'',pairRegion:chk.pair?chk.pair.region:'',minutes:chk.min};
+  document.getElementById('routeOvBody').innerHTML=
+    `${chk.pair?`${chk.pair.slot} <b>${chk.pair.region}</b>(${chk.pair.addr}) ↔ 새 예약 <b>${chk.region}</b><br>`:''}예상 이동 약 <b>${chk.min}분</b> — 회사 권장 이동시간(${ROUTE_CFG.warn}분)을 초과했습니다.<br><span style="color:#7a7a70;font-size:12.5px">시공팀 일정에 무리가 갈 수 있어요. 가능하면 추천 날짜를 먼저 확인해 주세요.</span>`;
+  const checked=document.querySelector('input[name=routeOvR]:checked');if(checked)checked.checked=false;
+  const etc=document.getElementById('routeOvEtc');etc.value='';etc.style.display='none';
+  ov.style.display='flex';
 }
 </script>
 </body>
