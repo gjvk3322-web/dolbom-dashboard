@@ -1333,6 +1333,7 @@ function editItem(time,ds,index){
   document.getElementById('fScope').value=item.scope||'';
   document.getElementById('fReferrer').value=item.referrer||'';
   if(item.channelName){document.getElementById('channelText').value=item.channelName;document.getElementById('channelResult').style.display='flex';}else{document.getElementById('channelText').value='';document.getElementById('channelResult').style.display='none';}
+  try{updateDistHint();}catch(e){} // 🆕 수정 모드로 불러온 뒤에도 동선 안내 갱신
   document.getElementById('fProduct1').value=item.product||'';
   document.getElementById('fProduct2').value=item.product||'';
   checkProductMatch();
@@ -1825,6 +1826,7 @@ function fillBookingForm(b){
   // 신축여부, 제품 선택자 자동 매칭 시도
   var fIsNew=document.getElementById('fIsNew');
   if(fIsNew&&b.memo&&b.memo.indexOf('신축')>=0) fIsNew.value='신축';
+  try{updateDistHint();}catch(e){} // 🆕 자동 입력 후에도 동선 안내 갱신
   
   // 폼 영역으로 스크롤
   var formSection=document.getElementById('formSection');
