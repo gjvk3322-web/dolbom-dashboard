@@ -689,6 +689,7 @@ let holdReason='';
 let surveyDone=false, surveyNps=null;
 let curStep=0;
 let skipped={};
+let serverFresh=false;   // 서버 최신 상태 확인 여부 — 확인 전엔 캐시백 신청 잠금
 
 function stepLocked(i){return i>SURVEY_STEP && !surveyDone;}
 
@@ -867,7 +868,7 @@ function updateSummary(){
   // 빠른 신청 배너: 설문 완료 + 신청 가능 금액이 있으면 어디서든 노출
   const qc=document.getElementById('quickClaim');
   if(qc){
-    const showQC=surveyDone&&remain>0&&payStatus.indexOf('신청완료')<0&&STEPS[curStep].type!=='final';
+    const showQC=serverFresh&&surveyDone&&remain>0&&payStatus.indexOf('신청완료')<0&&STEPS[curStep].type!=='final';
     qc.style.display=showQC?'flex':'none';
     if(showQC)qc.innerHTML='<span>지금 <b>'+remain.toLocaleString()+'원</b> 신청 가능 — 달성한 만큼 먼저 받을 수 있어요</span><span class="qc-go">신청하기</span>';
   }
@@ -938,6 +939,11 @@ function updateCashbackBtn(){
   const isPaid=payStatus.indexOf('지급완료')>=0;
   const btn=document.getElementById('cashbackBtn');
   const hb=document.getElementById('holdBanner');
+  if(!serverFresh){
+    hb.style.display='none';
+    btn.disabled=true;btn.textContent='최신 정보 확인 중...';
+    return;
+  }
   if(holdReason){
     hb.style.display='block';
     document.getElementById('holdReasonText').textContent=holdReason;
@@ -1185,6 +1191,7 @@ async function submitMission(mIdx){
 
 // ── 캐시백 신청 (설문 완료 필수) ──
 async function requestCashback(){
+  if(!serverFresh){showToast('최신 정보를 확인하는 중이에요. 잠시 후 다시 눌러주세요');return;}
   if(!surveyDone){showToast('설문을 먼저 완료해 주세요');gotoStep(SURVEY_STEP);return;}
   if(holdReason){showToast('지급 보류 중입니다 — 카카오톡 채널로 문의해 주세요');return;}
   if(!document.getElementById('cashbackConsent').checked){showToast('개인정보 수집에 동의해 주세요');return;}
@@ -1290,44 +1297,128 @@ function restoreInspectionFromLocal(){
 }
 
 // ═════════════════════════════════════════════════════════
-// 데이터 로드 (이벤트 + 설문 완료 여부)
+// 데이터 로드 v3 — reviewBootstrap 1콜 + 캐시 TTL + 복귀 재동기화
 // ═════════════════════════════════════════════════════════
+const CACHE_FRESH_MS = 5*60*1000;      // 이내: 캐시 신뢰
+const CACHE_MAX_MS   = 24*60*60*1000;  // 초과: 캐시 폐기
+const SYNC_MIN_MS    = 60*1000;        // 복귀 재조회 최소 간격
+let lastSync=0;
+
+function recomputePaid(){
+  paidTotal=0;
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
+}
+function pickInitialStep(){
+  const c=missionState[MISSIONS[0].id]||{};
+  if(!c.done&&!skipped[MISSIONS[0].id]){curStep=0;return;}
+  if(!surveyDone){curStep=SURVEY_STEP;return;}
+  curStep=STEPS.length-1;
+  for(let i=SURVEY_STEP+1;i<STEPS.length-1;i++){
+    const m=MISSIONS[STEPS[i].m];const s=missionState[m.id]||{};
+    if(!s.done&&!skipped[m.id]){curStep=i;break;}
+  }
+}
+function hideLoading(){const o=document.getElementById('loadingOverlay');if(o)o.style.display='none';}
+
+function fillAccount(acc){
+  if(!acc)return;
+  if(acc.bank)document.getElementById('accBank').value=acc.bank;
+  if(acc.name)document.getElementById('accName').value=acc.name;
+  if(acc.num)document.getElementById('accNum').value=acc.num;
+}
+function saveCache(){
+  try{localStorage.setItem(LS_KEY('cache'),JSON.stringify({cachedAt:Date.now(),
+    data:{ms:missionState,ps:payStatus,hold:holdReason,svy:surveyDone,nps:surveyNps}}));}catch(e){}
+}
+function applyBootstrap(d){
+  if(d.missions)Object.keys(d.missions).forEach(id=>{missionState[id]=d.missions[id];});
+  payStatus=(d.cashback&&d.cashback.status)||'';
+  holdReason=(d.hold&&d.hold.active)?(d.hold.reason||'확인이 필요한 접수 건이 있어요.'):'';
+  if(d.survey&&d.survey.done){
+    surveyDone=true;if(typeof d.survey.nps==='number')surveyNps=d.survey.nps;
+    try{localStorage.setItem(LS_KEY('svy'),'1');}catch(e){}
+  }
+  recomputePaid();
+  fillAccount(d.account);
+}
+async function fetchBootstrap(){
+  const r=await fetch(API_URL+'?type=reviewBootstrap&phone='+encodeURIComponent(PHONE));
+  const d=await r.json();
+  if(!d||d.ok!==true)throw new Error('bootstrap unavailable');
+  return d;
+}
+// 구버전 앱스크립트 폴백 (bootstrap 미배포 시에도 페이지 정상 동작)
+async function legacyLoad(){
+  const holdP=fetch(API_URL+'?type=reviewHold&phone='+encodeURIComponent(PHONE)).then(r=>r.json())
+    .then(d=>{if(d&&d.hold)holdReason=d.reason||'확인이 필요한 접수 건이 있어요.';}).catch(()=>{});
+  const svP=fetch(API_URL+'?type=surveyCheck&phone='+encodeURIComponent(PHONE)).then(r=>r.json())
+    .then(d=>{if(d&&d.done){surveyDone=true;if(typeof d.nps==='number')surveyNps=d.nps;try{localStorage.setItem(LS_KEY('svy'),'1');}catch(e){}}}).catch(()=>{});
+  const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
+  const data=await res.json();
+  if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
+  if(data.status)payStatus=data.status;
+  recomputePaid();
+  fillAccount(data.account);
+  await holdP;await svP;
+}
+async function syncFromServer(){
+  try{
+    const d=await fetchBootstrap();
+    applyBootstrap(d);
+    serverFresh=true;lastSync=Date.now();saveCache();
+    return true;
+  }catch(e){
+    try{
+      await legacyLoad();
+      serverFresh=true;lastSync=Date.now();saveCache();
+      return true;
+    }catch(e2){console.error('로드 실패',e2);return false;}
+  }
+}
+
 async function loadData(){
   loadLocal();
   MISSIONS.forEach(m=>{if(!missionState[m.id])missionState[m.id]={done:false,url:'',submittedAt:''};});
-  if(!PHONE){document.getElementById('loadingOverlay').style.display='none';renderStep();return;}
-  // 보류 여부 + 설문 완료 여부 (병렬 — 실패해도 페이지는 정상 동작)
-  const holdP=fetch(API_URL+'?type=reviewHold&phone='+encodeURIComponent(PHONE)).then(r=>r.json()).then(d=>{if(d&&d.hold)holdReason=d.reason||'확인이 필요한 접수 건이 있어요.';}).catch(()=>{});
-  const svP=fetch(API_URL+'?type=surveyCheck&phone='+encodeURIComponent(PHONE)).then(r=>r.json()).then(d=>{if(d&&d.done){surveyDone=true;if(typeof d.nps==='number')surveyNps=d.nps;}}).catch(()=>{});
+  if(!PHONE){serverFresh=true;hideLoading();renderStep();return;}
+
+  // 1) 캐시 (TTL 내) → 즉시 화면. 캐시백 버튼은 서버 확인까지 잠김
+  let cached=false;
   try{
-    const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
-    const data=await res.json();
-    if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
-    if(data.status)payStatus=data.status;
-    paidTotal=0;
-    MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
-    if(data.account){
-      if(data.account.bank)document.getElementById('accBank').value=data.account.bank;
-      if(data.account.name)document.getElementById('accName').value=data.account.name;
-      if(data.account.num)document.getElementById('accNum').value=data.account.num;
+    const c=JSON.parse(localStorage.getItem(LS_KEY('cache'))||'null');
+    if(c&&c.data&&c.cachedAt&&(Date.now()-c.cachedAt)<=CACHE_MAX_MS){
+      Object.keys(c.data.ms||{}).forEach(id=>{missionState[id]=c.data.ms[id];});
+      payStatus=c.data.ps||'';
+      if(c.data.hold)holdReason=c.data.hold;
+      if(c.data.svy){surveyDone=true;if(typeof c.data.nps==='number')surveyNps=c.data.nps;}
+      recomputePaid();cached=true;
     }
-  }catch(e){console.error('이벤트 로드 실패',e);}
-  restoreInspectionFromLocal();
-  await holdP;await svP;
-  // 시작 스텝: 계약후기 미완료면 1단계, 설문 미완료면 설문, 그 외 첫 미완료 미션, 없으면 신청 스텝
-  const c=missionState[MISSIONS[0].id]||{};
-  if(!c.done&&!skipped[MISSIONS[0].id])curStep=0;
-  else if(!surveyDone)curStep=SURVEY_STEP;
-  else{
-    curStep=STEPS.length-1;
-    for(let i=SURVEY_STEP+1;i<STEPS.length-1;i++){
-      const m=MISSIONS[STEPS[i].m];const s=missionState[m.id]||{};
-      if(!s.done&&!skipped[m.id]){curStep=i;break;}
-    }
+  }catch(e){}
+
+  // 2) 8초 안전장치 — 무한 스피너 방지
+  const failsafe=setTimeout(()=>{hideLoading();renderStep();},8000);
+
+  if(cached){
+    pickInitialStep();
+    clearTimeout(failsafe);hideLoading();renderStep();
   }
-  document.getElementById('loadingOverlay').style.display='none';
-  renderStep();
+
+  // 3) 서버 동기화 (bootstrap 1콜, 실패 시 구 API 3콜 폴백)
+  await syncFromServer();
+  restoreInspectionFromLocal();
+  if(!cached)pickInitialStep();
+  clearTimeout(failsafe);hideLoading();renderStep();
 }
+
+// 카톡 인앱 복귀 시 가벼운 재동기화 (60초 최소 간격)
+function maybeResync(){
+  if(!PHONE)return;
+  if(Date.now()-lastSync<SYNC_MIN_MS)return;
+  lastSync=Date.now();
+  fetchBootstrap().then(d=>{applyBootstrap(d);serverFresh=true;saveCache();renderStep();}).catch(()=>{});
+}
+window.addEventListener('pageshow',()=>{maybeResync();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeResync();});
+
 loadData();
 
 
