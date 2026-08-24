@@ -281,6 +281,36 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .cs-st.no{color:var(--text3);font-weight:500}
 .cs-note{margin-top:10px;padding:10px 12px;background:#f8f9fa;border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6}
 
+/* 상단 고정 보류 배너 (모든 스텝에서 노출) */
+.hold-top{margin:10px 16px 0;padding:12px 14px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:12px;font-size:12.5px;color:#7c2d12;line-height:1.6}
+.hold-top b{display:block;font-size:13.5px;color:#9a3412;margin-bottom:2px}
+
+/* 플랫폼 가이드 g2 */
+.g-label{font-size:12px;font-weight:800;color:var(--text2);margin-bottom:7px}
+.g-quick{background:linear-gradient(135deg,#FFF8E1,#FFF4D6);border:1px solid #F5D87E;border-radius:12px;padding:12px 14px;margin-top:12px}
+.g-quick .g-label{color:#7A5C10}
+.g-quick-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#5C4810;font-weight:600;padding:3px 0;line-height:1.5}
+.gq-n{flex:0 0 18px;height:18px;border-radius:50%;background:#E8B548;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.g-plat{margin-top:12px}
+.g-plat-btns{display:flex;gap:8px;flex-wrap:wrap}
+.g-plat-btn{flex:1;min-width:90px;padding:12px 8px;text-align:center;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .12s}
+.g-plat-btn.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
+.g-detail-btn{width:100%;margin-top:10px;padding:11px;border:1.5px dashed var(--border);border-radius:10px;background:#fff;font-size:12.5px;font-weight:700;color:var(--text3);cursor:pointer;font-family:inherit}
+.g-hints{background:#eef4fd;border:1px solid #b9d3f5;border-radius:12px;padding:12px 14px;margin-top:10px}
+.g-hints .g-label{color:#2b5d9e}
+.g-hint-row{font-size:12.5px;color:#2b4a72;padding:3px 0;line-height:1.55;word-break:keep-all}
+.g-hint-note{margin-top:6px;font-size:11.5px;color:#5b7ca6}
+.g-steps,.g-photos{background:#eafaf1;border:1px solid #bce6cd;border-radius:12px;padding:12px 14px;margin-top:10px}
+.g-steps .g-label,.g-photos .g-label{color:#1d7a4d}
+.g-step-row,.g-photo-row{font-size:12.5px;color:#265c41;padding:2.5px 0;line-height:1.55}
+.g-tips{background:#f4f5f7;border:1px solid #e1e4e8;border-radius:12px;padding:12px 14px;margin-top:10px}
+.g-tip-row{font-size:12px;color:var(--text2);padding:2.5px 0;line-height:1.55}
+.g-disc{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-top:10px}
+.g-disc-txt{font-size:12.5px;color:var(--text2);background:#f8f9fa;border-radius:8px;padding:9px 11px;line-height:1.55}
+.g-disc-copy{width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:var(--text2);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.g-disc-note{margin-top:7px;font-size:10.5px;color:var(--text3);line-height:1.5}
+.g-cond{margin-top:8px;font-size:11px;color:var(--text3);line-height:1.6}
+
 </style>
 </head>
 <body>
@@ -323,6 +353,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="row" id="statusRow" style="display:none;margin-top:4px;padding-top:6px;border-top:1px solid var(--border)"><span class="label">상태</span><span class="value" id="statusText" style="color:var(--orange)">-</span></div>
     </div>
     <div class="quick-claim" id="quickClaim" style="display:none" onclick="gotoStep(STEPS.length-1)"></div>
+    <div class="hold-top" id="holdTopBanner" style="display:none"></div>
   </div>
 
   <!-- 스텝 인디케이터 -->
@@ -656,22 +687,22 @@ function _row(label,val){return '<div style="display:flex;gap:6px;margin-top:4px
 function _must(val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--red)">필수</span><span style="font-size:12px;color:var(--red);font-weight:600;line-height:1.4">'+val+'</span></div>';}
 
 const MISSIONS=[
-  {id:'contract',short:'계약후기',icon:'📝',title:'웰컴쿠폰(계약후기) 작성',reward:30000,tag:'시공 전 작성',tag2:'당일 할인 적용',guide:'contract',
+  {id:'contract',short:'계약후기',icon:'📝',title:'웰컴쿠폰(계약후기) 작성',reward:30000,tag:'시공 전 작성',tag2:'당일 할인 적용',
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 전 계약 후기 작성')},
   {id:'chatroom',short:'단톡방',icon:'💬',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,tag:'시공 중 업로드',
     desc:_row('어디에','입주자 단톡방 (카톡 · 노크타운 등)')+_row('무엇을','설치 중인 사진과 한 줄 후기')},
-  {id:'review1',short:'당일후기1',icon:'⭐',title:'시공 당일 후기 ①',reward:20000,guide:'day',
+  {id:'review1',short:'당일후기1',icon:'⭐',title:'시공 당일 후기 ①',reward:20000,
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 당일 후기 작성')},
-  {id:'review2',short:'당일후기2',icon:'🌟',title:'시공 당일 후기 ②',reward:20000,guide:'day',
+  {id:'review2',short:'당일후기2',icon:'🌟',title:'시공 당일 후기 ②',reward:20000,
     desc:_row('어디에','셀인 · 강사모 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
   {id:'instagram',short:'인스타',icon:'📸',title:'인스타그램 후기',reward:10000,
-    desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진과 함께 후기 작성')+_must('@dolbomstore 태그 · #돌봄매트 #매트시공')},
+    desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진·짧은 이야기와 함께 후기 작성')+_row('추천','@dolbomstore 태그 · 해시태그 3~5개')},
   {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',reward:10000,
-    desc:_row('어디에','주제 선택 → 시공매트 · 층간소음매트 중 1곳')+_row('무엇을','시공 사진과 함께 "매트시공 완료" 후기')+_must('#돌봄매트 #매트시공')},
-  {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,guide:'mami',
-    desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_must('시공매트 · 돌봄매트 키워드'),
+    desc:_row('어디에','쓰레드 (주제 태그 1개 선택 — 예: 매트시공)')+_row('무엇을','짧은 경험담과 사진 1~3장')+_row('추천','본문에 돌봄매트 자연스럽게 언급')},
+  {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,
+    desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_row('추천','시공매트 · 돌봄매트 자연스럽게 언급'),
     link:'mamitalk',linkLabel:'마미톡 앱',customUrl:'go-mamitalk.html'},
-  {id:'review_month',short:'한달후기',icon:'📅',title:'한 달 후 후기',reward:20000,guide:'month',
+  {id:'review_month',short:'한달후기',icon:'📅',title:'한 달 후 후기',reward:20000,
     desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','한 달 사용 후기 작성')}
 ];
 const MAX_REWARD=130000;
@@ -690,6 +721,7 @@ let surveyDone=false, surveyNps=null;
 let curStep=0;
 let skipped={};
 let serverFresh=false;   // 서버 최신 상태 확인 여부 — 확인 전엔 캐시백 신청 잠금
+let reupOpen=false;      // 달성 미션 사진 교체 UI 열림 여부
 
 function stepLocked(i){return i>SURVEY_STEP && !surveyDone;}
 
@@ -703,35 +735,145 @@ function saveSkip(){try{localStorage.setItem(LS_KEY('skip'),JSON.stringify(skipp
 
 // ── 지역명 ──
 function getRegion(){try{return localStorage.getItem(LS_KEY('region'))||'';}catch(e){return '';}}
-function setRegion(v){try{localStorage.setItem(LS_KEY('region'),v.trim());}catch(e){} refreshTitleText();}
+function setRegion(v){try{localStorage.setItem(LS_KEY('region'),v.trim());}catch(e){} curTitle='';rollTitle();}
 
-// ── 제목 생성기 ──
-const TITLE_POOL={
-  contract:{kw:['층간소음매트','시공매트','매트시공'],tail:['계약 후기','계약 후기 (샘플 비교 끝!)','계약했어요!']},
-  day:{kw:['층간소음매트','시공매트','매트시공'],tail:['시공 후기','시공 완료 후기','솔직 후기','시공 후기 (층간소음 고민 끝!)']},
-  month:{kw:['층간소음매트','시공매트','매트시공'],tail:['한 달 사용 후기','한 달 실사용 후기','사용 한 달 솔직 후기']},
-  mami:{kw:['시공매트'],tail:['시공 후기','설치 후기','솔직 후기']}
+// ── 플랫폼별 후기 작성 가이드 (2026-08-25 g2) ──
+// 데이터와 렌더링 분리 — 전략 수정은 PLATFORM_GUIDES만 고치면 됨
+const GUIDE_VERSION='g2';
+
+// 설문 답변 (서버 bootstrap 우선, localStorage 폴백)
+let surveyAns=null;
+function getSurveyAns(){
+  if(surveyAns)return surveyAns;
+  try{const a=JSON.parse(localStorage.getItem(LS_KEY('svyans'))||'null');if(a)surveyAns=a;}catch(e){}
+  return surveyAns;
+}
+function _ansFirst(q){const a=getSurveyAns();if(!a||!a[q]||!a[q].length)return '';
+  let v=String(a[q][0]).replace(/^기타:\s*/,'').trim();
+  const i=v.indexOf('(');if(i>2)v=v.slice(0,i).trim();
+  return v;}
+
+// review2 · 한달후기 플랫폼 선택 (phone별 저장)
+function getPlat(mid){try{return localStorage.getItem(LS_KEY('p_'+mid))||'';}catch(e){return '';}}
+function setPlat(mid,p){try{localStorage.setItem(LS_KEY('p_'+mid),p);}catch(e){} renderStep();}
+
+const DISC_TXT={
+  discount:'본 후기는 돌봄매트 후기 이벤트에 참여하여 할인 혜택을 받고 작성한 실제 후기입니다.',
+  cashback:'본 후기는 돌봄매트 후기 이벤트에 참여하여 캐시백 혜택을 받고 작성한 실제 후기입니다.'
 };
-let curPick={kw:'',tail:''};
-function _rand(a){return a[Math.floor(Math.random()*a.length)];}
+
+const PLATFORM_GUIDES={
+  contract:{name:'맘스홀릭 계약후기',disc:'discount',
+    quick:['추천 제목 골라 복사하기','알아보고 계약한 과정 적기','샘플·비교 사진 올리기','혜택 표시 문구 붙이기'],
+    titles:['{r} 층간소음매트 알아보다 돌봄매트로 계약한 이유','{r} 시공매트 여러 곳 비교하다 결정했어요','아기 뛰기 시작해서 시공매트 알아본 후기','{r} 시공매트 샘플 비교하고 돌봄매트로 계약했어요','\'{c}\' 고민하다 시공매트 계약한 후기','{r} 매트시공 업체 비교 끝에 계약했어요','{w} 때문에 층간소음매트 알아보고 계약한 후기','{r} 층간소음매트 돌봄매트 계약 후기'],
+    body:['왜 시공매트를 알아봤는지','가장 고민했던 부분','어떤 것을 비교했는지','돌봄매트를 선택한 이유','시공 전에 기대하는 부분'],
+    photos:['받은 샘플','컬러 비교','시공할 집 바닥','제품 비교 과정'],
+    tips:['제목의 지역·키워드가 검색 노출에 도움돼요','본문 첫 문장에 제목 내용을 자연스럽게 이어주세요','같은 키워드를 억지로 반복하지 않아도 됩니다']},
+  moms_day:{name:'맘스홀릭 시공 당일 후기',disc:'cashback',
+    quick:['추천 제목 골라 복사하기','시공 전→과정→완성 순서로 적기','시공 전후 사진 5장 안팎','혜택 표시 문구 붙이기'],
+    titles:['{r} 층간소음매트 시공 완료 후기','아기 있는 집 시공매트 설치 전후 비교해봤어요','{r} 거실+복도 시공매트 시공하고 달라진 점','시공매트 실제 시공 과정과 마감 후기','{r} 매트시공 하루만에 끝낸 후기','\'{s}\'까지 만족한 {r} 시공매트 후기','{r} 시공매트 돌봄매트 시공 후기','층간소음매트 시공 당일 솔직 후기'],
+    body:['오늘 시공하게 된 상황','시공 전 모습','시공 과정','시공 완료 모습','가장 만족했던 부분','직접 느낀 점'],
+    photos:['시공 전','작업 중','거실 전체','복도','문·펜트리 마감','실제 생활 모습'],
+    tips:['계약후기와 겹치지 않게 — 오늘의 "결과" 중심으로','사진은 5장 안팎 추천 (짧은 영상도 좋아요)','본문 첫 문장에 제목 키워드를 자연스럽게','다른 카페에 올릴 글과는 내용·사진을 다르게 해주세요']},
+  sellin:{name:'셀인',disc:'cashback',
+    quick:['추천 제목 골라 복사하기','인테리어 관점으로 적기','공간 전체가 보이는 사진','혜택 표시 문구 붙이기'],
+    titles:['{r} 화이트 인테리어에 시공매트 깔아본 후기','신축 입주하면서 거실 복도 시공매트 했어요','시공매트 실제 마감과 인테리어 느낌','시공매트 깔고 집 분위기가 어떻게 바뀌었는지','{r} 아파트 시공매트 컬러 고민한 후기','인테리어 해치지 않는 층간소음매트 후기'],
+    body:['집 인테리어 스타일','매트를 고민한 이유','컬러·사이즈 선택','시공 후 인테리어 느낌','문·펜트리·벽면 마감','만족한 점과 아쉬운 점'],
+    photos:['거실 전체','복도','문 앞·펜트리','벽면 마감','가구 주변','시공 전후 비교'],
+    tips:['육아보다 인테리어·공간 느낌 중심으로','컬러 조합 이야기가 반응이 좋아요','맘스홀릭 글과 내용·사진을 다르게 해주세요']},
+  gangsamo:{name:'강사모',disc:'cashback',
+    quick:['추천 제목 골라 복사하기','반려견 생활 중심으로 적기','아이(강아지) 실제 모습 사진','혜택 표시 문구 붙이기'],
+    titles:['강아지 미끄러짐 때문에 거실 시공매트 해본 후기','강아지 키우는 집 바닥 매트 고민하다 시공했어요','반려견 있는 집 시공매트 실제 사용 느낌','{r} 반려견 집 시공매트 후기','강아지 발 미끄러지는 게 신경 쓰여서 매트 시공했어요'],
+    body:['반려견과 기존 바닥 생활','어떤 점이 신경 쓰였는지','시공매트를 선택한 이유','시공 직후 느낌','청소·관리 첫인상','반려견 실제 모습'],
+    photos:['시공 전 바닥','시공 후 전체','반려견이 매트 위에 있는 모습','청소하는 모습'],
+    tips:['미끄러움·청소·털 관리 등 실제 생활 이야기 중심으로','치료·예방 같은 의료적 표현은 쓰지 말아 주세요','맘스홀릭 글과 내용·사진을 다르게 해주세요']},
+  direct:{name:'다이렉트 결혼준비',disc:'cashback',
+    quick:['추천 제목 골라 복사하기','신혼집·입주 관점으로 적기','새집 전체 느낌 사진','혜택 표시 문구 붙이기'],
+    titles:['신혼집 입주하면서 시공매트까지 한 후기','{r} 신축 입주 시공매트 고민하다 설치했어요','새집 인테리어와 어울리는 시공매트 고른 후기','입주 청소 끝나고 바로 시공매트 한 후기','{r} 신혼집 층간소음매트 후기'],
+    body:['신혼집·입주 상황','왜 입주할 때 같이 시공했는지','제품·가격 비교','컬러 선택','시공 일정','인테리어와의 조화'],
+    photos:['입주 직후 빈 집','시공 후 거실','컬러 디테일','전체 분위기'],
+    tips:['예산·일정 이야기가 예비부부에게 도움돼요','육아 얘기보다 새집·인테리어 중심으로','다른 카페 글과 내용·사진을 다르게 해주세요']},
+  instagram:{name:'인스타그램',disc:'cashback',
+    quick:['첫 문장 골라 붙이기','시공 전후 사진 여러 장 올리기','내 이야기 2~3문장 적기','혜택 표시 문구 붙이기'],
+    titles:['아기가 뛰기 시작하면서 층간소음 때문에 시공매트를 알아보기 시작했어요.','입주하면서 바닥까지 한 번에 정리하고 싶어서 시공매트를 했어요.','\'{w}\' 때문에 고민하다가 오늘 {r} 집에 시공매트 시공했어요.','{r} 아파트 매트시공 완료! 고민 많았는데 하길 잘했어요.'],
+    titleLabel:'첫 문장은 이렇게 시작해보세요',
+    body:['고민했던 것','선택한 이유','시공 과정','실제 느낌'],
+    photos:['1장: 완성된 전체 모습','2장: 시공 전','3장: 작업 중','4~6장: 거실·복도·마감','마지막: 실제 생활 모습'],
+    tips:['첫 문장에 지역·상황을 자연스럽게 넣으면 검색에 도움돼요','해시태그는 3~5개 추천 (예: #돌봄매트 #시공매트 #층간소음매트 #{r}맘)','@dolbomstore 태그해 주시면 저희 계정에서 소개될 수 있어요','짧은 릴(완성→전→과정→완성)도 반응이 좋아요']},
+  threads:{name:'쓰레드',disc:'cashback',
+    quick:['첫 줄에 내 경험 한 문장','2~4문장으로 짧게','사진 1~3장','주제 태그 1개 선택'],
+    titles:['아기 뛰기 시작하면서 층간소음 때문에 고민하다가 오늘 시공매트 했어요.','\'{c}\' 걱정돼서 미루다가 결국 시공매트 깔았습니다.','{r} 집에 매트시공 완료. 생각보다 집 분위기가 안 깨져서 다행이네요.','층간소음매트 오늘 시공했는데, 확실히 발소리가 다르네요.'],
+    titleLabel:'첫 줄은 이렇게 시작해보세요',
+    body:['첫 줄: 실제 경험 한 문장','2~4문장 짧은 이야기','마지막에 가벼운 질문 (예: "매트 고민하시는 분들은 뭐가 제일 걱정되세요?")','댓글이 달리면 자연스럽게 답변'],
+    photos:['완성 모습 1~3장이면 충분해요'],
+    tips:['주제 태그는 \'매트시공\' 같은 것 1개만 — 여러 개는 오히려 손해예요','\'돌봄매트\'는 본문에서 자연스럽게 언급해 주세요','질문으로 끝내면 대화가 이어져 더 많이 노출돼요']},
+  mamitalk:{name:'마미톡',disc:'cashback',
+    quick:['추천 제목 골라 복사하기','아이·고민 중심으로 적기','첫 사진은 제일 예쁜 완성컷','혜택 표시 문구 붙이기'],
+    titles:['층간소음 때문에 시공매트 고민하다가 결국 했어요','아기 걷기 시작하니 바닥이 신경 쓰여서 매트 시공했어요','시공매트 청소가 걱정됐는데 실제로 깔아봤어요','\'{c}\' 고민하다 시공매트 한 후기','{r} 시공매트 돌봄매트 후기'],
+    body:['아이 연령·생활 상황','어떤 고민이 있었는지','어떤 제품을 알아봤는지','선택 이유','실제 시공 모습','사용 첫 느낌'],
+    photos:['첫 장: 완성된 모습 (목록에서 보이는 사진)','아이와 함께 있는 모습','마감 디테일'],
+    tips:['[육아는 템빨] 카테고리에 올려주세요','제목 앞부분에 실제 고민을 넣으면 눈에 잘 띄어요','본문에 시공매트·돌봄매트를 자연스럽게 한 번씩 언급해 주세요']},
+  chatroom:{name:'입주자 단톡방',disc:null,
+    quick:['사진 1장 + 한두 문장이면 충분해요','광고처럼 안 보이는 게 제일 좋아요'],
+    titles:[],
+    body:['예: "오늘 저희 집 시공매트 작업하고 있어요. 궁금하신 분 계시면 써보고 후기 알려드릴게요 :)"'],
+    photos:['설치 중인 모습 1장'],
+    tips:['같은 아파트 이웃의 신뢰가 목표라 짧고 자연스럽게가 최고예요','브랜드·키워드를 반복하지 않아도 됩니다']},
+  month:{name:'한 달 후기',disc:'cashback',
+    quick:['어디에 쓸지 선택하기','한 달 살아본 이야기 적기','당일 후기와 같은 각도 사진 비교','혜택 표시 문구 붙이기'],
+    titles:['시공매트 한 달 사용해본 솔직 후기','{r} 시공매트 한 달 써보니 장단점','아이 있는 집 시공매트 한 달 사용 후 청소·틈새 후기','층간소음매트 한 달 실사용 후기','시공매트 한 달, 다시 선택한다면?'],
+    body:['처음 시공했을 때','한 달 동안 사용한 환경','가장 좋았던 점','생각보다 아쉬웠던 점','청소·관리','지금 다시 선택한다면?'],
+    photos:['시공 직후와 같은 각도의 지금 모습','틈새·눌림 등 실제 상태','생활 모습'],
+    tips:['청소·틈새·눌림처럼 당일엔 몰랐던 이야기가 제일 읽혀요','아쉬운 점을 솔직하게 적어도 괜찮아요','당일 후기와 같은 각도 비교 사진이 신뢰를 높여요']}
+};
+
+// 미션 → 가이드 키 (review2·month는 선택값 반영)
+function guideKeyFor(m){
+  if(m.id==='contract')return 'contract';
+  if(m.id==='review1')return 'moms_day';
+  if(m.id==='review2'){const p=getPlat('review2');return p||null;}
+  if(m.id==='instagram')return 'instagram';
+  if(m.id==='threads')return 'threads';
+  if(m.id==='mamitalk')return 'mamitalk';
+  if(m.id==='chatroom')return 'chatroom';
+  if(m.id==='review_month')return 'month';
+  return null;
+}
+
+// ── 제목 생성 v2 (설문 답변 슬롯 주입) ──
+let curTitle='';
+function _fillTpl(t){
+  const r=getRegion();
+  const map={'{r}':r||'(동네이름)','{c}':_ansFirst('q3'),'{w}':_ansFirst('q2'),'{p}':_ansFirst('q4'),'{s}':_ansFirst('q5')};
+  for(const k of ['{c}','{w}','{p}','{s}'])if(t.indexOf(k)>=0&&!map[k])return null; // 데이터 없으면 이 템플릿 스킵
+  let out=t;Object.keys(map).forEach(k=>{out=out.split(k).join(map[k]);});
+  return out;
+}
 function rollTitle(){
   const st=STEPS[curStep];if(!st||st.type!=='mission')return;
-  const m=MISSIONS[st.m];if(!m.guide)return;
-  const p=TITLE_POOL[m.guide];
-  curPick={kw:_rand(p.kw),tail:_rand(p.tail)};
+  const key=guideKeyFor(MISSIONS[st.m]);if(!key)return;
+  const g=PLATFORM_GUIDES[key];if(!g||!g.titles.length)return;
+  const cands=[];
+  g.titles.forEach(t=>{const f=_fillTpl(t);if(f&&f!==curTitle)cands.push(f);});
+  if(!cands.length){const f=_fillTpl(g.titles[0]);curTitle=f||g.titles[0];}
+  else curTitle=cands[Math.floor(Math.random()*cands.length)];
   refreshTitleText();
 }
-function buildTitle(){
-  const r=getRegion();
-  return (r?r+' ':'(동네이름) ')+curPick.kw+' 돌봄매트 '+curPick.tail;
-}
+function buildTitle(){return curTitle;}
 function refreshTitleText(){
-  const el=document.getElementById('genTitle');if(el)el.textContent=buildTitle();
+  rollIfEmpty();
+  const el=document.getElementById('genTitle');if(el)el.textContent=curTitle;
 }
+function rollIfEmpty(){if(!curTitle)rollTitle();}
 function copyTitle(){
-  if(!getRegion()){showToast('동네 이름을 먼저 입력해 주세요');const i=document.getElementById('regionInput');if(i)i.focus();return;}
-  const t=buildTitle();
-  const done=()=>showToast('제목이 복사됐어요. 글쓰기에서 붙여넣기 하세요');
+  const st=STEPS[curStep];const key=st&&st.type==='mission'?guideKeyFor(MISSIONS[st.m]):null;
+  const g=key?PLATFORM_GUIDES[key]:null;
+  if(g&&!g.titleLabel&&!getRegion()&&curTitle.indexOf('(동네이름)')>=0){showToast('동네 이름을 먼저 입력해 주세요');const i=document.getElementById('regionInput');if(i)i.focus();return;}
+  _copyText(curTitle,'복사됐어요. 글쓰기에서 붙여넣기 하세요');
+}
+function copyDisclosure(kind){_copyText(DISC_TXT[kind]||DISC_TXT.cashback,'혜택 표시 문구가 복사됐어요');}
+function _copyText(t,msg){
+  const done=()=>showToast(msg);
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));}
   else fallbackCopy(t,done);
 }
@@ -741,9 +883,99 @@ function fallbackCopy(t,cb){
   document.body.removeChild(ta);
 }
 
+// ── 개인화 후기 힌트 ──
+function personalHintsHTML(){
+  const a=getSurveyAns();if(!a)return '';
+  const rows=[];
+  const w=_ansFirst('q2');if(w)rows.push('\''+w+'\' 때문에 시공매트를 알아보게 된 이야기');
+  const c=_ansFirst('q3');if(c)rows.push('\''+c+'\'이(가) 걱정됐던 부분과 어떻게 해소됐는지');
+  const p=_ansFirst('q4');if(p)rows.push('\''+p+'\' — 돌봄매트를 선택하게 된 이유');
+  const s=_ansFirst('q5');if(s)rows.push('\''+s+'\'에서 실제로 만족했던 경험');
+  if(!rows.length)return '';
+  let h='<div class="g-hints"><div class="g-label">고객님 경험에서 골라 쓰세요</div>';
+  rows.slice(0,4).forEach(r=>{h+='<div class="g-hint-row">✓ '+r+'</div>';});
+  if(surveyNps!=null&&surveyNps<=6)h+='<div class="g-hint-note">좋았던 점과 아쉬웠던 점 모두 실제 경험대로 작성하셔도 괜찮아요.</div>';
+  h+='</div>';
+  return h;
+}
+
+// ── 가이드 블록 렌더 (공통 renderer) ──
+let guideDetailOpen=false;
+function toggleGuideDetail(){guideDetailOpen=!guideDetailOpen;
+  const d=document.getElementById('gDetail');const b=document.getElementById('gDetailBtn');
+  if(d){d.style.display=guideDetailOpen?'block':'none';}
+  if(b){b.textContent=guideDetailOpen?'작성 팁 접기':'자세한 작성 팁 보기';}
+}
+function platSelectorHTML(mid,opts){
+  const cur=getPlat(mid);
+  let h='<div class="g-plat"><div class="g-label">어디에 작성하시겠어요?</div><div class="g-plat-btns">';
+  opts.forEach(o=>{h+='<div class="g-plat-btn'+(cur===o.k?' on':'')+'" onclick="setPlat(\''+mid+'\',\''+o.k+'\')">'+o.n+'</div>';});
+  h+='</div></div>';
+  return h;
+}
+function guideBlockHTML(m){
+  let h='';
+  // 플랫폼 선택 (review2 · 한달후기)
+  if(m.id==='review2'){
+    h+=platSelectorHTML('review2',[{k:'sellin',n:'셀인'},{k:'gangsamo',n:'강사모'},{k:'direct',n:'다이렉트 결혼준비'}]);
+    if(!getPlat('review2'))return h; // 선택 전엔 가이드 미노출
+  }
+  if(m.id==='review_month'){
+    const opts=[{k:'moms',n:'맘스홀릭'}];
+    const r2=getPlat('review2');
+    if(r2==='sellin')opts.push({k:'sellin',n:'셀인'});
+    else if(r2==='gangsamo')opts.push({k:'gangsamo',n:'강사모'});
+    else if(r2==='direct')opts.push({k:'direct',n:'다이렉트 결혼준비'});
+    h+=platSelectorHTML('month',opts);
+  }
+  const key=guideKeyFor(m);if(!key)return h;
+  const g=PLATFORM_GUIDES[key];if(!g)return h;
+  // 빠른 작성 가이드
+  h+='<div class="g-quick"><div class="g-label">3분 작성 가이드</div>';
+  g.quick.forEach((q,i)=>{h+='<div class="g-quick-row"><span class="gq-n">'+(i+1)+'</span>'+q+'</div>';});
+  h+='</div>';
+  // 제목/첫 문장 박스
+  if(g.titles.length){
+    h+='<div class="title-box"><div class="tb-label">'+(g.titleLabel||'추천 제목 — 복사해서 쓰세요')+'</div>'
+      +'<div class="tb-region"><span>우리 동네</span><input id="regionInput" value="'+getRegion().replace(/"/g,'&quot;')+'" placeholder="동네 이름 입력 (예: 명지, 동탄)" oninput="setRegion(this.value)"></div>'
+      +'<div class="tb-title" id="genTitle"></div>'
+      +'<div class="tb-btns"><button class="tb-copy" onclick="copyTitle()">복사</button><button class="tb-roll" onclick="rollTitle()">다른 문장</button></div></div>';
+  }
+  // 접이식 상세
+  h+='<button class="g-detail-btn" id="gDetailBtn" onclick="toggleGuideDetail()">'+(guideDetailOpen?'작성 팁 접기':'자세한 작성 팁 보기')+'</button>';
+  h+='<div id="gDetail" style="display:'+(guideDetailOpen?'block':'none')+'">';
+  h+=personalHintsHTML();
+  if(g.body&&g.body.length){
+    h+='<div class="g-steps"><div class="g-label">이 순서로 적으면 편해요</div>';
+    g.body.forEach((b,i)=>{h+='<div class="g-step-row">'+(i+1)+'. '+b+'</div>';});
+    h+='</div>';
+  }
+  if(g.photos&&g.photos.length){
+    h+='<div class="g-photos"><div class="g-label">추천 사진 구성</div>';
+    g.photos.forEach(p=>{h+='<div class="g-photo-row">· '+p+'</div>';});
+    h+='</div>';
+  }
+  if(g.tips&&g.tips.length){
+    h+='<div class="g-tips"><div class="g-label">노출에 도움 되는 작성 팁</div>';
+    g.tips.forEach(t=>{h+='<div class="g-tip-row">- '+t+'</div>';});
+    h+='</div>';
+  }
+  h+='</div>';
+  // 혜택 표시 (참여 조건)
+  if(g.disc){
+    h+='<div class="g-disc"><div class="g-label">후기 혜택 표시 (참여 조건)</div>'
+      +'<div class="g-disc-txt">"'+DISC_TXT[g.disc]+'"</div>'
+      +'<button class="g-disc-copy" onclick="copyDisclosure(\''+g.disc+'\')">표시 문구 복사</button>'
+      +'<div class="g-disc-note">커뮤니티 정책상 혜택 표시 글이 제한되는 곳에서는 운영정책을 먼저 확인해 주세요.</div></div>';
+    h+='<div class="g-cond">참여 조건 · 실제 경험 작성 · 직접 촬영한 사진 사용 · 혜택 표시 · 작성 후 화면 인증</div>';
+  }
+  return h;
+}
+
 // ── 스텝 네비게이션 ──
 function gotoStep(i){
   i=Math.max(0,Math.min(i,STEPS.length-1));
+  reupOpen=false;guideDetailOpen=false;curTitle='';
   curStep=i;renderStep();
 }
 function gotoNext(){gotoStep(curStep+1);}
@@ -753,6 +985,9 @@ function skipStep(){
   if(st.type==='mission'){skipped[MISSIONS[st.m].id]=true;saveSkip();}
   gotoNext();
 }
+
+function openReup(){reupOpen=true;renderStep();}
+function closeReup(){reupOpen=false;renderStep();}
 
 function dotState(i){
   const st=STEPS[i];
@@ -800,25 +1035,31 @@ function missionCardHTML(mIdx){
   if(done){
     h+='<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">'+(paid?'지급완료!':'달성 완료!')+' ('+(s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):'')+')</p>'
       +((s.url&&s.url.toString().indexOf('http')===0)?'<button class="photo-btn" onclick="showPhotoModal(\''+s.url.toString().replace(/'/g,"\\'")+'\')">사진 보기</button>':'')
-      +'</div><button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
+      +'</div>';
+    if(!paid){
+      if(reupOpen){
+        h+='<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">'
+          +'<div style="font-size:12.5px;font-weight:700;color:var(--text2);margin-bottom:6px">새 스크린샷으로 교체하기</div>'
+          +'<div class="upload-zone" id="uzone'+mIdx+'"><input type="file" accept="image/*" onchange="handleUpload('+mIdx+',this)"><div class="txt" style="padding:6px 0">새 스크린샷을 업로드해 주세요</div></div>'
+          +'<div class="upload-preview" id="uprev'+mIdx+'"><img id="uimg'+mIdx+'"></div>'
+          +'<button class="submit-btn primary" onclick="submitMission('+mIdx+',true)" id="msubmit'+mIdx+'" disabled>사진 교체하기</button>'
+          +'<button class="skip-btn" onclick="closeReup()">취소</button></div>';
+      }else{
+        h+='<button class="skip-btn" onclick="openReup()">사진을 잘못 올렸나요? 다시 올리기</button>';
+      }
+    }
+    h+='<button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
   }else if(locked){
     h+='<div class="locked-box"><div class="lk-title">설문을 완료하면 참여할 수 있어요</div><div class="lk-sub">미션 내용은 미리 확인하실 수 있어요. 설문(1분)을 마치면 업로드가 열립니다.</div>'
       +'<button class="lk-btn" onclick="gotoStep(SURVEY_STEP)">설문 하러 가기</button></div>'
       +'<button class="skip-btn" onclick="gotoNext()">다음 미션 둘러보기</button>';
   }else{
-    if(m.guide){
-      h+='<div class="title-box"><div class="tb-label">제목은 이대로 복사해서 쓰세요</div>'
-        +'<div class="tb-region"><span>우리 동네</span><input id="regionInput" value="'+getRegion().replace(/"/g,'&quot;')+'" placeholder="동네 이름 입력 (예: 명지, 동탄)" oninput="setRegion(this.value)"></div>'
-        +'<div class="tb-title" id="genTitle"></div>'
-        +'<div class="tb-btns"><button class="tb-copy" onclick="copyTitle()">제목 복사</button><button class="tb-roll" onclick="rollTitle()">다른 제목</button></div></div>'
-        +'<div class="body-check"><b>본문 체크</b> · 제목 키워드 1~2회 반복 · <b>\'돌봄매트\'</b> 1회 이상 · 사진 <b>3장 이상</b>'+(m.guide==='day'||m.guide==='month'?' · 짧은 영상도 함께 올려주시면 큰 도움이 돼요':'')+'</div>'
-        +'<div class="hold-note">필수 키워드가 빠지면 캐시백 지급이 보류될 수 있어요</div>';
-    }
+    h+=guideBlockHTML(m);
     if(m.link)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>'+(m.linkLabel||'카페')+'에서 작성하기</span><span class="arrow">→</span></button>';
     else if(m.links)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>카페 선택해서 작성하기</span><span class="arrow">→</span></button>';
-    h+='<div class="upload-zone" id="uzone'+mIdx+'"><input type="file" accept="image/*" onchange="handleUpload('+mIdx+',this)"><div class="txt" style="padding:6px 0">스크린샷을 업로드해 주세요</div></div>'
+    h+='<div class="upload-zone" id="uzone'+mIdx+'"><input type="file" accept="image/*" onchange="handleUpload('+mIdx+',this)"><div class="txt" style="padding:6px 0">작성 완료 화면을 업로드해 주세요</div></div>'
       +'<div class="upload-preview" id="uprev'+mIdx+'"><img id="uimg'+mIdx+'"></div>'
-      +'<button class="submit-btn primary" onclick="submitMission('+mIdx+')" id="msubmit'+mIdx+'" disabled>미션 달성하기</button>'
+      +'<button class="submit-btn primary" onclick="submitMission('+mIdx+')" id="msubmit'+mIdx+'" disabled>후기 인증하기</button>'
       +'<button class="skip-btn" onclick="skipStep()">이번엔 건너뛰기</button>';
   }
   h+='</div></div>';
@@ -840,7 +1081,7 @@ function renderStep(){
   if(st.type==='mission'){
     mp.style.display='block';
     mp.innerHTML=missionCardHTML(st.m);
-    if(MISSIONS[st.m].guide&&!(missionState[MISSIONS[st.m].id]||{}).done)rollTitle();
+    if(!(missionState[MISSIONS[st.m].id]||{}).done){curTitle='';rollTitle();}
   }else if(st.type==='survey'){
     sw.style.display='block';
     renderSurveyStep();
@@ -864,9 +1105,18 @@ function updateSummary(){
   // 빠른 신청 배너: 설문 완료 + 신청 가능 금액이 있으면 어디서든 노출
   const qc=document.getElementById('quickClaim');
   if(qc){
-    const showQC=serverFresh&&surveyDone&&remain>0&&payStatus.indexOf('신청완료')<0&&STEPS[curStep].type!=='final';
+    const showQC=serverFresh&&surveyDone&&remain>0&&!holdReason&&payStatus.indexOf('신청완료')<0&&STEPS[curStep].type!=='final';
     qc.style.display=showQC?'flex':'none';
     if(showQC)qc.innerHTML='<span>지금 <b>'+remain.toLocaleString()+'원</b> 신청 가능 — 달성한 만큼 먼저 받을 수 있어요</span><span class="qc-go">신청하기</span>';
+  }
+  // 보류 배너 — 어느 스텝에 있든 상단에 항상 표시
+  const htb=document.getElementById('holdTopBanner');
+  if(htb){
+    if(holdReason){
+      const safe=String(holdReason).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      htb.innerHTML='<b>캐시백 지급이 잠시 보류되었어요</b>사유: '+safe+'<br>카카오톡 채널로 문의 주시면 빠르게 도와드릴게요.';
+      htb.style.display='block';
+    }else htb.style.display='none';
   }
   if(paidTotal>0||earned>0||isPending){
     document.getElementById('paidInfo').style.display='block';
@@ -1120,7 +1370,8 @@ async function submitSurvey(){
     const txt=await res.text();let result={};try{result=JSON.parse(txt)}catch(e){}
     if(result.error){btn.disabled=false;btn.textContent='설문 제출하기';showToast('제출 실패: '+result.error);return;}
     surveyDone=true;surveyNps=svyNps;
-    try{localStorage.setItem(LS_KEY('svy'),'1');}catch(e){}
+    surveyAns={q2:svyVal('q2'),q3:svyVal('q3'),q4:svyVal('q4'),q5:svyVal('q5')};
+    try{localStorage.setItem(LS_KEY('svy'),'1');localStorage.setItem(LS_KEY('svyans'),JSON.stringify(surveyAns));}catch(e){}
     fireConfetti();
     renderStep();
   }catch(e){btn.disabled=false;btn.textContent='설문 제출하기';showToast('전송 실패 - 다시 시도해 주세요');}
@@ -1169,20 +1420,28 @@ function handleUpload(idx,input){const f=input.files[0];if(!f)return;if(f.size>1
     };img.src=e.target.result;
   };r.readAsDataURL(f);}
 
-async function submitMission(mIdx){
+async function submitMission(mIdx,isReup){
   const m=MISSIONS[mIdx];if(!uploadData[mIdx]){showToast('스크린샷을 업로드해 주세요');return;}
   const btn=document.getElementById('msubmit'+mIdx);btn.disabled=true;btn.textContent='사진 업로드 중...';
   try{
     const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[mIdx]})});
+      body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[mIdx],
+        platform:(m.id==='review2'?getPlat('review2'):m.id==='review_month'?getPlat('month'):''),guideVersion:GUIDE_VERSION})});
     const txt=await res.text();
     let result={};try{result=JSON.parse(txt)}catch(e){}
-    if(result.error){btn.disabled=false;btn.textContent='미션 달성하기';showToast('업로드 실패: '+result.error);return;}
+    if(result.error){btn.disabled=false;btn.textContent=isReup?'사진 교체하기':'미션 달성하기';showToast('업로드 실패: '+result.error);return;}
     missionState[m.id]={done:true,url:result.url||'',submittedAt:new Date().toISOString()};
     delete skipped[m.id];saveSkip();
-    fireConfetti();showToast(m.title+' 달성! +'+m.reward.toLocaleString()+'원');
-    setTimeout(gotoNext,1200);
-  }catch(e){btn.disabled=false;btn.textContent='미션 달성하기';showToast('전송 실패');}
+    delete uploadData[mIdx];
+    if(isReup){
+      reupOpen=false;
+      showToast('사진이 교체됐어요');
+      renderStep();
+    }else{
+      fireConfetti();showToast(m.title+' 달성! +'+m.reward.toLocaleString()+'원');
+      setTimeout(gotoNext,1200);
+    }
+  }catch(e){btn.disabled=false;btn.textContent=isReup?'사진 교체하기':'미션 달성하기';showToast('전송 실패');}
 }
 
 // ── 캐시백 신청 (설문 완료 필수) ──
@@ -1333,6 +1592,7 @@ function applyBootstrap(d){
   if(d.survey&&d.survey.done){
     surveyDone=true;if(typeof d.survey.nps==='number')surveyNps=d.survey.nps;
     try{localStorage.setItem(LS_KEY('svy'),'1');}catch(e){}
+    if(d.survey.answers){surveyAns=d.survey.answers;try{localStorage.setItem(LS_KEY('svyans'),JSON.stringify(surveyAns));}catch(e){}}
   }
   recomputePaid();
   fillAccount(d.account);
