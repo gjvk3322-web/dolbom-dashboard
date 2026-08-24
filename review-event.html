@@ -48,6 +48,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .paid-info .value.green{color:var(--green);}
 .paid-info .value.primary{color:var(--primary);}
 .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
+.gate-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:24px}
+.gate-box{width:100%;max-width:320px;text-align:center}
+.gate-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px}
+.gate-sub{font-size:14px;color:var(--text3);margin-bottom:24px;line-height:1.6}
+.gate-input{width:100%;padding:16px;font-size:24px;font-weight:800;text-align:center;letter-spacing:12px;border:2px solid var(--border);border-radius:12px;outline:none;background:#fff}
+.gate-input:focus{border-color:var(--primary)}
+.gate-btn{width:100%;margin-top:12px;padding:15px;font-size:16px;font-weight:800;color:#fff;background:var(--primary);border:none;border-radius:12px;cursor:pointer}
+.gate-note{margin-top:16px;font-size:12px;color:var(--text3)}
+.gate-box.shake{animation:gshake .4s}
+@keyframes gshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 .loading-spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{margin-top:16px;font-size:14px;color:var(--text2);font-weight:600;}
@@ -310,6 +320,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .g-disc-copy{width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:var(--text2);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
 .g-disc-note{margin-top:7px;font-size:10.5px;color:var(--text3);line-height:1.5}
 .g-cond{margin-top:8px;font-size:11px;color:var(--text3);line-height:1.6}
+.mini-disc{margin:14px 0 2px;font-size:12px;color:var(--text3);line-height:1.6;cursor:pointer}
+.mini-disc b{color:var(--text2);font-weight:700}
+.mini-disc .md-copy{color:var(--primary-dark);font-weight:700;text-decoration:underline;white-space:nowrap}
 
 </style>
 </head>
@@ -318,6 +331,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <div id="loadingOverlay" class="loading-overlay">
   <div class="loading-spinner"></div>
   <div class="loading-text">정보를 불러오는 중...</div>
+</div>
+
+<div id="gateOverlay" class="gate-overlay">
+  <div class="gate-box" id="gateBox">
+    <div class="gate-title">본인 확인</div>
+    <div class="gate-sub">고객님의 정보 보호를 위해<br>휴대폰 번호 <b>뒤 4자리</b>를 입력해 주세요</div>
+    <input id="gateInput" class="gate-input" type="tel" inputmode="numeric" maxlength="4" placeholder="0000" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=4)checkGate()" onkeydown="if(event.key==='Enter')checkGate()">
+    <button class="gate-btn" onclick="checkGate()">확인</button>
+    <div class="gate-note">시공 계약 시 등록하신 번호예요</div>
+  </div>
 </div>
 
 <div class="loading-bar" id="loadingBar" style="width:0%"></div>
@@ -739,7 +762,7 @@ function setRegion(v){try{localStorage.setItem(LS_KEY('region'),v.trim());}catch
 
 // ── 플랫폼별 후기 작성 가이드 (2026-08-25 g2) ──
 // 데이터와 렌더링 분리 — 전략 수정은 PLATFORM_GUIDES만 고치면 됨
-const GUIDE_VERSION='g2';
+const GUIDE_VERSION='g3';
 
 // 설문 답변 (서버 bootstrap 우선, localStorage 폴백)
 let surveyAns=null;
@@ -758,58 +781,69 @@ function getPlat(mid){try{return localStorage.getItem(LS_KEY('p_'+mid))||'';}cat
 function setPlat(mid,p){try{localStorage.setItem(LS_KEY('p_'+mid),p);}catch(e){} renderStep();}
 
 const DISC_TXT={
-  discount:'본 후기는 돌봄매트 후기 이벤트에 참여하여 할인 혜택을 받고 작성한 실제 후기입니다.',
-  cashback:'본 후기는 돌봄매트 후기 이벤트에 참여하여 캐시백 혜택을 받고 작성한 실제 후기입니다.'
+  discount:'돌봄매트 할인 혜택 받고 기분 좋게 쓰는 후기예요 🧡',
+  cashback:'돌봄매트 캐시백 받고 기분 좋게 쓰는 후기예요 🧡'
 };
 
 const PLATFORM_GUIDES={
   contract:{name:'맘스홀릭 계약후기',disc:'discount',
-    quick:['추천 제목 골라 복사하기','알아보고 계약한 과정 적기','샘플·비교 사진 올리기','혜택 표시 문구 붙이기'],
-    titles:['{r} 층간소음매트 알아보다 돌봄매트로 계약한 이유','{r} 시공매트 여러 곳 비교하다 결정했어요','아기 뛰기 시작해서 시공매트 알아본 후기','{r} 시공매트 샘플 비교하고 돌봄매트로 계약했어요','\'{c}\' 고민하다 시공매트 계약한 후기','{r} 매트시공 업체 비교 끝에 계약했어요','{w} 때문에 층간소음매트 알아보고 계약한 후기','{r} 층간소음매트 돌봄매트 계약 후기'],
+    quick:['추천 제목 골라 복사하기','알아보고 계약한 과정 적기','샘플·비교 사진 올리기','작성 완료 화면 인증하기'],
+    titles:['아기 뛰기 시작해서 시공매트 알아본 후기','\'{c}\' 고민하다 시공매트 계약한 후기','{w} 때문에 층간소음매트 알아보고 계약한 후기'],
+    combo:{heads:['{r} 층간소음매트','{r} 시공매트','{r} 매트시공 업체','{r} 아파트 시공매트','아기 있는 집 층간소음매트','거실+복도 시공매트','첫째 뛰기 시작해서 시공매트','미루고 미루던 층간소음매트'],
+      tails:['알아보다 돌봄매트로 계약한 이유','여러 곳 비교하다 계약했어요','비교 끝에 계약한 후기','샘플 받아보고 계약했어요','상담 받고 계약한 솔직 후기','드디어 계약했어요']},
     body:['왜 시공매트를 알아봤는지','가장 고민했던 부분','어떤 것을 비교했는지','돌봄매트를 선택한 이유','시공 전에 기대하는 부분'],
     photos:['받은 샘플','컬러 비교','시공할 집 바닥','제품 비교 과정'],
     tips:['제목의 지역·키워드가 검색 노출에 도움돼요','본문 첫 문장에 제목 내용을 자연스럽게 이어주세요','같은 키워드를 억지로 반복하지 않아도 됩니다']},
   moms_day:{name:'맘스홀릭 시공 당일 후기',disc:'cashback',
-    quick:['추천 제목 골라 복사하기','시공 전→과정→완성 순서로 적기','시공 전후 사진 5장 안팎','혜택 표시 문구 붙이기'],
-    titles:['{r} 층간소음매트 시공 완료 후기','아기 있는 집 시공매트 설치 전후 비교해봤어요','{r} 거실+복도 시공매트 시공하고 달라진 점','시공매트 실제 시공 과정과 마감 후기','{r} 매트시공 하루만에 끝낸 후기','\'{s}\'까지 만족한 {r} 시공매트 후기','{r} 시공매트 돌봄매트 시공 후기','층간소음매트 시공 당일 솔직 후기'],
+    quick:['추천 제목 골라 복사하기','시공 전→과정→완성 순서로 적기','시공 전후 사진 5장 안팎','작성 완료 화면 인증하기'],
+    titles:['아기 있는 집 시공매트 설치 전후 비교해봤어요','시공매트 실제 시공 과정과 마감 후기','\'{s}\'까지 만족한 {r} 시공매트 후기','층간소음매트 시공 당일 솔직 후기'],
+    combo:{heads:['{r} 층간소음매트','{r} 거실+복도 시공매트','{r} 매트시공','아기 있는 집 시공매트','신축 아파트 시공매트','{w} 때문에 미루던 시공매트'],
+      tails:['시공 완료 후기','오늘 시공하고 달라진 점','하루만에 끝낸 후기','시공 당일 솔직 후기','드디어 시공했어요','설치 전후 비교해봤어요']},
     body:['오늘 시공하게 된 상황','시공 전 모습','시공 과정','시공 완료 모습','가장 만족했던 부분','직접 느낀 점'],
     photos:['시공 전','작업 중','거실 전체','복도','문·펜트리 마감','실제 생활 모습'],
     tips:['계약후기와 겹치지 않게 — 오늘의 "결과" 중심으로','사진은 5장 안팎 추천 (짧은 영상도 좋아요)','본문 첫 문장에 제목 키워드를 자연스럽게','다른 카페에 올릴 글과는 내용·사진을 다르게 해주세요']},
   sellin:{name:'셀인',disc:'cashback',
-    quick:['추천 제목 골라 복사하기','인테리어 관점으로 적기','공간 전체가 보이는 사진','혜택 표시 문구 붙이기'],
-    titles:['{r} 화이트 인테리어에 시공매트 깔아본 후기','신축 입주하면서 거실 복도 시공매트 했어요','시공매트 실제 마감과 인테리어 느낌','시공매트 깔고 집 분위기가 어떻게 바뀌었는지','{r} 아파트 시공매트 컬러 고민한 후기','인테리어 해치지 않는 층간소음매트 후기'],
+    quick:['추천 제목 골라 복사하기','인테리어 관점으로 적기','공간 전체가 보이는 사진','작성 완료 화면 인증하기'],
+    titles:['시공매트 실제 마감과 인테리어 느낌','시공매트 깔고 집 분위기가 어떻게 바뀌었는지','인테리어 해치지 않는 층간소음매트 후기'],
+    combo:{heads:['{r} 화이트 인테리어에','신축 입주하면서','{r} 아파트 거실에','인테리어 톤 맞춰서','컬러 고민 끝에'],
+      tails:['시공매트 깔아본 후기','시공매트 시공한 후기','층간소음매트 설치했어요','시공매트 하고 달라진 집 분위기','매트시공 후기']},
     body:['집 인테리어 스타일','매트를 고민한 이유','컬러·사이즈 선택','시공 후 인테리어 느낌','문·펜트리·벽면 마감','만족한 점과 아쉬운 점'],
     photos:['거실 전체','복도','문 앞·펜트리','벽면 마감','가구 주변','시공 전후 비교'],
     tips:['육아보다 인테리어·공간 느낌 중심으로','컬러 조합 이야기가 반응이 좋아요','맘스홀릭 글과 내용·사진을 다르게 해주세요']},
   gangsamo:{name:'강사모',disc:'cashback',
-    quick:['추천 제목 골라 복사하기','반려견 생활 중심으로 적기','아이(강아지) 실제 모습 사진','혜택 표시 문구 붙이기'],
-    titles:['강아지 미끄러짐 때문에 거실 시공매트 해본 후기','강아지 키우는 집 바닥 매트 고민하다 시공했어요','반려견 있는 집 시공매트 실제 사용 느낌','{r} 반려견 집 시공매트 후기','강아지 발 미끄러지는 게 신경 쓰여서 매트 시공했어요'],
+    quick:['추천 제목 골라 복사하기','반려견 생활 중심으로 적기','아이(강아지) 실제 모습 사진','작성 완료 화면 인증하기'],
+    titles:['강아지 발 미끄러지는 게 신경 쓰여서 매트 시공했어요','반려견 있는 집 시공매트 실제 사용 느낌'],
+    combo:{heads:['강아지 미끄러짐 때문에','강아지 키우는 집이라','반려견 발 미끄러지는 게 신경 쓰여서','{r} 반려견 있는 집','노견 키우다 보니'],
+      tails:['거실 시공매트 해봤어요','시공매트 시공한 후기','바닥 매트 시공했어요','시공매트 실제 사용 느낌']},
     body:['반려견과 기존 바닥 생활','어떤 점이 신경 쓰였는지','시공매트를 선택한 이유','시공 직후 느낌','청소·관리 첫인상','반려견 실제 모습'],
     photos:['시공 전 바닥','시공 후 전체','반려견이 매트 위에 있는 모습','청소하는 모습'],
     tips:['미끄러움·청소·털 관리 등 실제 생활 이야기 중심으로','치료·예방 같은 의료적 표현은 쓰지 말아 주세요','맘스홀릭 글과 내용·사진을 다르게 해주세요']},
   direct:{name:'다이렉트 결혼준비',disc:'cashback',
-    quick:['추천 제목 골라 복사하기','신혼집·입주 관점으로 적기','새집 전체 느낌 사진','혜택 표시 문구 붙이기'],
-    titles:['신혼집 입주하면서 시공매트까지 한 후기','{r} 신축 입주 시공매트 고민하다 설치했어요','새집 인테리어와 어울리는 시공매트 고른 후기','입주 청소 끝나고 바로 시공매트 한 후기','{r} 신혼집 층간소음매트 후기'],
+    quick:['추천 제목 골라 복사하기','신혼집·입주 관점으로 적기','새집 전체 느낌 사진','작성 완료 화면 인증하기'],
+    titles:['새집 인테리어와 어울리는 시공매트 고른 후기','{r} 신혼집 층간소음매트 후기'],
+    combo:{heads:['신혼집 입주하면서','{r} 신축 입주하고','입주 청소 끝나자마자','새집 인테리어 맞춰서'],
+      tails:['시공매트까지 한 후기','시공매트 설치했어요','층간소음매트 시공 후기','매트시공 고민하다 했어요']},
     body:['신혼집·입주 상황','왜 입주할 때 같이 시공했는지','제품·가격 비교','컬러 선택','시공 일정','인테리어와의 조화'],
     photos:['입주 직후 빈 집','시공 후 거실','컬러 디테일','전체 분위기'],
     tips:['예산·일정 이야기가 예비부부에게 도움돼요','육아 얘기보다 새집·인테리어 중심으로','다른 카페 글과 내용·사진을 다르게 해주세요']},
   instagram:{name:'인스타그램',disc:'cashback',
-    quick:['첫 문장 골라 붙이기','시공 전후 사진 여러 장 올리기','내 이야기 2~3문장 적기','혜택 표시 문구 붙이기'],
-    titles:['아기가 뛰기 시작하면서 층간소음 때문에 시공매트를 알아보기 시작했어요.','입주하면서 바닥까지 한 번에 정리하고 싶어서 시공매트를 했어요.','\'{w}\' 때문에 고민하다가 오늘 {r} 집에 시공매트 시공했어요.','{r} 아파트 매트시공 완료! 고민 많았는데 하길 잘했어요.'],
-    titleLabel:'첫 문장은 이렇게 시작해보세요',
-    body:['고민했던 것','선택한 이유','시공 과정','실제 느낌'],
-    photos:['1장: 완성된 전체 모습','2장: 시공 전','3장: 작업 중','4~6장: 거실·복도·마감','마지막: 실제 생활 모습'],
-    tips:['첫 문장에 지역·상황을 자연스럽게 넣으면 검색에 도움돼요','해시태그는 3~5개 추천 (예: #돌봄매트 #시공매트 #층간소음매트 #{r}맘)','@dolbomstore 태그해 주시면 저희 계정에서 소개될 수 있어요','짧은 릴(완성→전→과정→완성)도 반응이 좋아요']},
+    quick:['평소 피드처럼 자유롭게 올리기','시공 사진 또는 짧은 릴 올리기','@dolbomstore 태그하기'],
+    titles:[],
+    body:['형식 제한 없어요 — 내 계정 분위기대로, 지인들에게 소개하듯 편하게 올려주세요'],
+    photos:['시공 전후 사진이나 완성 모습, 아이와 함께 있는 모습 등 자유롭게'],
+    tips:['@dolbomstore 태그만 꼭 해주세요 — 저희 계정에서 소개될 수 있어요','문구·해시태그는 자유예요','짧은 릴(완성→전→과정→완성)도 반응이 좋아요']},
   threads:{name:'쓰레드',disc:'cashback',
-    quick:['첫 줄에 내 경험 한 문장','2~4문장으로 짧게','사진 1~3장','주제 태그 1개 선택'],
+    quick:['첫 줄에 내 경험 한 문장','2~4문장으로 짧게','사진 1~3장','올린 글에 내 댓글 하나 달기'],
     titles:['아기 뛰기 시작하면서 층간소음 때문에 고민하다가 오늘 시공매트 했어요.','\'{c}\' 걱정돼서 미루다가 결국 시공매트 깔았습니다.','{r} 집에 매트시공 완료. 생각보다 집 분위기가 안 깨져서 다행이네요.','층간소음매트 오늘 시공했는데, 확실히 발소리가 다르네요.'],
     titleLabel:'첫 줄은 이렇게 시작해보세요',
-    body:['첫 줄: 실제 경험 한 문장','2~4문장 짧은 이야기','마지막에 가벼운 질문 (예: "매트 고민하시는 분들은 뭐가 제일 걱정되세요?")','댓글이 달리면 자연스럽게 답변'],
+    body:['첫 줄: 실제 경험 한 문장','2~4문장 짧은 이야기','마지막에 가벼운 질문 (예: "매트 고민하시는 분들은 뭐가 제일 걱정되세요?")','올린 뒤 내 글에 댓글 하나 달기 (예: "시공매트 궁금한 거 있으면 댓글 주세요")','댓글이 달리면 자연스럽게 답변'],
     photos:['완성 모습 1~3장이면 충분해요'],
-    tips:['주제 태그는 \'매트시공\' 같은 것 1개만 — 여러 개는 오히려 손해예요','\'돌봄매트\'는 본문에서 자연스럽게 언급해 주세요','질문으로 끝내면 대화가 이어져 더 많이 노출돼요']},
+    tips:['주제 태그는 \'매트시공\' 같은 것 1개만 — 여러 개는 오히려 손해예요','\'돌봄매트\'는 본문에서 자연스럽게 언급해 주세요','글 올린 뒤 본인 댓글로 \'시공매트\' 키워드를 한 번 더 남기면 검색·노출에 도움돼요','질문으로 끝내면 대화가 이어져 더 많이 노출돼요']},
   mamitalk:{name:'마미톡',disc:'cashback',
-    quick:['추천 제목 골라 복사하기','아이·고민 중심으로 적기','첫 사진은 제일 예쁜 완성컷','혜택 표시 문구 붙이기'],
-    titles:['층간소음 때문에 시공매트 고민하다가 결국 했어요','아기 걷기 시작하니 바닥이 신경 쓰여서 매트 시공했어요','시공매트 청소가 걱정됐는데 실제로 깔아봤어요','\'{c}\' 고민하다 시공매트 한 후기','{r} 시공매트 돌봄매트 후기'],
+    quick:['추천 제목 골라 복사하기','아이·고민 중심으로 적기','첫 사진은 제일 예쁜 완성컷','작성 완료 화면 인증하기'],
+    titles:['시공매트 청소가 걱정됐는데 실제로 깔아봤어요','\'{c}\' 고민하다 시공매트 한 후기'],
+    combo:{heads:['층간소음 때문에','아기 걷기 시작하니','둘째 뛰기 시작해서','{r} 아파트','바닥 층간소음이 신경 쓰여서'],
+      tails:['시공매트 결국 했어요','매트 시공한 후기','시공매트 깔아본 솔직 후기','돌봄매트 시공 후기']},
     body:['아이 연령·생활 상황','어떤 고민이 있었는지','어떤 제품을 알아봤는지','선택 이유','실제 시공 모습','사용 첫 느낌'],
     photos:['첫 장: 완성된 모습 (목록에서 보이는 사진)','아이와 함께 있는 모습','마감 디테일'],
     tips:['[육아는 템빨] 카테고리에 올려주세요','제목 앞부분에 실제 고민을 넣으면 눈에 잘 띄어요','본문에 시공매트·돌봄매트를 자연스럽게 한 번씩 언급해 주세요']},
@@ -820,8 +854,10 @@ const PLATFORM_GUIDES={
     photos:['설치 중인 모습 1장'],
     tips:['같은 아파트 이웃의 신뢰가 목표라 짧고 자연스럽게가 최고예요','브랜드·키워드를 반복하지 않아도 됩니다']},
   month:{name:'한 달 후기',disc:'cashback',
-    quick:['어디에 쓸지 선택하기','한 달 살아본 이야기 적기','당일 후기와 같은 각도 사진 비교','혜택 표시 문구 붙이기'],
-    titles:['시공매트 한 달 사용해본 솔직 후기','{r} 시공매트 한 달 써보니 장단점','아이 있는 집 시공매트 한 달 사용 후 청소·틈새 후기','층간소음매트 한 달 실사용 후기','시공매트 한 달, 다시 선택한다면?'],
+    quick:['어디에 쓸지 선택하기','한 달 살아본 이야기 적기','당일 후기와 같은 각도 사진 비교','작성 완료 화면 인증하기'],
+    titles:['시공매트 한 달, 다시 선택한다면?','아이 있는 집 시공매트 한 달 사용 후 청소·틈새 후기'],
+    combo:{heads:['시공매트 한 달','{r} 시공매트 한 달','층간소음매트 한 달','아이 있는 집 시공매트 한 달'],
+      tails:['사용해본 솔직 후기','써보니 장단점','실사용 후기','살아보니 어땠는지','청소·틈새까지 솔직 후기']},
     body:['처음 시공했을 때','한 달 동안 사용한 환경','가장 좋았던 점','생각보다 아쉬웠던 점','청소·관리','지금 다시 선택한다면?'],
     photos:['시공 직후와 같은 각도의 지금 모습','틈새·눌림 등 실제 상태','생활 모습'],
     tips:['청소·틈새·눌림처럼 당일엔 몰랐던 이야기가 제일 읽혀요','아쉬운 점을 솔직하게 적어도 괜찮아요','당일 후기와 같은 각도 비교 사진이 신뢰를 높여요']}
@@ -849,13 +885,19 @@ function _fillTpl(t){
   let out=t;Object.keys(map).forEach(k=>{out=out.split(k).join(map[k]);});
   return out;
 }
+function _titlePool(g){
+  const pool=(g.titles||[]).slice();
+  if(g.combo)g.combo.heads.forEach(h=>g.combo.tails.forEach(t=>pool.push(h+' '+t)));
+  return pool;
+}
 function rollTitle(){
   const st=STEPS[curStep];if(!st||st.type!=='mission')return;
   const key=guideKeyFor(MISSIONS[st.m]);if(!key)return;
-  const g=PLATFORM_GUIDES[key];if(!g||!g.titles.length)return;
+  const g=PLATFORM_GUIDES[key];if(!g)return;
+  const pool=_titlePool(g);if(!pool.length)return;
   const cands=[];
-  g.titles.forEach(t=>{const f=_fillTpl(t);if(f&&f!==curTitle)cands.push(f);});
-  if(!cands.length){const f=_fillTpl(g.titles[0]);curTitle=f||g.titles[0];}
+  pool.forEach(t=>{const f=_fillTpl(t);if(f&&f!==curTitle)cands.push(f);});
+  if(!cands.length){const f=_fillTpl(pool[0]);curTitle=f||pool[0];}
   else curTitle=cands[Math.floor(Math.random()*cands.length)];
   refreshTitleText();
 }
@@ -935,7 +977,7 @@ function guideBlockHTML(m){
   g.quick.forEach((q,i)=>{h+='<div class="g-quick-row"><span class="gq-n">'+(i+1)+'</span>'+q+'</div>';});
   h+='</div>';
   // 제목/첫 문장 박스
-  if(g.titles.length){
+  if(_titlePool(g).length){
     h+='<div class="title-box"><div class="tb-label">'+(g.titleLabel||'추천 제목 — 복사해서 쓰세요')+'</div>'
       +'<div class="tb-region"><span>우리 동네</span><input id="regionInput" value="'+getRegion().replace(/"/g,'&quot;')+'" placeholder="동네 이름 입력 (예: 명지, 동탄)" oninput="setRegion(this.value)"></div>'
       +'<div class="tb-title" id="genTitle"></div>'
@@ -961,14 +1003,7 @@ function guideBlockHTML(m){
     h+='</div>';
   }
   h+='</div>';
-  // 혜택 표시 (참여 조건)
-  if(g.disc){
-    h+='<div class="g-disc"><div class="g-label">후기 혜택 표시 (참여 조건)</div>'
-      +'<div class="g-disc-txt">"'+DISC_TXT[g.disc]+'"</div>'
-      +'<button class="g-disc-copy" onclick="copyDisclosure(\''+g.disc+'\')">표시 문구 복사</button>'
-      +'<div class="g-disc-note">커뮤니티 정책상 혜택 표시 글이 제한되는 곳에서는 운영정책을 먼저 확인해 주세요.</div></div>';
-    h+='<div class="g-cond">참여 조건 · 실제 경험 작성 · 직접 촬영한 사진 사용 · 혜택 표시 · 작성 후 화면 인증</div>';
-  }
+
   return h;
 }
 
@@ -1057,6 +1092,8 @@ function missionCardHTML(mIdx){
     h+=guideBlockHTML(m);
     if(m.link)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>'+(m.linkLabel||'카페')+'에서 작성하기</span><span class="arrow">→</span></button>';
     else if(m.links)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>카페 선택해서 작성하기</span><span class="arrow">→</span></button>';
+    const _gk=guideKeyFor(m),_gg=_gk?PLATFORM_GUIDES[_gk]:null;
+    if(_gg&&_gg.disc)h+='<div class="mini-disc" onclick="copyDisclosure(\''+_gg.disc+'\')">※ 후기 본문에 <b>혜택 받고 작성했다는 문구</b>도 한 문장 같이 넣어주세요 🙂 <span class="md-copy">예시 문구 복사</span></div>';
     h+='<div class="upload-zone" id="uzone'+mIdx+'"><input type="file" accept="image/*" onchange="handleUpload('+mIdx+',this)"><div class="txt" style="padding:6px 0">작성 완료 화면을 업로드해 주세요</div></div>'
       +'<div class="upload-preview" id="uprev'+mIdx+'"><img id="uimg'+mIdx+'"></div>'
       +'<button class="submit-btn primary" onclick="submitMission('+mIdx+')" id="msubmit'+mIdx+'" disabled>후기 인증하기</button>'
@@ -1675,7 +1712,31 @@ function maybeResync(){
 window.addEventListener('pageshow',()=>{maybeResync();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeResync();});
 
-loadData();
+// ── 본인 확인 게이트 (phone 링크 접근 시 뒤 4자리 인증) ──
+function isVerified(){try{return localStorage.getItem(LS_KEY('vfy'))==='1';}catch(e){return false;}}
+function checkGate(){
+  const i=document.getElementById('gateInput');
+  const v=(i.value||'').replace(/\D/g,'');
+  if(v.length<4)return;
+  if(v===PHONE.slice(-4)){
+    try{localStorage.setItem(LS_KEY('vfy'),'1');}catch(e){}
+    document.getElementById('gateOverlay').style.display='none';
+    document.getElementById('loadingOverlay').style.display='flex';
+    loadData();
+  }else{
+    showToast('번호가 일치하지 않아요');
+    i.value='';i.focus();
+    const box=document.getElementById('gateBox');
+    box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake');
+  }
+}
+if(PHONE&&PHONE.length>=4&&!isVerified()){
+  hideLoading();
+  document.getElementById('gateOverlay').style.display='flex';
+  setTimeout(()=>{const i=document.getElementById('gateInput');if(i)i.focus();},150);
+}else{
+  loadData();
+}
 
 
 // URL ?tab= 파라미터에 따라 첫 진입 탭 자동 활성화
