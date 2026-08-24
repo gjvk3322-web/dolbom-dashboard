@@ -358,6 +358,37 @@
   .adr-row.none{border-left-color:#D9534F;background:#FBF0F0;opacity:.8}
   .adr-name{font-weight:650;flex:1}
   .adr-pos{font-weight:800;min-width:48px;text-align:right}
+
+  /* ── 시공팀 매뉴얼 트리 ── */
+  #manualTree{padding:6px 2px}
+  .mn-branch{position:relative}
+  .mn-branch + .mn-branch{margin-top:28px}
+  .mn-branch + .mn-branch::before{content:"";position:absolute;left:150px;top:-28px;height:28px;border-left:2px solid #BFE4D3}
+  .mn-branch + .mn-branch::after{content:"";position:absolute;left:145.5px;top:-8px;border:5px solid transparent;border-top-color:#BFE4D3}
+  .mn-row{display:flex;align-items:flex-start}
+  .mn-card{width:300px;flex:0 0 300px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(33,43,54,.05)}
+  .mn-step{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--accent);padding:3px 9px;border-radius:999px;margin-bottom:8px}
+  .mn-kids .mn-step{background:#5C7CFA}
+  .mn-title{font-weight:700;font-size:15px;line-height:1.45}
+  .mn-desc{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.6;white-space:pre-line}
+  .mn-actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .mn-conn{flex:0 0 34px;height:2px;background:#EAD9A6;margin-top:36px}
+  .mn-points{flex:0 1 400px;min-width:230px;background:#FFFBF0;border:1px solid #F0E2BE;border-radius:14px;padding:12px 14px}
+  .mn-points-label{font-size:11px;font-weight:700;color:#B98A24;margin-bottom:8px;letter-spacing:.2px}
+  .mn-point{display:flex;gap:7px;font-size:13px;line-height:1.55;padding:7px 10px;border-radius:9px;background:#fff;border:1px solid #F0E2BE;margin-top:6px;cursor:pointer}
+  .mn-point:first-of-type{margin-top:0}
+  .mn-point:hover{border-color:#E1C878;box-shadow:0 0 0 2px rgba(233,190,90,.18)}
+  .mn-point .ck{color:#C99A2E;font-weight:800}
+  .mn-kids{margin:20px 0 0 30px;padding-left:26px;border-left:2px dashed #BFE4D3;display:flex;flex-direction:column;gap:20px}
+  .mn-kids .mn-branch + .mn-branch::before,.mn-kids .mn-branch + .mn-branch::after{display:none}
+  @media (max-width:900px){
+    .mn-row{flex-direction:column}
+    .mn-conn{width:2px;height:18px;flex:0 0 18px;margin:0 0 0 26px}
+    .mn-card{width:100%;flex:auto}
+    .mn-points{flex:auto;width:100%;min-width:0}
+    .mn-kids{margin-left:12px;padding-left:14px}
+    .mn-branch + .mn-branch::before,.mn-branch + .mn-branch::after{display:none}
+  }
 </style>
 </head>
 <body>
@@ -374,6 +405,7 @@
       <button data-view="okr">OKR</button>
       <button data-view="decision">의사결정 권한</button>
       <button data-view="forms">서류 서식</button>
+      <button data-view="manual">시공팀 매뉴얼</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="rules">운영 원칙</button>
       <button data-view="logs">활동 기록 (관리자)</button>
@@ -671,6 +703,42 @@
       <div class="form-filters" id="formFilters"></div>
       <div id="formList"></div>
     </section>
+
+    <!-- 시공팀 매뉴얼 -->
+    <section id="manual" class="section">
+      <div class="topbar">
+        <div>
+          <h1>시공팀 매뉴얼</h1>
+          <div class="lead">시공 상황(단계)은 <b>아래로</b> 이어지고, 각 상황에서 고객만족도를 올리는 <b>핵심포인트는 오른쪽으로</b> 뻗습니다. 카드의 버튼으로 누구나 추가·수정할 수 있습니다.</div>
+        </div>
+        <button class="btn primary" id="addManualBtn">상황 추가</button>
+      </div>
+      <div id="manualTree"></div>
+    </section>
+
+    <dialog id="manualModal">
+      <form method="dialog" onsubmit="return false">
+        <div class="modal-head"><strong id="manualModalTitle">상황 추가</strong><button class="mini-btn" onclick="manualModal.close()">닫기</button></div>
+        <div class="modal-body" style="grid-template-columns:1fr">
+          <input type="hidden" id="manualId" />
+          <label>상황(단계) 이름 <input id="manualTitle" placeholder="예: 도착 및 첫인사" /></label>
+          <label>설명 (선택) <textarea id="manualDesc" placeholder="이 단계에서 해야 할 일을 적어 주세요"></textarea></label>
+          <label>상위 상황 <select id="manualParent"></select></label>
+        </div>
+        <div class="modal-foot"><button class="btn" onclick="manualModal.close()">취소</button><button class="btn primary" id="saveManualBtn">저장</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="manualPointModal">
+      <form method="dialog" onsubmit="return false">
+        <div class="modal-head"><strong id="manualPointHead">핵심포인트 추가</strong><button class="mini-btn" onclick="manualPointModal.close()">닫기</button></div>
+        <div class="modal-body" style="grid-template-columns:1fr">
+          <input type="hidden" id="manualPointMid" /><input type="hidden" id="manualPointPid" />
+          <label>고객만족 핵심포인트 <textarea id="manualPointText" placeholder="예: 도착 10분 전 고객에게 전화로 알리기"></textarea></label>
+        </div>
+        <div class="modal-foot"><button class="btn" id="delManualPointBtn" style="color:var(--bad)">삭제</button><button class="btn" onclick="manualPointModal.close()">취소</button><button class="btn primary" id="saveManualPointBtn">저장</button></div>
+      </form>
+    </dialog>
 
     <!-- 주간회의 -->
     <section id="weekly" class="section">
@@ -1123,7 +1191,7 @@ function renderAll(){
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderForms, renderMeetings,
-   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
   ensureUser(); renderWho();
@@ -2430,6 +2498,140 @@ $("saveOkrBtn").onclick = async () => {
     okrQ = payload.quarter;
     okrModal.close();
   }
+};
+
+/* ───────── 시공팀 매뉴얼 (상황 트리 + 고객만족 핵심포인트) ───────── */
+const manualModal = $("manualModal");
+const manualPointModal = $("manualPointModal");
+
+function renderManual(){
+  const el = $("manualTree"); if (!el) return;
+  const items = entries(data.manual).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const byParent = {};
+  items.forEach(it => { const p = it.parentId || ""; (byParent[p] = byParent[p] || []).push(it); });
+  const node = (it, depth, idx) => {
+    const pts = entries(it.points).sort((a, b) => (a.t || 0) - (b.t || 0));
+    const kids = byParent[it.id] || [];
+    return `
+    <div class="mn-branch">
+      <div class="mn-row">
+        <div class="mn-card">
+          <div class="mn-step">${depth === 0 ? "상황 " : "세부 "}${idx + 1}</div>
+          <div class="mn-title">${esc(it.title)}</div>
+          ${it.desc ? `<div class="mn-desc">${esc(it.desc)}</div>` : ""}
+          <div class="mn-actions">
+            <button class="mini-btn" onclick="openManualPoint('${it.id}','')">+ 핵심포인트</button>
+            <button class="mini-btn" onclick="openManualModal('','${it.id}')">+ 하위 상황</button>
+            <button class="mini-btn" onclick="openManualModal('${it.id}')">수정</button>
+            <button class="mini-btn" onclick="moveManual('${it.id}',-1)">▲</button>
+            <button class="mini-btn" onclick="moveManual('${it.id}',1)">▼</button>
+            <button class="mini-btn" onclick="delManual('${it.id}')" style="color:var(--bad)">삭제</button>
+          </div>
+        </div>
+        ${pts.length ? `
+        <div class="mn-conn"></div>
+        <div class="mn-points">
+          <div class="mn-points-label">고객만족 핵심포인트 ${pts.length}</div>
+          ${pts.map(p => `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span>${esc(p.text)}</span></div>`).join("")}
+        </div>` : ""}
+      </div>
+      ${kids.length ? `<div class="mn-kids">${kids.map((k, i) => node(k, depth + 1, i)).join("")}</div>` : ""}
+    </div>`;
+  };
+  const roots = byParent[""] || [];
+  el.innerHTML = roots.length
+    ? roots.map((r, i) => node(r, 0, i)).join("")
+    : `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">아직 상황이 없습니다. <b>상황 추가</b>로 첫 단계를 만들어 보세요.<br>예: 도착 → 인사 → 사전 확인 → 시공 → 마무리 점검 → 퇴장</div>`;
+}
+
+function manualParentOptions(exceptId){
+  const items = entries(data.manual);
+  const kidsOf = id => items.filter(i => i.parentId === id).flatMap(i => [i.id, ...kidsOf(i.id)]);
+  const banned = exceptId ? new Set([exceptId, ...kidsOf(exceptId)]) : new Set();
+  return `<option value="">(최상위 단계)</option>` +
+    items.filter(i => !banned.has(i.id)).map(i => `<option value="${i.id}">${esc(i.title)}</option>`).join("");
+}
+window.openManualModal = (id, parentId) => {
+  const it = id ? (data.manual || {})[id] : null;
+  $("manualModalTitle").textContent = it ? "상황 수정" : "상황 추가";
+  $("manualId").value = id || "";
+  $("manualTitle").value = it ? it.title : "";
+  $("manualDesc").value = it ? (it.desc || "") : "";
+  $("manualParent").innerHTML = manualParentOptions(id);
+  $("manualParent").value = it ? (it.parentId || "") : (parentId || "");
+  manualModal.showModal();
+};
+$("addManualBtn").onclick = () => openManualModal("");
+$("saveManualBtn").onclick = async e => {
+  const title = $("manualTitle").value.trim();
+  if (!title) return alert("상황(단계) 이름을 입력해 주세요.");
+  const editId = $("manualId").value;
+  const id = editId || newId("mn_");
+  const prev = (editId && (data.manual || {})[editId]) || {};
+  const item = {
+    title, desc: $("manualDesc").value.trim(), parentId: $("manualParent").value || "",
+    points: prev.points || null,
+    order: prev.order ?? Date.now(),
+    by: prev.by || currentUser() || "?", t: prev.t || Date.now(),
+    updatedBy: editId ? (currentUser() || "?") : null, updatedAt: editId ? Date.now() : null
+  };
+  if (await safeWrite("매뉴얼", () => orgRef.child("manual/" + id).set(item), e.target)){
+    logAction(editId ? "수정" : "추가", "매뉴얼: " + title);
+    manualModal.close();
+  }
+};
+window.delManual = async id => {
+  const it = (data.manual || {})[id]; if (!it) return;
+  const kids = entries(data.manual).filter(i => i.parentId === id);
+  if (kids.length) return alert("하위 상황이 " + kids.length + "개 있습니다. 하위 상황을 먼저 삭제하거나 수정에서 다른 곳으로 옮겨 주세요.");
+  if (!confirm(`'${it.title}' 단계를 삭제할까요? (활동 기록에서 복구 가능)`)) return;
+  softDelete("manual", id, "매뉴얼: " + it.title);
+};
+window.moveManual = async (id, dir) => {
+  const it = (data.manual || {})[id]; if (!it) return;
+  const sibs = entries(data.manual).filter(i => (i.parentId || "") === (it.parentId || "")).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const idx = sibs.findIndex(s => s.id === id);
+  const other = sibs[idx + dir];
+  if (!other) return;
+  let a = it.order || 0, b = other.order || 0;
+  if (a === b) b = a + dir;
+  try {
+    await orgRef.child("manual/" + id + "/order").set(b);
+    await orgRef.child("manual/" + other.id + "/order").set(a);
+  } catch(e){ alert("순서 변경에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+};
+window.openManualPoint = (mid, pid) => {
+  const it = (data.manual || {})[mid]; if (!it) return;
+  const p = pid ? (it.points || {})[pid] : null;
+  $("manualPointHead").textContent = (p ? "핵심포인트 수정" : "핵심포인트 추가") + " — " + it.title;
+  $("manualPointMid").value = mid;
+  $("manualPointPid").value = pid || "";
+  $("manualPointText").value = p ? p.text : "";
+  $("delManualPointBtn").style.display = p ? "" : "none";
+  manualPointModal.showModal();
+};
+$("saveManualPointBtn").onclick = async e => {
+  const text = $("manualPointText").value.trim();
+  if (!text) return alert("내용을 입력해 주세요.");
+  const mid = $("manualPointMid").value;
+  const editPid = $("manualPointPid").value;
+  const pid = editPid || newId("pt_");
+  const prev = ((((data.manual || {})[mid]) || {}).points || {})[editPid] || {};
+  const payload = { text, by: prev.by || currentUser() || "?", t: prev.t || Date.now() };
+  if (await safeWrite("핵심포인트", () => orgRef.child("manual/" + mid + "/points/" + pid).set(payload), e.target)){
+    logAction(editPid ? "수정" : "추가", "핵심포인트: " + text.slice(0, 30));
+    manualPointModal.close();
+  }
+};
+$("delManualPointBtn").onclick = async () => {
+  const mid = $("manualPointMid").value, pid = $("manualPointPid").value;
+  const p = ((((data.manual || {})[mid]) || {}).points || {})[pid];
+  if (!p || !confirm("이 핵심포인트를 삭제할까요?")) return;
+  try {
+    await orgRef.child("manual/" + mid + "/points/" + pid).remove();
+    logAction("삭제", "핵심포인트: " + (p.text || "").slice(0, 30));
+    manualPointModal.close();
+  } catch(e){ alert("삭제에 실패했습니다."); }
 };
 </script>
 <script>
