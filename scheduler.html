@@ -1503,6 +1503,87 @@ event.target.textContent='✅ 복사됨!';
 setTimeout(()=>{event.target.textContent='📋 복사'},2000)})}
 
 // ===== AS 보고서 =====
+// ===== 이전 시공 이력 자동 조회 (전화번호 매칭, 부산+경기 양쪽 검색) =====
+const PREV_CSV_BS='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
+const PREV_CSV_GG='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
+let PREV_HIST_CACHE=null,PREV_HIST_TS=0;
+
+function normPhone8(p){return String(p||'').replace(/[^0-9]/g,'').slice(-8)}
+
+function parsePrevRows(text,regionLabel){
+const lines=text.split('\n');const out=[];
+for(let i=1;i<lines.length;i++){
+const r=[];let cur='',inQ=false;
+for(let c=0;c<lines[i].length;c++){const ch=lines[i][c];if(ch==='"'){inQ=!inQ}else if(ch===','&&!inQ){r.push(cur.trim().replace(/^"|"$/g,''));cur=''}else{cur+=ch}}
+r.push(cur.trim().replace(/^"|"$/g,''));
+if(!r[0]||!r[2])continue;
+let ds=r[2];
+if(ds.length===8&&/^\d{8}$/.test(ds))ds=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8);
+if(ds.includes('T'))ds=ds.substring(0,10);
+if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){const p=ds.split('-');ds=p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}
+out.push({region:regionLabel,time:r[0],category:r[1]||'',date:ds,addr:r[3]||'',ph8:normPhone8(r[4]),product:r[8]||'',sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim()});
+}
+return out}
+
+async function fetchPrevHistory(){
+if(PREV_HIST_CACHE&&Date.now()-PREV_HIST_TS<5*60*1000)return PREV_HIST_CACHE;
+const [bs,gg]=await Promise.all([
+fetch(PREV_CSV_BS+'&_='+Date.now()).then(r=>r.text()),
+fetch(PREV_CSV_GG+'&_='+Date.now()).then(r=>r.text())
+]);
+PREV_HIST_CACHE=[...parsePrevRows(bs,'부산'),...parsePrevRows(gg,'경기')];
+PREV_HIST_TS=Date.now();
+return PREV_HIST_CACHE}
+
+function setPrevSelect(selId,name){
+const sel=document.getElementById(selId);if(!sel)return;
+if(!name){sel.selectedIndex=0;return}
+for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===name){sel.selectedIndex=i;return}}
+const opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.appendChild(opt);sel.value=name}
+
+function applyPrevWorkers(sasu,busasu){
+setPrevSelect('arPrev1',sasu);
+setPrevSelect('arPrev2',busasu);
+toast('✅ 이전 작업자 적용: '+[sasu,busasu].filter(Boolean).join(', '),'ok')}
+
+async function loadPrevHistory(j){
+const box=document.getElementById('arPrevHist');if(!box)return;
+const ph8=normPhone8(j.phone);
+if(ph8.length<8){box.innerHTML='<div style="font-size:10px;color:var(--dim)">연락처가 없어 이전 이력을 조회할 수 없습니다</div>';return}
+box.innerHTML='<div style="font-size:10px;color:var(--dim)">🔎 이전 시공 이력 조회중...</div>';
+let rows;
+try{rows=await fetchPrevHistory()}catch(e){box.innerHTML='<div style="font-size:10px;color:var(--red)">이력 조회 실패 (네트워크 확인)</div>';return}
+const isCurAs=t=>String(t).toUpperCase().startsWith('AS');
+let matches=rows.filter(x=>x.ph8===ph8);
+// 지금 접수된 AS 건 자체는 제외 (같은 날짜의 AS 행)
+matches=matches.filter(x=>!(isCurAs(x.time)&&x.date===j.date));
+matches.sort((a,b)=>b.date.localeCompare(a.date));
+if(!matches.length){box.innerHTML='<div style="font-size:10px;color:var(--dim)">📭 이 번호로 이전 시공 기록이 없습니다 (아래에서 직접 선택)</div>';return}
+// 자동 채움: 가장 최근 시공(오전/오후) 건의 사수/부사수. 없으면 작업자 있는 최근 건.
+const withWorker=matches.filter(x=>x.sasu||x.busasu);
+const best=withWorker.find(x=>x.time.startsWith('오전')||x.time.startsWith('오후'))||withWorker[0];
+const p1=document.getElementById('arPrev1'),p2=document.getElementById('arPrev2');
+let autoNote='';
+if(best&&p1&&p2&&!p1.value&&!p2.value){
+setPrevSelect('arPrev1',best.sasu);
+setPrevSelect('arPrev2',best.busasu);
+autoNote=`<div style="font-size:9px;color:var(--green);margin-top:3px">✅ ${best.date} ${best.region} 기록에서 자동 입력됨 — 다르면 아래에서 수정</div>`;
+}
+const typeLabel=x=>isCurAs(x.time)?'AS':x.time.startsWith('실측')?'실측':'시공';
+const html=matches.slice(0,6).map(x=>{
+const w=[x.sasu,x.busasu].filter(Boolean).join('·')||'작업자 미기록';
+const tl=typeLabel(x);
+const tc=tl==='AS'?'var(--red)':tl==='실측'?'var(--dim)':'var(--green)';
+const applyBtn=(x.sasu||x.busasu)?`<span onclick="applyPrevWorkers('${x.sasu}','${x.busasu}')" style="padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.3);flex-shrink:0">적용</span>`:'';
+return `<div style="display:flex;gap:6px;align-items:center;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--card2);font-size:10px">
+<span style="color:${tc};font-weight:700;flex-shrink:0">${tl}</span>
+<span style="color:var(--dim);flex-shrink:0">${x.date}</span>
+<span style="color:var(--dim);flex-shrink:0">[${x.region}]</span>
+<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)" title="${x.addr}">${x.addr}</span>
+<span style="color:var(--purple);font-weight:700;flex-shrink:0">${w}</span>
+${applyBtn}</div>`}).join('');
+box.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:4px">🔍 이 번호의 이전 기록 ${matches.length}건 (부산·경기 통합)</div><div style="display:flex;flex-direction:column;gap:3px">${html}</div>${autoNote}`}
+
 let asReportJobId='';
 
 function calcAsReport(){
@@ -1561,6 +1642,7 @@ const html=`
 <span style="${lA}">5. 동호수</span><input id="arUnit" value="${unit}" style="${aS}" readonly>
 <span style="${lA}">6. 연락처</span><input id="arPhone" value="${j.phone}" style="${aS}" readonly>
 <span style="${lA}">7. 평수</span><input id="arPy" value="${j.py}평" style="${aS}" readonly>
+<div id="arPrevHist" style="grid-column:1/-1;margin:4px 0;padding:6px;border:1px dashed var(--border);border-radius:8px"></div>
 <span style="${lE}">8. 이전작업자1</span><select id="arPrev1" style="${eS}"><option value="">선택</option>${empOpts}</select>
 <span style="${lE}">9. 이전작업자2</span><select id="arPrev2" style="${eS}"><option value="">선택</option>${empOpts}</select>
 <span style="${lE}">10. 색상</span><select id="arColor" style="${eS}" onchange="calcAsReport()">${colorSelect}</select>
@@ -1585,6 +1667,7 @@ document.getElementById('asReportResult').style.display='none';
 document.getElementById('asReportSubmitBtn').style.display='block';
 document.getElementById('asReportOverlay').style.display='block';
 calcAsReport();
+loadPrevHistory(j);
 db.ref('asReports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
 if(d.color){const sel=document.getElementById('arColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16900)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
