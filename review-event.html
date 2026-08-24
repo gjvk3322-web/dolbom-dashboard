@@ -165,6 +165,122 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .guide-item ul{margin:4px 0 0;padding-left:16px;font-size:12.5px;color:#5C4810;line-height:1.7}
 .guide-item ul li{margin:1px 0}
 .guide-item ul li strong{color:#7A5C10}
+
+/* ═══ 스텝형 미션 UI (2026-08-24 개편) ═══ */
+.step-dots{display:flex;gap:6px;overflow-x:auto;padding:14px 16px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.step-dots::-webkit-scrollbar{display:none}
+.step-dot{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:46px;padding:7px 6px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .15s}
+.step-dot .ic{font-size:15px;line-height:1}
+.step-dot .lb{font-size:9.5px;font-weight:700;color:var(--text3);white-space:nowrap}
+.step-dot.current{border-color:var(--primary);background:var(--primary-light)}
+.step-dot.current .lb{color:var(--primary-dark)}
+.step-dot.done{border-color:var(--green);background:var(--green-light)}
+.step-dot.done .lb{color:var(--green)}
+.step-dot.skip{opacity:.45}
+.step-counter{margin:8px 16px 0;font-size:11.5px;font-weight:700;color:var(--text3)}
+.prev-link{background:none;border:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;padding:4px 0;text-decoration:underline}
+.skip-btn{width:100%;padding:12px;background:transparent;border:none;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:2px}
+.next-btn{width:100%;padding:13px;border:none;border-radius:10px;background:var(--green);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px}
+/* 제목 가이드 박스 */
+.title-box{background:linear-gradient(135deg,#FFF8E1,#FFF4D6);border:1px solid #F5D87E;border-radius:12px;padding:12px 14px;margin-top:12px}
+.title-box .tb-label{font-size:12.5px;font-weight:800;color:#7A5C10;margin-bottom:8px}
+.tb-region{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tb-region span{font-size:11.5px;font-weight:700;color:#9A7820;flex:0 0 auto}
+.tb-region input{flex:1;min-width:0;padding:8px 10px;border:1.5px solid #F5D87E;border-radius:8px;font-size:13px;font-family:inherit;background:#FFFDF5}
+.tb-region input:focus{outline:none;border-color:#E8B548}
+.tb-title{background:#fff;border:1.5px dashed #E8B548;border-radius:8px;padding:10px 12px;font-size:13.5px;font-weight:700;color:#5C4810;line-height:1.5;word-break:keep-all}
+.tb-btns{display:flex;gap:8px;margin-top:8px}
+.tb-btns button{flex:1;padding:10px;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.tb-copy{background:#E8B548;color:#fff}
+.tb-roll{background:#fff;border:1.5px solid #E8B548;color:#A07A20}
+.body-check{margin-top:8px;font-size:11.5px;color:#7A5C10;background:#FFFAE8;border-radius:8px;padding:8px 10px;line-height:1.6}
+.hold-note{margin-top:6px;font-size:11px;color:var(--red);font-weight:600}
+/* 설문 */
+.svy-q{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:10px 16px}
+.svy-q h4{font-size:14px;font-weight:700;line-height:1.5;margin-bottom:4px}
+.svy-q .sub{font-size:11.5px;color:var(--text3);margin-bottom:10px}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:9px 13px;border:1.5px solid var(--border);border-radius:20px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;user-select:none;background:var(--card);transition:all .12s}
+.chip.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
+.etc-input{display:none;width:100%;margin-top:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
+.etc-input.show{display:block}
+.nps-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.nps-btn{min-height:44px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:12.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;padding:0}
+.nps-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.nps-lbl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text3);margin-top:4px}
+.svy-ta{width:100%;min-height:80px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box}
+.svy-ta:focus,.etc-input:focus{outline:none;border-color:var(--primary)}
+.svy-submit{width:calc(100% - 32px);margin:14px 16px;padding:15px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(232,115,108,0.3)}
+.svy-submit:disabled{opacity:.5}
+.thanks-box{margin:12px 16px;padding:16px;border-radius:var(--radius);background:var(--green-light);color:#0ca678;font-size:13.5px;font-weight:600;line-height:1.6;text-align:center}
+
+/* 잠금 안내 박스 */
+.locked-box{background:#f2f4f6;border:1.5px dashed var(--border);border-radius:12px;padding:18px 16px;text-align:center;margin-top:12px}
+.locked-box .lk-title{font-size:13.5px;font-weight:800;color:var(--text2)}
+.locked-box .lk-sub{font-size:12px;color:var(--text3);line-height:1.6;margin-top:6px}
+.locked-box .lk-btn{margin-top:12px;padding:11px 22px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.step-dot.lock{opacity:.45;cursor:pointer}
+
+/* 설문 위저드 (한 화면 한 질문) */
+.svy-head{text-align:center;padding:22px 16px 8px}
+.svy-title{font-size:19px;font-weight:800;color:var(--text)}
+.svy-sub2{font-size:12.5px;color:var(--text3);margin-top:4px}
+.svy-prog-row{display:flex;align-items:center;gap:10px;margin:14px 4px 0}
+.svy-prog-bar{flex:1;height:6px;background:#e9ecef;border-radius:6px;overflow:hidden}
+.svy-prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-dark));border-radius:6px;transition:width .3s ease}
+.svy-prog-text{font-size:11.5px;font-weight:700;color:var(--text3);flex:0 0 auto}
+.svy-back-link{background:none;border:none;font-family:inherit;font-size:11px;color:var(--text3);text-decoration:underline;cursor:pointer;margin-top:8px;padding:4px}
+.svy-card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:22px 18px;margin:10px 16px}
+.svy-card.anim{animation:fadeUp .25s ease}
+.svy-qtitle{font-size:16px;font-weight:800;line-height:1.5;color:var(--text);word-break:keep-all}
+.svy-qtitle.important{color:var(--primary-dark)}
+.imp-tag{display:inline-block;font-size:10px;font-weight:800;color:#fff;background:var(--primary);border-radius:6px;padding:2px 7px;margin-right:6px;vertical-align:2px}
+.svy-qsub{font-size:12.5px;color:var(--text3);margin:6px 0 16px}
+.chip-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip2{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:13px 12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;user-select:none;transition:all .12s;line-height:1.35;word-break:keep-all}
+.chip2:active{transform:scale(.98)}
+.chip2 .ck{flex:0 0 auto;font-size:13px;font-weight:800;color:var(--primary);visibility:hidden}
+.chip2.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
+.chip2.on .ck{visibility:visible}
+.q6-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.q6-btn{padding:18px 10px;text-align:center;border:1.5px solid var(--border);border-radius:14px;background:#fff;font-size:14px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .12s}
+.q6-btn:active{transform:scale(.98)}
+.q6-btn.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
+.nps-follow{margin-top:16px;animation:fadeUp .25s ease}
+.nf-msg{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.5;margin-bottom:8px;word-break:keep-all}
+.svy-nav{display:flex;gap:10px;margin:14px 16px 4px}
+.svy-prev{flex:0 0 84px;padding:14px;border:1.5px solid var(--border);border-radius:12px;background:#fff;font-size:14px;font-weight:700;color:var(--text3);cursor:pointer;font-family:inherit}
+.svy-prev:disabled{opacity:.35;cursor:default}
+.svy-next{flex:1;padding:14px;border:none;border-radius:12px;background:var(--primary);color:#fff;font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(232,115,108,.25)}
+.svy-next:disabled{opacity:.5;box-shadow:none}
+.svy-next.ghost{background:#f2f4f6;color:var(--text3);box-shadow:none}
+/* 설문 완료 화면 */
+.svy-done{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:34px 22px;margin:20px 16px;text-align:center}
+.done-check{width:64px;height:64px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:32px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.svy-done h3{font-size:18px;font-weight:800;color:var(--text)}
+.svy-done p{font-size:13px;color:var(--text2);line-height:1.7;margin-top:8px}
+.done-benefit{display:inline-block;margin-top:14px;padding:10px 18px;background:var(--primary-light);color:var(--primary-dark);border-radius:20px;font-size:14px;font-weight:800}
+
+/* 칩 괄호 내용 줄바꿈 */
+.chip2 .cl{display:block;flex:1;min-width:0}
+.chip2 .cs{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-top:2px;line-height:1.4}
+.chip2.on .cs{color:var(--primary)}
+/* 빠른 신청 배너 */
+.quick-claim{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 16px 0;padding:11px 14px;background:var(--green-light);border:1.5px solid var(--green);border-radius:12px;font-size:12.5px;color:#0ca678;font-weight:600;cursor:pointer;line-height:1.4}
+.quick-claim b{font-weight:800}
+.quick-claim .qc-go{flex:0 0 auto;background:var(--green);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700}
+/* 신청 스텝 달성 요약 */
+.claim-summary{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin:12px 16px 0}
+.cs-title{font-size:14px;font-weight:700;margin-bottom:8px}
+.cs-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.cs-row:last-of-type{border-bottom:none}
+.cs-name{color:var(--text2);font-weight:500;line-height:1.4}
+.cs-st{flex:0 0 auto;font-weight:700}
+.cs-st.done{color:var(--green)}
+.cs-st.paid{color:var(--text3)}
+.cs-st.no{color:var(--text3);font-weight:500}
+.cs-note{margin-top:10px;padding:10px 12px;background:#f8f9fa;border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6}
+
 </style>
 </head>
 <body>
@@ -183,107 +299,120 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <!-- 탭 3개: 이벤트가 기본 활성 -->
 <div class="tabs">
-  <div class="tab active" onclick="switchTab(0)">🎁 후기 이벤트</div>
-  <div class="tab" onclick="switchTab(1)">📋 시공 전</div>
-  <div class="tab" onclick="switchTab(2)">✅ 시공 후</div>
-  <div class="tab" onclick="switchTab(3)">📖 사용설명서</div>
+  <div class="tab active" onclick="switchTab(0)">후기 이벤트</div>
+  <div class="tab" onclick="switchTab(1)">시공 전</div>
+  <div class="tab" onclick="switchTab(2)">시공 후</div>
+  <div class="tab" onclick="switchTab(3)">사용설명서</div>
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- 탭 0: 🎁 후기 이벤트 (기본)                   -->
+<!-- 탭 0: 후기 이벤트 (기본)                   -->
 <!-- ════════════════════════════════════════════ -->
 <div class="tab-content active" id="tab0">
 
-  <div class="reward-header">
-    <div class="reward-amount" id="rewardTotal">0원</div>
-    <div class="reward-max">최대 13만원 캐시백</div>
-  </div>
-  <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-  <div class="progress-label" id="progressLabel">0 / 130,000원</div>
-  <div class="paid-info" id="paidInfo">
-    <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
-    <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
-    <div class="row" id="statusRow" style="display:none;margin-top:4px;padding-top:6px;border-top:1px solid var(--border)"><span class="label">상태</span><span class="value" id="statusText" style="color:var(--orange)">-</span></div>
+  <div id="topSummary">
+    <div class="reward-header">
+      <div class="reward-amount" id="rewardTotal">0원</div>
+      <div class="reward-max">최대 13만원 캐시백</div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="progress-label" id="progressLabel">0 / 130,000원</div>
+    <div class="paid-info" id="paidInfo">
+      <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
+      <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
+      <div class="row" id="statusRow" style="display:none;margin-top:4px;padding-top:6px;border-top:1px solid var(--border)"><span class="label">상태</span><span class="value" id="statusText" style="color:var(--orange)">-</span></div>
+    </div>
+    <div class="quick-claim" id="quickClaim" style="display:none" onclick="gotoStep(STEPS.length-1)"></div>
   </div>
 
-  <!-- 후기 작성 가이드 -->
-  <div class="guide-section">
-    <div class="guide-header" onclick="toggleGuide()">
-      <span>✍️ 후기 작성법 보기 (10분이면 완성!)</span>
-      <span class="guide-toggle" id="guideToggle">▼</span>
-    </div>
-    <div class="guide-body" id="guideBody">
-      <div class="guide-item">
-        <span class="gtitle">📝 제목 작성법</span>
-        <p>필수 키워드 <strong>3개 이상</strong> 포함</p>
-        <p style="font-size:11.5px;color:#9A7820">지역명 + (층간소음매트 / 시공매트 / 매트시공) + <strong>돌봄매트</strong></p>
-        <div class="example">예시: 부산 층간소음매트 돌봄매트 시공 후기 👶</div>
+  <!-- 스텝 인디케이터 -->
+  <div class="step-dots" id="stepDots"></div>
+  <div class="step-counter" id="stepCounter"></div>
+
+  <!-- 미션 카드 (스텝별 1개 렌더) -->
+  <div id="missionPanel"></div>
+
+  <!-- 스텝 2: 설문 (한 화면 한 질문 위저드) -->
+  <div id="surveyStepWrap" style="display:none">
+
+    <div id="surveyPanel">
+      <div class="svy-head">
+        <div class="svy-title">고객 설문</div>
+        <div class="svy-sub2">약 1분이면 완료돼요</div>
+        <div class="svy-prog-row">
+          <div class="svy-prog-bar"><div class="svy-prog-fill" id="svyProgFill"></div></div>
+          <span class="svy-prog-text" id="svyProgText">1 / 7</span>
+        </div>
+        <button class="svy-back-link" onclick="gotoStep(0)">후기 이벤트로 돌아가기</button>
       </div>
-      <div class="guide-item">
-        <span class="gtitle">✏️ 내용 작성법</span>
-        <ul>
-          <li>제목 키워드 <strong>1~2회 반복</strong></li>
-          <li><strong>'돌봄매트'</strong> 키워드 1회 이상 포함</li>
-          <li>사진 <strong>3장 이상</strong> 첨부</li>
-        </ul>
-        <div class="example" style="margin-top:8px">
-          🎬 <strong>짧은 영상도 함께 올려주시면 큰 도움이 돼요!</strong><br>
-          <span style="font-size:11px;color:#9A7820">고민하는 다른 가족들에게 매트 질감과 분위기를 더 잘 전달할 수 있어요 ☺️</span>
+      <div class="svy-card" id="svyCard"></div>
+      <div class="svy-nav" id="svyNav"></div>
+    </div>
+
+    <div id="surveyDoneBox" style="display:none">
+      <div class="svy-done">
+        <div class="done-check">✓</div>
+        <h3>설문 참여 감사합니다!</h3>
+        <p>고객님의 의견이 정상적으로 저장되었습니다.<br>이제 후기 이벤트에 참여하실 수 있어요.</p>
+        <div class="done-benefit">추가 최대 100,000원 혜택</div>
+        <div id="doneLowNote" style="display:none;margin-top:12px;font-size:12.5px;color:#9a3412;background:#fff7ed;border-radius:10px;padding:10px 12px;line-height:1.6">불편을 드려 죄송합니다.<br>담당자가 직접 확인 후 연락드리겠습니다.</div>
+        <button class="next-btn" style="margin-top:16px" onclick="gotoNext()">후기 이벤트 확인하기</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 마지막 스텝: 캐시백 신청 -->
+  <div id="finalStepWrap" style="display:none">
+
+    <div class="locked-box" id="finalLockBox" style="display:none;margin:12px 16px"><div class="lk-title">설문을 완료하면 캐시백을 신청할 수 있어요</div><div class="lk-sub">설문(1분)을 마치면 계좌 입력과 신청 버튼이 열립니다.</div><button class="lk-btn" onclick="gotoStep(SURVEY_STEP)">설문 하러 가기</button></div>
+
+    <div class="claim-summary" id="claimSummary" style="display:none"></div>
+
+    <div class="account-section" id="accSection">
+      <h3>캐시백 계좌 정보</h3>
+      <div class="account-grid">
+        <div class="fg">
+          <label>은행</label>
+          <select id="accBank">
+            <option value="">선택</option>
+            <option>국민</option><option>신한</option><option>우리</option><option>하나</option>
+            <option>농협</option><option>기업</option><option>새마을</option><option>카카오뱅크</option>
+            <option>토스뱅크</option><option>케이뱅크</option><option>SC제일</option><option>씨티</option>
+            <option>부산</option><option>경남</option><option>대구</option><option>광주</option>
+            <option>제주</option><option>전북</option><option>수협</option><option>우체국</option><option>기타</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>예금주</label>
+          <input type="text" id="accName" placeholder="홍길동">
+        </div>
+        <div class="fg full">
+          <label>계좌번호</label>
+          <input type="text" id="accNum" placeholder="000-0000-0000-00" inputmode="numeric">
+        </div>
+        <div class="full" style="margin-top:12px;padding:12px;background:#fdf0ef;border:1.5px solid var(--primary);border-radius:10px">
+          <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--primary-dark);cursor:pointer;font-weight:600">
+            <input type="checkbox" id="cashbackConsent" style="width:20px;height:20px;accent-color:var(--primary);flex-shrink:0">
+            <span>개인정보 수집·이용에 동의합니다 (필수)</span>
+          </label>
         </div>
       </div>
-      <div class="guide-item">
-        <span class="gtitle">📍 작성 후</span>
-        <p>① 작성한 후기 화면 캡쳐</p>
-        <p>② 아래 미션에서 스크린샷 업로드</p>
-        <p>③ 캐시백 자동 계산 → 계좌 입력 후 신청</p>
-      </div>
     </div>
-  </div>
 
-  <div id="missionList"></div>
-
-  <div class="account-section">
-    <h3>캐시백 계좌 정보</h3>
-    <div class="account-grid">
-      <div class="fg">
-        <label>은행</label>
-        <select id="accBank">
-          <option value="">선택</option>
-          <option>국민</option><option>신한</option><option>우리</option><option>하나</option>
-          <option>농협</option><option>기업</option><option>새마을</option><option>카카오뱅크</option>
-          <option>토스뱅크</option><option>케이뱅크</option><option>SC제일</option><option>씨티</option>
-          <option>부산</option><option>경남</option><option>대구</option><option>광주</option>
-          <option>제주</option><option>전북</option><option>수협</option><option>우체국</option><option>기타</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>예금주</label>
-        <input type="text" id="accName" placeholder="홍길동">
-      </div>
-      <div class="fg full">
-        <label>계좌번호</label>
-        <input type="text" id="accNum" placeholder="000-0000-0000-00" inputmode="numeric">
-      </div>
-      <div class="full" style="margin-top:12px;padding:12px;background:#fdf0ef;border:1.5px solid var(--primary);border-radius:10px">
-        <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--primary-dark);cursor:pointer;font-weight:600">
-          <input type="checkbox" id="cashbackConsent" style="width:20px;height:20px;accent-color:var(--primary);flex-shrink:0">
-          <span>개인정보 수집·이용에 동의합니다 (필수)</span>
-        </label>
-      </div>
+    <div id="holdBanner" style="display:none;margin:0 16px 12px;padding:14px 16px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:12px">
+      <div style="font-size:14px;font-weight:800;color:#9a3412;margin-bottom:4px">캐시백 지급이 잠시 보류되었어요</div>
+      <div id="holdReasonText" style="font-size:13px;color:#7c2d12;line-height:1.6;margin-bottom:6px"></div>
+      <div style="font-size:12px;color:#9a3412">확인이 필요한 부분이 있어요. 카카오톡 채널로 문의 주시면 빠르게 도와드릴게요.</div>
     </div>
-  </div>
+    <button class="cashback-btn" id="cashbackBtn" onclick="requestCashback()" disabled>캐시백 받기</button>
 
-  <div id="holdBanner" style="display:none;margin:0 0 12px 0;padding:14px 16px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:12px">
-    <div style="font-size:14px;font-weight:800;color:#9a3412;margin-bottom:4px">⏸ 캐시백 지급이 잠시 보류되었어요</div>
-    <div id="holdReasonText" style="font-size:13px;color:#7c2d12;line-height:1.6;margin-bottom:6px"></div>
-    <div style="font-size:12px;color:#9a3412">확인이 필요한 부분이 있어요. 카카오톡 채널로 문의 주시면 빠르게 도와드릴게요 🙏</div>
   </div>
-  <button class="cashback-btn" id="cashbackBtn" onclick="requestCashback()" disabled>캐시백 받기</button>
 
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- 탭 1: 📋 시공 전 안내                         -->
+<!-- 탭 1: 시공 전 안내                         -->
 <!-- ════════════════════════════════════════════ -->
 <div class="tab-content" id="tab1">
   <div class="total-time">전체 예상 소요시간 : 약 3~4시간</div>
@@ -395,7 +524,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- 탭 2: ✅ 시공 후 검수                          -->
+<!-- 탭 2: 시공 후 검수                          -->
 <!-- ════════════════════════════════════════════ -->
 <div class="tab-content" id="tab2">
   <div id="inspectionForm">
@@ -433,7 +562,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- 탭 3: 📖 사용설명서                            -->
+<!-- 탭 3: 사용설명서                            -->
 <!-- ════════════════════════════════════════════ -->
 <div class="tab-content" id="tab3">
   <div style="padding:16px 16px 24px;">
@@ -455,8 +584,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <canvas id="confetti" class="confetti-overlay"></canvas>
 <div class="success-overlay" id="successOverlay">
   <div class="success-box">
-    <div class="ic">🎉</div>
-    <h2>캐시백 신청 완료!</h2>
+    <h2 style="margin-top:4px">캐시백 신청 완료</h2>
     <div class="amt" id="successAmt">0원</div>
     <p>영업일 기준 1~2일 내에 입금됩니다.<br>감사합니다!</p>
     <button onclick="document.getElementById('successOverlay').classList.remove('show')">확인</button>
@@ -521,49 +649,213 @@ function toggleChecklist(el){
 }
 
 // ═════════════════════════════════════════════════════════
-// 탭 0 · 후기 이벤트 (원본 review-event.html 100% 그대로)
+// 탭 0 · 후기 이벤트 (2026-08-24 스텝형 개편 v2)
+// 순서: 계약후기 → 설문 → 나머지 미션(설문 완료 시 잠금 해제) → 캐시백 신청
 // ═════════════════════════════════════════════════════════
-// 통일 라벨 헬퍼 — 모든 카드가 "어디에 / 무엇을 / 필수" 같은 리듬으로 읽히도록
-// L: 라벨(회색 굵게), 그 뒤 내용. m=필수조건(빨강 강조)
 function _row(label,val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--text3,#9aa0a6)">'+label+'</span><span style="font-size:12.5px;color:var(--text2);font-weight:500;line-height:1.4">'+val+'</span></div>';}
 function _must(val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--red)">필수</span><span style="font-size:12px;color:var(--red);font-weight:600;line-height:1.4">'+val+'</span></div>';}
 
 const MISSIONS=[
-  // 1번: 웰컴쿠폰 (계약후기)
-  {id:'contract',title:'웰컴쿠폰(계약후기) 작성',reward:30000,icon:'📝',tag:'시공 전 작성',tag2:'당일 할인 적용',
+  {id:'contract',short:'계약후기',icon:'📝',title:'웰컴쿠폰(계약후기) 작성',reward:30000,tag:'시공 전 작성',tag2:'당일 할인 적용',guide:'contract',
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 전 계약 후기 작성')},
-  // 2번: 입주자 단톡방
-  {id:'chatroom',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,icon:'💬',tag:'시공 중 업로드',
+  {id:'chatroom',short:'단톡방',icon:'💬',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,tag:'시공 중 업로드',
     desc:_row('어디에','입주자 단톡방 (카톡 · 노크타운 등)')+_row('무엇을','설치 중인 사진과 한 줄 후기')},
-  // 3번: 시공 당일 후기 ①
-  {id:'review1',title:'시공 당일 후기 ①',reward:20000,icon:'⭐',
+  {id:'review1',short:'당일후기1',icon:'⭐',title:'시공 당일 후기 ①',reward:20000,guide:'day',
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 당일 후기 작성')},
-  // 4번: 시공 당일 후기 ②
-  {id:'review2',title:'시공 당일 후기 ②',reward:20000,icon:'🌟',
+  {id:'review2',short:'당일후기2',icon:'🌟',title:'시공 당일 후기 ②',reward:20000,guide:'day',
     desc:_row('어디에','셀인 · 강사모 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
-  // 5번: 인스타그램
-  {id:'instagram',title:'인스타그램 후기',reward:10000,icon:'📸',
+  {id:'instagram',short:'인스타',icon:'📸',title:'인스타그램 후기',reward:10000,
     desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진과 함께 후기 작성')+_must('@dolbomstore 태그 · #돌봄매트 #매트시공')},
-  // 5-2번: 쓰레드 후기
-  {id:'threads',title:'쓰레드 후기',reward:10000,icon:'🧵',
+  {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',reward:10000,
     desc:_row('어디에','주제 선택 → 시공매트 · 층간소음매트 중 1곳')+_row('무엇을','시공 사진과 함께 "매트시공 완료" 후기')+_must('#돌봄매트 #매트시공')},
-  // 6번: 마미톡 (작성하기 버튼 유지 — 안내 페이지 필요)
-  {id:'mamitalk',title:'마미톡 후기',reward:10000,icon:'📱',
+  {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,guide:'mami',
     desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_must('시공매트 · 돌봄매트 키워드'),
     link:'mamitalk',linkLabel:'마미톡 앱',customUrl:'go-mamitalk.html'},
-  // 7번: 한 달 후 후기
-  {id:'review_month',title:'한 달 후 후기',reward:20000,icon:'📅',
+  {id:'review_month',short:'한달후기',icon:'📅',title:'한 달 후 후기',reward:20000,guide:'month',
     desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','한 달 사용 후기 작성')}
 ];
 const MAX_REWARD=130000;
+
+// 스텝 구성: [계약후기, 설문, 단톡방~한달후기, 캐시백 신청]
+const STEPS=[{type:'mission',m:0},{type:'survey',short:'설문',icon:'✍️'}];
+for(let i=1;i<MISSIONS.length;i++)STEPS.push({type:'mission',m:i});
+STEPS.push({type:'final',short:'신청',icon:'💰'});
+const SURVEY_STEP=1;
+
 let missionState={};
 let paidTotal=0;
 let payStatus='';
-let holdReason=''; // 🆕 지급 보류 사유 (시트 Q열)
+let holdReason='';
+let surveyDone=false, surveyNps=null;
+let curStep=0;
+let skipped={};
 
-function initMissions(){MISSIONS.forEach(m=>{if(!missionState[m.id])missionState[m.id]={done:false,url:'',submittedAt:''};});renderMissions();}
+function stepLocked(i){return i>SURVEY_STEP && !surveyDone;}
 
-function renderMissions(){
+// ── 로컬 저장 (phone별) ──
+const LS_KEY=(k)=>'dolbom_'+k+'_'+(PHONE||'guest');
+function loadLocal(){
+  try{skipped=JSON.parse(localStorage.getItem(LS_KEY('skip'))||'{}')||{};}catch(e){skipped={};}
+  if(localStorage.getItem(LS_KEY('svy'))==='1')surveyDone=true;
+}
+function saveSkip(){try{localStorage.setItem(LS_KEY('skip'),JSON.stringify(skipped));}catch(e){}}
+
+// ── 지역명 ──
+function getRegion(){try{return localStorage.getItem(LS_KEY('region'))||'';}catch(e){return '';}}
+function setRegion(v){try{localStorage.setItem(LS_KEY('region'),v.trim());}catch(e){} refreshTitleText();}
+
+// ── 제목 생성기 ──
+const TITLE_POOL={
+  contract:{kw:['층간소음매트','시공매트','매트시공'],tail:['계약 후기','계약 후기 (샘플 비교 끝!)','계약했어요!']},
+  day:{kw:['층간소음매트','시공매트','매트시공'],tail:['시공 후기','시공 완료 후기','솔직 후기','시공 후기 (층간소음 고민 끝!)']},
+  month:{kw:['층간소음매트','시공매트','매트시공'],tail:['한 달 사용 후기','한 달 실사용 후기','사용 한 달 솔직 후기']},
+  mami:{kw:['시공매트'],tail:['시공 후기','설치 후기','솔직 후기']}
+};
+let curPick={kw:'',tail:''};
+function _rand(a){return a[Math.floor(Math.random()*a.length)];}
+function rollTitle(){
+  const st=STEPS[curStep];if(!st||st.type!=='mission')return;
+  const m=MISSIONS[st.m];if(!m.guide)return;
+  const p=TITLE_POOL[m.guide];
+  curPick={kw:_rand(p.kw),tail:_rand(p.tail)};
+  refreshTitleText();
+}
+function buildTitle(){
+  const r=getRegion();
+  return (r?r+' ':'(동네이름) ')+curPick.kw+' 돌봄매트 '+curPick.tail;
+}
+function refreshTitleText(){
+  const el=document.getElementById('genTitle');if(el)el.textContent=buildTitle();
+}
+function copyTitle(){
+  if(!getRegion()){showToast('동네 이름을 먼저 입력해 주세요');const i=document.getElementById('regionInput');if(i)i.focus();return;}
+  const t=buildTitle();
+  const done=()=>showToast('제목이 복사됐어요. 글쓰기에서 붙여넣기 하세요');
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));}
+  else fallbackCopy(t,done);
+}
+function fallbackCopy(t,cb){
+  const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();try{document.execCommand('copy');cb();}catch(e){showToast('복사 실패 - 길게 눌러 복사해 주세요');}
+  document.body.removeChild(ta);
+}
+
+// ── 스텝 네비게이션 ──
+function gotoStep(i){
+  i=Math.max(0,Math.min(i,STEPS.length-1));
+  curStep=i;renderStep();
+}
+function gotoNext(){gotoStep(curStep+1);}
+function gotoPrev(){gotoStep(curStep-1);}
+function skipStep(){
+  const st=STEPS[curStep];
+  if(st.type==='mission'){skipped[MISSIONS[st.m].id]=true;saveSkip();}
+  gotoNext();
+}
+
+function dotState(i){
+  const st=STEPS[i];
+  if(i===curStep)return 'current';
+  if(st.type==='mission'){
+    const s=missionState[MISSIONS[st.m].id]||{};
+    if(s.done)return 'done';
+    if(stepLocked(i))return 'lock';
+    if(skipped[MISSIONS[st.m].id])return 'skip';
+    return '';
+  }
+  if(st.type==='survey')return surveyDone?'done':'';
+  return stepLocked(i)?'lock':'';
+}
+function renderDots(){
+  const wrap=document.getElementById('stepDots');wrap.innerHTML='';
+  STEPS.forEach((st,i)=>{
+    const d=document.createElement('div');
+    const state=dotState(i);
+    d.className='step-dot'+(state?' '+state:'');
+    const label=st.type==='mission'?MISSIONS[st.m].short:st.short;
+    const icon=st.type==='mission'?MISSIONS[st.m].icon:st.icon;
+    const doneMark=(state==='done');
+    d.innerHTML='<span class="ic">'+(doneMark?'✓':icon)+'</span><span class="lb">'+label+'</span>';
+    d.onclick=()=>gotoStep(i);
+    wrap.appendChild(d);
+  });
+  const cur=wrap.children[curStep];
+  if(cur&&cur.scrollIntoView)cur.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+}
+
+function missionCardHTML(mIdx){
+  const m=MISSIONS[mIdx];const s=missionState[m.id]||{};const done=s.done;const paid=s.paid;
+  const badgeText=paid?'지급완료':done?'달성':stepLocked(curStep)?'잠김':skipped[m.id]?'건너뜀':'미달성';
+  const badgeCls=(paid||done)?'done':'pending';
+  let h='<div class="mission-card"><div class="mission-header" style="cursor:default">'
+    +'<div class="mission-icon '+(done?'done':'pending')+'"><span style="font-size:15px;font-weight:800;color:'+(done?'var(--green)':'var(--text3)')+'">'+(done?'✓':(mIdx+1))+'</span></div>'
+    +'<div class="mission-info"><h4>'+m.title+'</h4>'
+    +((m.tag||m.tag2)?('<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+(m.tag?'<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">'+m.tag+'</span>':'')+(m.tag2?'<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">'+m.tag2+'</span>':'')+'</div>'):'')
+    +(m.desc?'<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">'+m.desc+'</div>':'')
+    +'<div class="reward">+'+m.reward.toLocaleString()+'원</div></div>'
+    +'<span class="mission-badge '+badgeCls+'" '+(paid?'style="background:#e3faf1;color:#20c997"':'')+'>'+badgeText+'</span>'
+    +'</div><div class="mission-body open" style="display:block">';
+  const locked=stepLocked(curStep);
+  if(done){
+    h+='<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">'+(paid?'지급완료!':'달성 완료!')+' ('+(s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):'')+')</p>'
+      +((s.url&&s.url.toString().indexOf('http')===0)?'<button class="photo-btn" onclick="showPhotoModal(\''+s.url.toString().replace(/'/g,"\\'")+'\')">사진 보기</button>':'')
+      +'</div><button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
+  }else if(locked){
+    h+='<div class="locked-box"><div class="lk-title">설문을 완료하면 참여할 수 있어요</div><div class="lk-sub">미션 내용은 미리 확인하실 수 있어요. 설문(1분)을 마치면 업로드가 열립니다.</div>'
+      +'<button class="lk-btn" onclick="gotoStep(SURVEY_STEP)">설문 하러 가기</button></div>'
+      +'<button class="skip-btn" onclick="gotoNext()">다음 미션 둘러보기</button>';
+  }else{
+    if(m.guide){
+      h+='<div class="title-box"><div class="tb-label">제목은 이대로 복사해서 쓰세요</div>'
+        +'<div class="tb-region"><span>우리 동네</span><input id="regionInput" value="'+getRegion().replace(/"/g,'&quot;')+'" placeholder="동네 이름 입력 (예: 명지, 동탄)" oninput="setRegion(this.value)"></div>'
+        +'<div class="tb-title" id="genTitle"></div>'
+        +'<div class="tb-btns"><button class="tb-copy" onclick="copyTitle()">제목 복사</button><button class="tb-roll" onclick="rollTitle()">다른 제목</button></div></div>'
+        +'<div class="body-check"><b>본문 체크</b> · 제목 키워드 1~2회 반복 · <b>\'돌봄매트\'</b> 1회 이상 · 사진 <b>3장 이상</b>'+(m.guide==='day'||m.guide==='month'?' · 짧은 영상도 함께 올려주시면 큰 도움이 돼요':'')+'</div>'
+        +'<div class="hold-note">필수 키워드가 빠지면 캐시백 지급이 보류될 수 있어요</div>';
+    }
+    if(m.link)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>'+(m.linkLabel||'카페')+'에서 작성하기</span><span class="arrow">→</span></button>';
+    else if(m.links)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>카페 선택해서 작성하기</span><span class="arrow">→</span></button>';
+    h+='<div class="upload-zone" id="uzone'+mIdx+'"><input type="file" accept="image/*" onchange="handleUpload('+mIdx+',this)"><div class="txt" style="padding:6px 0">스크린샷을 업로드해 주세요</div></div>'
+      +'<div class="upload-preview" id="uprev'+mIdx+'"><img id="uimg'+mIdx+'"></div>'
+      +'<button class="submit-btn primary" onclick="submitMission('+mIdx+')" id="msubmit'+mIdx+'" disabled>미션 달성하기</button>'
+      +'<button class="skip-btn" onclick="skipStep()">이번엔 건너뛰기</button>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
+function renderStep(){
+  updateSummary();
+  renderDots();
+  const st=STEPS[curStep];
+  // 설문 진행 중엔 설문 전용 화면 (상단 요약/스텝 숨김)
+  const svyMode=(st.type==='survey'&&!surveyDone);
+  document.getElementById('topSummary').style.display=svyMode?'none':'block';
+  document.getElementById('stepDots').style.display=svyMode?'none':'flex';
+  document.getElementById('stepCounter').style.display=svyMode?'none':'block';
+  const mp=document.getElementById('missionPanel');
+  const sw=document.getElementById('surveyStepWrap');
+  const fw=document.getElementById('finalStepWrap');
+  const sc=document.getElementById('stepCounter');
+  mp.style.display='none';sw.style.display='none';fw.style.display='none';
+  const prevBtn=curStep>0?' &nbsp;<button class="prev-link" onclick="gotoPrev()">← 이전</button>':'';
+  sc.innerHTML='단계 '+(curStep+1)+' / '+STEPS.length+prevBtn;
+  if(st.type==='mission'){
+    mp.style.display='block';
+    mp.innerHTML=missionCardHTML(st.m);
+    if(MISSIONS[st.m].guide&&!(missionState[MISSIONS[st.m].id]||{}).done)rollTitle();
+  }else if(st.type==='survey'){
+    sw.style.display='block';
+    renderSurveyStep();
+  }else{
+    fw.style.display='block';
+    renderFinalStep();
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── 상단 요약 (금액/상태) ──
+function updateSummary(){
   let earned=0;
   MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
   document.getElementById('rewardTotal').textContent=earned.toLocaleString()+'원';
@@ -572,10 +864,17 @@ function renderMissions(){
   const remain=earned-paidTotal;
   const isPending=payStatus.indexOf('신청완료')>=0;
   const isPaid=payStatus.indexOf('지급완료')>=0;
+  // 빠른 신청 배너: 설문 완료 + 신청 가능 금액이 있으면 어디서든 노출
+  const qc=document.getElementById('quickClaim');
+  if(qc){
+    const showQC=surveyDone&&remain>0&&payStatus.indexOf('신청완료')<0&&STEPS[curStep].type!=='final';
+    qc.style.display=showQC?'flex':'none';
+    if(showQC)qc.innerHTML='<span>지금 <b>'+remain.toLocaleString()+'원</b> 신청 가능 — 달성한 만큼 먼저 받을 수 있어요</span><span class="qc-go">신청하기</span>';
+  }
   if(paidTotal>0||earned>0||isPending){
     document.getElementById('paidInfo').style.display='block';
     if(isPaid){
-      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 ✅';
+      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원';
       document.getElementById('paidAmount').style.color='var(--green)';
     }else if(isPending){
       document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 (입금 대기 중)';
@@ -584,58 +883,250 @@ function renderMissions(){
       document.getElementById('paidAmount').textContent='0원';
     }
     document.getElementById('remainAmount').textContent=(remain>0?remain:0).toLocaleString()+'원';
-    // 상태 표시
     const sr=document.getElementById('statusRow'),st=document.getElementById('statusText');
     if(payStatus){
       sr.style.display='flex';
-      if(isPaid){st.textContent='✅ 지급완료';st.style.color='var(--green)';}
-      else if(isPending){st.textContent='💰 신청완료 (입금 대기 중)';st.style.color='var(--orange)';}
+      if(isPaid){st.textContent='지급완료';st.style.color='var(--green)';}
+      else if(isPending){st.textContent='신청완료 (입금 대기 중)';st.style.color='var(--orange)';}
       else{st.textContent=payStatus;st.style.color='var(--text2)';}
     }
   }
+}
+
+// ── 마지막 스텝 (잠금이면 안내만, 열리면 계좌+신청) ──
+function renderFinalStep(){
+  const lk=document.getElementById('finalLockBox');
+  const ac=document.getElementById('accSection');
+  const hb=document.getElementById('holdBanner');
   const btn=document.getElementById('cashbackBtn');
-  // 🆕 보류 상태: 배너 표시 + 신청 버튼 잠금
+  const cs=document.getElementById('claimSummary');
+  if(!surveyDone){
+    lk.style.display='block';ac.style.display='none';hb.style.display='none';
+    btn.style.display='none';if(cs)cs.style.display='none';
+    return;
+  }
+  lk.style.display='none';ac.style.display='block';btn.style.display='block';
+  renderClaimSummary();
+  updateCashbackBtn();
+}
+
+// 미션별 달성 요약 (부분 신청 가능 안내)
+function renderClaimSummary(){
+  const box=document.getElementById('claimSummary');if(!box)return;
+  let rows='',undoneCnt=0,undoneAmt=0;
+  MISSIONS.forEach((m,i)=>{
+    const s=missionState[m.id]||{};
+    let st,cls;
+    if(s.paid){st='지급완료';cls='paid';}
+    else if(s.done){st='+'+m.reward.toLocaleString()+'원';cls='done';}
+    else{st='미달성';cls='no';undoneCnt++;undoneAmt+=m.reward;}
+    rows+='<div class="cs-row"><span class="cs-name">'+m.title+'</span><span class="cs-st '+cls+'">'+st+'</span></div>';
+  });
+  let note='<div class="cs-note">달성한 미션만큼만 <b>먼저</b> 신청할 수 있어요.';
+  if(undoneCnt>0)note+='<br>남은 미션 '+undoneCnt+'개(+'+undoneAmt.toLocaleString()+'원)는 나중에 하고 <b>추가로 신청</b>하시면 돼요.';
+  note+='</div>';
+  box.innerHTML='<div class="cs-title">미션 달성 현황</div>'+rows+note;
+  box.style.display='block';
+}
+
+// ── 캐시백 버튼/보류 배너 ──
+function updateCashbackBtn(){
+  let earned=0;
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
+  const remain=earned-paidTotal;
+  const isPending=payStatus.indexOf('신청완료')>=0;
+  const isPaid=payStatus.indexOf('지급완료')>=0;
+  const btn=document.getElementById('cashbackBtn');
   const hb=document.getElementById('holdBanner');
   if(holdReason){
     hb.style.display='block';
     document.getElementById('holdReasonText').textContent=holdReason;
-    btn.disabled=true;btn.textContent='⏸ 지급 보류 중 — 위 안내를 확인해 주세요';
-  } else if(hb.style.display!=='none'){hb.style.display='none';}
-  if(holdReason){}
-  else if(isPending&&remain<=0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
+    btn.disabled=true;btn.textContent='지급 보류 중 — 위 안내를 확인해 주세요';
+    return;
+  }
+  hb.style.display='none';
+  if(isPending&&remain<=0){btn.disabled=true;btn.textContent='캐시백 신청 완료 (입금 대기 중)';}
   else if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
-  else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='✅ 지급 완료 ('+paidTotal.toLocaleString()+'원)';}
-  else if(earned>0){btn.disabled=true;btn.textContent='💰 캐시백 신청 완료 (입금 대기 중)';}
+  else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='지급 완료 ('+paidTotal.toLocaleString()+'원)';}
+  else if(earned>0){btn.disabled=true;btn.textContent='캐시백 신청 완료 (입금 대기 중)';}
   else{btn.disabled=true;btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';}
-
-  const list=document.getElementById('missionList');list.innerHTML='';
-  MISSIONS.forEach((m,idx)=>{
-    const s=missionState[m.id]||{};const done=s.done;const paid=s.paid;
-    const card=document.createElement('div');card.className='mission-card';
-    const badgeText=paid?'지급완료':done?'달성':'미달성';
-    const badgeCls=paid?'done':done?'done':'pending';
-    card.innerHTML=`<div class="mission-header" onclick="toggleMission(${idx})">
-      <div class="mission-icon ${done?'done':'pending'}">${m.icon}</div>
-      <div class="mission-info"><h4>${m.title}</h4>${(m.tag||m.tag2)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${m.tag?`<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag}</span>`:''}${m.tag2?`<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">${m.tag2}</span>`:''}</div>`:''}${m.desc?`<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">${m.desc}</div>`:''}${m.note?`<div style="font-size:11px;color:var(--orange);margin-top:3px;font-weight:600">${m.note}</div>`:''}<div class="reward">+${m.reward.toLocaleString()}원</div></div>
-      <span class="mission-badge ${badgeCls}" ${paid?'style="background:#e3faf1;color:#20c997"':''}>${badgeText}</span>
-    </div>
-    <div class="mission-body" id="mbody${idx}">
-      ${done?`<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">${paid?'💰 지급완료!':'✅ 달성 완료!'} (${s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):''})</p>${(s.url && s.url.toString().indexOf('http')===0)?`<button class="photo-btn" onclick="showPhotoModal('${s.url.toString().replace(/'/g,"\\'")}')">📷 사진 보기</button>`:''}</div>`:`
-      ${m.link?`<button class="go-write-btn" onclick="openWriteLink(${idx})"><span>${m.linkLabel||'카페'}에서 작성하기</span><span class="arrow">→</span></button>`:m.links?`<button class="go-write-btn" onclick="openWriteLink(${idx})"><span>카페 선택해서 작성하기</span><span class="arrow">→</span></button>`:''}
-      <div class="upload-zone" id="uzone${idx}"><input type="file" accept="image/*" onchange="handleUpload(${idx},this)"><div class="icon">📷</div><div class="txt">스크린샷을 업로드해 주세요</div></div>
-      <div class="upload-preview" id="uprev${idx}"><img id="uimg${idx}"></div>
-      <button class="submit-btn primary" onclick="submitMission(${idx})" id="msubmit${idx}" disabled>미션 달성하기</button>`}
-    </div>`;
-    list.appendChild(card);
-  });
 }
 
-let openIdx=-1;
-function toggleMission(idx){const b=document.getElementById('mbody'+idx);if(!b)return;if(openIdx===idx){b.classList.remove('open');openIdx=-1;}else{if(openIdx>=0){const p=document.getElementById('mbody'+openIdx);if(p)p.classList.remove('open');}b.classList.add('open');openIdx=idx;}}
+// ── 설문 스텝 (한 화면 한 질문 위저드) ──
+const SVY_TOTAL=7;
+let svyStep=0;
+const SVY_OPTS={
+  q1:['네이버 검색','네이버 광고','맘카페','인스타그램','유튜브','지인 추천','베이비페어','기타'],
+  q2:['층간소음','아이 안전(낙상 방지)','입주 · 이사','미끄럼 방지','인테리어','반려동물','주변 추천','기타'],
+  q3:['가격','층간소음 효과','안전성(소재)','매트 틈새 · 청소','장판 · 마루 변색','시공 품질','A/S','업체 선택','기타'],
+  q4:['가격','제품 안전성(KC 인증 · 라돈 검사)','층간소음 성능','디자인','맞춤 시공(대형 · 퍼즐)','후기 · 평판','상담이 좋아서','지인 추천','기타'],
+  q5:['상담 응대','가격 안내','예약 과정','시공기사님 친절','시공 품질 · 마감','작업 속도','제품 품질']
+};
+const SVY_CFG={q1:{multi:false},q2:{multi:true},q3:{multi:true,max:3},q4:{multi:true,max:3},q5:{multi:true,max:3}};
+const SVY_META=[
+  {key:'q1',q:'돌봄매트를 처음 알게 된 경로는 어디인가요?',sub:'1개 선택'},
+  {key:'q2',q:'시공매트를 알아보게 된 계기는 무엇인가요?',sub:'여러 개 선택하셔도 괜찮아요'},
+  {key:'q3',q:'알아보실 때 가장 고민됐던 부분은 무엇이었나요?',sub:'가장 고민됐던 것 3가지만 골라주세요'},
+  {key:'q4',q:'돌봄매트를 최종 선택하신 가장 큰 이유는 무엇인가요?',sub:'결정에 가장 크게 영향을 준 이유 3가지를 골라주세요',important:true},
+  {key:'q5',q:'상담부터 시공 완료까지, 가장 만족스러웠던 부분은 무엇인가요?',sub:'특히 만족했던 부분을 최대 3개 골라주세요'},
+  {key:'q6',q:'혹시 아쉬웠던 점이 있었나요?',sub:'작은 부분이라도 편하게 알려주세요'},
+  {key:'q7',q:'주변에 시공매트를 고민하는 분이 있다면,<br>돌봄매트를 얼마나 추천하고 싶으신가요?',sub:'숫자를 눌러 선택해 주세요'}
+];
+let svySel={q1:[],q2:[],q3:[],q4:[],q5:[]};
+let svyNps=null;
+let q6Choice=null;   // 'none' | 'some'
+let q6Text='';
+let npsReason='';
 
-// 작성하러 가기 — 단일 카페면 바로 이동, 여러 카페면 선택 모달
-function openWriteLink(idx){
-  const m=MISSIONS[idx];
+function renderSurveyStep(){
+  const sp=document.getElementById('surveyPanel');
+  const db=document.getElementById('surveyDoneBox');
+  if(surveyDone){
+    sp.style.display='none';db.style.display='block';
+    document.getElementById('doneLowNote').style.display=(surveyNps!=null&&surveyNps<=6)?'block':'none';
+  }else{
+    sp.style.display='block';db.style.display='none';
+    renderSvyQ();
+  }
+}
+
+function svyProg(){
+  document.getElementById('svyProgFill').style.width=Math.round((svyStep+1)/SVY_TOTAL*100)+'%';
+  document.getElementById('svyProgText').textContent=(svyStep+1)+' / '+SVY_TOTAL;
+}
+
+function chipHTML(q,opt){
+  const on=svySel[q].indexOf(opt)>=0;
+  const m=opt.match(/^(.+?)\((.+)\)$/);
+  const label=m?('<span class="cl">'+m[1].trim()+'<span class="cs">'+m[2]+'</span></span>'):('<span class="cl">'+opt+'</span>');
+  return '<div class="chip2'+(on?' on':'')+'" onclick="pickChip(\''+q+'\','+SVY_OPTS[q].indexOf(opt)+',this)">'+label+'<span class="ck">✓</span></div>';
+}
+
+function renderSvyQ(){
+  const meta=SVY_META[svyStep];
+  const card=document.getElementById('svyCard');
+  const nav=document.getElementById('svyNav');
+  let h='';
+  h+='<div class="svy-qtitle'+(meta.important?' important':'')+'">'+(meta.important?'<span class="imp-tag">중요</span>':'')+meta.q+'</div>';
+  h+='<div class="svy-qsub">'+meta.sub+'</div>';
+  if(svyStep<=4){
+    const q=meta.key;
+    h+='<div class="chip-grid">'+SVY_OPTS[q].map(o=>chipHTML(q,o)).join('')+'</div>';
+    h+='<input class="etc-input'+(svySel[q].indexOf('기타')>=0?' show':'')+'" id="svyEtc" placeholder="기타 내용을 적어주세요" value="'+(svyEtc[q]||'').replace(/"/g,'&quot;')+'" oninput="svyEtc[\''+q+'\']=this.value">';
+  }else if(svyStep===5){
+    h+='<div class="q6-btns">'
+      +'<div class="q6-btn'+(q6Choice==='none'?' on':'')+'" onclick="pickQ6(\'none\')">없었어요 🙂</div>'
+      +'<div class="q6-btn'+(q6Choice==='some'?' on':'')+'" onclick="pickQ6(\'some\')">조금 있었어요</div>'
+      +'</div>';
+    h+='<textarea class="svy-ta" id="q6ta" style="'+(q6Choice==='some'?'':'display:none;')+'margin-top:12px" placeholder="작은 부분이라도 편하게 적어주세요. 서비스 개선에 적극 반영하겠습니다." oninput="q6Text=this.value">'+q6Text+'</textarea>';
+  }else{
+    h+='<div class="nps-grid">';
+    for(let n=0;n<=10;n++)h+='<button class="nps-btn'+(svyNps===n?' on':'')+'" onclick="pickNps('+n+')">'+n+'</button>';
+    h+='</div><div class="nps-lbl"><span>0 추천하고 싶지 않아요</span><span>꼭 추천하고 싶어요 10</span></div>';
+    h+='<div id="npsFollow">'+(svyNps!==null?npsFollowHTML():'')+'</div>';
+  }
+  card.innerHTML=h;
+  card.classList.remove('anim');void card.offsetWidth;card.classList.add('anim');
+  // 하단 내비
+  let nh='';
+  nh+='<button class="svy-prev" onclick="svyPrev()"'+(svyStep===0?' disabled':'')+'>이전</button>';
+  if(svyStep===0){
+    nh+='<button class="svy-next ghost" disabled>선택하면 넘어가요</button>';
+  }else if(svyStep===SVY_TOTAL-1){
+    nh+='<button class="svy-next" id="svySubmitBtn" onclick="submitSurvey()"'+(svyNps===null?' disabled':'')+'>설문 제출하기</button>';
+  }else{
+    nh+='<button class="svy-next" onclick="svyNext()">다음</button>';
+  }
+  nav.innerHTML=nh;
+  svyProg();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+let svyEtc={q1:'',q2:'',q3:'',q4:'',q5:''};
+function pickChip(q,optIdx,el){
+  const opt=SVY_OPTS[q][optIdx];
+  const cfg=SVY_CFG[q];const sel=svySel[q];
+  const on=sel.indexOf(opt)>=0;
+  if(on){
+    svySel[q]=sel.filter(x=>x!==opt);el.classList.remove('on');
+  }else{
+    if(!cfg.multi){
+      svySel[q]=[opt];
+      el.parentNode.querySelectorAll('.chip2').forEach(x=>x.classList.remove('on'));
+      el.classList.add('on');
+      if(opt!=='기타'){setTimeout(svyNext,280);}
+    }else{
+      if(cfg.max&&sel.length>=cfg.max){showToast('최대 '+cfg.max+'개까지 선택할 수 있어요');return;}
+      sel.push(opt);el.classList.add('on');
+    }
+  }
+  const etc=document.getElementById('svyEtc');
+  if(etc)etc.classList.toggle('show',svySel[q].indexOf('기타')>=0);
+  if(!cfg.multi&&opt==='기타'&&svySel[q].indexOf('기타')>=0){const e=document.getElementById('svyEtc');if(e)e.focus();}
+}
+function pickQ6(v){
+  q6Choice=v;
+  renderSvyQ();
+  if(v==='none'){setTimeout(svyNext,280);}
+  else{const t=document.getElementById('q6ta');if(t)t.focus();}
+}
+function pickNps(n){
+  svyNps=n;
+  renderSvyQ();
+  const f=document.getElementById('npsFollow');
+  if(f)f.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function npsFollowHTML(){
+  let msg,ph;
+  if(svyNps>=9){msg='감사합니다! 만족하신 이유를 한 줄로 알려주실 수 있을까요?';ph='예: 상담이 친절하고 시공 품질이 좋아서 만족했습니다.';}
+  else if(svyNps>=7){msg='어떤 부분이 조금 더 좋아지면 10점을 주실 것 같으세요?';ph='예: 가격 안내가 조금 더 명확했으면 좋겠어요.';}
+  else{msg='아쉬웠던 점을 알려주시면 담당자가 확인하겠습니다.';ph='불편했던 점을 자유롭게 적어주세요.';}
+  return '<div class="nps-follow"><div class="nf-msg">'+msg+'</div><textarea class="svy-ta" placeholder="'+ph+'" oninput="npsReason=this.value">'+npsReason+'</textarea></div>';
+}
+
+function svyValidate(step){
+  const key=SVY_META[step].key;
+  if(step===0&&svySel.q1.length!==1){showToast('경로를 선택해 주세요');return false;}
+  if(step===1&&svySel.q2.length<1){showToast('계기를 1개 이상 선택해 주세요');return false;}
+  if(step===2&&svySel.q3.length<1){showToast('고민됐던 부분을 선택해 주세요');return false;}
+  if(step===3&&svySel.q4.length<1){showToast('선택 이유를 골라주세요');return false;}
+  if(step===4&&svySel.q5.length<1){showToast('만족한 부분을 선택해 주세요');return false;}
+  if(step===5&&!q6Choice){showToast('둘 중 하나를 선택해 주세요');return false;}
+  if(step===6&&svyNps===null){showToast('추천 점수를 선택해 주세요');return false;}
+  return true;
+}
+function svyNext(){
+  if(!svyValidate(svyStep))return;
+  if(svyStep<SVY_TOTAL-1){svyStep++;renderSvyQ();}
+}
+function svyPrev(){if(svyStep>0){svyStep--;renderSvyQ();}}
+
+function svyVal(q){
+  return svySel[q].map(o=>{
+    if(o==='기타'){const t=(svyEtc[q]||'').trim();return t?('기타: '+t):'기타';}
+    return o;
+  });
+}
+async function submitSurvey(){
+  for(let i=0;i<SVY_TOTAL;i++){if(!svyValidate(i)){svyStep=i;renderSvyQ();return;}}
+  const btn=document.getElementById('svySubmitBtn');btn.disabled=true;btn.textContent='제출 중...';
+  const q6Final=q6Choice==='none'?'없음':(q6Text.trim()||'(내용 미작성)');
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'survey',phone:PHONE,q1:svyVal('q1')[0]||'',q2:svyVal('q2'),q3:svyVal('q3'),q4:svyVal('q4'),q5:svyVal('q5'),
+        q6:q6Final,nps:svyNps,npsReason:npsReason.trim(),submittedAt:new Date().toISOString()})});
+    const txt=await res.text();let result={};try{result=JSON.parse(txt)}catch(e){}
+    if(result.error){btn.disabled=false;btn.textContent='설문 제출하기';showToast('제출 실패: '+result.error);return;}
+    surveyDone=true;surveyNps=svyNps;
+    try{localStorage.setItem(LS_KEY('svy'),'1');}catch(e){}
+    fireConfetti();
+    renderStep();
+  }catch(e){btn.disabled=false;btn.textContent='설문 제출하기';showToast('전송 실패 - 다시 시도해 주세요');}
+}
+
+// ── 작성하러 가기 / 카페 선택 모달 ──
+function openWriteLink(mIdx){
+  const m=MISSIONS[mIdx];
   if(m.customUrl){
     window.open(m.customUrl,'_blank','noopener');
   } else if(m.link){
@@ -651,7 +1142,7 @@ function showCafeModal(m){
   m.links.forEach(lk=>{
     const btn=document.createElement('button');
     btn.className='cafe-option';
-    btn.innerHTML=`<span>${lk.label}</span><span class="arrow">→</span>`;
+    btn.innerHTML='<span>'+lk.label+'</span><span class="arrow">→</span>';
     btn.onclick=()=>{window.open('go-cafe.html?to='+encodeURIComponent(lk.to),'_blank','noopener');closeCafeModal();};
     list.appendChild(btn);
   });
@@ -659,9 +1150,9 @@ function showCafeModal(m){
 }
 function closeCafeModal(){document.getElementById('cafeModal').classList.remove('open');}
 
+// ── 업로드 / 미션 제출 ──
 const uploadData={};
 function handleUpload(idx,input){const f=input.files[0];if(!f)return;if(f.size>10*1024*1024){showToast('10MB 이하만 가능');return;}
-  // 이미지 압축 (최대 1200px, 품질 80%)
   const r=new FileReader();r.onload=function(e){
     const img=new Image();img.onload=function(){
       const maxW=1200,maxH=1200;let w=img.width,h=img.height;
@@ -676,24 +1167,25 @@ function handleUpload(idx,input){const f=input.files[0];if(!f)return;if(f.size>1
     };img.src=e.target.result;
   };r.readAsDataURL(f);}
 
-async function submitMission(idx){
-  const m=MISSIONS[idx];if(!uploadData[idx]){showToast('스크린샷을 업로드해 주세요');return;}
-  const btn=document.getElementById('msubmit'+idx);btn.disabled=true;btn.textContent='사진 업로드 중...';
+async function submitMission(mIdx){
+  const m=MISSIONS[mIdx];if(!uploadData[mIdx]){showToast('스크린샷을 업로드해 주세요');return;}
+  const btn=document.getElementById('msubmit'+mIdx);btn.disabled=true;btn.textContent='사진 업로드 중...';
   try{
-    // 사진을 Google Drive에 업로드
     const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[idx]})});
+      body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[mIdx]})});
     const txt=await res.text();
     let result={};try{result=JSON.parse(txt)}catch(e){}
     if(result.error){btn.disabled=false;btn.textContent='미션 달성하기';showToast('업로드 실패: '+result.error);return;}
     missionState[m.id]={done:true,url:result.url||'',submittedAt:new Date().toISOString()};
-    renderMissions();fireConfetti();showToast('🎉 '+m.title+' 달성! +'+m.reward.toLocaleString()+'원');
+    delete skipped[m.id];saveSkip();
+    fireConfetti();showToast(m.title+' 달성! +'+m.reward.toLocaleString()+'원');
+    setTimeout(gotoNext,1200);
   }catch(e){btn.disabled=false;btn.textContent='미션 달성하기';showToast('전송 실패');}
 }
 
-function checkCashbackReady(){renderMissions();}
-
+// ── 캐시백 신청 (설문 완료 필수) ──
 async function requestCashback(){
+  if(!surveyDone){showToast('설문을 먼저 완료해 주세요');gotoStep(SURVEY_STEP);return;}
   if(holdReason){showToast('지급 보류 중입니다 — 카카오톡 채널로 문의해 주세요');return;}
   if(!document.getElementById('cashbackConsent').checked){showToast('개인정보 수집에 동의해 주세요');return;}
   const bank=document.getElementById('accBank').value,name=document.getElementById('accName').value.trim(),num=document.getElementById('accNum').value.trim();
@@ -715,7 +1207,7 @@ async function requestCashback(){
       }
     } catch(e) { console.warn('네이버 전환 추적 실패:', e); }
     // ═══════════════════════════════════════════════
-    fireConfetti();payStatus='신청완료';renderMissions();
+    fireConfetti();payStatus='신청완료';renderStep();
   }catch(e){btn.disabled=false;btn.textContent='캐시백 받기';showToast('신청 실패');}
 }
 
@@ -798,19 +1290,20 @@ function restoreInspectionFromLocal(){
 }
 
 // ═════════════════════════════════════════════════════════
-// 데이터 로드 (이벤트 + 검수 상태)
+// 데이터 로드 (이벤트 + 설문 완료 여부)
 // ═════════════════════════════════════════════════════════
 async function loadData(){
-  if(!PHONE){document.getElementById('loadingOverlay').style.display='none';return;}
-  // 후기이벤트 데이터 (원본 그대로)
-  // 🆕 보류 여부 조회 (병렬 — 실패해도 페이지는 정상 동작)
+  loadLocal();
+  MISSIONS.forEach(m=>{if(!missionState[m.id])missionState[m.id]={done:false,url:'',submittedAt:''};});
+  if(!PHONE){document.getElementById('loadingOverlay').style.display='none';renderStep();return;}
+  // 보류 여부 + 설문 완료 여부 (병렬 — 실패해도 페이지는 정상 동작)
   const holdP=fetch(API_URL+'?type=reviewHold&phone='+encodeURIComponent(PHONE)).then(r=>r.json()).then(d=>{if(d&&d.hold)holdReason=d.reason||'확인이 필요한 접수 건이 있어요.';}).catch(()=>{});
+  const svP=fetch(API_URL+'?type=surveyCheck&phone='+encodeURIComponent(PHONE)).then(r=>r.json()).then(d=>{if(d&&d.done){surveyDone=true;if(typeof d.nps==='number')surveyNps=d.nps;}}).catch(()=>{});
   try{
     const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
     const data=await res.json();
     if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
     if(data.status)payStatus=data.status;
-    // 지급완료 미션 기반으로 paidTotal 계산
     paidTotal=0;
     MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
     if(data.account){
@@ -819,14 +1312,24 @@ async function loadData(){
       if(data.account.num)document.getElementById('accNum').value=data.account.num;
     }
   }catch(e){console.error('이벤트 로드 실패',e);}
-  // 검수 상태 (시공 후 탭용) · 서버 호출 비활성화 (불필요한 19.6초 지연 제거)
-  // localStorage 기반으로 작동하므로 서버 조회 불필요
   restoreInspectionFromLocal();
-  await holdP; // 🆕 보류 조회 완료 대기
+  await holdP;await svP;
+  // 시작 스텝: 계약후기 미완료면 1단계, 설문 미완료면 설문, 그 외 첫 미완료 미션, 없으면 신청 스텝
+  const c=missionState[MISSIONS[0].id]||{};
+  if(!c.done&&!skipped[MISSIONS[0].id])curStep=0;
+  else if(!surveyDone)curStep=SURVEY_STEP;
+  else{
+    curStep=STEPS.length-1;
+    for(let i=SURVEY_STEP+1;i<STEPS.length-1;i++){
+      const m=MISSIONS[STEPS[i].m];const s=missionState[m.id]||{};
+      if(!s.done&&!skipped[m.id]){curStep=i;break;}
+    }
+  }
   document.getElementById('loadingOverlay').style.display='none';
-  renderMissions();
+  renderStep();
 }
-initMissions();loadData();
+loadData();
+
 
 // URL ?tab= 파라미터에 따라 첫 진입 탭 자동 활성화
 const _initialTab=getInitialTabIndex();
