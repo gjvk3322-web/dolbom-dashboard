@@ -400,6 +400,9 @@
   .oc-trunk{width:2px;flex:1;min-height:30px;background:#C9DED3}
   .oc-exec{display:flex;align-items:flex-start;justify-self:start}
   .oc-exec-line{width:46px;height:2px;flex:0 0 46px;background:#C9DED3;margin-top:26px}
+  .oc-exec-line.sm{width:26px;flex:0 0 26px}
+  .oc-exec-dept{min-width:180px}
+  .oc-exec-members{margin-top:7px;min-width:210px}
   .oc-depts{display:flex;justify-content:center;align-items:flex-start}
   .oc-branch{position:relative;padding:26px 8px 0}
   .oc-branch::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:#C9DED3}
@@ -2808,6 +2811,8 @@ function renderOrgChart(){
     return;
   }
 
+  const execMembers = execDept ? members.filter(p => p.dept === execDept.id) : [];
+  const execColor = execDept ? okrColor(execDept.name) : "";
   el.innerHTML = `
     <div class="oc-tree">
       <div class="oc-top">
@@ -2817,7 +2822,9 @@ function renderOrgChart(){
           ${branches.length ? `<div class="oc-trunk"></div>` : ""}
         </div>
         <div class="oc-exec">${execDept
-          ? `<div class="oc-exec-line"></div>${colInner(execDept.name, okrColor(execDept.name), members.filter(p => p.dept === execDept.id), true, execDept.id)}`
+          ? `<div class="oc-exec-line"></div>
+             <div class="oc-dept oc-exec-dept" style="background:${execColor}">${esc(execDept.name)}<div class="cnt">${execMembers.length}명</div></div>
+             ${execMembers.length ? `<div class="oc-exec-line sm"></div><div class="oc-members oc-exec-members" data-home="${esc(execDept.id)}">${execMembers.map(p => personCard(p, execColor, true, execDept.id)).join("")}</div>` : ""}`
           : ""}</div>
       </div>
       ${branches.length ? `<div class="oc-depts">${branches.join("")}</div>` : ""}
