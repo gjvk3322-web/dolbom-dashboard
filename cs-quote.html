@@ -110,6 +110,7 @@ body {
 .welcome-btn-onnuricard { background: #7b1fa2; color: #fff; }   /* 온누리카드 — 진보라 */
 .welcome-btn-color      { background: #c2185b; color: #fff; }   /* 색상관련 — 로즈 */
 .welcome-btn-pantry     { background: #3949ab; color: #fff; }   /* 팬트리 — 인디고 */
+.welcome-btn-single     { background: #00838f; color: #fff; }   /* 낱장 추가 구매 — 청록 */
 .welcome-btn-as         { background: #ef6c00; color: #fff; }   /* AS 접수 — 오렌지 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
@@ -1216,6 +1217,9 @@ body {
           <button class="welcome-btn welcome-btn-color" onclick="copyColorInfo()">
             🎨 <span>색상관련</span>
           </button>
+          <button class="welcome-btn welcome-btn-single" onclick="copySinglePurchase()">
+            🧩 <span>낱장 추가 구매</span>
+          </button>
         </div>
       </div>
     </div>
@@ -2216,7 +2220,7 @@ function renderReply(results, py) {
   // 혜택 표시 매핑 (카톡 양식 라벨)
   var BENEFIT_DISPLAY = {
     review_contract: '계약 후기(-3만)',
-    group_buy: '5인 공구(-3%)',
+    group_buy: '공구(-3%)',
     onnuri: '온누리 결제(-7%)',
     review_event: '후기작성(-8만)'
   };
@@ -2821,6 +2825,30 @@ function copyPantry() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 팬트리 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+// 🧩 낱장/추가 구매 신청서 복사
+function copySinglePurchase() {
+  var text =
+    '[돌봄매트 낱장/추가 구매 신청서 ]\n' +
+    '1. 성함:\n' +
+    '2. 연락처:\n' +
+    '3. 주소:\n' +
+    '4. 매트 크기 및 수량\n' +
+    '* 센터용 (경사 없음):\n' +
+    '* 사이드용 (경사 1개):\n' +
+    '* 코너용 (경사 2개):\n' +
+    '5. 결제 및 현금영수증 정보\n' +
+    '* 기업은행 030-505520-04-011 허민석(돌봄)\n' +
+    '* 현금영수증 신청 번호:\n' +
+    '6. 단순 변심으로 인한 교환 및 환불은 불가능합니다.';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ 낱장 추가 구매 신청서 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
