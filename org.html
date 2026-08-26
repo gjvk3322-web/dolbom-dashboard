@@ -367,7 +367,10 @@
   .mn-branch + .mn-branch::after{content:"";position:absolute;left:145.5px;top:-8px;border:5px solid transparent;border-top-color:#BFE4D3}
   .mn-row{display:flex;align-items:flex-start}
   .mn-card{width:300px;flex:0 0 300px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(33,43,54,.05)}
-  .mn-step{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--accent);padding:3px 9px;border-radius:999px;margin-bottom:8px}
+  .mn-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .mn-move{display:flex;gap:4px}
+  .mn-move .mini-btn{padding:2px 8px;font-size:11px;line-height:1.4}
+  .mn-step{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--accent);padding:3px 9px;border-radius:999px}
   .mn-kids .mn-step{background:#5C7CFA}
   .mn-title{font-weight:700;font-size:15px;line-height:1.45}
   .mn-desc{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.6;white-space:pre-line}
@@ -773,6 +776,10 @@
           <label>상황(단계) 이름 <input id="manualTitle" placeholder="예: 도착 및 첫인사" /></label>
           <label>설명 (선택) <textarea id="manualDesc" placeholder="이 단계에서 해야 할 일을 적어 주세요"></textarea></label>
           <label>상위 상황 <select id="manualParent"></select></label>
+          <div id="manualQuick" style="display:none;gap:6px;margin-top:4px;padding-top:12px;border-top:1px dashed var(--line)">
+            <button type="button" class="mini-btn" id="quickPointBtn">+ 핵심포인트 추가</button>
+            <button type="button" class="mini-btn" id="quickChildBtn">+ 하위 상황 추가</button>
+          </div>
         </div>
         <div class="modal-foot"><button class="btn" onclick="manualModal.close()">취소</button><button class="btn primary" id="saveManualBtn">저장</button></div>
       </form>
@@ -2650,15 +2657,17 @@ function renderManual(){
     <div class="mn-branch">
       <div class="mn-row">
         <div class="mn-card">
-          <div class="mn-step">${depth === 0 ? "상황 " : "세부 "}${idx + 1}</div>
+          <div class="mn-head">
+            <div class="mn-step">${depth === 0 ? "상황 " : "세부 "}${idx + 1}</div>
+            <div class="mn-move">
+              <button class="mini-btn" onclick="moveManual('${it.id}',-1)" title="위로">▲</button>
+              <button class="mini-btn" onclick="moveManual('${it.id}',1)" title="아래로">▼</button>
+            </div>
+          </div>
           <div class="mn-title">${esc(it.title)}</div>
           ${it.desc ? `<div class="mn-desc">${esc(it.desc)}</div>` : ""}
           <div class="mn-actions">
-            <button class="mini-btn" onclick="openManualPoint('${it.id}','')">+ 핵심포인트</button>
-            <button class="mini-btn" onclick="openManualModal('','${it.id}')">+ 하위 상황</button>
             <button class="mini-btn" onclick="openManualModal('${it.id}')">수정</button>
-            <button class="mini-btn" onclick="moveManual('${it.id}',-1)">▲</button>
-            <button class="mini-btn" onclick="moveManual('${it.id}',1)">▼</button>
             <button class="mini-btn" onclick="delManual('${it.id}')" style="color:var(--bad)">삭제</button>
           </div>
         </div>
@@ -2693,6 +2702,12 @@ window.openManualModal = (id, parentId) => {
   $("manualDesc").value = it ? (it.desc || "") : "";
   $("manualParent").innerHTML = manualParentOptions(id);
   $("manualParent").value = it ? (it.parentId || "") : (parentId || "");
+  const quick = $("manualQuick");
+  quick.style.display = it ? "flex" : "none";
+  if (it){
+    $("quickPointBtn").onclick = () => { manualModal.close(); openManualPoint(id, ""); };
+    $("quickChildBtn").onclick = () => { manualModal.close(); openManualModal("", id); };
+  }
   manualModal.showModal();
 };
 $("addManualBtn").onclick = () => openManualModal("");
