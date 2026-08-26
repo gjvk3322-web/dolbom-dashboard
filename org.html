@@ -784,6 +784,7 @@
           <input type="hidden" id="manualId" />
           <label>상황(단계) 이름 <input id="manualTitle" placeholder="예: 도착 및 첫인사" /></label>
           <label>설명 (선택) <textarea id="manualDesc" placeholder="이 단계에서 해야 할 일을 적어 주세요"></textarea></label>
+          <label>매뉴얼 구분 <select id="manualOwnerSel"></select></label>
           <label>상위 상황 <select id="manualParent"></select></label>
           <div id="manualQuick" style="display:none;gap:6px;margin-top:4px;padding-top:12px;border-top:1px dashed var(--line)">
             <button type="button" class="mini-btn" id="quickPointBtn">+ 핵심포인트 추가</button>
@@ -2773,9 +2774,22 @@ $("saveOkrBtn").onclick = async () => {
 const manualModal = $("manualModal");
 const manualPointModal = $("manualPointModal");
 
+let manualOwner = "";   // "" = 공통 매뉴얼, 이름 = 개인 매뉴얼
+window.setManualOwner = o => { manualOwner = o; renderManual(); };
+
 function renderManual(){
   const el = $("manualTree"); if (!el) return;
-  const items = entries(data.manual).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const all = entries(data.manual);
+  const owners = [...new Set(all.map(it => it.owner || "").filter(Boolean))];
+  const me = currentUser();
+  if (me && !owners.includes(me)) owners.push(me);
+  owners.sort((a, b) => a.localeCompare(b, "ko"));
+  const chip = (label, val) => `<button class="mini-btn" onclick="setManualOwner('${val}')"
+    style="${manualOwner === val ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${esc(label)}</button>`;
+  const chips = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+    ${chip("📗 공통", "")}${owners.map(o => chip((o === me ? "⭐ " : "") + o, o)).join("")}
+  </div>`;
+  const items = all.filter(it => (it.owner || "") === manualOwner).sort((a, b) => (a.order || 0) - (b.order || 0));
   const byParent = {};
   items.forEach(it => { const p = it.parentId || ""; (byParent[p] = byParent[p] || []).push(it); });
   const node = (it, depth, idx) => {
@@ -2810,13 +2824,14 @@ function renderManual(){
     </div>`;
   };
   const roots = byParent[""] || [];
-  el.innerHTML = roots.length
-    ? roots.map((r, i) => node(r, 0, i)).join("")
+  const emptyMsg = manualOwner
+    ? `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center"><b>${esc(manualOwner)}</b>의 매뉴얼이 아직 없습니다.<br><b>상황 추가</b>를 누르면 이 탭에 만들어집니다.</div>`
     : `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">아직 상황이 없습니다. <b>상황 추가</b>로 첫 단계를 만들어 보세요.<br>예: 도착 → 인사 → 사전 확인 → 시공 → 마무리 점검 → 퇴장</div>`;
+  el.innerHTML = chips + (roots.length ? roots.map((r, i) => node(r, 0, i)).join("") : emptyMsg);
 }
 
-function manualParentOptions(exceptId){
-  const items = entries(data.manual);
+function manualParentOptions(exceptId, owner){
+  const items = entries(data.manual).filter(i => (i.owner || "") === (owner || ""));
   const kidsOf = id => items.filter(i => i.parentId === id).flatMap(i => [i.id, ...kidsOf(i.id)]);
   const banned = exceptId ? new Set([exceptId, ...kidsOf(exceptId)]) : new Set();
   return `<option value="">(최상위 단계)</option>` +
@@ -2828,8 +2843,17 @@ window.openManualModal = (id, parentId) => {
   $("manualId").value = id || "";
   $("manualTitle").value = it ? it.title : "";
   $("manualDesc").value = it ? (it.desc || "") : "";
-  $("manualParent").innerHTML = manualParentOptions(id);
-  $("manualParent").value = it ? (it.parentId || "") : (parentId || "");
+  const me = currentUser();
+  const ownVals = [...new Set([...entries(data.manual).map(x => x.owner || "").filter(Boolean), ...(me ? [me] : [])])].sort((a,b) => a.localeCompare(b,"ko"));
+  const curOwner = it ? (it.owner || "") : (parentId ? ((data.manual[parentId] || {}).owner || "") : manualOwner);
+  $("manualOwnerSel").innerHTML = `<option value="">📗 공통 매뉴얼</option>` + ownVals.map(o => `<option value="${esc(o)}">${esc(o)} 매뉴얼</option>`).join("");
+  $("manualOwnerSel").value = curOwner;
+  const refreshParent = () => {
+    $("manualParent").innerHTML = manualParentOptions(id, $("manualOwnerSel").value);
+    $("manualParent").value = it ? (it.parentId || "") : (parentId || "");
+  };
+  $("manualOwnerSel").onchange = refreshParent;
+  refreshParent();
   const quick = $("manualQuick");
   quick.style.display = it ? "flex" : "none";
   if (it){
@@ -2847,6 +2871,7 @@ $("saveManualBtn").onclick = async e => {
   const prev = (editId && (data.manual || {})[editId]) || {};
   const item = {
     title, desc: $("manualDesc").value.trim(), parentId: $("manualParent").value || "",
+    owner: $("manualOwnerSel").value || "",
     points: prev.points || null,
     order: prev.order ?? Date.now(),
     by: prev.by || currentUser() || "?", t: prev.t || Date.now(),
