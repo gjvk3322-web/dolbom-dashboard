@@ -388,6 +388,8 @@
   .mn-point:hover{border-color:#E1C878;box-shadow:0 0 0 2px rgba(233,190,90,.18)}
   .mn-point .ck{color:#C99A2E;font-weight:800}
   .mn-kids{margin:20px 0 0 30px;padding-left:26px;border-left:2px dashed #BFE4D3;display:flex;flex-direction:column;gap:20px}
+  .mn-kids > .mn-branch > .mn-row{position:relative}
+  .mn-kids > .mn-branch > .mn-row::before{content:"";position:absolute;left:-33px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 0 0 2px #BFE4D3}
   .mn-kids .mn-branch + .mn-branch::before,.mn-kids .mn-branch + .mn-branch::after{display:none}
   @media (max-width:900px){
     .mn-row{flex-direction:column}
@@ -1059,7 +1061,8 @@
     <div class="modal-body">
       <input type="hidden" id="meetingId">
       <div class="field full"><label>회의 날짜 *</label><input type="date" id="mDate"></div>
-      <div class="field full"><label>회의 내용 — 어떤 이야기를 했고, 무엇을 하기로 했는지</label><textarea id="mContent" rows="12" style="min-height:260px"></textarea></div>
+      <div class="field full"><label>AI 요약 — 전체 내용을 AI에게 30줄로 요약해 달라고 해서 붙여넣기</label><textarea id="mSummary" rows="8" style="min-height:170px"></textarea></div>
+      <div class="field full"><label>전체 내용</label><textarea id="mContent" rows="12" style="min-height:260px"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="meetingModal.close()">취소</button><button class="btn primary" id="saveMeetingBtn">저장</button></div>
   </form>
@@ -1828,7 +1831,10 @@ function renderMeetings(){
     <div class="card meeting-card">
       <h3>주간 운영회의</h3>
       <div class="when">${esc(m.date)}</div>
-      ${m.content ? `<div class="meeting-field"><div>${esc(m.content)}</div></div>` : (
+      ${m.summary ? `<div class="meeting-field"><b>AI 요약</b><div>${esc(m.summary)}</div></div>` : ""}
+      ${m.content ? (m.summary
+        ? `<details style="margin-bottom:11px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted)">전체 내용 보기</summary><div style="font-size:13.5px;line-height:1.65;white-space:pre-wrap;margin-top:8px">${esc(m.content)}</div></details>`
+        : `<div class="meeting-field"><div>${esc(m.content)}</div></div>`) : (
         field("1. 숫자", m.numbers) +
         field("2. 목표 대비 차이", m.gap) +
         field("3. 핵심 문제", m.issues) +
@@ -2468,7 +2474,7 @@ $("addMeetingBtn").onclick = () => {
   $("meetingModalTitle").textContent = "회의 기록 추가";
   $("meetingId").value = "";
   $("mDate").value = todayStr();
-  $("mContent").value = "";
+  $("mSummary").value = ""; $("mContent").value = "";
   meetingModal.showModal();
 };
 window.editMeeting = id => {
@@ -2476,6 +2482,7 @@ window.editMeeting = id => {
   $("meetingModalTitle").textContent = "회의 기록 수정";
   $("meetingId").value = id;
   $("mDate").value = m.date || "";
+  $("mSummary").value = m.summary || "";
   // 예전 4칸 형식 기록은 하나의 내용으로 합쳐서 편집
   $("mContent").value = m.content || [
     m.numbers && "[숫자]\n" + m.numbers,
@@ -2496,9 +2503,10 @@ $("saveMeetingBtn").onclick = async () => {
   if (!date) return alert("회의 날짜는 필수입니다.");
   const id = $("meetingId").value || newId("w_");
   const content = $("mContent").value.trim();
-  if (!content) return alert("회의 내용을 입력해 주세요.");
+  const summary = $("mSummary").value.trim();
+  if (!content && !summary) return alert("AI 요약 또는 전체 내용 중 하나는 입력해 주세요.");
   if (await safeWrite("회의 기록", () => orgRef.child("weekly/" + id).set({
-    date, content
+    date, content, summary
   }), $("saveMeetingBtn"))){
     logAction($("meetingId").value ? "수정" : "추가", "회의: " + date);
     meetingModal.close();
@@ -2912,8 +2920,10 @@ function renderManual(){
           <div class="mn-head">
             <div class="mn-step">${depth === 0 ? "상황 " : "세부 "}${idx + 1}</div>
             <div class="mn-move">
-              <button class="mini-btn" onclick="moveManual('${it.id}',-1)" title="위로">▲</button>
-              <button class="mini-btn" onclick="moveManual('${it.id}',1)" title="아래로">▼</button>
+              <button class="mini-btn" onclick="moveManual('${it.id}',-1)" title="순서 위로">▲</button>
+              <button class="mini-btn" onclick="moveManual('${it.id}',1)" title="순서 아래로">▼</button>
+              <button class="mini-btn" onclick="addManualBelow('${it.id}')" title="아래에 세부 상황 추가" style="color:var(--accent);font-weight:800">↓＋</button>
+              <button class="mini-btn" onclick="openManualPoint('${it.id}')" title="오른쪽에 핵심포인트 추가" style="color:#B8860B;font-weight:800">→＋</button>
             </div>
           </div>
           <div class="mn-title">${esc(it.title)}</div>
@@ -2929,6 +2939,7 @@ function renderManual(){
           <div class="mn-points-label">고객만족 핵심포인트 ${pts.length}</div>
           ${pts.map(p => { const me = currentUser(); const mine = p.by && p.by === me;
             return `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span>${esc(p.text)}${p.by ? ` <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;vertical-align:1px;${mine ? "background:var(--accent);color:#fff" : "background:#EEF3F0;color:#5B6763"}">${esc(p.by)}</span>` : ""}</span></div>`; }).join("")}
+          <button class="mini-btn" onclick="openManualPoint('${it.id}')" title="핵심포인트 추가" style="align-self:flex-start;margin-top:4px;color:#B8860B;font-weight:800">↓＋ 포인트</button>
         </div>` : ""}
       </div>
       ${kids.length ? `<div class="mn-kids">${kids.map((k, i) => node(k, depth + 1, i)).join("")}</div>` : ""}
@@ -2945,7 +2956,15 @@ function manualParentOptions(exceptId, owner){
   return `<option value="">(최상위 단계)</option>` +
     roots.map(i => `<option value="${i.id}">${esc(i.title)}</option>`).join("");
 }
+let manualInsertAfter = "";   // ↓＋ 로 열었을 때: 이 항목 바로 아래 순서로 저장
+window.addManualBelow = id => {
+  const it = (data.manual || {})[id]; if (!it) return;
+  manualInsertAfter = id;
+  // 상황 카드에서 누르면 그 상황의 세부로, 세부 카드에서 누르면 같은 상황의 세부로
+  openManualModal("", it.parentId ? it.parentId : it.id);
+};
 window.openManualModal = (id, parentId) => {
+  if (id) manualInsertAfter = "";
   const it = id ? (data.manual || {})[id] : null;
   $("manualModalTitle").textContent = it ? "상황 수정" : "상황 추가";
   $("manualId").value = id || "";
@@ -2961,7 +2980,7 @@ window.openManualModal = (id, parentId) => {
   }
   manualModal.showModal();
 };
-$("addManualBtn").onclick = () => openManualModal("");
+$("addManualBtn").onclick = () => { manualInsertAfter = ""; openManualModal(""); };
 $("bFiles").onchange = e => {
   for (const file of e.target.files){
     if (file.size > 10 * 1048576){ alert(`'${file.name}'은 10MB를 넘어 첨부할 수 없습니다.`); continue; }
@@ -3012,12 +3031,22 @@ $("saveManualBtn").onclick = async e => {
     title, desc: $("manualDesc").value.trim(), parentId: $("manualParent").value || "",
     owner: "",
     points: prev.points || null,
-    order: prev.order ?? Date.now(),
+    order: prev.order ?? (function(){
+      const af = manualInsertAfter && (data.manual || {})[manualInsertAfter];
+      if (!af) return Date.now();
+      const sibs = entries(data.manual).filter(x => (x.parentId || "") === ($("manualParent").value || ""))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      const i = sibs.findIndex(x => x.id === manualInsertAfter);
+      const a = af.order || 0;
+      const next = i >= 0 && sibs[i + 1] ? (sibs[i + 1].order || 0) : null;
+      return next === null ? a + 10 : (a + next) / 2;
+    })(),
     by: prev.by || currentUser() || "?", t: prev.t || Date.now(),
     updatedBy: editId ? (currentUser() || "?") : null, updatedAt: editId ? Date.now() : null
   };
   if (await safeWrite("매뉴얼", () => orgRef.child("manual/" + id).set(item), e.target)){
     logAction(editId ? "수정" : "추가", "매뉴얼: " + title);
+    manualInsertAfter = "";
     manualModal.close();
   }
 };
