@@ -1050,10 +1050,27 @@
   </form>
 </dialog>
 
+<!-- ───────── 접근 제한: 구글 로그인 게이트 ───────── -->
+<div id="authGate" style="position:fixed;inset:0;z-index:9999;background:#F7F9F8;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:36px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(33,43,54,.08)">
+    <div style="font-size:22px;font-weight:800;margin-bottom:6px">돌봄매트 조직 운영</div>
+    <div id="authMsg" class="hint" style="margin-bottom:22px">승인된 직원만 접근할 수 있습니다.</div>
+    <button id="authLoginBtn" class="btn primary" style="width:100%;justify-content:center;font-size:15px;padding:12px">Google로 로그인</button>
+    <button id="authLogoutBtn" class="btn" style="width:100%;justify-content:center;margin-top:8px;display:none">로그아웃</button>
+    <div id="authKakaoTip" class="hint" style="margin-top:14px;display:none">카카오톡에서 열었다면 로그인이 안 될 수 있어요.<br>우측 하단 ⋯ → <b>다른 브라우저로 열기</b>를 눌러 주세요.</div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script>
-firebase.initializeApp({ databaseURL: "https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app" });
+firebase.initializeApp({
+  apiKey: "AIzaSyA_IxxyRjr3ZJDT-OBtUsfKKWCJaTviRgk",
+  authDomain: "dolbom-schedule.firebaseapp.com",
+  projectId: "dolbom-schedule",
+  databaseURL: "https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app"
+});
 const db = firebase.database();
 const orgRef = db.ref("org");
 
@@ -1077,21 +1094,122 @@ db.ref(".info/connected").on("value", s => {
 });
 
 setTimeout(() => {
-  if (!data) $("syncText").textContent = "연결이 늦어지고 있어요 — 배포된 주소(my.dolbommat.com)에서 열었는지 확인해 주세요";
+  if (!data && authState.allowed) $("syncText").textContent = "연결이 늦어지고 있어요 — 배포된 주소(my.dolbommat.com)에서 열었는지 확인해 주세요";
 }, 8000);
-orgRef.on("value", snap => {
-  const v = snap.val();
-  if (!v) {
-    $("syncText").textContent = "⚠ 데이터가 비어 있습니다 — 대표에게 알리고 백업 복구를 진행하세요";
-    return;
-  }
-  data = v;
-  renderAll();
-  runReorg202608();
-}, err => {
-  $("syncText").textContent = "연결 실패 — 새로고침 해주세요";
-  console.error(err);
+
+/* ───────── 구글 로그인 + 승인 게이트 ───────── */
+const ADMIN_EMAILS = ["gjvk3322@gmail.com"];   // 관리자(승인 권한) 이메일 — 여러 명이면 콤마로 추가
+const authState = { user: null, allowed: false, started: false };
+const isAdminEmail = e => ADMIN_EMAILS.includes(String(e || "").toLowerCase());
+
+function startData(){
+  if (authState.started) return;
+  authState.started = true;
+  orgRef.on("value", snap => {
+    const v = snap.val();
+    if (!v) {
+      $("syncText").textContent = "⚠ 데이터가 비어 있습니다 — 대표에게 알리고 백업 복구를 진행하세요";
+      return;
+    }
+    data = v;
+    renderAll();
+    runReorg202608();
+  }, err => {
+    $("syncText").textContent = "연결 실패 — 새로고침 해주세요";
+    console.error(err);
+  });
+}
+
+function gateShow(msg, showLogout){
+  $("authGate").style.display = "flex";
+  $("authMsg").innerHTML = msg;
+  $("authLoginBtn").style.display = showLogout ? "none" : "";
+  $("authLogoutBtn").style.display = showLogout ? "" : "none";
+}
+function gateHide(){ $("authGate").style.display = "none"; }
+
+$("authLoginBtn").onclick = () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(() => {
+    firebase.auth().signInWithRedirect(provider).catch(e2 => {
+      $("authKakaoTip").style.display = "";
+      $("authMsg").textContent = "로그인에 실패했어요: " + (e2.message || e2.code || "");
+    });
+  });
+};
+$("authLogoutBtn").onclick = () => firebase.auth().signOut().then(() => location.reload());
+
+firebase.auth().onAuthStateChanged(async user => {
+  authState.user = user;
+  if (!user){ gateShow("승인된 직원만 접근할 수 있습니다.", false); return; }
+  const uid = user.uid;
+  db.ref("orgAuth/allow/" + uid).on("value", snap => {
+    const ok = snap.exists() || isAdminEmail(user.email);
+    authState.allowed = ok;
+    if (ok){
+      gateHide();
+      startData();
+      if (isAdminEmail(user.email)) mountAdminAccessBtn();
+    } else {
+      // 승인 대기 등록 (자기 uid에만 쓰기 가능)
+      db.ref("orgAuth/pending/" + uid).update({
+        email: user.email || "", name: user.displayName || "", at: Date.now()
+      }).catch(()=>{});
+      gateShow("<b>" + esc(user.email || "") + "</b><br>승인 대기 중입니다.<br>대표 승인 후 자동으로 열립니다.", true);
+    }
+  }, () => {
+    // allow 노드 읽기 거부 = 규칙 미적용 상태 등
+    gateShow("접근 확인에 실패했어요 — 관리자에게 문의해 주세요.", true);
+  });
 });
+
+/* ── 관리자: 접근 관리 패널 ── */
+function mountAdminAccessBtn(){
+  if ($("accessMgrBtn")) return;
+  const nav = document.querySelector(".sidebar") || document.body;
+  const b = document.createElement("button");
+  b.id = "accessMgrBtn"; b.className = "mini-btn"; b.textContent = "🔑 접근 관리";
+  b.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:500;box-shadow:0 2px 10px rgba(0,0,0,.12);background:#fff";
+  b.onclick = openAccessMgr;
+  document.body.appendChild(b);
+}
+async function openAccessMgr(){
+  const [pSnap, aSnap] = await Promise.all([
+    db.ref("orgAuth/pending").once("value"), db.ref("orgAuth/allow").once("value")
+  ]);
+  const pend = pSnap.val() || {}, allow = aSnap.val() || {};
+  const row = (uid, o, isPending) => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px">
+    <div style="flex:1"><b>${esc(o.name || "-")}</b><br><span class="hint">${esc(o.email || uid)}</span></div>
+    ${isPending
+      ? `<button class="mini-btn" onclick="approveUser('${uid}')">✅ 승인</button><button class="mini-btn" style="color:var(--bad)" onclick="rejectUser('${uid}')">거절</button>`
+      : `<button class="mini-btn" style="color:var(--bad)" onclick="kickUser('${uid}')">강퇴</button>`}
+  </div>`;
+  const html = `<div style="position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()" id="accessMgrOv">
+    <div style="background:#fff;border-radius:16px;padding:22px 24px;max-width:420px;width:100%;max-height:80vh;overflow:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:16px">접근 관리</b>
+      <button class="mini-btn" onclick="document.getElementById('accessMgrOv').remove()">닫기</button></div>
+      <div style="font-weight:700;margin-top:10px">⏳ 승인 대기 ${Object.keys(pend).length}명</div>
+      ${Object.entries(pend).map(([u,o]) => row(u,o,true)).join("") || '<div class="hint" style="padding:8px 0">없음</div>'}
+      <div style="font-weight:700;margin-top:16px">✅ 승인됨 ${Object.keys(allow).length}명</div>
+      ${Object.entries(allow).map(([u,o]) => row(u,o,false)).join("") || '<div class="hint" style="padding:8px 0">없음</div>'}
+    </div></div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+}
+window.approveUser = async uid => {
+  const o = (await db.ref("orgAuth/pending/" + uid).once("value")).val() || {};
+  await db.ref("orgAuth/allow/" + uid).set({ email: o.email || "", name: o.name || "", at: Date.now() });
+  await db.ref("orgAuth/pending/" + uid).remove();
+  document.getElementById("accessMgrOv").remove(); openAccessMgr();
+};
+window.rejectUser = async uid => {
+  await db.ref("orgAuth/pending/" + uid).remove();
+  document.getElementById("accessMgrOv").remove(); openAccessMgr();
+};
+window.kickUser = async uid => {
+  if (!confirm("이 사용자의 접근을 차단할까요?")) return;
+  await db.ref("orgAuth/allow/" + uid).remove();
+  document.getElementById("accessMgrOv").remove(); openAccessMgr();
+};
 
 /* ───────── 1회성 조직 정비 (2026-08 팀설정 시트 기준) ─────────
    최초 1회만 실행되고 org/migrations 에 완료 표시를 남깁니다.
