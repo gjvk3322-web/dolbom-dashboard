@@ -61,7 +61,7 @@
   .section{display:none}
   .section.active{display:block}
   .section-title{display:flex;align-items:center;justify-content:space-between;margin:26px 0 12px;gap:12px}
-  .section-title h2{font-size:19px;margin:0;letter-spacing:-.3px}
+  .section-title h2{font-size:19px;margin:0;letter-spacing:-.3px;white-space:nowrap}
 
   table{width:100%;border-collapse:collapse;background:var(--panel);font-size:14px}
   th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
@@ -339,8 +339,13 @@
   .dash-sec{position:relative}
   .dash-sec.hidden,.dash-sec.cat-off,.dash-group.cat-off{display:none}
   .dash-sec .table-wrap td{padding-top:11px;padding-bottom:11px;line-height:1.5}
-  .dash-hide{margin-left:auto;opacity:.55}
+  .dash-hide{margin-left:auto;opacity:.55;white-space:nowrap}
   .dash-hide:hover{opacity:1}
+  .rowline{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:13px}
+  .rowline+.rowline{border-top:1px solid #F4F7F5}
+  .rowline .rowbar-name{flex:0 0 110px}
+  .rowline .rowbar-track{flex:1}
+  .rowline .rowbar-val{flex-shrink:0}
   .dash-chip{display:inline-flex;align-items:center;gap:5px;margin:2px 6px 2px 0;padding:5px 11px;background:#fff;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:650;color:#3D4844;cursor:pointer}
   .dash-chip:hover{border-color:var(--accent);color:var(--accent-deep)}
   .rowbar{padding:9px 0}
@@ -513,6 +518,10 @@
       <div class="dash-sec" data-dash="asStats" data-cat="ops">
       <div class="section-title"><h2>AS 현황</h2><span class="hint" id="asHint"></span></div>
       <div class="grid kpis" id="asCards"><div class="hint">불러오는 중…</div></div>
+      <div class="card" style="padding:16px 20px;margin-top:12px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px">월별 시공하자율 <span class="hint" style="font-weight:400">시공스케줄 구분="시공하자" ÷ 시공 건수 · 2026-09부터</span></div>
+        <div id="asDefectChart" class="hint">불러오는 중…</div>
+      </div>
       </div>
 
       <div class="dash-sec" data-dash="products" data-cat="ops">
@@ -3115,10 +3124,10 @@ function renderProducts(){
   const PRODUCT_NAMES = {"모던1m22":"모던 1M 22T","모던1m17":"모던 1M 17T","베이지1m22":"베이지 1M 22T","베이지1m17":"베이지 1M 17T","모던50":"모던 500","마블50":"마블 500","코튼50":"코튼 500"};
   document.getElementById("productRows").innerHTML = rows.map(r => {
     const pct = total > 0 ? Math.round(r.adj/total*100) : 0;
-    return `<div class="rowbar">
-      <div class="rowbar-top"><span class="rowbar-name">${esc(PRODUCT_NAMES[r.colorCode] || r.colorCode || "")}</span>
-      <span class="rowbar-val"><b>${r.adj.toLocaleString()}집</b> (${pct}%) · ${(r.qty||0).toLocaleString()}장</span></div>
-      <div class="rowbar-track"><div class="rowbar-fill" style="width:${pct}%"></div></div></div>`;
+    return `<div class="rowline">
+      <span class="rowbar-name">${esc(PRODUCT_NAMES[r.colorCode] || r.colorCode || "")}</span>
+      <div class="rowbar-track"><div class="rowbar-fill" style="width:${pct}%"></div></div>
+      <span class="rowbar-val"><b>${r.adj.toLocaleString()}집</b> (${pct}%) · ${(r.qty||0).toLocaleString()}장</span></div>`;
   }).join("") + `<div class="hint" style="margin-top:10px">합계 ${total.toLocaleString()}집 · 시공스케줄 직접 카운팅 기준</div>`;
 }
 
@@ -3295,8 +3304,39 @@ async function dashAs(){
       dashCard("AS율", j.month.rate !== null ? j.month.rate : "-", "%", `이번달 시공 ${j.month.installs}건 대비`) +
       dashCard("AS 결제액", manWon(j.month.paid), "만원", "유상 수리 합계") +
       dashCard("전월 AS", j.prevMonth.count, "건", j.prevMonth.rate !== null ? `AS율 ${j.prevMonth.rate}%` : "");
-    document.getElementById("asHint").textContent = "AS보고 시트 기준";
+    document.getElementById("asHint").textContent = "AS보고 시트 기준 · 하자율은 시공스케줄 기준";
   } catch(e){ document.getElementById("asCards").innerHTML = '<div class="hint">AS 데이터를 불러오지 못했습니다 — Code.gs에 orgstats.gs 적용이 필요할 수 있어요.</div>'; }
+  dashAsDefect();
+}
+
+/* ── 월별 시공하자율 (부산/경기, 2026-09~) ── */
+async function dashAsDefect(){
+  const el = document.getElementById("asDefectChart"); if (!el) return;
+  try{
+    const j = await fetch(APPS_SCRIPT_URL + "?type=asDefect").then(r => r.json());
+    if (!j.success) throw 0;
+    const months = j.months || [];
+    if (!months.length){ el.innerHTML = '<div class="hint">2026년 9월부터 집계됩니다. (구분 입력이 쌓이면 자동 표시)</div>'; return; }
+    const maxRate = Math.max(5, ...months.flatMap(m => [m.busan.rate || 0, m.gyeonggi.rate || 0]));
+    const bar = (o, color, label) => {
+      const rate = o.rate === null ? 0 : o.rate;
+      const w = Math.min(100, rate / maxRate * 100);
+      const txt = o.rate === null ? "시공 0건" : `<b>${o.rate}%</b> (${o.defects}/${o.installs}건)`;
+      return `<div class="rowline" style="padding:3px 0;border:0">
+        <span class="rowbar-name" style="flex-basis:52px;color:${color};font-weight:700">${label}</span>
+        <div class="rowbar-track"><div class="rowbar-fill" style="width:${w}%;background:${color}"></div></div>
+        <span class="rowbar-val">${txt}</span></div>`;
+    };
+    el.classList.remove("hint");
+    el.innerHTML = months.map(m => {
+      const [y, mo] = m.ym.split("-");
+      return `<div style="padding:7px 0;border-top:1px solid #F4F7F5">
+        <div style="font-weight:700;font-size:12.5px;margin-bottom:4px">${y}년 ${parseInt(mo)}월</div>
+        ${bar(m.busan, "#D64545", "🔴 부산")}
+        ${bar(m.gyeonggi, "#3B6FD4", "🔵 경기")}
+      </div>`;
+    }).join("");
+  } catch(e){ el.innerHTML = '<div class="hint">하자율 데이터를 불러오지 못했습니다 — Code.gs에 asDefect API 추가가 필요해요.</div>'; }
 }
 
 /* ── 팀별 실적 (신규 API) ── */
