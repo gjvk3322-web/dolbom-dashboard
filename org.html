@@ -1147,8 +1147,12 @@ firebase.auth().onAuthStateChanged(async user => {
     const ok = snap.exists() || isAdminEmail(user.email);
     authState.allowed = ok;
     if (ok){
+      const info = snap.val();
+      if (info && info.name) localStorage.setItem("orgUser", info.name);
+      else if (isAdminEmail(user.email) && !localStorage.getItem("orgUser")) localStorage.setItem("orgUser", "민석");
       gateHide();
       startData();
+      if (typeof renderWho === "function") renderWho();
       if (isAdminEmail(user.email)) mountAdminAccessBtn();
     } else {
       // 승인 대기 등록 (자기 uid에만 쓰기 가능)
@@ -1197,7 +1201,9 @@ async function openAccessMgr(){
 }
 window.approveUser = async uid => {
   const o = (await db.ref("orgAuth/pending/" + uid).once("value")).val() || {};
-  await db.ref("orgAuth/allow/" + uid).set({ email: o.email || "", name: o.name || "", at: Date.now() });
+  const nm = prompt("직원 이름을 입력하세요 (조직도 이름과 동일하게)", o.name || "");
+  if (nm === null) return;
+  await db.ref("orgAuth/allow/" + uid).set({ email: o.email || "", name: (nm.trim() || o.name || ""), at: Date.now() });
   await db.ref("orgAuth/pending/" + uid).remove();
   document.getElementById("accessMgrOv").remove(); openAccessMgr();
 };
@@ -1310,12 +1316,7 @@ function showNameStep(hint){
 
 function ensureUser(){
   if (currentUser() || !data) return;
-  if (kakaoReady){
-    $("kakaoStep").style.display = "block";
-    $("nameStep").style.display = "none";
-  } else {
-    showNameStep("본인 이름을 선택해 주세요. (이 기기에 저장됩니다)");
-  }
+  showNameStep("본인 이름을 선택해 주세요. (이 기기에 저장됩니다)");
   if (!userModal.open) userModal.showModal();
 }
 
