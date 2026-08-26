@@ -519,7 +519,7 @@
       <div class="section-title"><h2>AS 현황</h2><span class="hint" id="asHint"></span></div>
       <div class="grid kpis" id="asCards"><div class="hint">불러오는 중…</div></div>
       <div class="card" style="padding:16px 20px;margin-top:12px">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px">월별 시공하자율 <span class="hint" style="font-weight:400">시공스케줄 구분="시공하자" ÷ 시공 건수 · 2026-09부터</span></div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px">월별 시공하자율 <span class="hint" style="font-weight:400">시공스케줄 구분="시공하자" ÷ 시공 건수 · 막대 전체 = 10% · 2026-09부터</span></div>
         <div id="asDefectChart" class="hint">불러오는 중…</div>
       </div>
       </div>
@@ -3461,10 +3461,10 @@ async function dashAsDefect(){
     if (!j.success) throw 0;
     const months = j.months || [];
     if (!months.length){ el.innerHTML = '<div class="hint">2026년 9월부터 집계됩니다. (구분 입력이 쌓이면 자동 표시)</div>'; return; }
-    const maxRate = Math.max(5, ...months.flatMap(m => [m.busan.rate || 0, m.gyeonggi.rate || 0]));
+    const SCALE = 10;   // 막대 전체 = 하자율 10%
     const bar = (o, color, label) => {
       const rate = o.rate === null ? 0 : o.rate;
-      const w = Math.min(100, rate / maxRate * 100);
+      const w = Math.min(100, rate / SCALE * 100);
       const txt = o.rate === null ? "시공 0건" : `<b>${o.rate}%</b> (${o.defects}/${o.installs}건)`;
       return `<div class="rowline" style="padding:3px 0;border:0">
         <span class="rowbar-name" style="flex-basis:52px;color:${color};font-weight:700">${label}</span>
