@@ -3224,8 +3224,12 @@ async function dashRealConv(){
     const j = await fetch(APPS_SCRIPT_URL + "?type=sampleConversion").then(r => r.json());
     if (!j.success || !j.data) throw 0;
     const d = j.data;
+    const sTot = parseInt(d.sampleTotal) || 0;
+    const mTot = parseInt(String(d.stats.total || "").replace(/[^0-9]/g, "")) || 0;
     document.getElementById("realconvStats").innerHTML =
-      dashCard("총 매칭", d.stats.total || "-", "") + dashCard("평균", d.stats.avg || "-", "") +
+      dashCard("총 샘플", sTot ? sTot.toLocaleString() : "-", "건") +
+      dashCard("총 매칭", d.stats.total || "-", "", sTot && mTot ? `전환율 ${(mTot / sTot * 100).toFixed(1)}%` : "") +
+      dashCard("평균", d.stats.avg || "-", "") +
       dashCard("75% 결정", d.stats.p75 || "-", "") + dashCard("90% 결정", d.stats.p90 || "-", "");
     const dist = d.distribution || [];
     const maxPct = Math.max(...dist.map(x => parseFloat(String(x.pct||"").replace("%","")) || 0), 1);
@@ -3327,6 +3331,15 @@ async function dashSurvey(){
       (j.channels || []).map(c => line(c.name, c.count, chMax, "")).join("") +
       `<div style="font-weight:700;font-size:13.5px;margin:16px 0 6px">만족한 부분 TOP</div>` +
       (j.satisfy || []).slice(0, 6).map(c => line(c.name, c.count, stMax, "#E2A93B")).join("") +
+      ((j.months || []).length ? `<div style="font-weight:700;font-size:13.5px;margin:16px 0 6px">월별 NPS 추이 <span class="hint" style="font-weight:400">응답 10명 미만 달은 회색(표본 부족)</span></div>` +
+        j.months.map(m => {
+          const low = m.count < 10, sc = m.npsScore;
+          const w = sc === null ? 0 : Math.max(2, (sc + 100) / 200 * 100);
+          return `<div class="rowline" style="border:0;padding:4px 0${low ? ";opacity:.45" : ""}">
+            <span class="rowbar-name" style="flex-basis:90px">${esc(m.ym)}</span>
+            <div class="rowbar-track"><div class="rowbar-fill" style="width:${w}%${sc !== null && sc < 0 ? ";background:#EB5757" : ""}"></div></div>
+            <span class="rowbar-val" style="width:150px"><b>${sc === null ? "-" : "NPS " + sc}</b> · 평균 ${m.npsAvg === null ? "-" : m.npsAvg} · ${m.count}명</span></div>`;
+        }).join("") : "") +
       ((j.improve || []).length ? `<div style="font-weight:700;font-size:13.5px;margin:16px 0 6px">최근 개선 의견</div>` +
         j.improve.map(v => `<div style="font-size:12.5px;color:#5B6763;padding:4px 0;border-top:1px solid #F4F7F5">💬 ${esc(v.text)} <span class="hint">· ${esc(v.d)}</span></div>`).join("") : "");
   } catch(e){
