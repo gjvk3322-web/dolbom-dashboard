@@ -596,6 +596,21 @@
       <div class="card" style="padding:18px 20px"><div id="surveyBars" class="hint">불러오는 중…</div></div>
       </div>
 
+      <div class="dash-sec" data-dash="ga4" data-cat="mkt">
+      <div class="section-title"><h2>홈페이지 GA4</h2><span class="hint">Looker Studio 자동 갱신</span>
+        <a href="https://lookerstudio.google.com/reporting/cf0cbaf8-7f84-46ac-9ac8-b64c11754974" target="_blank" rel="noopener" class="mini-btn" style="margin-left:auto;text-decoration:none">전체화면 열기 →</a></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="position:relative;width:100%;padding-top:75%">
+          <iframe loading="lazy"
+            src="https://datastudio.google.com/embed/reporting/cf0cbaf8-7f84-46ac-9ac8-b64c11754974/page/dMrvF"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;border:0"
+            frameborder="0" allowfullscreen
+            sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            title="돌봄매트 홈페이지 GA4 대시보드"></iframe>
+        </div>
+      </div>
+      </div>
+
       <div class="dash-sec" data-dash="adrank" data-cat="mkt">
       <div class="section-title"><h2>네이버 광고 순위 · 경쟁사</h2><span class="hint" id="adrankUpdate"></span></div>
       <div class="card" style="padding:18px 20px"><div id="adrankContent" class="hint">불러오는 중…</div></div>
@@ -788,9 +803,8 @@
         <div class="modal-head"><strong id="manualModalTitle">상황 추가</strong><button class="mini-btn" onclick="manualModal.close()">닫기</button></div>
         <div class="modal-body" style="grid-template-columns:1fr">
           <input type="hidden" id="manualId" />
-          <label>상황(단계) 이름 <input id="manualTitle" placeholder="예: 도착 및 첫인사" /></label>
+          <label>상황(단계) 이름 <input id="manualTitle" /></label>
           <label>설명 (선택) <textarea id="manualDesc" placeholder="이 단계에서 해야 할 일을 적어 주세요"></textarea></label>
-          <label>매뉴얼 구분 <select id="manualOwnerSel"></select></label>
           <label>상위 상황 <select id="manualParent"></select></label>
           <div id="manualQuick" style="display:none;gap:6px;margin-top:4px;padding-top:12px;border-top:1px dashed var(--line)">
             <button type="button" class="mini-btn" id="quickPointBtn">+ 핵심포인트 추가</button>
@@ -801,12 +815,26 @@
       </form>
     </dialog>
 
+<dialog id="boardModal">
+  <div class="modal-head"><h3>자료 올리기</h3><button class="mini-btn" onclick="boardModal.close()">닫기</button></div>
+  <div class="modal-body">
+    <label>제목 *<input id="bTitle"></label>
+    <label>설명 (선택)<textarea id="bDesc"></textarea></label>
+    <label>파일 * — PDF 등, 개당 10MB까지
+      <input type="file" id="bFiles" multiple accept=".pdf,.hwp,.hwpx,.doc,.docx,.jpg,.jpeg,.png">
+    </label>
+    <div id="bFileList" style="margin-top:6px"></div>
+  </div>
+  <div class="modal-foot"><button class="btn" onclick="boardModal.close()">취소</button>
+    <button class="btn primary" id="saveBoardBtn">올리기</button></div>
+</dialog>
+
     <dialog id="manualPointModal">
       <form method="dialog" onsubmit="return false">
         <div class="modal-head"><strong id="manualPointHead">핵심포인트 추가</strong><button class="mini-btn" onclick="manualPointModal.close()">닫기</button></div>
         <div class="modal-body" style="grid-template-columns:1fr">
           <input type="hidden" id="manualPointMid" /><input type="hidden" id="manualPointPid" />
-          <label>고객만족 핵심포인트 <textarea id="manualPointText" placeholder="예: 도착 10분 전 고객에게 전화로 알리기"></textarea></label>
+          <label>고객만족 핵심포인트 <textarea id="manualPointText"></textarea></label>
         </div>
         <div class="modal-foot"><button class="btn" id="delManualPointBtn" style="color:var(--bad)">삭제</button><button class="btn" onclick="manualPointModal.close()">취소</button><button class="btn primary" id="saveManualPointBtn">저장</button></div>
       </form>
@@ -902,7 +930,7 @@
     <div class="modal-body">
       <input type="hidden" id="personId">
       <div class="field"><label>이름 *</label><input id="pName"></div>
-      <div class="field"><label>직무 *</label><input id="pRole" placeholder="예: 사수 (부산1)"></div>
+      <div class="field"><label>직무 *</label><input id="pRole"></div>
       <div class="field"><label>부서</label><select id="pDept"></select></div>
       <div class="field" style="display:none"><label>직속 책임자</label><input id="pManager"></div>
       <div class="field full"><label>Mission — 이 사람이 책임지는 결과 한 줄</label><textarea id="pMission"></textarea></div>
@@ -923,7 +951,7 @@
       <input type="hidden" id="deptId">
       <div class="field full"><label>부서명 *</label><input id="dName"></div>
       <div class="field full"><label>존재 이유 — 이 부서가 없으면 회사에 무슨 일이 생기는가</label><textarea id="dMission"></textarea></div>
-      <div class="field full"><label>핵심 KPI</label><input id="dKpi" placeholder="예: 시공건수 · A/S율 · 생산성"></div>
+      <div class="field full"><label>핵심 KPI</label><input id="dKpi"></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="deptModal.close()">취소</button><button class="btn primary" id="saveDeptBtn">저장</button></div>
   </form>
@@ -957,7 +985,7 @@
     <div class="modal-head"><strong id="decisionModalTitle">권한 항목 추가</strong><button class="mini-btn" onclick="decisionModal.close()">닫기</button></div>
     <div class="modal-body">
       <input type="hidden" id="decisionId">
-      <div class="field full"><label>업무 *</label><input id="dcTask" placeholder="예: 제품 가격 변경"></div>
+      <div class="field full"><label>업무 *</label><input id="dcTask"></div>
       <div class="field full hint">각 칸에는 결정 / 검토 / 의견 / 제안 / 공유 / - 등을 자유롭게 적으면 됩니다.</div>
       <div class="field"><label>담당자</label><input id="dcStaff"></div>
       <div class="field"><label>사수/팀장</label><input id="dcLead"></div>
@@ -974,11 +1002,11 @@
     <div class="modal-body" style="grid-template-columns:1fr">
       <input type="hidden" id="formId">
       <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
-        <div class="field"><label>서식 이름 *</label><input id="fTitle" placeholder="예: AS 접수 양식"></div>
-        <div class="field"><label>분류</label><input id="fCat" list="fCatList" placeholder="예: 시공 / CS / 마케팅"><datalist id="fCatList"></datalist></div>
+        <div class="field"><label>서식 이름 *</label><input id="fTitle"></div>
+        <div class="field"><label>분류</label><input id="fCat" list="fCatList"><datalist id="fCatList"></datalist></div>
       </div>
-      <div class="field"><label>용도 — 언제 쓰는 서류인지</label><input id="fPurpose" placeholder="예: 고객이 AS를 요청했을 때 상담원이 접수하며 작성"></div>
-      <div class="field"><label>작성 방법 — 한 줄에 하나씩</label><textarea id="fGuide" placeholder="예:&#10;증상은 고객 표현 그대로 적기&#10;근접 사진 1장 + 전경 사진 1장 필수&#10;시공일자는 시트에서 확인 후 기입"></textarea></div>
+      <div class="field"><label>용도 — 언제 쓰는 서류인지</label><input id="fPurpose"></div>
+      <div class="field"><label>작성 방법 — 한 줄에 하나씩</label><textarea id="fGuide" placeholder="한 줄에 하나씩"></textarea></div>
       <div class="field"><label>서식 파일 — hwp·한글·엑셀·PDF 등 (여러 개 가능, 파일당 10MB 이하)</label>
         <input type="file" id="fFiles" multiple accept=".hwp,.hwpx,.doc,.docx,.xls,.xlsx,.pdf,.txt,.zip">
         <div id="fFileList" style="margin-top:6px"></div>
@@ -995,7 +1023,7 @@
     <div class="modal-head"><strong id="taskModalTitle">할 일 추가</strong><button class="mini-btn" onclick="taskModal.close()">닫기</button></div>
     <div class="modal-body">
       <input type="hidden" id="taskId">
-      <div class="field full"><label>제목 *</label><input id="tTitle" placeholder="예: 9월 맘카페 공동구매 오픈"></div>
+      <div class="field full"><label>제목 *</label><input id="tTitle"></div>
       <div class="field"><label>팀</label><select id="tDept"><option value="">공통</option></select></div>
       <div class="field"><label>담당자</label><input id="tAssignee"></div>
       <div class="field"><label>상태</label><select id="tStatus"><option value="todo">대기</option><option value="doing">진행 중</option><option value="done">완료</option></select></div>
@@ -1013,8 +1041,8 @@
     <div class="modal-head"><strong id="toolModalTitle">링크 추가</strong><button class="mini-btn" onclick="toolModal.close()">닫기</button></div>
     <div class="modal-body">
       <input type="hidden" id="toolId">
-      <div class="field full"><label>이름 *</label><input id="tlName" placeholder="예: 부산 스케줄러"></div>
-      <div class="field full"><label>주소 *</label><input id="tlUrl" placeholder="예: scheduler.html 또는 https://..."></div>
+      <div class="field full"><label>이름 *</label><input id="tlName"></div>
+      <div class="field full"><label>주소 *</label><input id="tlUrl" placeholder="https:// 주소 또는 파일명"></div>
       <div class="field"><label>그룹</label><select id="tlGroup">
         <option>시공·운영</option><option>CS·상담</option><option>마케팅</option><option>교육·기타</option><option>고객용 페이지</option>
       </select></div>
@@ -1121,6 +1149,7 @@ function startData(){
     data = v;
     renderAll();
     runReorg202608();
+    runManualFlatten2608();
   }, err => {
     $("syncText").textContent = "연결 실패 — 새로고침 해주세요";
     console.error(err);
@@ -1244,6 +1273,42 @@ const REORG_SHEET = {
   "신영": { team:"busan", role:"부사수 (부산2)", joined:"2026-08-01" }
 };
 let reorgTried = false;
+let flattenTried = false;
+async function runManualFlatten2608(){
+  const KEY = "manualFlatten202608";
+  if (flattenTried || !data || (data.migrations || {})[KEY]) return;
+  const items = entries(data.manual);
+  if (!items.length) return;
+  const byId = {}; items.forEach(i => byId[i.id] = i);
+  const rootOf = it => {
+    let cur = it, guard = 0;
+    while (cur.parentId && byId[cur.parentId] && guard++ < 50) cur = byId[cur.parentId];
+    return cur;
+  };
+  const deep = items.filter(i => i.parentId && byId[i.parentId] && byId[i.parentId].parentId);
+  if (!deep.length) return;
+  flattenTried = true;
+  try {
+    const upd = {};
+    // 상황(root)별로 후손 전체를 DFS 순서로 모아 직계 자식으로 재배치
+    const roots = items.filter(i => !i.parentId);
+    roots.forEach(root => {
+      const seq = [];
+      const walk = pid => items
+        .filter(i => i.parentId === pid)
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .forEach(i => { seq.push(i); walk(i.id); });
+      walk(root.id);
+      seq.forEach((it, idx) => {
+        upd["manual/" + it.id + "/parentId"] = root.id;
+        upd["manual/" + it.id + "/order"] = (idx + 1) * 10;
+      });
+    });
+    upd["migrations/" + KEY] = { t: Date.now(), by: currentUser() || "자동" };
+    await orgRef.update(upd);
+    logAction("정비", "매뉴얼 세부 단계 사슬 정리 (" + deep.length + "건을 상황 바로 아래로)");
+  } catch(e){ console.error("매뉴얼 정리 실패:", e); flattenTried = false; }
+}
 async function runReorg202608(){
   if (reorgTried || !data) return;
   reorgTried = true;
@@ -2780,22 +2845,61 @@ $("saveOkrBtn").onclick = async () => {
 const manualModal = $("manualModal");
 const manualPointModal = $("manualPointModal");
 
-let manualOwner = "";   // "" = 공통 매뉴얼, 이름 = 개인 매뉴얼
+let manualOwner = "";   // "" = 공통 매뉴얼, "__board" = 자료 게시판
 window.setManualOwner = o => { manualOwner = o; renderManual(); };
+
+function renderManualBoard(){
+  const posts = entries(data.manualBoard).sort((a, b) => (b.t || 0) - (a.t || 0));
+  const top = `<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <button class="btn primary" onclick="openBoardModal()">자료 올리기</button></div>`;
+  if (!posts.length) return top + `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">아직 올라온 자료가 없습니다. <b>자료 올리기</b>로 매뉴얼 PDF를 공유해 보세요.</div>`;
+  return top + posts.map(p => `
+    <div class="card" style="padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="min-width:0">
+          <div style="font-weight:800;font-size:14.5px">${esc(p.title)}</div>
+          ${p.desc ? `<div style="font-size:12.5px;color:#5B6763;margin-top:3px;white-space:pre-wrap">${esc(p.desc)}</div>` : ""}
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+            ${toArr(p.files).map(f => `<a class="mini-btn" href="${esc(f.url)}" target="_blank" rel="noopener" style="text-decoration:none">📄 ${esc(f.name)} <span class="hint" style="font-size:11px">${fmtSize(f.size)}</span></a>`).join("")}
+          </div>
+          <div class="hint" style="margin-top:7px">${esc(p.by || "?")} · ${new Date(p.t || 0).toLocaleDateString("ko-KR")}</div>
+        </div>
+        <button class="mini-btn danger" onclick="deleteBoardPost('${p.id}')">삭제</button>
+      </div>
+    </div>`).join("");
+}
+let boardFiles = [];
+function renderBFileList(){
+  $("bFileList").innerHTML = boardFiles.map((f, i) =>
+    `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0">📄 ${esc(f.name)} <span class="hint">${fmtSize(f.size)}</span>
+     <button type="button" class="mini-btn" onclick="removeBoardFile(${i})">빼기</button></div>`).join("")
+    || `<span class="hint" style="font-size:12px;color:var(--muted)">첨부된 파일이 없습니다.</span>`;
+}
+window.removeBoardFile = i => { boardFiles.splice(i, 1); renderBFileList(); };
+window.openBoardModal = () => {
+  $("bTitle").value = ""; $("bDesc").value = "";
+  boardFiles = []; renderBFileList();
+  boardModal.showModal();
+};
+window.deleteBoardPost = id => {
+  const p = (data.manualBoard || {})[id]; if (!p) return;
+  if (!canDeleteItem(p)) return alert(DEL_DENY_MSG);
+  if (!confirm(`'${p.title}' 자료를 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("manualBoard", id, "매뉴얼 자료: " + p.title);
+};
 
 function renderManual(){
   const el = $("manualTree"); if (!el) return;
   const all = entries(data.manual);
-  const owners = [...new Set(all.map(it => it.owner || "").filter(Boolean))];
-  const me = currentUser();
-  if (me && !owners.includes(me)) owners.push(me);
-  owners.sort((a, b) => a.localeCompare(b, "ko"));
   const chip = (label, val) => `<button class="mini-btn" onclick="setManualOwner('${val}')"
     style="${manualOwner === val ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${esc(label)}</button>`;
   const chips = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
-    ${chip("📗 공통", "")}${owners.map(o => chip((o === me ? "⭐ " : "") + o, o)).join("")}
+    ${chip("📗 공통", "")}${chip("📄 게시판", "__board")}
   </div>`;
-  const items = all.filter(it => (it.owner || "") === manualOwner).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const addBtn = $("addManualBtn");
+  if (addBtn) addBtn.style.display = manualOwner === "__board" ? "none" : "";
+  if (manualOwner === "__board"){ el.innerHTML = chips + renderManualBoard(); return; }
+  const items = all.filter(it => !(it.owner || "")).sort((a, b) => (a.order || 0) - (b.order || 0));
   const byParent = {};
   items.forEach(it => { const p = it.parentId || ""; (byParent[p] = byParent[p] || []).push(it); });
   const node = (it, depth, idx) => {
@@ -2823,25 +2927,23 @@ function renderManual(){
         <div class="mn-conn"></div>
         <div class="mn-points">
           <div class="mn-points-label">고객만족 핵심포인트 ${pts.length}</div>
-          ${pts.map(p => `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span>${esc(p.text)}</span></div>`).join("")}
+          ${pts.map(p => { const me = currentUser(); const mine = p.by && p.by === me;
+            return `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span>${esc(p.text)}${p.by ? ` <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;vertical-align:1px;${mine ? "background:var(--accent);color:#fff" : "background:#EEF3F0;color:#5B6763"}">${esc(p.by)}</span>` : ""}</span></div>`; }).join("")}
         </div>` : ""}
       </div>
       ${kids.length ? `<div class="mn-kids">${kids.map((k, i) => node(k, depth + 1, i)).join("")}</div>` : ""}
     </div>`;
   };
   const roots = byParent[""] || [];
-  const emptyMsg = manualOwner
-    ? `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center"><b>${esc(manualOwner)}</b>의 매뉴얼이 아직 없습니다.<br><b>상황 추가</b>를 누르면 이 탭에 만들어집니다.</div>`
-    : `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">아직 상황이 없습니다. <b>상황 추가</b>로 첫 단계를 만들어 보세요.<br>예: 도착 → 인사 → 사전 확인 → 시공 → 마무리 점검 → 퇴장</div>`;
+  const emptyMsg = `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">아직 상황이 없습니다. <b>상황 추가</b>로 첫 단계를 만들어 보세요.</div>`;
   el.innerHTML = chips + (roots.length ? roots.map((r, i) => node(r, 0, i)).join("") : emptyMsg);
 }
 
 function manualParentOptions(exceptId, owner){
-  const items = entries(data.manual).filter(i => (i.owner || "") === (owner || ""));
-  const kidsOf = id => items.filter(i => i.parentId === id).flatMap(i => [i.id, ...kidsOf(i.id)]);
-  const banned = exceptId ? new Set([exceptId, ...kidsOf(exceptId)]) : new Set();
+  const items = entries(data.manual).filter(i => !(i.owner || ""));
+  const roots = items.filter(i => !i.parentId && i.id !== exceptId);
   return `<option value="">(최상위 단계)</option>` +
-    items.filter(i => !banned.has(i.id)).map(i => `<option value="${i.id}">${esc(i.title)}</option>`).join("");
+    roots.map(i => `<option value="${i.id}">${esc(i.title)}</option>`).join("");
 }
 window.openManualModal = (id, parentId) => {
   const it = id ? (data.manual || {})[id] : null;
@@ -2849,17 +2951,8 @@ window.openManualModal = (id, parentId) => {
   $("manualId").value = id || "";
   $("manualTitle").value = it ? it.title : "";
   $("manualDesc").value = it ? (it.desc || "") : "";
-  const me = currentUser();
-  const ownVals = [...new Set([...entries(data.manual).map(x => x.owner || "").filter(Boolean), ...(me ? [me] : [])])].sort((a,b) => a.localeCompare(b,"ko"));
-  const curOwner = it ? (it.owner || "") : (parentId ? ((data.manual[parentId] || {}).owner || "") : manualOwner);
-  $("manualOwnerSel").innerHTML = `<option value="">📗 공통 매뉴얼</option>` + ownVals.map(o => `<option value="${esc(o)}">${esc(o)} 매뉴얼</option>`).join("");
-  $("manualOwnerSel").value = curOwner;
-  const refreshParent = () => {
-    $("manualParent").innerHTML = manualParentOptions(id, $("manualOwnerSel").value);
-    $("manualParent").value = it ? (it.parentId || "") : (parentId || "");
-  };
-  $("manualOwnerSel").onchange = refreshParent;
-  refreshParent();
+  $("manualParent").innerHTML = manualParentOptions(id, "");
+  $("manualParent").value = it ? (it.parentId || "") : (parentId || "");
   const quick = $("manualQuick");
   quick.style.display = it ? "flex" : "none";
   if (it){
@@ -2869,6 +2962,46 @@ window.openManualModal = (id, parentId) => {
   manualModal.showModal();
 };
 $("addManualBtn").onclick = () => openManualModal("");
+$("bFiles").onchange = e => {
+  for (const file of e.target.files){
+    if (file.size > 10 * 1048576){ alert(`'${file.name}'은 10MB를 넘어 첨부할 수 없습니다.`); continue; }
+    boardFiles.push({ name: file.name, size: file.size, file });
+  }
+  e.target.value = ""; renderBFileList();
+};
+$("saveBoardBtn").onclick = async () => {
+  const title = $("bTitle").value.trim();
+  if (!title) return alert("제목은 필수입니다.");
+  if (!boardFiles.length) return alert("파일을 첨부해 주세요.");
+  const btn = $("saveBoardBtn");
+  const files = [];
+  try {
+    btn.disabled = true;
+    for (let i = 0; i < boardFiles.length; i++){
+      btn.textContent = `업로드 중… (${i + 1}/${boardFiles.length})`;
+      const f = boardFiles[i];
+      const b64 = await readB64(f.file);
+      const resp = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ type: "formUpload", folder: "돌봄매트 매뉴얼", filename: f.name, mimeType: f.file.type || "application/octet-stream", data: b64 })
+      });
+      const j = await resp.json();
+      if (!j || !j.ok || !j.url) throw new Error((j && j.error) || "업로드 실패");
+      files.push({ name: f.name, size: f.size, url: j.url });
+    }
+  } catch(e){
+    console.error(e);
+    btn.disabled = false; btn.textContent = "올리기";
+    return alert("파일 업로드에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.");
+  }
+  btn.disabled = false; btn.textContent = "올리기";
+  const id = newId("mb_");
+  const rec = { title, desc: $("bDesc").value.trim(), files, by: currentUser() || "?", t: Date.now() };
+  if (await safeWrite("매뉴얼 자료", () => orgRef.child("manualBoard/" + id).set(rec), btn)){
+    logAction("등록", "매뉴얼 자료: " + title);
+    boardModal.close();
+  }
+};
 $("saveManualBtn").onclick = async e => {
   const title = $("manualTitle").value.trim();
   if (!title) return alert("상황(단계) 이름을 입력해 주세요.");
@@ -2877,7 +3010,7 @@ $("saveManualBtn").onclick = async e => {
   const prev = (editId && (data.manual || {})[editId]) || {};
   const item = {
     title, desc: $("manualDesc").value.trim(), parentId: $("manualParent").value || "",
-    owner: $("manualOwnerSel").value || "",
+    owner: "",
     points: prev.points || null,
     order: prev.order ?? Date.now(),
     by: prev.by || currentUser() || "?", t: prev.t || Date.now(),
@@ -3071,7 +3204,7 @@ function bindOcDrag(root){
 const DASH_LABELS = {
   hist:"월별 추이·상세", deptStatus:"부서별 핵심 상태", today:"오늘 실시간",
   channels:"채널별 전환", cohort:"샘플 전환 추이", realconv:"진짜 전환(휴대폰 매칭)", products:"제품별 판매",
-  phone:"상담 전화", review:"후기·알림톡", survey:"고객 설문", adrank:"광고 순위·경쟁사",
+  phone:"상담 전화", review:"후기·알림톡", survey:"고객 설문", ga4:"홈페이지 GA4", adrank:"광고 순위·경쟁사",
   soomgo:"숨고 유입", apt:"입주아파트", stock:"재고 요약",
   asStats:"AS 현황", teamStats:"팀별 실적", custFunnel:"고객 풀퍼널"
 };
