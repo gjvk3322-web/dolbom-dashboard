@@ -1566,7 +1566,7 @@ function lvApprovedDays(name){
 }
 function lvFmt(n){ return n % 1 ? n.toFixed(1) : String(n); }
 function lvRange(l){ return l.start + (l.end && l.end !== l.start ? "~" + l.end.slice(5) : "") + (l.half ? " 반차" : ""); }
-const LV_ST = { pending: ["대기", "#FFF7E0;color:#B8860B"], approved: ["승인", "var(--tint);color:var(--accent-deep)"], rejected: ["반려", "#FDECEA;color:#C62828"] };
+const LV_ST = { pending: ["대기", "#FFF7E0;color:#B8860B"], approved: ["승인", "var(--tint);color:var(--accent-deep)"], rejected: ["반려", "#FDECEA;color:#C62828"], canceled: ["취소", "#EEF2F0;color:#8A959E"] };
 function lvChip(st){ const s = LV_ST[st] || LV_ST.pending; return `<span style="border-radius:999px;font-size:11px;font-weight:700;padding:3px 9px;background:${s[1]}">${s[0]}</span>`; }
 function renderLeave(){
   if (!$("leaveMine")) return;
@@ -1590,7 +1590,8 @@ function renderLeave(){
         `<div style="display:flex;align-items:center;gap:9px;font-size:13px;padding:3px 0">
           <span style="min-width:150px">${esc(lvRange(l))}</span><span class="hint">${lvFmt(lvDays(l))}일</span>${lvChip(l.status)}
           ${l.reason ? `<span class="hint">· ${esc(l.reason)}</span>` : ""}
-          ${l.status === "pending" ? `<button class="mini-btn" onclick="cancelLeave('${l.id}')">취소</button>` : ""}
+          ${l.status === "pending" ? `<button class="mini-btn" onclick="cancelLeave('${l.id}')">취소</button>`
+            : l.status === "approved" ? `<button class="mini-btn" onclick="cancelApprovedLeave('${l.id}')">취소</button>` : ""}
         </div>`).join("") + `</div>` : ""}
     </div>`;
 
@@ -1643,6 +1644,14 @@ window.cancelLeave = id => {
   if (!confirm("이 연차 신청을 취소할까요?")) return;
   orgRef.child("leaves/" + id).remove();
   logAction("취소", "연차: " + l.name + " " + lvRange(l));
+};
+window.cancelApprovedLeave = id => {
+  const l = (data.leaves || {})[id]; if (!l) return;
+  const me = currentUser();
+  if (l.name !== me && !ADMINS.includes(me)) return alert("본인 또는 관리자만 취소할 수 있어요.");
+  if (!confirm(`승인된 연차(${lvRange(l)})를 취소할까요? 사용 일수는 자동으로 복구됩니다.`)) return;
+  orgRef.child("leaves/" + id).update({ status: "canceled", canceledBy: me, canceledAt: Date.now() });
+  logAction("취소", "연차(승인 취소): " + l.name + " " + lvRange(l));
 };
 window.decideLeave = (id, st) => {
   if (!ADMINS.includes(currentUser())) return alert("관리자만 승인/반려할 수 있어요.");
@@ -2413,6 +2422,15 @@ function renderCalendar(){
   const viewStart = fmtD(start);
   const viewEnd = addDays(viewStart, 41);
   const byDate = {};
+  // 승인된 연차 → 회색 막대
+  entries(data.leaves).filter(l => l.status === "approved").forEach(l => {
+    const ts = l.start, te = l.end || l.start;
+    if (!ts || te < viewStart || ts > viewEnd) return;
+    const s = ts < viewStart ? viewStart : ts, e = te > viewEnd ? viewEnd : te;
+    for (let ds = s; ds <= e; ds = addDays(ds, 1)){
+      (byDate[ds] = byDate[ds] || []).push({ lv: l, isStart: ds === ts, isEnd: ds === te });
+    }
+  });
   calFiltered().forEach(t => {
     if (!t.due) return;
     const ts = (t.start && t.start <= t.due) ? t.start : t.due;
@@ -2428,12 +2446,20 @@ function renderCalendar(){
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
     const ds = fmtD(d);
     const other = d.getMonth() !== m;
-    const segs = (byDate[ds] || []).sort((a,b) => (a.t.createdAt||0) - (b.t.createdAt||0));
+    const segs = (byDate[ds] || []).sort((a,b) => ((a.lv ? -1 : (a.t.createdAt||0)) - (b.lv ? -1 : (b.t.createdAt||0))));
     const shown = segs.slice(0, 4);
     cells.push(`<div class="cal-cell ${other?"other":""} ${ds===tStr?"today":""} ${d.getDay()===0?"sun":""}"
         onclick="calCellClick('${ds}')" ondragover="event.preventDefault()" ondrop="calDrop(event,'${ds}')">
       <div class="d">${d.getDate()}</div>
       ${shown.map(sg => {
+        if (sg.lv){
+          const l = sg.lv;
+          const st2 = `background:#EEF2F0;color:#5B6763;` +
+            `margin-left:${sg.isStart?"0":"-7px"};margin-right:${sg.isEnd?"0":"-7px"};` +
+            `border-radius:${sg.isStart?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isStart?"6px":"0"}`;
+          const lb = sg.isStart || d.getDay() === 0;
+          return `<span class="cal-pill" style="${st2}" onclick="event.stopPropagation()" title="${esc(l.name)} 연차">${lb ? esc(l.name) + (l.half ? " 반차" : " 연차") : "&nbsp;"}</span>`;
+        }
         const t = sg.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
         const bg = done ? "#E3E9E6" : c;
         const style = `background:${bg};color:${done?"#98A49E":"#fff"};` +
