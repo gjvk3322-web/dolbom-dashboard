@@ -177,6 +177,8 @@ function catalogSort(list,keyFn){return (list||[]).slice().sort((a,b)=>{const ka
 // ⬇️ 로스 방향 색상 통일: 실사가 예상보다 많으면(잉여) 빨강, 적으면(로스) 파랑 — loss>0이 부족
 const LOSS_BLUE='#60a5fa';
 function lossDirColor(loss){return loss>0?LOSS_BLUE:loss<0?'var(--red)':'var(--dim)'}
+function lossSign(loss){return loss>0?'-':loss<0?'+':''}
+function fmtLossRate(loss,rate){return lossSign(loss)+Math.abs(rate)+'%'}
 const SPP=Object.fromEntries(PR.map(p=>[p.id,p.bpb*p.bpp]));  // 1파레트당 장수 (500:288 · 1000_22:64 · 1000_17:84)
 let team=null,loc=null,tab='summary';
 let fbInvData={},fbInRef=null;
@@ -398,7 +400,7 @@ function lv2Show(i){
   const s=lossV2Series[i];const el=document.getElementById('lv2Detail');
   if(!s||!el)return;
   const col=lossDirColor(s.loss);
-  el.innerHTML=`<div style="margin-top:6px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim)">📅 ${s.from.substring(5).replace('-','/')} → ${s.to.substring(5).replace('-','/')} · 이전 ${s.prevStock.toLocaleString()} +입고 ${s.incoming.toLocaleString()} -판매 ${s.sold.toLocaleString()} = 예상 ${s.expected.toLocaleString()} | 실사 ${s.current.toLocaleString()} → <b style="color:${col}">${s.loss>0?'로스':'잉여'} ${Math.abs(s.loss).toLocaleString()}장 (${s.rate}%)</b>${s.missing>0?` · ⚠️판매미입력 ${s.missing}건`:''}</div>`;
+  el.innerHTML=`<div style="margin-top:6px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim)">📅 ${s.from.substring(5).replace('-','/')} → ${s.to.substring(5).replace('-','/')} · 이전 ${s.prevStock.toLocaleString()} +입고 ${s.incoming.toLocaleString()} -판매 ${s.sold.toLocaleString()} = 예상 ${s.expected.toLocaleString()} | 실사 ${s.current.toLocaleString()} → <b style="color:${col}">${s.loss>0?'로스':'잉여'} ${Math.abs(s.loss).toLocaleString()}장 (${fmtLossRate(s.loss,s.rate)})</b>${s.missing>0?` · ⚠️판매미입력 ${s.missing}건`:''}</div>`;
 }
 async function fillLossV2(){
   const box=document.getElementById('lossV2Box');if(!box)return;
@@ -419,10 +421,10 @@ async function fillLossV2(){
   lossV2Series=d.series||[];
   const isLoss=c.loss>0;const absR=Math.abs(c.rate);
   const sCol=lossDirColor(c.loss);
-  const sTxt=!isLoss?'실사가 예상보다 많음 (조사 확인 필요)':absR<=2?'정상 범위':absR<=5?'주의':'점검 필요';
+  const sTxt=!isLoss?'실사가 예상보다 많음 (조사 확인 필요)':absR<=5?'정상 범위 (5% 이하)':absR<=10?'주의 (5~10%)':'점검 필요 (10% 초과)';
   let h=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
   // 헤더 (클릭하면 상세 펼침)
-  h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('lossV2Detail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:700">📈 누적 로스율 <span style="font-size:10px;color:var(--dim);font-weight:400">· ${c.from.substring(5).replace('-','/')}부터 ${c.weeks}주</span></span><span style="font-size:10px;color:${sCol};font-weight:600">${sTxt}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:800;color:${sCol}">${Math.abs(c.loss).toLocaleString()}장 (${c.rate}%)</span><span class="arrow" style="color:var(--dim);font-size:12px">▸</span></div></div>`;
+  h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('lossV2Detail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:700">📈 누적 로스율 <span style="font-size:10px;color:var(--dim);font-weight:400">· ${c.from.substring(5).replace('-','/')}부터 ${c.weeks}주</span></span><span style="font-size:10px;color:${sCol};font-weight:600">${sTxt}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:800;color:${sCol}">${Math.abs(c.loss).toLocaleString()}장 (${fmtLossRate(c.loss,c.rate)})</span><span class="arrow" style="color:var(--dim);font-size:12px">▸</span></div></div>`;
   h+=`<div id="lossV2Detail" style="display:none;padding:12px 14px;border-top:.5px solid var(--border);font-size:12px">`;
   h+=`<div style="color:var(--dim);margin-bottom:8px;font-size:11px">📅 기준일 ${c.from} → 최근 조사 ${c.to}</div>`;
   h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">기준일 재고</span><span>${c.baseStock.toLocaleString()}장</span></div>`;
@@ -430,7 +432,7 @@ async function fillLossV2(){
   h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">- 누적 판매</span><span style="color:var(--red)">-${c.sold.toLocaleString()}장</span></div>`;
   h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="font-weight:600">있어야 할 재고</span><span style="font-weight:700">${c.expected.toLocaleString()}장</span></div>`;
   h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">최근 실사</span><span>${c.current.toLocaleString()}장</span></div>`;
-  h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-weight:700"><span style="color:${sCol}">${isLoss?'누적 로스':'누적 잉여'}</span><span style="color:${sCol}">${Math.abs(c.loss).toLocaleString()}장 (${c.rate}%)</span></div>`;
+  h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-weight:700"><span style="color:${sCol}">${isLoss?'누적 로스':'누적 잉여'}</span><span style="color:${sCol}">${Math.abs(c.loss).toLocaleString()}장 (${fmtLossRate(c.loss,c.rate)})</span></div>`;
   if(c.missing>0)h+=`<div style="margin-top:6px;font-size:10px;color:var(--red)">⚠️ 이 기간 판매갯수 미입력 시공 ${c.missing}건 — 입력하면 로스가 줄어들 수 있어요</div>`;
   // 제품·색상별 누적 breakdown
   if(d.cumByProduct&&d.cumByProduct.length){
@@ -445,7 +447,7 @@ async function fillLossV2(){
       const pc=lossDirColor(p.loss);
       const costTag=isL?` <span style="font-size:9px;opacity:.85">≈ -${fmtManwon(lossCostWon(pid,p.loss))}</span>`:'';
       h+=`<div style="margin-bottom:6px">`;
-      h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodNameMap[pid]||pid} ${color}</span><span style="color:${pc};font-weight:700">${isL?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)${costTag}</span></div>`;
+      h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodNameMap[pid]||pid} ${color}</span><span style="color:${pc};font-weight:700">${isL?'':'+'}${(-p.loss).toLocaleString()}장 (${fmtLossRate(p.loss,p.rate)})${costTag}</span></div>`;
       h+=`<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.abs(p.loss)/maxAbs*100)}%;background:${pc}"></div></div>`;
       h+=`</div>`;
     });
@@ -934,8 +936,8 @@ async function renderSummary(){
     let status,statusColor,statusBg,statusEmoji,statusText;
     if(ld.loss===0){status='일치';statusColor='var(--dim)';statusBg='rgba(255,255,255,.04)';statusEmoji='✅';statusText='예상과 실사 일치';}
     else if(!isLoss){status='과다';statusColor='var(--red)';statusBg='rgba(255,69,58,.1)';statusEmoji='🔴';statusText='실사 재고가 더 많음 (조사 확인 필요)';}
-    else if(absRate<=5){status='정상';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='✅';statusText='정상 범위 (5% 이하)';}
-    else if(absRate<=10){status='주의';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='⚠️';statusText='주의 필요 (5~10%)';}
+    else if(absRate<=3){status='정상';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='✅';statusText='정상 범위 (3% 이하)';}
+    else if(absRate<=10){status='주의';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='⚠️';statusText='주의 필요 (3~10%)';}
     else{status='이상';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='🔴';statusText='이상 징후 (10% 초과)';}
     
     // 날짜 계산
@@ -943,7 +945,7 @@ async function renderSummary(){
     const daysDiff=Math.round((d2-d1)/86400000);
     
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
-    h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('lossDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:700">📉 로스율 <span style="font-size:10px;color:var(--dim);font-weight:400">· ${daysDiff}일간</span></span><span style="font-size:10px;color:${statusColor};font-weight:600">${statusEmoji} ${statusText}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:800;color:${statusColor}">${Math.abs(ld.loss).toLocaleString()}장 (${ld.lossRate}%)</span><span class="arrow" style="color:var(--dim);font-size:12px">▸</span></div></div>`;
+    h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('lossDetail');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:700">📉 로스율 <span style="font-size:10px;color:var(--dim);font-weight:400">· ${daysDiff}일간</span></span><span style="font-size:10px;color:${statusColor};font-weight:600">${statusEmoji} ${statusText}</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;font-weight:800;color:${statusColor}">${Math.abs(ld.loss).toLocaleString()}장 (${fmtLossRate(ld.loss,ld.lossRate)})</span><span class="arrow" style="color:var(--dim);font-size:12px">▸</span></div></div>`;
     
     // 미실사 경고 (차량 등)
     if(pending.length&&isLoss){
@@ -957,10 +959,10 @@ async function renderSummary(){
     h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--dim)">- 판매 (보고서 기준)</span><span style="color:var(--red)">-${ld.soldBetween.toLocaleString()}장</span></div>`;
     h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border)"><span style="font-weight:600">있어야 할 재고</span><span style="font-weight:700">${ld.expectedStock.toLocaleString()}장</span></div>`;
     h+=`<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="font-weight:600">실제 재고 (실사)</span><span style="font-weight:700">${ld.currentStock.toLocaleString()}장</span></div>`;
-    h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-weight:700"><span style="color:${statusColor}">${isLoss?'로스 (부족)':'과다 (잉여)'}</span><span style="color:${statusColor}">${Math.abs(ld.loss).toLocaleString()}장 (${ld.lossRate}%)</span></div>`;
+    h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:4px;border-top:.5px solid var(--border);font-weight:700"><span style="color:${statusColor}">${isLoss?'로스 (부족)':'과다 (잉여)'}</span><span style="color:${statusColor}">${Math.abs(ld.loss).toLocaleString()}장 (${fmtLossRate(ld.loss,ld.lossRate)})</span></div>`;
     
     // 원인 안내
-    if(isLoss&&absRate>5){
+    if(isLoss&&absRate>3){
       h+=`<div style="margin-top:10px;padding:10px;background:rgba(255,159,10,.05);border-radius:8px;font-size:11px;line-height:1.7">`;
       h+=`<div style="font-weight:700;color:var(--orange);margin-bottom:6px">🔍 로스가 높을 때 체크할 것</div>`;
       if(pending.length)h+=`<div style="color:var(--red)">1️⃣ <b>미실사 ${pending.length}곳</b>: ${pending.join(', ')} 실사 필요</div>`;
@@ -987,7 +989,7 @@ async function renderSummary(){
         const barW=Math.min(100,Math.abs(p.loss)/maxAbs*100);
         const costTagW=isLossP?` <span style="font-size:9px;opacity:.85">≈ -${fmtManwon(lossCostWon(pid,p.loss))}</span>`:'';
         h+=`<div style="margin-bottom:6px">`;
-        h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodName} ${color}</span><span style="color:${pColor};font-weight:700">${isLossP?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)${costTagW}</span></div>`;
+        h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodName} ${color}</span><span style="color:${pColor};font-weight:700">${isLossP?'':'+'}${(-p.loss).toLocaleString()}장 (${fmtLossRate(p.loss,p.rate)})${costTagW}</span></div>`;
         h+=`<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${barW}%;background:${pColor}"></div></div>`;
         h+=`<div style="font-size:9px;color:var(--dim);margin-top:2px">이전 ${p.prev.toLocaleString()} ${p.incoming>0?'+ 입고 '+p.incoming.toLocaleString():''} - 판매 ${p.sold.toLocaleString()} = 예상 ${p.expected.toLocaleString()} | 실사 ${p.current.toLocaleString()}</div>`;
         h+=`</div>`;
