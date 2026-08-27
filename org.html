@@ -197,8 +197,8 @@
   .cal-cell{background:#fff;min-height:124px;padding:6px 6px 4px;cursor:pointer;transition:background .1s}
   .cal-cell:hover{background:#F7FBF9}
   .cal-cell.other{background:#FAFBFA;color:#C2CBC7}
-  .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px}
-  .cal-cell.today .d{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:1px 7px}
+  .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px;height:20px;line-height:20px}
+  .cal-cell.today .d{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;padding:0 7px}
   .cal-cell.sun .d{color:var(--bad)}
   .cal-pill{position:relative;cursor:grab}
   .cal-pill .hdl{position:absolute;left:1px;top:0;bottom:0;display:flex;align-items:center;font-style:normal;font-size:9px;opacity:.55;cursor:ew-resize;padding:0 1px}
@@ -2375,7 +2375,7 @@ window.editTask = id => {
 };
 window.deleteTask = id => {
   const t = (data.tasks || {})[id]; if (!t) return;
-  if (!canDeleteItem(t)) return alert(DEL_DENY_MSG);
+  if (!currentUser()) return alert("이름 확인 후 삭제할 수 있어요.");
   if (!confirm(`'${t.title}' 항목을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
   softDelete("tasks", id, "프로젝트: " + t.title);
 };
