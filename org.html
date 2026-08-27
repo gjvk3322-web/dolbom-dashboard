@@ -446,6 +446,7 @@
       <button data-view="departments">부서별 업무</button>
       <button data-view="people">직원별 업무</button>
       <button data-view="calendar">프로젝트 보드</button>
+      <button data-view="leave">연차 관리</button>
       <button data-view="okr">OKR</button>
       <button data-view="decision">의사결정 권한</button>
       <button data-view="forms">서류 서식</button>
@@ -735,6 +736,20 @@
 
     <!-- 의사결정 -->
     <!-- OKR -->
+    <!-- 연차 관리 -->
+    <section id="leave" class="section">
+      <div class="topbar">
+        <div>
+          <h1>연차 관리</h1>
+          <div class="lead">인적사항과 연차 부여 개수는 <b>구글 시트(팀설정 탭)</b>가 기준이고, 여기서는 <b>신청과 승인</b>을 처리합니다. 이 페이지 도입 후의 연차 사용은 여기서만 차감하고 시트에서는 따로 차감하지 않습니다.</div>
+        </div>
+        <button class="btn primary" id="addLeaveBtn">연차 신청</button>
+      </div>
+      <div id="leaveMine" style="margin-bottom:18px"></div>
+      <div id="leavePending" style="margin-bottom:18px"></div>
+      <div id="leaveAll"></div>
+    </section>
+
     <section id="okr" class="section">
       <div class="topbar">
         <div>
@@ -1020,6 +1035,18 @@
 </dialog>
 
 <!-- 할 일 모달 -->
+<dialog id="leaveModal">
+  <div class="modal-head"><h3>연차 신청</h3><button class="mini-btn" onclick="leaveModal.close()">닫기</button></div>
+  <div class="modal-body">
+    <label>시작일 *<input type="date" id="lvStart"></label>
+    <label>종료일 — 하루면 비워두세요<input type="date" id="lvEnd"></label>
+    <label style="display:flex;align-items:center;gap:8px;flex-direction:row"><input type="checkbox" id="lvHalf" style="width:auto"> 반차 (시작일 하루 · 0.5일)</label>
+    <label>사유 (선택)<input id="lvReason"></label>
+  </div>
+  <div class="modal-foot"><button class="btn" onclick="leaveModal.close()">취소</button>
+    <button class="btn primary" id="saveLeaveBtn">신청</button></div>
+</dialog>
+
 <dialog id="taskModal">
   <form method="dialog" onsubmit="return false">
     <div class="modal-head"><strong id="taskModalTitle">할 일 추가</strong><button class="mini-btn" onclick="taskModal.close()">닫기</button></div>
@@ -1518,13 +1545,119 @@ function renderLogs(){
     </div>`).join("") || `<div class="hint">휴지통이 비어 있습니다.</div>`;
 }
 
+/* ───────── 연차 관리 ───────── */
+let leaveSheet = null, leaveFetching = false;
+async function fetchLeaveSheet(){
+  if (leaveSheet || leaveFetching) return;
+  leaveFetching = true;
+  try {
+    const r = await fetch(APPS_SCRIPT_URL + "?type=leaveStats");
+    const j = await r.json();
+    if (j && j.success) leaveSheet = j.rows || [];
+  } catch(e){ console.error("연차 시트 로드 실패:", e); }
+  leaveFetching = false;
+  renderLeave();
+}
+function lvDays(l){ return l.half ? 0.5 : (diffDays(l.start, l.end || l.start) + 1); }
+function lvApprovedDays(name){
+  const yr = String(new Date().getFullYear());
+  return entries(data.leaves).filter(l => l.name === name && l.status === "approved" && String(l.start || "").startsWith(yr))
+    .reduce((s, l) => s + lvDays(l), 0);
+}
+function lvFmt(n){ return n % 1 ? n.toFixed(1) : String(n); }
+function lvRange(l){ return l.start + (l.end && l.end !== l.start ? "~" + l.end.slice(5) : "") + (l.half ? " 반차" : ""); }
+const LV_ST = { pending: ["대기", "#FFF7E0;color:#B8860B"], approved: ["승인", "var(--tint);color:var(--accent-deep)"], rejected: ["반려", "#FDECEA;color:#C62828"] };
+function lvChip(st){ const s = LV_ST[st] || LV_ST.pending; return `<span style="border-radius:999px;font-size:11px;font-weight:700;padding:3px 9px;background:${s[1]}">${s[0]}</span>`; }
+function renderLeave(){
+  if (!$("leaveMine")) return;
+  if (!leaveSheet){ fetchLeaveSheet(); }
+  const me = currentUser();
+  const rows = leaveSheet || [];
+  const rowOf = n => rows.find(r => r.name === n);
+  const remainOf = n => { const r = rowOf(n); return r ? (parseFloat(r.remain) || 0) - lvApprovedDays(n) : null; };
+  const all = entries(data.leaves).sort((a, b) => (b.t || 0) - (a.t || 0));
+
+  // 내 카드 + 내 신청 내역
+  const myRow = me && rowOf(me);
+  const mine = all.filter(l => l.name === me);
+  $("leaveMine").innerHTML = !me ? "" : `
+    <div class="card" style="padding:16px 18px">
+      <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center">
+        <div><div class="hint">내 잔여 연차</div><div style="font-size:26px;font-weight:800;color:var(--accent-deep)">${myRow ? lvFmt(remainOf(me)) + "일" : "시트에 없음"}</div></div>
+        ${myRow ? `<div class="hint">부여 ${lvFmt(parseFloat(myRow.total) || 0)} · 시트 기사용 ${lvFmt((parseFloat(myRow.total) || 0) - (parseFloat(myRow.remain) || 0))} · 이 페이지 승인 ${lvFmt(lvApprovedDays(me))}</div>` : `<div class="hint">팀설정 탭에 이름(${esc(me)})이 있어야 잔여가 계산됩니다.</div>`}
+      </div>
+      ${mine.length ? `<div style="margin-top:12px;border-top:1px solid #F1F5F3;padding-top:10px">` + mine.slice(0, 6).map(l =>
+        `<div style="display:flex;align-items:center;gap:9px;font-size:13px;padding:3px 0">
+          <span style="min-width:150px">${esc(lvRange(l))}</span><span class="hint">${lvFmt(lvDays(l))}일</span>${lvChip(l.status)}
+          ${l.reason ? `<span class="hint">· ${esc(l.reason)}</span>` : ""}
+          ${l.status === "pending" ? `<button class="mini-btn" onclick="cancelLeave('${l.id}')">취소</button>` : ""}
+        </div>`).join("") + `</div>` : ""}
+    </div>`;
+
+  // 대기 목록 (관리자 승인)
+  const pend = all.filter(l => l.status === "pending");
+  const admin = ADMINS.includes(me);
+  $("leavePending").innerHTML = !pend.length ? "" : `
+    <div class="section-title"><h2>승인 대기 ${pend.length}건</h2></div>
+    ${pend.map(l => `<div class="card" style="padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <b>${esc(l.name)}</b><span>${esc(lvRange(l))}</span><span class="hint">${lvFmt(lvDays(l))}일 · 잔여 ${(() => { const r = remainOf(l.name); return r === null ? "?" : lvFmt(r); })()}일</span>
+      ${l.reason ? `<span class="hint">· ${esc(l.reason)}</span>` : ""}
+      ${admin ? `<span style="margin-left:auto;display:flex;gap:6px">
+        <button class="mini-btn" style="color:var(--accent-deep);font-weight:700" onclick="decideLeave('${l.id}','approved')">승인</button>
+        <button class="mini-btn danger" onclick="decideLeave('${l.id}','rejected')">반려</button></span>` : ""}
+    </div>`).join("")}`;
+
+  // 전체 현황
+  $("leaveAll").innerHTML = `
+    <div class="section-title"><h2>직원별 잔여 현황</h2><span class="hint">부여·기사용은 팀설정 탭 기준</span></div>
+    <div class="card" style="padding:0;overflow-x:auto"><table class="tbl" style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr style="text-align:left;color:#5B6763"><th style="padding:9px 12px">이름</th><th>지역</th><th>직급</th><th style="text-align:right">부여</th><th style="text-align:right">시트 잔여</th><th style="text-align:right">페이지 승인</th><th style="text-align:right;padding-right:12px">현재 잔여</th></tr>
+      ${rows.map(r => { const ap = lvApprovedDays(r.name); const cur = (parseFloat(r.remain) || 0) - ap;
+        return `<tr style="border-top:1px solid #F1F5F3"><td style="padding:8px 12px;font-weight:700">${esc(r.name)}</td><td>${esc(r.region || "")}</td><td>${esc(r.role || "")}</td>
+        <td style="text-align:right">${lvFmt(parseFloat(r.total) || 0)}</td><td style="text-align:right">${lvFmt(parseFloat(r.remain) || 0)}</td>
+        <td style="text-align:right">${lvFmt(ap)}</td><td style="text-align:right;padding-right:12px;font-weight:800;${cur < 0 ? "color:var(--bad)" : "color:var(--accent-deep)"}">${lvFmt(cur)}</td></tr>`; }).join("")}
+    </table></div>`;
+}
+$("addLeaveBtn").onclick = () => {
+  if (!currentUser()) return alert("이름 확인 후 신청할 수 있어요.");
+  $("lvStart").value = ""; $("lvEnd").value = ""; $("lvHalf").checked = false; $("lvReason").value = "";
+  leaveModal.showModal();
+};
+$("saveLeaveBtn").onclick = async e => {
+  const start = $("lvStart").value;
+  if (!start) return alert("시작일을 선택해 주세요.");
+  const half = $("lvHalf").checked;
+  let end = half ? start : ($("lvEnd").value || start);
+  if (end < start) return alert("종료일이 시작일보다 빠릅니다.");
+  const rec = { name: currentUser(), start, end, half, reason: $("lvReason").value.trim(),
+    status: "pending", t: Date.now() };
+  const id = newId("lv_");
+  if (await safeWrite("연차 신청", () => orgRef.child("leaves/" + id).set(rec), e.target)){
+    logAction("신청", "연차: " + rec.name + " " + lvRange(rec));
+    leaveModal.close();
+  }
+};
+window.cancelLeave = id => {
+  const l = (data.leaves || {})[id]; if (!l) return;
+  if (l.name !== currentUser() && !ADMINS.includes(currentUser())) return alert("본인 신청만 취소할 수 있어요.");
+  if (!confirm("이 연차 신청을 취소할까요?")) return;
+  orgRef.child("leaves/" + id).remove();
+  logAction("취소", "연차: " + l.name + " " + lvRange(l));
+};
+window.decideLeave = (id, st) => {
+  if (!ADMINS.includes(currentUser())) return alert("관리자만 승인/반려할 수 있어요.");
+  const l = (data.leaves || {})[id]; if (!l) return;
+  orgRef.child("leaves/" + id).update({ status: st, decidedBy: currentUser(), decidedAt: Date.now() });
+  logAction(st === "approved" ? "승인" : "반려", "연차: " + l.name + " " + lvRange(l));
+};
+
 /* ───────── 렌더링 ───────── */
 function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderForms, renderMeetings,
-   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
   ensureUser(); renderWho();
