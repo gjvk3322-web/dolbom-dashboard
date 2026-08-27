@@ -171,6 +171,12 @@ const PR=[
 ];
 // ⬇️ PR에서 자동 파생 — 손으로 관리하는 파레트 상수를 없앰 (발주탭·종합탭이 항상 같은 값 사용)
 const BPP=Object.fromEntries(PR.map(p=>[p.id,p.bpp]));        // 1파레트당 박스수
+// ⬇️ 재고표와 같은 순서(500 모던·마블·코튼 → 1000 22T 모던·베이지 → 1000 17T 모던·베이지)로 정렬하는 헬퍼
+const CATALOG_ORDER=(()=>{const m={};let i=0;PR.forEach(p=>p.colors.forEach(c=>{m[p.id+'_'+c]=i++}));return m})();
+function catalogSort(list,keyFn){return (list||[]).slice().sort((a,b)=>{const ka=CATALOG_ORDER[keyFn(a)],kb=CATALOG_ORDER[keyFn(b)];return (ka===undefined?99:ka)-(kb===undefined?99:kb)})}
+// ⬇️ 로스 방향 색상 통일: 실사가 예상보다 많으면(잉여) 빨강, 적으면(로스) 파랑 — loss>0이 부족
+const LOSS_BLUE='#60a5fa';
+function lossDirColor(loss){return loss>0?LOSS_BLUE:loss<0?'var(--red)':'var(--dim)'}
 const SPP=Object.fromEntries(PR.map(p=>[p.id,p.bpb*p.bpp]));  // 1파레트당 장수 (500:288 · 1000_22:64 · 1000_17:84)
 let team=null,loc=null,tab='summary';
 let fbInvData={},fbInRef=null;
@@ -355,7 +361,7 @@ async function renderHistory(){
       let cur=0,prv=0;TY.forEach(t=>{cur+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb;prv+=(pt[p.id+'_'+c+'_'+t]||0)*p.bpb});
       if(cur!==prv)rows.push({name:(prodNameMap[p.id]||p.id)+' '+c,color:c,cur,prv,d:cur-prv});
     })});
-    rows.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+    // 재고표와 같은 순서 유지 (PR 순회 순서 그대로)
     rows.slice(0,8).forEach(r=>{
       const rc=r.d>0?'var(--accent)':'var(--red)';
       dh+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-top:.5px dashed var(--border)"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[r.color]||'#888'};margin-right:4px"></span>${r.name}</span><span style="color:${rc};font-weight:600">${r.prv.toLocaleString()} → ${r.cur.toLocaleString()} (${r.d>0?'+':''}${r.d.toLocaleString()})</span></div>`;
@@ -391,7 +397,7 @@ let lossV2Series=[];  // 그래프 클릭용
 function lv2Show(i){
   const s=lossV2Series[i];const el=document.getElementById('lv2Detail');
   if(!s||!el)return;
-  const col=s.loss>0?(Math.abs(s.rate)<=3?'var(--accent)':Math.abs(s.rate)<=8?'var(--orange)':'var(--red)'):'#60a5fa';
+  const col=lossDirColor(s.loss);
   el.innerHTML=`<div style="margin-top:6px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim)">📅 ${s.from.substring(5).replace('-','/')} → ${s.to.substring(5).replace('-','/')} · 이전 ${s.prevStock.toLocaleString()} +입고 ${s.incoming.toLocaleString()} -판매 ${s.sold.toLocaleString()} = 예상 ${s.expected.toLocaleString()} | 실사 ${s.current.toLocaleString()} → <b style="color:${col}">${s.loss>0?'로스':'잉여'} ${Math.abs(s.loss).toLocaleString()}장 (${s.rate}%)</b>${s.missing>0?` · ⚠️판매미입력 ${s.missing}건`:''}</div>`;
 }
 async function fillLossV2(){
@@ -412,7 +418,7 @@ async function fillLossV2(){
   const c=d.cumulative;
   lossV2Series=d.series||[];
   const isLoss=c.loss>0;const absR=Math.abs(c.rate);
-  const sCol=!isLoss?'#60a5fa':absR<=2?'var(--accent)':absR<=5?'var(--orange)':'var(--red)';
+  const sCol=lossDirColor(c.loss);
   const sTxt=!isLoss?'실사가 예상보다 많음 (조사 확인 필요)':absR<=2?'정상 범위':absR<=5?'주의':'점검 필요';
   let h=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
   // 헤더 (클릭하면 상세 펼침)
@@ -433,10 +439,10 @@ async function fillLossV2(){
     const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트17T'};
     const colorDot={'모던':'#5e9eff','마블':'#c792ea','코튼':'#50c878','베이지':'#e6c875'};
     const maxAbs=Math.max(...d.cumByProduct.map(p=>Math.abs(p.loss)),1);
-    d.cumByProduct.slice(0,8).forEach(p=>{
+    catalogSort(d.cumByProduct,p=>p.key).slice(0,8).forEach(p=>{
       const parts=p.key.split('_');const color=parts.pop();const pid=parts.join('_');
       const isL=p.loss>0;const aR=Math.abs(p.rate);
-      const pc=!isL?'#60a5fa':aR<=2?'var(--accent)':aR<=5?'var(--orange)':'var(--red)';
+      const pc=lossDirColor(p.loss);
       const costTag=isL?` <span style="font-size:9px;opacity:.85">≈ -${fmtManwon(lossCostWon(pid,p.loss))}</span>`:'';
       h+=`<div style="margin-bottom:6px">`;
       h+=`<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${colorDot[color]||'#888'};margin-right:4px"></span>${prodNameMap[pid]||pid} ${color}</span><span style="color:${pc};font-weight:700">${isL?'':'+'}${(-p.loss).toLocaleString()}장 (${p.rate}%)${costTag}</span></div>`;
@@ -462,7 +468,7 @@ async function fillLossV2(){
     h+=`<div style="display:flex;align-items:flex-end;gap:3px;height:52px">`;
     lossV2Series.forEach((s,i)=>{
       const aR=Math.abs(s.rate);
-      const bc=s.loss<=0?'#60a5fa':aR<=3?'var(--accent)':aR<=8?'var(--orange)':'var(--red)';
+      const bc=lossDirColor(s.loss);
       const bh=Math.max(4,Math.min(44,aR/15*44));
       h+=`<div onclick="lv2Show(${i})" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;cursor:pointer;height:100%"><div style="width:100%;max-width:26px;height:${bh}px;background:${bc};border-radius:3px 3px 0 0;opacity:.9"></div></div>`;
     });
@@ -926,10 +932,11 @@ async function renderSummary(){
     // 상태 분류: 과다(실사재고많음) / 정상(0-5%) / 주의(5-10%) / 이상(>10%)
     const absRate=Math.abs(ld.lossRate);
     let status,statusColor,statusBg,statusEmoji,statusText;
-    if(!isLoss){status='과다';statusColor='var(--accent)';statusBg='rgba(48,209,88,.1)';statusEmoji='✅';statusText='실사 재고가 더 많음';}
-    else if(absRate<=5){status='정상';statusColor='var(--accent)';statusBg='rgba(48,209,88,.1)';statusEmoji='✅';statusText='정상 범위 (5% 이하)';}
-    else if(absRate<=10){status='주의';statusColor='var(--orange)';statusBg='rgba(255,159,10,.1)';statusEmoji='⚠️';statusText='주의 필요 (5~10%)';}
-    else{status='이상';statusColor='var(--red)';statusBg='rgba(255,69,58,.1)';statusEmoji='🔴';statusText='이상 징후 (10% 초과)';}
+    if(ld.loss===0){status='일치';statusColor='var(--dim)';statusBg='rgba(255,255,255,.04)';statusEmoji='✅';statusText='예상과 실사 일치';}
+    else if(!isLoss){status='과다';statusColor='var(--red)';statusBg='rgba(255,69,58,.1)';statusEmoji='🔴';statusText='실사 재고가 더 많음 (조사 확인 필요)';}
+    else if(absRate<=5){status='정상';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='✅';statusText='정상 범위 (5% 이하)';}
+    else if(absRate<=10){status='주의';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='⚠️';statusText='주의 필요 (5~10%)';}
+    else{status='이상';statusColor=LOSS_BLUE;statusBg='rgba(96,165,250,.1)';statusEmoji='🔴';statusText='이상 징후 (10% 초과)';}
     
     // 날짜 계산
     const d1=new Date(ld.prevDate),d2=new Date(ld.currentDate);
@@ -970,18 +977,13 @@ async function renderSummary(){
       h+=`<div style="font-weight:700;font-size:11px;margin-bottom:8px">📊 제품·색상별 로스 분석</div>`;
       const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트17T'};
       const colorDot={'모던':'#5e9eff','마블':'#c792ea','코튼':'#50c878','베이지':'#e6c875'};
-      // 로스 큰 순 정렬 후 최대값 찾기
+      // 재고표와 같은 제품 순서로 정렬 (500 → 1000 22T → 1000 17T)
       const maxAbs=Math.max(...ld.lossByProduct.map(p=>Math.abs(p.loss)),1);
-      ld.lossByProduct.forEach(p=>{
+      catalogSort(ld.lossByProduct,p=>p.key).forEach(p=>{
         const [pid,color]=p.key.split('_').length===2?p.key.split('_'):[p.key.split('_').slice(0,-1).join('_'),p.key.split('_').pop()];
         const prodName=prodNameMap[pid]||pid;
         const isLossP=p.loss>0;
-        const absP=Math.abs(p.rate);
-        let pColor;
-        if(!isLossP)pColor='var(--accent)';
-        else if(absP<=5)pColor='var(--accent)';
-        else if(absP<=10)pColor='var(--orange)';
-        else pColor='var(--red)';
+        const pColor=lossDirColor(p.loss);
         const barW=Math.min(100,Math.abs(p.loss)/maxAbs*100);
         const costTagW=isLossP?` <span style="font-size:9px;opacity:.85">≈ -${fmtManwon(lossCostWon(pid,p.loss))}</span>`:'';
         h+=`<div style="margin-bottom:6px">`;
