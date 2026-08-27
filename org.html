@@ -1546,7 +1546,14 @@ function renderLogs(){
 }
 
 /* ───────── 연차 관리 ───────── */
-let leaveSheet = null, leaveFetching = false;
+let leaveSheet = null, leaveFetching = false, lvAllowNames = null;
+try {
+  firebase.database().ref("orgAuth/allow").on("value", s => {
+    const v = s.val() || {};
+    lvAllowNames = new Set(Object.values(v).map(x => String(x.name || "").trim()).filter(Boolean));
+    renderLeave();
+  });
+} catch(e){ console.error("승인 명단 구독 실패:", e); }
 async function fetchLeaveSheet(){
   if (leaveSheet || leaveFetching) return;
   leaveFetching = true;
@@ -1558,10 +1565,17 @@ async function fetchLeaveSheet(){
   leaveFetching = false;
   renderLeave();
 }
+function lvNameMatch(a, b){
+  a = String(a || "").trim(); b = String(b || "").trim();
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const shorter = a.length < b.length ? a : b;
+  return shorter.length >= 2 && (a.endsWith(b) || b.endsWith(a));
+}
 function lvDays(l){ return l.half ? 0.5 : (diffDays(l.start, l.end || l.start) + 1); }
 function lvApprovedDays(name){
   const yr = String(new Date().getFullYear());
-  return entries(data.leaves).filter(l => l.name === name && (l.status === "approved" || l.status === "cancelReq") && String(l.start || "").startsWith(yr))
+  return entries(data.leaves).filter(l => lvNameMatch(l.name, name) && (l.status === "approved" || l.status === "cancelReq") && String(l.start || "").startsWith(yr))
     .reduce((s, l) => s + lvDays(l), 0);
 }
 function lvFmt(n){ return n % 1 ? n.toFixed(1) : String(n); }
@@ -1572,14 +1586,17 @@ function renderLeave(){
   if (!$("leaveMine")) return;
   if (!leaveSheet){ fetchLeaveSheet(); }
   const me = currentUser();
-  const rows = leaveSheet || [];
-  const rowOf = n => rows.find(r => r.name === n);
+  const allRows = leaveSheet || [];
+  const allowArr = lvAllowNames ? [...lvAllowNames] : [];
+  const rows = (allowArr.length ? allRows.filter(r => allowArr.some(n => lvNameMatch(n, r.name))) : allRows)
+    .slice().sort((a, b) => String(a.joined || "9999").localeCompare(String(b.joined || "9999")));
+  const rowOf = n => allRows.find(r => lvNameMatch(r.name, n));
   const remainOf = n => { const r = rowOf(n); return r ? (parseFloat(r.remain) || 0) - lvApprovedDays(n) : null; };
   const all = entries(data.leaves).sort((a, b) => (b.t || 0) - (a.t || 0));
 
   // 내 카드 + 내 신청 내역
   const myRow = me && rowOf(me);
-  const mine = all.filter(l => l.name === me);
+  const mine = all.filter(l => lvNameMatch(l.name, me));
   $("leaveMine").innerHTML = !me ? "" : `
     <div class="card" style="padding:16px 18px">
       <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center">
@@ -1611,9 +1628,22 @@ function renderLeave(){
            <button class="mini-btn danger" onclick="decideLeave('${l.id}','rejected')">반려</button>`}</span>` : ""}
     </div>`).join("")}`;
 
+  // 관리자: 승인된 연차 목록 (직접 취소 가능)
+  const appr = all.filter(l => l.status === "approved");
+  const apEl = $("leavePending");
+  if (admin && appr.length){
+    apEl.innerHTML += `
+    <div class="section-title"><h2>승인된 연차 ${appr.length}건</h2><span class="hint">관리자는 여기서 바로 취소할 수 있습니다</span></div>
+    ${appr.map(l => `<div class="card" style="padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <b>${esc(l.name)}</b><span>${esc(lvRange(l))}</span><span class="hint">${lvFmt(lvDays(l))}일</span>
+      ${l.reason ? `<span class="hint">· ${esc(l.reason)}</span>` : ""}
+      <button class="mini-btn danger" style="margin-left:auto" onclick="cancelApprovedLeave('${l.id}')">취소</button>
+    </div>`).join("")}`;
+  }
+
   // 전체 현황
   $("leaveAll").innerHTML = `
-    <div class="section-title"><h2>직원별 잔여 현황</h2><span class="hint">부여·기사용은 팀설정 탭 기준</span></div>
+    <div class="section-title"><h2>직원별 잔여 현황</h2><span class="hint">입사일순 · 구글 로그인 승인된 직원만 표시 (접근 관리에서 해제하면 사라짐)</span></div>
     <div class="card" style="padding:0;overflow-x:auto"><table class="tbl" style="width:100%;border-collapse:collapse;font-size:13px">
       <tr style="text-align:left;color:#5B6763"><th style="padding:9px 12px">이름</th><th>지역</th><th>직급</th><th style="text-align:right">부여</th><th style="text-align:right">시트 잔여</th><th style="text-align:right">페이지 승인</th><th style="text-align:right;padding-right:12px">현재 잔여</th></tr>
       ${rows.map(r => { const ap = lvApprovedDays(r.name); const cur = (parseFloat(r.remain) || 0) - ap;
