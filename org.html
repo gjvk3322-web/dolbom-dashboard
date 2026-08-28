@@ -3176,7 +3176,7 @@ function renderManual(){
           </div>
           <div class="mn-title">${it.id === manualEditingId
             ? `<input id="mnInlineInput" value="${esc(it.title)}" placeholder="상황 이름 입력 후 Enter" style="width:100%;font:inherit;font-weight:700;border:1.5px solid var(--accent);border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box">`
-            : (esc(it.title) || `<span style="color:var(--muted)">(이름 없음 — 수정을 눌러 입력)</span>`)}</div>
+            : `<span onclick="editManualTitle('${it.id}')" style="cursor:pointer" title="누르면 이름 수정">${esc(it.title) || `<span style=\"color:var(--muted)\">(이름 없음 — 누르면 입력)</span>`}</span>`}</div>
           ${it.desc ? `<div class="mn-desc">${esc(it.desc)}</div>` : ""}
           <div class="mn-actions">
             <button class="mini-btn" onclick="openManualModal('${it.id}')">수정</button>
@@ -3210,10 +3210,16 @@ function renderManual(){
     const commit = async () => {
       if (done) return; done = true;
       const v = inp.value.trim();
-      manualEditingId = null;
-      if (!v){ try { await orgRef.child("manual/" + id).remove(); } catch(e){} renderManual(); return; }
-      try { await orgRef.child("manual/" + id + "/title").set(v); logAction("추가", "매뉴얼: " + v); }
-      catch(e){ alert("저장에 실패했습니다. 인터넷 연결을 확인해 주세요."); renderManual(); }
+      const isNew = manualEditingIsNew;
+      const orig = (((data.manual || {})[id]) || {}).title || "";
+      manualEditingId = null; manualEditingIsNew = false;
+      if (!v){
+        if (isNew){ try { await orgRef.child("manual/" + id).remove(); } catch(e){} } // 새 카드는 빈 채로 나가면 삭제
+        renderManual(); return; // 기존 카드는 원래 이름으로 원복
+      }
+      if (v === orig){ renderManual(); return; } // 안 바뀌었으면 저장 생략
+      try { await orgRef.child("manual/" + id + "/title").set(v); logAction(isNew ? "추가" : "수정", "매뉴얼: " + v); }
+      catch(e){ alert("저장에 실패했습니다: " + (e && e.message || e)); renderManual(); }
     };
     inp.onkeydown = e => {
       if (e.key === "Enter"){ e.preventDefault(); commit(); }
@@ -3254,6 +3260,9 @@ function manualParentOptions(exceptId, owner){
 }
 let manualInsertAfter = "";   // (수정 모달 경유 추가 시) 이 항목 바로 아래 순서로 저장
 let manualEditingId = null;   // 🆕 인라인 이름 입력 중인 카드 id
+let manualEditingIsNew = false; // 🆕 방금 만든 카드인지 (빈 값이면 삭제) / 기존 카드 수정인지 (빈 값이면 원복)
+// 🆕 기존 카드 제목 클릭 → 그 자리에서 수정
+window.editManualTitle = id => { manualEditingId = id; manualEditingIsNew = false; manualPointDraftMid = null; renderManual(); };
 let manualPointDraftMid = null; // 🆕 인라인 핵심포인트 입력 중인 카드 id
 // 🆕 ↓＋: 팝업 없이 즉시 카드를 만들고 그 자리에서 이름 입력
 window.addManualBelow = async id => {
@@ -3269,7 +3278,7 @@ window.addManualBelow = async id => {
     order = sibs.length ? (sibs[sibs.length - 1].order || 0) + 10 : Date.now();
   }
   const nid = newId("mn_");
-  manualEditingId = nid; manualPointDraftMid = null;
+  manualEditingId = nid; manualEditingIsNew = true; manualPointDraftMid = null;
   const item = { title: "새 상황", desc: "", parentId, owner: it.owner || "", order, by: currentUser() || "?", t: Date.now() };
   try { await orgRef.child("manual/" + nid).set(item); }
   catch(e){ manualEditingId = null; console.error(e); alert("추가에 실패했습니다: " + (e && e.message || e)); }
@@ -3298,7 +3307,7 @@ $("addManualBtn").onclick = async () => { // 🆕 팝업 없이 최상위 카드
   const roots = entries(data.manual).filter(x => (x.owner || "") === manualOwner && !(x.parentId || ""));
   const order = roots.length ? Math.max(...roots.map(r => r.order || 0)) + 10 : Date.now();
   const nid = newId("mn_");
-  manualEditingId = nid; manualPointDraftMid = null;
+  manualEditingId = nid; manualEditingIsNew = true; manualPointDraftMid = null;
   try { await orgRef.child("manual/" + nid).set({ title: "새 상황", desc: "", parentId: "", owner: manualOwner || "", order, by: currentUser() || "?", t: Date.now() }); }
   catch(e){ manualEditingId = null; console.error(e); alert("추가에 실패했습니다: " + (e && e.message || e)); }
 };
