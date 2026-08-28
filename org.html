@@ -3086,9 +3086,12 @@ const manualModal = $("manualModal");
 const manualPointModal = $("manualPointModal");
 
 let manualOwner = "";   // "" = 시공팀(기존 데이터), 팀 id, "__board" = 자료 게시판
-window.setManualOwner = o => { manualOwner = o; renderManual(); };
+window.setManualOwner = o => { if (manualOwner === o) return; manualOwner = o; renderManual(); };
+let manualTeamEditKey = null; // 🆕 이름 변경 중인 팀 칩
+window.startTeamRename = key => { if (key === "__board") return; manualTeamEditKey = key; manualEditingId = null; manualDescEditingId = null; manualPointDraftMid = null; renderManual(); };
 function manualTeams(){
-  const base = [{ key: "", label: "시공팀" }, { key: "mkt", label: "마케팅" }, { key: "cs", label: "CS" }];
+  const lbl = data.manualTeamLabels || {}; // 🆕 기본 팀 이름 변경분 (더블클릭 rename)
+  const base = [{ key: "", label: lbl.base_main || "시공팀" }, { key: "mkt", label: lbl.base_mkt || "마케팅" }, { key: "cs", label: lbl.base_cs || "CS" }];
   const extra = entries(data.manualTeams).sort((a, b) => (a.t || 0) - (b.t || 0))
     .map(t => ({ key: t.id, label: t.name }));
   return base.concat(extra);
@@ -3146,7 +3149,9 @@ window.deleteBoardPost = id => {
 function renderManual(){
   const el = $("manualTree"); if (!el) return;
   const all = entries(data.manual);
-  const chip = (label, val) => `<button class="mini-btn" onclick="setManualOwner('${val}')"
+  const chip = (label, val) => manualTeamEditKey === val
+    ? `<input id="mnTeamInput" value="${esc(label)}" style="width:100px;font-size:12px;font-weight:600;padding:4px 12px;border:1.5px solid var(--accent);border-radius:999px;outline:none;box-sizing:border-box">`
+    : `<button class="mini-btn" onclick="setManualOwner('${val}')" ondblclick="startTeamRename('${val}')" title="더블클릭하면 이름 변경"
     style="${manualOwner === val ? "background:var(--accent);color:#fff;border-color:var(--accent)" : ""}">${esc(label)}</button>`;
   const chips = `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
     ${manualTeams().map(t => chip(t.label, t.key)).join("")}${chip("게시판", "__board")}
@@ -3251,6 +3256,33 @@ function renderManual(){
     };
     dsc.onblur = commit;
     setTimeout(() => { dsc.focus(); dsc.setSelectionRange(dsc.value.length, dsc.value.length); }, 0);
+  }
+  // 🆕 팀 칩 이름 변경: Enter/포커스아웃 저장, Esc/빈값 취소
+  const ti = $("mnTeamInput");
+  if (ti){
+    const key = manualTeamEditKey;
+    let done = false;
+    const commit = async () => {
+      if (done) return; done = true;
+      const v = ti.value.trim();
+      const cur = (manualTeams().find(t => t.key === key) || {}).label || "";
+      manualTeamEditKey = null;
+      if (!v || v === cur){ renderManual(); return; }
+      try {
+        if (key === "" || key === "mkt" || key === "cs"){
+          await orgRef.child("manualTeamLabels/base_" + (key === "" ? "main" : key)).set(v); // 기본 팀은 라벨 덮어쓰기
+        } else {
+          await orgRef.child("manualTeams/" + key + "/name").set(v); // 추가 팀은 이름 자체 수정
+        }
+        logAction("수정", "매뉴얼 팀 이름: " + cur + " → " + v);
+      } catch(e){ alert("저장에 실패했습니다: " + (e && e.message || e)); renderManual(); }
+    };
+    ti.onkeydown = e => {
+      if (e.key === "Enter"){ e.preventDefault(); commit(); }
+      else if (e.key === "Escape"){ done = true; manualTeamEditKey = null; renderManual(); }
+    };
+    ti.onblur = commit;
+    setTimeout(() => { ti.focus(); ti.select(); }, 0);
   }
   // 🆕 핵심포인트 인라인 입력: Enter 저장(Shift+Enter 줄바꿈), 빈 채로 나가면 취소, Esc 취소
   const pd = $("mnPointDraft");
