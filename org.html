@@ -3164,9 +3164,9 @@ function renderManual(){
     return `
     <div class="mn-branch">
       <div class="mn-row">
-        <div class="mn-card">
+        <div class="mn-card" ondragover="mnDragOver(event,'${it.id}','${it.parentId || ""}')" ondragleave="mnDragLeave(event)" ondrop="mnDrop(event,'${it.id}','${it.parentId || ""}')">
           <div class="mn-head">
-            <div class="mn-step">${depth === 0 ? "상황 " : "세부 "}${idx + 1}</div>
+            <div class="mn-step" draggable="true" ondragstart="mnDragStart(event,'${it.id}')" ondragend="mnDragEnd(event)" title="잡고 끌어서 순서 이동" style="cursor:grab">${depth === 0 ? "상황 " : "세부 "}${idx + 1}</div>
             <div class="mn-move">
               <button class="mini-btn" onclick="moveManual('${it.id}',-1)" title="순서 위로">▲</button>
               <button class="mini-btn" onclick="moveManual('${it.id}',1)" title="순서 아래로">▼</button>
@@ -3427,6 +3427,45 @@ window.moveManual = async (id, dir) => {
     await orgRef.child("manual/" + id + "/order").set(b);
     await orgRef.child("manual/" + other.id + "/order").set(a);
   } catch(e){ alert("순서 변경에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+};
+// 🆕 배지 드래그로 순서 이동 (같은 묶음 안에서만 · 모바일은 ▲▼ 버튼 사용)
+let mnDragId = null, mnDragParent = null;
+window.mnDragStart = (e, id) => {
+  const it = (data.manual || {})[id]; if (!it) return;
+  mnDragId = id; mnDragParent = it.parentId || "";
+  e.dataTransfer.effectAllowed = "move";
+  try { e.dataTransfer.setData("text/plain", id); } catch(_){}
+};
+window.mnDragEnd = () => { mnDragId = null; };
+window.mnDragOver = (e, id, parent) => {
+  if (!mnDragId || id === mnDragId || parent !== mnDragParent) return; // 다른 묶음으론 이동 불가
+  e.preventDefault();
+  const card = e.currentTarget, r = card.getBoundingClientRect();
+  const before = (e.clientY - r.top) < r.height / 2;
+  card.style.boxShadow = before ? "0 -3px 0 0 var(--accent)" : "0 3px 0 0 var(--accent)";
+  card.dataset.dropBefore = before ? "1" : "";
+};
+window.mnDragLeave = e => { e.currentTarget.style.boxShadow = ""; };
+window.mnDrop = async (e, id, parent) => {
+  e.preventDefault();
+  const card = e.currentTarget; card.style.boxShadow = "";
+  if (!mnDragId || id === mnDragId || parent !== mnDragParent) return;
+  const before = card.dataset.dropBefore === "1";
+  const dragId = mnDragId; mnDragId = null;
+  const sibs = entries(data.manual)
+    .filter(x => (x.parentId || "") === parent && (x.owner || "") === manualOwner && x.id !== dragId)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const idx = sibs.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  const pos = before ? idx : idx + 1;
+  const prev = sibs[pos - 1], next = sibs[pos];
+  let order;
+  if (prev && next) order = ((prev.order || 0) + (next.order || 0)) / 2;
+  else if (prev) order = (prev.order || 0) + 10;
+  else if (next) order = (next.order || 0) - 10;
+  else order = Date.now();
+  try { await orgRef.child("manual/" + dragId + "/order").set(order); }
+  catch(err){ alert("순서 이동에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
 };
 window.openManualPoint = (mid, pid) => {
   const it = (data.manual || {})[mid]; if (!it) return;
