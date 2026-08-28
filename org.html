@@ -3175,7 +3175,7 @@ function renderManual(){
             </div>
           </div>
           <div class="mn-title">${it.id === manualEditingId
-            ? `<input id="mnInlineInput" placeholder="상황 이름 입력 후 Enter" style="width:100%;font:inherit;font-weight:700;border:1.5px solid var(--accent);border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box">`
+            ? `<input id="mnInlineInput" value="${esc(it.title)}" placeholder="상황 이름 입력 후 Enter" style="width:100%;font:inherit;font-weight:700;border:1.5px solid var(--accent);border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box">`
             : (esc(it.title) || `<span style="color:var(--muted)">(이름 없음 — 수정을 눌러 입력)</span>`)}</div>
           ${it.desc ? `<div class="mn-desc">${esc(it.desc)}</div>` : ""}
           <div class="mn-actions">
@@ -3220,7 +3220,7 @@ function renderManual(){
       else if (e.key === "Escape"){ inp.value = ""; commit(); }
     };
     inp.onblur = commit;
-    setTimeout(() => inp.focus(), 0);
+    setTimeout(() => { inp.focus(); inp.select(); }, 0);
   }
   // 🆕 핵심포인트 인라인 입력: Enter 저장(Shift+Enter 줄바꿈), 빈 채로 나가면 취소, Esc 취소
   const pd = $("mnPointDraft");
@@ -3270,9 +3270,9 @@ window.addManualBelow = async id => {
   }
   const nid = newId("mn_");
   manualEditingId = nid; manualPointDraftMid = null;
-  const item = { title: "", desc: "", parentId, owner: it.owner || "", order, by: currentUser() || "?", t: Date.now() };
+  const item = { title: "새 상황", desc: "", parentId, owner: it.owner || "", order, by: currentUser() || "?", t: Date.now() };
   try { await orgRef.child("manual/" + nid).set(item); }
-  catch(e){ manualEditingId = null; alert("추가에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+  catch(e){ manualEditingId = null; console.error(e); alert("추가에 실패했습니다: " + (e && e.message || e)); }
 };
 // 🆕 →＋ / 포인트 추가: 팝업 없이 오른쪽에 입력칸 즉시 표시
 window.startManualPointDraft = id => { manualPointDraftMid = id; manualEditingId = null; renderManual(); };
@@ -3299,8 +3299,8 @@ $("addManualBtn").onclick = async () => { // 🆕 팝업 없이 최상위 카드
   const order = roots.length ? Math.max(...roots.map(r => r.order || 0)) + 10 : Date.now();
   const nid = newId("mn_");
   manualEditingId = nid; manualPointDraftMid = null;
-  try { await orgRef.child("manual/" + nid).set({ title: "", desc: "", parentId: "", owner: manualOwner || "", order, by: currentUser() || "?", t: Date.now() }); }
-  catch(e){ manualEditingId = null; alert("추가에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+  try { await orgRef.child("manual/" + nid).set({ title: "새 상황", desc: "", parentId: "", owner: manualOwner || "", order, by: currentUser() || "?", t: Date.now() }); }
+  catch(e){ manualEditingId = null; console.error(e); alert("추가에 실패했습니다: " + (e && e.message || e)); }
 };
 $("bFiles").onchange = e => {
   for (const file of e.target.files){
