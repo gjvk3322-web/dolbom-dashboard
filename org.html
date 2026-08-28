@@ -3258,7 +3258,7 @@ let manualPointDraftMid = null; // 🆕 인라인 핵심포인트 입력 중인 
 // 🆕 ↓＋: 팝업 없이 즉시 카드를 만들고 그 자리에서 이름 입력
 window.addManualBelow = async id => {
   const it = (data.manual || {})[id]; if (!it) return;
-  const parentId = it.parentId ? it.parentId : it.id; // 상황에서 누르면 그 상황의 세부로, 세부에서 누르면 같은 상황의 세부로
+  const parentId = it.parentId ? it.parentId : id; // 상황에서 누르면 그 상황의 세부로, 세부에서 누르면 같은 상황의 세부로 (원본 객체엔 id 필드가 없으므로 인자 id 사용)
   const sibs = entries(data.manual).filter(x => (x.parentId || "") === parentId).sort((a, b) => (a.order || 0) - (b.order || 0));
   let order;
   if (it.parentId){ // 세부 카드에서 누름 → 바로 아래 순서
