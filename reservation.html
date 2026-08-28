@@ -549,16 +549,29 @@ let rowMapReady=false;
 
 // 범용 CSV → 객체배열 파서 (헤더행 기반)
 function csvToObjects(text){
-  const lines=text.split('\n');
-  if(lines.length<2) return [];
-  // 헤더 파싱
-  const headers=parseCSVLine(lines[0]);
+  // 🆕 정식 CSV 파서 — 따옴표 안 줄바꿈 처리 (특이사항 메모에 엔터가 있으면 기존 줄단위 파서는 행이 두 동강 나서 집계 누락됨)
+  const rows=[];let cur='',row=[],inQ=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){
+      if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else {inQ=false;} }
+      else cur+=ch;
+    }else{
+      if(ch==='"')inQ=true;
+      else if(ch===','){row.push(cur);cur='';}
+      else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n')i++; row.push(cur);cur='';rows.push(row);row=[]; }
+      else cur+=ch;
+    }
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  if(rows.length<2) return [];
+  const headers=rows[0].map(h=>String(h).trim());
   const result=[];
-  for(let i=1;i<lines.length;i++){
-    if(!lines[i].trim()) continue;
-    const vals=parseCSVLine(lines[i]);
+  for(let i=1;i<rows.length;i++){
+    const vals=rows[i];
+    if(!vals.some(v=>String(v).trim())) continue;
     const obj={};
-    headers.forEach((h,idx)=>{obj[h]=vals[idx]||'';});
+    headers.forEach((h,idx)=>{obj[h]=String(vals[idx]||'').trim();});
     obj._csvRow=i+1; // 시트 행번호 (헤더=1행, 데이터=2행부터)
     result.push(obj);
   }
