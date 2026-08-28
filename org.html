@@ -3172,6 +3172,8 @@ function renderManual(){
               <button class="mini-btn" onclick="moveManual('${it.id}',1)" title="순서 아래로">▼</button>
               <button class="mini-btn" onclick="addManualBelow('${it.id}')" title="아래에 세부 상황 추가" style="color:var(--accent);font-weight:800">↓＋</button>
               <button class="mini-btn" onclick="startManualPointDraft('${it.id}')" title="오른쪽에 핵심포인트 추가" style="color:#B8860B;font-weight:800">→＋</button>
+              <button class="mini-btn" onclick="openManualModal('${it.id}')" title="설명·상위 상황 수정">수정</button>
+              <button class="mini-btn" onclick="delManual('${it.id}')" title="삭제" style="color:var(--bad)">삭제</button>
             </div>
           </div>
           <div class="mn-title">${it.id === manualEditingId
@@ -3182,10 +3184,7 @@ function renderManual(){
             : (it.desc
               ? `<div class="mn-desc" onclick="editManualDesc('${it.id}')" style="cursor:pointer" title="누르면 설명 수정">${esc(it.desc)}</div>`
               : `<div class="mn-desc" onclick="editManualDesc('${it.id}')" style="cursor:pointer;color:var(--muted)" title="누르면 설명 입력">＋ 설명 추가</div>`)}
-          <div class="mn-actions">
-            <button class="mini-btn" onclick="openManualModal('${it.id}')">수정</button>
-            <button class="mini-btn" onclick="delManual('${it.id}')" style="color:var(--bad)">삭제</button>
-          </div>
+
         </div>
         ${(pts.length || manualPointDraftMid === it.id) ? `
         <div class="mn-conn"></div>
