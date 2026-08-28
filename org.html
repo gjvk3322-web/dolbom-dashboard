@@ -1272,7 +1272,7 @@ async function openAccessMgr(){
   ]);
   const pend = pSnap.val() || {}, allow = aSnap.val() || {};
   const row = (uid, o, isPending) => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px">
-    <div style="flex:1"><b>${esc(o.name || "-")}</b><br><span class="hint">${esc(o.email || uid)}</span></div>
+    <div style="flex:1"><b ${isPending ? "" : `style="cursor:pointer" title="누르면 이름 변경" onclick="renameUser('${uid}', this)"`}>${esc(o.name || "-")}</b><br><span class="hint">${esc(o.email || uid)}</span></div>
     ${isPending
       ? `<button class="mini-btn" onclick="approveUser('${uid}')">✅ 승인</button><button class="mini-btn" style="color:var(--bad)" onclick="rejectUser('${uid}')">거절</button>`
       : `<button class="mini-btn" style="color:var(--bad)" onclick="kickUser('${uid}')">강퇴</button>`}
@@ -1299,6 +1299,33 @@ window.approveUser = async uid => {
 window.rejectUser = async uid => {
   await db.ref("orgAuth/pending/" + uid).remove();
   document.getElementById("accessMgrOv").remove(); openAccessMgr();
+};
+// 🆕 승인된 직원 이름 클릭 → 그 자리에서 변경 (닉네임으로 로그인한 직원을 실명으로 정리)
+window.renameUser = (uid, el) => {
+  const cur = el.textContent === "-" ? "" : el.textContent;
+  const inp = document.createElement("input");
+  inp.value = cur;
+  inp.placeholder = "실명 입력 후 Enter";
+  inp.style.cssText = "font:inherit;font-weight:700;border:1.5px solid var(--accent);border-radius:8px;padding:2px 8px;width:130px;outline:none";
+  el.replaceWith(inp);
+  let done = false;
+  const commit = async () => {
+    if (done) return; done = true;
+    const v = inp.value.trim();
+    const ov = document.getElementById("accessMgrOv");
+    if (!v || v === cur){ if (ov){ ov.remove(); openAccessMgr(); } return; }
+    try {
+      await db.ref("orgAuth/allow/" + uid + "/name").set(v);
+      logAction("수정", "직원 이름: " + (cur || "-") + " → " + v);
+    } catch(e){ alert("저장에 실패했습니다: " + (e && e.message || e)); }
+    if (ov){ ov.remove(); openAccessMgr(); }
+  };
+  inp.onkeydown = e => {
+    if (e.key === "Enter"){ e.preventDefault(); commit(); }
+    else if (e.key === "Escape"){ inp.value = cur; commit(); }
+  };
+  inp.onblur = commit;
+  setTimeout(() => { inp.focus(); inp.select(); }, 0);
 };
 window.kickUser = async uid => {
   if (!confirm("이 사용자의 접근을 차단할까요?")) return;
