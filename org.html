@@ -3177,7 +3177,11 @@ function renderManual(){
           <div class="mn-title">${it.id === manualEditingId
             ? `<input id="mnInlineInput" value="${esc(it.title)}" placeholder="상황 이름 입력 후 Enter" style="width:100%;font:inherit;font-weight:700;border:1.5px solid var(--accent);border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box">`
             : `<span onclick="editManualTitle('${it.id}')" style="cursor:pointer" title="누르면 이름 수정">${esc(it.title) || `<span style=\"color:var(--muted)\">(이름 없음 — 누르면 입력)</span>`}</span>`}</div>
-          ${it.desc ? `<div class="mn-desc">${esc(it.desc)}</div>` : ""}
+          ${it.id === manualDescEditingId
+            ? `<textarea id="mnDescInput" rows="${Math.max(2, String(it.desc || "").split("\n").length)}" placeholder="설명 입력 후 Enter (줄바꿈은 Shift+Enter)" style="width:100%;font:inherit;font-size:13px;border:1.5px solid var(--accent);border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box;resize:vertical">${esc(it.desc || "")}</textarea>`
+            : (it.desc
+              ? `<div class="mn-desc" onclick="editManualDesc('${it.id}')" style="cursor:pointer" title="누르면 설명 수정">${esc(it.desc)}</div>`
+              : `<div class="mn-desc" onclick="editManualDesc('${it.id}')" style="cursor:pointer;color:var(--muted)" title="누르면 설명 입력">＋ 설명 추가</div>`)}
           <div class="mn-actions">
             <button class="mini-btn" onclick="openManualModal('${it.id}')">수정</button>
             <button class="mini-btn" onclick="delManual('${it.id}')" style="color:var(--bad)">삭제</button>
@@ -3228,6 +3232,27 @@ function renderManual(){
     inp.onblur = commit;
     setTimeout(() => { inp.focus(); inp.select(); }, 0);
   }
+  // 🆕 설명 인라인 수정: Enter 저장 · Shift+Enter 줄바꿈 · Esc/빈값 원복
+  const dsc = $("mnDescInput");
+  if (dsc){
+    const id = manualDescEditingId;
+    let done = false;
+    const commit = async () => {
+      if (done) return; done = true;
+      const v = dsc.value.trim();
+      const cur = ((data.manual || {})[id]) || {};
+      manualDescEditingId = null;
+      if (v === (cur.desc || "")){ renderManual(); return; } // 안 바뀌었으면 저장 생략
+      try { await orgRef.child("manual/" + id + "/desc").set(v); logAction("수정", "매뉴얼 설명: " + (cur.title || "")); }
+      catch(e){ alert("저장에 실패했습니다: " + (e && e.message || e)); renderManual(); }
+    };
+    dsc.onkeydown = e => {
+      if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); commit(); }
+      else if (e.key === "Escape"){ done = true; manualDescEditingId = null; renderManual(); }
+    };
+    dsc.onblur = commit;
+    setTimeout(() => { dsc.focus(); dsc.setSelectionRange(dsc.value.length, dsc.value.length); }, 0);
+  }
   // 🆕 핵심포인트 인라인 입력: Enter 저장(Shift+Enter 줄바꿈), 빈 채로 나가면 취소, Esc 취소
   const pd = $("mnPointDraft");
   if (pd){
@@ -3261,8 +3286,11 @@ function manualParentOptions(exceptId, owner){
 let manualInsertAfter = "";   // (수정 모달 경유 추가 시) 이 항목 바로 아래 순서로 저장
 let manualEditingId = null;   // 🆕 인라인 이름 입력 중인 카드 id
 let manualEditingIsNew = false; // 🆕 방금 만든 카드인지 (빈 값이면 삭제) / 기존 카드 수정인지 (빈 값이면 원복)
+let manualDescEditingId = null; // 🆕 설명 인라인 수정 중인 카드 id
 // 🆕 기존 카드 제목 클릭 → 그 자리에서 수정
-window.editManualTitle = id => { manualEditingId = id; manualEditingIsNew = false; manualPointDraftMid = null; renderManual(); };
+window.editManualTitle = id => { manualEditingId = id; manualEditingIsNew = false; manualPointDraftMid = null; manualDescEditingId = null; renderManual(); };
+// 🆕 설명 클릭 → 그 자리에서 수정 (Enter 저장 · Shift+Enter 줄바꿈)
+window.editManualDesc = id => { manualDescEditingId = id; manualEditingId = null; manualPointDraftMid = null; renderManual(); };
 let manualPointDraftMid = null; // 🆕 인라인 핵심포인트 입력 중인 카드 id
 // 🆕 ↓＋: 팝업 없이 즉시 카드를 만들고 그 자리에서 이름 입력
 window.addManualBelow = async id => {
