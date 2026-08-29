@@ -741,7 +741,7 @@
       <div class="topbar">
         <div>
           <h1>연차 관리</h1>
-          <div class="lead">인적사항과 연차 부여 개수는 <b>구글 시트(팀설정 탭)</b>가 기준이고, 여기서는 <b>신청과 승인</b>을 처리합니다. 이 페이지 도입 후의 연차 사용은 여기서만 차감하고 시트에서는 따로 차감하지 않습니다.</div>
+          <div class="lead">인적사항과 연차 부여 개수는 <b>구글 시트(팀설정 탭)</b>가 기준이고, 여기서는 <b>신청과 승인</b>을 처리합니다. <b>시공팀(부산·경기)</b>은 휴무 시트 기준으로 스케줄러가 집계한 시트 잔여를 그대로 보고, 여기 승인은 기록·캘린더 표시용입니다. <b>사무직(CS·마케팅·경영 등)</b>은 휴무 시트가 없으므로 여기서 승인된 만큼 차감합니다.</div>
         </div>
         <button class="btn primary" id="addLeaveBtn">연차 신청</button>
       </div>
@@ -1628,6 +1628,15 @@ function lvApprovedDays(name){
   return entries(data.leaves).filter(l => lvNameMatch(l.name, name) && (l.status === "approved" || l.status === "cancelReq") && String(l.start || "").startsWith(yr))
     .reduce((s, l) => s + lvDays(l), 0);
 }
+// 시공팀(팀설정 지역에 부산/경기 포함) = 시트 집계, 그 외 = 페이지 차감
+function lvSheetManaged(r){ const g = String((r && r.region) || ""); return /부산|경기/.test(g); }
+function lvCurrent(r, name){ const base = parseFloat(r.remain) || 0; return lvSheetManaged(r) ? base : base - lvApprovedDays(name || r.name); }
+function lvModeBadge(r){ return lvSheetManaged(r)
+  ? `<span style="border-radius:999px;font-size:10px;font-weight:700;padding:2px 7px;background:#E8F1FD;color:#2F6FCC">시트 집계</span>`
+  : `<span style="border-radius:999px;font-size:10px;font-weight:700;padding:2px 7px;background:var(--tint);color:var(--accent-deep)">페이지 차감</span>`; }
+function lvRemainHtml(n, size){ return n < 0
+  ? `<span style="color:var(--bad)">${lvFmt(n)}</span><span style="font-size:${size ? 12 : 10}px;font-weight:700;color:var(--bad);margin-left:5px">초과 사용</span>`
+  : lvFmt(n); }
 function lvFmt(n){ return n % 1 ? n.toFixed(1) : String(n); }
 function lvRange(l){ return l.start + (l.end && l.end !== l.start ? "~" + l.end.slice(5) : "") + (l.half ? " 반차" : ""); }
 const LV_ST = { pending: ["대기", "#FFF7E0;color:#B8860B"], approved: ["승인", "var(--tint);color:var(--accent-deep)"], rejected: ["반려", "#FDECEA;color:#C62828"], canceled: ["취소", "#EEF2F0;color:#8A959E"], cancelReq: ["취소 요청", "#FFF7E0;color:#B8860B"] };
@@ -1641,7 +1650,7 @@ function renderLeave(){
   const rows = (allowArr.length ? allRows.filter(r => allowArr.some(n => lvNameMatch(n, r.name))) : allRows)
     .slice().sort((a, b) => String(a.joined || "9999").localeCompare(String(b.joined || "9999")));
   const rowOf = n => allRows.find(r => lvNameMatch(r.name, n));
-  const remainOf = n => { const r = rowOf(n); return r ? (parseFloat(r.remain) || 0) - lvApprovedDays(n) : null; };
+  const remainOf = n => { const r = rowOf(n); return r ? lvCurrent(r, n) : null; };
   const all = entries(data.leaves).sort((a, b) => (b.t || 0) - (a.t || 0));
 
   // 내 카드 + 내 신청 내역
@@ -1650,8 +1659,8 @@ function renderLeave(){
   $("leaveMine").innerHTML = !me ? "" : `
     <div class="card" style="padding:16px 18px">
       <div style="display:flex;gap:26px;flex-wrap:wrap;align-items:center">
-        <div><div class="hint">내 잔여 연차</div><div style="font-size:26px;font-weight:800;color:var(--accent-deep)">${myRow ? lvFmt(remainOf(me)) + "일" : "시트에 없음"}</div></div>
-        ${myRow ? `<div class="hint">부여 ${lvFmt(parseFloat(myRow.total) || 0)} · 시트 기사용 ${lvFmt((parseFloat(myRow.total) || 0) - (parseFloat(myRow.remain) || 0))} · 이 페이지 승인 ${lvFmt(lvApprovedDays(me))}</div>` : `<div class="hint">팀설정 탭에 이름(${esc(me)})이 있어야 잔여가 계산됩니다.</div>`}
+        <div><div class="hint">내 잔여 연차</div><div style="font-size:26px;font-weight:800;color:var(--accent-deep)">${myRow ? lvRemainHtml(remainOf(me), true) + "일" : "시트에 없음"}</div></div>
+        ${myRow ? `<div class="hint">${lvModeBadge(myRow)} 부여 ${lvFmt(parseFloat(myRow.total) || 0)} · 시트 기사용 ${lvFmt((parseFloat(myRow.total) || 0) - (parseFloat(myRow.remain) || 0))} · 이 페이지 승인 ${lvFmt(lvApprovedDays(me))}${lvSheetManaged(myRow) ? " (기록용, 차감 안 함)" : ""}</div>` : `<div class="hint">팀설정 탭에 이름(${esc(me)})이 있어야 잔여가 계산됩니다.</div>`}
       </div>
       ${mine.length ? `<div style="margin-top:12px;border-top:1px solid #F1F5F3;padding-top:10px">` + mine.slice(0, 6).map(l =>
         `<div style="display:flex;align-items:center;gap:9px;font-size:13px;padding:3px 0">
@@ -1695,11 +1704,11 @@ function renderLeave(){
   $("leaveAll").innerHTML = `
     <div class="section-title"><h2>직원별 잔여 현황</h2><span class="hint">입사일순 · 구글 로그인 승인된 직원만 표시 (접근 관리에서 해제하면 사라짐)</span></div>
     <div class="card" style="padding:0;overflow-x:auto"><table class="tbl" style="width:100%;border-collapse:collapse;font-size:13px">
-      <tr style="text-align:left;color:#5B6763"><th style="padding:9px 12px">이름</th><th>지역</th><th>직급</th><th style="text-align:right">부여</th><th style="text-align:right">시트 잔여</th><th style="text-align:right">페이지 승인</th><th style="text-align:right;padding-right:12px">현재 잔여</th></tr>
-      ${rows.map(r => { const ap = lvApprovedDays(r.name); const cur = (parseFloat(r.remain) || 0) - ap;
+      <tr style="text-align:left;color:#5B6763"><th style="padding:9px 12px">이름</th><th>지역</th><th>직급</th><th style="text-align:right">부여</th><th style="text-align:right">시트 잔여</th><th style="text-align:right">페이지 승인</th><th style="text-align:right;padding-right:12px">현재 잔여</th><th style="padding-right:12px">방식</th></tr>
+      ${rows.map(r => { const ap = lvApprovedDays(r.name); const cur = lvCurrent(r);
         return `<tr style="border-top:1px solid #F1F5F3"><td style="padding:8px 12px;font-weight:700">${esc(r.name)}</td><td>${esc(r.region || "")}</td><td>${esc(r.role || "")}</td>
         <td style="text-align:right">${lvFmt(parseFloat(r.total) || 0)}</td><td style="text-align:right">${lvFmt(parseFloat(r.remain) || 0)}</td>
-        <td style="text-align:right">${lvFmt(ap)}</td><td style="text-align:right;padding-right:12px;font-weight:800;${cur < 0 ? "color:var(--bad)" : "color:var(--accent-deep)"}">${lvFmt(cur)}</td></tr>`; }).join("")}
+        <td style="text-align:right">${lvFmt(ap)}</td><td style="text-align:right;padding-right:12px;font-weight:800;white-space:nowrap;${cur < 0 ? "color:var(--bad)" : "color:var(--accent-deep)"}">${lvRemainHtml(cur)}</td><td style="padding-right:12px">${lvModeBadge(r)}</td></tr>`; }).join("")}
     </table></div>`;
 }
 $("addLeaveBtn").onclick = () => {
