@@ -1541,11 +1541,11 @@ body {
 <script>
 // ===== 제품 데이터 (quote.html v2026.04.29 기준 - 17T) =====
 var PRODUCTS = [
-  { key:'mat1000_22', name:'1000매트 22T', thickness:'22T', price:76500,
+  { key:'mat1000_22', name:'1000매트 22T', label:'1000매트 22T(1M X 1M 두께 2.2cm)', thickness:'22T', price:76500,
     feature:'논슬립·방오·황변억제', badge:'대형사이즈', badgeClass:'',       cardClass:'highlight',         is1000:true,  icon:'⭐' },
-  { key:'mat1000_17', name:'1000매트 17T', thickness:'17T', price:64500,
+  { key:'mat1000_17', name:'1000매트 17T', label:'1000매트 17T(1M X 1M 두께 1.7cm)', thickness:'17T', price:64500,
     feature:'논슬립·방오·황변억제', badge:'애견 추천',    badgeClass:'orange', cardClass:'highlight-orange',  is1000:true,  icon:'🐶' },
-  { key:'mat500',     name:'500매트 22T',  thickness:'22T', price:16900,
+  { key:'mat500',     name:'500매트 22T',  label:'500매트 22T(50cm X 50cm 두께 2.2cm)', thickness:'22T', price:16900,
     feature:'기본 코팅',          badge:'갓성비',       badgeClass:'amber',  cardClass:'highlight-amber',   is1000:false, icon:'💰' }
 ];
 
@@ -2107,7 +2107,7 @@ function renderProductCards(results) {
 
     card.innerHTML =
       '<div class="product-badge '+p.badgeClass+'">'+p.icon+' '+p.badge+'</div>' +
-      '<div class="product-name">'+p.name+'</div>' +
+      '<div class="product-name">'+p.name+'<div style="font-size:10px;font-weight:500;color:#888;margin-top:2px">'+p.label.slice(p.name.length)+'</div></div>' +
       '<div class="product-feature">'+p.feature+'</div>' +
       '<div class="product-divider"></div>' +
       '<div class="product-qty">'+qtyDisplay+'<span style="font-size:14px;color:#999;font-weight:500"> 장</span></div>' +
@@ -2263,7 +2263,7 @@ function renderReply(results, py) {
     // 장당 체감가 (낮은 값만 표시) - finalCost / qty 기반
     var perFinalLow = Math.round(r.finalCost / r.totalQty);
 
-    text += icon + ' ' + p.name + ' [' + info.badge + ']\n';
+    text += icon + ' ' + p.label + ' [' + info.badge + ']\n';
     // 장당 가격 한 줄 (기존 → 체감가)
     text += '장당 ' + fmt(p.price) + '원 → 체감가 ' + fmt(perFinalLow) + '원\n';
     // 장수별 가격 (만원 단위, 기존 → 체감가)
@@ -2347,7 +2347,7 @@ function renderReply(results, py) {
       } else {
         priceStr = fmt(r.beforeDiscount) + '원';
       }
-      tText += '🔹 ' + p.name + ' : ' + priceStr + '\n';
+      tText += '🔹 ' + p.label + ' : ' + priceStr + '\n';
     });
 
     // 할인 차이 자동 계산 (체크된 혜택이 있을 때만)
