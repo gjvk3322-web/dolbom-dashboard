@@ -216,8 +216,8 @@ body.embedded{min-height:0!important}body.embedded .container{padding-bottom:8px
 <body>
 <script>
 var PRODUCTS=[{key:'mat1000_22',name:'1000매트',thickness:'22T',spec:'(1M X 1M 두께 2.2cm)',price:76500},{key:'mat1000_17',name:'1000매트',thickness:'17T',spec:'(1M X 1M 두께 1.7cm)',price:64500},{key:'mat500',name:'500매트',thickness:'22T',spec:'(50cm X 50cm 두께 2.2cm)',price:16900}];
-var INSTALL_FEE=100000,INSTALL_THRESHOLD_500=100,INSTALL_THRESHOLD_1000=25;
-var BENEFITS=[{key:'review_contract',name:'계약 후기 작성 (샘플박스 쿠폰)',desc:'계약 후기 작성 시 샘플박스 3만원 쿠폰 지급',type:'fixed',discount:30000,label:'-30,000원',phase:1},{key:'group_buy',name:'5인 공동구매 할인',desc:'5인 이상 공동구매 시',type:'percent',discount:3,label:'-3%',phase:1},{key:'onnuri',name:'온누리상품권 결제',desc:'디지털온누리 앱에서 할인',type:'percent',discount:7,label:'-7%',phase:1},{key:'review_event',name:'후기 이벤트 (5곳 후기 작성 시)',desc:'최대 80,000원 캐시백',type:'fixed',discount:80000,label:'-80,000원',phase:2}];
+var INSTALL_FEE=100000,INSTALL_THRESHOLD_500=99,INSTALL_THRESHOLD_1000=24;
+var BENEFITS=[{key:'review_contract',name:'계약 후기 작성 (샘플박스 쿠폰)',desc:'계약 후기 작성 시 샘플박스 3만원 쿠폰 지급',type:'fixed',discount:30000,label:'-30,000원',phase:1},{key:'group_buy',name:'5인 공동구매 할인',desc:'5인 이상 공동구매 시',type:'percent',discount:3,label:'-3%',phase:1},{key:'onnuri',name:'온누리상품권 결제',desc:'디지털온누리 앱에서 할인',type:'percent',discount:7,label:'-7%',phase:1},{key:'review_event',name:'후기 이벤트 (원하는 만큼 작성)',desc:'최대 100,000원 캐시백',type:'fixed',discount:100000,label:'-100,000원',phase:2}];
 var REFERRAL_CODE=new URLSearchParams(location.search).get('ch')||'';
 var WELCOME_PHONE=new URLSearchParams(location.search).get('phone')||'';
 var WELCOME_NAME=new URLSearchParams(location.search).get('name')||'';
@@ -225,7 +225,7 @@ if(WELCOME_PHONE){document.addEventListener('DOMContentLoaded',function(){var el
 var REFERRAL_NAME=REFERRAL_CODE.replace(/_\d+$/,'')+'님';
 // 추천 코드 추적은 하되 자동 할인은 OFF (상담 시 결정)
 var REVIEW_DETAILS=[{icon:'📸',name:'인스타그램 후기',amount:10000},{icon:'💬',name:'단지 단톡방 업로드',amount:10000},{icon:'⭐',name:'첫날 후기 1곳',amount:20000},{icon:'🌟',name:'첫날 후기 2곳',amount:20000},{icon:'📅',name:'한 달 후 후기',amount:20000}];
-var NOTICES=['실제 시공 후 들어간 수량에 맞춰 결제가 이루어집니다','1000매트 25장·500매트 100장 이하 시공 시 시공비 10만원 추가'];
+var NOTICES=['실제 시공 후 들어간 수량에 맞춰 결제가 이루어집니다','1000매트 24장·500매트 99장 이하 시공 시 시공비 10만원 추가'];
 var COMPARE_SIZES=[500,600,800];
 var DEFAULT_ROOMS=[{name:'거실',removable:false},{name:'복도',removable:false},{name:'주방',removable:false}];
 </script>
