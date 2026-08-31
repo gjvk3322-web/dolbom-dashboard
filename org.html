@@ -420,9 +420,9 @@
 
   /* ── 조직도 (트리형 · 드래그 정렬) ── */
   #orgChartWrap{overflow-x:auto;padding:10px 2px 26px}
-  .oc-tree{min-width:max-content;margin:0 auto}
-  .oc-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start}
-  .oc-ceo-cell{display:flex;flex-direction:column;align-items:center}
+  .oc-tree{min-width:max-content;margin:0}
+  .oc-top{display:grid;grid-template-columns:auto 1fr;align-items:start}
+  .oc-ceo-cell{display:flex;flex-direction:column;align-items:center;width:246px}   /* 첫 부서 열 폭(230+패딩 16)과 맞춰 줄기가 첫 열 중앙에 떨어지도록 */
   .oc-ceo{width:230px;border-radius:13px;padding:13px 14px;text-align:center;color:#fff;font-weight:800;font-size:15px;background:var(--accent);box-shadow:0 2px 10px rgba(0,177,115,.28)}
   .oc-ceo .rl{font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
   .oc-trunk{width:2px;flex:1;min-height:30px;background:#C9DED3}
@@ -431,7 +431,7 @@
   .oc-exec-line.sm{width:26px;flex:0 0 26px}
   .oc-exec-dept{min-width:180px}
   .oc-exec-members{margin-top:7px;min-width:210px}
-  .oc-depts{display:flex;justify-content:center;align-items:flex-start}
+  .oc-depts{display:flex;justify-content:flex-start;align-items:flex-start}
   .oc-branch{position:relative;padding:26px 8px 0}
   .oc-branch::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:#C9DED3}
   .oc-branch::after{content:"";position:absolute;top:0;left:50%;width:2px;height:26px;background:#C9DED3;margin-left:-1px}
@@ -3661,7 +3661,6 @@ function renderOrgChart(){
   el.innerHTML = `
     <div class="oc-tree">
       <div class="oc-top">
-        <div></div>
         <div class="oc-ceo-cell">
           <div class="oc-ceo">${esc(ceo ? ceo.name : "대표")}<div class="rl">대표</div></div>
           ${branches.length ? `<div class="oc-trunk"></div>` : ""}
