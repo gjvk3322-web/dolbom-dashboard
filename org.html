@@ -355,6 +355,24 @@
   .rowbar-val{color:#5B6763;white-space:nowrap;flex-shrink:0}
   .rowbar-track{height:8px;background:#EFF3F1;border-radius:4px;overflow:hidden}
   .rowbar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s}
+  /* 지역별 유입 */
+  .rg-row{display:grid;grid-template-columns:150px 1fr 1fr 64px;gap:12px;align-items:center;padding:7px 0;font-size:13px}
+  .rg-row+.rg-row{border-top:1px solid #F4F7F5}
+  .rg-head{font-size:11.5px;color:var(--muted);font-weight:650;padding-bottom:4px}
+  .rg-name{font-weight:700;color:#3D4844;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rg-name small{font-weight:500;color:var(--muted);margin-left:4px}
+  .rg-bar{display:flex;align-items:center;gap:8px;min-width:0}
+  .rg-bar .rowbar-track{flex:1}
+  .rg-bar b{flex:0 0 34px;text-align:right;font-weight:700;color:#3D4844}
+  .rg-rate{text-align:right;color:var(--muted);font-weight:650;white-space:nowrap}
+  .rg-rate.low{color:#D64545}
+  .rg-rate.high{color:var(--accent-deep)}
+  .region-level.active{background:var(--tint);color:var(--accent-deep);border-color:var(--accent);font-weight:700}
+  @media (max-width:760px){
+    .rg-row{grid-template-columns:1fr 1fr;grid-template-areas:"name rate" "s i";gap:6px 10px}
+    .rg-name{grid-area:name}.rg-rate{grid-area:rate}.rg-s{grid-area:s}.rg-i{grid-area:i}
+    .rg-head{display:none}
+  }
   .rowbar-fill.gold{background:#E2A93B}
   .rowbar-fill.red{background:#D9534F}
   .adr-row{display:flex;align-items:center;gap:10px;padding:7px 12px;border-left:3px solid #D6DEDA;background:#F8FAF9;border-radius:8px;margin-bottom:5px;font-size:12.5px}
@@ -568,6 +586,33 @@
         <tbody id="convBody"><tr><td colspan="5" class="hint">불러오는 중…</td></tr></tbody>
         <tfoot id="convFoot"></tfoot>
       </table></div>
+      </div>
+
+      <div class="dash-sec" data-dash="region" data-cat="mkt">
+      <div class="section-title"><h2>지역별 유입 (샘플 &middot; 시공)</h2><span class="hint" id="regionHint"></span></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-4px 0 12px">
+        <select id="regionPeriod" class="mini-btn" style="cursor:pointer;width:auto;padding:4px 26px 4px 11px">
+          <option value="thisMonth">이번달</option>
+          <option value="lastMonth">지난달</option>
+          <option value="3m" selected>최근 3개월</option>
+          <option value="all">전체</option>
+        </select>
+        <button class="mini-btn region-level active" data-level="city">시·군</button>
+        <button class="mini-btn region-level" data-level="sido">시·도</button>
+        <select id="regionSort" class="mini-btn" style="cursor:pointer;width:auto;padding:4px 26px 4px 11px">
+          <option value="install">시공 많은 순</option>
+          <option value="sample">샘플 많은 순</option>
+          <option value="lowRate">전환 낮은 순 (샘플 10건 이상)</option>
+        </select>
+        <label class="hint" style="display:flex;gap:4px;align-items:center;cursor:pointer;white-space:nowrap;margin-left:4px"><input type="checkbox" id="regionMove" style="width:auto;margin:0"> 이전설치 포함</label>
+      </div>
+      <div class="grid kpis" id="regionCards" style="margin-bottom:12px"></div>
+      <div class="card" style="padding:16px 20px">
+        <div class="rg-row rg-head"><span>지역</span><span>샘플 접수</span><span>시공 예약</span><span style="text-align:right">시공/샘플</span></div>
+        <div id="regionRows" class="hint">불러오는 중…</div>
+        <div id="regionMore" style="margin-top:10px"></div>
+      </div>
+      <div class="hint" style="margin:8px 0 22px">샘플·시공 모두 접수일 기준 (예약접수 페이지 "일별 접수"와 같은 집계, 접수일 없는 옛 행은 시공일로 대체) &middot; 시·군 단위는 부산·울산·대구 같은 광역시는 통째로, 경남·경기 같은 도는 시·군(김해시·평택시)까지만 나눔 &middot; 시공/샘플은 같은 기간 안의 단순 비율이라 참고용</div>
       </div>
 
       <div class="dash-sec" data-dash="cohort" data-cat="mkt">
@@ -3699,7 +3744,7 @@ const DASH_LABELS = {
   channels:"채널별 전환", cohort:"샘플 전환 추이", realconv:"진짜 전환(휴대폰 매칭)", products:"제품별 판매",
   phone:"상담 전화", review:"후기·알림톡", survey:"고객 설문", ga4:"홈페이지 GA4", adrank:"광고 순위·경쟁사",
   soomgo:"숨고 유입", apt:"입주아파트", stock:"재고 요약",
-  asStats:"AS 현황", teamStats:"팀별 실적", custFunnel:"고객 풀퍼널"
+  asStats:"AS 현황", teamStats:"팀별 실적", custFunnel:"고객 풀퍼널", region:"지역별 유입"
 };
 /* 숨김 설정은 개인(브라우저)별 — localStorage 저장, 다른 직원 화면에 영향 없음 */
 let dashPrefs = {};
@@ -4191,10 +4236,99 @@ async function dashCust(){
   } catch(e){ document.getElementById("custBody").innerHTML = '<tr><td colspan="6" class="hint">고객 풀퍼널을 불러오지 못했습니다 — Code.gs에 orgstats.gs 적용이 필요할 수 있어요.</td></tr>'; }
 }
 
+/* ── 지역별 유입 (샘플·시공) — regionstats.gs regionStats API ── */
+let regionData = null, regionLevel = "city", regionShowAll = false;
+const REGION_METRO = { "서울":1, "부산":1, "대구":1, "인천":1, "광주":1, "대전":1, "울산":1, "세종":1 };
+/* 시·군 단위: 광역시·특별시는 통째로, 도는 시·군까지 (구 제외 → 창원시 성산구 = 창원시) */
+const regionCity = r => REGION_METRO[r.sido] ? "" : (r.sgg || "").split(" ")[0];
+async function dashRegion(){
+  const el = document.getElementById("regionRows");
+  try{
+    const j = await fetch(APPS_SCRIPT_URL + "?type=regionStats").then(r => r.json());
+    if (!j.success) throw 0;
+    regionData = j.rows || [];
+    regionShowAll = false;
+    document.getElementById("regionHint").textContent = new Date().toLocaleTimeString("ko-KR", {hour:"2-digit", minute:"2-digit"}) + " 갱신";
+    renderRegion();
+  } catch(e){
+    el.innerHTML = '<div class="hint">지역 데이터를 불러오지 못했습니다 — Code.gs에 regionStats 라우팅(regionstats.gs) 추가가 필요해요.</div>';
+    document.getElementById("regionCards").innerHTML = "";
+  }
+}
+function regionPeriodYms(){
+  const mode = document.getElementById("regionPeriod").value;
+  const now = new Date(), ym = d => d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2);
+  if (mode === "all") return null;
+  if (mode === "thisMonth") return [ym(now)];
+  if (mode === "lastMonth") return [ym(new Date(now.getFullYear(), now.getMonth() - 1, 1))];
+  return [0, 1, 2].map(i => ym(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+}
+function renderRegion(){
+  const el = document.getElementById("regionRows"), cards = document.getElementById("regionCards"), more = document.getElementById("regionMore");
+  if (!regionData) return;
+  const yms = regionPeriodYms();
+  const inclMove = document.getElementById("regionMove").checked;
+  const sort = document.getElementById("regionSort").value;
+  const map = {};
+  let tS = 0, tI = 0;
+  regionData.forEach(r => {
+    if (yms && !yms.includes(r.ym)) return;
+    if (r.kind === "install" && r.move && !inclMove) return;
+    const city = regionCity(r);
+    const key = regionLevel === "sido" ? r.sido : (r.sido + "|" + city);
+    const o = map[key] || (map[key] = { sido: r.sido, city, sample: 0, install: 0 });
+    if (r.kind === "sample"){ o.sample += r.n; tS += r.n; } else { o.install += r.n; tI += r.n; }
+  });
+  const full = Object.values(map);
+  let list = [...full];
+  const rate = o => o.sample > 0 ? o.install / o.sample : null;
+  if (sort === "sample") list.sort((a, b) => b.sample - a.sample || b.install - a.install);
+  else if (sort === "lowRate") list = list.filter(o => o.sample >= 10).sort((a, b) => rate(a) - rate(b) || b.sample - a.sample);
+  else list.sort((a, b) => b.install - a.install || b.sample - a.sample);
+
+  if (!full.length){
+    el.innerHTML = '<div class="hint">이 기간에 집계된 지역이 없습니다.</div>'; cards.innerHTML = ""; more.innerHTML = ""; return;
+  }
+  const maxS = Math.max(...full.map(o => o.sample), 1), maxI = Math.max(...full.map(o => o.install), 1);
+  const top5 = [...full].sort((a, b) => b.install - a.install).slice(0, 5);
+  const top5I = top5.reduce((a, o) => a + o.install, 0);
+  const nm = o => regionLevel === "sido" || !o.city ? o.sido : (REGION_METRO[o.sido] ? o.sido : (o.city === "" ? o.sido + " (시·군 미확인)" : o.city));
+  cards.innerHTML =
+    dashCard("샘플 접수", tS.toLocaleString(), "건", `${full.filter(o => o.sample).length}개 지역`) +
+    dashCard("시공", tI.toLocaleString(), "건", `${full.filter(o => o.install).length}개 지역`) +
+    dashCard("상위 5개 지역 비중", tI > 0 ? Math.round(top5I / tI * 100) : "-", "%", "시공 기준") +
+    dashCard("시공 1위", top5[0] ? nm(top5[0]) : "-", "", top5[0] ? `${top5[0].install}건${regionLevel === "city" && top5[0].city ? " · " + top5[0].sido : ""}` : "");
+
+  const shown = regionShowAll ? list : list.slice(0, 20);
+  el.classList.remove("hint");
+  if (!list.length){ el.innerHTML = '<div class="hint">샘플 10건 이상인 지역이 없습니다.</div>'; more.innerHTML = ""; return; }
+  el.innerHTML = shown.map(o => {
+    const r = rate(o);
+    const rTxt = r === null ? (o.install ? "샘플 0" : "-") : Math.round(r * 100) + "%";
+    const cls = r === null ? "" : (o.sample >= 10 && r < 0.25 ? "low" : (o.sample >= 10 && r >= 0.5 ? "high" : ""));
+    return `<div class="rg-row">
+      <span class="rg-name">${esc(nm(o))}${regionLevel === "city" && o.city ? `<small>${esc(o.sido)}</small>` : ""}</span>
+      <span class="rg-bar rg-s"><div class="rowbar-track"><div class="rowbar-fill" style="width:${Math.round(o.sample / maxS * 100)}%;background:#9AD6BC"></div></div><b>${o.sample}</b></span>
+      <span class="rg-bar rg-i"><div class="rowbar-track"><div class="rowbar-fill" style="width:${Math.round(o.install / maxI * 100)}%"></div></div><b>${o.install}</b></span>
+      <span class="rg-rate ${cls}">${rTxt}</span>
+    </div>`;
+  }).join("");
+  more.innerHTML = list.length > 20
+    ? `<button class="mini-btn" onclick="regionShowAll=!regionShowAll;renderRegion()">${regionShowAll ? "상위 20개만 보기" : `전체 ${list.length}개 지역 보기`}</button>`
+    : "";
+}
+document.getElementById("regionPeriod").onchange = renderRegion;
+document.getElementById("regionSort").onchange = renderRegion;
+document.getElementById("regionMove").onchange = renderRegion;
+document.querySelectorAll(".region-level").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".region-level").forEach(x => x.classList.toggle("active", x === b));
+  regionLevel = b.dataset.level; regionShowAll = false; renderRegion();
+});
+
 /* ── 로드 트리거 ── */
 function loadDashAll(){
   [dashToday, dashChannels, dashCohort, dashRealConv, dashProducts, dashPhone, dashReview, dashSurvey,
-   dashAdRank, dashSoomgo, dashApt, dashStock, dashAs, dashTeam, dashCust].forEach(fn => {
+   dashAdRank, dashSoomgo, dashApt, dashStock, dashAs, dashTeam, dashCust, dashRegion].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name, e); }
   });
 }
