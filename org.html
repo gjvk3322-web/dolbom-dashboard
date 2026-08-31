@@ -3872,18 +3872,47 @@ async function dashCohort(){
     if (!j.success) throw j.error || 0;
     const rows = (j.cohorts || []).slice().reverse(); // 최신이 위로
     const maxRate = Math.max(...rows.map(c => c.installRate), 1);
-    body.innerHTML = rows.map(c => {
+    /* 주별 보기: 월 구분 헤더 + 월 소계 (주 시작일이 속한 달 기준) */
+    const nowY = new Date().getFullYear(), nowM = new Date().getMonth() + 1;
+    const monthOf = c => {
+      const m = parseInt(String(c.label).split("/")[0]);
+      if (!m) return "";
+      const y = m > nowM ? nowY - 1 : nowY;
+      return `${y}-${String(m).padStart(2, "0")}`;
+    };
+    const monthRow = (ym, list) => {
+      const t = list.reduce((a, c) => ({ s: a.s + c.sample, r: a.r + c.reserved, i: a.i + c.installed, mat: a.mat || c.maturing }), { s: 0, r: 0, i: 0, mat: false });
+      const rr = t.s ? (t.r / t.s * 100).toFixed(1) : 0, ir = t.s ? (t.i / t.s * 100).toFixed(1) : 0;
+      const [y, mo] = ym.split("-");
+      return `<tr style="background:var(--tint);font-weight:700">
+        <td>${y}년 ${parseInt(mo)}월 소계${t.mat ? ' <span class="hint" style="font-weight:400">(일부 진행 중)</span>' : ""}</td>
+        <td style="text-align:right">${t.s}</td>
+        <td style="text-align:right">${t.r} · ${rr}%</td>
+        <td style="text-align:right">${t.i} · ${ir}%</td>
+      </tr>`;
+    };
+    const parts = [];
+    const weekRow = c => {
       const style = c.maturing ? ' style="color:#9AA5A0;background:#FAFBFA"' : "";
       const barW = c.sample > 0 ? (c.installRate / maxRate * 100).toFixed(0) : 0;
       return `<tr${style}>
-        <td><b>${esc(c.label)}</b>${c.maturing ? ' <span class="hint">(진행 중)</span>' : ""}</td>
+        <td style="padding-left:${cohortMode === "week" ? 26 : 12}px"><b>${esc(c.label)}</b>${c.maturing ? ' <span class="hint">(진행 중)</span>' : ""}</td>
         <td style="text-align:right">${c.sample}</td>
         <td style="text-align:right">${c.reserved} · <b>${c.reserveRate}%</b></td>
         <td style="text-align:right">
           <span style="display:inline-block;width:70px;height:7px;background:#EFF3F1;border-radius:4px;margin-right:8px;vertical-align:middle;overflow:hidden"><span style="display:block;width:${barW}%;height:100%;background:${c.maturing ? '#C9DED3' : 'var(--accent)'}"></span></span>${c.installed} · <b>${c.installRate}%</b>
         </td>
       </tr>`;
-    }).join("") || '<tr><td colspan="4" class="hint">데이터 없음</td></tr>';
+    };
+    if (cohortMode === "week"){
+      let curYm = "", bucket = [];
+      const flush = () => { if (bucket.length){ parts.push(monthRow(curYm, bucket)); bucket.forEach(c => parts.push(weekRow(c))); } bucket = []; };
+      rows.forEach(c => { const ym = monthOf(c); if (ym !== curYm){ flush(); curYm = ym; } bucket.push(c); });
+      flush();
+    } else {
+      rows.forEach(c => parts.push(weekRow(c)));
+    }
+    body.innerHTML = parts.join("") || '<tr><td colspan="4" class="hint">데이터 없음</td></tr>';
   } catch(e){
     body.innerHTML = '<tr><td colspan="4" class="hint">코호트 데이터를 불러오지 못했습니다 — Code.gs에 sampleCohort 라우팅 추가가 필요할 수 있어요.</td></tr>';
   }
