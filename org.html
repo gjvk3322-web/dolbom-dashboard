@@ -824,7 +824,7 @@
       <div class="topbar">
         <div>
           <h1>출퇴근</h1>
-          <div class="lead"><b>사무직</b> 출퇴근 기록입니다. 자율 출근 <b>08~19시</b>, 하루 <b>8시간 근무 + 휴게 1시간</b>이 기준입니다. 출근·퇴근 버튼은 서버 시간으로 찍히고, 사무실 반경 밖이면 <b>외근</b>으로 표시됩니다.</div>
+          <div class="lead"><b>사무직</b> 출퇴근 기록입니다. 자율 출근 <b>08~19시</b>, 하루 <b>8시간 근무 + 휴게 1시간</b>이 기준입니다. 출근·퇴근 버튼은 서버 시간으로 찍히고, 사무실 반경 밖이면 <b>외근</b>으로 표시됩니다. 기록은 본인 것만 보이고 전체 현황은 관리자만 봅니다.</div>
         </div>
       </div>
       <div id="atMine" style="margin-bottom:18px"></div>
@@ -1954,7 +1954,8 @@ const atHourCell = (h, done) => h >= AT_WORK
   : `<span style="color:${done ? "#B42323" : "var(--muted)"};font-weight:700">${atFmtH(h)}</span>${done ? `<span class="hint"> (${atFmtH(h - AT_WORK)})</span>` : ""}`;
 function renderAttendance(){
   if (!$("atMine")) return;
-  const me = currentUser(), admin = isAdminUser(), members = atMemberNames();
+  const me = currentUser(), admin = isAdminUser();
+  const members = admin ? atMemberNames() : (atIsMember(me) ? [me] : []);   // 직원은 본인 기록만, 전체는 관리자만
   const today = atToday(), now = atNow(), nowTs = now.getTime();
   if (!atMonthSel) atMonthSel = today.slice(0, 7);
 
@@ -1976,7 +1977,7 @@ function renderAttendance(){
         <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center">
           <div><div class="hint">${esc(me)} · ${today}</div>
             <div class="at-time">${my && my.in ? atFmtT(my.in) : "—"} <span style="color:var(--muted);font-weight:500">→</span> ${my && my.out ? atFmtT(my.out) : "—"}</div></div>
-          <div style="font-size:13.5px;line-height:1.7">${status || "아직 출근 전"}${my && my.in ? `<div class="hint">출근 ${atLocBadge(my.inLoc, my.inDist)}${my.out ? " · 퇴근 " + atLocBadge(my.outLoc, my.outDist) : ""}</div>` : ""}</div>
+          <div style="font-size:13.5px;line-height:1.7">${status || "아직 출근 전"}${my && my.in && (atLocBadge(my.inLoc, my.inDist) || atLocBadge(my.outLoc, my.outDist)) ? `<div class="hint">출근 ${atLocBadge(my.inLoc, my.inDist)}${my.out ? " · 퇴근 " + atLocBadge(my.outLoc, my.outDist) : ""}</div>` : ""}</div>
         </div>
         <div class="at-punch">
           <button class="in" onclick="atPunch('in',this)" ${my && my.in ? "disabled" : ""}>출근</button>
@@ -1986,7 +1987,7 @@ function renderAttendance(){
       </div>`;
 
   // 2) 오늘 현황
-  $("atToday").innerHTML = !members.length ? "" : `
+  $("atToday").innerHTML = (!admin || !members.length) ? "" : `
     <div class="section-title"><h2>오늘 현황</h2></div>
     <div class="at-grid">${members.map(n => {
       const r = atRec(today, n), lv = atLeaveOf(today, n);
@@ -2024,7 +2025,7 @@ function renderAttendance(){
   const prevM = new Date(yy, mm - 2, 1), nextM = new Date(yy, mm, 1);
   const mStr = d => d.getFullYear() + "-" + atPad(d.getMonth() + 1);
   $("atMonth").innerHTML = !members.length ? "" : `
-    <div class="section-title"><h2>${yy}년 ${mm}월</h2>
+    <div class="section-title"><h2>${admin ? "" : "내 기록 · "}${yy}년 ${mm}월</h2>
       <div style="display:flex;gap:6px;align-items:center">
         <button class="mini-btn" onclick="atSetMonth('${mStr(prevM)}')">◀ 이전달</button>
         <button class="mini-btn" onclick="atSetMonth('${mStr(nextM)}')" ${nextM > now ? "disabled" : ""}>다음달 ▶</button>
