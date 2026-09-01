@@ -2251,7 +2251,7 @@ function renderReply(results, py) {
     var expandText = isExpand ? '확장형' : '비확장';
     var scopeText = SCOPE_NAMES[currentScopeIdx];
     var smallRoomTextReply = smallRoomCount > 0 ? ' + 작은방 ' + smallRoomCount + '개' : '';
-    text += py + '평 ' + expandText + ' 견적\n(' + scopeText + smallRoomTextReply + ')\n\n';
+    text += py + '평(' + scopeText + smallRoomTextReply + ')' + expandText + ' 예상견적\n\n';
   }
 
   // 제품별 견적
@@ -2299,7 +2299,9 @@ function renderReply(results, py) {
 
   // CTA (혜택 다음 빈 줄 없이 바로)
   text += '더 많은 정보는 아래 링크에서!\n';
-  text += '👉 https://m.site.naver.com/279vd';
+  text += '👉 https://m.site.naver.com/279vd\n';
+  text += '조금 더 정확한 견적!\n';
+  text += '👉 https://my.dolbommat.com/quote.html';
 
   // 전체 텍스트는 전역에 보관 (복사 / 펼침에 사용)
   window._fullReplyText = text;
