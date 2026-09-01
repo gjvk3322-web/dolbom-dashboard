@@ -30,6 +30,7 @@
   .sync.on .dot{background:var(--accent)}
   nav{flex:1}
   nav button{width:100%;text-align:left;border:0;background:transparent;color:#5B6763;padding:11px 13px;border-radius:12px;margin:2px 0;font-weight:500}
+  .nav-group{font-size:10.5px;font-weight:700;color:#9AA5A0;letter-spacing:.08em;padding:14px 13px 3px;text-transform:uppercase}
   nav button.active{background:var(--tint);color:var(--accent-deep);font-weight:700}
   nav button:hover{background:#EDF2EF;color:var(--text)}
   .side-foot{font-size:11px;color:var(--muted);line-height:1.6}
@@ -252,6 +253,7 @@
     aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px}
     nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:4px}
     nav button{white-space:nowrap;width:auto}
+    .nav-group{display:none}   /* 모바일 가로 스크롤 탭에서는 그룹 라벨 숨김 */
     .side-foot{display:none}
     main{padding:18px 16px}
     h1{font-size:22px}
@@ -484,20 +486,25 @@
     <div class="sync" id="syncBadge"><span class="dot"></span><span id="syncText">연결 중…</span></div>
     <nav id="nav">
       <button data-view="overview" class="active">대시보드</button>
+      <div class="nav-group">조직</div>
       <button data-view="orgchart">조직도</button>
       <button data-view="departments">부서별 업무</button>
       <button data-view="people">직원별 업무</button>
-      <button data-view="calendar">프로젝트 보드</button>
-      <button data-view="leave">연차 관리</button>
-      <button data-view="attendance">출퇴근</button>
-      <button data-view="okr">OKR</button>
       <button data-view="decision">의사결정 권한</button>
-      <button data-view="forms">서류 서식</button>
-      <button data-view="manual">팀 매뉴얼</button>
+      <div class="nav-group">일 · 목표</div>
+      <button data-view="okr">OKR</button>
+      <button data-view="calendar">프로젝트 보드</button>
       <button data-view="weekly">주간 운영회의</button>
+      <div class="nav-group">근태</div>
+      <button data-view="attendance">출퇴근</button>
+      <button data-view="leave">연차 관리</button>
+      <div class="nav-group">기준 · 문서</div>
+      <button data-view="manual">팀 매뉴얼</button>
       <button data-view="rules">운영 원칙</button>
-      <button data-view="logs">활동 기록 (관리자)</button>
+      <button data-view="forms">서류 서식</button>
+      <div class="nav-group">기타</div>
       <button data-view="tools">도구 모음</button>
+      <button data-view="logs">활동 기록 (관리자)</button>
     </nav>
     <div class="side-foot"><span id="whoami" style="display:block;margin-bottom:6px;font-weight:700;color:#5B6763"></span>모든 수정은 즉시 전 직원 화면에 반영됩니다.</div>
   </aside>
