@@ -405,6 +405,8 @@
   .mn-point:first-of-type{margin-top:0}
   .mn-point:hover{border-color:#E1C878;box-shadow:0 0 0 2px rgba(233,190,90,.18)}
   .mn-point .ck{color:#C99A2E;font-weight:800}
+  .mn-point .mn-point-text{white-space:pre-line;min-width:0}
+  #manualPointText{min-height:130px;resize:vertical}
   .mn-kids{margin:20px 0 0 30px;padding-left:26px;border-left:2px dashed #BFE4D3;display:flex;flex-direction:column;gap:20px}
   .mn-kids > .mn-branch > .mn-row{position:relative}
   .mn-kids > .mn-branch > .mn-row::before{content:"";position:absolute;left:-33px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 0 0 2px #BFE4D3}
@@ -3277,7 +3279,7 @@ function renderManual(){
         <div class="mn-points">
           <div class="mn-points-label">고객만족 핵심포인트 ${pts.length}</div>
           ${pts.map(p => { const me = currentUser(); const mine = p.by && p.by === me;
-            return `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span>${esc(p.text)}${p.by ? ` <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;vertical-align:1px;${mine ? "background:var(--accent);color:#fff" : "background:#EEF3F0;color:#5B6763"}">${esc(p.by)}</span>` : ""}</span></div>`; }).join("")}
+            return `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span class="mn-point-text">${esc(p.text)}${p.by ? ` <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;vertical-align:1px;${mine ? "background:var(--accent);color:#fff" : "background:#EEF3F0;color:#5B6763"}">${esc(p.by)}</span>` : ""}</span></div>`; }).join("")}
           ${manualPointDraftMid === it.id
             ? `<textarea id="mnPointDraft" rows="2" placeholder="핵심포인트 입력 후 Enter (줄바꿈은 Shift+Enter)" style="width:100%;font:inherit;font-size:13px;border:1.5px solid #B8860B;border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box;resize:vertical"></textarea>`
             : `<button class="mini-btn" onclick="startManualPointDraft('${it.id}')" title="핵심포인트 추가" style="align-self:flex-start;margin-top:4px;color:#B8860B;font-weight:800">↓＋ 포인트</button>`}
