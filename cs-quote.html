@@ -2251,10 +2251,11 @@ function renderReply(results, py) {
     var expandText = isExpand ? '확장형' : '비확장';
     var scopeText = SCOPE_NAMES[currentScopeIdx];
     var smallRoomTextReply = smallRoomCount > 0 ? ' + 작은방 ' + smallRoomCount + '개' : '';
-    text += py + '평(' + scopeText + smallRoomTextReply + ')' + expandText + ' 예상견적\n';
+    text += py + '평(' + scopeText + smallRoomTextReply + ')' + expandText + ' 예상견적\n\n';
   }
 
   // 제품별 견적
+  var REPLY_SIZE_SHORT = { mat1000_22:'(1M 2.2cm)', mat1000_17:'(1M 1.7cm)', mat500:'(50cm 2.2cm)' };
   results.forEach(function(r, i) {
     var p = r.product;
     var icon = numberIcons[i] || '·';
@@ -2263,7 +2264,7 @@ function renderReply(results, py) {
     // 장당 체감가 (낮은 값만 표시) - finalCost / qty 기반
     var perFinalLow = Math.round(r.finalCost / r.totalQty);
 
-    text += icon + ' ' + p.name + '\n' + p.label.slice(p.name.length) + '\n';
+    text += icon + ' ' + p.name + ' ' + (REPLY_SIZE_SHORT[p.key] || p.label.slice(p.name.length)) + '\n';
     // 장당 가격 한 줄 (기존 → 체감가)
     text += '장당 ' + fmt(p.price) + '원 → 체감가 ' + fmt(perFinalLow) + '원\n';
     // 장수별 가격 (만원 단위, 기존 → 체감가)
