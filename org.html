@@ -225,6 +225,28 @@
   .kcard .krow{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
   .kcard .move{display:flex;gap:4px}
   .kcol.done .kcard{opacity:.62}
+  /* ───────── 출퇴근 ───────── */
+  .at-punch{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  .at-punch button{flex:1;min-width:150px;padding:18px 16px;border-radius:16px;font-size:17px;font-weight:800;border:1.5px solid #DDE5E1;background:#fff;color:var(--text)}
+  .at-punch button.in{background:var(--accent);color:#fff;border-color:transparent}
+  .at-punch button.out{background:#213A31;color:#fff;border-color:transparent}
+  .at-punch button:disabled{opacity:.45}
+  .at-time{font-size:26px;font-weight:800;color:var(--accent-deep);letter-spacing:-.5px}
+  .at-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;vertical-align:1px}
+  .at-badge.office{background:var(--tint);color:var(--accent-deep)}
+  .at-badge.out{background:#FFF4D6;color:#9A6B00}
+  .at-badge.noloc{background:#EEF3F0;color:#5B6763}
+  .at-badge.leave{background:#E8EEFF;color:#3554B8}
+  .at-badge.miss{background:#FFE8E8;color:#B42323}
+  .at-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+  .at-tbl td{font-size:12.5px;padding:8px 10px;white-space:nowrap}
+  .at-tbl th{padding:9px 10px}
+  .at-tbl td.we{background:#FAFBFA;color:var(--muted)}
+  .at-tbl td.cell{cursor:pointer}
+  .at-tbl td.cell:hover{background:var(--tint)}
+  .at-tbl td.today{background:#FFFBEA}
+  .at-chip{display:inline-block;padding:5px 12px;border-radius:999px;border:1.5px solid #DDE5E1;background:#fff;font-size:12.5px;font-weight:600;margin:3px 4px 3px 0;cursor:pointer;color:var(--muted)}
+  .at-chip.on{background:var(--tint);border-color:var(--accent);color:var(--accent-deep)}
   @media (max-width:820px){
     .app{grid-template-columns:1fr}
     aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:14px}
@@ -405,6 +427,8 @@
   .mn-point:first-of-type{margin-top:0}
   .mn-point:hover{border-color:#E1C878;box-shadow:0 0 0 2px rgba(233,190,90,.18)}
   .mn-point .ck{color:#C99A2E;font-weight:800}
+  .mn-point .mn-point-text{white-space:pre-line;min-width:0}
+  #manualPointText{min-height:130px;resize:vertical}
   .mn-kids{margin:20px 0 0 30px;padding-left:26px;border-left:2px dashed #BFE4D3;display:flex;flex-direction:column;gap:20px}
   .mn-kids > .mn-branch > .mn-row{position:relative}
   .mn-kids > .mn-branch > .mn-row::before{content:"";position:absolute;left:-33px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;box-shadow:0 0 0 2px #BFE4D3}
@@ -465,6 +489,7 @@
       <button data-view="people">직원별 업무</button>
       <button data-view="calendar">프로젝트 보드</button>
       <button data-view="leave">연차 관리</button>
+      <button data-view="attendance">출퇴근</button>
       <button data-view="okr">OKR</button>
       <button data-view="decision">의사결정 권한</button>
       <button data-view="forms">서류 서식</button>
@@ -794,6 +819,33 @@
       <div id="leavePending" style="margin-bottom:18px"></div>
       <div id="leaveAll"></div>
     </section>
+
+    <section id="attendance" class="section">
+      <div class="topbar">
+        <div>
+          <h1>출퇴근</h1>
+        </div>
+      </div>
+      <div id="atMine" style="margin-bottom:18px"></div>
+      <div id="atToday" style="margin-bottom:18px"></div>
+      <div id="atMonth" style="margin-bottom:18px"></div>
+      <div id="atAdmin"></div>
+    </section>
+
+    <dialog id="atEditModal">
+      <div class="modal-head"><strong id="atEditHead">출퇴근 수정</strong><button class="mini-btn" onclick="atEditModal.close()">닫기</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="atEditDate"><input type="hidden" id="atEditName">
+        <div class="field"><label>출근 시각</label><input type="time" id="atEditIn"></div>
+        <div class="field"><label>퇴근 시각</label><input type="time" id="atEditOut"></div>
+        <div class="field full"><label>메모 (지각 사유·외근지 등)</label><input id="atEditNote" placeholder="예: 거래처 미팅 후 출근"></div>
+        <div class="hint" style="grid-column:1/-1">비워서 저장하면 해당 기록이 지워집니다. 수정 내역은 활동 기록에 남습니다.</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="atEditModal.close()">취소</button>
+        <button class="btn primary" id="atEditSaveBtn">저장</button>
+      </div>
+    </dialog>
 
     <section id="okr" class="section">
       <div class="topbar">
@@ -1815,12 +1867,280 @@ window.decideLeave = (id, st) => {
 };
 
 /* ───────── 렌더링 ───────── */
+/* ───────── 출퇴근 (사무직) ───────── */
+const AT_START = 8, AT_END = 19, AT_WORK = 8, AT_BREAK = 1;   // 자율 출근 08~19시, 하루 8시간 근무 + 휴게 1시간
+const atEditModal = $("atEditModal");
+let atServerOffset = 0;
+try { db.ref(".info/serverTimeOffset").on("value", s => { atServerOffset = s.val() || 0; }); } catch(e){}
+let atMonthSel = null;
+const atCfg = () => (data && data.attendanceCfg) || {};
+const atMemberNames = () => {
+  const m = atCfg().members || {};
+  const order = {}; entries(data.people).forEach(p => order[p.name] = p.order || 0);
+  return Object.keys(m).filter(k => m[k]).sort((a, b) => (order[a] || 999) - (order[b] || 999));
+};
+const atIsMember = name => !!name && !!((atCfg().members || {})[name]);
+const atNow = () => new Date(Date.now() + atServerOffset);
+const atPad = n => String(n).padStart(2, "0");
+const atDateStr = d => d.getFullYear() + "-" + atPad(d.getMonth() + 1) + "-" + atPad(d.getDate());
+const atToday = () => atDateStr(atNow());
+const atFmtT = ts => ts ? (d => atPad(d.getHours()) + ":" + atPad(d.getMinutes()))(new Date(ts)) : "";
+const atFmtH = h => { const m = Math.round(Math.abs(h) * 60); return (h < 0 ? "-" : "") + Math.floor(m / 60) + "h" + (m % 60 ? atPad(m % 60) : ""); };
+const atRec = (date, name) => ((((data || {}).attendance || {})[date]) || {})[name] || null;
+// 근무시간: 08~19시 안쪽만 인정, 휴게 1시간 차감. endTs 없으면 지금 시각 기준(근무 중)
+function atHours(r, date, endTs){
+  if (!r || !r.in) return 0;
+  const out = r.out || endTs; if (!out) return 0;
+  const s = new Date(date + "T" + atPad(AT_START) + ":00:00").getTime(), e = new Date(date + "T" + atPad(AT_END) + ":00:00").getTime();
+  const span = Math.min(out, e) - Math.max(r.in, s);
+  return Math.max(0, span / 3600000 - AT_BREAK);
+}
+function atDist(a, b){
+  const R = 6371000, toR = x => x * Math.PI / 180;
+  const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function atGetPos(){
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }),
+      () => res(null), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  });
+}
+function atLocOf(pos){
+  const off = atCfg().office;
+  if (!off || !off.lat) return { loc: "nocfg", dist: null };
+  if (!pos) return { loc: "noloc", dist: null };
+  const d = Math.round(atDist(pos, off));
+  return { loc: d <= (off.radius || 300) ? "office" : "out", dist: d };
+}
+function atLocBadge(loc, dist){
+  if (loc === "office") return `<span class="at-badge office">사무실</span>`;
+  if (loc === "out") return `<span class="at-badge out" title="사무실에서 ${dist >= 1000 ? (dist / 1000).toFixed(1) + "km" : dist + "m"}">외근</span>`;
+  if (loc === "noloc") return `<span class="at-badge noloc" title="위치 권한 없음/확인 실패">위치 없음</span>`;
+  return "";
+}
+function atLeaveOf(date, name){
+  const l = entries(data.leaves).find(l => lvNameMatch(l.name, name) && (l.status === "approved" || l.status === "cancelReq") && l.start <= date && date <= (l.end || l.start));
+  return l ? (l.half ? "반차" : "연차") : "";
+}
+window.atPunch = async (kind, btn) => {
+  const me = currentUser();
+  if (!me) return alert("이름 확인 후 기록할 수 있어요.");
+  if (!atIsMember(me)) return alert("출퇴근 대상 명단에 없습니다. 관리자에게 요청해 주세요.");
+  const date = atToday(), rec = atRec(date, me) || {};
+  if (kind === "in" && rec.in) return alert("오늘 출근은 이미 " + atFmtT(rec.in) + "에 기록됐어요.");
+  if (kind === "out" && !rec.in) return alert("출근을 먼저 눌러 주세요.");
+  if (kind === "out" && rec.out && !confirm("퇴근이 이미 " + atFmtT(rec.out) + "에 기록됐어요. 지금 시각으로 다시 기록할까요?")) return;
+  const old = btn.textContent; btn.disabled = true; btn.textContent = "위치 확인 중…";
+  const pos = await atGetPos();
+  let { loc, dist } = atLocOf(pos);
+  const off = atCfg().office;
+  /* GPS 오차 보정: 오차범위를 감안하면 반경 안일 수 있으면 사무실로 인정 (PC 와이파이 위치 오차 대비) */
+  if (loc === "out" && pos && off && dist - Math.min(pos.acc || 0, 300) <= (off.radius || 300)) loc = "office";
+  if (kind === "in" && off && off.lat){
+    const stop = msg => { btn.disabled = false; btn.textContent = old; alert(msg); };
+    if (loc === "noloc") return stop("위치를 확인할 수 없어 출근 기록이 되지 않았어요.\n브라우저 위치 권한을 허용한 뒤 다시 눌러 주세요.");
+    if (loc === "out")   return stop("사무실 반경 밖이라 출근 기록이 되지 않았어요.\n(사무실에서 " + (dist >= 1000 ? (dist / 1000).toFixed(1) + "km" : dist + "m") + " 떨어진 위치)\n사무실 도착 후 다시 눌러 주세요.");
+  }
+  btn.textContent = "저장 중…";
+  const payload = {};
+  payload[kind] = firebase.database.ServerValue.TIMESTAMP;
+  payload[kind + "Loc"] = loc; payload[kind + "Dist"] = dist;
+  try {
+    await orgRef.child("attendance/" + date + "/" + me).update(payload);
+    logAction(kind === "in" ? "출근" : "퇴근", me + " " + date + (loc === "out" ? " (외근)" : ""));
+    showToast((kind === "in" ? "출근" : "퇴근") + " 기록 완료" + (loc === "out" ? " · 외근으로 표시됨" : loc === "noloc" ? " · 위치는 확인되지 않았어요" : ""));
+  } catch(e){ console.error(e); alert("기록에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+  btn.disabled = false; btn.textContent = old;
+};
+const atHourCell = (h, done) => h >= AT_WORK
+  ? `<span style="color:var(--accent-deep);font-weight:700">${atFmtH(h)}</span>`
+  : `<span style="color:${done ? "#B42323" : "var(--muted)"};font-weight:700">${atFmtH(h)}</span>${done ? `<span class="hint"> (${atFmtH(h - AT_WORK)})</span>` : ""}`;
+function renderAttendance(){
+  if (!$("atMine")) return;
+  const me = currentUser(), admin = isAdminUser();
+  const members = admin ? atMemberNames() : (atIsMember(me) ? [me] : []);   // 직원은 본인 기록만, 전체는 관리자만
+  const today = atToday(), now = atNow(), nowTs = now.getTime();
+  if (!atMonthSel) atMonthSel = today.slice(0, 7);
+
+  // 1) 내 카드
+  const my = atRec(today, me);
+  let status = "";
+  if (my && my.in){
+    const worked = atHours(my, today, nowTs);
+    if (my.out) status = `퇴근 완료 · 오늘 근무 ${atHourCell(worked, true)}`;
+    else {
+      const needTs = my.in + (AT_WORK + AT_BREAK) * 3600000, endTs = new Date(today + "T" + atPad(AT_END) + ":00:00").getTime();
+      status = `근무 중 ${atHourCell(worked, false)} · 8시간 채우는 퇴근 시각 <b>${atFmtT(Math.min(needTs, endTs))}</b>` +
+        (needTs > endTs ? ` <span style="color:#B42323">(${AT_END}시까지 해도 ${atFmtH((needTs - endTs) / 3600000)} 부족)</span>` : "");
+    }
+  }
+  $("atMine").innerHTML = !me ? "" : !atIsMember(me)
+    ? (admin ? "" : `<div class="card"><div class="hint">출퇴근 대상 명단에 없습니다. 사무직이라면 관리자에게 추가를 요청해 주세요.</div></div>`)
+    : `<div class="card" style="padding:16px 18px">
+        <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center">
+          <div><div class="hint">${esc(me)} · ${today} · 현재 <b>${atFmtT(nowTs)}</b></div>
+            <div class="at-time">${my && my.in ? atFmtT(my.in) : "—"} <span style="color:var(--muted);font-weight:500">→</span> ${my && my.out ? atFmtT(my.out) : "—"}</div></div>
+          <div style="font-size:13.5px;line-height:1.7">${status || "아직 출근 전"}${my && my.in && (atLocBadge(my.inLoc, my.inDist) || atLocBadge(my.outLoc, my.outDist)) ? `<div class="hint">출근 ${atLocBadge(my.inLoc, my.inDist)}${my.out ? " · 퇴근 " + atLocBadge(my.outLoc, my.outDist) : ""}</div>` : ""}</div>
+        </div>
+        <div class="at-punch">
+          <button class="in" onclick="atPunch('in',this)" ${my && my.in ? "disabled" : ""}>출근</button>
+          <button class="out" onclick="atPunch('out',this)" ${!my || !my.in ? "disabled" : ""}>퇴근</button>
+        </div>
+      </div>`;
+
+  // 2) 오늘 현황
+  $("atToday").innerHTML = (!admin || !members.length) ? "" : `
+    <div class="section-title"><h2>오늘 현황</h2></div>
+    <div class="at-grid">${members.map(n => {
+      const r = atRec(today, n), lv = atLeaveOf(today, n);
+      const st = lv ? `<span class="at-badge leave">${lv}</span>` : !r || !r.in ? `<span class="hint">미출근</span>` : r.out ? "" : `<span class="at-badge office">근무 중</span>`;
+      return `<div class="card" style="padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><b>${esc(n)}</b>${st}</div>
+        ${r && r.in ? `<div style="font-size:15px;font-weight:700;margin-top:4px">${atFmtT(r.in)} → ${atFmtT(r.out) || "—"}</div>
+          <div class="hint" style="margin-top:3px">${atLocBadge(r.inLoc, r.inDist)} ${atHourCell(atHours(r, today, nowTs), !!r.out)}${r.note ? " · " + esc(r.note) : ""}</div>` : ""}
+      </div>`; }).join("")}</div>`;
+
+  // 3) 월별 표
+  const [yy, mm] = atMonthSel.split("-").map(Number);
+  const last = new Date(yy, mm, 0).getDate();
+  const isCur = atMonthSel === today.slice(0, 7);
+  const days = []; for (let d = 1; d <= last; d++){ const ds = atMonthSel + "-" + atPad(d); if (!isCur || ds <= today) days.push(ds); }
+  const sum = {}; members.forEach(n => sum[n] = { days: 0, hours: 0 });
+  const rows = days.map(ds => {
+    const dow = new Date(ds + "T00:00:00").getDay(), we = dow === 0 || dow === 6;
+    const lbl = ds.slice(8) + " (" + "일월화수목금토"[dow] + ")";
+    return `<tr><td class="${we ? "we" : ""}${ds === today ? " today" : ""}" style="font-weight:700">${lbl}</td>${members.map(n => {
+      const r = atRec(ds, n), lv = atLeaveOf(ds, n);
+      let html = "";
+      if (r && r.in){
+        const done = !!r.out || ds < today, h = atHours(r, ds, ds === today ? nowTs : null);
+        if (r.out || ds === today){ sum[n].days++; sum[n].hours += h; }
+        html = `${atFmtT(r.in)}–${atFmtT(r.out) || (ds === today ? "<span style='color:var(--accent-deep)'>근무 중</span>" : `<span class="at-badge miss">퇴근 미기록</span>`)}` +
+          (r.out || ds === today ? ` ${atHourCell(h, !!r.out)}` : "") +
+          (r.inLoc === "out" || r.outLoc === "out" ? ` ${atLocBadge("out", r.inLoc === "out" ? r.inDist : r.outDist)}` : "") +
+          (r.note ? ` <span class="hint" title="${esc(r.note)}">📝</span>` : "") + (r.editedBy ? ` <span class="hint" title="${esc(r.editedBy)} 수정">✎</span>` : "");
+      } else if (lv) html = `<span class="at-badge leave">${lv}</span>`;
+      else if (!we) html = `<span class="hint">—</span>`;
+      return `<td class="${we ? "we " : ""}${admin ? "cell" : ""}${ds === today ? " today" : ""}" ${admin ? `onclick="atOpenEdit('${ds}','${esc(n)}')" title="누르면 수정"` : ""}>${html}</td>`;
+    }).join("")}</tr>`;
+  }).join("");
+  const prevM = new Date(yy, mm - 2, 1), nextM = new Date(yy, mm, 1);
+  const mStr = d => d.getFullYear() + "-" + atPad(d.getMonth() + 1);
+  $("atMonth").innerHTML = !members.length ? "" : `
+    <div class="section-title"><h2>${admin ? "" : "내 기록 · "}${yy}년 ${mm}월</h2>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="mini-btn" onclick="atSetMonth('${mStr(prevM)}')">◀ 이전달</button>
+        <button class="mini-btn" onclick="atSetMonth('${mStr(nextM)}')" ${nextM > now ? "disabled" : ""}>다음달 ▶</button>
+        ${admin ? `<button class="mini-btn" onclick="atExportCsv()">CSV</button>` : ""}
+      </div></div>
+    <div class="table-wrap"><table class="at-tbl"><thead><tr><th>날짜</th>${members.map(n => `<th>${esc(n)}</th>`).join("")}</tr></thead>
+      <tbody>${rows}
+      <tr style="background:var(--panel2)"><td style="font-weight:800">합계</td>${members.map(n => { const diff = sum[n].hours - sum[n].days * AT_WORK;
+        return `<td style="font-weight:700">${sum[n].days}일 · ${atFmtH(sum[n].hours)} <span class="hint" style="color:${diff < 0 ? "#B42323" : "var(--accent-deep)"}">(기준 대비 ${diff >= 0 ? "+" : ""}${atFmtH(diff)})</span></td>`; }).join("")}</tr></tbody></table></div>
+    <div class="hint" style="margin-top:6px">근무시간 = ${atPad(AT_START)}~${AT_END}시 안에서 출근~퇴근 − 휴게 ${AT_BREAK}시간. ${AT_WORK}시간 미만이면 빨간색으로 부족분 표시. 연차는 연차 관리 승인 건이 자동 표시.${admin ? " 칸을 누르면 수정할 수 있습니다." : ""}</div>`;
+
+  // 4) 관리자 설정
+  if (!admin){ $("atAdmin").innerHTML = ""; return; }
+  const off = atCfg().office || {}, mset = atCfg().members || {};
+  const people = entries(data.people).sort(byOrder).map(p => p.name).filter(Boolean);
+  const extra = Object.keys(mset).filter(n => mset[n] && !people.includes(n));
+  $("atAdmin").innerHTML = `
+    <div class="section-title"><h2>설정 <span class="hint">관리자</span></h2></div>
+    <div class="card" style="padding:14px 16px;margin-bottom:10px">
+      <div class="hint" style="margin-bottom:6px">대상 직원 (누르면 추가/제외)</div>
+      ${people.concat(extra).map(n => `<span class="at-chip ${mset[n] ? "on" : ""}" onclick="atToggleMember('${esc(n)}')">${esc(n)}</span>`).join("")}
+      <button class="mini-btn" onclick="atAddMemberName()">+ 이름 직접 추가</button>
+    </div>
+    <div class="card" style="padding:14px 16px">
+      <div class="hint" style="margin-bottom:6px">사무실 위치</div>
+      ${off.lat ? `
+      <div style="font-size:13.5px">✅ 등록됨 · 반경 <b>${off.radius || 300}m</b> <span class="hint">(${esc(off.setBy || "")} ${off.setAt ? new Date(off.setAt).toLocaleDateString("ko-KR") : ""})</span> — 반경 밖에서는 출근 버튼이 눌리지 않습니다</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        <button class="mini-btn" onclick="atTestHere(this)">내 위치 확인</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px" class="hint">반경(m) <input type="number" id="atRadius" value="${off.radius || 300}" style="width:80px;padding:5px 8px" onchange="atSetRadius(this.value)"></label>
+        <button class="mini-btn" onclick="if(confirm('사무실 위치를 지금 이 위치로 다시 등록할까요?\n(사무실이 이전한 경우에만 사용하세요)'))atSetOfficeHere(this)">위치 재등록</button>
+      </div>` : `
+      <div style="font-size:13.5px"><span style="color:#B42323;font-weight:700">아직 등록 안 됨</span> — 사무실에서 아래 버튼을 누르면 등록되고, 그 후에는 사무실 반경 안에서만 출근을 찍을 수 있습니다.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        <button class="btn primary" onclick="atSetOfficeHere(this)">지금 내 위치를 사무실로 등록</button>
+        <button class="btn" onclick="atTestHere(this)">내 위치 확인</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px">반경(m) <input type="number" id="atRadius" value="${off.radius || 300}" style="width:90px;padding:6px 9px" onchange="atSetRadius(this.value)"></label>
+      </div>`}
+    </div>`;
+}
+setInterval(() => { if (data && $("attendance") && $("attendance").classList.contains("active")) { try { renderAttendance(); } catch(e){} } }, 60000);
+window.atSetMonth = m => { atMonthSel = m; renderAttendance(); };
+window.atToggleMember = async n => {
+  const on = !!((atCfg().members || {})[n]);
+  await orgRef.child("attendanceCfg/members/" + n).set(on ? null : true).catch(() => alert("저장 실패"));
+  logAction(on ? "제외" : "추가", "출퇴근 대상: " + n);
+};
+window.atAddMemberName = () => { const n = prompt("추가할 이름"); if (n && n.trim()) atToggleMember(n.trim()); };
+window.atSetOfficeHere = async btn => {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = "위치 확인 중…";
+  const pos = await atGetPos();
+  btn.disabled = false; btn.textContent = old;
+  if (!pos) return alert("위치를 가져오지 못했어요. 브라우저 위치 권한을 허용해 주세요.");
+  if (!confirm(`현재 위치(정확도 ±${pos.acc}m)를 사무실로 등록할까요?`)) return;
+  const radius = parseInt(($("atRadius") || {}).value) || 300;
+  await orgRef.child("attendanceCfg/office").set({ lat: pos.lat, lng: pos.lng, radius, setBy: currentUser() || "?", setAt: Date.now() }).catch(() => alert("저장 실패"));
+  logAction("설정", "출퇴근 사무실 위치 등록");
+};
+window.atSetRadius = async v => {
+  const r = parseInt(v); if (!r || r < 50) return alert("50m 이상으로 입력해 주세요.");
+  await orgRef.child("attendanceCfg/office/radius").set(r).catch(() => alert("저장 실패"));
+};
+window.atTestHere = async btn => {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = "확인 중…";
+  const pos = await atGetPos(); btn.disabled = false; btn.textContent = old;
+  if (!pos) return alert("위치를 가져오지 못했어요.");
+  const { loc, dist } = atLocOf(pos);
+  alert(`정확도 ±${pos.acc}m · 사무실까지 ${dist === null ? "(미등록)" : dist + "m"} → ${loc === "office" ? "사무실" : loc === "out" ? "외근" : "판정 불가"}`);
+};
+window.atOpenEdit = (date, name) => {
+  if (!isAdminUser()) return;
+  const r = atRec(date, name) || {};
+  $("atEditHead").textContent = `수정 — ${name} ${date}`;
+  $("atEditDate").value = date; $("atEditName").value = name;
+  $("atEditIn").value = atFmtT(r.in); $("atEditOut").value = atFmtT(r.out); $("atEditNote").value = r.note || "";
+  atEditModal.showModal();
+};
+$("atEditSaveBtn").onclick = async e => {
+  const date = $("atEditDate").value, name = $("atEditName").value;
+  const toTs = hm => hm ? new Date(date + "T" + hm + ":00").getTime() : null;
+  const inTs = toTs($("atEditIn").value), outTs = toTs($("atEditOut").value), note = $("atEditNote").value.trim();
+  const prev = atRec(date, name) || {};
+  const ref = orgRef.child("attendance/" + date + "/" + name);
+  const ok = await safeWrite("출퇴근 수정", () => (!inTs && !outTs && !note) ? ref.remove()
+    : ref.update({ in: inTs, out: outTs, note: note || null, editedBy: currentUser() || "?", editedAt: Date.now(),
+        inLoc: inTs && inTs !== prev.in ? "edit" : (prev.inLoc || null), outLoc: outTs && outTs !== prev.out ? "edit" : (prev.outLoc || null) }), e.target);
+  if (ok){ logAction("수정", `출퇴근: ${name} ${date} ${atFmtT(prev.in) || "—"}→${$("atEditIn").value || "—"} / ${atFmtT(prev.out) || "—"}→${$("atEditOut").value || "—"}`); atEditModal.close(); }
+};
+window.atExportCsv = () => {
+  const att = (data.attendance || {}), members = atMemberNames();
+  const lines = ["날짜,이름,출근,퇴근,근무시간(휴게차감),출근위치,퇴근위치,메모,수정자"];
+  Object.keys(att).filter(d => d.startsWith(atMonthSel)).sort().forEach(d => members.forEach(n => {
+    const r = att[d][n]; if (!r || !r.in) return;
+    const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+    const locK = l => ({ office: "사무실", out: "외근", noloc: "위치없음", nocfg: "미설정", edit: "수정" }[l] || "");
+    const h = atHours(r, d, null);
+    lines.push([d, n, atFmtT(r.in), atFmtT(r.out), r.out ? Math.round(h * 100) / 100 : "", locK(r.inLoc), locK(r.outLoc), r.note || "", r.editedBy || ""].map(q).join(","));
+  }));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
+  a.download = `출퇴근_${atMonthSel}.csv`; a.click();
+};
+
 function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderForms, renderMeetings,
-   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
   ensureUser(); renderWho();
@@ -3277,7 +3597,7 @@ function renderManual(){
         <div class="mn-points">
           <div class="mn-points-label">고객만족 핵심포인트 ${pts.length}</div>
           ${pts.map(p => { const me = currentUser(); const mine = p.by && p.by === me;
-            return `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span>${esc(p.text)}${p.by ? ` <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;vertical-align:1px;${mine ? "background:var(--accent);color:#fff" : "background:#EEF3F0;color:#5B6763"}">${esc(p.by)}</span>` : ""}</span></div>`; }).join("")}
+            return `<div class="mn-point" onclick="openManualPoint('${it.id}','${p.id}')" title="누르면 수정"><span class="ck">✓</span><span class="mn-point-text">${esc(p.text)}${p.by ? ` <span style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;vertical-align:1px;${mine ? "background:var(--accent);color:#fff" : "background:#EEF3F0;color:#5B6763"}">${esc(p.by)}</span>` : ""}</span></div>`; }).join("")}
           ${manualPointDraftMid === it.id
             ? `<textarea id="mnPointDraft" rows="2" placeholder="핵심포인트 입력 후 Enter (줄바꿈은 Shift+Enter)" style="width:100%;font:inherit;font-size:13px;border:1.5px solid #B8860B;border-radius:8px;padding:6px 10px;outline:none;box-sizing:border-box;resize:vertical"></textarea>`
             : `<button class="mini-btn" onclick="startManualPointDraft('${it.id}')" title="핵심포인트 추가" style="align-self:flex-start;margin-top:4px;color:#B8860B;font-weight:800">↓＋ 포인트</button>`}
