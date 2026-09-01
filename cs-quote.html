@@ -2250,8 +2250,9 @@ function renderReply(results, py) {
   } else {
     var expandText = isExpand ? '확장형' : '비확장';
     var scopeText = SCOPE_NAMES[currentScopeIdx];
-    var smallRoomTextReply = smallRoomCount > 0 ? ' + 작은방 ' + smallRoomCount + '개' : '';
-    text += py + '평(' + scopeText + smallRoomTextReply + ')' + expandText + ' 예상견적\n\n';
+    var smallRoomTextReply = smallRoomCount > 0 ? '+작은방 ' + smallRoomCount + '개' : '';
+    text += '[예상 견적]\n';
+    text += py + '평(' + scopeText + smallRoomTextReply + ')' + expandText + '\n';
   }
 
   // 제품별 견적
