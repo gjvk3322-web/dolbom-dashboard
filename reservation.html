@@ -1220,6 +1220,51 @@ function changeMonth(d){currentMonth+=d;if(currentMonth>12){currentMonth=1;curre
 
 function selectDate(ds){selectedDate=ds;renderCalendar();renderDayDetail(ds);}
 
+/* ───── 🆕 오전/오후 카드 표시 순서 (드래그 정렬 · Firebase 공유, 시트 데이터 불변) ─────
+   저장 위치: resvOrder/{팀}/{날짜}/{am|pm} = 카드 키 배열
+   모든 접속자에게 실시간 반영 — CS가 바꾸면 대장 화면도 즉시 바뀜 */
+let _orderAll={};
+let _orderReady=false;
+fbDb.ref('resvOrder').on('value',snap=>{
+  _orderAll=snap.val()||{};
+  _orderReady=true;
+  if(typeof selectedDate!=='undefined'&&selectedDate)renderDayDetail(selectedDate); // 다른 사람이 바꾸면 즉시 재정렬
+});
+function _ordKey(s){return String(s.address||'')+'|'+String(s.phone||'').replace(/[^0-9]/g,'');}
+function _ordSave(ds,slot,keys){
+  fbDb.ref('resvOrder/'+currentTeam+'/'+ds+'/'+slot).set(keys);
+  /* 60일 지난 날짜는 정리 */
+  const cut=new Date(Date.now()-60*86400000).toISOString().slice(0,10);
+  const mine=_orderAll[currentTeam]||{};
+  Object.keys(mine).forEach(d=>{if(d<cut)fbDb.ref('resvOrder/'+currentTeam+'/'+d).remove();});
+}
+function applyOrder(list,ds,slot){
+  const saved=(((_orderAll[currentTeam]||{})[ds]||{})[slot])||[];
+  return list.map((s,i)=>({s,i})).sort((a,b)=>{
+    const pa=saved.indexOf(_ordKey(a.s)), pb=saved.indexOf(_ordKey(b.s));
+    return (pa<0?9999+a.i:pa)-(pb<0?9999+b.i:pb);
+  });
+}
+function _bindOrderDnD(containerId,ds,slot){
+  const c=document.getElementById(containerId); if(!c)return;
+  let dragEl=null;
+  c.querySelectorAll('.sched-item[data-okey]').forEach(el=>{
+    el.addEventListener('dragstart',e=>{dragEl=el;el.style.opacity='.35';try{e.dataTransfer.setData('text/plain','');e.dataTransfer.effectAllowed='move';}catch(err){}});
+    el.addEventListener('dragend',()=>{
+      if(dragEl)dragEl.style.opacity='';
+      dragEl=null;
+      const keys=[...c.querySelectorAll('.sched-item[data-okey]')].map(x=>decodeURIComponent(x.dataset.okey));
+      _ordSave(ds,slot,keys);
+    });
+    el.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(!dragEl||dragEl===el)return;
+      const r=el.getBoundingClientRect();
+      el.parentNode.insertBefore(dragEl, e.clientY>r.top+r.height/2?el.nextSibling:el);
+    });
+  });
+}
+
 function renderDayDetail(ds){
   const[y,m,d]=ds.split('-').map(Number);const dn=['일','월','화','수','목','금','토'];const dow=new Date(y,m-1,d).getDay();
   const sc=scheduleData[ds]||{am:[],pm:[]};
@@ -1239,36 +1284,40 @@ function renderDayDetail(ds){
   const pmRemain = maxPS - realCount(sc.pm); // 🆕 차단용 표시 제외
 
   let amH='';
-  sc.am.forEach((s,i)=>{
+  applyOrder(sc.am,ds,'am').forEach(({s,i})=>{
+    const okey=encodeURIComponent(_ordKey(s));
     if(isBlockedItem(s)){ // 🆕 차단 표시: 라벨 + 사유
       const reason=blockReason(s);
-      amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;border-left-color:#9e9e9e;background:#f5f5f5;"><div class="area" style="color:#616161">🚫 오전 차단</div>${reason?`<div class="info">${reason}</div>`:''}</div>`;
+      amH+=`<div class="sched-item" draggable="true" data-okey="${okey}" title="드래그해서 순서 변경" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;border-left-color:#9e9e9e;background:#f5f5f5;"><div class="area" style="color:#616161">🚫 오전 차단</div>${reason?`<div class="info">${reason}</div>`:''}</div>`;
       return;
     }
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
     const moveTag = (s.category||'').includes('이전설치')?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전설치</span>':'';
-    amH+=`<div class="sched-item" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
+    amH+=`<div class="sched-item" draggable="true" data-okey="${okey}" title="드래그해서 순서 변경" onclick="editItem('오전','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
   });
   if(amRemain>0 && !isClosed(ds)) amH+=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
   if(!sc.am.length && !isClosed(ds)) amH=`<div class="sched-empty" onclick="openForm('오전','${ds}')">+ 오전 예약</div>`;
   if(isClosed(ds) && !sc.am.length) amH='<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px;">마감</div>';
   document.getElementById('amSlots').innerHTML=amH;
+  _bindOrderDnD('amSlots',ds,'am');
 
   let pmH='';
-  sc.pm.forEach((s,i)=>{
+  applyOrder(sc.pm,ds,'pm').forEach(({s,i})=>{
+    const okey=encodeURIComponent(_ordKey(s));
     if(isBlockedItem(s)){ // 🆕 차단 표시: 라벨 + 사유
       const reason=blockReason(s);
-      pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;border-left-color:#9e9e9e;background:#f5f5f5;"><div class="area" style="color:#616161">🚫 오후 차단</div>${reason?`<div class="info">${reason}</div>`:''}</div>`;
+      pmH+=`<div class="sched-item" draggable="true" data-okey="${okey}" title="드래그해서 순서 변경" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;border-left-color:#9e9e9e;background:#f5f5f5;"><div class="area" style="color:#616161">🚫 오후 차단</div>${reason?`<div class="info">${reason}</div>`:''}</div>`;
       return;
     }
     const crew = [s.sasu,s.busasu].filter(Boolean).join(', ');
     const moveTag = (s.category||'').includes('이전설치')?'<span style="font-size:10px;background:#fff3cd;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:600;margin-left:4px">이전설치</span>':'';
-    pmH+=`<div class="sched-item" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
+    pmH+=`<div class="sched-item" draggable="true" data-okey="${okey}" title="드래그해서 순서 변경" onclick="editItem('오후','${ds}',${i})" style="cursor:pointer;"><div class="area">${s.address||'주소 없음'}</div><div class="info">${s.product}${s.size?' · '+s.size+'평':''}${crew?' · '+crew:''}${moveTag}</div></div>`;
   });
   if(pmRemain>0 && !isClosed(ds)) pmH+=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
   if(!sc.pm.length && !isClosed(ds)) pmH=`<div class="sched-empty" onclick="openForm('오후','${ds}')">+ 오후 예약</div>`;
   if(isClosed(ds) && !sc.pm.length) pmH='<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px;">마감</div>';
   document.getElementById('pmSlots').innerHTML=pmH;
+  _bindOrderDnD('pmSlots',ds,'pm');
 
   // 오전/오후 잔여 표시
   document.getElementById('amTitle').innerHTML=`☀️ 오전 <span style="font-size:11px;color:${amRemain>0?'var(--green)':'var(--red)'};">(${amRemain>0?amRemain+'건 가능':'마감'})</span>`;
