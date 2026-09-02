@@ -431,11 +431,19 @@ var GG_R=[
 var KR_HOLIDAYS={'1-1':'신정','3-1':'삼일절','5-5':'어린이날','6-6':'현충일','8-15':'광복절','10-3':'개천절','10-9':'한글날','12-25':'성탄절','2025-1-28':'설날','2025-1-29':'설날','2025-1-30':'설날','2025-5-5':'어린이날','2025-5-6':'대체공휴일','2025-10-5':'추석','2025-10-6':'추석','2025-10-7':'추석','2025-10-8':'대체공휴일','2026-2-16':'설날','2026-2-17':'설날','2026-2-18':'설날','2026-5-5':'어린이날','2026-5-24':'부처님오신날','2026-9-24':'추석','2026-9-25':'추석','2026-9-26':'추석','2027-2-6':'설날','2027-2-7':'설날','2027-2-8':'설날','2027-2-9':'대체공휴일','2027-5-5':'어린이날','2027-5-13':'부처님오신날','2027-10-14':'추석','2027-10-15':'추석','2027-10-16':'추석'};
 function getHolidayName(y,m,d){return KR_HOLIDAYS[y+'-'+(m+1)+'-'+d]||KR_HOLIDAYS[(m+1)+'-'+d]||null}
 
+// 🆕 2026-09-02: 도로명 오염 차단 — 주소 앞 두 토큰(시/도+시군구)만으로 팀 판정
+//   버그: '인천 부평구 산청로' → 도로명 '산청로'가 BUSAN_R '산청'에 매치되어 부산팀 캘린더 표시
+function regionHead(a){
+  a=String(a||'').replace(/^\(\d+\)\s*/,'').trim();
+  return a.split(/\s+/).slice(0,2).join(' ');
+}
 function detectTeam(a){
-  if(BLOCKED_CITY.some(function(r){return a.includes(r)}))return 'blocked';
-  if(BUSAN_R.some(function(r){return a.includes(r)}))return '부산';
-  if(GG_R.some(function(r){return a.includes(r)}))return '경기';
-  if(BLOCKED_PROVINCE.some(function(r){return a.includes(r)}))return 'blocked';
+  var h=regionHead(a);  // "인천 부평구", "경남 산청군" 등 — 도로명 제외
+  if(BLOCKED_CITY.some(function(r){return h.includes(r)}))return 'blocked';
+  if(h.indexOf('강원')===0&&h.indexOf('원주')<0)return 'blocked';  // 🆕 강원은 원주만 (고성군 등 BUSAN_R 오탐 방지)
+  if(BUSAN_R.some(function(r){return h.includes(r)}))return '부산';
+  if(GG_R.some(function(r){return h.includes(r)}))return '경기';
+  if(BLOCKED_PROVINCE.some(function(r){return h.includes(r)}))return 'blocked';
   return 'unknown';
 }
 function switchTeam(t){
