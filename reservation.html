@@ -1665,7 +1665,9 @@ function loadNewBookings(){
         document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">조회 실패</div>';
         return;
       }
-      renderNewBookings(data.bookings||[]);
+      lastBookings=data.bookings||[];
+      renderNewBookings(lastBookings);
+      checkSmsExpiry();
     })
     .catch(function(){
       document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">네트워크 오류</div>';
@@ -1685,6 +1687,7 @@ function renderNewBookings(bookings){
     var phoneFormatted=b.phone.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3');
     var datesStr=b.dates&&b.dates.length>0?b.dates.join(', '):'상관없음';
     var roomStr=b.roomCount>0?' / 방추가 '+b.roomCount+'개':'';
+    var pk=b.phone.replace(/[^0-9]/g,'');
     
     // 🆕 상태별 카드 스타일 + 버튼 분기
     var isDeposited=b.status==='입금완료';
@@ -1707,6 +1710,7 @@ function renderNewBookings(bookings){
       buttons='<button onclick="copyConfirmMessage('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#FEE500;color:#1a1a1a;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">확인 메시지</button>'+
               '<button onclick="updateBookingStatus('+b.rowNumber+',\'입금완료\',\''+b.name+'\')" style="flex:1;padding:8px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료</button>'+
               '<button onclick="fillBookingForm('+JSON.stringify(b).replace(/"/g,'&quot;')+')" style="flex:1;padding:8px;background:#1976D2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📋 폼에 채우기</button>'+
+              buildSmsButton(pk,b.name)+
               '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>';
     }
     
@@ -1725,6 +1729,87 @@ function renderNewBookings(bookings){
   }).join('');
   
   document.getElementById('newBookingsList').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 📨 예약금 안내 문자 발송 기록 + 2일 미입금 자동 삭제
+// Firebase smsReminder/{전화번호} = {sentAt, name} — 브라우저 간 실시간 공유
+// ═══════════════════════════════════════════════════════════════
+var SMS_EXPIRE_MS=48*3600*1000; // 48시간 (여기만 바꾸면 기간 조정)
+var smsReminders={};
+var lastBookings=[];
+
+fbDb.ref('smsReminder').on('value',function(snap){
+  smsReminders=snap.val()||{};
+  if(lastBookings.length)renderNewBookings(lastBookings);
+  checkSmsExpiry();
+});
+
+// 카드 버튼 생성: 발송 전 → [문자 전송 완료], 발송 후 → 남은 시간 카운트다운
+function buildSmsButton(pk,name){
+  var rem=smsReminders[pk];
+  if(rem&&rem.sentAt){
+    var leftMs=rem.sentAt+SMS_EXPIRE_MS-Date.now();
+    var leftTxt;
+    if(leftMs<=0)leftTxt='삭제 처리중';
+    else{
+      var leftH=Math.ceil(leftMs/3600000);
+      leftTxt=leftH>24?'D-2 · '+leftH+'h':leftH+'시간 후 삭제';
+    }
+    return '<button onclick="cancelSmsSent(\''+pk+'\',\''+name+'\')" style="flex:1;padding:8px;background:#FFF3E0;color:#E65100;border:1px solid #FFB74D;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📨 '+leftTxt+'</button>';
+  }
+  return '<button onclick="markSmsSent(\''+pk+'\',\''+name+'\')" style="flex:1;padding:8px;background:#7B1FA2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📨 문자 전송 완료</button>';
+}
+
+function markSmsSent(phone,name){
+  if(!confirm(name+' 고객님께 예약금 안내 문자를 보냈나요?\n\n확인을 누르면 2일(48시간) 안에 [입금완료] 처리가 없을 경우\n이 접수는 자동으로 삭제됩니다.'))return;
+  fbDb.ref('smsReminder/'+phone).set({sentAt:Date.now(),name:name});
+}
+
+// 발송 버튼 다시 누르면 타이머 취소
+function cancelSmsSent(phone,name){
+  if(!confirm(name+' 고객님의 문자 발송 기록을 취소할까요?\n(2일 자동 삭제 타이머가 해제됩니다)'))return;
+  fbDb.ref('smsReminder/'+phone).remove();
+}
+
+function checkSmsExpiry(){
+  if(!lastBookings.length)return;
+  var byPhone={};
+  lastBookings.forEach(function(b){byPhone[b.phone.replace(/[^0-9]/g,'')]=b;});
+  Object.keys(smsReminders).forEach(function(pk){
+    var rem=smsReminders[pk];
+    if(!rem||!rem.sentAt||rem.deleting)return;
+    var b=byPhone[pk];
+    // 카드가 사라졌거나 입금완료 됐으면 기록 정리
+    if(!b||b.status==='입금완료'){fbDb.ref('smsReminder/'+pk).remove();return;}
+    if(Date.now()-rem.sentAt>=SMS_EXPIRE_MS){
+      // 트랜잭션 가드: 여러 브라우저가 동시에 떠 있어도 한 곳만 삭제 실행
+      fbDb.ref('smsReminder/'+pk+'/deleting').transaction(function(cur){
+        if(cur)return; // 이미 다른 곳에서 처리 중 → 중단
+        return Date.now();
+      },function(err,committed){
+        if(committed)autoExpireBooking(b,pk);
+      });
+    }
+  });
+}
+
+function autoExpireBooking(b,pk){
+  fetch(API_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({type:'bookingStatus',rowNumber:b.rowNumber,status:'취소'})
+  })
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(data.success){
+      fbDb.ref('smsReminder/'+pk).remove();
+      loadNewBookings();
+    }else{
+      fbDb.ref('smsReminder/'+pk+'/deleting').remove(); // 실패 시 다음 검사 때 재시도
+    }
+  })
+  .catch(function(){fbDb.ref('smsReminder/'+pk+'/deleting').remove();});
 }
 
 // 🆕 예약 확정 메시지 복사 (새 예약 폼 기준 - 시공일 확정 후)
