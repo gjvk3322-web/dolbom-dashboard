@@ -218,11 +218,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     </div>
     <div class="sync-info" id="syncInfo">데이터 로딩 중...</div>
     <div id="dailyChart" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"></div>
-  </div>
-  <!-- 2열: 2주 일정 -->
-  <div class="card" style="flex:0 0 220px;min-width:200px;margin:0;margin-top:12px;max-height:calc(100vh - 180px);overflow-y:auto">
-    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;position:sticky;top:0;background:#fff;padding:4px 0;z-index:1">📋 전체 일정</div>
-    <div id="weekList"></div>
     <div id="nearbyCard" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e3">
       <h3 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">📍 근접 매칭 결과</h3>
       <div id="nearbyList"></div>
@@ -1697,8 +1692,8 @@ function renderNewBookings(bookings){
       'background:linear-gradient(135deg,#E8F5E9,#fff);border:2px solid #2E7D32;':
       'background:#fff;border:1px solid #FFE0B2;';
     var statusBadge=isDeposited?
-      '<div style="font-size:11px;background:#2E7D32;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">💰 입금완료</div>':
-      '<div style="font-size:11px;color:#999">📋 '+b.submittedAt+'</div>';
+      '<span style="font-size:11px;background:#2E7D32;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700">💰 입금완료</span>':
+      '<span style="font-size:11px;color:#999">📋 '+b.submittedAt+'</span>';
     
     // 🆕 상태별 버튼
     var buttons='';
@@ -1715,17 +1710,14 @@ function renderNewBookings(bookings){
               '<button onclick="updateBookingStatus('+b.rowNumber+',\'취소\',\''+b.name+'\')" style="padding:8px 12px;background:#fff;color:#999;border:1px solid #e0e0e0;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">❌</button>';
     }
     
-    return '<div id="bookingCard_'+b.rowNumber+'" style="'+cardStyle+'border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px;transition:all 0.5s ease">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-        statusBadge+
-        (b.channel?'<div style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:8px">'+b.channel+'</div>':'')+
+    return '<div id="bookingCard_'+b.rowNumber+'" style="'+cardStyle+'border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;transition:all 0.5s ease">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:3px">'+
+        '<div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+statusBadge+' <span style="font-weight:700;color:#1a1a1a">'+b.name+'</span> <span style="color:#666;font-size:11px">'+phoneFormatted+'</span></div>'+
+        (b.channel?'<div style="flex:none;font-size:10px;background:#E8F5E9;color:#2E7D32;padding:1px 6px;border-radius:8px">'+b.channel+'</div>':'')+
       '</div>'+
-      '<div style="font-weight:700;color:#1a1a1a;margin-bottom:4px">'+b.name+' <span style="color:#666;font-weight:normal;font-size:11px">'+phoneFormatted+'</span></div>'+
-      '<div style="color:#555;line-height:1.5;margin-bottom:4px">📍 '+b.address+(b.dongHo?' '+b.dongHo:'')+'</div>'+
-      '<div style="color:#555;line-height:1.5;margin-bottom:4px">📅 희망일: <strong>'+datesStr+'</strong> · '+b.time+'</div>'+
-      '<div style="color:#555;line-height:1.5;margin-bottom:4px">🏠 '+b.pyung+'평 / '+b.product+' '+(b.color?'('+b.color+')':'')+roomStr+'</div>'+
-      '<div style="color:#555;line-height:1.5;margin-bottom:8px">✏️ '+b.scope+'</div>'+
-      (b.memo?'<div style="background:#FFF3E0;padding:6px 8px;border-radius:6px;font-size:11px;color:#666;margin-bottom:8px">💬 '+b.memo+'</div>':'')+
+      '<div style="color:#555;line-height:1.45;margin-bottom:2px">'+b.address+(b.dongHo?' '+b.dongHo:'')+'</div>'+
+      '<div style="color:#555;line-height:1.45;margin-bottom:6px">희망일: <strong>'+datesStr+'</strong> · '+b.time+' · '+b.pyung+'평 '+(b.scope?b.scope:'')+' / '+b.product+' '+(b.color?'('+b.color+')':'')+roomStr+'</div>'+
+      (b.memo?'<div style="background:#FFF3E0;padding:5px 8px;border-radius:6px;font-size:11px;color:#666;margin-bottom:6px">💬 '+b.memo+'</div>':'')+
       '<div style="display:flex;gap:4px" data-row="'+b.rowNumber+'">'+
         buttons+
       '</div>'+
