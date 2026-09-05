@@ -686,6 +686,9 @@ async function renderSummary(){
     if(!/^\d{4}/.test(s)&&(dt-today)/86400000<-180)dt=new Date(y+1,m-1,d);
     return Math.round((dt-today)/86400000);
   }
+  // 🎨 제품/색상 미정 판별 — 서버(Inventory.gs)가 미정 건은 product '미정'·undecided:true로 넘김(구버전 서버는 color 빈칸).
+  //    미정은 목록·건수엔 그대로 두되 장수는 0으로 집계 → 합계·제품별 요약·부족 경고에 임의 장수가 섞이지 않음 (발주 실수 방지)
+  function isUndecidedJob(j){return !!j.undecided||!j.color||j.color==='미정'||String(j.product||'').indexOf('미정')>=0;}
   // 🆕 futureList를 7일/20일 구간으로 분리 (Code.gs가 20일치를 보내줘도 7일 카드는 그대로 유지)
   const future7List=[],future20List=[];
   if(sd&&sd.futureList)sd.futureList.forEach(j=>{
@@ -697,10 +700,11 @@ async function renderSummary(){
   // 🆕 이전설치 = 기존 매트 이동이라 보충분만 소모 → 500매트 기준 10장 고정 (1000매트는 ÷4 올림 = 3장)
   function isReinstallJob(j){return !!j.reinstall||String(j.category||'').indexOf('이전설치')>=0;}
   function reinstallQty(product){return String(product||'').indexOf('1000')>=0?3:10;}
-  function jobQty(j){return isReinstallJob(j)?reinstallQty(j.product):calcMatQty(j.sqm,j.scope,j.product);}
+  function jobQty(j){if(isUndecidedJob(j))return 0;return isReinstallJob(j)?reinstallQty(j.product):calcMatQty(j.sqm,j.scope,j.product);}
   function buildFutureAgg(list){
     const agg={};
     list.forEach(j=>{
+      if(isUndecidedJob(j))return; // 🎨 미정은 장수 0 → 제품별 집계 제외 (요약 카드에 별도 줄)
       const pid=j.product==='500매트 22T'?'500':(j.product==='1000매트 22T'?'1000_22':'1000_17');
       const c=j.color||'미정';const key=pid+'_'+c;
       if(!agg[key])agg[key]={n:0,s:0,sqmList:[]};
@@ -851,13 +855,12 @@ async function renderSummary(){
   }
   // 🎨 색상/제품 미정 예약 카드 — 시공일 임박 순, 내일까지는 빨강 (☎ 색상 확정 연락 필요)
   {
-    const undecided=future20List.filter(j=>!j.color||j.color==='미정'||String(j.product||'').indexOf('미정')>=0)
-      .slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    const undecided=future20List.filter(isUndecidedJob).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     if(undecided.length){
       const urgentN=undecided.filter(j=>futureDayDiff(j.date)<=1).length;
       h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid ${urgentN?'rgba(255,69,58,.45)':'var(--border)'};border-radius:12px;overflow:hidden">`;
       h+=`<div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="const el=document.getElementById('undecidedList');el.style.display=el.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=el.style.display==='none'?'▸':'▾'">`;
-      h+=`<span style="font-size:13px;font-weight:700">🎨 색상 미정 예약 <span style="color:var(--orange)">${undecided.length}건</span>${urgentN?` <span style="color:var(--red)">· 내일까지 ${urgentN}건 ☎</span>`:''}</span><span style="font-size:12px;color:var(--dim)">색상 확정 연락 필요 <span class="arrow">${urgentN?'▾':'▸'}</span></span></div>`;
+      h+=`<span style="font-size:13px;font-weight:700">🎨 색상 미정 예약 <span style="color:var(--orange)">${undecided.length}건</span>${urgentN?` <span style="color:var(--red)">· 내일까지 ${urgentN}건 ☎</span>`:''}</span><span style="font-size:12px;color:var(--dim)">장수 0으로 집계 · 색상 확정 연락 필요 <span class="arrow">${urgentN?'▾':'▸'}</span></span></div>`;
       h+=`<div id="undecidedList" style="display:${urgentN?'block':'none'};padding:4px 14px 10px;border-top:.5px solid var(--border)">`;
       undecided.forEach(j=>{
         const dDiff=futureDayDiff(j.date);
@@ -867,10 +870,10 @@ async function renderSummary(){
         const scopeL=['거실복도','거실복도+아일','거실복도+주방'][sIdx2];
         h+=`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:.5px dashed var(--border);font-size:12px;${urgent?'color:var(--red);font-weight:700':''}">`;
         h+=`<span style="flex-shrink:0">${urgent?'☎ ':''}${String(j.date).substring(5)} <span style="font-size:10px;${urgent?'':'color:var(--dim)'}">(${dLabel})</span></span>`;
-        h+=`<span style="flex:1;text-align:right;${urgent?'':'color:var(--dim)'}">${j.sqm}평 · ${scopeL} · ${String(j.product||'미정').replace('매트','')}</span>`;
+        h+=`<span style="flex:1;text-align:right;${urgent?'':'color:var(--dim)'}">${j.sqm}평 · ${scopeL} · 미정</span>`;
         h+=`</div>`;
       });
-      h+=`<div style="margin-top:6px;font-size:10px;color:var(--dim)">💡 시공스케줄 시트에서 날짜·평수로 찾아 색상 확정 후 U열(색상) 입력 → 재고 계산에 자동 반영</div>`;
+      h+=`<div style="margin-top:6px;font-size:10px;color:var(--dim)">💡 미정 건은 장수 0으로 잡혀 합계·부족 경고에 안 들어가요. 색상 확정되면 예약 페이지에서 그 건 수정 → 제품 칸 확정 시 장수가 자동 반영</div>`;
       h+=`</div></div>`;
     }
   }
@@ -903,16 +906,19 @@ async function renderSummary(){
           c+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:12px"><span>${dot}${cn} ${(prodNames[pid]||pid).replace('매트','')}</span><span style="color:var(--dim)">${d.n}건 · <span style="font-weight:700;color:var(--text)">${d.s.toLocaleString()}장</span> · <span style="font-weight:700;color:var(--accent)">${pct}%</span></span></div>`;
         });
       });
+      const undN=list.filter(isUndecidedJob).length;
+      if(undN)c+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:12px"><span><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#888;margin-right:4px"></span><span style="color:var(--orange)">미정</span></span><span style="color:var(--dim)">${undN}건 · <span style="font-weight:700">0장</span> · 색상 확정 후 반영</span></div>`;
       c+=`</div>`;
     }
     list.forEach(j=>{
-      const pName=j.product.replace('매트','');
+      const und=isUndecidedJob(j);
+      const pName=und?`<span style="color:var(--orange);font-weight:700">미정</span>`:j.product.replace('매트','');
       const cDot=j.color?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${CL[j.color]||'#888'};margin-right:3px"></span>`:'';
       const sIdx=scopeToIdx(j.scope);
       const qtyCalc=jobQty(j);
       const reTag=isReinstallJob(j)?`<span style="color:var(--orange);font-weight:700">이전설치</span> · `:'';
       const scopeLabel=['거실복도','거실복도+아일','거실복도+주방'][sIdx];
-      c+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${reTag}${j.sqm}평 · ${scopeLabel} · ${cDot}${j.color||''} ${pName}</span><span style="font-weight:600">${qtyCalc}장</span></div>`;
+      c+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${j.date} · ${reTag}${j.sqm}평 · ${scopeLabel} · ${cDot}${und?'':(j.color||'')} ${pName}</span><span style="font-weight:600;${und?'color:var(--dim)':''}">${qtyCalc}장</span></div>`;
     });
     c+=`</div></div>`;
     return c;
