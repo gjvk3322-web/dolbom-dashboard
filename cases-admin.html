@@ -55,7 +55,9 @@ textarea{resize:vertical;min-height:70px}
 .pv .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:22px;text-align:center;cursor:pointer}
 .pv{cursor:grab}
 .pv.dragging{opacity:.35;cursor:grabbing}
-.pv .ord{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:6px;pointer-events:none}
+.pv .ord{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:6px;pointer-events:none}
+.pv.sel,.main-slot.sel{outline:2.5px solid var(--ink);outline-offset:1px}
+.pv .lbl,.main-slot .lbl{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.88);color:var(--ink);font-size:9.5px;line-height:1.3;text-align:center;padding:2px 3px;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .best-line{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px}
 .best-line input{width:18px;height:18px}
 .submit{width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:var(--ink);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
@@ -153,13 +155,12 @@ body.editing .cancel-edit{display:block}
     <input type="file" id="photoInput" accept="image/*" multiple hidden>
     <div class="previews" id="previews"></div>
     <div class="hint">업로드 시 웹용으로 자동 변환돼요(최대 1600px). 원본은 드라이브에 따로 보관해주세요.</div>
+    <label>사진 라벨 — 사진을 클릭하고 라벨을 붙이세요 (고객 페이지 필터에 사용돼요)</label>
+    <div class="hint" id="labelTarget" style="margin-top:0">라벨을 붙일 사진을 클릭하세요</div>
+    <div class="chips" id="labelChips" style="margin-top:8px"></div>
 
-    <label>지역 (제목 생성용)</label>
-    <div class="chips" data-group="region">
-      <button class="chip" data-v="부산">부산</button>
-      <button class="chip" data-v="경기">경기</button>
-      <button class="chip" data-v="기타">기타</button>
-    </div>
+    <label>지역 (제목 생성용 — 자유 입력)</label>
+    <input id="region" placeholder="예: 부산, 경기, 인천, 대구">
     <label>도시 · 아파트명 (예: 화성 동탄 센트럴 푸르지오)</label>
     <input id="apt" placeholder="검색 노출에 중요 — 아파트명까지">
     <div class="row">
@@ -175,8 +176,6 @@ body.editing .cancel-edit{display:block}
         </select>
       </div>
     </div>
-    <label>필터 태그 (여러 개 선택 가능)</label>
-    <div class="chips" data-group="tags" data-multi="1" id="tagChips"></div>
     <label>시공 제품</label>
     <select id="product"><option value="">선택 안 함</option></select>
 
@@ -320,14 +319,13 @@ function renderFormOptions(){
   const curP=ps.value;
   ps.innerHTML='<option value="">선택 안 함</option>'+CONFIG.products.map(p=>`<option value="${p}">${p}</option>`).join('');
   if(CONFIG.products.includes(curP)) ps.value=curP;
-  const tc=document.getElementById('tagChips');
-  const onNow=picked('tags');
-  tc.innerHTML=CONFIG.tags.map(t=>`<button class="chip${onNow.includes(t)?' on':''}" data-v="${t}">${t}</button>`).join('');
+  renderLabelChips();
 }
 
 /* ===== 칩 선택 ===== */
 document.querySelectorAll('.chips').forEach(g=>{
   g.addEventListener('click',e=>{
+    if(!g.dataset.group) return;
     const b = e.target.closest('.chip'); if(!b) return;
     if(g.dataset.multi) b.classList.toggle('on');
     else { g.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); }
@@ -348,7 +346,7 @@ function setChips(g, values){
 let titleTouched = false;
 document.getElementById('title').addEventListener('input',e=>{titleTouched = e.target.value.trim() !== ''; autoTitle();});
 function buildTitle(){
-  const region = picked('region')[0]||'';
+  const region = document.getElementById('region').value.trim();
   const apt = document.getElementById('apt').value.trim();
   const size = document.getElementById('size').value;
   const mat = document.getElementById('mat').value;
@@ -360,7 +358,7 @@ function buildTitle(){
 function autoTitle(){
   if(!titleTouched) document.getElementById('title').value = buildTitle();
 }
-['apt','size','mat'].forEach(id=>document.getElementById(id).addEventListener('input',autoTitle));
+['region','apt','size','mat'].forEach(id=>document.getElementById(id).addEventListener('input',autoTitle));
 document.getElementById('size').addEventListener('change',autoTitle);
 document.getElementById('mat').addEventListener('change',autoTitle);
 
@@ -385,10 +383,10 @@ function compress(file){
         if(b.size > 1.5*1024*1024){ // 파노라마 등 큰 사진은 한 번 더 압축
           cv.toBlob(b2=>{
             if(!b2) return rej();
-            res({blob:b2, url:URL.createObjectURL(b2)});
+            res({blob:b2, url:URL.createObjectURL(b2), labels:[]});
           },'image/jpeg',0.6);
         } else {
-          res({blob:b, url:URL.createObjectURL(b)});
+          res({blob:b, url:URL.createObjectURL(b), labels:[]});
         }
       },'image/jpeg',0.82);
     };
@@ -397,7 +395,8 @@ function compress(file){
   });
 }
 const mainSlot=document.getElementById('mainSlot');
-mainSlot.onclick=()=>document.getElementById('mainInput').click();
+let selObj=null;
+mainSlot.onclick=()=>{ if(mainPhoto) selectPhoto(mainPhoto); else document.getElementById('mainInput').click(); };
 document.getElementById('mainChange').onclick=()=>document.getElementById('mainInput').click();
 document.getElementById('mainInput').addEventListener('change', async e=>{
   if(e.target.files[0]){
@@ -407,9 +406,27 @@ document.getElementById('mainInput').addEventListener('change', async e=>{
   e.target.value='';
 });
 function renderMain(){
+  mainSlot.classList.toggle('sel', !!mainPhoto && selObj===mainPhoto);
   if(!mainPhoto){ mainSlot.innerHTML='대표 사진<br>선택'; return; }
   const src = mainPhoto.fid ? thumb(mainPhoto.fid,300) : mainPhoto.url;
-  mainSlot.innerHTML=`<img src="${src}"><span class="rep">대표</span>`;
+  const lbl = (mainPhoto.labels&&mainPhoto.labels.length)?`<span class="lbl">${esc(mainPhoto.labels.join('·'))}</span>`:'';
+  mainSlot.innerHTML=`<img src="${src}"><span class="rep">대표</span>${lbl}`;
+}
+function selectPhoto(p){ selObj = (selObj===p) ? null : p; renderMain(); renderPreviews(); renderLabelChips(); }
+function renderLabelChips(){
+  const box=document.getElementById('labelChips');
+  const tgt=document.getElementById('labelTarget');
+  if(!box||!tgt) return;
+  if(!selObj){ tgt.textContent='라벨을 붙일 사진을 클릭하세요'; box.innerHTML=''; return; }
+  const which = selObj===mainPhoto ? '대표 사진' : `추가 사진 ${extraPhotos.indexOf(selObj)+1}번`;
+  tgt.textContent = which + '에 라벨 붙이기:';
+  box.innerHTML = CONFIG.tags.map(t=>`<button class="chip${(selObj.labels||[]).includes(t)?' on':''}" data-t="${t}">${t}</button>`).join('');
+  box.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+    selObj.labels = selObj.labels||[];
+    const i = selObj.labels.indexOf(b.dataset.t);
+    if(i>=0) selObj.labels.splice(i,1); else selObj.labels.push(b.dataset.t);
+    renderMain(); renderPreviews(); renderLabelChips();
+  });
 }
 const MAX_EXTRA = 14; // 대표 1장 + 추가 14장 = 최대 15장
 const freeUrl = p => { if(p && !p.fid && p.url) URL.revokeObjectURL(p.url); };
@@ -432,10 +449,18 @@ function renderPreviews(){
     d.draggable = true;
     d.dataset.i = i;
     const src = ph.fid ? thumb(ph.fid,300) : ph.url;
-    d.innerHTML = `<img src="${src}" draggable="false"><span class="del" data-i="${i}">×</span><span class="ord">${i+1}</span>`;
+    const lbl = (ph.labels&&ph.labels.length)?`<span class="lbl">${esc(ph.labels.join('·'))}</span>`:'';
+    d.innerHTML = `<img src="${src}" draggable="false"><span class="del" data-i="${i}">×</span><span class="ord">${i+1}</span>${lbl}`;
+    if(ph===selObj) d.classList.add('sel');
+    d.onclick=()=>selectPhoto(ph);
     p.appendChild(d);
   });
-  p.querySelectorAll('.del').forEach(x=>x.onclick=()=>{freeUrl(extraPhotos[+x.dataset.i]); extraPhotos.splice(+x.dataset.i,1);renderPreviews();});
+  p.querySelectorAll('.del').forEach(x=>x.onclick=(e)=>{
+    e.stopPropagation();
+    const ph=extraPhotos[+x.dataset.i];
+    if(ph===selObj){ selObj=null; renderLabelChips(); }
+    freeUrl(ph); extraPhotos.splice(+x.dataset.i,1); renderPreviews();
+  });
 }
 
 /* ===== 추가 사진 드래그 순서 변경 (PC 드래그 + 모바일 길게 눌러 드래그) ===== */
@@ -443,7 +468,7 @@ const pvBox = document.getElementById('previews');
 function applyDomOrder_(){
   const order = [...pvBox.querySelectorAll('.pv')].map(el=>+el.dataset.i);
   extraPhotos = order.map(i=>extraPhotos[i]);
-  renderPreviews();
+  renderPreviews(); renderLabelChips();
 }
 pvBox.addEventListener('dragstart', e=>{
   const pv = e.target.closest('.pv'); if(!pv) return;
@@ -493,15 +518,15 @@ function startEdit(c){
   document.body.classList.add('editing');
   document.getElementById('formTitle').textContent = '사례 수정';
   document.getElementById('submitBtn').textContent = '수정 저장';
-  mainPhoto = c.photos[0] ? {fid:c.photos[0]} : null;
-  extraPhotos = c.photos.slice(1).map(fid=>({fid}));
-  renderMain(); renderPreviews();
-  setChips('region',[c.region]);
+  mainPhoto = c.photos[0] ? {fid:c.photos[0].id, labels:(c.photos[0].labels||[]).slice()} : null;
+  extraPhotos = c.photos.slice(1).map(p=>({fid:p.id, labels:(p.labels||[]).slice()}));
+  selObj=null;
+  renderMain(); renderPreviews(); renderLabelChips();
+  document.getElementById('region').value = c.region||'';
   document.getElementById('apt').value='';
   renderFormOptions();
   document.getElementById('size').value = CONFIG.sizes.includes(c.size)?c.size:'';
   document.getElementById('mat').value=c.mat||'유아매트';
-  setChips('tags',c.tags||[]);
   document.getElementById('product').value = CONFIG.products.includes(c.product)?c.product:'';
   document.getElementById('title').value=c.title||'';
   titleTouched = true;
@@ -517,11 +542,9 @@ function resetForm(){
   document.getElementById('formTitle').textContent='새 사례 등록';
   document.getElementById('submitBtn').textContent='등록하기';
   freeUrl(mainPhoto); extraPhotos.forEach(freeUrl);
-  mainPhoto=null; extraPhotos=[];
-  renderMain(); renderPreviews();
-  setChips('region',[]);
-  document.querySelectorAll('#tagChips .chip').forEach(c=>c.classList.remove('on'));
-  ['apt','title','desc'].forEach(id=>document.getElementById(id).value='');
+  mainPhoto=null; extraPhotos=[]; selObj=null;
+  renderMain(); renderPreviews(); renderLabelChips();
+  ['region','apt','title','desc'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('size').value='';
   document.getElementById('product').value='';
   document.getElementById('mat').value='유아매트';
@@ -541,7 +564,7 @@ document.getElementById('submitBtn').onclick = async ()=>{
   const msg = document.getElementById('submitMsg');
   const show=(t,ok)=>{msg.textContent=t;msg.className='msg '+(ok?'ok':'bad');msg.style.display='block';};
   if(!mainPhoto) return show('대표 사진을 넣어주세요',false);
-  if(!picked('region').length) return show('지역을 선택해주세요',false);
+  if(!document.getElementById('region').value.trim()) return show('지역을 입력해주세요',false);
   if(!document.getElementById('size').value) return show('평형을 선택해주세요',false);
   if(!document.getElementById('title').value.trim()) return show('제목을 입력해주세요',false);
   if(!document.getElementById('by').value.trim()) return show(editingId?'수정자 이름을 입력해주세요':'등록자 이름을 입력해주세요',false);
@@ -558,13 +581,13 @@ document.getElementById('submitBtn').onclick = async ()=>{
     }
     show(newOnes.length?`사진 ${newOnes.length}장 업로드 중... (잠시만요)`:'저장 중...', true);
     let newIdx = 0;
-    const photoSeq = seq.map(p=>p.fid ? 'keep:'+p.fid : 'new:'+(newIdx++));
+    const photoSeq = seq.map(p=>p.fid ? {keep:p.fid, labels:p.labels||[]} : {new:(newIdx++), labels:p.labels||[]});
+    const uploadPhotos = seq.map((p,i2)=>({b64:newB64[i2], labels:p.labels||[]}));
     const common = {
       key: KEY,
       title: document.getElementById('title').value.trim(),
-      region: picked('region')[0],
+      region: document.getElementById('region').value.trim(),
       size: document.getElementById('size').value,
-      tags: picked('tags'),
       mat: document.getElementById('mat').value,
       product: document.getElementById('product').value,
       desc: document.getElementById('desc').value.trim(),
@@ -573,7 +596,7 @@ document.getElementById('submitBtn').onclick = async ()=>{
     };
     const payload = editingId
       ? Object.assign({type:'caseEdit', id:editingId, photoSeq, newPhotos:newB64}, common)
-      : Object.assign({type:'caseUpload', photos:newB64}, common);
+      : Object.assign({type:'caseUpload', photos:uploadPhotos}, common);
     const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'저장 실패');
