@@ -28,7 +28,7 @@
   .sync{font-size:11px;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted);display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;width:fit-content}
   .sync .dot{width:7px;height:7px;border-radius:50%;background:var(--bad)}
   .sync.on .dot{background:var(--accent)}
-  nav{flex:1}
+  nav{flex:1;overflow-y:auto;min-height:0;margin:0 -4px;padding:0 4px;scrollbar-width:thin}
   nav button{width:100%;text-align:left;border:0;background:transparent;color:#5B6763;padding:11px 13px;border-radius:12px;margin:2px 0;font-weight:500}
   .nav-group{font-size:10.5px;font-weight:700;color:#9AA5A0;letter-spacing:.08em;padding:14px 13px 3px;text-transform:uppercase}
   nav button.active{background:var(--tint);color:var(--accent-deep);font-weight:700}
@@ -96,6 +96,14 @@
   .decision-card.t1{border-top:3px solid var(--good)} .decision-card.t1 h3{color:var(--accent-deep)}
   .decision-card.t2{border-top:3px solid var(--warn)} .decision-card.t2 h3{color:var(--warn)}
   .decision-card.t3{border-top:3px solid var(--bad)} .decision-card.t3 h3{color:var(--bad)}
+
+  /* 마케팅 예산 */
+  .bud-bar{height:8px;border-radius:999px;background:var(--panel2);overflow:hidden;min-width:110px}
+  .bud-bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+  .bud-bar i.warn{background:var(--warn)}
+  .bud-bar i.over{background:var(--bad)}
+  .bud-pct{font-size:12px;color:var(--muted);margin-top:4px}
+  .bud-pct.over{color:var(--bad);font-weight:700}
 
 
   .meeting-card h3{margin:0;font-size:15px}
@@ -495,6 +503,7 @@
       <button data-view="okr">OKR</button>
       <button data-view="calendar">프로젝트 보드</button>
       <button data-view="weekly">주간 운영회의</button>
+      <button data-view="budget">마케팅 예산</button>
       <div class="nav-group">근태</div>
       <button data-view="attendance">출퇴근</button>
       <button data-view="leave">연차 관리</button>
@@ -1011,6 +1020,34 @@
     </section>
 
     <!-- 도구 모음 -->
+    <!-- 마케팅 예산 -->
+    <section id="budget" class="section">
+      <div class="topbar">
+        <div>
+          <h1>마케팅 예산</h1>
+          <div class="lead">채널(카테고리)별로 월 예산을 정하고 지출을 기록합니다. 집행률이 실시간으로 계산되고, 모든 변경은 활동 기록에 남습니다.</div>
+        </div>
+        <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn" id="budPrev">◀</button>
+          <b id="budYmLabel" style="min-width:104px;text-align:center;font-size:15px"></b>
+          <button class="btn" id="budNext">▶</button>
+          <button class="btn" id="budCopyBtn">지난달 예산 불러오기</button>
+          <button class="btn" id="addBudCatBtn">카테고리 추가</button>
+          <button class="btn primary" id="addBudSpendBtn">지출 기록</button>
+        </span>
+      </div>
+      <div class="grid kpis" id="budCards"></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>카테고리</th><th style="text-align:right">월 예산</th><th style="text-align:right">집행</th><th style="text-align:right">잔여</th><th style="width:170px">집행률</th><th style="width:120px"></th></tr></thead>
+        <tbody id="budBody"></tbody>
+      </table></div>
+      <div class="section-title"><h2>이달 지출 내역</h2><span class="hint" id="budSpendHint"></span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>날짜</th><th>카테고리</th><th style="text-align:right">금액</th><th>메모</th><th>작성자</th><th style="width:60px"></th></tr></thead>
+        <tbody id="budSpendBody"></tbody>
+      </table></div>
+    </section>
+
     <section id="tools" class="section">
       <div class="topbar">
         <div>
@@ -1023,6 +1060,45 @@
     </section>
   </main>
 </div>
+
+<!-- 예산: 카테고리 모달 -->
+<dialog id="budCatModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong id="budCatModalTitle">카테고리 추가</strong><button class="mini-btn" onclick="budCatModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <input type="hidden" id="bcId">
+      <label>카테고리 이름 * <input id="bcName"></label>
+      <label>메모 (선택) <input id="bcMemo"></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="budCatModal.close()">취소</button><button class="btn primary" id="saveBudCatBtn">저장</button></div>
+  </form>
+</dialog>
+
+<!-- 예산: 월 예산 설정 모달 -->
+<dialog id="budPlanModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong id="budPlanModalTitle">월 예산 설정</strong><button class="mini-btn" onclick="budPlanModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <input type="hidden" id="bpCat">
+      <label>월 예산 (원 단위 · 0 입력 시 예산 삭제) <input id="bpAmount" type="number" min="0" step="10000"></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="budPlanModal.close()">취소</button><button class="btn primary" id="saveBudPlanBtn">저장</button></div>
+  </form>
+</dialog>
+
+<!-- 예산: 지출 기록 모달 -->
+<dialog id="budSpendModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong>지출 기록</strong><button class="mini-btn" onclick="budSpendModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <label>날짜 * <input id="bsDate" type="date"></label>
+      <label>카테고리 * <select id="bsCat"></select></label>
+      <label>금액 (원 단위) * <input id="bsAmount" type="number" min="0" step="1000"></label>
+      <label>메모 (선택) <input id="bsMemo"></label>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="budSpendModal.close()">취소</button><button class="btn primary" id="saveBudSpendBtn">저장</button></div>
+  </form>
+</dialog>
 
 <!-- 사용자 선택 모달 -->
 <dialog id="userModal">
@@ -2142,12 +2218,172 @@ window.atExportCsv = () => {
   a.download = `출퇴근_${atMonthSel}.csv`; a.click();
 };
 
+/* ───────── 마케팅 예산 ───────── */
+let budYm = (function(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); })();
+const budFmt = n => { n = Number(n) || 0; return n >= 10000 ? Math.round(n/10000).toLocaleString() + "만원" : n.toLocaleString() + "원"; };
+const budCatName = id => ((data.budgetCats || {})[id] || {}).name || "삭제된 카테고리";
+function budShiftMonth(d){
+  const [y, m] = budYm.split("-").map(Number);
+  const nd = new Date(y, m - 1 + d, 1);
+  budYm = nd.getFullYear() + "-" + String(nd.getMonth()+1).padStart(2,"0");
+  renderBudget();
+}
+function renderBudget(){
+  if (!$("budYmLabel")) return;
+  $("budYmLabel").textContent = budYm.replace("-", "년 ") + "월";
+  const cats = entries(data.budgetCats).sort(byOrder);
+  const plans = (data.budgetPlans || {})[budYm] || {};
+  const spends = entries(data.budgetSpend).filter(s => s.ym === budYm)
+    .sort((a, b) => String(b.date||"").localeCompare(String(a.date||"")) || (b.createdAt||0) - (a.createdAt||0));
+  const spentBy = {};
+  spends.forEach(s => { spentBy[s.catId] = (spentBy[s.catId] || 0) + (Number(s.amount) || 0); });
+
+  let totPlan = 0, totSpent = 0;
+  const known = new Set(cats.map(c => c.id));
+  const rowHtml = (name, plan, spent, actions) => {
+    const remain = plan - spent;
+    const pct = plan > 0 ? Math.round(spent / plan * 100) : (spent > 0 ? 101 : 0);
+    const w = Math.min(100, pct);
+    const cls = pct > 100 ? "over" : (pct >= 85 ? "warn" : "");
+    return `<tr>
+      <td><b>${name}</b></td>
+      <td style="text-align:right">${plan ? budFmt(plan) : '<span class="hint">미설정</span>'}</td>
+      <td style="text-align:right">${budFmt(spent)}</td>
+      <td style="text-align:right;${remain < 0 ? 'color:var(--bad);font-weight:700' : ''}">${plan ? budFmt(remain) : "—"}</td>
+      <td><div class="bud-bar"><i class="${cls}" style="width:${plan ? w : (spent ? 100 : 0)}%"></i></div>
+        <div class="bud-pct ${pct > 100 ? "over" : ""}">${plan ? pct + "%" + (pct > 100 ? " 초과" : "") : (spent ? "예산 미설정" : "")}</div></td>
+      <td style="text-align:right;white-space:nowrap">${actions}</td>
+    </tr>`;
+  };
+  let body = cats.map(c => {
+    const p = Number(plans[c.id]) || 0, s = spentBy[c.id] || 0;
+    totPlan += p; totSpent += s;
+    return rowHtml(esc(c.name), p, s,
+      `<button class="mini-btn" onclick="budEditPlan('${c.id}')">예산</button>
+       <button class="mini-btn" onclick="budEditCat('${c.id}')">수정</button>
+       <button class="mini-btn" onclick="budDelCat('${c.id}')">삭제</button>`);
+  }).join("");
+  Object.keys(spentBy).filter(id => !known.has(id)).forEach(id => {
+    totSpent += spentBy[id];
+    body += rowHtml('<span class="hint">삭제된 카테고리</span>', 0, spentBy[id], "");
+  });
+  $("budBody").innerHTML = body || `<tr><td colspan="6" class="hint">카테고리가 없습니다. 오른쪽 위 [카테고리 추가]로 시작하세요. (예: 메타 광고, 네이버 광고, 체험단, 콘텐츠 제작)</td></tr>`;
+
+  const remainTot = totPlan - totSpent;
+  const totPct = totPlan > 0 ? Math.round(totSpent / totPlan * 100) : 0;
+  $("budCards").innerHTML =
+    `<div class="card"><div class="label">이달 총 예산</div><div class="value">${budFmt(totPlan)}</div></div>` +
+    `<div class="card"><div class="label">총 집행</div><div class="value">${budFmt(totSpent)}</div><div class="meta">${spends.length}건 기록</div></div>` +
+    `<div class="card"><div class="label">잔여</div><div class="value" style="${remainTot < 0 ? 'color:var(--bad)' : ''}">${budFmt(remainTot)}</div></div>` +
+    `<div class="card"><div class="label">집행률</div><div class="value" style="${totPct > 100 ? 'color:var(--bad)' : ''}">${totPct}%</div><div class="meta">${totPct > 100 ? "예산 초과" : totPlan ? "" : "예산을 설정해 주세요"}</div></div>`;
+
+  $("budSpendHint").textContent = spends.length ? `${spends.length}건 · 최신순` : "";
+  $("budSpendBody").innerHTML = spends.map(s => `<tr>
+      <td>${esc(s.date || "")}</td>
+      <td>${esc(budCatName(s.catId))}</td>
+      <td style="text-align:right">${budFmt(s.amount)}</td>
+      <td>${esc(s.memo || "")}</td>
+      <td>${esc(s.by || "")}</td>
+      <td style="text-align:right"><button class="mini-btn" onclick="budDelSpend('${s.id}')">삭제</button></td>
+    </tr>`).join("") || `<tr><td colspan="6" class="hint">이달 지출 기록이 없습니다.</td></tr>`;
+}
+$("budPrev").onclick = () => budShiftMonth(-1);
+$("budNext").onclick = () => budShiftMonth(1);
+
+const budCatModal = $("budCatModal"), budPlanModal = $("budPlanModal"), budSpendModal = $("budSpendModal");
+$("addBudCatBtn").onclick = () => {
+  $("budCatModalTitle").textContent = "카테고리 추가";
+  $("bcId").value = ""; $("bcName").value = ""; $("bcMemo").value = "";
+  budCatModal.showModal();
+};
+window.budEditCat = id => {
+  const c = (data.budgetCats || {})[id]; if (!c) return;
+  $("budCatModalTitle").textContent = "카테고리 수정";
+  $("bcId").value = id; $("bcName").value = c.name || ""; $("bcMemo").value = c.memo || "";
+  budCatModal.showModal();
+};
+window.budDelCat = id => {
+  const c = (data.budgetCats || {})[id]; if (!c) return;
+  if (!canDeleteItem(c)) return alert(DEL_DENY_MSG);
+  if (!confirm(`'${c.name}' 카테고리를 삭제할까요? 이미 기록된 지출은 '삭제된 카테고리'로 남습니다. 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("budgetCats", id, "예산 카테고리: " + c.name);
+};
+$("saveBudCatBtn").onclick = async () => {
+  const name = $("bcName").value.trim();
+  if (!name) return alert("이름은 필수입니다.");
+  const id = $("bcId").value || newId("bc_");
+  const prev = (data.budgetCats || {})[$("bcId").value] || {};
+  const payload = { name, memo: $("bcMemo").value.trim(), order: prev.order || nextOrder(data.budgetCats), by: prev.by || currentUser() || "" };
+  if (await safeWrite("예산 카테고리", () => orgRef.child("budgetCats/" + id).set(payload), $("saveBudCatBtn"))){
+    logAction($("bcId").value ? "수정" : "추가", "예산 카테고리: " + name);
+    budCatModal.close();
+  }
+};
+window.budEditPlan = id => {
+  const c = (data.budgetCats || {})[id]; if (!c) return;
+  $("budPlanModalTitle").textContent = budYm.replace("-", "년 ") + "월 예산 — " + c.name;
+  $("bpCat").value = id;
+  $("bpAmount").value = ((data.budgetPlans || {})[budYm] || {})[id] || "";
+  budPlanModal.showModal();
+};
+$("saveBudPlanBtn").onclick = async () => {
+  const id = $("bpCat").value;
+  const amt = Math.max(0, Math.round(Number($("bpAmount").value) || 0));
+  const ref = orgRef.child("budgetPlans/" + budYm + "/" + id);
+  const label = budYm + " " + budCatName(id) + " 예산 " + budFmt(amt);
+  if (await safeWrite("월 예산", () => amt > 0 ? ref.set(amt) : ref.remove(), $("saveBudPlanBtn"))){
+    logAction("수정", label);
+    budPlanModal.close();
+  }
+};
+$("addBudSpendBtn").onclick = () => {
+  const cats = entries(data.budgetCats).sort(byOrder);
+  if (!cats.length) return alert("먼저 [카테고리 추가]로 채널을 만들어 주세요.");
+  const t = new Date(), kst = t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,"0") + "-" + String(t.getDate()).padStart(2,"0");
+  $("bsDate").value = budYm === kst.slice(0, 7) ? kst : budYm + "-01";
+  $("bsCat").innerHTML = cats.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  $("bsAmount").value = ""; $("bsMemo").value = "";
+  budSpendModal.showModal();
+};
+$("saveBudSpendBtn").onclick = async () => {
+  const date = $("bsDate").value;
+  const amt = Math.round(Number($("bsAmount").value) || 0);
+  if (!date) return alert("날짜는 필수입니다.");
+  if (amt <= 0) return alert("금액을 입력해 주세요.");
+  const id = newId("bs_");
+  const payload = { ym: date.slice(0, 7), date, catId: $("bsCat").value, amount: amt, memo: $("bsMemo").value.trim(), by: currentUser() || "", createdAt: Date.now() };
+  if (await safeWrite("지출 기록", () => orgRef.child("budgetSpend/" + id).set(payload), $("saveBudSpendBtn"))){
+    logAction("추가", "예산 지출: " + budCatName(payload.catId) + " " + budFmt(amt) + " (" + date + ")");
+    if (payload.ym !== budYm){ budYm = payload.ym; }
+    budSpendModal.close();
+    renderBudget();
+  }
+};
+window.budDelSpend = id => {
+  const s = (data.budgetSpend || {})[id]; if (!s) return;
+  if (!canDeleteItem(s)) return alert(DEL_DENY_MSG);
+  if (!confirm(`${s.date} ${budCatName(s.catId)} ${budFmt(s.amount)} 지출 기록을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("budgetSpend", id, "예산 지출: " + budCatName(s.catId) + " " + budFmt(s.amount));
+};
+$("budCopyBtn").onclick = async () => {
+  const [y, m] = budYm.split("-").map(Number);
+  const pd = new Date(y, m - 2, 1);
+  const pym = pd.getFullYear() + "-" + String(pd.getMonth()+1).padStart(2,"0");
+  const prev = (data.budgetPlans || {})[pym];
+  if (!prev || !Object.keys(prev).length) return alert(pym + " 예산이 없어 불러올 수 없습니다.");
+  const cur = (data.budgetPlans || {})[budYm] || {};
+  if (Object.keys(cur).length && !confirm("이번달 예산이 이미 있어요. " + pym + " 예산으로 덮어쓸까요?")) return;
+  if (await safeWrite("예산 복사", () => orgRef.child("budgetPlans/" + budYm).set(prev), $("budCopyBtn"))){
+    logAction("추가", "예산 복사: " + pym + " → " + budYm);
+  }
+};
+
 function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderForms, renderMeetings,
-   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance, renderBudget].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
   ensureUser(); renderWho();
