@@ -451,6 +451,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           </label>
         </div>
       </div>
+      <div class="cs-note" style="margin-top:12px">📅 <b>일요일 오후 6시까지</b> 신청한 캐시백은 <b>그날 저녁 6~10시</b> 사이에 순차 입금돼요. 그 이후 신청은 다음 주 일요일에 입금돼요.<br>입금되면 이 페이지 상단 <b>지급완료</b>에 반영돼요.</div>
     </div>
 
     <div id="holdBanner" style="display:none;margin:0 16px 12px;padding:14px 16px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:12px">
@@ -639,7 +640,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="success-box">
     <h2 style="margin-top:4px">캐시백 신청 완료</h2>
     <div class="amt" id="successAmt">0원</div>
-    <p>영업일 기준 1~2일 내에 입금됩니다.<br>감사합니다!</p>
+    <p id="successNote"><b>일요일 저녁 6~10시</b> 사이에 순차 입금됩니다.<br>감사합니다!</p>
     <button onclick="document.getElementById('successOverlay').classList.remove('show')">확인</button>
   </div>
 </div>
@@ -647,6 +648,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <script>
 // ═════════════════════════════════════════════════════════
+// 캐시백 입금 예정일: 일요일 18시까지 신청 → 그날 저녁, 이후 → 다음 주 일요일
+function nextPayoutDate(from){
+  const d=new Date(from||Date.now());
+  let add=(7-d.getDay())%7;
+  if(add===0&&d.getHours()>=18)add=7;
+  const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+add);
+  return (t.getMonth()+1)+'/'+t.getDate()+'(일)';
+}
+
 // 공통 (탭 / 로딩 / 체크리스트 펼치기)
 // ═════════════════════════════════════════════════════════
 const API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
@@ -1158,7 +1168,7 @@ function updateSummary(){
       document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원';
       document.getElementById('paidAmount').style.color='var(--green)';
     }else if(isPending){
-      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 (입금 대기 중)';
+      document.getElementById('paidAmount').textContent=paidTotal.toLocaleString()+'원 (일요일 저녁 입금 예정)';
       document.getElementById('paidAmount').style.color='var(--orange)';
     }else{
       document.getElementById('paidAmount').textContent='0원';
@@ -1168,7 +1178,7 @@ function updateSummary(){
     if(payStatus){
       sr.style.display='flex';
       if(isPaid){st.textContent='지급완료';st.style.color='var(--green)';}
-      else if(isPending){st.textContent='신청완료 (입금 대기 중)';st.style.color='var(--orange)';}
+      else if(isPending){st.textContent='신청완료 (일요일 저녁 입금 예정)';st.style.color='var(--orange)';}
       else{st.textContent=payStatus;st.style.color='var(--text2)';}
     }
   }
@@ -1231,10 +1241,10 @@ function updateCashbackBtn(){
     return;
   }
   hb.style.display='none';
-  if(isPending&&remain<=0){btn.disabled=true;btn.textContent='캐시백 신청 완료 (입금 대기 중)';}
+  if(isPending&&remain<=0){btn.disabled=true;btn.textContent='캐시백 신청 완료 (일요일 저녁 입금)';}
   else if(remain>0){btn.disabled=false;btn.textContent='캐시백 '+remain.toLocaleString()+'원 받기';}
   else if(earned>0&&isPaid){btn.disabled=true;btn.textContent='지급 완료 ('+paidTotal.toLocaleString()+'원)';}
-  else if(earned>0){btn.disabled=true;btn.textContent='캐시백 신청 완료 (입금 대기 중)';}
+  else if(earned>0){btn.disabled=true;btn.textContent='캐시백 신청 완료 (일요일 저녁 입금)';}
   else{btn.disabled=true;btn.textContent='미션을 달성하면 캐시백을 받을 수 있어요';}
 }
 
@@ -1490,6 +1500,7 @@ async function requestCashback(){
     await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'cashback',phone:PHONE,bank,accountName:name,accountNum:num,totalEarned:earned,paidAmount:paidTotal,requestAmount:reqAmt,submittedAt:new Date().toISOString()})});
     document.getElementById('successAmt').textContent=reqAmt.toLocaleString()+'원';
+    document.getElementById('successNote').innerHTML='<b>'+nextPayoutDate()+' 저녁 6~10시</b> 사이에 순차 입금됩니다.<br>감사합니다!';
     document.getElementById('successOverlay').classList.add('show');
     // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
     try {
