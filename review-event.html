@@ -451,7 +451,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           </label>
         </div>
       </div>
-      <div class="cs-note" style="margin-top:12px">📅 <b>일요일 오후 6시까지</b> 신청한 캐시백은 <b>그날 저녁 6~10시</b> 사이에 순차 입금돼요. 그 이후 신청은 다음 주 일요일에 입금돼요.<br>입금되면 이 페이지 상단 <b>지급완료</b>에 반영돼요.</div>
+      <div class="cs-note" style="margin-top:12px"><b>월~일요일 저녁 6시까지</b> 신청한 캐시백은 <b>일요일 저녁 6~10시</b> 사이 순차적으로 입금됩니다.<br>입금 후 이 페이지 상단 <b>지급완료</b>에 반영됩니다.</div>
     </div>
 
     <div id="holdBanner" style="display:none;margin:0 16px 12px;padding:14px 16px;background:#fff7ed;border:1.5px solid #ea580c;border-radius:12px">
@@ -640,7 +640,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="success-box">
     <h2 style="margin-top:4px">캐시백 신청 완료</h2>
     <div class="amt" id="successAmt">0원</div>
-    <p id="successNote"><b>일요일 저녁 6~10시</b> 사이에 순차 입금됩니다.<br>감사합니다!</p>
+    <p id="successNote"><b>일요일 저녁 6~10시</b> 사이 순차적으로 입금됩니다.<br>감사합니다!</p>
     <button onclick="document.getElementById('successOverlay').classList.remove('show')">확인</button>
   </div>
 </div>
@@ -1500,7 +1500,7 @@ async function requestCashback(){
     await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'cashback',phone:PHONE,bank,accountName:name,accountNum:num,totalEarned:earned,paidAmount:paidTotal,requestAmount:reqAmt,submittedAt:new Date().toISOString()})});
     document.getElementById('successAmt').textContent=reqAmt.toLocaleString()+'원';
-    document.getElementById('successNote').innerHTML='<b>'+nextPayoutDate()+' 저녁 6~10시</b> 사이에 순차 입금됩니다.<br>감사합니다!';
+    document.getElementById('successNote').innerHTML='<b>'+nextPayoutDate()+' 저녁 6~10시</b> 사이 순차적으로 입금됩니다.<br>감사합니다!';
     document.getElementById('successOverlay').classList.add('show');
     // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
     try {
