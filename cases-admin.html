@@ -53,7 +53,9 @@ textarea{resize:vertical;min-height:70px}
 .pv{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--dim)}
 .pv img{width:100%;height:100%;object-fit:cover}
 .pv .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:22px;text-align:center;cursor:pointer}
-.pv .fw{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.85);color:var(--ink);font-size:10.5px;text-align:center;padding:3px 0;cursor:pointer;border:0}
+.pv{cursor:grab}
+.pv.dragging{opacity:.35;cursor:grabbing}
+.pv .ord{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:6px;pointer-events:none}
 .best-line{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px}
 .best-line input{width:18px;height:18px}
 .submit{width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:var(--ink);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
@@ -146,7 +148,7 @@ body.editing .cancel-edit{display:block}
     </div>
     <input type="file" id="mainInput" accept="image/*" hidden>
 
-    <label>추가 사진 (라이트박스에서 순서대로 표시)</label>
+    <label>추가 사진 — 드래그해서 순서 변경 (라이트박스에 순서대로 표시)</label>
     <button class="photo-add" id="photoAdd">＋ 추가 사진 넣기</button>
     <input type="file" id="photoInput" accept="image/*" multiple hidden>
     <div class="previews" id="previews"></div>
@@ -427,18 +429,63 @@ function renderPreviews(){
   extraPhotos.forEach((ph,i)=>{
     const d = document.createElement('div');
     d.className='pv';
+    d.draggable = true;
+    d.dataset.i = i;
     const src = ph.fid ? thumb(ph.fid,300) : ph.url;
-    d.innerHTML = `<img src="${src}"><span class="del" data-i="${i}">×</span>
-      ${i>0?`<button class="fw" data-i="${i}">‹ 앞으로</button>`:''}`;
+    d.innerHTML = `<img src="${src}" draggable="false"><span class="del" data-i="${i}">×</span><span class="ord">${i+1}</span>`;
     p.appendChild(d);
   });
   p.querySelectorAll('.del').forEach(x=>x.onclick=()=>{freeUrl(extraPhotos[+x.dataset.i]); extraPhotos.splice(+x.dataset.i,1);renderPreviews();});
-  p.querySelectorAll('.fw').forEach(x=>x.onclick=()=>{
-    const i=+x.dataset.i;
-    [extraPhotos[i-1],extraPhotos[i]]=[extraPhotos[i],extraPhotos[i-1]];
-    renderPreviews();
-  });
 }
+
+/* ===== 추가 사진 드래그 순서 변경 (PC 드래그 + 모바일 길게 눌러 드래그) ===== */
+const pvBox = document.getElementById('previews');
+function applyDomOrder_(){
+  const order = [...pvBox.querySelectorAll('.pv')].map(el=>+el.dataset.i);
+  extraPhotos = order.map(i=>extraPhotos[i]);
+  renderPreviews();
+}
+pvBox.addEventListener('dragstart', e=>{
+  const pv = e.target.closest('.pv'); if(!pv) return;
+  pv.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  try{ e.dataTransfer.setData('text/plain',''); }catch(err){}
+});
+pvBox.addEventListener('dragover', e=>{
+  e.preventDefault();
+  const dragging = pvBox.querySelector('.dragging');
+  const target = e.target.closest('.pv');
+  if(!dragging || !target || target===dragging) return;
+  const rect = target.getBoundingClientRect();
+  const before = (e.clientX - rect.left) < rect.width/2;
+  pvBox.insertBefore(dragging, before ? target : target.nextSibling);
+});
+pvBox.addEventListener('drop', e=>e.preventDefault());
+pvBox.addEventListener('dragend', ()=>{ applyDomOrder_(); });
+
+let touchEl=null, touchTimer=null;
+pvBox.addEventListener('touchstart', e=>{
+  const pv = e.target.closest('.pv');
+  if(!pv || e.target.classList.contains('del')) return;
+  touchTimer = setTimeout(()=>{ touchEl=pv; pv.classList.add('dragging'); }, 250);
+},{passive:true});
+pvBox.addEventListener('touchmove', e=>{
+  if(!touchEl){ clearTimeout(touchTimer); return; }
+  e.preventDefault();
+  const t = e.touches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const target = el && el.closest('.pv');
+  if(!target || target===touchEl) return;
+  const rect = target.getBoundingClientRect();
+  const before = (t.clientX - rect.left) < rect.width/2;
+  pvBox.insertBefore(touchEl, before ? target : target.nextSibling);
+},{passive:false});
+pvBox.addEventListener('touchend', ()=>{
+  clearTimeout(touchTimer);
+  if(!touchEl) return;
+  touchEl = null;
+  applyDomOrder_();
+});
 
 /* ===== 수정 모드 ===== */
 function startEdit(c){
