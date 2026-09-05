@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시공사례 관리 | 돌봄매트 마케팅</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--ink:#161616;--soft:#555;--faint:#999;--line:#e6e4e0;--dim:#f5f4f2;--ok:#1a7f37;--bad:#c0392b;--edit:#8a5a00;--edit-bg:#fff7e6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;color:var(--ink);background:#fafaf9;word-break:keep-all;padding-bottom:80px}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px}
+h1{font-size:20px;font-weight:800;padding:4px 0 14px}
+.cols{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:980px){.cols{grid-template-columns:520px 1fr;align-items:start}.mgr-col{position:sticky;top:16px}}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+details.card{padding:0}
+details.card summary{padding:16px;font-size:15px;font-weight:700;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+details.card summary::after{content:'▾';margin-left:auto;color:var(--faint);transition:transform .15s}
+details.card[open] summary::after{transform:rotate(180deg)}
+details.card .inner{padding:0 16px 18px}
+.edit-badge{display:none;font-size:11.5px;font-weight:700;color:var(--edit);background:var(--edit-bg);border-radius:100px;padding:3px 10px}
+body.editing .edit-badge{display:inline-block}
+body.editing .form-card{border-color:#e8c98a}
+label{display:block;font-size:13px;color:var(--soft);margin:12px 0 6px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:15px;background:#fff}
+textarea{resize:vertical;min-height:70px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border:1px solid var(--line);border-radius:100px;font-size:14px;background:#fff;cursor:pointer;color:var(--soft)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+.hint{font-size:12px;color:var(--faint);margin-top:6px;line-height:1.5}
+/* 대표사진 */
+.main-photo{display:flex;gap:12px;align-items:center}
+.main-slot{
+  width:140px;height:105px;flex:0 0 auto;border-radius:12px;overflow:hidden;
+  background:var(--dim);border:1.5px dashed #cfcbc4;display:flex;align-items:center;justify-content:center;
+  color:var(--faint);font-size:13px;cursor:pointer;position:relative;text-align:center;line-height:1.5;
+}
+.main-slot img{width:100%;height:100%;object-fit:cover}
+.main-slot .rep{position:absolute;left:0;right:0;top:0;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;text-align:center;padding:2px 0}
+.main-actions{font-size:13px;color:var(--soft);line-height:2}
+.main-actions button{color:var(--ink);text-decoration:underline;font-size:13px}
+/* 추가 사진 */
+.photo-add{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  border:1.5px dashed #cfcbc4;border-radius:12px;padding:16px;
+  color:var(--soft);font-size:14px;cursor:pointer;background:#fff;width:100%;
+}
+.previews{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.pv{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--dim)}
+.pv img{width:100%;height:100%;object-fit:cover}
+.pv .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:22px;text-align:center;cursor:pointer}
+.pv .fw{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.85);color:var(--ink);font-size:10.5px;text-align:center;padding:3px 0;cursor:pointer;border:0}
+.best-line{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px}
+.best-line input{width:18px;height:18px}
+.submit{width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:var(--ink);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.submit:disabled{opacity:.45}
+.cancel-edit{display:none;width:100%;margin-top:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:14px;cursor:pointer;color:var(--soft)}
+body.editing .cancel-edit{display:block}
+.msg{margin-top:10px;font-size:14px;text-align:center;display:none}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+#gate{position:fixed;inset:0;background:#fafaf9;z-index:10;display:flex;align-items:center;justify-content:center;padding:24px}
+#gate .card{width:100%;max-width:360px}
+/* 카테고리 편집기 */
+.cfg-block{margin-top:14px}
+.cfg-block:first-child{margin-top:4px}
+.cfg-title{font-size:13px;font-weight:700;margin-bottom:8px}
+.cfg-items{display:flex;flex-wrap:wrap;gap:6px}
+.cfg-item{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:100px;padding:5px 6px 5px 12px;font-size:13.5px;background:#fff}
+.cfg-item button{font-size:12px;color:var(--faint);width:20px;height:20px;border-radius:50%}
+.cfg-item button:hover{background:var(--dim);color:var(--ink)}
+.cfg-addrow{display:flex;gap:6px;margin-top:8px}
+.cfg-addrow input{flex:1;padding:8px 10px;font-size:14px}
+.cfg-addrow button{flex:0 0 auto;padding:8px 14px;border:1px solid var(--ink);border-radius:10px;font-size:13.5px;font-weight:600;background:#fff}
+.cfg-save{width:100%;margin-top:16px;padding:12px;border:0;border-radius:12px;background:var(--ink);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+.cfg-save:disabled{opacity:.45}
+/* 관리 리스트 */
+.mgr-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--dim)}
+.mgr-item:last-child{border-bottom:0}
+.mgr-item img{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--dim);flex:0 0 auto}
+.mgr-info{flex:1;min-width:0}
+.mgr-info .t{font-size:13.5px;font-weight:600;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.mgr-info .s{font-size:12px;color:var(--faint);margin-top:2px}
+.mini{flex:0 0 auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:170px}
+.mini button{font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;color:var(--soft)}
+.mini button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hidden-row{opacity:.45}
+.reload{font-size:13px;color:var(--soft);background:none;border:0;cursor:pointer;text-decoration:underline;margin-left:auto}
+</style>
+</head>
+<body>
+
+<!-- 관리자 키 게이트 -->
+<div id="gate">
+  <div class="card">
+    <h2>시공사례 관리 — 마케팅팀 전용</h2>
+    <label>관리자 키</label>
+    <input type="password" id="gateKey" placeholder="키 입력 (최초 1회만)" autocomplete="off">
+    <button class="submit" id="gateBtn" style="margin-top:12px">입장</button>
+    <div class="msg bad" id="gateMsg">키가 올바르지 않아요</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>시공사례 관리 <button id="logoutBtn" style="font-size:12px;font-weight:500;color:var(--faint);border:1px solid var(--line);border-radius:8px;padding:5px 10px;margin-left:8px;vertical-align:middle">로그아웃</button></h1>
+  <div class="cols">
+
+  <div>
+  <details class="card">
+    <summary>카테고리 설정 (평형 · 필터 태그 · 제품)</summary>
+    <div class="inner">
+      <div class="cfg-block">
+        <div class="cfg-title">평형 카테고리 <span style="font-weight:400;color:var(--faint)">— 나열 순서 그대로 고객 페이지 필터에 표시</span></div>
+        <div class="cfg-items" id="cfgSizes"></div>
+        <div class="cfg-addrow"><input id="addSize" placeholder="예: 50평대 이상"><button data-add="sizes">추가</button></div>
+      </div>
+      <div class="cfg-block">
+        <div class="cfg-title">필터 태그 <span style="font-weight:400;color:var(--faint)">— 고객이 궁금해할 시공 포인트</span></div>
+        <div class="cfg-items" id="cfgTags"></div>
+        <div class="cfg-addrow"><input id="addTag" placeholder="예: 아일랜드 식탁 주변"><button data-add="tags">추가</button></div>
+      </div>
+      <div class="cfg-block">
+        <div class="cfg-title">시공 제품 목록 <span style="font-weight:400;color:var(--faint)">— 등록 폼 드롭다운에 표시</span></div>
+        <div class="cfg-items" id="cfgProducts"></div>
+        <div class="cfg-addrow"><input id="addProduct" placeholder="예: 500 코튼"><button data-add="products">추가</button></div>
+      </div>
+      <button class="cfg-save" id="cfgSaveBtn">카테고리 설정 저장</button>
+      <div class="msg" id="cfgMsg"></div>
+      <div class="hint">‹ 는 한 칸 앞으로 이동, × 는 삭제예요. 삭제해도 기존 사례에 붙은 값은 그대로 남고, 새 등록에서만 안 보여요.</div>
+    </div>
+  </details>
+
+  <div class="card form-card">
+    <h2><span id="formTitle">새 사례 등록</span><span class="edit-badge">수정 중</span></h2>
+
+    <label>대표 사진 (썸네일·목록에 노출되는 1장)</label>
+    <div class="main-photo">
+      <div class="main-slot" id="mainSlot">대표 사진<br>선택</div>
+      <div class="main-actions">
+        <button id="mainChange">대표 사진 바꾸기</button><br>
+        <span class="hint" style="margin:0">추가 사진과 섞이지 않아요</span>
+      </div>
+    </div>
+    <input type="file" id="mainInput" accept="image/*" hidden>
+
+    <label>추가 사진 (라이트박스에서 순서대로 표시)</label>
+    <button class="photo-add" id="photoAdd">＋ 추가 사진 넣기</button>
+    <input type="file" id="photoInput" accept="image/*" multiple hidden>
+    <div class="previews" id="previews"></div>
+    <div class="hint">업로드 시 웹용으로 자동 변환돼요(최대 1600px). 원본은 드라이브에 따로 보관해주세요.</div>
+
+    <label>지역 (제목 생성용)</label>
+    <div class="chips" data-group="region">
+      <button class="chip" data-v="부산">부산</button>
+      <button class="chip" data-v="경기">경기</button>
+      <button class="chip" data-v="기타">기타</button>
+    </div>
+    <label>도시 · 아파트명 (예: 화성 동탄 센트럴 푸르지오)</label>
+    <input id="apt" placeholder="검색 노출에 중요 — 아파트명까지">
+    <div class="row">
+      <div>
+        <label>평형</label>
+        <select id="size"><option value="">선택</option></select>
+      </div>
+      <div>
+        <label>매트 종류</label>
+        <select id="mat">
+          <option value="유아매트">유아매트</option>
+          <option value="애견매트">애견매트</option>
+        </select>
+      </div>
+    </div>
+    <label>필터 태그 (여러 개 선택 가능)</label>
+    <div class="chips" data-group="tags" data-multi="1" id="tagChips"></div>
+    <label>시공 제품</label>
+    <select id="product"><option value="">선택 안 함</option></select>
+
+    <label>페이지 제목 (자동 생성 — 직접 다듬어도 됨)</label>
+    <input id="title" placeholder="정보를 입력하면 자동으로 채워져요">
+    <div class="hint">검색 노출용 제목이에요. "지역+아파트명+평형" 패턴을 유지하고, 필요하면 키워드를 추가하세요.</div>
+
+    <label>한 줄 설명 (선택)</label>
+    <textarea id="desc" placeholder="예: 몰딩 라인까지 맞춘 걸레받이 마감이 포인트"></textarea>
+    <div class="best-line">
+      <input type="checkbox" id="best"><label for="best" style="margin:0;font-size:14px;color:var(--ink)">BEST 사례로 올리기 (상단 노출, 3개까지 표시)</label>
+    </div>
+    <label id="byLabel">등록자 이름</label>
+    <input id="by" placeholder="본인 이름">
+    <button class="submit" id="submitBtn">등록하기</button>
+    <button class="cancel-edit" id="cancelBtn">수정 취소</button>
+    <div class="msg" id="submitMsg"></div>
+  </div>
+  </div>
+
+  <div class="mgr-col">
+  <div class="card">
+    <h2>등록된 사례 <button class="reload" id="reloadBtn">새로고침</button></h2>
+    <input id="mgrSearch" placeholder="제목 검색 (아파트명·지역 등)" style="margin-bottom:8px;font-size:14px;padding:9px 12px">
+    <div id="mgrList" style="margin-top:4px"><div style="font-size:13px;color:var(--faint)">불러오는 중...</div></div>
+  </div>
+  </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
+const thumb = (id,w)=>`https://drive.google.com/thumbnail?id=${id}&sz=w${w||400}`;
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let KEY = sessionStorage.getItem('casesAdminKey') || '';
+let editingId = null;
+let allCases = [];
+let CONFIG = { sizes:[], tags:[], products:[] };
+
+/* ===== 키 게이트 ===== */
+const gate = document.getElementById('gate');
+async function tryKey(k){
+  const r = await fetch(`${API}?type=cases&key=${encodeURIComponent(k)}`);
+  const j = await r.json();
+  if(j.ok && j.admin){ applyBootstrap(j); return true; }
+  return false;
+}
+document.getElementById('gateBtn').onclick = async ()=>{
+  const k = document.getElementById('gateKey').value.trim();
+  if(!k) return;
+  document.getElementById('gateBtn').disabled = true;
+  try{
+    if(await tryKey(k)){
+      KEY = k; sessionStorage.setItem('casesAdminKey', k);
+      gate.style.display='none';
+    } else {
+      document.getElementById('gateMsg').style.display='block';
+    }
+  }catch(e){ document.getElementById('gateMsg').textContent='연결 실패 — 다시 시도해주세요'; document.getElementById('gateMsg').style.display='block'; }
+  document.getElementById('gateBtn').disabled = false;
+};
+(async ()=>{
+  if(KEY){
+    try{ if(await tryKey(KEY)){ gate.style.display='none'; return; } }catch(e){}
+    sessionStorage.removeItem('casesAdminKey');
+  }
+})();
+document.getElementById('logoutBtn').onclick=()=>{
+  sessionStorage.removeItem('casesAdminKey');
+  location.reload();
+};
+function applyBootstrap(j){
+  if(j.config && Array.isArray(j.config.sizes)) CONFIG = j.config;
+  allCases = (j.cases || []).map(c => ({
+    ...c,
+    title: c.title || '', size: c.size || '', mat: c.mat || '',
+    tags: Array.isArray(c.tags) ? c.tags : [],
+    photos: Array.isArray(c.photos) ? c.photos : []
+  }));
+  renderConfigEditors(); renderFormOptions(); renderList();
+}
+
+/* ===== 카테고리 설정 편집기 ===== */
+function renderConfigEditors(){
+  const map = {sizes:'cfgSizes', tags:'cfgTags', products:'cfgProducts'};
+  Object.entries(map).forEach(([k,elId])=>{
+    const box = document.getElementById(elId);
+    box.innerHTML='';
+    CONFIG[k].forEach((v,i)=>{
+      const d=document.createElement('span');
+      d.className='cfg-item';
+      d.innerHTML=`${v}${i>0?`<button title="앞으로" data-fw>‹</button>`:''}<button title="삭제" data-del>×</button>`;
+      const fw=d.querySelector('[data-fw]');
+      if(fw) fw.onclick=()=>{ [CONFIG[k][i-1],CONFIG[k][i]]=[CONFIG[k][i],CONFIG[k][i-1]]; renderConfigEditors(); };
+      d.querySelector('[data-del]').onclick=()=>{ CONFIG[k].splice(i,1); renderConfigEditors(); };
+      box.appendChild(d);
+    });
+  });
+}
+document.querySelectorAll('[data-add]').forEach(btn=>{
+  btn.onclick=()=>{
+    const k=btn.dataset.add;
+    const input=btn.previousElementSibling;
+    const v=input.value.trim();
+    if(!v) return;
+    if(CONFIG[k].includes(v)){ input.value=''; return; }
+    CONFIG[k].push(v);
+    input.value='';
+    renderConfigEditors();
+  };
+});
+document.getElementById('cfgSaveBtn').onclick = async ()=>{
+  const m=document.getElementById('cfgMsg');
+  const show=(t,ok)=>{m.textContent=t;m.className='msg '+(ok?'ok':'bad');m.style.display='block';};
+  const names={sizes:'평형',tags:'필터 태그',products:'제품'};
+  for(const k of ['sizes','tags','products']){
+    if(!CONFIG[k].length) return show(`${names[k]} 목록은 최소 1개 필요해요`,false);
+  }
+  const btn=document.getElementById('cfgSaveBtn');
+  btn.disabled=true;
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'caseConfigSave', key:KEY, config:CONFIG})});
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||'저장 실패');
+    if(j.config) CONFIG=j.config;
+    renderConfigEditors(); renderFormOptions();
+    show('저장 완료 — 고객 페이지 필터에 반영됐어요 ✓',true);
+  }catch(e){ show('저장 실패: '+e.message,false); }
+  btn.disabled=false;
+};
+
+/* ===== 폼 옵션 (평형·태그·제품을 설정값으로) ===== */
+function renderFormOptions(){
+  const sel=document.getElementById('size');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">선택</option>'+CONFIG.sizes.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(CONFIG.sizes.includes(cur)) sel.value=cur;
+  const ps=document.getElementById('product');
+  const curP=ps.value;
+  ps.innerHTML='<option value="">선택 안 함</option>'+CONFIG.products.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(CONFIG.products.includes(curP)) ps.value=curP;
+  const tc=document.getElementById('tagChips');
+  const onNow=picked('tags');
+  tc.innerHTML=CONFIG.tags.map(t=>`<button class="chip${onNow.includes(t)?' on':''}" data-v="${t}">${t}</button>`).join('');
+}
+
+/* ===== 칩 선택 ===== */
+document.querySelectorAll('.chips').forEach(g=>{
+  g.addEventListener('click',e=>{
+    const b = e.target.closest('.chip'); if(!b) return;
+    if(g.dataset.multi) b.classList.toggle('on');
+    else { g.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); b.classList.add('on'); }
+    autoTitle();
+  });
+});
+const picked = g => {
+  const el=document.querySelector(`[data-group="${g}"]`);
+  return el?[...el.querySelectorAll('.chip.on')].map(b=>b.dataset.v):[];
+};
+function setChips(g, values){
+  document.querySelector(`[data-group="${g}"]`).querySelectorAll('.chip').forEach(c=>{
+    c.classList.toggle('on', values.includes(c.dataset.v));
+  });
+}
+
+/* ===== 제목 자동 생성 ===== */
+let titleTouched = false;
+document.getElementById('title').addEventListener('input',e=>{titleTouched = e.target.value.trim() !== ''; autoTitle();});
+function buildTitle(){
+  const region = picked('region')[0]||'';
+  const apt = document.getElementById('apt').value.trim();
+  const size = document.getElementById('size').value;
+  const mat = document.getElementById('mat').value;
+  let t = [region, apt].filter(Boolean).join(' ');
+  if(size) t += ` ${size}`;
+  t += ` ${mat} 시공`;
+  return t.trim();
+}
+function autoTitle(){
+  if(!titleTouched) document.getElementById('title').value = buildTitle();
+}
+['apt','size','mat'].forEach(id=>document.getElementById(id).addEventListener('input',autoTitle));
+document.getElementById('size').addEventListener('change',autoTitle);
+document.getElementById('mat').addEventListener('change',autoTitle);
+
+/* ===== 사진: 대표 1장 + 추가 사진 ===== */
+let mainPhoto = null;   // {fid} 또는 {blob,url}
+let extraPhotos = [];   // 위와 동일 구조
+function compress(file){
+  return new Promise((res,rej)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const MAX = 1600;
+      const scale = Math.min(1, MAX/Math.max(img.width,img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width*scale);
+      cv.height = Math.round(img.height*scale);
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff';                 // PNG 투명 배경이 검게 변하는 것 방지
+      ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.drawImage(img,0,0,cv.width,cv.height);
+      cv.toBlob(b=>{
+        if(!b) return rej();
+        if(b.size > 1.5*1024*1024){ // 파노라마 등 큰 사진은 한 번 더 압축
+          cv.toBlob(b2=>{
+            if(!b2) return rej();
+            res({blob:b2, url:URL.createObjectURL(b2)});
+          },'image/jpeg',0.6);
+        } else {
+          res({blob:b, url:URL.createObjectURL(b)});
+        }
+      },'image/jpeg',0.82);
+    };
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+const mainSlot=document.getElementById('mainSlot');
+mainSlot.onclick=()=>document.getElementById('mainInput').click();
+document.getElementById('mainChange').onclick=()=>document.getElementById('mainInput').click();
+document.getElementById('mainInput').addEventListener('change', async e=>{
+  if(e.target.files[0]){
+    try{ freeUrl(mainPhoto); mainPhoto = await compress(e.target.files[0]); renderMain(); }
+    catch(err){ alert('사진을 불러오지 못했어요'); }
+  }
+  e.target.value='';
+});
+function renderMain(){
+  if(!mainPhoto){ mainSlot.innerHTML='대표 사진<br>선택'; return; }
+  const src = mainPhoto.fid ? thumb(mainPhoto.fid,300) : mainPhoto.url;
+  mainSlot.innerHTML=`<img src="${src}"><span class="rep">대표</span>`;
+}
+const MAX_EXTRA = 14; // 대표 1장 + 추가 14장 = 최대 15장
+const freeUrl = p => { if(p && !p.fid && p.url) URL.revokeObjectURL(p.url); };
+document.getElementById('photoAdd').onclick = ()=>document.getElementById('photoInput').click();
+document.getElementById('photoInput').addEventListener('change', async e=>{
+  for(const f of e.target.files){
+    if(extraPhotos.length >= MAX_EXTRA){ alert(`추가 사진은 최대 ${MAX_EXTRA}장까지예요`); break; }
+    try{ extraPhotos.push(await compress(f)); }
+    catch(err){ alert('사진 한 장을 불러오지 못했어요: '+f.name); }
+  }
+  e.target.value='';
+  renderPreviews();
+});
+function renderPreviews(){
+  const p = document.getElementById('previews');
+  p.innerHTML='';
+  extraPhotos.forEach((ph,i)=>{
+    const d = document.createElement('div');
+    d.className='pv';
+    const src = ph.fid ? thumb(ph.fid,300) : ph.url;
+    d.innerHTML = `<img src="${src}"><span class="del" data-i="${i}">×</span>
+      ${i>0?`<button class="fw" data-i="${i}">‹ 앞으로</button>`:''}`;
+    p.appendChild(d);
+  });
+  p.querySelectorAll('.del').forEach(x=>x.onclick=()=>{freeUrl(extraPhotos[+x.dataset.i]); extraPhotos.splice(+x.dataset.i,1);renderPreviews();});
+  p.querySelectorAll('.fw').forEach(x=>x.onclick=()=>{
+    const i=+x.dataset.i;
+    [extraPhotos[i-1],extraPhotos[i]]=[extraPhotos[i],extraPhotos[i-1]];
+    renderPreviews();
+  });
+}
+
+/* ===== 수정 모드 ===== */
+function startEdit(c){
+  editingId = c.id;
+  document.body.classList.add('editing');
+  document.getElementById('formTitle').textContent = '사례 수정';
+  document.getElementById('submitBtn').textContent = '수정 저장';
+  mainPhoto = c.photos[0] ? {fid:c.photos[0]} : null;
+  extraPhotos = c.photos.slice(1).map(fid=>({fid}));
+  renderMain(); renderPreviews();
+  setChips('region',[c.region]);
+  document.getElementById('apt').value='';
+  renderFormOptions();
+  document.getElementById('size').value = CONFIG.sizes.includes(c.size)?c.size:'';
+  document.getElementById('mat').value=c.mat||'유아매트';
+  setChips('tags',c.tags||[]);
+  document.getElementById('product').value = CONFIG.products.includes(c.product)?c.product:'';
+  document.getElementById('title').value=c.title||'';
+  titleTouched = true;
+  document.getElementById('desc').value=c.desc||'';
+  document.getElementById('best').checked=!!c.best;
+  document.getElementById('byLabel').textContent='수정자 이름 (수정 이력에 기록돼요)';
+  document.getElementById('by').value='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function resetForm(){
+  editingId=null; titleTouched=false;
+  document.body.classList.remove('editing');
+  document.getElementById('formTitle').textContent='새 사례 등록';
+  document.getElementById('submitBtn').textContent='등록하기';
+  freeUrl(mainPhoto); extraPhotos.forEach(freeUrl);
+  mainPhoto=null; extraPhotos=[];
+  renderMain(); renderPreviews();
+  setChips('region',[]);
+  document.querySelectorAll('#tagChips .chip').forEach(c=>c.classList.remove('on'));
+  ['apt','title','desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('size').value='';
+  document.getElementById('product').value='';
+  document.getElementById('mat').value='유아매트';
+  document.getElementById('best').checked=false;
+  document.getElementById('byLabel').textContent='등록자 이름';
+  document.getElementById('by').value='';
+}
+document.getElementById('cancelBtn').onclick=resetForm;
+
+/* ===== 등록/수정 저장 ===== */
+const blobToB64 = blob => new Promise(res=>{
+  const r = new FileReader();
+  r.onload = ()=>res(r.result.split(',')[1]);
+  r.readAsDataURL(blob);
+});
+document.getElementById('submitBtn').onclick = async ()=>{
+  const msg = document.getElementById('submitMsg');
+  const show=(t,ok)=>{msg.textContent=t;msg.className='msg '+(ok?'ok':'bad');msg.style.display='block';};
+  if(!mainPhoto) return show('대표 사진을 넣어주세요',false);
+  if(!picked('region').length) return show('지역을 선택해주세요',false);
+  if(!document.getElementById('size').value) return show('평형을 선택해주세요',false);
+  if(!document.getElementById('title').value.trim()) return show('제목을 입력해주세요',false);
+  if(!document.getElementById('by').value.trim()) return show(editingId?'수정자 이름을 입력해주세요':'등록자 이름을 입력해주세요',false);
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  try{
+    const seq = [mainPhoto, ...extraPhotos];
+    const newOnes = seq.filter(p=>!p.fid);
+    const newB64 = [];
+    for(let i=0;i<newOnes.length;i++){
+      show(`사진 ${i+1}/${newOnes.length} 변환 중...`, true);
+      newB64.push(await blobToB64(newOnes[i].blob));
+    }
+    show(newOnes.length?`사진 ${newOnes.length}장 업로드 중... (잠시만요)`:'저장 중...', true);
+    let newIdx = 0;
+    const photoSeq = seq.map(p=>p.fid ? 'keep:'+p.fid : 'new:'+(newIdx++));
+    const common = {
+      key: KEY,
+      title: document.getElementById('title').value.trim(),
+      region: picked('region')[0],
+      size: document.getElementById('size').value,
+      tags: picked('tags'),
+      mat: document.getElementById('mat').value,
+      product: document.getElementById('product').value,
+      desc: document.getElementById('desc').value.trim(),
+      best: document.getElementById('best').checked,
+      by: document.getElementById('by').value.trim()
+    };
+    const payload = editingId
+      ? Object.assign({type:'caseEdit', id:editingId, photoSeq, newPhotos:newB64}, common)
+      : Object.assign({type:'caseUpload', photos:newB64}, common);
+    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'저장 실패');
+    show(editingId?'수정 완료 ✓':'등록 완료! 고객 페이지에 바로 반영됐어요 ✓', true);
+    resetForm(); loadList();
+  }catch(e){
+    show('실패: '+e.message+' — 다시 시도해주세요', false);
+  }
+  btn.disabled = false;
+};
+
+/* ===== 관리 리스트 ===== */
+async function loadList(){
+  try{
+    const r = await fetch(`${API}?type=cases&key=${encodeURIComponent(KEY)}`);
+    const j = await r.json();
+    if(!j.ok) throw 0;
+    applyBootstrap(j);
+  }catch(e){
+    document.getElementById('mgrList').innerHTML='<div style="font-size:13px;color:var(--bad)">목록을 불러오지 못했어요</div>';
+  }
+}
+function renderList(){
+  const box = document.getElementById('mgrList');
+  const q = (document.getElementById('mgrSearch').value||'').trim().toLowerCase();
+  const list = q ? allCases.filter(c=>c.title.toLowerCase().includes(q)) : allCases;
+  if(!allCases.length){ box.innerHTML='<div style="font-size:13px;color:var(--faint)">아직 등록된 사례가 없어요</div>'; return; }
+  if(!list.length){ box.innerHTML='<div style="font-size:13px;color:var(--faint)">검색 결과가 없어요</div>'; return; }
+  box.innerHTML='';
+  list.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='mgr-item'+(c.status!=='노출'?' hidden-row':'');
+    d.innerHTML=`
+      <img src="${c.photos[0]?thumb(c.photos[0],200):''}" loading="lazy">
+      <div class="mgr-info">
+        <div class="t">${esc(c.title)}</div>
+        <div class="s">${c.date}${c.by?' · 등록 '+esc(c.by):''}${c.lastEdit?' · 수정 '+esc(c.lastEdit):''} · 사진 ${c.photos.length}장${c.status!=='노출'?' · 숨김 상태':''}</div>
+      </div>
+      <div class="mini">
+        <button class="b-edit">수정</button>
+        <button class="b-best ${c.best?'on':''}">BEST</button>
+        <button class="b-hide">${c.status==='노출'?'숨김':'노출'}</button>
+      </div>`;
+    d.querySelector('.b-edit').onclick=()=>startEdit(c);
+    d.querySelector('.b-best').onclick=()=>patch(c.id,'best',!c.best);
+    d.querySelector('.b-hide').onclick=()=>patch(c.id,'status', c.status==='노출'?'숨김':'노출');
+    box.appendChild(d);
+  });
+}
+async function patch(id, field, value){
+  try{
+    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'casePatch', key:KEY, id, field, value})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error);
+    loadList();
+  }catch(e){ alert('변경 실패: '+(e.message||'다시 시도해주세요')); }
+}
+document.getElementById('reloadBtn').onclick=loadList;
+document.getElementById('mgrSearch').addEventListener('input',renderList);
+</script>
+</body>
+</html>
