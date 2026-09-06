@@ -1081,7 +1081,7 @@
       <div class="topbar">
         <div>
           <h1>이벤트</h1>
-          <div class="lead">회사 이벤트 신청 창구입니다. 신청할 때 적은 주소와 연락처는 본인과 관리자만 볼 수 있어요.</div>
+          <div class="lead">회사 이벤트 신청 창구입니다. 누가 신청했는지는 모두 볼 수 있고, 주소와 휴대폰 번호는 본인과 관리자만 볼 수 있어요.</div>
         </div>
         <span id="evAdminBtns" style="display:none"><button class="btn primary" id="addEventBtn">이벤트 추가</button></span>
       </div>
@@ -1111,6 +1111,7 @@
       <label style="grid-column:1/-1">안내문 <textarea id="evDesc"></textarea></label>
       <label>선물(상품명) <input id="evProduct"></label>
       <label>상품 링크 <input id="evLink" type="url"></label>
+      <label style="grid-column:1/-1">대상자 <textarea id="evEligible" style="min-height:56px"></textarea><span class="hint">쉼표로 구분해서 이름을 적어 주세요. 적은 순서대로 신청 현황에 표시되고, 명단에 없는 직원은 신청할 수 없어요. 비워두면 전 직원이 신청할 수 있어요.</span></label>
       <label style="grid-column:1/-1">도착 희망일 선택지 <input id="evDates"><span class="hint">쉼표로 구분해서 적어 주세요. 비워두면 날짜 선택 없이 신청을 받습니다.</span></label>
       <label>신청 마감일 <input id="evDeadline" type="date"><span class="hint">비워두면 [마감] 버튼으로 닫을 때까지 접수합니다.</span></label>
       <div>
@@ -2464,6 +2465,15 @@ const evSafeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
 const evTodayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
 const evIsOpen = ev => ev.open !== false && (!ev.deadline || evTodayStr() <= ev.deadline);
 const evFmt = t => { if (!t) return ""; const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+const evKDate = iso => {   // "2026-09-13" → "9월 13일 (일)"
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return String(iso || "");
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return `${d.getMonth()+1}월 ${d.getDate()}일 (${"일월화수목금토"[d.getDay()]})`;
+};
+const evDday = iso => { const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return ""; const t = new Date(); t.setHours(0,0,0,0); const n = Math.round((new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) - t) / 86400000); return n > 0 ? `D-${n}` : (n === 0 ? "오늘 마감" : "마감됨"); };
+const CHUSEOK_ELIGIBLE = ["민우","선재","현진","세욱","형석","경준","재문","승민","경필","영호","승현","신영","근령","상진","지현"];
+const evEligibleOf = ev => toArr(ev.eligible).filter(Boolean);
+const evIsEligible = (ev, me) => { const el = evEligibleOf(ev); return !el.length || el.some(n => evSameName(n, me)); };
 function evSameName(a, b){
   a = String(a || "").trim(); b = String(b || "").trim();
   if (!a || !b) return false;
@@ -2517,7 +2527,7 @@ function renderEvents(){
       </div>`;
     if (ev.product || link) h += `<div class="ev-row"><b>선물</b><span>${esc(ev.product || "")}</span>${link ? `<a class="mini-btn" href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none">상품 보기</a>` : ""}</div>`;
     if (dates.length) h += `<div class="ev-row"><b>도착 희망일</b><span>${dates.map(esc).join(" · ")} 중 선택</span></div>`;
-    if (ev.deadline) h += `<div class="ev-row"><b>신청 마감</b><span>${esc(ev.deadline)}</span></div>`;
+    if (ev.deadline) h += `<div class="ev-row"><b>신청 마감</b><span>${esc(evKDate(ev.deadline))}까지 <span class="chip" style="margin-left:4px">${esc(evDday(ev.deadline))}</span></span></div>`;
     if (ev.reqTasks !== false || ev.reqOkr !== false){
       h += `<div class="ev-cond"><div class="ev-cond-title">신청 조건 — 아래 두 가지를 마친 뒤 신청해 주세요</div>`;
       if (ev.reqTasks !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${tk.n ? "ok" : ""}"></span><span>직원별 업무분장 작성</span><span class="hint">${tk.n ? `직원별 업무에 내 업무 ${tk.n}개 등록됨` : (tk.found ? "직원별 업무에 내 업무가 아직 비어 있어요" : "직원별 업무에서 내 이름을 찾지 못했어요")}</span><button class="mini-btn" onclick="evGo('people')">${tk.n ? "확인하기" : "작성하러 가기"}</button></div>`;
@@ -2528,28 +2538,42 @@ function renderEvents(){
     if (mine){
       h += `<div class="ev-done"><b>신청 완료</b>${mine.date ? ` · ${esc(mine.date)} 도착` : ""} · ${esc(mine.name)} · ${esc(mine.phone)}<br><span style="color:var(--muted)">${esc(mine.address)}</span></div>
         <span style="display:flex;gap:6px">${open ? `<button class="mini-btn" onclick="evApply('${ev.id}')">수정</button><button class="mini-btn" onclick="evCancelApp('${ev.id}')">신청 취소</button>` : ""}</span>`;
+    } else if (open && !evIsEligible(ev, currentUser()) && !admin){
+      h += `<span class="ev-closed">이번 이벤트 대상자 명단에 없어요. 빠진 것 같으면 대표에게 말해 주세요.</span>`;
     } else if (open){
       h += `<span class="hint" style="font-size:13px">아직 신청하지 않았어요.</span><button class="btn primary" onclick="evApply('${ev.id}')">${ev.product ? "선물 신청하기" : "신청하기"}</button>`;
     } else {
       h += `<span class="ev-closed">접수가 마감되었습니다.</span>`;
     }
     h += `</div>`;
-    if (admin){
-      const rows = apps.slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.name || "").localeCompare(String(b.name || "")));
+    {
+      const eligible = evEligibleOf(ev);
+      const roster = eligible.length ? eligible : entries(data.people).sort(byOrder).map(p => p.name).filter(Boolean);
+      const findApp = n => apps.find(a => evSameName(a.by, n) || evSameName(a.name, n));
+      const rows = roster.map((n, i) => ({ no: i + 1, name: n, app: findApp(n) }));
+      apps.filter(a => !roster.some(n => evSameName(n, a.by) || evSameName(n, a.name)))
+        .forEach(a => rows.push({ no: "", name: a.by || a.name, app: a, extra: true }));   // 명단 밖 신청(관리자 테스트 등)
+      const done = rows.filter(r => r.app && !r.extra).length;
+      const missing = rows.filter(r => !r.app && !r.extra).map(r => r.name);
       const cnt = d => apps.filter(a => a.date === d).length;
-      const applied = new Set();
-      apps.forEach(a => entries(data.people).forEach(p => { if (evSameName(p.name, a.by) || evSameName(p.name, a.name)) applied.add(p.id); }));
-      const missing = entries(data.people).filter(p => !applied.has(p.id)).map(p => p.name);
       h += `<div class="ev-admin">
-        <div class="section-title"><h2>신청 현황 <span class="chip">${apps.length}명</span></h2>
+        <div class="section-title"><h2>신청 현황 <span class="chip">${done}/${rows.filter(r => !r.extra).length}명</span></h2>
           <span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${dates.map(d => `<span class="chip">${esc(d)} ${cnt(d)}명</span>`).join("")}
-            <button class="mini-btn" onclick="evCopy('${ev.id}')">주문용 복사</button><button class="mini-btn" onclick="evCsv('${ev.id}')">CSV 내려받기</button></span>
+            ${admin ? `<button class="mini-btn" onclick="evCopy('${ev.id}')">주문용 복사</button><button class="mini-btn" onclick="evCsv('${ev.id}')">CSV 내려받기</button>` : ""}</span>
         </div>
         <div class="table-wrap"><table>
-          <thead><tr><th>이름</th><th>휴대폰</th><th>주소</th><th>도착 희망일</th><th>신청</th><th style="width:60px"></th></tr></thead>
-          <tbody>${rows.map(a => `<tr><td><b>${esc(a.name)}</b>${a.by && !evSameName(a.by, a.name) ? `<div class="hint">${esc(a.by)} 신청</div>` : ""}</td><td style="white-space:nowrap">${esc(a.phone)}</td><td>${esc(a.address)}</td><td style="white-space:nowrap">${esc(a.date || "—")}</td><td style="white-space:nowrap">${evFmt(a.updatedAt || a.at)}</td><td style="text-align:right"><button class="mini-btn" onclick="evDelApp('${ev.id}','${a.id}')">삭제</button></td></tr>`).join("") || `<tr><td colspan="6" class="hint">아직 신청이 없습니다.</td></tr>`}</tbody>
+          <thead><tr><th style="width:44px">#</th><th>이름</th><th>신청</th><th>도착 희망일</th>${admin ? `<th>휴대폰</th><th>주소</th><th>신청 시각</th><th style="width:60px"></th>` : ""}</tr></thead>
+          <tbody>${rows.map(r => {
+            const a = r.app;
+            return `<tr>
+              <td class="hint">${r.no}</td>
+              <td><b>${esc(r.name)}</b>${a && a.name && !evSameName(a.name, r.name) ? `<div class="hint">받는 분: ${esc(a.name)}</div>` : ""}${r.extra ? `<div class="hint">명단 외</div>` : ""}</td>
+              <td style="white-space:nowrap">${a ? `<span style="color:var(--accent-deep);font-weight:700">완료</span>` : `<span class="hint">미신청</span>`}</td>
+              <td style="white-space:nowrap">${a ? esc(a.date || "—") : ""}</td>
+              ${admin ? `<td style="white-space:nowrap">${a ? esc(a.phone) : ""}</td><td>${a ? esc(a.address) : ""}</td><td style="white-space:nowrap">${a ? evFmt(a.updatedAt || a.at) : ""}</td><td style="text-align:right">${a ? `<button class="mini-btn" onclick="evDelApp('${ev.id}','${a.id}')">삭제</button>` : ""}</td>` : ""}
+            </tr>`; }).join("") || `<tr><td colspan="${admin ? 8 : 4}" class="hint">대상자가 없습니다.</td></tr>`}</tbody>
         </table></div>
-        ${missing.length ? `<div class="hint" style="margin-top:8px">미신청 ${missing.length}명: ${missing.map(esc).join(", ")}</div>` : (apps.length ? `<div class="hint" style="margin-top:8px">직원 전원 신청 완료</div>` : "")}
+        ${missing.length ? `<div class="hint" style="margin-top:8px">미신청 ${missing.length}명: ${missing.map(esc).join(", ")}</div>` : `<div class="hint" style="margin-top:8px">대상자 전원 신청 완료</div>`}
       </div>`;
     }
     return h + `</div>`;
@@ -2561,7 +2585,7 @@ $("addEventBtn").onclick = () => {
   if (!isAdminUser()) return alert("관리자만 이벤트를 만들 수 있어요.");
   $("evModalTitle").textContent = "이벤트 추가";
   $("evId").value = "";
-  ["evTitle","evDesc","evProduct","evLink","evDates","evDeadline"].forEach(id => $(id).value = "");
+  ["evTitle","evDesc","evProduct","evLink","evDates","evDeadline","evEligible"].forEach(id => $(id).value = "");
   $("evReqTasks").checked = true; $("evReqOkr").checked = true;
   evModal.showModal();
 };
@@ -2573,6 +2597,7 @@ window.evEdit = id => {
   $("evTitle").value = ev.title || ""; $("evDesc").value = ev.desc || "";
   $("evProduct").value = ev.product || ""; $("evLink").value = ev.link || "";
   $("evDates").value = toArr(ev.dates).join(", "); $("evDeadline").value = ev.deadline || "";
+  $("evEligible").value = evEligibleOf(ev).join(", ");
   $("evReqTasks").checked = ev.reqTasks !== false; $("evReqOkr").checked = ev.reqOkr !== false;
   evModal.showModal();
 };
@@ -2587,6 +2612,7 @@ $("saveEvBtn").onclick = async () => {
   const fields = {
     title, desc: $("evDesc").value.trim(), product: $("evProduct").value.trim(), link,
     dates: $("evDates").value.split(",").map(x => x.trim()).filter(Boolean),
+    eligible: $("evEligible").value.split(/[,\n]/).map(x => x.trim()).filter(Boolean),
     deadline: $("evDeadline").value || "",
     reqTasks: $("evReqTasks").checked, reqOkr: $("evReqOkr").checked,
     open: prev.open !== false,
@@ -2653,6 +2679,7 @@ window.evApply = id => {
   const ev = (data.events || {})[id]; if (!ev) return;
   if (!currentUser()) return ensureUser();
   if (!evIsOpen(ev)) return alert("접수가 마감된 이벤트예요.");
+  if (!evIsEligible(ev, currentUser()) && !isAdminUser()) return alert("이번 이벤트 대상자 명단에 없어요. 빠진 것 같으면 대표에게 말해 주세요.");
   const mine = evMyApp(ev) || {};
   const tk = evMyTasks(), ok = evMyOkr();
   $("eaEvId").value = id;
@@ -2673,6 +2700,7 @@ $("saveEvAppBtn").onclick = async () => {
   const id = $("eaEvId").value;
   const ev = (data.events || {})[id]; if (!ev) return;
   if (!evIsOpen(ev)) return alert("접수가 마감된 이벤트예요.");
+  if (!evIsEligible(ev, currentUser()) && !isAdminUser()) return alert("이번 이벤트 대상자 명단에 없어요.");
   if (ev.reqTasks !== false && !($("eaChkTasks") && $("eaChkTasks").checked)) return alert("직원별 업무분장을 먼저 작성하고 체크해 주세요.");
   if (ev.reqOkr !== false && !($("eaChkOkr") && $("eaChkOkr").checked)) return alert("이번 분기 OKR을 먼저 작성하고 체크해 주세요.");
   const name = $("eaName").value.trim();
@@ -2713,22 +2741,36 @@ window.evCancelApp = async id => {
 let evSeedTried = false;
 async function runEventSeed2609(){
   const KEY = "eventChuseok2026";
-  if (evSeedTried || !data || (data.migrations || {})[KEY] || !isAdminUser()) return;
+  if (evSeedTried || !data || !isAdminUser()) return;
+  if ((data.migrations || {})[KEY] && (data.migrations || {})["eventChuseok2026v2"]) return;
   evSeedTried = true;
   try {
-    if (!entries(data.events).length){
+    if (!(data.migrations || {})[KEY] && !entries(data.events).length){
       await orgRef.child("events/" + newId("ev_")).set({
         title: "추석 선물 신청",
         desc: "직원별 업무분장과 이번 분기 OKR 작성을 마친 분께 추석 선물을 보내드려요.\n아래 조건을 확인한 뒤 받을 주소, 휴대폰 번호, 도착 희망일을 남겨 주세요.",
         product: "미쓰하누 1++ 한우 선물세트 · SVIP 1.4kg 구성",
         link: "https://brand.naver.com/misshanu86/products/4791453142",
         dates: ["9월 17일 (목)", "9월 19일 (토)"],
-        deadline: "", reqTasks: true, reqOkr: true, open: true,
+        eligible: CHUSEOK_ELIGIBLE,
+        deadline: "2026-09-13", reqTasks: true, reqOkr: true, open: true,
         at: Date.now(), by: currentUser() || "관리자"
       });
       logAction("추가", "이벤트: 추석 선물 신청 (자동 생성)");
     }
-    await orgRef.child("migrations/" + KEY).set({ at: Date.now(), by: currentUser() || "?" });
+    if (!(data.migrations || {})[KEY]) await orgRef.child("migrations/" + KEY).set({ at: Date.now(), by: currentUser() || "?" });
+    // v2: 이전 버전으로 이미 만들어진 추석 이벤트에 대상자 명단·마감일 1회 보정
+    const KEY2 = "eventChuseok2026v2";
+    if (!(data.migrations || {})[KEY2]){
+      const ev = entries(data.events).find(e => String(e.title || "").indexOf("추석") >= 0);
+      if (ev){
+        const upd = {};
+        if (!evEligibleOf(ev).length) upd.eligible = CHUSEOK_ELIGIBLE;
+        if (!ev.deadline) upd.deadline = "2026-09-13";
+        if (Object.keys(upd).length) await orgRef.child("events/" + ev.id).update(upd);
+      }
+      await orgRef.child("migrations/" + KEY2).set({ at: Date.now(), by: currentUser() || "?" });
+    }
   } catch(e){ console.error("이벤트 시드 실패:", e); }
 }
 
