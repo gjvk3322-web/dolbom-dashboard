@@ -1442,6 +1442,7 @@ function startData(){
     }
     data = v;
     renderAll();
+    try { cleanupTaskUndefined(); } catch(_){}
     runReorg202608();
     runManualFlatten2608();
     runEventSeed2609();
@@ -3680,21 +3681,30 @@ window.calDrag = (e, id, mode, grabDs) => {
 window.calDrop = (e, dropDs) => {
   e.preventDefault();
   if (!calDragInfo) return;
-  const t = (data.tasks || {})[calDragInfo.id];
-  if (!t || !t.due) { calDragInfo = null; return; }
+  const id = calDragInfo.id, mode = calDragInfo.mode, grabDs = calDragInfo.grabDs;
+  calDragInfo = null;
+  const t = id ? (data.tasks || {})[id] : null;   // 원본 객체엔 id 필드가 없으므로 드래그 시작 때 받은 id를 그대로 씀
+  if (!t || !t.due) return;
   const s = (t.start && t.start <= t.due) ? t.start : t.due;
   let newS = s, newE = t.due;
-  if (calDragInfo.mode === "move"){
-    const delta = diffDays(calDragInfo.grabDs, dropDs);
+  if (mode === "move"){
+    const delta = diffDays(grabDs, dropDs);
     newS = addDays(s, delta); newE = addDays(t.due, delta);
-  } else if (calDragInfo.mode === "l"){
+  } else if (mode === "l"){
     newS = dropDs <= t.due ? dropDs : t.due;
-  } else if (calDragInfo.mode === "r"){
+  } else if (mode === "r"){
     newE = dropDs >= s ? dropDs : s;
   }
-  calDragInfo = null;
-  orgRef.child("tasks/" + t.id).update({ start: newS === newE ? "" : newS, due: newE });
+  if (newS === s && newE === t.due) return;
+  orgRef.child("tasks/" + id).update({ start: newS === newE ? "" : newS, due: newE })
+    .then(() => showToast(`${taskTitle(t)} → ${newS === newE ? newE.slice(5).replace("-","/") : newS.slice(5).replace("-","/") + "~" + newE.slice(5).replace("-","/")}`))
+    .catch(() => showToast("일정 이동에 실패했어요 — 인터넷 연결을 확인해 주세요", true));
 };
+// 예전 드래그 버그가 남긴 찌꺼기(tasks/undefined, 제목 없음)는 발견 즉시 정리
+function cleanupTaskUndefined(){
+  const junk = (data.tasks || {})["undefined"];
+  if (junk && !String(junk.title || "").trim()) orgRef.child("tasks/undefined").remove().catch(()=>{});
+}
 $("calPrev").onclick = () => { calBase.setMonth(calBase.getMonth()-1); renderCalendar(); };
 $("calNext").onclick = () => { calBase.setMonth(calBase.getMonth()+1); renderCalendar(); };
 $("calToday").onclick = () => { calBase = new Date(); calBase.setDate(1); renderCalendar(); };
