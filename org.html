@@ -2536,8 +2536,8 @@ function renderEvents(){
     if (ev.deadline) h += `<div class="ev-row"><b>신청 마감</b><span>${esc(evKDate(ev.deadline))}까지 <span class="chip" style="margin-left:4px">${esc(evDday(ev.deadline))}</span></span></div>`;
     if (ev.reqTasks !== false || ev.reqOkr !== false){
       h += `<div class="ev-cond"><div class="ev-cond-title">신청 조건 — 아래 두 가지를 마친 뒤 신청해 주세요</div>`;
-      if (ev.reqTasks !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${tk.n ? "ok" : ""}"></span><span>직원별 업무분장 작성</span><span class="hint">${tk.n ? `직원별 업무에 내 업무 ${tk.n}개 등록됨` : (tk.found ? "직원별 업무에 내 업무가 아직 비어 있어요" : "직원별 업무에서 내 이름을 찾지 못했어요")}</span><button class="mini-btn" onclick="evGo('people')">${tk.n ? "확인하기" : "작성하러 가기"}</button></div>`;
-      if (ev.reqOkr !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${ok.n ? "ok" : ""}"></span><span>이번 분기 OKR 작성</span><span class="hint">${ok.n ? `${ok.q.replace("-Q", "년 ")}분기 내 목표 ${ok.n}개 등록됨` : `${ok.q.replace("-Q", "년 ")}분기 내 목표가 아직 없어요`}</span><button class="mini-btn" onclick="evGo('okr')">${ok.n ? "확인하기" : "작성하러 가기"}</button></div>`;
+      if (ev.reqTasks !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${tk.n ? "ok" : ""}"></span><span>직원별 업무분장 작성</span><button class="mini-btn" onclick="evGo('people')">${tk.n ? "확인하기" : "작성하러 가기"}</button></div>`;
+      if (ev.reqOkr !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${ok.n ? "ok" : ""}"></span><span>이번 분기 OKR 작성</span><button class="mini-btn" onclick="evGo('okr')">${ok.n ? "확인하기" : "작성하러 가기"}</button></div>`;
       h += `</div>`;
     }
     h += `<div class="ev-my">`;
@@ -2691,8 +2691,8 @@ window.evApply = id => {
   $("eaEvId").value = id;
   $("evAppTitle").textContent = ev.product ? "선물 신청 — " + ev.title : ev.title;
   let c = "";
-  if (ev.reqTasks !== false) c += `<label class="ev-check"><input type="checkbox" id="eaChkTasks" ${mine.okTasks ? "checked" : ""}><span>직원별 업무분장을 작성했어요<span class="hint">${tk.n ? `직원별 업무에 내 업무 ${tk.n}개 등록됨` : "아직 등록된 업무가 없어요 — 직원별 업무 탭에서 먼저 작성해 주세요"}</span></span></label>`;
-  if (ev.reqOkr !== false) c += `<label class="ev-check"><input type="checkbox" id="eaChkOkr" ${mine.okOkr ? "checked" : ""}><span>이번 분기 OKR을 작성했어요<span class="hint">${ok.n ? `내 목표 ${ok.n}개 등록됨` : "아직 등록된 목표가 없어요 — OKR 탭에서 먼저 작성해 주세요"}</span></span></label>`;
+  if (ev.reqTasks !== false) c += `<label class="ev-check"><input type="checkbox" id="eaChkTasks" ${mine.okTasks ? "checked" : ""}><span>직원별 업무분장을 작성했어요${tk.n ? "" : `<span class="hint">아직 등록된 업무가 없어요 — 직원별 업무 탭에서 먼저 작성해 주세요</span>`}</span></label>`;
+  if (ev.reqOkr !== false) c += `<label class="ev-check"><input type="checkbox" id="eaChkOkr" ${mine.okOkr ? "checked" : ""}><span>이번 분기 OKR을 작성했어요${ok.n ? "" : `<span class="hint">아직 등록된 목표가 없어요 — OKR 탭에서 먼저 작성해 주세요</span>`}</span></label>`;
   $("eaConds").innerHTML = c ? `<div><div style="font-size:14px;margin-bottom:6px">신청 조건</div>${c}</div>` : "";
   $("eaName").value = mine.name || currentUser();
   $("eaPhone").value = mine.phone || "";
@@ -2748,16 +2748,16 @@ let evSeedTried = false;
 async function runEventSeed2609(){
   const KEY = "eventChuseok2026";
   if (evSeedTried || !data || !isAdminUser()) return;
-  if ((data.migrations || {})[KEY] && (data.migrations || {})["eventChuseok2026v2"]) return;
+  if ((data.migrations || {})[KEY] && (data.migrations || {})["eventChuseok2026v2"] && (data.migrations || {})["eventChuseok2026v3"] && (data.migrations || {})["eventChuseok2026v4"]) return;
   evSeedTried = true;
   try {
     if (!(data.migrations || {})[KEY] && !entries(data.events).length){
       await orgRef.child("events/" + newId("ev_")).set({
         title: "추석 선물 신청",
         desc: "직원별 업무분장과 이번 분기 OKR 작성을 마친 분께 추석 선물을 보내드려요.\n아래 조건을 확인한 뒤 받을 주소, 휴대폰 번호, 도착 희망일을 남겨 주세요.",
-        product: "미쓰하누 1++ 한우 선물세트 · SVIP 1.4kg 구성",
-        link: "https://brand.naver.com/misshanu86/products/4791453142",
-        dates: ["9월 17일 (목)", "9월 19일 (토)"],
+        product: "추석 선물세트",
+        link: "https://brand.naver.com/woomaison/products/11186900263",
+        dates: ["9월 16일 (수)", "9월 17일 (목)", "9월 18일 (금)", "9월 19일 (토)", "9월 22일 (화)", "9월 23일 (수)"],
         eligible: CHUSEOK_ELIGIBLE,
         deadline: "2026-09-13", reqTasks: true, reqOkr: true, open: true,
         at: Date.now(), by: currentUser() || "관리자"
@@ -2776,6 +2776,28 @@ async function runEventSeed2609(){
         if (Object.keys(upd).length) await orgRef.child("events/" + ev.id).update(upd);
       }
       await orgRef.child("migrations/" + KEY2).set({ at: Date.now(), by: currentUser() || "?" });
+    }
+    // v3: 상품 링크를 새 상품 페이지로 1회 교체 (관리자가 이미 직접 바꿨으면 건드리지 않음)
+    const KEY3 = "eventChuseok2026v3";
+    if (!(data.migrations || {})[KEY3]){
+      const ev = entries(data.events).find(e => String(e.title || "").indexOf("추석") >= 0);
+      if (ev && (!ev.link || ev.link === "https://brand.naver.com/misshanu86/products/4791453142"))
+        await orgRef.child("events/" + ev.id).update({ link: "https://brand.naver.com/misshanu86/products/11754712882" });
+      await orgRef.child("migrations/" + KEY3).set({ at: Date.now(), by: currentUser() || "?" });
+    }
+    // v4: 상품을 woomaison 페이지로 바꾸고 도착 희망일을 판매처 출발 옵션에 맞춰 6개로 교체 (관리자가 직접 바꾼 값은 유지)
+    const KEY4 = "eventChuseok2026v4";
+    if (!(data.migrations || {})[KEY4]){
+      const ev = entries(data.events).find(e => String(e.title || "").indexOf("추석") >= 0);
+      if (ev){
+        const upd = {};
+        if (!ev.link || String(ev.link).indexOf("misshanu") >= 0) upd.link = "https://brand.naver.com/woomaison/products/11186900263";
+        if (!ev.product || String(ev.product).indexOf("미쓰하누") >= 0) upd.product = "추석 선물세트";
+        const cur = (ev.dates || []).join("|");
+        if (!cur || cur === "9월 17일 (목)|9월 19일 (토)") upd.dates = ["9월 16일 (수)", "9월 17일 (목)", "9월 18일 (금)", "9월 19일 (토)", "9월 22일 (화)", "9월 23일 (수)"];
+        if (Object.keys(upd).length) await orgRef.child("events/" + ev.id).update(upd);
+      }
+      await orgRef.child("migrations/" + KEY4).set({ at: Date.now(), by: currentUser() || "?" });
     }
   } catch(e){ console.error("이벤트 시드 실패:", e); }
 }
