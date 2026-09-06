@@ -514,7 +514,7 @@
   .ev-admin{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
   .ev-admin .section-title{margin:0 0 10px}
   .ev-admin .section-title h2{font-size:15px}
-  /* ── 대표의 머릿속 (고민 지도) ── */
+  /* ── 대표의 아이디어 (뇌 지도) ── */
   .br-form{margin-bottom:18px}
   .br-form-grid{display:grid;grid-template-columns:1fr 210px;gap:14px}
   .br-lb{display:block;font-size:12px;font-weight:700;color:#5B6763;margin-bottom:6px}
@@ -527,8 +527,8 @@
   .br-dot circle{transition:transform .15s;transform-box:fill-box;transform-origin:center}
   .br-dot.hl circle,.br-dot:hover circle{transform:scale(1.15)}
   .br-dot text{pointer-events:none;font-family:inherit}
-  .br-labels{display:flex;flex-direction:column;justify-content:space-around;gap:6px;min-width:0;padding:6px 0}
-  .br-label{display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px 12px;cursor:pointer;min-width:0;max-width:440px}
+  .br-labels{position:relative;min-width:0}
+  .br-label{position:absolute;left:0;right:0;max-width:440px;display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px 12px;cursor:pointer;min-width:0;box-sizing:border-box}
   .br-label:hover,.br-label.hl{border-color:#D4537E;background:#FBEAF0}
   .br-label .br-lt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:14px}
   .br-label.s3 .br-lt{font-size:16px;font-weight:800}
@@ -581,7 +581,7 @@
       <button data-view="decision">의사결정 권한</button>
       <div class="nav-group">일 · 목표</div>
       <button data-view="okr">OKR</button>
-      <button data-view="brain">대표의 머릿속</button>
+      <button data-view="brain">대표의 아이디어</button>
       <button data-view="calendar">프로젝트 보드</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="budget">마케팅 예산</button>
@@ -969,24 +969,24 @@
       <div id="okrPeople" style="display:none"></div>
     </section>
 
-    <!-- 대표의 머릿속: 고민 지도 (org/brain) -->
+    <!-- 대표의 아이디어: 뇌 지도 (org/brain) -->
     <section id="brain" class="section">
       <div class="topbar">
         <div>
-          <h1>대표의 머릿속</h1>
-          <div class="lead">대표가 요즘 붙들고 있는 고민입니다. 크기는 <b>상 · 중 · 하</b>. 같이 풀어보고 싶은 게 있으면 <b>내가 해볼게</b>를 눌러 주세요.</div>
+          <h1>대표의 아이디어</h1>
+          <div class="lead">대표가 요즘 생각하는 것들입니다. 중요도는 <b>상 · 중 · 하</b>. 해보고 싶은 게 있으면 <b>내가 해볼게</b>를 눌러 주세요.</div>
         </div>
-        <span id="brAdminBtns" style="display:none"><button class="btn primary" id="addBrainBtn">고민 추가</button></span>
+        <span id="brAdminBtns" style="display:none"><button class="btn primary" id="addBrainBtn">아이디어 추가</button></span>
       </div>
       <div id="brForm" class="card br-form" style="display:none">
         <input type="hidden" id="brEditId">
         <div class="br-form-grid">
           <div>
-            <label class="br-lb" for="brTitle">고민 (한 줄)</label>
+            <label class="br-lb" for="brTitle">아이디어 (한 줄)</label>
             <input id="brTitle" maxlength="60">
           </div>
           <div>
-            <label class="br-lb">크기</label>
+            <label class="br-lb">중요도</label>
             <div class="br-seg" id="brSizeSeg">
               <button type="button" data-size="3">상</button>
               <button type="button" data-size="2" class="on">중</button>
@@ -994,7 +994,7 @@
             </div>
           </div>
         </div>
-        <label class="br-lb" for="brNote" style="margin-top:12px">배경 — 왜 이게 고민인지 (선택)</label>
+        <label class="br-lb" for="brNote" style="margin-top:12px">설명 — 왜 이 생각을 하는지 (선택)</label>
         <textarea id="brNote"></textarea>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <button class="btn" id="brCancelBtn">취소</button>
@@ -5534,10 +5534,10 @@ document.getElementById("soomgoDays").onchange = dashSoomgo;
 loadDashAll();
 </script>
 <script>
-/* ═══════════ 대표의 머릿속 — 고민 지도 (org/brain) ═══════════
+/* ═══════════ 대표의 아이디어 — 뇌 지도 (org/brain) ═══════════
    데이터: org/brain/{id} = { title, note, size(3=상·2=중·1=하), at, by, updatedAt, updatedBy, hands/{이름키}: {name, at} }
    권한: 추가·수정·삭제 = 관리자(ADMINS)만, 손들기(내가 해볼게) = 이름 확인된 직원 누구나. 삭제는 휴지통(trash/brain__id)으로 이동. */
-const BR_ANCHORS = [[225,62],[327,88],[378,168],[364,234],[302,280],[247,325],[250,364]];  // 뇌 그림 위 작대기 시작점 (위→아래 순)
+const BR_ANCHORS = [[228,70],[335,96],[373,190],[354,234],[330,263],[231,323],[238,364]];  // 뇌 그림 위 작대기 시작점 (위→아래 순)
 const BR_MAX = BR_ANCHORS.length;
 const BR_SIZE = {
   3: { label:"상", r:17, fill:"#D4537E", tx:"#FFFFFF", fs:12 },
@@ -5548,22 +5548,27 @@ const brSizeOf = c => BR_SIZE[Number(c && c.size)] ? Number(c.size) : 2;
 function brSorted(){
   return entries(data && data.brain).sort((a, b) => (brSizeOf(b) - brSizeOf(a)) || ((a.at || 0) - (b.at || 0)));
 }
-/* 고민 개수에 따라 작대기 시작점을 위아래로 고르게 배분 */
+/* 아이디어 개수에 따라 작대기 시작점을 위아래로 고르게 배분 */
 function brPickAnchors(n){
-  const table = { 1:[2], 2:[1,3], 3:[0,2,4], 4:[0,1,3,4], 5:[0,1,2,3,4], 6:[0,1,2,3,4,5] };  // 5개까지는 대뇌 위에만, 6개부터 뇌간까지 사용
+  const table = { 1:[2], 2:[1,4], 3:[0,2,5], 4:[0,2,4,5], 5:[0,1,2,4,5], 6:[0,1,2,3,4,5] };  // 점이 위→아래로 고르게 퍼지는 조합
   return table[n] || Array.from({ length: Math.min(n, BR_MAX) }, (_, i) => i);
 }
 const BR_SVG_BODY = `
-  <path d="M210 285 C212 315 220 340 226 366 L252 366 C248 340 244 312 244 285 Z" fill="#F4C0D1" stroke="#993556" stroke-width="1.2"/>
-  <ellipse cx="152" cy="298" rx="50" ry="28" fill="#ED93B1" stroke="#993556" stroke-width="1.2"/>
-  <path d="M116 296 Q152 278 188 296" fill="none" stroke="#993556" stroke-width="0.9"/>
-  <path d="M120 308 Q152 290 184 308" fill="none" stroke="#993556" stroke-width="0.9"/>
-  <path d="M132 320 Q152 306 172 320" fill="none" stroke="#993556" stroke-width="0.9"/>
-  <path d="M70 205 C70 120 140 66 225 62 C300 58 372 100 378 168 C384 224 350 268 302 280 C282 285 264 292 248 298 C192 312 92 288 70 205 Z" fill="#F4C0D1" stroke="#993556" stroke-width="1.4"/>
-  <path d="M128 150 Q170 118 208 148 T285 142" fill="none" stroke="#D4537E" stroke-width="1.4"/>
-  <path d="M110 200 Q160 170 210 200 T310 196" fill="none" stroke="#D4537E" stroke-width="1.4"/>
-  <path d="M135 246 Q185 222 232 246 T318 240" fill="none" stroke="#D4537E" stroke-width="1.4"/>
-  <path d="M300 100 Q340 118 352 156" fill="none" stroke="#D4537E" stroke-width="1.4"/>`;
+  <path d="M192 282 C190 310 198 338 208 366 L238 366 C230 338 228 308 232 282 Z" fill="#F4C0D1" stroke="#993556" stroke-width="1.3"/>
+  <path d="M108 276 C92 296 100 328 130 334 C158 340 186 326 192 302 C194 292 192 284 190 280 Z" fill="#ED93B1" stroke="#993556" stroke-width="1.3"/>
+  <path d="M112 296 C130 306 156 312 180 310" fill="none" stroke="#993556" stroke-width="0.9"/>
+  <path d="M110 310 C128 318 152 322 174 320" fill="none" stroke="#993556" stroke-width="0.9"/>
+  <path d="M118 322 C132 328 150 330 166 328" fill="none" stroke="#993556" stroke-width="0.9"/>
+  <path d="M84 208 C76 140 140 74 228 70 C300 66 356 96 370 146 C382 190 366 232 340 246 C330 252 332 272 316 286 C292 304 244 304 214 290 C200 284 176 288 156 288 C118 288 92 256 84 208 Z" fill="#F4C0D1" stroke="#993556" stroke-width="1.4"/>
+  <path d="M326 268 C292 254 250 246 206 254" fill="none" stroke="#993556" stroke-width="1.1"/>
+  <g fill="none" stroke="#D4537E" stroke-width="1.5" stroke-linecap="round">
+    <path d="M112 186 C134 190 134 226 114 244"/>
+    <path d="M150 118 C178 110 184 150 162 170 S142 210 166 226"/>
+    <path d="M212 94 C242 98 238 140 216 160 S202 202 228 218"/>
+    <path d="M270 110 C302 114 304 154 282 176 S268 214 296 228"/>
+    <path d="M334 156 C352 170 348 200 330 216"/>
+    <path d="M236 282 C258 270 290 276 312 290"/>
+  </g>`;
 function brBrainSvg(items){
   const idx = brPickAnchors(items.length);
   const dots = items.map((c, i) => {
@@ -5572,7 +5577,7 @@ function brBrainSvg(items){
       <circle cx="${x}" cy="${y}" r="${s.r}" fill="${s.fill}" stroke="#fff" stroke-width="2"/>
       <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${s.fs}" font-weight="800" fill="${s.tx}">${i + 1}</text></g>`;
   }).join("");
-  return `<svg viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="대표의 머릿속">${BR_SVG_BODY}<g id="brDots">${dots}</g></svg>`;
+  return `<svg viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="대표의 아이디어">${BR_SVG_BODY}<g id="brDots">${dots}</g></svg>`;
 }
 function renderBrain(){
   const stage = $("brStage"); if (!stage || !data) return;
@@ -5580,19 +5585,20 @@ function renderBrain(){
   const ab = $("brAdminBtns"); if (ab) ab.style.display = admin ? "" : "none";
   const items = brSorted(), onBrain = items.slice(0, BR_MAX);
   $("brBrain").innerHTML = brBrainSvg(onBrain);
+  const idx = brPickAnchors(onBrain.length);
   $("brLabels").innerHTML = onBrain.map((c, i) => {
     const s = brSizeOf(c);
-    return `<div class="br-label s${s}" data-id="${c.id}" onclick="brFocus('${c.id}')" onmouseenter="brHl('${c.id}',1)" onmouseleave="brHl('${c.id}',0)">
+    return `<div class="br-label s${s}" data-id="${c.id}" style="top:${Math.max(0, BR_ANCHORS[idx[i]][1] - 20)}px" onclick="brFocus('${c.id}')" onmouseenter="brHl('${c.id}',1)" onmouseleave="brHl('${c.id}',0)">
       <span class="br-no">${i + 1}</span><span class="br-lt">${esc(c.title)}</span><span class="br-size s${s}">${BR_SIZE[s].label}</span></div>`;
   }).join("");
   const fmtD = t => { if (!t) return ""; const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()}`; };
   let h = "";
   if (!items.length){
-    h = `<div class="hint" style="font-size:13px">아직 올라온 고민이 없어요.${admin ? " 오른쪽 위 [고민 추가]로 첫 고민을 올리세요." : ""}</div>`;
+    h = `<div class="hint" style="font-size:13px">아직 올라온 아이디어가 없어요.${admin ? " 오른쪽 위 [아이디어 추가]로 첫 아이디어를 올리세요." : ""}</div>`;
   }
   items.forEach((c, i) => {
     const s = brSizeOf(c), hands = entries(c.hands), mine = !!me && hands.some(x => evSameName(x.name, me));
-    if (i === BR_MAX) h += `<div class="hint" style="margin:6px 0 10px;font-size:12.5px">뇌에는 ${BR_MAX}개까지만 올라가요 — 아래는 목록에만 있는 고민입니다.</div>`;
+    if (i === BR_MAX) h += `<div class="hint" style="margin:6px 0 10px;font-size:12.5px">뇌에는 ${BR_MAX}개까지만 올라가요 — 아래는 목록에만 있는 아이디어입니다.</div>`;
     h += `<div class="card br-item s${s}" id="br_${c.id}">
       <div class="br-item-head">
         <span class="br-no">${i + 1}</span>
@@ -5600,7 +5606,7 @@ function renderBrain(){
         <span class="br-item-meta">${esc(c.by || "")} · ${fmtD(c.at)}${c.updatedAt ? " · 수정 " + fmtD(c.updatedAt) : ""}</span>
       </div>
       ${c.note ? `<div class="br-note">${esc(c.note)}</div>` : ""}
-      <div class="br-hands"><b>같이 풀어볼 사람</b>${hands.length ? hands.map(x => `<span class="chip">${esc(x.name)}</span>`).join("") : `<span class="hint" style="font-size:12.5px">아직 없음</span>`}</div>
+      <div class="br-hands"><b>같이 해볼 사람</b>${hands.length ? hands.map(x => `<span class="chip">${esc(x.name)}</span>`).join("") : `<span class="hint" style="font-size:12.5px">아직 없음</span>`}</div>
       <div class="br-actions">
         <button class="mini-btn br-hand${mine ? " on" : ""}" onclick="brHand('${c.id}')">${mine ? "손 내리기" : "내가 해볼게"}</button>
         <button class="mini-btn" onclick="evGo('okr')">OKR에 목표 달기</button>
@@ -5611,25 +5617,38 @@ function renderBrain(){
   $("brList").innerHTML = h;
   requestAnimationFrame(brDrawLines);
 }
-/* 작대기: 뇌 위의 점 → 오른쪽 라벨 왼쪽 가운데 (화면 크기 바뀔 때마다 다시 계산) */
+/* 라벨 세로 위치를 뇌 위 점 높이에 맞추고(겹치면 위아래로 밀어냄) 작대기를 그림 — 화면 크기 바뀔 때마다 다시 계산 */
 function brDrawLines(){
-  const stage = $("brStage"), svg = $("brLines");
+  const stage = $("brStage"), svg = $("brLines"), col = $("brLabels");
   const brain = $("brBrain") ? $("brBrain").querySelector("svg") : null;
   if (!stage || !svg || !brain || !stage.offsetWidth) return;
   if (window.innerWidth <= 820){ svg.innerHTML = ""; return; }
   const sr = stage.getBoundingClientRect(), br = brain.getBoundingClientRect(), k = br.width / 400;
-  let h = "";
+  const cr = col.getBoundingClientRect();
+  const rows = [];
   stage.querySelectorAll(".br-label").forEach(lb => {
-    const id = lb.dataset.id, dot = brain.querySelector(`.br-dot[data-id="${id}"] circle`);
+    const dot = brain.querySelector(`.br-dot[data-id="${lb.dataset.id}"] circle`);
     if (!dot) return;
-    const ax = br.left - sr.left + Number(dot.getAttribute("cx")) * k;
-    const ay = br.top - sr.top + Number(dot.getAttribute("cy")) * k;
-    const r = Number(dot.getAttribute("r")) * k;
-    const lr = lb.getBoundingClientRect();
+    rows.push({ lb, id: lb.dataset.id, h: lb.offsetHeight,
+      ax: br.left - sr.left + Number(dot.getAttribute("cx")) * k,
+      ay: br.top - sr.top + Number(dot.getAttribute("cy")) * k,
+      r: Number(dot.getAttribute("r")) * k });
+  });
+  if (!rows.length){ svg.innerHTML = ""; return; }
+  const gap = 8, top = br.top - cr.top, bottom = top + br.height;
+  const y = rows.map(r => r.ay - (sr.top - cr.top));
+  for (let i = 1; i < rows.length; i++) y[i] = Math.max(y[i], y[i - 1] + (rows[i - 1].h + rows[i].h) / 2 + gap);
+  const last = rows.length - 1, maxC = bottom - rows[last].h / 2;
+  if (y[last] > maxC){ y[last] = maxC; for (let i = last - 1; i >= 0; i--) y[i] = Math.min(y[i], y[i + 1] - (rows[i].h + rows[i + 1].h) / 2 - gap); }
+  if (y[0] < top + rows[0].h / 2){ y[0] = top + rows[0].h / 2; for (let i = 1; i < rows.length; i++) y[i] = Math.max(y[i], y[i - 1] + (rows[i - 1].h + rows[i].h) / 2 + gap); }
+  rows.forEach((r, i) => r.lb.style.top = Math.round(y[i] - r.h / 2) + "px");
+  let h = "";
+  rows.forEach(r => {
+    const lr = r.lb.getBoundingClientRect();
     const lx = lr.left - sr.left - 2, ly = lr.top - sr.top + lr.height / 2;
-    const dx = lx - ax, dy = ly - ay, d = Math.hypot(dx, dy) || 1;
-    const sx = ax + dx / d * (r + 1), sy = ay + dy / d * (r + 1);
-    h += `<line data-id="${id}" x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${ly.toFixed(1)}"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="#D4537E"/>`;
+    const dx = lx - r.ax, dy = ly - r.ay, d = Math.hypot(dx, dy) || 1;
+    const sx = r.ax + dx / d * (r.r + 1), sy = r.ay + dy / d * (r.r + 1);
+    h += `<line data-id="${r.id}" x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${ly.toFixed(1)}"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="#D4537E"/>`;
   });
   svg.setAttribute("viewBox", `0 0 ${sr.width} ${sr.height}`);
   svg.innerHTML = h;
@@ -5640,15 +5659,15 @@ window.brFocus = id => {
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
 };
-/* 손들기 = 같이 풀어볼 사람 (본인 토글) */
+/* 손들기 = 같이 해볼 사람 (본인 토글) */
 window.brHand = async id => {
   const me = currentUser(); if (!me) return ensureUser();
   const c = (data.brain || {})[id]; if (!c) return;
   const key = evKey(me), ref = orgRef.child("brain/" + id + "/hands/" + key);
   const has = !!((c.hands || {})[key]);
   try {
-    if (has){ await ref.remove(); logAction("손 내림", "고민 · " + c.title); }
-    else { await ref.set({ name: me, at: Date.now() }); logAction("손들기", "고민 · " + c.title); showToast(`'${c.title}' 같이 풀어볼 사람에 올랐어요`); }
+    if (has){ await ref.remove(); logAction("손 내림", "아이디어 · " + c.title); }
+    else { await ref.set({ name: me, at: Date.now() }); logAction("손들기", "아이디어 · " + c.title); showToast(`'${c.title}' 같이 해볼 사람에 올랐어요`); }
   } catch(e){ console.error(e); alert("저장에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
 };
 /* 관리자: 추가·수정 폼 (인라인) */
@@ -5674,18 +5693,18 @@ window.brEdit = id => { if (!isAdminUser()) return alert("관리자만 수정할
 $("brSaveBtn").onclick = async () => {
   if (!isAdminUser()) return alert("관리자만 저장할 수 있어요.");
   const title = $("brTitle").value.trim();
-  if (!title) return alert("고민을 한 줄로 적어 주세요.");
+  if (!title) return alert("아이디어를 한 줄로 적어 주세요.");
   const id = $("brEditId").value || newId("br_"), prev = (data.brain || {})[id] || {}, me = currentUser() || "?";
   const payload = { title, note: $("brNote").value.trim(), size: brSize, at: prev.at || Date.now(), by: prev.by || me };
   if (prev.at){ payload.updatedAt = Date.now(); payload.updatedBy = me; }
-  const ok = await safeWrite("고민", () => orgRef.child("brain/" + id).update(payload), $("brSaveBtn"));
-  if (ok){ logAction(prev.at ? "수정" : "추가", "고민 · " + title); $("brForm").style.display = "none"; }
+  const ok = await safeWrite("아이디어", () => orgRef.child("brain/" + id).update(payload), $("brSaveBtn"));
+  if (ok){ logAction(prev.at ? "수정" : "추가", "아이디어 · " + title); $("brForm").style.display = "none"; }
 };
 window.brDel = async id => {
   if (!isAdminUser()) return alert("관리자만 삭제할 수 있어요.");
   const c = (data.brain || {})[id]; if (!c) return;
-  if (!confirm(`'${c.title}' 고민을 지울까요? 활동 기록의 휴지통에서 복구할 수 있어요.`)) return;
-  await softDelete("brain", id, "고민 · " + c.title);
+  if (!confirm(`'${c.title}' 아이디어를 지울까요? 활동 기록의 휴지통에서 복구할 수 있어요.`)) return;
+  await softDelete("brain", id, "아이디어 · " + c.title);
 };
 $("brTitle").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("brSaveBtn").click(); } });
 /* 탭이 열리거나(숨김→표시) 화면 크기가 바뀌면 작대기 다시 그림 */
