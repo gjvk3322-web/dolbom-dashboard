@@ -484,6 +484,34 @@
   .oc-person .nm{font-weight:700;font-size:13.5px}
   .oc-person .rl{font-size:11.5px;color:var(--muted);margin-top:1px}
   .oc-empty{font-size:12px;color:var(--muted);text-align:center;padding:10px 0}
+
+  /* ── 이벤트 (선물 신청 등) ── */
+  .ev-card{margin-bottom:14px}
+  .ev-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+  .ev-title{font-size:18px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ev-desc{color:var(--muted);line-height:1.7;margin-top:6px;white-space:pre-wrap;font-size:14px;max-width:760px}
+  .ev-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:14px}
+  .ev-row b{font-size:12px;color:var(--muted);font-weight:700;min-width:70px}
+  .ev-cond{margin-top:14px;background:var(--panel2);border-radius:12px;padding:10px 14px}
+  .ev-cond-title{font-size:12px;font-weight:700;color:#5B6763;margin:2px 0 4px}
+  .ev-cond-row{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:13.5px;flex-wrap:wrap}
+  .ev-cond-row .hint{font-size:12px}
+  .ev-dot{width:9px;height:9px;border-radius:50%;background:#C9D3CE;flex-shrink:0}
+  .ev-dot.ok{background:var(--good)}
+  .ev-my{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
+  .ev-done{font-size:13.5px;line-height:1.7}
+  .ev-done b{color:var(--accent-deep)}
+  .ev-closed{color:var(--muted);font-size:13px}
+  .ev-radio{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .ev-radio label{display:flex;align-items:center;gap:7px;border:1.5px solid #DDE5E1;border-radius:999px;padding:8px 14px;cursor:pointer;font-size:13.5px}
+  .ev-radio label:has(input:checked){border-color:var(--accent);background:var(--tint);color:var(--accent-deep);font-weight:700}
+  .ev-radio input,label.ev-check input{width:auto;margin:0}
+  label.ev-check{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.5;padding:9px 11px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer}
+  label.ev-check input{margin-top:3px}
+  label.ev-check .hint{display:block;margin-top:2px}
+  .ev-admin{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
+  .ev-admin .section-title{margin:0 0 10px}
+  .ev-admin .section-title h2{font-size:15px}
 </style>
 </head>
 <body>
@@ -512,6 +540,7 @@
       <button data-view="rules">운영 원칙</button>
       <button data-view="forms">서류 서식</button>
       <div class="nav-group">기타</div>
+      <button data-view="events">이벤트</button>
       <button data-view="tools">도구 모음</button>
       <button data-view="logs">활동 기록 (관리자)</button>
     </nav>
@@ -1048,6 +1077,17 @@
       </table></div>
     </section>
 
+    <section id="events" class="section">
+      <div class="topbar">
+        <div>
+          <h1>이벤트</h1>
+          <div class="lead">회사 이벤트 신청 창구입니다. 신청할 때 적은 주소와 연락처는 본인과 관리자만 볼 수 있어요.</div>
+        </div>
+        <span id="evAdminBtns" style="display:none"><button class="btn primary" id="addEventBtn">이벤트 추가</button></span>
+      </div>
+      <div id="evList"></div>
+    </section>
+
     <section id="tools" class="section">
       <div class="topbar">
         <div>
@@ -1060,6 +1100,44 @@
     </section>
   </main>
 </div>
+
+<!-- 이벤트: 관리자용 추가/수정 모달 -->
+<dialog id="evModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong id="evModalTitle">이벤트 추가</strong><button class="mini-btn" onclick="evModal.close()">닫기</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="evId">
+      <label style="grid-column:1/-1">제목 * <input id="evTitle"></label>
+      <label style="grid-column:1/-1">안내문 <textarea id="evDesc"></textarea></label>
+      <label>선물(상품명) <input id="evProduct"></label>
+      <label>상품 링크 <input id="evLink" type="url"></label>
+      <label style="grid-column:1/-1">도착 희망일 선택지 <input id="evDates"><span class="hint">쉼표로 구분해서 적어 주세요. 비워두면 날짜 선택 없이 신청을 받습니다.</span></label>
+      <label>신청 마감일 <input id="evDeadline" type="date"><span class="hint">비워두면 [마감] 버튼으로 닫을 때까지 접수합니다.</span></label>
+      <div>
+        <div style="font-size:14px;margin-bottom:6px">신청 조건</div>
+        <label class="ev-check"><input type="checkbox" id="evReqTasks" checked> 직원별 업무분장 작성</label>
+        <label class="ev-check"><input type="checkbox" id="evReqOkr" checked> 이번 분기 OKR 작성</label>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="evModal.close()">취소</button><button class="btn primary" id="saveEvBtn">저장</button></div>
+  </form>
+</dialog>
+
+<!-- 이벤트: 직원 신청 모달 -->
+<dialog id="evAppModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong id="evAppTitle">선물 신청</strong><button class="mini-btn" onclick="evAppModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <input type="hidden" id="eaEvId">
+      <div id="eaConds"></div>
+      <label>받는 분 이름 * <input id="eaName"></label>
+      <label>휴대폰 번호 * <input id="eaPhone" type="tel" inputmode="numeric"></label>
+      <label>받을 주소 * <textarea id="eaAddr" style="min-height:64px"></textarea><span class="hint">아파트는 동·호수까지 적어 주세요.</span></label>
+      <div id="eaDateWrap"><div style="font-size:14px">도착 희망일 *</div><div id="eaDates" class="ev-radio"></div></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="evAppModal.close()">취소</button><button class="btn primary" id="saveEvAppBtn">신청 저장</button></div>
+  </form>
+</dialog>
 
 <!-- 예산: 카테고리 모달 -->
 <dialog id="budCatModal">
@@ -1360,6 +1438,7 @@ function startData(){
     renderAll();
     runReorg202608();
     runManualFlatten2608();
+    runEventSeed2609();
   }, err => {
     $("syncText").textContent = "연결 실패 — 새로고침 해주세요";
     console.error(err);
@@ -2378,12 +2457,287 @@ $("budCopyBtn").onclick = async () => {
   }
 };
 
+/* ───────── 이벤트 (선물 신청 등) — org/events/{id}, 신청은 org/events/{id}/apps/{이름키} ───────── */
+const evModal = $("evModal"), evAppModal = $("evAppModal");
+const evKey = n => String(n || "").trim().replace(/[.#$\[\]\/]/g, "_") || "_";
+const evSafeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
+const evTodayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+const evIsOpen = ev => ev.open !== false && (!ev.deadline || evTodayStr() <= ev.deadline);
+const evFmt = t => { if (!t) return ""; const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+function evSameName(a, b){
+  a = String(a || "").trim(); b = String(b || "").trim();
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const s = a.length < b.length ? a : b, l = a.length < b.length ? b : a;
+  return s.length >= 2 && l.endsWith(s);   // 성 제외 일치 허용 (연차 관리와 같은 기준)
+}
+function evMyTasks(){
+  const me = currentUser();
+  const p = entries(data.people).find(x => evSameName(x.name, me));
+  return { found: !!p, n: p ? toArr(p.responsibilities).filter(Boolean).length : 0 };
+}
+function evMyOkr(){
+  const me = currentUser(), q = curQuarter();
+  const n = entries(data.okr).filter(o => o.quarter === q && (evSameName(o.lead, me) || evSameName(o.owner, me) || evSameName(o.by, me))).length;
+  return { n, q };
+}
+function evMyApp(ev){
+  const me = currentUser();
+  const apps = entries(ev.apps);
+  return apps.find(a => a.id === evKey(me)) || apps.find(a => evSameName(a.by, me)) || null;
+}
+window.evGo = v => { const b = document.querySelector('#nav button[data-view="' + v + '"]'); if (b) b.click(); };
+
+function renderEvents(){
+  const list = $("evList"); if (!list) return;
+  const admin = isAdminUser();
+  const ab = $("evAdminBtns"); if (ab) ab.style.display = admin ? "" : "none";
+  const evs = entries(data.events).sort((a, b) => (b.at || 0) - (a.at || 0));
+  if (!evs.length){
+    list.innerHTML = `<div class="hint" style="font-size:13px">진행 중인 이벤트가 없습니다.${admin ? " 오른쪽 위 [이벤트 추가]로 만드세요." : ""}</div>`;
+    return;
+  }
+  const tk = evMyTasks(), ok = evMyOkr();
+  list.innerHTML = evs.map(ev => {
+    const open = evIsOpen(ev);
+    const dates = toArr(ev.dates).filter(Boolean);
+    const apps = entries(ev.apps);
+    const mine = evMyApp(ev);
+    const link = evSafeUrl(ev.link);
+    let h = `<div class="card ev-card">
+      <div class="ev-head">
+        <div>
+          <div class="ev-title">${esc(ev.title)} <span class="chip" style="${open ? "" : "background:#F1F1F1;color:var(--muted)"}">${open ? "접수 중" : "접수 마감"}</span></div>
+          ${ev.desc ? `<div class="ev-desc">${esc(ev.desc)}</div>` : ""}
+        </div>
+        ${admin ? `<span style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="mini-btn" onclick="evEdit('${ev.id}')">수정</button>
+          <button class="mini-btn" onclick="evToggleOpen('${ev.id}')">${ev.open === false ? "접수 재개" : "마감"}</button>
+          <button class="mini-btn" onclick="evDel('${ev.id}')">삭제</button></span>` : ""}
+      </div>`;
+    if (ev.product || link) h += `<div class="ev-row"><b>선물</b><span>${esc(ev.product || "")}</span>${link ? `<a class="mini-btn" href="${esc(link)}" target="_blank" rel="noopener" style="text-decoration:none">상품 보기</a>` : ""}</div>`;
+    if (dates.length) h += `<div class="ev-row"><b>도착 희망일</b><span>${dates.map(esc).join(" · ")} 중 선택</span></div>`;
+    if (ev.deadline) h += `<div class="ev-row"><b>신청 마감</b><span>${esc(ev.deadline)}</span></div>`;
+    if (ev.reqTasks !== false || ev.reqOkr !== false){
+      h += `<div class="ev-cond"><div class="ev-cond-title">신청 조건 — 아래 두 가지를 마친 뒤 신청해 주세요</div>`;
+      if (ev.reqTasks !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${tk.n ? "ok" : ""}"></span><span>직원별 업무분장 작성</span><span class="hint">${tk.n ? `직원별 업무에 내 업무 ${tk.n}개 등록됨` : (tk.found ? "직원별 업무에 내 업무가 아직 비어 있어요" : "직원별 업무에서 내 이름을 찾지 못했어요")}</span><button class="mini-btn" onclick="evGo('people')">${tk.n ? "확인하기" : "작성하러 가기"}</button></div>`;
+      if (ev.reqOkr !== false) h += `<div class="ev-cond-row"><span class="ev-dot ${ok.n ? "ok" : ""}"></span><span>이번 분기 OKR 작성</span><span class="hint">${ok.n ? `${ok.q.replace("-Q", "년 ")}분기 내 목표 ${ok.n}개 등록됨` : `${ok.q.replace("-Q", "년 ")}분기 내 목표가 아직 없어요`}</span><button class="mini-btn" onclick="evGo('okr')">${ok.n ? "확인하기" : "작성하러 가기"}</button></div>`;
+      h += `</div>`;
+    }
+    h += `<div class="ev-my">`;
+    if (mine){
+      h += `<div class="ev-done"><b>신청 완료</b>${mine.date ? ` · ${esc(mine.date)} 도착` : ""} · ${esc(mine.name)} · ${esc(mine.phone)}<br><span style="color:var(--muted)">${esc(mine.address)}</span></div>
+        <span style="display:flex;gap:6px">${open ? `<button class="mini-btn" onclick="evApply('${ev.id}')">수정</button><button class="mini-btn" onclick="evCancelApp('${ev.id}')">신청 취소</button>` : ""}</span>`;
+    } else if (open){
+      h += `<span class="hint" style="font-size:13px">아직 신청하지 않았어요.</span><button class="btn primary" onclick="evApply('${ev.id}')">${ev.product ? "선물 신청하기" : "신청하기"}</button>`;
+    } else {
+      h += `<span class="ev-closed">접수가 마감되었습니다.</span>`;
+    }
+    h += `</div>`;
+    if (admin){
+      const rows = apps.slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.name || "").localeCompare(String(b.name || "")));
+      const cnt = d => apps.filter(a => a.date === d).length;
+      const applied = new Set();
+      apps.forEach(a => entries(data.people).forEach(p => { if (evSameName(p.name, a.by) || evSameName(p.name, a.name)) applied.add(p.id); }));
+      const missing = entries(data.people).filter(p => !applied.has(p.id)).map(p => p.name);
+      h += `<div class="ev-admin">
+        <div class="section-title"><h2>신청 현황 <span class="chip">${apps.length}명</span></h2>
+          <span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${dates.map(d => `<span class="chip">${esc(d)} ${cnt(d)}명</span>`).join("")}
+            <button class="mini-btn" onclick="evCopy('${ev.id}')">주문용 복사</button><button class="mini-btn" onclick="evCsv('${ev.id}')">CSV 내려받기</button></span>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>이름</th><th>휴대폰</th><th>주소</th><th>도착 희망일</th><th>신청</th><th style="width:60px"></th></tr></thead>
+          <tbody>${rows.map(a => `<tr><td><b>${esc(a.name)}</b>${a.by && !evSameName(a.by, a.name) ? `<div class="hint">${esc(a.by)} 신청</div>` : ""}</td><td style="white-space:nowrap">${esc(a.phone)}</td><td>${esc(a.address)}</td><td style="white-space:nowrap">${esc(a.date || "—")}</td><td style="white-space:nowrap">${evFmt(a.updatedAt || a.at)}</td><td style="text-align:right"><button class="mini-btn" onclick="evDelApp('${ev.id}','${a.id}')">삭제</button></td></tr>`).join("") || `<tr><td colspan="6" class="hint">아직 신청이 없습니다.</td></tr>`}</tbody>
+        </table></div>
+        ${missing.length ? `<div class="hint" style="margin-top:8px">미신청 ${missing.length}명: ${missing.map(esc).join(", ")}</div>` : (apps.length ? `<div class="hint" style="margin-top:8px">직원 전원 신청 완료</div>` : "")}
+      </div>`;
+    }
+    return h + `</div>`;
+  }).join("");
+}
+
+/* 관리자: 이벤트 추가/수정/마감/삭제 */
+$("addEventBtn").onclick = () => {
+  if (!isAdminUser()) return alert("관리자만 이벤트를 만들 수 있어요.");
+  $("evModalTitle").textContent = "이벤트 추가";
+  $("evId").value = "";
+  ["evTitle","evDesc","evProduct","evLink","evDates","evDeadline"].forEach(id => $(id).value = "");
+  $("evReqTasks").checked = true; $("evReqOkr").checked = true;
+  evModal.showModal();
+};
+window.evEdit = id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  if (!isAdminUser()) return alert("관리자만 수정할 수 있어요.");
+  $("evModalTitle").textContent = "이벤트 수정";
+  $("evId").value = id;
+  $("evTitle").value = ev.title || ""; $("evDesc").value = ev.desc || "";
+  $("evProduct").value = ev.product || ""; $("evLink").value = ev.link || "";
+  $("evDates").value = toArr(ev.dates).join(", "); $("evDeadline").value = ev.deadline || "";
+  $("evReqTasks").checked = ev.reqTasks !== false; $("evReqOkr").checked = ev.reqOkr !== false;
+  evModal.showModal();
+};
+$("saveEvBtn").onclick = async () => {
+  if (!isAdminUser()) return alert("관리자만 저장할 수 있어요.");
+  const title = $("evTitle").value.trim();
+  if (!title) return alert("제목을 입력해 주세요.");
+  const link = $("evLink").value.trim();
+  if (link && !evSafeUrl(link)) return alert("상품 링크는 http:// 또는 https://로 시작해야 해요.");
+  const id = $("evId").value || newId("ev_");
+  const prev = (data.events || {})[id] || {};
+  const fields = {
+    title, desc: $("evDesc").value.trim(), product: $("evProduct").value.trim(), link,
+    dates: $("evDates").value.split(",").map(x => x.trim()).filter(Boolean),
+    deadline: $("evDeadline").value || "",
+    reqTasks: $("evReqTasks").checked, reqOkr: $("evReqOkr").checked,
+    open: prev.open !== false,
+    at: prev.at || Date.now(), by: prev.by || currentUser() || "?",
+    updatedAt: Date.now(), updatedBy: currentUser() || "?"
+  };
+  // update()라서 기존 신청(apps)은 그대로 유지됨
+  if (await safeWrite("이벤트", () => orgRef.child("events/" + id).update(fields), $("saveEvBtn"))){
+    logAction($("evId").value ? "수정" : "추가", "이벤트: " + title);
+    evModal.close();
+  }
+};
+window.evToggleOpen = async id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  if (!isAdminUser()) return alert("관리자만 마감할 수 있어요.");
+  const next = ev.open === false;
+  if (!next && !confirm(`'${ev.title}' 접수를 마감할까요? 직원들은 더 이상 신청·수정할 수 없어요.`)) return;
+  try {
+    await orgRef.child("events/" + id + "/open").set(next);
+    logAction(next ? "접수 재개" : "마감", "이벤트: " + ev.title);
+    showToast(next ? "접수를 다시 열었어요" : "접수를 마감했어요");
+  } catch(e){ alert("저장에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+};
+window.evDel = async id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  if (!isAdminUser()) return alert("관리자만 삭제할 수 있어요.");
+  const n = entries(ev.apps).length;
+  if (!confirm(`'${ev.title}' 이벤트를 삭제할까요?${n ? ` 신청 ${n}건도 함께 휴지통으로 이동합니다.` : ""}`)) return;
+  softDelete("events", id, "이벤트: " + ev.title);
+};
+window.evDelApp = async (id, key) => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  const a = (ev.apps || {})[key]; if (!a) return;
+  if (!isAdminUser()) return alert(DEL_DENY_MSG);
+  if (!confirm(`${a.name}님의 신청을 삭제할까요?`)) return;
+  try {
+    await orgRef.child(`events/${id}/apps/${key}`).remove();
+    logAction("삭제", `이벤트 신청: ${ev.title} · ${a.name}`);
+  } catch(e){ alert("삭제에 실패했습니다."); }
+};
+window.evCopy = async id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  const rows = entries(ev.apps).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+  if (!rows.length) return alert("아직 신청이 없습니다.");
+  const text = ["이름\t휴대폰\t주소\t도착 희망일"].concat(rows.map(a => [a.name, a.phone, a.address, a.date || ""].map(v => String(v || "").replace(/[\t\n]/g, " ")).join("\t"))).join("\n");
+  try { await navigator.clipboard.writeText(text); showToast(`${rows.length}명 목록 복사 완료 — 시트나 주문서에 붙여넣으세요`); }
+  catch(e){ prompt("복사가 안 되면 아래 내용을 직접 복사하세요", text); }
+};
+window.evCsv = id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  const rows = entries(ev.apps).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+  if (!rows.length) return alert("아직 신청이 없습니다.");
+  const q = v => '"' + String(v || "").replace(/"/g, '""') + '"';
+  const csv = "\uFEFF" + ["이름,휴대폰,주소,도착 희망일,신청 시각"].concat(rows.map(a => [a.name, a.phone, a.address, a.date || "", evFmt(a.updatedAt || a.at)].map(q).join(","))).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = `${ev.title}_신청자_${evTodayStr()}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+/* 직원: 신청 */
+window.evApply = id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  if (!currentUser()) return ensureUser();
+  if (!evIsOpen(ev)) return alert("접수가 마감된 이벤트예요.");
+  const mine = evMyApp(ev) || {};
+  const tk = evMyTasks(), ok = evMyOkr();
+  $("eaEvId").value = id;
+  $("evAppTitle").textContent = ev.product ? "선물 신청 — " + ev.title : ev.title;
+  let c = "";
+  if (ev.reqTasks !== false) c += `<label class="ev-check"><input type="checkbox" id="eaChkTasks" ${mine.okTasks ? "checked" : ""}><span>직원별 업무분장을 작성했어요<span class="hint">${tk.n ? `직원별 업무에 내 업무 ${tk.n}개 등록됨` : "아직 등록된 업무가 없어요 — 직원별 업무 탭에서 먼저 작성해 주세요"}</span></span></label>`;
+  if (ev.reqOkr !== false) c += `<label class="ev-check"><input type="checkbox" id="eaChkOkr" ${mine.okOkr ? "checked" : ""}><span>이번 분기 OKR을 작성했어요<span class="hint">${ok.n ? `내 목표 ${ok.n}개 등록됨` : "아직 등록된 목표가 없어요 — OKR 탭에서 먼저 작성해 주세요"}</span></span></label>`;
+  $("eaConds").innerHTML = c ? `<div><div style="font-size:14px;margin-bottom:6px">신청 조건</div>${c}</div>` : "";
+  $("eaName").value = mine.name || currentUser();
+  $("eaPhone").value = mine.phone || "";
+  $("eaAddr").value = mine.address || "";
+  const dates = toArr(ev.dates).filter(Boolean);
+  $("eaDateWrap").style.display = dates.length ? "" : "none";
+  $("eaDates").innerHTML = dates.map((d, i) => `<label><input type="radio" name="eaDate" value="${esc(d)}" ${mine.date === d ? "checked" : ""}> ${esc(d)}</label>`).join("");
+  evAppModal.showModal();
+};
+$("saveEvAppBtn").onclick = async () => {
+  const id = $("eaEvId").value;
+  const ev = (data.events || {})[id]; if (!ev) return;
+  if (!evIsOpen(ev)) return alert("접수가 마감된 이벤트예요.");
+  if (ev.reqTasks !== false && !($("eaChkTasks") && $("eaChkTasks").checked)) return alert("직원별 업무분장을 먼저 작성하고 체크해 주세요.");
+  if (ev.reqOkr !== false && !($("eaChkOkr") && $("eaChkOkr").checked)) return alert("이번 분기 OKR을 먼저 작성하고 체크해 주세요.");
+  const name = $("eaName").value.trim();
+  const digits = $("eaPhone").value.replace(/[^0-9]/g, "");
+  const address = $("eaAddr").value.trim();
+  const dates = toArr(ev.dates).filter(Boolean);
+  const picked = document.querySelector('input[name="eaDate"]:checked');
+  if (!name) return alert("받는 분 이름을 입력해 주세요.");
+  if (digits.length < 10 || digits.length > 11) return alert("휴대폰 번호를 숫자 10~11자리로 입력해 주세요.");
+  if (!address) return alert("받을 주소를 입력해 주세요.");
+  if (dates.length && !picked) return alert("도착 희망일을 선택해 주세요.");
+  const me = currentUser() || name, key = evKey(me);
+  const prev = (ev.apps || {})[key] || {};
+  const payload = {
+    name, phone: digits.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3"), address,
+    date: picked ? picked.value : "",
+    okTasks: ev.reqTasks !== false, okOkr: ev.reqOkr !== false,
+    by: me, at: prev.at || Date.now(), updatedAt: Date.now()
+  };
+  if (await safeWrite("신청", () => orgRef.child(`events/${id}/apps/${key}`).set(payload), $("saveEvAppBtn"))){
+    logAction(prev.at ? "신청 수정" : "신청", `이벤트: ${ev.title} · ${name}${payload.date ? " · " + payload.date : ""}`);
+    evAppModal.close();
+  }
+};
+window.evCancelApp = async id => {
+  const ev = (data.events || {})[id]; if (!ev) return;
+  const mine = evMyApp(ev); if (!mine) return;
+  if (!evIsOpen(ev)) return alert("접수가 마감돼 취소할 수 없어요. 관리자에게 말해 주세요.");
+  if (!confirm("신청을 취소할까요?")) return;
+  try {
+    await orgRef.child(`events/${id}/apps/${mine.id}`).remove();
+    logAction("신청 취소", `이벤트: ${ev.title} · ${mine.name}`);
+    showToast("신청을 취소했어요");
+  } catch(e){ alert("취소에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+};
+
+/* 첫 이벤트(2026 추석 선물) 1회 자동 생성 — 관리자 화면에서만, migrations 플래그로 재생성 방지 */
+let evSeedTried = false;
+async function runEventSeed2609(){
+  const KEY = "eventChuseok2026";
+  if (evSeedTried || !data || (data.migrations || {})[KEY] || !isAdminUser()) return;
+  evSeedTried = true;
+  try {
+    if (!entries(data.events).length){
+      await orgRef.child("events/" + newId("ev_")).set({
+        title: "추석 선물 신청",
+        desc: "직원별 업무분장과 이번 분기 OKR 작성을 마친 분께 추석 선물을 보내드려요.\n아래 조건을 확인한 뒤 받을 주소, 휴대폰 번호, 도착 희망일을 남겨 주세요.",
+        product: "미쓰하누 1++ 한우 선물세트 · SVIP 1.4kg 구성",
+        link: "https://brand.naver.com/misshanu86/products/4791453142",
+        dates: ["9월 17일 (목)", "9월 19일 (토)"],
+        deadline: "", reqTasks: true, reqOkr: true, open: true,
+        at: Date.now(), by: currentUser() || "관리자"
+      });
+      logAction("추가", "이벤트: 추석 선물 신청 (자동 생성)");
+    }
+    await orgRef.child("migrations/" + KEY).set({ at: Date.now(), by: currentUser() || "?" });
+  } catch(e){ console.error("이벤트 시드 실패:", e); }
+}
+
 function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderForms, renderMeetings,
-   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance, renderBudget].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance, renderBudget, renderEvents].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
   ensureUser(); renderWho();
