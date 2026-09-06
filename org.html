@@ -521,7 +521,10 @@
   <aside>
     <div class="brand">돌봄매트 조직 운영</div>
     <div class="sub">누가 어떤 결과를 책임지고,<br>어디까지 결정할 수 있는가</div>
-    <div class="sync" id="syncBadge"><span class="dot"></span><span id="syncText">연결 중…</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+      <div class="sync" id="syncBadge" style="margin-bottom:0"><span class="dot"></span><span id="syncText">연결 중…</span></div>
+      <button class="sync" id="copyViewLink" style="margin-bottom:0;cursor:pointer;color:#5B6763" title="지금 보고 있는 화면의 주소를 복사합니다 — 직원에게 보내면 그 화면이 바로 열려요">🔗 화면 링크 복사</button>
+    </div>
     <nav id="nav">
       <button data-view="overview" class="active">대시보드</button>
       <div class="nav-group">조직</div>
@@ -3121,14 +3124,53 @@ async function checkAdmin(){
   alert("비밀번호가 올바르지 않습니다.");
   return false;
 }
-$("nav").addEventListener("click", async e => {
+/* 탭마다 고유 주소: org.html#events 처럼 #탭이름 (또는 ?view=탭이름)으로 열면 그 탭이 바로 열림 */
+const VIEW_IDS = [...document.querySelectorAll("#nav button")].map(b => b.dataset.view);
+function viewFromUrl(){
+  try {
+    const raw = (location.hash || "").replace(/^#\/?/, "");
+    let h = raw; try { h = decodeURIComponent(raw); } catch(_){}
+    h = h.split(/[\/?&]/)[0];
+    if (VIEW_IDS.includes(h)) return h;
+    const q = new URLSearchParams(location.search);
+    const v = q.get("view") || q.get("tab") || "";
+    return VIEW_IDS.includes(v) ? v : null;
+  } catch(_) { return null; }
+}
+async function goView(v, opts){
+  opts = opts || {};
+  if (!VIEW_IDS.includes(v)) return false;
+  if (v === "logs"){
+    if (opts.noPrompt && sessionStorage.getItem("orgAdmin") !== "1") return false;
+    if (!(await checkAdmin())) return false;
+  }
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+  document.querySelectorAll(".section").forEach(s => s.classList.toggle("active", s.id === v));
+  if (!opts.keepUrl) try { history.replaceState(null, "", location.pathname + location.search + "#" + v); } catch(_){}
+  const nb = document.querySelector('#nav button[data-view="' + v + '"]');
+  if (nb && window.innerWidth <= 820) try { nb.scrollIntoView({ block: "nearest", inline: "center" }); } catch(_){}
+  return true;
+}
+window.goView = goView;
+function viewLink(v){ return location.origin + location.pathname + "#" + (v || currentView()); }
+function currentView(){ const s = document.querySelector(".section.active"); return s ? s.id : "overview"; }
+$("nav").addEventListener("click", e => {
   if (!e.target.matches("button")) return;
-  if (e.target.dataset.view === "logs" && !(await checkAdmin())) return;
-  document.querySelectorAll("#nav button").forEach(b => b.classList.remove("active"));
-  e.target.classList.add("active");
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  $(e.target.dataset.view).classList.add("active");
+  goView(e.target.dataset.view);
 });
+window.addEventListener("hashchange", () => { const v = viewFromUrl(); if (v && v !== currentView()) goView(v, { keepUrl: true, noPrompt: true }); });
+(() => { const v = viewFromUrl(); if (v && v !== "overview") goView(v, { keepUrl: true, noPrompt: true }); })();
+$("copyViewLink").onclick = async () => {
+  const url = viewLink();
+  const nb = document.querySelector("#nav button.active");
+  const label = nb ? nb.textContent.trim() : "";
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast(`${label} 링크 복사됨 — 붙여넣어 보내면 이 화면이 바로 열려요`);
+  } catch(_) {
+    prompt("아래 주소를 복사하세요", url);
+  }
+};
 $("searchInput").addEventListener("input", renderPeople);
 $("deptFilter").addEventListener("change", renderPeople);
 $("companyMission").addEventListener("blur", () => {
@@ -3425,6 +3467,7 @@ const isOverdue = t => t.due && t.status !== "done" && t.due < todayStr();
 let calBase = new Date(); calBase.setDate(1);
 
 function taskList(){ return entries(data.tasks); }
+const taskTitle = t => (t && String(t.title || "").trim()) || "(제목 없음)"; // 제목이 빈 항목도 눈에 띄게
 function calFiltered(){
   const f = $("taskDeptFilter").value || "";
   const hide = $("calHideDone").checked;
@@ -3452,7 +3495,7 @@ function renderTasks(){
     const range = t.due ? ((t.start && t.start < t.due) ? `${t.start.slice(5).replace("-","/")}~${t.due.slice(5).replace("-","/")}` : t.due.slice(5).replace("-","/")) : "";
     return `<div class="pitem ${t.status==="done"?"done":""}" style="border-left:3px solid ${c}">
       <div class="pi-top">
-        <span class="pi-title">${esc(t.title)}</span>
+        <span class="pi-title">${esc(taskTitle(t))}</span>
         <span style="display:flex;gap:5px;align-items:center;flex-shrink:0">
           <button class="mini-btn" onclick="toggleTaskMenu('${t.id}')">관리</button>
           <button class="st-chip st-${t.status||"todo"}" title="클릭하면 상태가 바뀝니다" onclick="cycleStatus('${t.id}')">${STATUS_LABEL[t.status]||"대기"}</button>
@@ -3517,6 +3560,7 @@ window.calCellClick = ds => {
   }
   const s = placing.first <= ds ? placing.first : ds;
   const e = placing.first <= ds ? ds : placing.first;
+  if (!(data.tasks || {})[placing.id]) { showToast("항목이 없어 일정을 잡지 못했어요 — 목록에서 다시 선택해 주세요", true); cancelPlace(); return; } // 삭제된 항목에 날짜만 남는 빈 항목 방지
   orgRef.child("tasks/" + placing.id).update({ start: s === e ? "" : s, due: e });
   cancelPlace();
 };
@@ -3549,7 +3593,7 @@ function renderCalendar(){
     if (!t.due) return;
     const ts = (t.start && t.start <= t.due) ? t.start : t.due;
     if (t.due < viewStart || ts > viewEnd) return; // 화면 밖 업무 제외
-    items.push({ key: "t:" + t.id, t, ts, te: t.due, title: t.title, prio: 0, createdAt: t.createdAt || 0 });
+    items.push({ key: "t:" + t.id, t, ts, te: t.due, title: taskTitle(t), prio: 0, createdAt: t.createdAt || 0 });
   });
 
   // 주 단위 줄(레인) 배정 — 한 항목은 같은 주 안에서 항상 같은 줄을 차지해서 막대가 끊기거나 위아래로 튀지 않음
@@ -3599,7 +3643,7 @@ function renderCalendar(){
       const shape = `margin-left:${isStart ? "0" : "-7px"};margin-right:${isEnd ? "0" : "-7px"};` +
         `border-radius:${isStart ? "6px" : "0"} ${isEnd ? "6px" : "0"} ${isEnd ? "6px" : "0"} ${isStart ? "6px" : "0"};`;
       if (it.lv){
-        pills.push(`<span class="cal-pill lv" style="${shape}" onclick="event.stopPropagation()" title="${esc(it.title)} · ${period}">${showLabel ? esc(it.title) : "&nbsp;"}</span>`);
+        pills.push(`<span class="cal-pill lv" style="${shape}" onclick="event.stopPropagation()" title="${esc(it.title)} · ${period}">${showLabel ? (esc(it.title) || "&nbsp;") : "&nbsp;"}</span>`);
         continue;
       }
       const t = it.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
@@ -3607,12 +3651,12 @@ function renderCalendar(){
       const style = `background:${bg};color:${done ? "#98A49E" : "#fff"};` +
         (late && !done ? "box-shadow:inset 0 0 0 2px var(--bad);" : "") + shape +
         (done ? "text-decoration:line-through;" : "");
-      const tip = `${esc(t.title)} · ${period}${t.assignee ? " · " + esc(t.assignee) : ""}${late && !done ? " · 지연" : ""}`;
+      const tip = `${esc(it.title)} · ${period}${t.assignee ? " · " + esc(t.assignee) : ""}${late && !done ? " · 지연" : ""}`;
       pills.push(`<span class="cal-pill" draggable="true" style="${style}" title="${tip}"
           ondragstart="calDrag(event,'${t.id}','move','${ds}')"
           onclick="event.stopPropagation();editTask('${t.id}')">` +
           (isStart ? `<i class="hdl" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','l','${ds}')">⟨</i>` : "") +
-          `${showLabel ? esc(t.title) : "&nbsp;"}` +
+          `${showLabel ? (esc(it.title) || "&nbsp;") : "&nbsp;"}` +
           (isEnd ? `<i class="hdl r" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','r','${ds}')">⟩</i>` : "") +
         `</span>`);
     }
