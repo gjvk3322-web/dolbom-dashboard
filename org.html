@@ -581,7 +581,7 @@
       <button data-view="decision">의사결정 권한</button>
       <div class="nav-group">일 · 목표</div>
       <button data-view="okr">OKR</button>
-      <button data-view="brain">대표의 아이디어</button>
+      <button data-view="brain" style="display:none">대표의 아이디어</button>
       <button data-view="calendar">프로젝트 보드</button>
       <button data-view="weekly">주간 운영회의</button>
       <button data-view="budget">마케팅 예산</button>
@@ -1807,6 +1807,8 @@ function currentUser(){ return localStorage.getItem("orgUser") || ""; }
 /* ── 삭제 권한: 작성자 본인 + 관리자 ── */
 const ADMINS = ["민석"];
 const isAdminUser = () => ADMINS.includes(currentUser());
+const BRAIN_PUBLIC = false;   // 대표의 아이디어 탭 공개 여부 — true로 바꾸면 전 직원에게 보임 (지금은 관리자만)
+const canSeeBrain = () => BRAIN_PUBLIC || isAdminUser();
 function canDeleteItem(item){
   const me = currentUser();
   return !!me && (ADMINS.includes(me) || (item && item.by === me));
@@ -3255,6 +3257,7 @@ async function goView(v, opts){
     if (opts.noPrompt && sessionStorage.getItem("orgAdmin") !== "1") return false;
     if (!(await checkAdmin())) return false;
   }
+  if (v === "brain" && !canSeeBrain()) return false;
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   document.querySelectorAll(".section").forEach(s => s.classList.toggle("active", s.id === v));
   if (!opts.keepUrl) try { history.replaceState(null, "", location.pathname + location.search + "#" + v); } catch(_){}
@@ -5579,8 +5582,14 @@ function brBrainSvg(items){
   }).join("");
   return `<svg viewBox="0 0 400 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="대표의 아이디어">${BR_SVG_BODY}<g id="brDots">${dots}</g></svg>`;
 }
+function brNavSync(){
+  const nb = document.querySelector('#nav button[data-view="brain"]');
+  if (nb) nb.style.display = canSeeBrain() ? "" : "none";
+}
 function renderBrain(){
   const stage = $("brStage"); if (!stage || !data) return;
+  brNavSync();
+  if (!canSeeBrain()){ $("brBrain").innerHTML = ""; $("brLabels").innerHTML = ""; $("brList").innerHTML = ""; return; }
   const admin = isAdminUser(), me = currentUser();
   const ab = $("brAdminBtns"); if (ab) ab.style.display = admin ? "" : "none";
   const items = brSorted(), onBrain = items.slice(0, BR_MAX);
@@ -5711,6 +5720,7 @@ $("brTitle").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preven
 try { new ResizeObserver(() => requestAnimationFrame(brDrawLines)).observe($("brStage")); }
 catch(_){ window.addEventListener("resize", brDrawLines); }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(brDrawLines));
+brNavSync();
 </script>
 </body>
 </html>
