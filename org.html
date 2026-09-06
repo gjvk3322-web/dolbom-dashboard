@@ -203,7 +203,7 @@
   .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:6px 0}
   .cal-head span:first-child{color:var(--bad)}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line);gap:1px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
-  .cal-cell{background:#fff;min-height:124px;padding:6px 6px 4px;cursor:pointer;transition:background .1s}
+  .cal-cell{background:#fff;min-height:128px;padding:6px 6px 4px;cursor:pointer;transition:background .1s}
   .cal-cell:hover{background:#F7FBF9}
   .cal-cell.other{background:#FAFBFA;color:#C2CBC7}
   .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px;height:20px;line-height:20px}
@@ -213,7 +213,9 @@
   .cal-pill .hdl{position:absolute;left:1px;top:0;bottom:0;display:flex;align-items:center;font-style:normal;font-size:9px;opacity:.55;cursor:ew-resize;padding:0 1px}
   .cal-pill .hdl.r{left:auto;right:1px}
   .cal-pill:hover .hdl{opacity:1}
-  .cal-pill{display:block;font-size:10.5px;font-weight:600;line-height:1.3;padding:2px 7px;border-radius:6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .cal-pill{display:block;font-size:11px;font-weight:600;line-height:1.3;padding:3px 8px;border-radius:6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-pill.spacer{visibility:hidden;pointer-events:none;cursor:default}
+  .cal-pill.lv{background:#EEF2F0;color:#5B6763;cursor:default}
   .cal-pill.todo{background:#EEF2F0;color:#5B6763}
   .cal-pill.doing{background:var(--tint);color:var(--accent-deep)}
   .cal-pill.done{background:#F2F6F4;color:#A6B2AD;text-decoration:line-through}
@@ -3531,64 +3533,94 @@ function renderCalendar(){
 
   const first = new Date(y, m, 1), start = new Date(first); start.setDate(1 - first.getDay());
   const tStr = todayStr();
-  // 날짜별 세그먼트 (기간 막대)
   const viewStart = fmtD(start);
   const viewEnd = addDays(viewStart, 41);
-  const byDate = {};
-  // 승인된 연차 → 회색 막대
+  const MAX_LANES = 4;           // 한 주에 보여줄 최대 줄 수 (넘치면 "+N건")
+  const md = ds => ds.slice(5).replace("-", "/");
+
+  // 화면(6주)에 걸치는 항목 수집 — 승인된 연차(회색) + 일정 잡힌 업무
+  const items = [];
   entries(data.leaves).filter(l => l.status === "approved" || l.status === "cancelReq").forEach(l => {
     const ts = l.start, te = l.end || l.start;
     if (!ts || te < viewStart || ts > viewEnd) return;
-    const s = ts < viewStart ? viewStart : ts, e = te > viewEnd ? viewEnd : te;
-    for (let ds = s; ds <= e; ds = addDays(ds, 1)){
-      (byDate[ds] = byDate[ds] || []).push({ lv: l, isStart: ds === ts, isEnd: ds === te });
-    }
+    items.push({ key: "lv:" + l.id, lv: l, ts, te, title: l.name + (l.half ? " 반차" : " 연차"), prio: 1, createdAt: 0 });
   });
   calFiltered().forEach(t => {
     if (!t.due) return;
     const ts = (t.start && t.start <= t.due) ? t.start : t.due;
     if (t.due < viewStart || ts > viewEnd) return; // 화면 밖 업무 제외
-    const s = ts < viewStart ? viewStart : ts;
-    const e = t.due > viewEnd ? viewEnd : t.due;
-    for (let ds = s; ds <= e; ds = addDays(ds, 1)){
-      (byDate[ds] = byDate[ds] || []).push({t, isStart: ds === ts, isEnd: ds === t.due});
-    }
+    items.push({ key: "t:" + t.id, t, ts, te: t.due, title: t.title, prio: 0, createdAt: t.createdAt || 0 });
   });
+
+  // 주 단위 줄(레인) 배정 — 한 항목은 같은 주 안에서 항상 같은 줄을 차지해서 막대가 끊기거나 위아래로 튀지 않음
+  // 우선순위: 먼저 시작한 것 → 기간 긴 것 → 업무가 연차보다 위 → 먼저 만든 것
+  const laneOf = {};
+  for (let w = 0; w < 6; w++){
+    const wS = addDays(viewStart, w * 7), wE = addDays(wS, 6);
+    const inWeek = items.filter(it => it.ts <= wE && it.te >= wS).sort((a, b) =>
+      a.ts.localeCompare(b.ts) ||
+      (diffDays(b.ts, b.te) - diffDays(a.ts, a.te)) ||
+      (a.prio - b.prio) ||
+      (a.createdAt - b.createdAt) ||
+      a.key.localeCompare(b.key));
+    const occ = []; // occ[lane][col] = 사용 중
+    inWeek.forEach(it => {
+      const c0 = Math.max(0, diffDays(wS, it.ts)), c1 = Math.min(6, diffDays(wS, it.te));
+      let lane = 0;
+      while (occ[lane] && occ[lane].some((v, c) => v && c >= c0 && c <= c1)) lane++;
+      occ[lane] = occ[lane] || new Array(7).fill(false);
+      for (let c = c0; c <= c1; c++) occ[lane][c] = true;
+      laneOf[w + "|" + it.key] = lane;
+    });
+  }
+
   const cells = [];
   for (let i = 0; i < 42; i++){
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
     const ds = fmtD(d);
+    const w = Math.floor(i / 7);
     const other = d.getMonth() !== m;
-    const segs = (byDate[ds] || []).sort((a,b) => ((a.lv ? -1 : (a.t.createdAt||0)) - (b.lv ? -1 : (b.t.createdAt||0))));
-    const shown = segs.slice(0, 4);
-    cells.push(`<div class="cal-cell ${other?"other":""} ${ds===tStr?"today":""} ${d.getDay()===0?"sun":""}"
-        onclick="calCellClick('${ds}')" ondragover="event.preventDefault()" ondrop="calDrop(event,'${ds}')">
-      <div class="d">${d.getDate()}</div>
-      ${shown.map(sg => {
-        if (sg.lv){
-          const l = sg.lv;
-          const st2 = `background:#EEF2F0;color:#5B6763;` +
-            `margin-left:${sg.isStart?"0":"-7px"};margin-right:${sg.isEnd?"0":"-7px"};` +
-            `border-radius:${sg.isStart?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isStart?"6px":"0"}`;
-          const lb = sg.isStart || d.getDay() === 0;
-          return `<span class="cal-pill" style="${st2}" onclick="event.stopPropagation()" title="${esc(l.name)} 연차">${lb ? esc(l.name) + (l.half ? " 반차" : " 연차") : "&nbsp;"}</span>`;
-        }
-        const t = sg.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
-        const bg = done ? "#E3E9E6" : c;
-        const style = `background:${bg};color:${done?"#98A49E":"#fff"};` +
-          (late && !done ? "box-shadow:inset 0 0 0 2px var(--bad);" : "") +
-          `margin-left:${sg.isStart?"0":"-7px"};margin-right:${sg.isEnd?"0":"-7px"};` +
-          `border-radius:${sg.isStart?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isEnd?"6px":"0"} ${sg.isStart?"6px":"0"};${done?"text-decoration:line-through;":""}`;
-        const showLabel = sg.isStart || d.getDay() === 0;
-        return `<span class="cal-pill" draggable="true" style="${style}"
+    const lanes = [], hidden = [];
+    items.forEach(it => {
+      if (it.ts > ds || it.te < ds) return;
+      const lane = laneOf[w + "|" + it.key];
+      if (lane === undefined) return;
+      if (lane >= MAX_LANES) hidden.push(it); else lanes[lane] = it;
+    });
+    const pills = [];
+    for (let k = 0; k < lanes.length; k++){
+      const it = lanes[k];
+      if (!it) { pills.push(`<span class="cal-pill spacer">&nbsp;</span>`); continue; } // 빈 줄도 자리를 지켜 아래 막대가 올라오지 않게
+      const isStart = it.ts === ds, isEnd = it.te === ds;
+      const weekFirst = d.getDay() === 0;                 // 주가 바뀌면 이름을 다시 보여줌
+      const showLabel = isStart || weekFirst;
+      const days = diffDays(it.ts, it.te) + 1;
+      const period = days > 1 ? `${md(it.ts)}~${md(it.te)} · ${days}일` : md(it.ts);
+      const shape = `margin-left:${isStart ? "0" : "-7px"};margin-right:${isEnd ? "0" : "-7px"};` +
+        `border-radius:${isStart ? "6px" : "0"} ${isEnd ? "6px" : "0"} ${isEnd ? "6px" : "0"} ${isStart ? "6px" : "0"};`;
+      if (it.lv){
+        pills.push(`<span class="cal-pill lv" style="${shape}" onclick="event.stopPropagation()" title="${esc(it.title)} · ${period}">${showLabel ? esc(it.title) : "&nbsp;"}</span>`);
+        continue;
+      }
+      const t = it.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
+      const bg = done ? "#E3E9E6" : c;
+      const style = `background:${bg};color:${done ? "#98A49E" : "#fff"};` +
+        (late && !done ? "box-shadow:inset 0 0 0 2px var(--bad);" : "") + shape +
+        (done ? "text-decoration:line-through;" : "");
+      const tip = `${esc(t.title)} · ${period}${t.assignee ? " · " + esc(t.assignee) : ""}${late && !done ? " · 지연" : ""}`;
+      pills.push(`<span class="cal-pill" draggable="true" style="${style}" title="${tip}"
           ondragstart="calDrag(event,'${t.id}','move','${ds}')"
           onclick="event.stopPropagation();editTask('${t.id}')">` +
-          (sg.isStart ? `<i class="hdl" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','l','${ds}')">⟨</i>` : "") +
+          (isStart ? `<i class="hdl" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','l','${ds}')">⟨</i>` : "") +
           `${showLabel ? esc(t.title) : "&nbsp;"}` +
-          (sg.isEnd ? `<i class="hdl r" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','r','${ds}')">⟩</i>` : "") +
-        `</span>`;
-      }).join("")}
-      ${segs.length > 4 ? `<span class="cal-more">+${segs.length-4}건</span>` : ""}
+          (isEnd ? `<i class="hdl r" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','r','${ds}')">⟩</i>` : "") +
+        `</span>`);
+    }
+    cells.push(`<div class="cal-cell ${other ? "other" : ""} ${ds === tStr ? "today" : ""} ${d.getDay() === 0 ? "sun" : ""}"
+        onclick="calCellClick('${ds}')" ondragover="event.preventDefault()" ondrop="calDrop(event,'${ds}')">
+      <div class="d">${d.getDate()}</div>
+      ${pills.join("")}
+      ${hidden.length ? `<span class="cal-more" title="${esc(hidden.map(h => h.title).join(", "))}">+${hidden.length}건</span>` : ""}
     </div>`);
   }
   $("calGrid").innerHTML = cells.join("");
