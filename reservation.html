@@ -57,6 +57,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .sr-pm{background:var(--accent-light);color:var(--accent);}
 
 .card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+
+/* ───── 📝 인수인계 메모 스트립 (오전CS·오후CS·기타 공유) — 제목 줄 없이 메모 줄 + 입력 줄만 ───── */
+.memo-strip{margin:12px 16px 0;background:var(--card);border:1.5px solid #ffd8a8;border-radius:12px;box-shadow:var(--shadow);padding:4px 12px 8px;}
+.memo-list{display:none;max-height:152px;overflow-y:auto;}
+.memo-strip.has-rows .memo-list{display:block;}
+.memo-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed var(--border);font-size:13px;}
+.memo-row:last-child{border-bottom:none;}
+.memo-row.done .memo-txt{color:var(--text3);text-decoration:line-through;}
+.memo-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;flex:none;}
+.memo-tag.am{background:#e3faf1;color:#0f6e56;}
+.memo-tag.pm{background:#eeedfe;color:#3c3489;}
+.memo-tag.etc{background:#f2f4f6;color:#4e5968;}
+.memo-txt{flex:1;min-width:0;line-height:1.4;word-break:break-all;}
+.memo-time{font-size:11px;color:var(--text3);white-space:nowrap;flex:none;}
+.memo-btn{width:26px;height:26px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-size:13px;line-height:1;color:var(--text2);font-family:inherit;flex:none;padding:0;}
+.memo-btn:hover{background:#f2f4f6;}
+.memo-btn.ok:hover{background:var(--green-light);color:#0f6e56;border-color:#9fe1cb;}
+.memo-btn.del:hover{background:var(--red-light);color:var(--red);border-color:#f7c1c1;}
+.memo-empty{font-size:12px;color:var(--text3);padding:6px 0 2px;}
+.memo-input{display:flex;gap:6px;align-items:center;margin-top:4px;}
+.memo-strip.has-rows .memo-input{margin-top:6px;padding-top:8px;border-top:1px solid var(--border);}
+.memo-input select{width:92px;height:30px;padding:0 6px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--text);}
+.memo-input input{flex:1;min-width:0;height:30px;padding:0 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);}
+.memo-input input:focus,.memo-input select:focus{outline:none;border-color:var(--accent);}
+.memo-input .memo-add{height:30px;padding:0 12px;border:none;background:var(--accent);color:#fff;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;flex:none;}
+.memo-done-btn{height:30px;border:1px solid var(--border);background:#fff;color:var(--text3);font-size:11px;padding:0 9px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;flex:none;}
+.memo-done-btn.on{background:#f2f4f6;color:var(--text);border-color:#c9ced4;}
 .team-bar{height:3px;margin:-20px -20px 16px;border-radius:var(--radius) var(--radius) 0 0;transition:background .3s;}
 .team-bar.busan{background:linear-gradient(90deg,var(--busan),#f0a8a3);}
 .team-bar.gyeonggi{background:linear-gradient(90deg,var(--gyeonggi),#9ec5e8);}
@@ -199,6 +226,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <div class="search-results" id="searchResults">
   <h4 id="searchTitle"></h4>
   <div id="searchList"></div>
+</div>
+
+<!-- 📝 인수인계 메모 — 오전CS·오후CS·기타가 공유하는 한 줄 메모 (Firebase csMemo, 부산/경기 공통) -->
+<div class="memo-strip" id="memoStrip">
+  <div class="memo-list" id="memoList"></div>
+  <div class="memo-input">
+    <select id="memoWho"><option>오전 CS</option><option>오후 CS</option><option>기타</option></select>
+    <input type="text" id="memoText" placeholder="📝 인수인계 메모 입력 후 Enter (오전·오후 CS 공유)" maxlength="200" onkeydown="memoKey(event)" />
+    <button class="memo-add" onclick="memoAdd()">등록</button>
+    <button class="memo-done-btn" id="memoDoneBtn" onclick="memoToggleDone()">완료 보기</button>
+  </div>
 </div>
 
 <div style="display:flex;gap:12px;align-items:flex-start;padding:0 12px">
@@ -2424,6 +2462,95 @@ function openRouteOverlay(chk,ctx){
   const checked=document.querySelector('input[name=routeOvR]:checked');if(checked)checked.checked=false;
   const etc=document.getElementById('routeOvEtc');etc.value='';etc.style.display='none';
   ov.style.display='flex';
+}
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 📝 인수인계 메모 — 오전CS·오후CS·기타 공유 메모장
+// Firebase csMemo/{id} = {who, text, t, done, doneAt} — 브라우저 간 실시간 공유·영구 저장
+// ✓ = 완료 처리(완료 보기에 남음), ✕ = 완전 삭제, 자동 삭제 없음, 부산/경기 공통
+// 메모가 없으면 입력 한 줄만 보임 (제목 줄 없음)
+// ═══════════════════════════════════════════════════════════════
+var memoAll={};
+var memoShowDone=false;
+
+(function(){
+  var sel=document.getElementById('memoWho');
+  var who=localStorage.getItem('memoWho');
+  if(who&&sel)sel.value=who; // 작성자 마지막 선택 기억 (브라우저별)
+  if(sel)sel.addEventListener('change',function(){localStorage.setItem('memoWho',this.value);});
+})();
+
+fbDb.ref('csMemo').on('value',function(snap){
+  memoAll=snap.val()||{};
+  renderMemo();
+});
+
+function memoEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function memoTagCls(w){return w==='오전 CS'?'am':w==='오후 CS'?'pm':'etc';}
+function memoTime(t){
+  if(!t)return '';
+  var d=new Date(t),n=new Date();
+  var hm=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  if(d.toDateString()===n.toDateString())return hm;
+  var y=new Date(n);y.setDate(n.getDate()-1);
+  if(d.toDateString()===y.toDateString())return '어제 '+hm;
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+hm;
+}
+
+function renderMemo(){
+  var strip=document.getElementById('memoStrip'),list=document.getElementById('memoList'),btn=document.getElementById('memoDoneBtn');
+  if(!list)return;
+  var items=Object.keys(memoAll).map(function(k){var m=memoAll[k]||{};return {id:k,who:m.who||'기타',text:m.text||'',t:m.t||0,done:!!m.done,doneAt:m.doneAt||0};}).filter(function(m){return m.text;});
+  var open=items.filter(function(m){return !m.done;}).sort(function(a,b){return b.t-a.t;});
+  var done=items.filter(function(m){return m.done;}).sort(function(a,b){return (b.doneAt||b.t)-(a.doneAt||a.t);});
+  if(btn)btn.textContent=memoShowDone?'남은 메모 '+open.length:'완료 '+done.length;
+  var rows=memoShowDone?done:open;
+  list.innerHTML=rows.map(function(m){
+    return '<div class="memo-row'+(m.done?' done':'')+'">'
+      +'<span class="memo-tag '+memoTagCls(m.who)+'">'+memoEsc(m.who)+'</span>'
+      +'<span class="memo-txt">'+memoEsc(m.text)+'</span>'
+      +'<span class="memo-time">'+memoTime(m.done?(m.doneAt||m.t):m.t)+'</span>'
+      +(m.done
+        ?'<button class="memo-btn ok" title="다시 열기" onclick="memoUndone(\''+m.id+'\')">↩</button>'
+        :'<button class="memo-btn ok" title="처리 완료" onclick="memoDone(\''+m.id+'\')">✓</button>')
+      +'<button class="memo-btn del" title="삭제" onclick="memoDel(\''+m.id+'\')">✕</button>'
+      +'</div>';
+  }).join('');
+  if(!rows.length&&memoShowDone)list.innerHTML='<div class="memo-empty">완료된 메모가 없어요</div>';
+  strip.classList.toggle('has-rows',!!(rows.length||memoShowDone)); // 남은 메모 없으면 입력 한 줄만
+}
+
+function memoKey(e){
+  if(e.key!=='Enter')return;
+  if(e.isComposing||e.keyCode===229)return; // 한글 조합 중 Enter 무시 (중복 등록 방지)
+  e.preventDefault();
+  memoAdd();
+}
+
+function memoAdd(){
+  var inp=document.getElementById('memoText'),sel=document.getElementById('memoWho');
+  var text=(inp.value||'').trim();
+  if(!text){inp.focus();return;}
+  fbDb.ref('csMemo').push({who:sel.value,text:text.substring(0,200),t:Date.now(),done:false});
+  inp.value='';
+  if(memoShowDone)memoToggleDone(); // 완료 목록 보던 중이면 남은 메모로 전환
+  inp.focus();
+}
+
+function memoDone(id){fbDb.ref('csMemo/'+id).update({done:true,doneAt:Date.now()});}
+function memoUndone(id){fbDb.ref('csMemo/'+id).update({done:false,doneAt:null});}
+function memoDel(id){
+  var m=memoAll[id]||{};
+  if(!confirm('이 메모를 삭제할까요?\n\n'+(m.text||'')))return;
+  fbDb.ref('csMemo/'+id).remove();
+}
+
+function memoToggleDone(){
+  memoShowDone=!memoShowDone;
+  var b=document.getElementById('memoDoneBtn');
+  if(b)b.classList.toggle('on',memoShowDone);
+  renderMemo();
 }
 </script>
 </body>
