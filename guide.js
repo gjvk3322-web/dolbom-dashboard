@@ -2,18 +2,18 @@
    guide.js — 현장 대응 프로세스 탭
    scheduler.html · scheduler-gg.html 공용 (둘 다 이 파일 하나를 불러옴)
    - 내용은 Firebase /guide 에 저장 → 두 지역 스케줄러가 같은 내용을 봄
-   - 수정은 GUIDE_PIN 입력 후에만 가능 (대장 전용)
+   - 수정은 GUIDE_PIN 입력 후에만 가능 (관리자 전용)
    - Firebase에 아직 아무것도 없으면 아래 기본 내용(SEED)을 화면에 보여주고,
-     대장이 처음 잠금을 풀 때 SEED를 Firebase에 옮겨 적음
+     관리자가 처음 잠금을 풀 때 SEED를 Firebase에 옮겨 적음
    ============================================================ */
 (function(){
 'use strict';
 
-const GUIDE_PIN='0908';          // ← 대장 전용 수정 PIN. 바꿔서 쓰기
+const GUIDE_PIN='0908';          // ← 관리자 수정 PIN. 바꿔서 쓰기
 const EDIT_TTL=12*60*60*1000;    // 잠금 해제 유지 시간 (12시간)
 const REGION=/gg/.test(location.pathname)?'경기':'부산';
 
-/* ---------- 기본 내용 (Firebase 비어 있을 때 사용, 대장 첫 잠금 해제 시 저장됨) ---------- */
+/* ---------- 기본 내용 (Firebase 비어 있을 때 사용, 관리자 첫 잠금 해제 시 저장됨) ---------- */
 const SEED_RULES={
   phone:'',
   principles:[
@@ -318,7 +318,7 @@ function ensureShell(){
   if(nav){const a=document.createElement('a');a.href='#';a.id='gNavBtn';a.setAttribute('onclick','gShow()');a.innerHTML='<span>🧭</span>프로세스';nav.appendChild(a)}
   // PIN
   const pin=document.createElement('div');pin.className='pin-overlay';pin.id='gPin';pin.setAttribute('onclick','if(event.target===this)gPinClose()');
-  pin.innerHTML=`<div class="pin-box"><h3>🔒 프로세스 수정</h3><p>대장 전용 PIN 4자리</p>
+  pin.innerHTML=`<div class="pin-box"><h3>🔒 프로세스 수정</h3><p>관리자 PIN 4자리</p>
     <div class="pin-input"><input id="gPinIn" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" oninput="gPinInput(this)"></div>
     <div class="pin-error" id="gPinErr">PIN이 올바르지 않습니다</div>
     <button onclick="gPinClose()" style="padding:10px 24px;border-radius:10px;background:var(--card2);color:var(--dim);border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">취소</button></div>`;
@@ -428,7 +428,7 @@ function gCopy(id){
   if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(done,fallback);else fallback();
 }
 
-/* ---------- 잠금 (대장 PIN) ---------- */
+/* ---------- 잠금 (관리자 PIN) ---------- */
 (function restoreEdit(){try{const s=localStorage.getItem('dolbom_guide_edit');if(s&&Date.now()-parseInt(s)<EDIT_TTL)gEdit=true;else localStorage.removeItem('dolbom_guide_edit')}catch(e){}})();
 function gLock(){
   if(gEdit){gEdit=false;localStorage.removeItem('dolbom_guide_edit');gToast('수정 모드 해제','ok');renderGuide();return}
