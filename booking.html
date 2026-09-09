@@ -148,7 +148,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div id="calWrap">
         <div class="cal-header"><button onclick="changeMonth(-1)">◀</button><span class="month" id="calMonth"></span><button onclick="changeMonth(1)">▶</button></div>
         <div class="cal-grid" id="calGrid"></div>
-        <div style="font-size:11px;color:#e53935;margin-top:6px">* 일요일은 돌봄매트 휴무입니다</div>
+        <div style="font-size:11px;color:#e53935;margin-top:6px">* 일요일은 돌봄매트 휴무입니다 (공휴일은 정상 시공)</div>
         <div id="selectedDatesDisplay" style="margin-top:8px"></div>
       </div>
     </div>
@@ -522,10 +522,11 @@ function renderCal(){
     var holName=getHolidayName(calYear,calMonth,d);
     var isPast=dt<today;                       // 지난 날짜
     var tooSoon=dt>=today&&dt<minDate;         // 오늘~5일 이내 (마케팅: 임박 예약 차단 / 상관없음 고객은 직원이 자체 배정)
-    var isAvail=dt>=minDate&&dow!==0&&!isDateClosed(dateStr)&&!holName&&!slotFull;
-    var isClosed=(dow!==0)&&(((isPast||tooSoon)&&!holName)||isDateClosed(dateStr)||slotFull);  // 🆕 일요일은 마감 제외(휴무), 나머지 과거+5일+슬롯마감은 마감
+    // 공휴일은 정상 영업(예약 가능) — 쉬는 날은 직원이 마감 처리, 고정 휴무는 일요일뿐 (2026-09-09)
+    var isAvail=dt>=minDate&&dow!==0&&!isDateClosed(dateStr)&&!slotFull;
+    var isClosed=(dow!==0)&&((isPast||tooSoon)||isDateClosed(dateStr)||slotFull);  // 일요일은 마감 제외(휴무), 나머지 과거+5일+슬롯마감은 마감
     el.className='cal-day';
-    if(dow===0||holName)el.className+=' sun';else if(dow===6)el.className+=' sat';
+    if(dow===0||holName)el.className+=' sun';else if(dow===6)el.className+=' sat';  // 공휴일은 빨간색만, 예약은 가능
     if(isPast)el.className+=' past';  // 🆕 지난 날짜 흐리게
     if(isAvail){el.className+=' available';el.setAttribute('data-date',dateStr);el.onclick=function(){selectDate(this)}}
     if(isClosed)el.className+=' closed';
@@ -533,7 +534,10 @@ function renderCal(){
     if(selectedDates.indexOf(dateStr)>=0)el.className+=' selected';
     var slotLabel='';
     if(isAvail&&slot){ if(slot.am&&!slot.pm)slotLabel='오전만'; else if(!slot.am&&slot.pm)slotLabel='오후만'; }
-    if(holName&&!isClosed){el.innerHTML=d+'<div style="font-size:7px;color:#e53935;font-weight:600;line-height:1;margin-top:1px">'+holName+'</div>'}else if(isClosed){el.innerHTML='<span style="text-decoration:line-through">'+d+'</span><span class="closed-label">마감</span>'}else if(slotLabel){el.innerHTML=d+'<div style="font-size:7px;color:#2e7d32;font-weight:700;line-height:1;margin-top:1px">'+slotLabel+'</div>'}else{el.textContent=d}
+    var sub='';
+    if(holName)sub+='<div style="font-size:7px;color:#e53935;font-weight:600;line-height:1;margin-top:1px">'+holName+'</div>';
+    if(slotLabel)sub+='<div style="font-size:7px;color:#2e7d32;font-weight:700;line-height:1;margin-top:1px">'+slotLabel+'</div>';
+    if(isClosed){el.innerHTML='<span style="text-decoration:line-through">'+d+'</span><span class="closed-label">마감</span>'}else if(sub){el.innerHTML=d+sub}else{el.textContent=d}
     grid.appendChild(el);
   }
 }
