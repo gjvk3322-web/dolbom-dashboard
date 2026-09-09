@@ -202,8 +202,8 @@
   .lg-todo{background:#B9C4BF}.lg-doing{background:var(--accent)}.lg-done{background:#D7E4DD}.lg-late{background:var(--bad)}
   .cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--muted);font-weight:700;padding:6px 0}
   .cal-head span:first-child{color:var(--bad)}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line);gap:1px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
-  .cal-cell{background:#fff;min-height:128px;padding:6px 6px 4px;cursor:pointer;transition:background .1s}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--line);gap:1px;box-shadow:0 1px 3px rgba(33,43,54,.04)}
+  .cal-cell{background:#fff;min-height:128px;padding:6px 6px 4px;cursor:pointer;transition:background .1s;min-width:0}
   .cal-cell:hover{background:#F7FBF9}
   .cal-cell.other{background:#FAFBFA;color:#C2CBC7}
   .cal-cell .d{font-size:12px;font-weight:700;margin-bottom:4px;height:20px;line-height:20px}
@@ -221,6 +221,8 @@
   .cal-pill.done{background:#F2F6F4;color:#A6B2AD;text-decoration:line-through}
   .cal-pill.late{background:#FCEBEB;color:var(--bad)}
   .cal-more{font-size:11px;color:var(--muted)}
+  .cal-pill .lbl{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:top}
+  .cal-pill.flow{overflow:visible;text-overflow:clip;z-index:2}   /* 막대가 옆 칸으로 이어지면 글자도 따라 흐름 */
   /* 칸반 */
   .kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
   .kcol{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:12px}
@@ -3856,10 +3858,15 @@ function renderCalendar(){
       const showLabel = isStart || weekFirst;
       const days = diffDays(it.ts, it.te) + 1;
       const period = days > 1 ? `${md(it.ts)}~${md(it.te)} · ${days}일` : md(it.ts);
+      // 긴 제목: 칸을 넓히지 않고, 막대가 이 주 안에서 이어지는 칸 수(span)만큼만 글자가 옆으로 흐르게 (나머지는 … 처리, 전체 제목은 툴팁)
+      const span = Math.min(days - diffDays(it.ts, ds), 7 - d.getDay());
+      const flow = showLabel && span > 1;
+      const lbl = showLabel ? `<span class="lbl" style="max-width:${flow ? `calc(${span * 100}% + ${(span - 1) * (22 - (isStart ? 0 : 7)) - 14}px)` : "100%"}">${esc(it.title) || "&nbsp;"}</span>` : "&nbsp;";
+      const flowCls = flow ? " flow" : "";
       const shape = `margin-left:${isStart ? "0" : "-7px"};margin-right:${isEnd ? "0" : "-7px"};` +
         `border-radius:${isStart ? "6px" : "0"} ${isEnd ? "6px" : "0"} ${isEnd ? "6px" : "0"} ${isStart ? "6px" : "0"};`;
       if (it.lv){
-        pills.push(`<span class="cal-pill lv" style="${shape}" onclick="event.stopPropagation()" title="${esc(it.title)} · ${period}">${showLabel ? (esc(it.title) || "&nbsp;") : "&nbsp;"}</span>`);
+        pills.push(`<span class="cal-pill lv${flowCls}" style="${shape}" onclick="event.stopPropagation()" title="${esc(it.title)} · ${period}">${lbl}</span>`);
         continue;
       }
       const t = it.t, c = deptColor(t.dept), late = isOverdue(t), done = t.status === "done";
@@ -3868,11 +3875,11 @@ function renderCalendar(){
         (late && !done ? "box-shadow:inset 0 0 0 2px var(--bad);" : "") + shape +
         (done ? "text-decoration:line-through;" : "");
       const tip = `${esc(it.title)} · ${period}${t.assignee ? " · " + esc(t.assignee) : ""}${late && !done ? " · 지연" : ""}`;
-      pills.push(`<span class="cal-pill" draggable="true" style="${style}" title="${tip}"
+      pills.push(`<span class="cal-pill${flowCls}" draggable="true" style="${style}" title="${tip}"
           ondragstart="calDrag(event,'${t.id}','move','${ds}')"
           onclick="event.stopPropagation();editTask('${t.id}')">` +
           (isStart ? `<i class="hdl" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','l','${ds}')">⟨</i>` : "") +
-          `${showLabel ? (esc(it.title) || "&nbsp;") : "&nbsp;"}` +
+          lbl +
           (isEnd ? `<i class="hdl r" draggable="true" ondragstart="event.stopPropagation();calDrag(event,'${t.id}','r','${ds}')">⟩</i>` : "") +
         `</span>`);
     }
