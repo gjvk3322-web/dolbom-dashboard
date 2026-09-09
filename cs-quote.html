@@ -102,7 +102,6 @@ body {
 .welcome-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 /* ===== 왼쪽 열: 이벤트/안내성 (다양한 톤으로 시선 분산) ===== */
 .welcome-btn-review { background: #d81b60; color: #fff; }   /* 리뷰 이벤트 — 핫핑크 */
-.welcome-btn-onnuri { background: #6a1b9a; color: #fff; }   /* 온누리 QR — 퍼플 */
 .welcome-btn-group  { background: #ef6c00; color: #fff; }   /* 공구안내 — 오렌지 */
 .welcome-btn-move   { background: #5d4037; color: #fff; }   /* 이전설치 — 브라운 */
 .welcome-btn-tape   { background: #00897b; color: #fff; }   /* 테이프뜯기 — 청록 */
@@ -119,7 +118,6 @@ body {
 .welcome-btn-closing { background: #1F7A52; color: #fff; } /* 3단계: 마무리 인사 */
 .welcome-btn-booking { background: #00796B; color: #fff; } /* 4단계: 예약 양식 */
 .welcome-btn-deposit { background: #00695C; color: #fff; } /* 5단계: 예약금 */
-.welcome-btn-time    { background: #004D40; color: #fff; } /* 6단계: 오전작업시간 (가장 진함) */
 .welcome-btn-custom { background: #546e7a; color: #fff; position: relative; }
 .welcome-btn-add {
   background: #fff; color: #8b6914; border: 1.5px dashed #c8a64d;
@@ -1160,13 +1158,10 @@ body {
       </div>
       <div class="welcome-text" id="welcomeText" style="display:none"></div>
       <div class="welcome-actions">
-        <!-- 왼쪽 열: 리뷰이벤트, 온누리 QR, 공구안내, 이전설치, (동적 커스텀들), + 커스텀 추가 -->
+        <!-- 왼쪽 열: 리뷰이벤트, 공구안내, 이전설치, 테이프뜯기, 인증서, 온누리카드, 팬트리, (동적 커스텀들), + 커스텀 추가 -->
         <div class="welcome-col">
           <button class="welcome-btn welcome-btn-review" onclick="copyReviewUrl()">
             ⭐ <span>리뷰 이벤트</span>
-          </button>
-          <button class="welcome-btn welcome-btn-onnuri" onclick="copyOnnuriQR()">
-            📱 <span>온누리 QR</span>
           </button>
           <button class="welcome-btn welcome-btn-group" onclick="copyGroupBuy()">
             👥 <span>공구안내</span>
@@ -1186,15 +1181,12 @@ body {
           <button class="welcome-btn welcome-btn-pantry" onclick="copyPantry()">
             🚪 <span>팬트리 안내</span>
           </button>
-          <button class="welcome-btn welcome-btn-as" onclick="copyAsIntake()">
-            🔧 <span>AS 접수 안내</span>
-          </button>
           <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
           <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
             ➕ <span>커스텀 추가</span>
           </button>
         </div>
-        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 예약금, 오전작업시간 -->
+        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 색상관련, 낱장 추가 구매, AS 접수 안내 -->
         <div class="welcome-col">
           <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
             1️⃣ <span>환영 메시지</span>
@@ -1208,17 +1200,14 @@ body {
           <button class="welcome-btn welcome-btn-booking" onclick="copyBookingUrl()">
             3️⃣ <span>예약 양식</span>
           </button>
-          <button class="welcome-btn welcome-btn-time" onclick="copyWorkTime()">
-            🕘 <span>오전작업시간</span>
-          </button>
-          <button class="welcome-btn welcome-btn-time" onclick="copyAfternoonWorkTime()">
-            🕒 <span>오후작업시간</span>
-          </button>
           <button class="welcome-btn welcome-btn-color" onclick="copyColorInfo()">
             🎨 <span>색상관련</span>
           </button>
           <button class="welcome-btn welcome-btn-single" onclick="copySinglePurchase()">
             🧩 <span>낱장 추가 구매</span>
+          </button>
+          <button class="welcome-btn welcome-btn-as" onclick="copyAsIntake()">
+            🔧 <span>AS 접수 안내</span>
           </button>
         </div>
       </div>
@@ -2634,39 +2623,6 @@ function copyReviewUrl() {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 리뷰 이벤트 메시지 복사 완료! 카톡에 붙여넣으세요');
-    }).catch(function(){ fallbackCopy(text); });
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function copyOnnuriQR() {
-  var text = '돌봄매트 온누리 QR입니다!\nhttps://m.site.naver.com/274EG\n\n결제 해주시고 내역 보내주시면 되세요!';
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function(){
-      showToast('✅ 온누리 QR 메시지 복사 완료! 카톡에 붙여넣으세요');
-    }).catch(function(){ fallbackCopy(text); });
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function copyWorkTime() {
-  var text = '보통 오전 9~10시 사이 시작해서\n오후 12~2시쯤 마무리됩니다! 😊';
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function(){
-      showToast('✅ 오전작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
-    }).catch(function(){ fallbackCopy(text); });
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function copyAfternoonWorkTime() {
-  var text = '오후 작업은 오전 작업 마치는 대로 진행됩니다!\n보통 오후 1~3시 방문 예정이며,\n정확한 시간은 당일 오전에 안내드릴게요 😊';
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function(){
-      showToast('✅ 오후작업시간 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
