@@ -265,6 +265,12 @@
   .film-kind.count{background:#EEF3FB;color:#3B6BC9}
   .film-kind.use{background:#FBF0F0;color:var(--bad)}
   .film-type-row input{margin:0}
+  .stock-rows{display:grid;gap:3px;margin:2px 0 4px}
+  .stock-rows > div{display:flex;align-items:baseline;gap:5px;font-size:12.5px;flex-wrap:wrap}
+  .stock-rows .k{color:var(--muted);font-size:12px;min-width:50px}
+  .stock-rows b{font-size:20px;font-weight:800;color:var(--accent-deep);letter-spacing:-.4px;line-height:1.15}
+  .stock-rows .u{font-size:12px;color:var(--accent-deep);font-weight:700}
+  .stock-rows .x{color:var(--muted);font-size:11.5px;margin-left:auto;white-space:nowrap}
   .at-tbl td.we{background:#FAFBFA;color:var(--muted)}
   .at-tbl td.cell{cursor:pointer}
   .at-tbl td.cell:hover{background:var(--tint)}
@@ -691,7 +697,7 @@
       <div class="dash-sec" data-dash="stock" data-cat="ops">
       <div class="section-title"><h2>재고 요약</h2><span class="hint">기준: stock.html 종합(실사+입고&minus;사용) · 원가·금액은 관리자에게만 표시</span></div>
       <div id="stockWrap">
-      <div class="grid kpis" id="stockCards"><div class="hint">불러오는 중…</div></div>
+      <div class="grid kpis" id="stockCards" style="grid-template-columns:repeat(auto-fill,minmax(215px,1fr))"><div class="hint">불러오는 중…</div></div>
 
       <div class="film-head" style="margin-top:0">
         <h3>제품별 재고 · 매입액</h3>
@@ -5217,7 +5223,7 @@ async function dashProducts(){
     const j = await fetch(APPS_SCRIPT_URL + "?type=productSales").then(r => r.json());
     productAll = j.data || [];
     renderProducts();
-    try { renderFilm(); } catch(_){}
+    refreshFilmViews();
   } catch(e){ document.getElementById("productRows").innerHTML = '<div class="hint">제품 판매 데이터를 불러오지 못했습니다.</div>'; }
 }
 function renderProducts(){
@@ -5505,12 +5511,60 @@ function renderStockSummary(){
       + `<tr class="tot"><td>합계</td><td ${R}>${sBs.toLocaleString()}</td><td ${R}>${sGg.toLocaleString()}</td><td ${R}>${(sBs + sGg).toLocaleString()}</td><td class="money-col"></td><td class="money-col" ${R}>${costSet ? fmtKrw(vBs + vGg) : "-"}</td></tr>`
     : '<tr><td colspan="6" class="hint">제품별 재고 데이터가 없습니다.</td></tr>';
   const fmtD = s => s ? mmdd(s) + " 실사" : "";
-  const meta = (d, v) => [fmtD(d && d.lastSurveyDate), showCost && costSet ? fmtKrw(v) : ""].filter(Boolean).join(" · ");
+  // 지역별 500매트 / 1M 매트 분리 (장수·금액)
+  const split = d => {
+    const o = { q500: 0, q1m: 0, v500: 0, v1m: 0, ok: false };
+    if (!d || d.error || !d.calcResult) return o;
+    o.ok = true;
+    Object.entries(d.calcResult).forEach(([k, v]) => {
+      const n = parseInt(v.calculated) || 0, p = stockProdOf(k), unit = p ? cost[p.key] : 0;
+      if (p ? p.key !== "500" : /1000|1m/i.test(k)){ o.q1m += n; o.v1m += n * unit; } else { o.q500 += n; o.v500 += n * unit; }
+    });
+    return o;
+  };
+  const sb = split(bs), sg = split(gg);
+  const teamCard = (label, d, s, tot) => {
+    const metaTxt = [fmtD(d && d.lastSurveyDate), `합계 ${(tot ?? 0).toLocaleString()}장`, showCost && costSet ? fmtKrw(s.v500 + s.v1m) : ""].filter(Boolean).join(" · ");
+    if (!s.ok) return dashCard(label, (tot ?? 0).toLocaleString(), "장", metaTxt);
+    return stockCard2(label, [
+      { k: "500매트", v: s.q500.toLocaleString(), money: costSet ? fmtKrw(s.v500) : "" },
+      { k: "1M 매트", v: s.q1m.toLocaleString(), money: costSet ? fmtKrw(s.v1m) : "" }
+    ], metaTxt);
+  };
+  const totQ500 = sb.q500 + sg.q500, totQ1m = sb.q1m + sg.q1m, totV500 = sb.v500 + sg.v500, totV1m = sb.v1m + sg.v1m;
   el.innerHTML =
-    dashCard("부산 재고", (bsT ?? 0).toLocaleString(), "장", meta(bs, vBs)) +
-    dashCard("경기 재고", (ggT ?? 0).toLocaleString(), "장", meta(gg, vGg)) +
-    dashCard("합계", ((bsT ?? 0) + (ggT ?? 0)).toLocaleString(), "장", '<a href="stock.html" style="color:var(--accent-deep)">전체 재고 보기 →</a>') +
-    (showCost ? dashCard("재고 매입액", costSet ? fmtKrw(vBs + vGg) : "-", "", costSet ? "재고 장수 × 장당 원가 — 창고에 묶인 돈" : "장당 원가 미설정") : "");
+    teamCard("부산 재고", bs, sb, bsT) +
+    teamCard("경기 재고", gg, sg, ggT) +
+    ((sb.ok || sg.ok)
+      ? stockCard2("합계", [
+          { k: "500매트", v: totQ500.toLocaleString(), money: costSet ? fmtKrw(totV500) : "" },
+          { k: "1M 매트", v: totQ1m.toLocaleString(), money: costSet ? fmtKrw(totV1m) : "" }
+        ], `${((bsT ?? 0) + (ggT ?? 0)).toLocaleString()}장 · <a href="stock.html" style="color:var(--accent-deep)">전체 재고 보기 →</a>`)
+      : dashCard("합계", ((bsT ?? 0) + (ggT ?? 0)).toLocaleString(), "장", '<a href="stock.html" style="color:var(--accent-deep)">전체 재고 보기 →</a>')) +
+    (showCost ? `<div class="card"><div class="label">재고 매입액</div><div class="value" style="font-size:22px;white-space:nowrap">${costSet ? fmtKrw(vBs + vGg) : "-"}</div><div class="meta">${costSet ? `500매트 ${fmtKrw(totV500)} · 1M ${fmtKrw(totV1m)}<br>재고 장수 × 장당 원가 — 창고에 묶인 돈` : "장당 원가 미설정"}</div></div>` : "") +
+    filmTopCard();
+}
+/* 두 줄 카드: rows = [{k:라벨, v:숫자, u:단위, extra:항상 표시, money:관리자만}] */
+const stockCard2 = (label, rows, meta) => `<div class="card"><div class="label">${label}</div><div class="stock-rows">${rows.map(r =>
+  `<div><span class="k">${r.k}</span><b>${r.v}</b><span class="u">${r.u || "장"}</span><span class="x">${r.extra || ""}${r.money ? `<span class="money-col">${r.extra ? " · " : ""}${r.money}</span>` : ""}</span></div>`).join("")}</div><div class="meta">${meta || ""}</div></div>`;
+/* 상단 카드용 필름 요약 — 종류별 공장 장부 장수·금액·남은 일수 */
+function filmSummary(){
+  if (!data) return [];
+  const types = filmTypesList(); if (!types.length) return [];
+  const logs = filmLogList(), incAll = filmIncomingRows(), usage = filmUsageByMonth();
+  return types.map(t => {
+    const c = filmCalc(t, logs, incAll), avg = filmAvgDaily(t.name, usage);
+    return { name: t.name, current: c.current, unit: c.unit, days: avg > 0 && c.current > 0 ? c.current / avg : 0 };
+  });
+}
+function filmTopCard(){
+  const fs = filmSummary(); if (!fs.length) return "";
+  const showCost = canSeeCost();
+  const totQ = fs.reduce((s, x) => s + x.current, 0), totV = fs.reduce((s, x) => s + x.current * x.unit, 0);
+  const rows = fs.map(x => ({ k: esc(x.name), v: x.current < 0 ? `<span style="color:var(--bad)">${x.current.toLocaleString()}</span>` : x.current.toLocaleString(),
+    extra: x.days > 0 ? `약 ${Math.round(x.days).toLocaleString()}일분` : "", money: showCost ? fmtKrw(x.current * x.unit) : "" }));
+  return stockCard2("1M 필름 (공장 장부)", rows,
+    `합계 ${totQ.toLocaleString()}장${showCost ? " · " + fmtKrw(totV) : ""} · <a href="javascript:void 0" onclick="document.getElementById('filmCard').scrollIntoView({behavior:'smooth',block:'start'})" style="color:var(--accent-deep)">필름 상세 ↓</a>`);
 }
 
 /* 장당 원가 설정 (관리자) */
@@ -5539,8 +5593,12 @@ function filmStartIncoming(){
   if (filmIncomingStarted) return;
   filmIncomingStarted = true;
   db.ref("incoming").on("value",
-    s => { filmIncoming = s.val() || {}; filmIncomingErr = null; try { renderFilm(); } catch(e){ console.error("renderFilm", e); } },
-    err => { filmIncoming = {}; filmIncomingErr = err; console.error("incoming 읽기 실패:", err); try { renderFilm(); } catch(e){} });
+    s => { filmIncoming = s.val() || {}; filmIncomingErr = null; refreshFilmViews(); },
+    err => { filmIncoming = {}; filmIncomingErr = err; console.error("incoming 읽기 실패:", err); refreshFilmViews(); });
+}
+function refreshFilmViews(){
+  try { renderFilm(); } catch(e){ console.error("renderFilm", e); }
+  try { renderStockSummary(); } catch(e){ console.error("renderStockSummary", e); }
 }
 const filmTypesList = () => entries(((data || {}).film || {}).types).sort(byOrder);
 const filmLogList = () => entries(((data || {}).film || {}).log).sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || (a.createdAt || 0) - (b.createdAt || 0));
