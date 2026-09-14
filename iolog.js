@@ -4,7 +4,7 @@
    로드: scheduler.html / scheduler-gg.html 맨 아래 guide.js 다음 <script src="./iolog.js?v=..."> (코드 수정 시 v 값도 변경) */
 (function(){
 'use strict';
-const IO_VER='2026.09.14';
+const IO_VER='2026.09.14b';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -175,6 +175,44 @@ const CSS=`
 .io-view img{max-width:100%;max-height:100%;border-radius:8px}
 .io-view button{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer}
 .io-view a{position:absolute;bottom:max(20px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);color:#fff;background:rgba(255,255,255,.15);padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none}
+.io-day-hd .io-shb{margin-left:auto;background:rgba(90,200,250,.12);color:var(--blue);border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;font-family:var(--font);cursor:pointer;white-space:nowrap}
+.io-day-hd span.cnt{font-size:11px;color:var(--dim);font-weight:700}
+.io-acts{display:flex;flex-direction:column;gap:6px;align-self:flex-start;flex-shrink:0}
+/* 공유 화면 (스크린샷·텍스트 복사용) */
+.io-sh{display:none;position:fixed;inset:0;background:var(--bg);z-index:992;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.io-sh.show{display:block}
+.io-sh-in{max-width:520px;margin:0 auto;padding:0 14px 110px}
+.io-sh-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 0 12px;padding-top:max(16px,env(safe-area-inset-top))}
+.io-sh-t{font-size:19px;font-weight:900;letter-spacing:-.4px}
+.io-sh-s{font-size:13px;color:var(--sub);font-weight:600;margin-top:3px}
+.io-sh-hd button{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;color:var(--text);font-size:13px;font-family:var(--font);cursor:pointer;flex-shrink:0}
+.io-sh-hint{display:flex;align-items:center;justify-content:space-between;background:rgba(255,214,10,.1);color:var(--yellow);border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
+.io-sh-hint span{cursor:pointer;text-decoration:underline}
+.io-sh-rec{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px;border-left:4px solid var(--green)}
+.io-sh-rec.in{border-left-color:var(--cyan)}
+.io-sh-body{min-width:0}
+.io-sh-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.io-sh-l1 b{font-size:14px;font-weight:900}
+.io-sh-l1 .v{font-size:13px;font-weight:700;color:var(--text)}
+.io-sh-l1 .hide{margin-left:auto;background:none;border:none;color:var(--dim);font-size:11px;font-family:var(--font);cursor:pointer;padding:2px 4px}
+.io-sh-line{font-size:13px;line-height:1.45;padding:5px 0;border-top:1px solid var(--border)}
+.io-sh-line .io-sh-pr{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.io-sh-line b{font-weight:900}
+.io-sh-line span{color:var(--sub);display:block;font-size:12px;margin-top:1px}
+.io-sh-line em{font-style:normal;font-weight:900;color:var(--green);white-space:nowrap;font-size:14px}
+.io-sh-line em small{font-weight:800;color:var(--purple);font-size:11px;margin-left:4px}
+.io-sh-memo{font-size:12px;color:var(--dim);margin-top:4px}
+.io-sh-th{width:100%;height:150px;margin-top:10px;border-radius:10px;background:var(--card2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);text-align:center;line-height:1.4;cursor:pointer}
+.io-sh-th img{width:100%;height:100%;object-fit:cover;object-position:center bottom;display:block}
+.io-sh-tot{background:var(--card2);border-radius:12px;padding:10px 14px;font-size:12px;line-height:1.7;color:var(--sub);margin-top:4px}
+.io-sh-tot b{color:var(--text);font-weight:800}
+.io-sh-tot .t{font-weight:800;margin-right:4px}
+.io-sh-tot .t.out{color:var(--green)}.io-sh-tot .t.in{color:var(--cyan)}
+.io-sh-note{font-size:11px;color:var(--dim);text-align:center;margin-top:14px;line-height:1.6}
+.io-sh-ft{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;padding-bottom:max(14px,env(safe-area-inset-bottom));z-index:6;pointer-events:none}
+.io-sh-ft-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:10px}
+.io-sh-btn{pointer-events:auto;padding:11px 26px;border-radius:22px;border:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;background:rgba(40,42,54,.92);color:var(--text);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.io-sh-btn.lnk{background:transparent;border-color:transparent;color:var(--dim);font-size:12px;font-weight:700;padding:11px 8px}
 `;
 
 /* ---------- 상태 ---------- */
@@ -185,6 +223,7 @@ let busy=false;      // 제출 진행 중
 let pingOk=+(localStorage.getItem('io_ping_ok')||0);
 let lastErr='';
 let flushing=false;
+let SH={open:false,date:'',ids:null,hidden:{}}; // 공유 화면 상태
 
 /* ---------- 껍데기 ---------- */
 function ensureShell(){
@@ -203,6 +242,9 @@ function ensureShell(){
   <div class="io-foot"><div class="io-foot-in"><button type="button" class="io-submit" id="ioSubmitBtn" onclick="ioSubmit()">출고 기록 제출</button></div></div>
   <input type="file" id="ioFile" accept="image/*" capture="environment" style="display:none" onchange="ioPhotoChange(this)">`;
   document.body.appendChild(ov);
+  const sh=document.createElement('div');sh.className='io-sh';sh.id='ioShare';
+  sh.innerHTML='<div class="io-sh-in" id="ioShareIn"></div><div class="io-sh-ft"><div class="io-sh-ft-in"><button type="button" class="io-sh-btn" onclick="ioShareClose()">✕ 닫기</button><button type="button" class="io-sh-btn lnk" id="ioShareCopyBtn" onclick="ioShareCopy()">텍스트로 복사</button></div></div>';
+  document.body.appendChild(sh);
   const vw=document.createElement('div');vw.className='io-view';vw.id='ioViewer';vw.setAttribute('onclick','if(event.target===this)ioViewClose()');
   vw.innerHTML='<button type="button" onclick="ioViewClose()">✕</button><img id="ioViewImg" alt=""><a id="ioViewLink" href="#" target="_blank" rel="noopener" style="display:none">드라이브에서 열기</a>';
   document.body.appendChild(vw);
@@ -235,11 +277,16 @@ function thumbUrl(id,w){return 'https://drive.google.com/thumbnail?id='+id+'&sz=
 function viewUrl(id){return 'https://drive.google.com/file/d/'+id+'/view'}
 function canVoid(r){if(admin())return true;return r.dev===devId()&&(Date.now()-(r.ts||0))<OWN_MIN*60000}
 
-function renderList(){
-  const v=$('ioView');if(!v)return;
+function allRecords(){ // Firebase 기록 + 이 폰의 전송 대기 기록 합치기
   const ob=obGet();const local={};ob.forEach(e=>{if(e.kind==='log'&&e.rec)local[e.rec.id]={photo:e.payload&&e.payload.photo,rec:e.rec,tries:e.tries||0}});
   const all={...LOGS};Object.keys(local).forEach(id=>{if(!all[id])all[id]=local[id].rec});
+  return {all,local,ob};
+}
+function renderList(){
+  const v=$('ioView');if(!v)return;
+  const {all,local,ob}=allRecords();
   const list=Object.values(all).filter(r=>r&&r.date).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(SH.open)renderShare();
   let h=`<div class="io-hd"><div><h2>📦 입·출고 기록</h2><p>차에 싣거나 창고로 내린 자재를 사진과 함께 남겨요.<br>촬영 시각이 사진에 찍히고, 시트에 자동 기록돼요.</p></div></div>
   <div class="io-start">
     <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b><small>${TYPE.out.sub} · 실은 만큼</small></button>
@@ -257,7 +304,7 @@ function renderList(){
     const rs=days[d];const live=rs.filter(r=>r.status!=='void');
     const cnt={out:0,in:0};live.forEach(r=>cnt[r.type==='in'?'in':'out']++);
     const label=d===today?'오늘 '+fmtD(d):d===yest?'어제 '+fmtD(d):fmtD(d);
-    h+=`<div class="io-day"><div class="io-day-hd"><b>${label}</b><span>출고 ${cnt.out} · 입고 ${cnt.in}</span></div>`;
+    h+=`<div class="io-day"><div class="io-day-hd"><b>${label}</b><span class="cnt">출고 ${cnt.out} · 입고 ${cnt.in}</span>${live.length?`<button type="button" class="io-shb" onclick="ioShare('${d}')">📤 공유</button>`:''}</div>`;
     // 합계
     const sum={out:{},in:{}};live.forEach(r=>{(r.items||[]).forEach(it=>{const s=sum[r.type==='in'?'in':'out'];s[it.product]=s[it.product]||{q:0,t:0};s[it.product].q+=num(it.total);s[it.product].t+=num(it.tQty)})});
     const sumLine=k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span> ${keys.map(pk=>'<b>'+esc(pk)+'</b> '+sum[k][pk].q+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`};
@@ -275,7 +322,7 @@ function renderList(){
         <div class="io-l1"><span class="io-tag ${r.type==='in'?'in':'out'}">${TYPE[r.type==='in'?'in':'out'].n}</span><span class="tm">${esc(hm(r.at))}</span><span class="who">${esc(r.vehicle||'')}${r.worker?' · '+esc(r.worker):''}</span>${pending?'<span class="io-tag wait">전송 대기</span>':''}${late}${gap}${isVoid?'<span class="io-tag void">취소됨</span>':''}</div>
         ${(r.items||[]).map(it=>`<div class="io-item">${itemLine(it)}</div>`).join('')}
         ${r.note?`<div class="io-note">${esc(r.note)}</div>`:''}${isVoid&&r.voidReason?`<div class="io-note">취소 사유: ${esc(r.voidReason)}</div>`:''}
-      </div>${!isVoid&&canVoid(r)?`<button type="button" class="io-x" onclick="ioVoid('${esc(r.id)}')">취소</button>`:''}</div>`;
+      </div>${isVoid?'':`<div class="io-acts"><button type="button" class="io-x" onclick="ioShare('${esc(r.date)}',['${esc(r.id)}'])">공유</button>${canVoid(r)?`<button type="button" class="io-x" onclick="ioVoid('${esc(r.id)}')">취소</button>`:''}</div>`}</div>`;
     });
     h+=`</div>`;
   });
@@ -284,6 +331,90 @@ function renderList(){
 function ioView(id){const im=$('ioViewImg');im.src=thumbUrl(id,1600);const a=$('ioViewLink');a.href=viewUrl(id);a.style.display='block';$('ioViewer').classList.add('show')}
 function ioViewLocal(id){const e=obGet().find(x=>x.rec&&x.rec.id===id);if(!e||!e.payload||!e.payload.photo)return;$('ioViewImg').src=e.payload.photo;$('ioViewLink').style.display='none';$('ioViewer').classList.add('show')}
 function ioViewClose(){$('ioViewer').classList.remove('show');$('ioViewImg').src=''}
+
+/* ---------- 공유 화면 (스크린샷 · 카톡용 텍스트) ---------- */
+function shareRecords(){
+  const {all,local}=allRecords();
+  let recs=Object.values(all).filter(r=>r&&r.date===SH.date&&r.status!=='void');
+  if(SH.ids)recs=recs.filter(r=>SH.ids.includes(r.id));
+  recs.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  return {recs,local};
+}
+function ioShare(date,ids){
+  SH={open:true,date,ids:ids||null,hidden:{}};
+  renderShare();$('ioShare').classList.add('show');$('ioShare').scrollTop=0;
+}
+function ioShareClose(){SH.open=false;$('ioShare').classList.remove('show')}
+function ioShareHide(id){SH.hidden[id]=true;renderShare()}
+function ioShareShowAll(){SH.hidden={};renderShare()}
+function partsText(it){ // "센터 40 · 사이드 16 · 코너 2 · 10T 2"
+  return [['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1])).join(' · ');
+}
+function sumByProduct(recs){ // {out:{product:{q,t}}, in:{...}}
+  const sum={out:{},in:{}};
+  recs.forEach(r=>{(r.items||[]).forEach(it=>{const s=sum[r.type==='in'?'in':'out'];s[it.product]=s[it.product]||{q:0,t:0};s[it.product].q+=num(it.total);s[it.product].t+=num(it.tQty)})});
+  return sum;
+}
+function sumLineText(sum,k){
+  const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));
+  if(!keys.length)return '';
+  return TYPE[k].n+' 합계 · '+keys.map(pk=>pk+' '+sum[k][pk].q+'장'+(sum[k][pk].t?'(10T '+sum[k][pk].t+')':'')).join(' · ');
+}
+function recText(r){
+  const T=TYPE[r.type==='in'?'in':'out'];
+  const lines=['['+T.n+'] '+fmtD(r.date)+' '+hm(r.at)+' · '+RN,'차량 '+(r.vehicle||'-')+(r.worker?' · '+r.worker:''),''];
+  (r.items||[]).forEach((it,i)=>{
+    lines.push((i+1)+'. '+it.product);
+    [['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].forEach(x=>{if(num(x[1])>0)lines.push(x[0]+' '+num(x[1])+'장')});
+    lines.push('합계 '+num(it.total)+'장'+(num(it.tQty)?' · 10T '+num(it.tQty)+'장':''));
+    lines.push('');
+  });
+  if(r.note)lines.push('메모: '+r.note);
+  if(r.late)lines.push('※ 지연 입력');
+  lines.push('사진 '+(r.photoId?viewUrl(r.photoId):'전송 중 (앱에서 확인)'));
+  return lines.join('\n');
+}
+function shareText(){
+  const {recs}=shareRecords();const shown=recs.filter(r=>!SH.hidden[r.id]);
+  if(!shown.length)return '';
+  let t=shown.map(recText).join('\n\n──────────\n\n');
+  if(shown.length>1){const sum=sumByProduct(shown);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);if(sl.length)t+='\n\n══════════\n'+fmtD(SH.date)+' '+sl.join('\n')}
+  return t;
+}
+function renderShare(){
+  const box=$('ioShareIn');if(!box||!SH.open)return;
+  const {recs,local}=shareRecords();
+  const shown=recs.filter(r=>!SH.hidden[r.id]);const hiddenN=recs.length-shown.length;
+  let h=`<div class="io-sh-hd"><div><div class="io-sh-t">📦 입·출고 기록</div><div class="io-sh-s">돌봄매트 ${RN} · ${fmtD(SH.date)}</div></div></div>`;
+  const ph=shown.length<=1?300:shown.length===2?170:120; // 기록 수에 따라 사진 높이 — 한 화면에 들어가게
+  if(hiddenN)h+=`<div class="io-sh-hint"><span style="text-decoration:none;cursor:default">${hiddenN}건 숨김</span><span onclick="ioShareShowAll()">전체 보기</span></div>`;
+  if(!shown.length){h+=`<div class="io-empty">공유할 기록이 없어요.</div>`;box.innerHTML=h;return}
+  shown.forEach(r=>{
+    const k=r.type==='in'?'in':'out';const lp=local[r.id];const pending=!!lp||r.status==='pending';
+    let th;const st=`style="height:${ph}px"`;
+    if(lp&&lp.photo)th=`<div class="io-sh-th" ${st} onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
+    else if(r.photoId)th=`<div class="io-sh-th" ${st} onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,800)}" alt="" onerror="this.parentNode.innerHTML='사진<br>불러오기 실패'"></div>`;
+    else th=`<div class="io-sh-th" ${st}>사진<br>전송 중</div>`;
+    h+=`<div class="io-sh-rec ${k}"><div class="io-sh-body">
+      <div class="io-sh-l1"><span class="io-tag ${k}">${TYPE[k].n}</span><b>${esc(hm(r.at))}</b><span class="v">${esc(r.vehicle||'')}${r.worker?' · '+esc(r.worker):''}</span>${pending?'<span class="io-tag wait">사진 전송 중</span>':''}${r.late?'<span class="io-tag late">지연 입력</span>':''}${recs.length>1?`<button type="button" class="hide" onclick="ioShareHide('${esc(r.id)}')">숨기기</button>`:''}</div>
+      ${(r.items||[]).map(it=>`<div class="io-sh-line"><div class="io-sh-pr"><b>${esc(it.product)}</b><em>${num(it.total)}장${num(it.tQty)?`<small>+10T ${num(it.tQty)}</small>`:''}</em></div><span>${esc(partsText(it))}</span></div>`).join('')}
+      ${r.note?`<div class="io-sh-memo">메모: ${esc(r.note)}</div>`:''}
+    </div>${th}</div>`;
+  });
+  if(shown.length>1){const sum=sumByProduct(shown);const parts=['out','in'].map(k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span>${keys.map(pk=>'<b>'+esc(pk)+'</b> '+sum[k][pk].q+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`}).filter(Boolean);if(parts.length)h+=`<div class="io-sh-tot">${parts.join('')}</div>`}
+  h+=`<div class="io-sh-note">이 화면을 그대로 스크린샷해서 단톡방에 올려주세요.${recs.length>1?'<br>내 기록만 올리려면 다른 기록은 숨기기.':''}</div>`;
+  box.innerHTML=h;
+  const cb=$('ioShareCopyBtn');if(cb)cb.disabled=!shown.length;
+}
+function copyText(text,onOk){
+  const fallback=()=>{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(ta);ta.focus();ta.select();try{ta.setSelectionRange(0,999999)}catch(e){}let ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);if(ok)onOk();else ioToast('복사가 안 돼요 · 스크린샷으로 올려주세요',true)};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(onOk).catch(fallback);else fallback();
+}
+function ioShareCopy(){
+  const t=shareText();if(!t){ioToast('복사할 기록이 없어요',true);return}
+  const {recs}=shareRecords();const anyPending=recs.some(r=>!SH.hidden[r.id]&&!r.photoId&&r.status!=='void');
+  copyText(t,()=>ioToast(anyPending?'📋 복사됨 · 사진 링크는 전송 뒤 다시 복사하면 들어가요':'📋 복사됨 · 카톡에 붙여넣기'));
+}
 
 /* ---------- 작성 ---------- */
 function newItem(){return {product:'',c:[0,0],s:[0,0],k:[0,0],t:[0,0]}}
@@ -444,6 +575,7 @@ async function ioSubmit(){
     busy=false;F=null;P=null;$('ioFile').value='';$('ioOv').classList.remove('show');
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
+    ioShare(rec.date,[rec.id]); // 저장 직후 공유 화면 — 스크린샷 또는 텍스트 복사해서 단톡방에
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
 function ioVoid(id){
@@ -512,6 +644,6 @@ function init(){
   setInterval(()=>{if(obGet().length&&!flushing)ioFlush(false)},90000);
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
 }
-Object.assign(window,{ioShow,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose});
+Object.assign(window,{ioShare,ioShareClose,ioShareHide,ioShareShowAll,ioShareCopy,ioShow,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
