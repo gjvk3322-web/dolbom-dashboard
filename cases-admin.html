@@ -93,6 +93,14 @@ body.editing .cancel-edit{display:block}
 .mini button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .hidden-row{opacity:.45}
 .reload{font-size:13px;color:var(--soft);background:none;border:0;cursor:pointer;text-decoration:underline;margin-left:auto}
+/* 홈페이지 발행 바 (하단 고정) */
+#pubBar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:#fff;border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.05);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+#pubBar .in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px}
+#pubStatus{flex:1;min-width:0;font-size:13px;color:var(--soft);line-height:1.45}
+#pubStatus.ok{color:var(--ok)}#pubStatus.bad{color:var(--bad)}#pubStatus.wait{color:var(--edit)}
+#pubBtn{flex:0 0 auto;padding:9px 14px;border:0;border-radius:10px;background:var(--ink);color:#fff;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+#pubBtn:disabled{opacity:.45}
+@media(max-width:520px){#pubStatus{font-size:12px}#pubBtn{padding:9px 11px;font-size:12.5px}}
 </style>
 </head>
 <body>
@@ -207,6 +215,14 @@ body.editing .cancel-edit{display:block}
   </div>
 </div>
 
+<!-- 홈페이지 발행 상태 · 저장하면 자동 발행, 필요하면 수동 발행 -->
+<div id="pubBar">
+  <div class="in">
+    <div id="pubStatus">홈페이지 반영 상태 확인 중…</div>
+    <button id="pubBtn">🚀 홈페이지 발행</button>
+  </div>
+</div>
+
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 const thumb = (id,w)=>`https://drive.google.com/thumbnail?id=${id}&sz=w${w||400}`;
@@ -304,7 +320,8 @@ document.getElementById('cfgSaveBtn').onclick = async ()=>{
     if(!j.ok) throw new Error(j.error||'저장 실패');
     if(j.config) CONFIG=j.config;
     renderConfigEditors(); renderFormOptions();
-    show('저장 완료 — 고객 페이지 필터에 반영됐어요 ✓',true);
+    show('저장 완료 ✓ — 홈페이지에는 발행 후 반영돼요 (아래 상태줄)',true);
+    publishSite();
   }catch(e){ show('저장 실패: '+e.message,false); }
   btn.disabled=false;
 };
@@ -600,8 +617,9 @@ document.getElementById('submitBtn').onclick = async ()=>{
     const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'저장 실패');
-    show(editingId?'수정 완료 ✓':'등록 완료! 고객 페이지에 바로 반영됐어요 ✓', true);
+    show(editingId?'수정 완료 ✓ — 홈페이지 발행 중 (아래 상태줄)':'등록 완료 ✓ — 홈페이지 발행 중 (아래 상태줄)', true);
     resetForm(); loadList();
+    publishSite();
   }catch(e){
     show('실패: '+e.message+' — 다시 시도해주세요', false);
   }
@@ -630,7 +648,7 @@ function renderList(){
     const d=document.createElement('div');
     d.className='mgr-item'+(c.status!=='노출'?' hidden-row':'');
     d.innerHTML=`
-      <img src="${c.photos[0]?thumb(c.photos[0],200):''}" loading="lazy">
+      <img src="${c.photos[0]?thumb(c.photos[0].id||c.photos[0],200):''}" loading="lazy">
       <div class="mgr-info">
         <div class="t">${esc(c.title)}</div>
         <div class="s">${c.date}${c.by?' · 등록 '+esc(c.by):''}${c.lastEdit?' · 수정 '+esc(c.lastEdit):''} · 사진 ${c.photos.length}장${c.status!=='노출'?' · 숨김 상태':''}</div>
@@ -653,10 +671,57 @@ async function patch(id, field, value){
     const j = await r.json();
     if(!j.ok) throw new Error(j.error);
     loadList();
+    publishSite();
   }catch(e){ alert('변경 실패: '+(e.message||'다시 시도해주세요')); }
 }
 document.getElementById('reloadBtn').onclick=loadList;
 document.getElementById('mgrSearch').addEventListener('input',renderList);
+
+/* ===== 홈페이지 발행 =====
+   저장(등록·수정·BEST·숨김·카테고리)마다 자동 호출 → Apps Script가 cases.json + 카드 사진을
+   homepage 레포에 커밋 → GitHub Pages 반영까지 약 1분. 실패해도 시트엔 저장돼 있으니 🚀로 재발행. */
+const LIVE_JSON = 'https://www.dolbommat.com/cases.json';
+let pubBusy=false, pubAgain=false;
+const fmtTime = d => `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+function setPub(text, cls){
+  const el=document.getElementById('pubStatus');
+  el.textContent=text; el.className=cls||'';
+  document.getElementById('pubBtn').disabled = (cls==='wait');
+}
+async function publishSite(){
+  if(!KEY) return;
+  if(pubBusy){ pubAgain=true; return; }
+  pubBusy=true;
+  setPub('홈페이지 발행 중… 새 사진이 많으면 1분 정도 걸려요. 이 화면을 닫지 마세요.','wait');
+  try{
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'casesPublish', key:KEY})});
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||'발행 실패');
+    const parts=[`사례 ${j.cases}건`];
+    if(j.photosUploaded) parts.push(`새 사진 ${j.photosUploaded}장`);
+    if(j.photosFailed&&j.photosFailed.length) parts.push(`사진 ${j.photosFailed.length}장은 드라이브 사진으로 대체`);
+    setPub(j.changed
+      ? `발행 완료 ${fmtTime(new Date())} — ${parts.join(' · ')}. 약 1분 뒤 홈페이지에 반영돼요 ✓`
+      : `홈페이지가 이미 최신 상태예요 (${parts[0]}) ✓`, 'ok');
+  }catch(e){
+    setPub('발행 실패: '+e.message+' — 저장은 됐어요. 잠시 후 🚀 버튼으로 다시 발행해주세요.','bad');
+  }
+  pubBusy=false;
+  if(pubAgain){ pubAgain=false; publishSite(); }
+}
+document.getElementById('pubBtn').onclick=()=>{ if(!KEY){ alert('먼저 관리자 키로 입장해주세요'); return; } publishSite(); };
+async function checkLive(){
+  try{
+    const r=await fetch(LIVE_JSON,{cache:'no-cache'});
+    if(!r.ok) throw 0;
+    const j=await r.json();
+    const d=new Date(j.publishedAt);
+    setPub(`홈페이지 현재 반영: ${isNaN(d)?'':fmtTime(d)+' 발행분 · '}사례 ${(j.cases||[]).length}건. 저장하면 자동으로 다시 발행돼요.`,'');
+  }catch(e){
+    setPub('홈페이지에 아직 발행된 적이 없어요. 🚀 버튼으로 첫 발행을 해주세요.','');
+  }
+}
+checkLive();
 </script>
 </body>
 </html>
