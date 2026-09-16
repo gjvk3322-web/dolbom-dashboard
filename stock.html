@@ -200,6 +200,12 @@ function lossDirColor(loss){return loss>0?LOSS_BLUE:loss<0?'var(--red)':'var(--d
 function lossSign(loss){return loss>0?'-':loss<0?'+':''}
 function fmtLossRate(loss,rate){return lossSign(loss)+Math.abs(rate)+'%'}
 const SPP=Object.fromEntries(PR.map(p=>[p.id,p.bpb*p.bpp]));  // 1파레트당 장수 (500:288 · 1000_22:64 · 1000_17:84)
+// 📐 재고조사 단위 = 장 (2026-09-17 박스→장 전환)
+//    Firebase inventory 기록에 unit:'장'이 있으면 장 그대로, 없으면 옛 박스 기록 → 박스×bpb로 환산해서 읽음
+//    → 화면의 모든 재고조사 숫자는 항상 '장' 기준 (과거 기록과 새 기록을 섞어 비교해도 안전)
+function bpbOfKey(k){const pr=PR.find(x=>String(k).indexOf(x.id+'_')===0);return pr?pr.bpb:1}
+function normInvLoc(d){if(!d||!d.data||d.unit==='장')return d;const nd={};Object.entries(d.data).forEach(([k,v])=>{nd[k]=(+v||0)*bpbOfKey(k)});return Object.assign({},d,{data:nd,unit:'장'})}
+function normInvTeam(val){if(!val)return val;const o={};Object.keys(val).forEach(k=>{o[k]=normInvLoc(val[k])});return o}
 let team=null,loc=null,tab='summary';
 // 📤 출고·이동 (2026-09-14): 입고 탭 안에서 [📥 입고 | 📤 출고·이동] 전환
 let ioMode='in';           // 'in'=입고 기록 / 'out'=출고·이동 기록
@@ -249,7 +255,7 @@ function pickTeam(t){
   // 오늘 데이터 먼저 확인
   fbInRef=db.ref('inventory/'+dateKey+'/'+team);
   fbInRef.on('value',snap=>{
-    const val=snap.val()||{};
+    const val=normInvTeam(snap.val()||{});
     // 오늘 제출된 데이터가 있으면 바로 사용
     const hasData=Object.keys(val).some(k=>val[k]&&val[k].time);
     if(hasData){
@@ -276,7 +282,7 @@ async function findRecentInventory(teamName){
     const dk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     try{
       const snap=await db.ref('inventory/'+dk+'/'+teamName).once('value');
-      const val=snap.val();
+      const val=normInvTeam(snap.val());
       if(val&&Object.keys(val).some(k=>val[k]&&val[k].time)){
         return {date:dk,data:val};
       }
@@ -304,7 +310,7 @@ async function loadHistData(date){
   if(histCache[ck]!==undefined)return histCache[ck];
   try{
     const snap=await db.ref('inventory/'+date+'/'+team).once('value');
-    const val=snap.val();
+    const val=normInvTeam(snap.val());
     const has=val&&Object.keys(val).some(k=>val[k]&&val[k].time);
     histCache[ck]=has?val:null;
     return histCache[ck];
@@ -356,13 +362,13 @@ async function renderHistory(){
   h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden"><div style="padding:10px 14px;font-size:13px;font-weight:700;border-bottom:.5px solid var(--border)">📦 ${histDateLabel(myDate)} 제출 재고 총합 <span style="color:var(--dim);font-weight:500;font-size:11px">(색상·사이즈별)</span></div><div style="padding:0 14px 10px">`;
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=data[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
-    p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
-    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum">${pB}박스 / ${pS}장</span></div>`;
+    p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB;gs+=pS;
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">장 단위</span><span class="ph-sum">${pS.toLocaleString()}장</span></div>`;
     h+=`<div class="g">`;
-    if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}박스</b></span>`});h+=`</div>`}
+    if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}장</b></span>`});h+=`</div>`}
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}" title="${v}박스 = ${v*p.bpb}장">${v}</div>`});h+=`</div>`});
+      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}" title="${v}장">${v}</div>`});h+=`</div>`});
     h+=`</div>`});
   h+=`<div style="padding:10px 0 4px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:800"><span>총 재고</span><span style="color:var(--accent)">${gs.toLocaleString()}장</span></div>`;
   h+=`</div></div>`;
@@ -382,7 +388,7 @@ async function renderHistory(){
   if(!box)return;
   if(prevData){
     const pt=histTotals(prevData);
-    let pgs=0;PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{pgs+=(pt[p.id+'_'+c+'_'+t]||0)*p.bpb})})});
+    let pgs=0;PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{pgs+=(pt[p.id+'_'+c+'_'+t]||0)})})});
     const diff=gs-pgs;const dCol=diff>0?'var(--accent)':diff<0?'var(--red)':'var(--dim)';
     let dh=`<div style="margin-top:8px;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:12px 14px">`;
     dh+=`<div style="font-size:13px;font-weight:700;margin-bottom:8px">🔀 직전 조사 대비 <span style="font-size:10px;color:var(--dim);font-weight:400">${histDateLabel(prevDate)} → ${histDateLabel(myDate)} · 입고·사용 포함</span></div>`;
@@ -391,7 +397,7 @@ async function renderHistory(){
     const prodNameMap={'500':'500매트','1000_22':'1000매트22T','1000_17':'1000매트17T'};
     const rows=[];
     PR.forEach(p=>{p.colors.forEach(c=>{
-      let cur=0,prv=0;TY.forEach(t=>{cur+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb;prv+=(pt[p.id+'_'+c+'_'+t]||0)*p.bpb});
+      let cur=0,prv=0;TY.forEach(t=>{cur+=(totals[p.id+'_'+c+'_'+t]||0);prv+=(pt[p.id+'_'+c+'_'+t]||0)});
       if(cur!==prv)rows.push({name:(prodNameMap[p.id]||p.id)+' '+c,color:c,cur,prv,d:cur-prv});
     })});
     // 재고표와 같은 순서 유지 (PR 순회 순서 그대로)
@@ -548,7 +554,7 @@ function changeInvDate(v){
   if(v!==dateKey&&pastDateKeyLoaded!==v){
     pastDateKeyLoaded=v;pastDateData=null;
     db.ref('inventory/'+v+'/'+team).once('value')
-      .then(s=>{if(invSubmitDate===v){pastDateData=s.val()||{};render()}})
+      .then(s=>{if(invSubmitDate===v){pastDateData=normInvTeam(s.val()||{});render()}})
       .catch(()=>{if(invSubmitDate===v){pastDateData={};render()}});
   }
   render();
@@ -594,7 +600,7 @@ function renderInventory(){
   if(isEdit){
     h+=`<div style="font-size:12px;color:var(--orange);background:#1a1400;border:.5px solid #3d2e00;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-weight:600;line-height:1.5">✏️ <b>수정 모드</b> — ${invSubmitDate} ${submitted.time}에 제출한 값이 그대로 들어있어요.<br><span style="font-weight:500;opacity:.85">틀린 칸만 고친 뒤 아래 <b>수정 저장</b>을 누르면 덮어쓰기 됩니다.</span></div>`;
   }else{
-    h+=`<div style="font-size:12px;color:var(--dim);background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:8px;line-height:1.5">🆕 <b style="color:var(--text)">새로 조사</b> — 모든 칸이 <b>0</b>에서 시작합니다. 재고가 <b style="color:#4ade80">있는 칸만</b> 눌러서 수량을 입력하세요. (칸을 누르면 0이 선택되어 바로 덮어쓸 수 있어요)</div>`;
+    h+=`<div style="font-size:12px;color:var(--dim);background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:8px;line-height:1.5">🆕 <b style="color:var(--text)">새로 조사</b> — 모든 칸이 <b>0</b>에서 시작합니다. 재고가 <b style="color:#4ade80">있는 칸만</b> 눌러서 <b style="color:#4ade80">장 수</b>를 입력하세요. (칸을 누르면 0이 선택되어 바로 덮어쓸 수 있어요)<br><span style="font-size:11px">📦 박스째 있으면 <b>박스 수 × 장수</b>로 넣기 — 500: 12장 (10T 24장) · 1000 22T: 4장 · 1000 17T: 6장 · 1000 10T: 8장</span></div>`;
   }
   h+=buildTable('inv',isEdit?submitted:null);
   if(loc==='사무실'){const pm=(isEdit&&submitted.memo)||'';h+=`<div class="memo-sec"><div class="memo-hd">📋 필요용품 / 기타</div><div class="memo-bd"><textarea class="memo" id="invMemo" placeholder="필요한 용품이나 특이사항">${pm}</textarea></div></div>`}
@@ -712,19 +718,19 @@ async function renderSummary(){
   h+=`<div id="surveyDetail" style="display:none;padding:0 14px 10px;border-top:.5px solid var(--border)">`;
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
-    p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB*p.bpb;gs+=pS;
-    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">1박스=${p.bpb}장</span><span class="ph-sum">${pB}박스 / ${pS}장</span></div>`;
+    p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB;gs+=pS;
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">장 단위</span><span class="ph-sum">${pS.toLocaleString()}장</span></div>`;
     h+=`<div class="g">`;
-    if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}박스</b></span>`});h+=`</div>`}
+    if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}장</b></span>`});h+=`</div>`}
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
-    // 색상별 행 · 툴팁으로 박스→장수 변환 표시
+    // 색상별 행 (장 단위)
     const _sizeSums={};TY.forEach(t=>_sizeSums[t]=0);
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;_sizeSums[t]+=v;h+=`<div class="rv ${v===0?'zero':''}" title="${v}박스 = ${v*p.bpb}장">${v}</div>`});h+=`</div>`});
+      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;_sizeSums[t]+=v;h+=`<div class="rv ${v===0?'zero':''}" title="${v}장">${v}</div>`});h+=`</div>`});
     // 🆕 사이즈별 합계 행
     h+=`<div class="g-row" style="border-top:1px dashed var(--border);margin-top:4px;padding-top:4px">`;
     h+=`<div class="cl" style="font-weight:700;color:var(--accent)">합계</div>`;
-    TY.forEach(t=>{const s=_sizeSums[t]||0;h+=`<div class="rv" style="font-weight:700;color:${s>0?'var(--accent)':'var(--dim)'}" title="${s}박스 = ${s*p.bpb}장">${s}</div>`});
+    TY.forEach(t=>{const s=_sizeSums[t]||0;h+=`<div class="rv" style="font-weight:700;color:${s>0?'var(--accent)':'var(--dim)'}" title="${s}장">${s}</div>`});
     h+=`</div>`;
     h+=`</div>`});
   h+=`</div></div>`;
@@ -735,7 +741,7 @@ async function renderSummary(){
 
   // 데이터 계산
   const prodColorStock={};
-  PR.forEach(p=>{p.colors.forEach(c=>{let s=0;TY.forEach(t=>{s+=(totals[p.id+'_'+c+'_'+t]||0)*p.bpb});if(s>0)prodColorStock[p.id+'_'+c]=s})});
+  PR.forEach(p=>{p.colors.forEach(c=>{let s=0;TY.forEach(t=>{s+=(totals[p.id+'_'+c+'_'+t]||0)});if(s>0)prodColorStock[p.id+'_'+c]=s})});
   // 🆕 예약 날짜 파싱 (MM/DD 또는 YYYY-MM-DD → 오늘 기준 며칠 후인지)
   function futureDayDiff(dateStr){
     if(!dateStr)return 999;
@@ -1925,7 +1931,7 @@ async function saveMonthlyOrder(){
 }
 
 function buildTable(pfx,ex,ref){let h='';PR.forEach(p=>{
-  const unitTag=(pfx==='out'&&outUnit==='장')?'낱장 단위':`1박스=${p.bpb}장`;
+  const unitTag=pfx==='inv'?'장 단위 (박스째면 박스×장수)':((pfx==='out'&&outUnit==='장')?'낱장 단위':`1박스=${p.bpb}장`);
   h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">${unitTag}</span><span class="ph-sum" id="ps_${pfx}_${p.id}">0장</span></div>`;
   h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
   p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
@@ -1934,7 +1940,7 @@ function buildTable(pfx,ex,ref){let h='';PR.forEach(p=>{
       const pv=(ex&&ex.data&&ex.data[k]!==undefined&&ex.data[k]!==null)?ex.data[k]:(pfx==='inv'?0:'');
       h+=`<div class="ce ${pfx==='in'?'incoming':(pfx==='out'?'out':'')}"><input type="number" inputmode="numeric" min="0" id="${pfx}_${k}" value="${pv}" class="${ex?'edit':''}" onfocus="this.select()" oninput="calc('${pfx}')"></div>`});h+=`</div>`});h+=`</div>`});return h}
 
-function calc(pfx){const perSheet=(pfx==='out'&&outUnit==='장');let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{const el=document.getElementById(`${pfx}_${p.id}_${c}_${t}`);const v=parseInt(el?.value)||0;pb+=v;if(el){el.classList.toggle('filled',v>0);el.classList.toggle('zero',el.value!==''&&v===0)}})});g+=pb*(perSheet?1:p.bpb);
+function calc(pfx){const perSheet=(pfx==='inv')||(pfx==='out'&&outUnit==='장');let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{const el=document.getElementById(`${pfx}_${p.id}_${c}_${t}`);const v=parseInt(el?.value)||0;pb+=v;if(el){el.classList.toggle('filled',v>0);el.classList.toggle('zero',el.value!==''&&v===0)}})});g+=pb*(perSheet?1:p.bpb);
   const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=perSheet?pb+'장':(pb+'박스 / '+pb*p.bpb+'장')});document.getElementById('gt').textContent=g.toLocaleString()}
 
 async function submitInv(){if(!loc||!team)return;
@@ -1981,11 +1987,11 @@ async function submitInv(){if(!loc||!team)return;
     if(!confirm(team+' '+loc+' 재고를 '+subLabel+' 날짜로 제출하시겠습니까?\n\n같은 날짜 기존 데이터가 있으면 업데이트됩니다.'+_dowWarn))return;
   }
   const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
-  const dm={},items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const v=parseInt(document.getElementById(`inv_${k}`)?.value)||0;dm[k]=v;
-    items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
+  const dm={},items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const v=parseInt(document.getElementById(`inv_${k}`)?.value)||0;dm[k]=v; // v = 장
+    items.push({product:p.name+' '+p.badge,color:c,type:t,qty:Math.round(v/p.bpb*100)/100,sheets:v,unit:'장'})})})});
   const memo=document.getElementById('invMemo')?.value||'';
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
-  const fb={time:hm,data:dm};if(loc==='사무실'&&memo)fb.memo=memo;
+  const fb={time:hm,unit:'장',data:dm};if(loc==='사무실'&&memo)fb.memo=memo;
   // 🆕 두 저장소(Firebase + Apps Script) 결과를 따로 추적
   let fbOK=false, gsOK=false, gsResp='';
   // 1) Firebase 저장
@@ -1994,7 +2000,7 @@ async function submitInv(){if(!loc||!team)return;
     fbOK=true;
   }catch(e){console.error('Firebase 저장 실패:',e);toast('❌ Firebase 저장 실패');btn.disabled=false;btn.textContent='재고 제출';return}
   // 2) 카톡 복사용 텍스트
-  let txt=subDate.slice(5).replace('-','')+' '+team+' '+loc+' (기준일:'+subDate+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
+  let txt=subDate.slice(5).replace('-','')+' '+team+' '+loc+' (기준일:'+subDate+')\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`inv_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'장\n';has=true}})});if(has)txt+=s+'\n'});
   if(memo)txt+='필요용품: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
   // 3) Apps Script 저장 — await로 응답 확인 (예전: fire-and-forget이라 실패해도 모름)
   try{
