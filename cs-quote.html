@@ -111,6 +111,7 @@ body {
 .welcome-btn-pantry     { background: #3949ab; color: #fff; }   /* 팬트리 — 인디고 */
 .welcome-btn-single     { background: #00838f; color: #fff; }   /* 낱장 추가 구매 — 청록 */
 .welcome-btn-as         { background: #ef6c00; color: #fff; }   /* AS 접수 — 오렌지 */
+.welcome-btn-aswarranty { background: #5e35b1; color: #fff; }   /* AS 기간 안내 — 딥퍼플 */
 
 /* ===== 오른쪽 열: 예약 흐름 (연한 녹 → 진한 청록 그라데이션, 위→아래) ===== */
 .welcome-btn-text    { background: #43A047; color: #fff; } /* 1단계: 환영 메시지 (가장 연함) */
@@ -151,6 +152,12 @@ body {
   flex: 1; padding: 7px 9px; border: 1px solid #ddd; border-radius: 6px;
   font-size: 12px; font-family: inherit; box-sizing: border-box;
 }
+.custom-item-col {
+  width: 78px; padding: 7px 4px; border: 1px solid #ddd; border-radius: 6px;
+  font-size: 11px; font-family: inherit; box-sizing: border-box; background: #fff; color: #555;
+  flex-shrink: 0;
+}
+.custom-item-col:focus { outline: none; border-color: #2E7D32; }
 .custom-item-delete {
   width: 32px; height: 32px; border: none; background: #fee; color: #c44;
   border-radius: 6px; cursor: pointer; font-size: 14px; flex-shrink: 0;
@@ -1181,12 +1188,12 @@ body {
           <button class="welcome-btn welcome-btn-pantry" onclick="copyPantry()">
             🚪 <span>팬트리 안내</span>
           </button>
-          <!-- 동적 커스텀 버튼들이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
-          <button class="welcome-btn welcome-btn-add" onclick="openSettingsAndAddCustom()">
+          <!-- 동적 커스텀 버튼(왼쪽 열)이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
+          <button class="welcome-btn welcome-btn-add welcome-btn-add-left" onclick="openSettingsAndAddCustom('L')">
             ➕ <span>커스텀 추가</span>
           </button>
         </div>
-        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 색상관련, 낱장 추가 구매, AS 접수 안내 -->
+        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 색상관련, 낱장 추가 구매, AS 접수 안내, AS 기간 안내, (동적 커스텀들), + 커스텀 추가 -->
         <div class="welcome-col">
           <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
             1️⃣ <span>환영 메시지</span>
@@ -1208,6 +1215,13 @@ body {
           </button>
           <button class="welcome-btn welcome-btn-as" onclick="copyAsIntake()">
             🔧 <span>AS 접수 안내</span>
+          </button>
+          <button class="welcome-btn welcome-btn-aswarranty" onclick="copyAsWarranty()">
+            🛡️ <span>AS 기간 안내</span>
+          </button>
+          <!-- 동적 커스텀 버튼(오른쪽 열)이 + 커스텀 추가 버튼 바로 위에 자동 삽입됩니다 -->
+          <button class="welcome-btn welcome-btn-add welcome-btn-add-right" onclick="openSettingsAndAddCustom('R')">
+            ➕ <span>커스텀 추가</span>
           </button>
         </div>
       </div>
@@ -1512,7 +1526,7 @@ body {
       <div class="custom-section-title">🎨 커스텀 메시지 (직접 만들기)</div>
       <div class="custom-section-help">
         자주 쓰는 안내 문구를 버튼으로 만들어두세요. 추가하면 위 버튼 목록에 자동으로 나타납니다.<br>
-        예) 매트 소개, A/S 안내, 결제 안내 등
+        각 항목의 열 선택으로 왼쪽/오른쪽 어느 열에 둘지 정할 수 있어요. 예) 매트 소개, A/S 안내, 결제 안내 등
       </div>
       <div class="custom-list" id="customListEdit">
         <!-- JS가 채웁니다 -->
@@ -2553,11 +2567,24 @@ var QUOTE_FORM_DEFAULT_TEXT =
 var BOOKING_DEFAULT_TEXT =
   '아래 링크에서 주소 입력하시면\n' +
   '예약 및 일정 확인하실 수 있어요! 😊\n' +
-  'https://my.dolbommat.com/booking.html\n\n' +
-  '👉 예약금\n' +
+  '※ 조회되는 일정은 참고용이며, 정확한 일정은 상담 후 확인 가능합니다.\n' +
+  'https://my.dolbommat.com/booking.html\n\n\n' +
+  '👉 예약금 안내\n' +
   '기업은행 030-505520-04-011 허민석(돌봄)\n' +
-  '20만원 입금해주시면 예약 확정됩니다~\n' +
-  '입금 후 입금자명 알려주시면 바로 확정 처리해드릴게요!';
+  '예약금 20만원 입금 후 입금자명을 알려주시면 확인 후 예약 확정 처리해드릴게요!';
+
+// 예약 양식 기본 문구 버전 — 문구를 바꿀 때 이 값을 올리면
+// 각 브라우저에 저장돼 있던 옛 예약 양식이 1회 초기화되어 새 기본 문구가 적용됨
+// (설정 저장을 한 번이라도 누른 브라우저는 옛 문구가 localStorage에 남아 있기 때문)
+var BOOKING_TEXT_VER = '20260916';
+(function migrateBookingText(){
+  try {
+    if (localStorage.getItem('dolbom_booking_text_ver') !== BOOKING_TEXT_VER) {
+      localStorage.removeItem('dolbom_booking_text');
+      localStorage.setItem('dolbom_booking_text_ver', BOOKING_TEXT_VER);
+    }
+  } catch (e) {}
+})();
 
 var REVIEW_DEFAULT_TEXT =
   '후기 이벤트 참여하시면\n' +
@@ -2833,6 +2860,20 @@ function copyAsIntake() {
   }
 }
 
+// AS 기간 안내 (예약 단계에서 AS 범위 고지용)
+function copyAsWarranty() {
+  var text =
+    'AS는 4개월간 진행되며,\n' +
+    '오염·데미지 관련 AS는 불가한 점 양해 부탁드려요!';
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      showToast('✅ AS 기간 안내 복사 완료! 카톡에 붙여넣으세요');
+    }).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
 function copyClosingMessage() {
   var text = '궁금하신 내용 있으시면 언제든 카톡 주시면 최대한 빠른 답변드리겠습니다!';
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2917,15 +2958,25 @@ if (document.readyState !== 'loading') {
 }
 
 // 메인 화면 "+ 커스텀 추가" 버튼 → 설정 열고 바로 새 항목 추가
-function openSettingsAndAddCustom() {
+// col: 'L'(왼쪽 열) / 'R'(오른쪽 열) — 누른 버튼이 있는 열이 새 항목의 기본 열이 됨
+function openSettingsAndAddCustom(col) {
   openWelcomeSettings();
   // 모달 렌더링이 끝난 다음 새 항목 추가 (포커스까지 자동)
-  setTimeout(function(){ addCustomItem(); }, 50);
+  setTimeout(function(){ addCustomItem(col); }, 50);
 }
 
 // ===== 🎨 커스텀 메시지 시스템 =====
 // localStorage 키: dolbom_custom_buttons (JSON 배열)
-// 항목 구조: { id, icon, label, message }
+// 항목 구조: { id, icon, label, message, col }  — col: 'L'(왼쪽 열, 기본) / 'R'(오른쪽 열)
+
+function normalizeCustomCol(col) {
+  return col === 'R' ? 'R' : 'L';
+}
+function customColOptions(selected) {
+  var col = normalizeCustomCol(selected);
+  return '<option value="L"' + (col === 'L' ? ' selected' : '') + '>왼쪽 열</option>' +
+         '<option value="R"' + (col === 'R' ? ' selected' : '') + '>오른쪽 열</option>';
+}
 
 function getCustomButtons() {
   try {
@@ -2951,9 +3002,10 @@ function renderCustomButtons() {
   for (var i = 0; i < existing.length; i++) {
     existing[i].remove();
   }
-  // + 커스텀 추가 버튼을 기준점으로 사용
-  var addBtn = document.querySelector('.welcome-btn-add');
-  if (!addBtn) return;
+  // 각 열의 + 커스텀 추가 버튼을 기준점으로 사용 (그 바로 위에 삽입)
+  var addBtnL = document.querySelector('.welcome-btn-add-left');
+  var addBtnR = document.querySelector('.welcome-btn-add-right');
+  if (!addBtnL && !addBtnR) return;
   var customs = getCustomButtons();
   for (var i = 0; i < customs.length; i++) {
     var c = customs[i];
@@ -2963,7 +3015,8 @@ function renderCustomButtons() {
     temp.innerHTML = '<button class="welcome-btn welcome-btn-custom welcome-btn-custom-dynamic" onclick="copyCustomMessage(\'' + c.id + '\')">' +
                      icon + ' <span>' + label + '</span></button>';
     var btn = temp.firstChild;
-    addBtn.parentNode.insertBefore(btn, addBtn);
+    var anchor = (normalizeCustomCol(c.col) === 'R' ? addBtnR : addBtnL) || addBtnL || addBtnR;
+    anchor.parentNode.insertBefore(btn, anchor);
   }
 }
 
@@ -2983,6 +3036,7 @@ function renderCustomList() {
               '<div class="custom-item-row">' +
                 '<input type="text" class="custom-item-icon" data-field="icon" value="' + escapeHtml(c.icon || '') + '" maxlength="3" placeholder="🎁">' +
                 '<input type="text" class="custom-item-label" data-field="label" value="' + escapeHtml(c.label || '') + '" maxlength="14" placeholder="버튼 이름 (예: 매트소개)">' +
+                '<select class="custom-item-col" data-field="col" title="버튼을 둘 열">' + customColOptions(c.col) + '</select>' +
                 '<button class="custom-item-delete" onclick="removeCustomItem(\'' + c.id + '\')" title="삭제">🗑️</button>' +
               '</div>' +
               '<textarea class="custom-item-textarea" data-field="message" placeholder="고객에게 보낼 메시지 내용을 입력하세요">' + escapeHtml(c.message || '') + '</textarea>' +
@@ -3003,17 +3057,20 @@ function collectCustomFromForm() {
     var icon = (el.querySelector('[data-field="icon"]').value || '✨').trim();
     var label = (el.querySelector('[data-field="label"]').value || '').trim();
     var message = (el.querySelector('[data-field="message"]').value || '').trim();
-    result.push({ id: id, icon: icon, label: label, message: message });
+    var colEl = el.querySelector('[data-field="col"]');
+    var col = normalizeCustomCol(colEl ? colEl.value : 'L');
+    result.push({ id: id, icon: icon, label: label, message: message, col: col });
   }
   return result;
 }
 
-// 새 커스텀 항목 추가 (모달 안에서)
-function addCustomItem() {
+// 새 커스텀 항목 추가 (모달 안에서) — col: 새 항목의 기본 열 ('L' 기본 / 'R')
+function addCustomItem(col) {
+  col = normalizeCustomCol(col);
   // 현재 입력 중인 내용을 보존하기 위해 한번 수집
   var current = collectCustomFromForm();
   var newId = 'c' + Date.now();
-  current.push({ id: newId, icon: '✨', label: '', message: '' });
+  current.push({ id: newId, icon: '✨', label: '', message: '', col: col });
   // 임시로 저장하지는 않고, 화면만 다시 그림
   // 그리려면 listEl에 새 항목 HTML을 직접 append
   var listEl = document.getElementById('customListEdit');
@@ -3027,6 +3084,7 @@ function addCustomItem() {
     '<div class="custom-item-row">' +
       '<input type="text" class="custom-item-icon" data-field="icon" value="✨" maxlength="3" placeholder="🎁">' +
       '<input type="text" class="custom-item-label" data-field="label" value="" maxlength="14" placeholder="버튼 이름 (예: 매트소개)">' +
+      '<select class="custom-item-col" data-field="col" title="버튼을 둘 열">' + customColOptions(col) + '</select>' +
       '<button class="custom-item-delete" onclick="removeCustomItem(\'' + newId + '\')" title="삭제">🗑️</button>' +
     '</div>' +
     '<textarea class="custom-item-textarea" data-field="message" placeholder="고객에게 보낼 메시지 내용을 입력하세요"></textarea>';
