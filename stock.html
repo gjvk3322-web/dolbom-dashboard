@@ -1147,7 +1147,7 @@ let ledgerData=null;   // buildLedger 결과 {evs,cr,surveyDate,missing,listOK,i
 let ledgerKey='';      // ''=전체 / '1000_22_모던' 같은 제품_색상 키로 필터 (-사용 숫자 누르면 세팅)
 let ledgerOpen={};     // 펼쳐둔 날짜 {'2026-09-10':true}
 const LEDGER_PN={'500':'500','1000_22':'1000 22T','1000_17':'1000 17T'};
-function ledgerKeyLabel(key){const parts=String(key).split('_');const c=parts.pop();const pid=parts.join('_');return c+' '+(LEDGER_PN[pid]||pid)}
+function ledgerKeyLabel(key){if(!key)return '제품 미정';const parts=String(key).split('_');const c=parts.pop();const pid=parts.join('_');return c+' '+(LEDGER_PN[pid]||pid)}
 function prodKeyOf(name){const n=String(name||'');if(n.indexOf('500')>=0)return '500';if(n.indexOf('17')>=0)return '1000_17';return '1000_22'}
 // 서버가 주는 날짜 표기가 제각각일 수 있어(yyyy-MM-dd · MM/DD · Date ISO) 전부 yyyy-MM-dd로 통일
 function normLedgerDate(v){
@@ -1284,7 +1284,7 @@ let lossLedgerOpen={};   // 펼쳐둔 날짜 {'2026-09-12':true}
 let lastPending=[];      // 종합탭 렌더 시점의 미제출 장소 (누적 로스율 카드 '확정 전' 표시용)
 function buildLossLedger(sd){
   const LL=sd&&sd.lossLedger;
-  if(!LL||!Array.isArray(LL.usedList)){lossLedgerData={evs:[],from:'',to:'',ok:false,missing:[]};return}
+  if(!LL||!Array.isArray(LL.usedList)){lossLedgerData={evs:[],from:'',to:'',ok:false,missing:[],err:sd&&sd.lossLedgerError?String(sd.lossLedgerError):''};return}
   const evs=[];
   LL.usedList.forEach(u=>{const dt=normLedgerDate(u.date);if(!dt)return;evs.push({date:dt,kind:'used',key:u.key||'',sheets:+u.sold||0,addr:u.addr||'',sasu:u.sasu||'',tt:u.timeType||''})});
   (LL.incoming||[]).forEach(i=>{const dt=normLedgerDate(i.date);if(!dt)return;const pid=prodKeyOf(i.product);const bpb=(PR.find(p=>p.id===pid)||{bpb:1}).bpb;const sheets=(i.sheets!=null&&i.sheets!=='')?(+i.sheets||0):(+i.qty||0)*bpb;evs.push({date:dt,kind:'in',key:pid+'_'+(i.color||''),sheets,type:i.type||'',qty:+i.qty||0})});
@@ -1302,7 +1302,7 @@ function toggleLossLedgerDay(ds){lossLedgerOpen[ds]=!lossLedgerOpen[ds];renderLo
 function renderLossLedgerBox(){
   const box=document.getElementById('lossLedgerBox');if(!box||!lossLedgerData||!stockCache||!stockCache.lossData)return;
   const ld=stockCache.lossData;const L=lossLedgerData;const fmt=n=>(n||0).toLocaleString();
-  if(!L.ok){box.innerHTML=`<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim);line-height:1.5">📒 <b style="color:var(--text)">구간 장부</b> — 서버(Inventory.gs getStockSummary)가 lossLedger를 보내주면 ${ld.prevDate} 실사 → ${ld.currentDate} 실사 사이 시공·입고·출고가 날짜·현장별로 여기에 펼쳐져요 (아직 구버전 서버)</div>`;return}
+  if(!L.ok){box.innerHTML=`<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim);line-height:1.5">📒 <b style="color:var(--text)">구간 장부</b> — ${L.err?`서버 오류: <span style="color:var(--orange)">${L.err}</span> (Inventory.gs buildLossLedger_ 확인)`:`서버(Inventory.gs getStockSummary)가 lossLedger를 보내주면 ${ld.prevDate} 실사 → ${ld.currentDate} 실사 사이 시공·입고·출고가 날짜·현장별로 여기에 펼쳐져요 (아직 구버전 서버)`}</div>`;return}
   const key=lossLedgerKey;
   // 기준 숫자: 전체는 lossData, 제품 필터는 lossByProduct의 해당 줄
   const P=key?(ld.lossByProduct||[]).find(p=>p.key===key):null;
