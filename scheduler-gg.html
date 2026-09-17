@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.09.17.57';
+const VER='2026.09.17.58';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -637,7 +637,7 @@ if(name){
 }}
 
 function parseCSV(text){
-const lines=text.split('\n');J=[];
+const lines=text.split('\n');J=[];const _idSeen={}; // 같은 날·같은 시간대·같은 전화(인테리어 업체 등) 중복 id 방지용
 // 헤더행에서 '접수일' 컬럼 위치 찾기 (열이 밀려도 안전). 없으면 -1
 let _recvIdx=-1;
 if(lines.length){
@@ -665,7 +665,8 @@ if(ds.match(/^\d{4}-\d{1,2}-\d{1,2}$/)){
 // jobId: 행번호 대신 전화뒤8자리 기반 (행 밀려도 안 변함). 전화없으면 주소12자.
 const _ph8=(r[4]||'').replace(/[^0-9]/g,'').slice(-8);
 const _akey=(r[3]||'').replace(/\s/g,'').slice(0,12);
-const id=ds+'_'+r[0]+'_'+(_ph8.length>=8?_ph8:('A'+_akey));
+const id0=ds+'_'+r[0]+'_'+(_ph8.length>=8?_ph8:('A'+_akey));
+const id=_idSeen[id0]?(id0+'_'+(++_idSeen[id0])):((_idSeen[id0]=1),id0); // 2026-09-17: id가 겹치면 2번째부터 _2,_3 — 안 그러면 AS보고·수정·취소·배정이 전부 첫 번째 건에 붙음 (용인 AS 열면 이천 뜨던 문제)
 const csvRow=i; // 시트 기록용 행번호는 별도 보관
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
