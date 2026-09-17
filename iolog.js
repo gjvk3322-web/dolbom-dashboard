@@ -1,31 +1,39 @@
-/* iolog.js — 돌봄매트 스케줄러 📦 입·출고 탭 (부산·경기 공용)
+/* iolog.js — 돌봄매트 스케줄러 📦 입출고 탭 (부산·경기 공용)
    차에 실은(출고) / 창고로 내린(입고) 자재를 시각 스탬프 사진과 함께 기록
-   저장: Apps Script(입출고기록 시트 + 드라이브 '입출고사진' 폴더) ← 원본, Firebase io_logs/{bs|gg} ← 앱 실시간 목록
-   로드: scheduler.html / scheduler-gg.html 맨 아래 guide.js 다음 <script src="./iolog.js?v=..."> (코드 수정 시 v 값도 변경) */
+   저장: Apps Script IoLog.gs(입출고기록 시트 + 드라이브 '입출고사진' 폴더) ← 원본, Firebase io_logs/{bs|gg} ← 앱 실시간 목록
+   로드: scheduler.html / scheduler-gg.html 맨 아래 guide.js 다음 <script src="./iolog.js?v=..."> (코드 수정 시 v 값도 변경)
+
+   v2 (2026-09-17)
+   · 입력 단위를 박스+낱장 → 장(枚)으로 통일 (재고조사와 동일). 박스째면 [+박스] 버튼으로 12/4/6장(10T 24/8장)씩 더함.
+     시트로 보내는 형식(cBox/cEa/cQty…)은 그대로 — 장수를 박스+낱장으로 나눠서 채우므로 IoLog.gs 수정 불필요
+   · 🚚 차량별 매트 현황: 지난 실사(Firebase inventory) + 출고 − 입고 − 시공보고 판매갯수(스케줄 J.sold) = 차에 있어야 할 장수,
+     실사가 2번 이상이면 직전 구간 실사 vs 예상 차이(팀별 로스)까지 표시
+   · 첫 사용 시 1회 도움말(❔ 버튼으로 다시 열람), 상단 설명 문단 제거 */
 (function(){
 'use strict';
-const IO_VER='2026.09.14b';
+const IO_VER='2026.09.17';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
 const OWN_MIN=30;         // 본인 기록 취소 가능 시간(분) — 지나면 당번 모드에서만
-const DAYS=7;             // 목록 표시 기간(일)
+const DAYS=14;            // Firebase에서 불러오는 기록 기간(일) — 차량별 현황 계산용 (실사 주기 7~10일)
+const LIST_DAYS=7;        // 목록에 펼쳐 보이는 기간(일)
 const MAX_PX=1280;        // 업로드 사진 긴 변(px)
 const JPG_Q=0.76;
 const LATE_MIN=30;        // 사진 시각과 제출 시각 차이 경고(분)
 
-// 재고표 순서. per=박스당 장수, per10=10T 박스당 장수
+// 재고표 순서. per=박스당 장수, per10=10T 박스당 장수. pid/col = 재고조사(Firebase inventory) 키 매칭용
 const PRODUCTS=[
-  {k:'500 모던',    g:'500매트', c:'모던',   per:12, per10:24, cls:'modern'},
-  {k:'500 마블',    g:'500매트', c:'마블',   per:12, per10:24, cls:'marble'},
-  {k:'500 코튼',    g:'500매트', c:'코튼',   per:12, per10:24, cls:'cotton'},
-  {k:'1M 22T 모던', g:'1M 매트', c:'22T 모던',   per:4,  per10:8,  cls:'modern'},
-  {k:'1M 22T 베이지',g:'1M 매트',c:'22T 베이지', per:4,  per10:8,  cls:'beige'},
-  {k:'1M 17T 모던', g:'1M 매트', c:'17T 모던',   per:6,  per10:8,  cls:'modern'},
-  {k:'1M 17T 베이지',g:'1M 매트',c:'17T 베이지', per:6,  per10:8,  cls:'beige'}
+  {k:'500 모던',    g:'500매트', c:'모던',   per:12, per10:24, cls:'modern', pid:'500',     col:'모던'},
+  {k:'500 마블',    g:'500매트', c:'마블',   per:12, per10:24, cls:'marble', pid:'500',     col:'마블'},
+  {k:'500 코튼',    g:'500매트', c:'코튼',   per:12, per10:24, cls:'cotton', pid:'500',     col:'코튼'},
+  {k:'1M 22T 모던', g:'1M 매트', c:'22T 모던',   per:4,  per10:8,  cls:'modern', pid:'1000_22', col:'모던'},
+  {k:'1M 22T 베이지',g:'1M 매트',c:'22T 베이지', per:4,  per10:8,  cls:'beige',  pid:'1000_22', col:'베이지'},
+  {k:'1M 17T 모던', g:'1M 매트', c:'17T 모던',   per:6,  per10:8,  cls:'modern', pid:'1000_17', col:'모던'},
+  {k:'1M 17T 베이지',g:'1M 매트',c:'17T 베이지', per:6,  per10:8,  cls:'beige',  pid:'1000_17', col:'베이지'}
 ];
 const PART=[{k:'c',n:'센터'},{k:'s',n:'사이드'},{k:'k',n:'코너'},{k:'t',n:'10T'}];
-const TYPE={out:{n:'출고',sub:'창고 → 차량',ico:'🚚'},in:{n:'입고',sub:'차량 → 창고',ico:'↩️'}};
+const TYPE={out:{n:'출고',sub:'창고 → 차',ico:'🚚'},in:{n:'입고',sub:'차 → 창고',ico:'↩️'}};
 
 /* ---------- 유틸 ---------- */
 const $=id=>document.getElementById(id);
@@ -38,8 +46,10 @@ function kstDate(offDays,base){const k=kst(base||new Date());if(offDays)k.setDat
 function kstDT(base){const k=kst(base||new Date());return kstDate(0,base)+' '+pad(k.getHours())+':'+pad(k.getMinutes())+':'+pad(k.getSeconds())}
 function dowOf(ds){const p=ds.split('-');return DOWK[new Date(+p[0],+p[1]-1,+p[2]).getDay()]}
 function fmtD(ds){const p=ds.split('-');return (+p[1])+'/'+(+p[2])+' ('+dowOf(ds)+')'}
+function fmtMD(ds){const p=String(ds||'').split('-');return p.length===3?(+p[1])+'/'+(+p[2]):String(ds||'')}
 function hm(dt){return String(dt||'').slice(11,16)}
 function prod(k){return PRODUCTS.find(p=>p.k===k)}
+function normPlate(p){return String(p||'').replace(/\s/g,'')}
 function ioToast(msg,err){
   const t=$('toast');if(!t){alert(msg);return}
   t.textContent=msg;t.className='toast toast-ok';t.style.display='block';
@@ -49,6 +59,7 @@ function ioToast(msg,err){
 function devId(){let d=localStorage.getItem('io_dev');if(!d){d=Math.random().toString(36).slice(2,10);localStorage.setItem('io_dev',d)}return d}
 function vehicles(){try{return (typeof VEHICLES==='object'&&VEHICLES)?VEHICLES:{}}catch(e){return {}}}
 function employees(){try{return Array.isArray(E)?E.filter(Boolean):[]}catch(e){return []}}
+function jobs(){try{return Array.isArray(J)?J:[]}catch(e){return []}}
 function admin(){try{return !!isAdmin}catch(e){return false}}
 function apiUrl(){try{return SHEET_REPORT_URL}catch(e){return ''}}
 
@@ -56,11 +67,13 @@ function apiUrl(){try{return SHEET_REPORT_URL}catch(e){return ''}}
 const CSS=`
 .nav a{white-space:nowrap;padding-left:2px;padding-right:2px;letter-spacing:-.2px;overflow:hidden}
 #p-io{padding-bottom:40px}
-.io-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:8px 0 4px}
+.io-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 2px}
 .io-hd h2{font-size:18px;font-weight:900;letter-spacing:-.3px}
-.io-hd p{font-size:12px;color:var(--dim);margin-top:4px;line-height:1.5}
-.io-start{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 6px}
-.io-start button{padding:16px 12px;border-radius:16px;border:none;font-family:var(--font);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.io-hd .r{display:flex;align-items:center;gap:6px}
+.io-hd .r span{font-size:11px;color:var(--dim);font-weight:700}
+.io-q{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--sub);font-weight:900;font-size:14px;cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent}
+.io-start{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 6px}
+.io-start button{padding:15px 12px;border-radius:16px;border:none;font-family:var(--font);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;transition:transform .1s}
 .io-start button:active{transform:scale(.97)}
 .io-start .out{background:var(--green);color:#03170a}
 .io-start .in{background:var(--card2);color:var(--text);border:1px solid rgba(255,255,255,.08)}
@@ -70,20 +83,46 @@ const CSS=`
 .io-status.wait{background:rgba(255,214,10,.1);color:var(--yellow)}
 .io-status.err{background:rgba(255,69,58,.12);color:var(--red)}
 .io-status button{padding:7px 12px;border-radius:9px;border:none;background:rgba(255,255,255,.12);color:inherit;font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
-.io-day{margin-top:18px}
+/* 차량별 현황 */
+.io-led{background:var(--card);border-radius:14px;padding:4px 12px 2px;margin-top:12px}
+.io-led-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 0 6px}
+.io-led-hd b{font-size:13px;font-weight:900}
+.io-led-hd small{font-size:10.5px;color:var(--dim);font-weight:600;margin-left:6px}
+.io-led-hd button{background:none;border:none;color:var(--dim);font-size:11px;font-family:var(--font);cursor:pointer;padding:4px 6px;font-weight:700}
+.io-veh{padding:9px 0;border-top:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.io-veh-l1{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.io-veh-l1 .p{font-size:14px;font-weight:900;white-space:nowrap}
+.io-veh-l1 .p small{font-size:12px;color:var(--sub);font-weight:600;margin-left:4px}
+.io-veh-l1 .e{font-size:11px;color:var(--dim);font-weight:700;white-space:nowrap;text-align:right}
+.io-veh-l1 .e b{font-size:17px;font-weight:900;color:var(--text);margin-left:4px}
+.io-veh-l1 .e b.neg{color:var(--red)}
+.io-veh-l2{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.55}
+.io-veh-l2 b{color:var(--sub);font-weight:700}
+.io-veh-l2 .warn{color:var(--orange);font-weight:700}
+.io-veh-diff{display:inline-block;margin-top:5px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:800}
+.io-veh-diff.ok{background:rgba(48,209,88,.12);color:var(--green)}
+.io-veh-diff.plus{background:rgba(255,69,58,.12);color:var(--red)}
+.io-veh-diff.minus{background:rgba(90,200,250,.12);color:var(--blue)}
+.io-veh-dt{display:none;margin-top:7px;font-size:11px;color:var(--sub);line-height:1.6;border-top:1px dashed var(--border);padding-top:6px}
+.io-veh-dt div{display:flex;justify-content:space-between;gap:8px}
+.io-veh-dt div span:last-child{white-space:nowrap;font-weight:700}
+.io-veh.open .io-veh-dt{display:block}
+.io-led-note{font-size:10.5px;color:var(--dim);padding:7px 0 6px;line-height:1.5;border-top:1px solid var(--border)}
+/* 목록 */
+.io-day{margin-top:16px}
 .io-day-hd{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 8px}
 .io-day-hd b{font-size:15px;font-weight:900}
 .io-day-hd span{font-size:11px;color:var(--dim);font-weight:700}
-.io-sum{background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:8px;font-size:12px;line-height:1.7;color:var(--sub)}
+.io-sum{background:var(--card);border-radius:12px;padding:9px 14px;margin-bottom:8px;font-size:12px;line-height:1.7;color:var(--sub)}
 .io-sum b{color:var(--text);font-weight:800}
 .io-sum .t{display:inline-block;min-width:40px;font-weight:800}
 .io-sum .t.out{color:var(--green)}.io-sum .t.in{color:var(--cyan)}
-.io-card{display:flex;gap:12px;background:var(--card);border-radius:14px;padding:12px;margin-bottom:8px}
+.io-card{display:flex;gap:10px;background:var(--card);border-radius:14px;padding:10px;margin-bottom:8px}
 .io-card.void{opacity:.45}
-.io-th{width:78px;height:78px;border-radius:10px;background:var(--card2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.4;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.io-th{width:66px;height:66px;border-radius:10px;background:var(--card2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.4;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .io-th img{width:100%;height:100%;object-fit:cover;display:block}
 .io-body{flex:1;min-width:0}
-.io-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.io-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .io-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:800}
 .io-tag.out{background:rgba(48,209,88,.15);color:var(--green)}
 .io-tag.in{background:rgba(100,210,255,.15);color:var(--cyan)}
@@ -92,12 +131,13 @@ const CSS=`
 .io-tag.void{background:rgba(255,69,58,.15);color:var(--red)}
 .io-l1 .tm{font-size:13px;font-weight:800}
 .io-l1 .who{font-size:12px;color:var(--sub);font-weight:600}
-.io-item{font-size:13px;line-height:1.55;color:var(--text)}
+.io-item{font-size:13px;line-height:1.5;color:var(--text)}
 .io-item b{font-weight:800;white-space:nowrap}
 .io-item .q{color:var(--sub)}
 .io-note{font-size:11px;color:var(--dim);margin-top:4px}
 .io-x{align-self:flex-start;background:none;border:1px solid var(--border);color:var(--dim);border-radius:8px;padding:5px 8px;font-size:11px;font-family:var(--font);cursor:pointer;flex-shrink:0}
-.io-empty{text-align:center;color:var(--dim);font-size:13px;padding:36px 0;line-height:1.7}
+.io-empty{text-align:center;color:var(--dim);font-size:13px;padding:30px 0;line-height:1.7}
+.io-more{width:100%;margin-top:6px;padding:11px;border-radius:12px;border:1px dashed rgba(255,255,255,.15);background:transparent;color:var(--sub);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer}
 /* 작성 화면 */
 .io-ov{display:none;position:fixed;inset:0;background:var(--bg);z-index:990;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .io-ov.show{display:block}
@@ -114,17 +154,17 @@ const CSS=`
 .io-lb{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;color:var(--sub);margin-bottom:8px;letter-spacing:-.2px}
 .io-lb small{font-weight:500;color:var(--dim);font-size:11px}
 .io-lb .lnk{font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;padding:4px 6px}
-.io-photo{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:2px dashed rgba(255,255,255,.14);min-height:170px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.io-photo{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:2px dashed rgba(255,255,255,.14);min-height:150px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .io-photo.has{border-style:solid;border-color:rgba(48,209,88,.4)}
-.io-photo .ph{text-align:center;color:var(--sub);padding:26px 16px}
-.io-photo .ph .i{font-size:42px;line-height:1;margin-bottom:10px}
-.io-photo .ph b{display:block;font-size:16px;font-weight:900;color:var(--text);margin-bottom:6px}
+.io-photo .ph{text-align:center;color:var(--sub);padding:22px 16px}
+.io-photo .ph .i{font-size:40px;line-height:1;margin-bottom:8px}
+.io-photo .ph b{display:block;font-size:16px;font-weight:900;color:var(--text);margin-bottom:5px}
 .io-photo .ph small{font-size:12px;color:var(--dim);line-height:1.5}
 .io-photo img{width:100%;display:block}
 .io-photo .re{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;font-family:var(--font);cursor:pointer;backdrop-filter:blur(6px)}
 .io-photo .busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);color:#fff;font-weight:800;font-size:14px}
-.io-date{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:14px;padding:14px 16px}
-.io-date b{font-size:18px;font-weight:900;letter-spacing:-.3px}
+.io-date{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:14px;padding:12px 16px}
+.io-date b{font-size:17px;font-weight:900;letter-spacing:-.3px}
 .io-date b small{font-size:13px;color:var(--dim);font-weight:600;margin-left:6px}
 .io-date input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:8px 10px;font-size:16px;font-family:var(--font);color-scheme:dark}
 .io-chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -147,20 +187,23 @@ const CSS=`
 .io-pchip.modern{color:#ff8a80}.io-pchip.beige{color:var(--yellow)}.io-pchip.marble{color:var(--blue)}.io-pchip.cotton{color:var(--green)}
 .io-pchip.on{border-color:currentColor;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px currentColor}
 .io-grid{margin-top:12px;border-top:1px solid var(--border)}
-.io-row{display:grid;grid-template-columns:52px 1fr 1fr 60px;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.io-row{display:grid;grid-template-columns:54px 1fr 82px;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
 .io-row .n{font-size:14px;font-weight:800}
+.io-row .n.t{color:var(--purple)}
 .io-row .u{position:relative}
-.io-row input{width:100%;background:var(--card2);border:1px solid transparent;color:var(--text);border-radius:10px;padding:11px 34px 11px 10px;font-size:18px;font-weight:800;font-family:var(--font);text-align:right;outline:none;-moz-appearance:textfield}
+.io-row input{width:100%;background:var(--card2);border:1px solid transparent;color:var(--text);border-radius:10px;padding:12px 30px 12px 12px;font-size:20px;font-weight:900;font-family:var(--font);text-align:right;outline:none;-moz-appearance:textfield}
 .io-row input::-webkit-outer-spin-button,.io-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .io-row input:focus{border-color:rgba(90,200,250,.6);background:var(--bg)}
 .io-row input.z{color:var(--dim);font-weight:600}
-.io-row .u i{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:11px;color:var(--dim);font-weight:700;pointer-events:none}
-.io-row .q{text-align:right;font-size:14px;font-weight:900;color:var(--green);white-space:nowrap}
-.io-row .q.z{color:var(--dim);font-weight:600}
-.io-row .q.t{color:var(--purple)}
-.io-ghd{display:grid;grid-template-columns:52px 1fr 1fr 60px;gap:8px;padding:8px 0 4px;font-size:11px;color:var(--dim);font-weight:700}
-.io-ghd span:nth-child(n+2){text-align:right;padding-right:10px}
-.io-pc-ft{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;font-size:13px;color:var(--sub)}
+.io-row .u i{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-size:12px;color:var(--dim);font-weight:700;pointer-events:none}
+.io-box{padding:9px 4px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:12px;font-weight:800;font-family:var(--font);cursor:pointer;line-height:1.15;-webkit-tap-highlight-color:transparent;user-select:none}
+.io-box small{display:block;font-size:10px;color:var(--dim);font-weight:700}
+.io-box:active{transform:scale(.95);background:var(--card)}
+.io-box:disabled{opacity:.35}
+.io-ghd{display:grid;grid-template-columns:54px 1fr 82px;gap:8px;padding:8px 0 4px;font-size:11px;color:var(--dim);font-weight:700}
+.io-ghd span:nth-child(2){text-align:right;padding-right:10px}
+.io-ghd span:nth-child(3){text-align:center}
+.io-pc-ft{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;font-size:12px;color:var(--sub)}
 .io-pc-ft b{font-size:16px;font-weight:900;color:var(--text)}
 .io-add{width:100%;padding:14px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.18);background:transparent;color:var(--text);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer}
 .io-add small{display:block;font-size:11px;color:var(--dim);font-weight:600;margin-top:3px}
@@ -178,6 +221,17 @@ const CSS=`
 .io-day-hd .io-shb{margin-left:auto;background:rgba(90,200,250,.12);color:var(--blue);border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;font-family:var(--font);cursor:pointer;white-space:nowrap}
 .io-day-hd span.cnt{font-size:11px;color:var(--dim);font-weight:700}
 .io-acts{display:flex;flex-direction:column;gap:6px;align-self:flex-start;flex-shrink:0}
+/* 도움말 (첫 사용 1회 + ❔ 버튼) */
+.io-help{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:996;align-items:flex-end;justify-content:center}
+.io-help.show{display:flex}
+.io-help-in{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:520px;padding:18px 18px;padding-bottom:max(18px,env(safe-area-inset-bottom));font-size:13px;line-height:1.55;color:var(--text)}
+.io-help-in h3{font-size:16px;font-weight:900;margin-bottom:12px}
+.io-help-in .st{display:flex;gap:10px;align-items:flex-start;margin:9px 0}
+.io-help-in .st b{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--green);color:#03170a;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.io-help-in .st span b{display:inline;width:auto;height:auto;background:none;color:var(--text);font-weight:800;font-size:13px;margin:0}
+.io-help-in .why{background:var(--card2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);margin-top:12px;line-height:1.55}
+.io-help-in .why b{color:var(--text)}
+.io-help-in button{width:100%;margin-top:14px;padding:13px;border-radius:12px;border:none;background:var(--green);color:#03170a;font-size:15px;font-weight:900;font-family:var(--font);cursor:pointer}
 /* 공유 화면 (스크린샷·텍스트 복사용) */
 .io-sh{display:none;position:fixed;inset:0;background:var(--bg);z-index:992;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .io-sh.show{display:block}
@@ -224,6 +278,11 @@ let pingOk=+(localStorage.getItem('io_ping_ok')||0);
 let lastErr='';
 let flushing=false;
 let SH={open:false,date:'',ids:null,hidden:{}}; // 공유 화면 상태
+let INV=null;        // Firebase inventory 최근 45일 {날짜:{팀:{위치:{time,unit,data}}}}
+let invAt=0;         // INV 불러온 시각
+let invBusy=false;
+let LED_OPEN={};     // 차량별 현황 펼침 상태 {plate:true}
+let LIST_ALL=false;  // 목록 14일 전체 보기
 
 /* ---------- 껍데기 ---------- */
 function ensureShell(){
@@ -248,6 +307,16 @@ function ensureShell(){
   const vw=document.createElement('div');vw.className='io-view';vw.id='ioViewer';vw.setAttribute('onclick','if(event.target===this)ioViewClose()');
   vw.innerHTML='<button type="button" onclick="ioViewClose()">✕</button><img id="ioViewImg" alt=""><a id="ioViewLink" href="#" target="_blank" rel="noopener" style="display:none">드라이브에서 열기</a>';
   document.body.appendChild(vw);
+  const hp=document.createElement('div');hp.className='io-help';hp.id='ioHelp';hp.setAttribute('onclick','if(event.target===this)ioHelpClose()');
+  hp.innerHTML=`<div class="io-help-in">
+    <h3>📦 입출고, 이렇게만 하면 돼요</h3>
+    <div class="st"><b>1</b><span><b>차에 실으면 출고</b>, <b>창고로 내리면 입고</b>. 실을 때·내릴 때 매번 남겨요.</span></div>
+    <div class="st"><b>2</b><span><b>사진 먼저</b> (박스·낱장 다 보이게) → 차량 고르기 → <b>장수 입력</b>. 박스째면 [+박스]를 누르면 장수가 더해져요.</span></div>
+    <div class="st"><b>3</b><span>제출하면 공유 화면이 떠요. <b>스크린샷</b>해서 단톡방에 올리면 끝.</span></div>
+    <div class="why"><b>왜 하나요?</b> 지난 실사 + 출고 − 입고 − 시공보고 = <b>차에 남아 있어야 할 매트</b>. 이게 수요일 실사와 안 맞으면 어디서 빠졌는지 바로 보여요. 기록이 빠지면 그 차 숫자가 틀리게 나와요.</div>
+    <button type="button" onclick="ioHelpClose()">알겠어요</button>
+  </div>`;
+  document.body.appendChild(hp);
 }
 
 function ioShow(){
@@ -257,20 +326,119 @@ function ioShow(){
   try{currentTab='io'}catch(e){}
   window.scrollTo(0,0);renderList();
   if(obGet().length)ioFlush(false);
+  if(!localStorage.getItem('io_help_seen'))ioHelp();
 }
+function ioHelp(){$('ioHelp').classList.add('show')}
+function ioHelpClose(){$('ioHelp').classList.remove('show');localStorage.setItem('io_help_seen','1')}
+
+/* ---------- 차량별 현황 (지난 실사 + 출고 − 입고 − 시공보고) ---------- */
+const PID_PER={'500':12,'1000_22':4,'1000_17':6};
+function keyPer(k){ // 재고조사 키 '500_모던_10T' → 박스당 장수 (옛 박스 기록 환산용)
+  const t=String(k).split('_').pop();const pid=k.indexOf('1000_22')===0?'1000_22':k.indexOf('1000_17')===0?'1000_17':'500';
+  return t==='10T'?(pid==='500'?24:8):PID_PER[pid];
+}
+function locSheets(d){ // 실사 1곳 {time,unit,data} → {main:센터·사이드·코너 장수, t10:10T 장수} (unit '장'이면 그대로, 없으면 박스×장수)
+  const o={main:0,t10:0};if(!d||!d.data)return o;
+  const isSheet=d.unit==='장';
+  Object.keys(d.data).forEach(k=>{const v=+d.data[k]||0;const n=isSheet?v:v*keyPer(k);if(/_10T$/.test(k))o.t10+=n;else o.main+=n});
+  return o;
+}
+function loadInventory(force){
+  if(!force&&INV&&Date.now()-invAt<5*60000)return Promise.resolve(INV);
+  if(invBusy)return Promise.resolve(INV||{});
+  invBusy=true;
+  return db.ref('inventory').orderByKey().startAt(kstDate(-45)).endAt(kstDate(0)+'\uf8ff').once('value')
+    .then(s=>{INV=s.val()||{};invAt=Date.now();return INV})
+    .catch(e=>{console.warn('[io] inventory',e);INV=INV||{};invAt=Date.now();return INV})
+    .finally(()=>{invBusy=false});
+}
+function vehicleSurveys(plate){ // 이 차량의 실사 목록 (오래된순) [{date,time,main,t10}]
+  const np=normPlate(plate);const out=[];
+  Object.keys(INV||{}).sort().forEach(date=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
+    const team=(INV[date]||{})[RN];if(!team)return;
+    Object.keys(team).forEach(loc=>{if(normPlate(loc)!==np)return;const d=team[loc];if(!d||!d.time)return;const s=locSheets(d);out.push({date,time:String(d.time),main:s.main,t10:s.t10})});
+  });
+  return out;
+}
+function afterSurvey(rec,sv){ // 기록이 실사 뒤인지 — 같은 날은 실사 시각 이후만, 지연 입력은 날짜로만 판단
+  if(rec.date>sv.date)return true;if(rec.date<sv.date)return false;
+  if(rec.late)return false;return hm(rec.at)>sv.time;
+}
+function sumIO(recs,pred){
+  const o={out:0,inn:0,out10:0,in10:0,n:0};
+  recs.forEach(r=>{if(!pred(r))return;o.n++;
+    const m=(r.items||[]).reduce((a,it)=>a+num(it.total),0),t=(r.items||[]).reduce((a,it)=>a+num(it.tQty),0);
+    if(r.type==='in'){o.inn+=m;o.in10+=t}else{o.out+=m;o.out10+=t}});
+  return o;
+}
+function jobsOf(plate,fromDate,toDate){ // 스케줄(J)에서 이 차량의 시공보고 판매갯수: fromDate 초과 ~ toDate 이하 (실측·차단 제외, AS는 판매갯수 있으면 포함)
+  const np=normPlate(plate);const o={sold:0,n:0,miss:0,list:[],noSold:false};
+  jobs().forEach(j=>{
+    if(!j||normPlate(j.vehicle)!==np)return;
+    if(!(j.date>fromDate&&j.date<=toDate))return;
+    const t=String(j.time||'').trim();if(t==='실측')return;
+    if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return;
+    if(j.sold==null){o.noSold=true;return} // 스케줄러가 판매갯수를 안 넘기는 구버전
+    const q=+j.sold||0;
+    if(q>0){o.sold+=q;o.n++;o.list.push({date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,16),q})}
+    else if(t!=='AS'&&j.sasu)o.miss++;
+  });
+  return o;
+}
+function vehicleLedger(plate){
+  const svs=vehicleSurveys(plate);const s1=svs[svs.length-1]||null;const s0=svs.length>1?svs[svs.length-2]:null;
+  const np=normPlate(plate);const {all}=allRecords();
+  const recs=Object.values(all).filter(r=>r&&r.date&&r.status!=='void'&&normPlate(r.vehicle)===np);
+  const today=kstDate(0);
+  const L={plate,s1,s0,cur:null,prev:null};
+  if(s1){
+    const io=sumIO(recs,r=>afterSurvey(r,s1));const jb=jobsOf(plate,s1.date,today);
+    L.cur={io,jb,expect:s1.main+io.out-io.inn-jb.sold,expect10:s1.t10+io.out10-io.in10};
+  }
+  if(s0&&s1&&s0.date>=kstDate(-DAYS)){ // 직전 구간이 불러온 기록 범위(14일) 안일 때만
+    const io=sumIO(recs,r=>afterSurvey(r,s0)&&!afterSurvey(r,s1));const jb=jobsOf(plate,s0.date,s1.date);
+    if(io.n)L.prev={io,jb,expect:s0.main+io.out-io.inn-jb.sold,diff:s1.main-(s0.main+io.out-io.inn-jb.sold)};
+  }
+  return L;
+}
+function renderLedger(){
+  const plates=Object.keys(vehicles());if(!plates.length)return '';
+  if(!INV){loadInventory(false).then(()=>renderList());return `<div class="io-led"><div class="io-led-hd"><b>🚚 차량별 매트 현황</b></div><div class="io-empty" style="padding:14px 0">실사 기록 불러오는 중…</div></div>`}
+  let h=`<div class="io-led"><div class="io-led-hd"><div><b>🚚 차량별 매트 현황</b><small>차에 있어야 할 장수</small></div><button type="button" onclick="ioLedgerReload()">↻ 새로고침</button></div>`;
+  let anyNoSold=false;
+  plates.forEach(pl=>{
+    const L=vehicleLedger(pl);const who=vehicles()[pl]||'';const open=!!LED_OPEN[pl];
+    h+=`<div class="io-veh${open?' open':''}" onclick="ioLedgerToggle('${esc(pl)}')"><div class="io-veh-l1"><span class="p">${esc(pl)}${who?`<small>${esc(who)}</small>`:''}</span>`;
+    if(!L.s1){h+=`<span class="e">실사 기록 없음</span></div><div class="io-veh-l2">이 차량으로 제출된 재고조사가 최근 45일 안에 없어요</div></div>`;return}
+    const c=L.cur;const neg=c.expect<0;
+    if(c.jb.noSold)anyNoSold=true;
+    h+=`<span class="e">있어야 할 매트<b class="${neg?'neg':''}">${c.expect}장</b></span></div>`;
+    h+=`<div class="io-veh-l2">실사 ${fmtMD(L.s1.date)} <b>${L.s1.main}</b> · +출고 <b>${c.io.out}</b> · −입고 <b>${c.io.inn}</b> · −시공 <b>${c.jb.sold}</b>${c.jb.miss?` · <span class="warn">보고 안 된 시공 ${c.jb.miss}건</span>`:''}${neg?` · <span class="warn">출고 기록이 빠진 것 같아요</span>`:''}</div>`;
+    if(L.prev){const d=L.prev.diff;const cls=d===0?'ok':d>0?'plus':'minus';
+      h+=`<span class="io-veh-diff ${cls}">직전 구간 ${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)} · 실사 ${L.s1.main} vs 예상 ${L.prev.expect} → ${d===0?'딱 맞음 ✓':(d>0?'+':'')+d+'장 '+(d>0?'잉여':'부족')}</span>`}
+    h+=`<div class="io-veh-dt">`;
+    h+=`<div><span>기록: 출고·입고 ${c.io.n}건 · 시공보고 ${c.jb.n}건</span><span>${fmtMD(L.s1.date)} ${esc(L.s1.time)} 실사 이후</span></div>`;
+    c.jb.list.slice(-6).forEach(j=>{h+=`<div><span>${fmtMD(j.date)} ${esc(j.addr)}</span><span>−${j.q}장</span></div>`});
+    if(c.jb.list.length>6)h+=`<div><span>… 외 ${c.jb.list.length-6}건</span><span></span></div>`;
+    h+=`<div><span>10T: 실사 ${L.s1.t10} +출고 ${c.io.out10} −입고 ${c.io.in10}</span><span>${c.expect10}장 (시공보고엔 10T 구분 없음)</span></div>`;
+    if(L.prev)h+=`<div><span>직전 구간: 실사 ${L.s0.main} +출고 ${L.prev.io.out} −입고 ${L.prev.io.inn} −시공 ${L.prev.jb.sold}</span><span>예상 ${L.prev.expect}</span></div>`;
+    else if(L.s0)h+=`<div><span>직전 구간(${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)})은 출고·입고 기록이 없어 비교 생략</span><span></span></div>`;
+    h+=`</div></div>`;
+  });
+  h+=`<div class="io-led-note">${anyNoSold?'⚠️ 스케줄러가 판매갯수를 아직 안 넘겨줘요 — 새로고침(업데이트) 후 다시 보세요.<br>':''}시공 = 스케줄 시공보고의 판매갯수(같은 차량). 실사 당일 시공·실사 전 기록은 지난 실사에 포함으로 봐요. 눌러서 자세히.</div></div>`;
+  return h;
+}
+function ioLedgerToggle(pl){LED_OPEN[pl]=!LED_OPEN[pl];renderList()}
+function ioLedgerReload(){INV=null;invAt=0;try{if(typeof refreshSheet==='function')refreshSheet(false)}catch(e){}renderList()}
 
 /* ---------- 목록 ---------- */
-function itemQty(it,k){ // 장수
-  const p=prod(it.product);if(!p)return 0;
-  const a=it[k]||[0,0];return num(a[0])*(k==='t'?p.per10:p.per)+num(a[1]);
-}
+function itemQty(it,k){return num(it[k])} // 장수 (작성 중 폼)
 function itemTotal(it){return itemQty(it,'c')+itemQty(it,'s')+itemQty(it,'k')}
-function fmtBoxEa(a){const b=num((a||[])[0]),e=num((a||[])[1]);if(!b&&!e)return '';return (b?b+'박스':'')+(b&&e?'+':'')+(e?e+'장':'')}
-function itemLine(it){ // 저장된 기록(items 평탄화)용
-  const parts=[];
-  [['센터',it.cBox,it.cEa,it.cQty],['사이드',it.sBox,it.sEa,it.sQty],['코너',it.kBox,it.kEa,it.kQty]].forEach(x=>{const s=fmtBoxEa([x[1],x[2]]);if(s)parts.push(x[0]+' '+s)});
-  let s='<b>'+esc(it.product)+'</b> <span class="q">'+esc(parts.join(' · '))+'</span>'+(it.total?' = <b>'+it.total+'장</b>':'');
-  const t=fmtBoxEa([it.tBox,it.tEa]);if(t)s+='<span class="q"> · 10T '+esc(t)+' = '+(it.tQty||0)+'장</span>';
+function itemLine(it){ // 저장된 기록(items 평탄화)용 — 장 단위로 표시
+  const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
+  let s='<b>'+esc(it.product)+'</b> <span class="q">'+esc(parts.join(' · '))+'</span>'+(num(it.total)?' = <b>'+num(it.total)+'장</b>':'');
+  if(num(it.tQty))s+='<span class="q"> · 10T '+num(it.tQty)+'장</span>';
   return s;
 }
 function thumbUrl(id,w){return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(w||400)}
@@ -285,18 +453,20 @@ function allRecords(){ // Firebase 기록 + 이 폰의 전송 대기 기록 합�
 function renderList(){
   const v=$('ioView');if(!v)return;
   const {all,local,ob}=allRecords();
-  const list=Object.values(all).filter(r=>r&&r.date).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const from=kstDate(-(LIST_ALL?DAYS:LIST_DAYS));
+  const list=Object.values(all).filter(r=>r&&r.date&&r.date>=from).sort((a,b)=>(b.ts||0)-(a.ts||0));
   if(SH.open)renderShare();
-  let h=`<div class="io-hd"><div><h2>📦 입·출고 기록</h2><p>차에 싣거나 창고로 내린 자재를 사진과 함께 남겨요.<br>촬영 시각이 사진에 찍히고, 시트에 자동 기록돼요.</p></div></div>
+  let h=`<div class="io-hd"><h2>📦 입출고</h2><div class="r"><span>${RN}</span><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
   <div class="io-start">
-    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b><small>${TYPE.out.sub} · 실은 만큼</small></button>
-    <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} 입고</b><small>${TYPE.in.sub} · 내린 만큼</small></button>
+    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b><small>${TYPE.out.sub}에 실은 만큼</small></button>
+    <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} 입고</b><small>${TYPE.in.sub}로 내린 만큼</small></button>
   </div>`;
   if(ob.length){
     const stuck=ob.some(e=>(e.tries||0)>=8);
     h+=`<div class="io-status ${stuck||lastErr?'err':'wait'}"><span>📤 전송 대기 ${ob.length}건${lastErr?' · '+esc(lastErr):''}</span><button type="button" onclick="ioFlush(true)">${flushing?'전송 중…':'지금 보내기'}</button></div>`;
   }
-  if(!list.length){h+=`<div class="io-empty">아직 기록이 없어요.<br>위 버튼으로 첫 기록을 남겨보세요.</div>`;v.innerHTML=h;return}
+  h+=renderLedger();
+  if(!list.length){h+=`<div class="io-empty">최근 ${LIST_ALL?DAYS:LIST_DAYS}일 기록이 없어요.<br>위 버튼으로 기록을 남겨보세요.</div>`;v.innerHTML=h;return}
   // 날짜별 그룹
   const days={};list.forEach(r=>{(days[r.date]=days[r.date]||[]).push(r)});
   const today=kstDate(0),yest=kstDate(-1);
@@ -326,8 +496,10 @@ function renderList(){
     });
     h+=`</div>`;
   });
+  if(!LIST_ALL){const older=Object.values(all).some(r=>r&&r.date&&r.date<from);if(older)h+=`<button type="button" class="io-more" onclick="ioListMore()">지난 ${DAYS}일 기록 더 보기</button>`}
   v.innerHTML=h;
 }
+function ioListMore(){LIST_ALL=true;renderList()}
 function ioView(id){const im=$('ioViewImg');im.src=thumbUrl(id,1600);const a=$('ioViewLink');a.href=viewUrl(id);a.style.display='block';$('ioViewer').classList.add('show')}
 function ioViewLocal(id){const e=obGet().find(x=>x.rec&&x.rec.id===id);if(!e||!e.payload||!e.payload.photo)return;$('ioViewImg').src=e.payload.photo;$('ioViewLink').style.display='none';$('ioViewer').classList.add('show')}
 function ioViewClose(){$('ioViewer').classList.remove('show');$('ioViewImg').src=''}
@@ -416,8 +588,8 @@ function ioShareCopy(){
   copyText(t,()=>ioToast(anyPending?'📋 복사됨 · 사진 링크는 전송 뒤 다시 복사하면 들어가요':'📋 복사됨 · 카톡에 붙여넣기'));
 }
 
-/* ---------- 작성 ---------- */
-function newItem(){return {product:'',c:[0,0],s:[0,0],k:[0,0],t:[0,0]}}
+/* ---------- 작성 (장 단위) ---------- */
+function newItem(){return {product:'',c:0,s:0,k:0,t:0}}
 function ioOpen(type){
   const vs=Object.keys(vehicles());
   const lastV=localStorage.getItem('io_last_vehicle')||'';
@@ -447,18 +619,18 @@ function renderForm(){
   <div class="io-sec"><div class="io-lb">사진 <small>촬영 시각이 사진 아래에 찍혀요</small></div>
     <div class="io-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`<div class="ph"><div class="i">📷</div><b>${F.type==='in'?'창고에 내린 자재':'차에 실은 자재'}를 촬영</b><small>박스와 낱장이 다 보이게 찍어주세요</small></div>`}</div>
   </div>
-  <div class="io-sec"><div class="io-lb">날짜 <span class="lnk" onclick="ioDateToggle()">${F.dateEdit?'오늘로':'변경'}</span></div>
-    <div class="io-date">${F.dateEdit?`<input type="date" id="ioDate" value="${F.date}" max="${kstDate(0)}" onchange="ioDateChange(this.value)">`:`<b>${F.date}<small>${dowOf(F.date)}요일${F.date===kstDate(0)?' · 오늘':''}</small></b>`}${F.date!==kstDate(0)?'<span class="io-tag late">지연 입력</span>':''}</div>
-  </div>
   <div class="io-sec"><div class="io-lb">차량 <small>${plates.length?'':'차량·공정성 탭에 등록된 차량이 없어요'}</small></div>
     <div class="io-chips">${plates.map(p=>`<div class="io-chip${!F.custom&&F.vehicle===p?' on':''}" onclick="ioVehicle('${esc(p)}')">${esc(p)}<small>${esc(vs[p]||'미배정')}</small></div>`).join('')}<div class="io-chip dim${F.custom?' on':''}" onclick="ioVehicleCustom()">직접 입력</div></div>
     ${F.custom?`<input class="io-inp" id="ioVehicleIn" style="margin-top:8px" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value)">`:''}
   </div>
+  <div class="io-sec"><div class="io-lb">제품 <small>장수로 입력 · 박스째면 [+박스]</small></div><div id="ioItems"></div>
+    <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가<small>다른 색상·사이즈를 같이 실었을 때</small></button>
+  </div>
   <div class="io-sec"><div class="io-lb">담당 <small>차량을 고르면 사수가 자동으로 들어가요</small></div>
     <select class="io-sel" id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select>
   </div>
-  <div class="io-sec"><div class="io-lb">제품 <small>오전·오후 색상이 다르면 제품을 추가해요</small></div><div id="ioItems"></div>
-    <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가<small>다른 색상·사이즈를 같이 실었을 때</small></button>
+  <div class="io-sec"><div class="io-lb">날짜 <span class="lnk" onclick="ioDateToggle()">${F.dateEdit?'오늘로':'다른 날짜'}</span></div>
+    <div class="io-date">${F.dateEdit?`<input type="date" id="ioDate" value="${F.date}" max="${kstDate(0)}" onchange="ioDateChange(this.value)">`:`<b>${F.date}<small>${dowOf(F.date)}요일${F.date===kstDate(0)?' · 오늘':''}</small></b>`}${F.date!==kstDate(0)?'<span class="io-tag late">지연 입력</span>':''}</div>
   </div>
   <div class="io-sec"><div class="io-lb">메모 <small>선택</small></div><input class="io-inp" id="ioNote" placeholder="예) 오후 현장용 추가 적재" value="${esc(F.note)}" oninput="ioNote(this.value)"></div>`;
   $('ioForm').innerHTML=h;
@@ -471,23 +643,28 @@ function renderItems(){
     const p=prod(it.product);
     const groups=[...new Set(PRODUCTS.map(x=>x.g))];
     const chips=groups.map(g=>`<div class="io-pg">${esc(g)}</div><div class="io-pchips">${PRODUCTS.filter(x=>x.g===g).map(x=>`<div class="io-pchip ${x.cls}${it.product===x.k?' on':''}" onclick="ioProduct(${i},'${esc(x.k)}')">${esc(x.c)}</div>`).join('')}</div>`).join('');
-    const rows=PART.map(pt=>{const a=it[pt.k];const q=itemQty(it,pt.k);const per=p?(pt.k==='t'?p.per10:p.per):0;
-      return `<div class="io-row"><span class="n">${pt.n}</span>
-        <span class="u"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" class="${num(a[0])?'':'z'}" value="${num(a[0])}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${pt.k}',0,this)"><i>박스</i></span>
-        <span class="u"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" class="${num(a[1])?'':'z'}" value="${num(a[1])}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${pt.k}',1,this)"><i>낱장</i></span>
-        <span class="q${pt.k==='t'?' t':''}${q?'':' z'}" id="ioq_${i}_${pt.k}" title="${per?'박스당 '+per+'장':''}">${p?q+'장':'–'}</span></div>`}).join('');
+    const rows=PART.map(pt=>{const q=itemQty(it,pt.k);const per=p?(pt.k==='t'?p.per10:p.per):0;
+      return `<div class="io-row"><span class="n${pt.k==='t'?' t':''}">${pt.n}</span>
+        <span class="u"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" class="${q?'':'z'}" value="${q}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${pt.k}',this)"><i>장</i></span>
+        <button type="button" class="io-box" ${per?'':'disabled'} onclick="ioAddBox(${i},'${pt.k}')">+박스<small>${per?per+'장':'—'}</small></button></div>`}).join('');
     return `<div class="io-pc" id="ioPc_${i}"><div class="io-pc-hd"><b>제품 ${i+1}${p?' · '+esc(p.k):''}</b>${F.items.length>1?`<button type="button" onclick="ioDelItem(${i})">삭제</button>`:''}</div>
       ${chips}
-      <div class="io-grid"><div class="io-ghd"><span></span><span>박스</span><span>낱장</span><span>= 장수</span></div>${rows}</div>
-      <div class="io-pc-ft"><span>${p?'박스당 '+p.per+'장 · 10T '+p.per10+'장':'색상을 먼저 골라주세요'}</span><span>합계 <b id="iot_${i}">${itemTotal(it)}</b>장${itemQty(it,'t')?` <span style="color:var(--purple)">+10T ${itemQty(it,'t')}장</span>`:''}</span></div></div>`;
+      <div class="io-grid"><div class="io-ghd"><span></span><span>장수</span><span>박스째</span></div>${rows}</div>
+      <div class="io-pc-ft"><span>${p?'1박스 = '+p.per+'장 · 10T '+p.per10+'장':'색상을 먼저 골라주세요'}</span><span>합계 <b id="iot_${i}">${itemTotal(it)}</b>장${itemQty(it,'t')?` <span style="color:var(--purple)">+10T ${itemQty(it,'t')}장</span>`:''}</span></div></div>`;
   }).join('');
 }
 function updateItemTotals(i){
-  const it=F.items[i];const p=prod(it.product);
-  PART.forEach(pt=>{const el=$('ioq_'+i+'_'+pt.k);if(!el)return;const q=itemQty(it,pt.k);el.textContent=p?q+'장':'–';el.classList.toggle('z',!q)});
+  const it=F.items[i];
   const t=$('iot_'+i);if(t){t.textContent=itemTotal(it);const ft=t.parentNode;const t10=itemQty(it,'t');const extra=ft.querySelector('span');if(extra)extra.remove();if(t10){const s=document.createElement('span');s.style.color='var(--purple)';s.textContent=' +10T '+t10+'장';ft.appendChild(s)}}
 }
-function ioNum(i,k,idx,el){const it=F.items[i];if(!it)return;const v=num(el.value);const clean=el.value.replace(/[^0-9]/g,'');if(el.value!==clean)el.value=clean;it[k][idx]=v;updateItemTotals(i);el.classList.toggle('z',!v)}
+function ioNum(i,k,el){const it=F.items[i];if(!it)return;const clean=el.value.replace(/[^0-9]/g,'');if(el.value!==clean)el.value=clean;const v=num(el.value);it[k]=v;updateItemTotals(i);el.classList.toggle('z',!v)}
+function ioAddBox(i,k){
+  const it=F.items[i];if(!it)return;const p=prod(it.product);
+  if(!p){ioToast('색상을 먼저 골라주세요',true);return}
+  const per=k==='t'?p.per10:p.per;it[k]=Math.min(9999,num(it[k])+per);
+  const row=$('ioPc_'+i);if(row){const inp=row.querySelectorAll('.io-row input')[PART.findIndex(x=>x.k===k)];if(inp){inp.value=it[k];inp.classList.remove('z')}}
+  updateItemTotals(i);
+}
 function ioFocus(el){if(el.value==='0'){el.value='';el.classList.add('z')}try{el.select()}catch(e){}}
 function ioBlur(el){if(el.value==='')el.value='0';el.classList.toggle('z',!num(el.value))}
 function ioProduct(i,k){F.items[i].product=k;renderItems()}
@@ -544,22 +721,23 @@ function drawPreview(){
 }
 
 /* ---------- 제출 ---------- */
-function flatItem(it){
-  const p=prod(it.product);const o={product:it.product};
-  [['c','c'],['s','s'],['k','k'],['t','t']].forEach(([k])=>{o[k+'Box']=num(it[k][0]);o[k+'Ea']=num(it[k][1]);o[k+'Qty']=itemQty(it,k)});
-  o.per=p?p.per:0;o.per10=p?p.per10:0;o.total=itemTotal(it);return o;
+function flatItem(it){ // 시트 형식(박스+낱장+장수)은 그대로 — 장수를 박스당 장수로 나눠 채움
+  const p=prod(it.product);const per=p?p.per:0,per10=p?p.per10:0;const o={product:it.product};
+  PART.forEach(pt=>{const q=itemQty(it,pt.k);const d=pt.k==='t'?per10:per;const box=d?Math.floor(q/d):0;
+    o[pt.k+'Box']=box;o[pt.k+'Ea']=q-box*d;o[pt.k+'Qty']=q});
+  o.per=per;o.per10=per10;o.total=itemTotal(it);return o;
 }
 async function ioSubmit(){
   if(!F||busy)return;
   if(!P){ioToast('사진을 먼저 촬영해주세요',true);$('ioOv').scrollTop=0;return}
   if(!F.vehicle){ioToast('차량을 선택해주세요',true);return}
   const items=[];
-  for(let i=0;i<F.items.length;i++){const it=F.items[i];const any=itemTotal(it)||itemQty(it,'t')||PART.some(pt=>num(it[pt.k][0])||num(it[pt.k][1]));
+  for(let i=0;i<F.items.length;i++){const it=F.items[i];const any=itemTotal(it)||itemQty(it,'t');
     if(!it.product&&!any)continue;
     if(!it.product){ioToast('제품 '+(i+1)+'의 색상을 골라주세요',true);return}
-    if(!any){ioToast('제품 '+(i+1)+'의 수량이 비어 있어요',true);return}
+    if(!any){ioToast('제품 '+(i+1)+'의 장수가 비어 있어요',true);return}
     items.push(flatItem(it))}
-  if(!items.length){ioToast('제품과 수량을 입력해주세요',true);return}
+  if(!items.length){ioToast('제품과 장수를 입력해주세요',true);return}
   busy=true;$('ioSubmitBtn').disabled=true;$('ioSubmitBtn').innerHTML='저장 중…';
   try{
     const now=new Date();const ts=now.getTime();
@@ -575,7 +753,7 @@ async function ioSubmit(){
     busy=false;F=null;P=null;$('ioFile').value='';$('ioOv').classList.remove('show');
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
-    ioShare(rec.date,[rec.id]); // 저장 직후 공유 화면 — 스크린샷 또는 텍스트 복사해서 단톡방에
+    ioShare(rec.date,[rec.id]); // 저장 직후 공유 화면 — 스크린샷해서 단톡방에
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
 function ioVoid(id){
@@ -637,13 +815,13 @@ async function ioFlush(manual){
 /* ---------- 시작 ---------- */
 function init(){
   ensureShell();
-  try{db.ref(NODE).orderByChild('date').startAt(kstDate(-DAYS)).limitToLast(300).on('value',snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});LOGS=o;renderList()})}
+  try{db.ref(NODE).orderByChild('date').startAt(kstDate(-DAYS)).limitToLast(600).on('value',snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});LOGS=o;renderList()})}
   catch(e){console.warn('[io] fb listen',e);renderList()}
   window.addEventListener('online',()=>ioFlush(false));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&obGet().length)ioFlush(false)});
   setInterval(()=>{if(obGet().length&&!flushing)ioFlush(false)},90000);
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
 }
-Object.assign(window,{ioShare,ioShareClose,ioShareHide,ioShareShowAll,ioShareCopy,ioShow,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose});
+Object.assign(window,{ioShare,ioShareClose,ioShareHide,ioShareShowAll,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioAddBox,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

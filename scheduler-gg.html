@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.09.14.46';
+const VER='2026.09.17.47';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -670,7 +670,7 @@ const csvRow=i; // 시트 기록용 행번호는 별도 보관
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
 const _recv=_recvIdx>=0?(r[_recvIdx]||'').trim():'';
-J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim(),receivedAt:_recv})}}
+J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim(),sold:parseInt(String(r[24]||'').replace(/[^0-9]/g,''))||0,reportAt:(r[30]||'').trim(),receivedAt:_recv})}}
 
 // 시공 CSV(부산/경기) → 접수일 기준 일별 집계. reset=true면 recvDaily 초기화
 function accumRecvDaily(text,reset){
@@ -3261,6 +3261,6 @@ document.addEventListener('visibilitychange',()=>{
 <!-- 현장 대응 프로세스 탭 (부산·경기 공용) — 내용 수정은 guide.js 배포 없이 앱 안에서 -->
 <script src="./guide.js?v=20260908b"></script>
 <!-- 📦 입·출고 기록 탭 (부산·경기 공용) — 사진 시각 스탬프 + 입출고기록 시트 + 드라이브 사진 -->
-<script src="./iolog.js?v=20260914b"></script>
+<script src="./iolog.js?v=20260917"></script>
 </body>
 </html>
