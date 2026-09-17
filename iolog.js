@@ -10,10 +10,13 @@
      실사가 2번 이상이면 직전 구간 실사 vs 예상 차이(팀별 로스)까지 표시. 10T도 같은 값에 받으므로 판매갯수에 포함 → 전부 한 묶음으로 계산
    · 첫 사용 시 1회 도움말(? 버튼으로 다시 열람), 상단 설명 문단 제거
    v3 (2026-09-17c) 대장 피드백 반영: 버튼 부제·[+박스]·'왜 하나요' 제거(장수만 입력), 제출 후 공유 화면은 그날 전체를 차량별로,
-     목록도 오늘 먼저·차량별 묶음·지난 날은 접힘, 차량별 현황은 한 줄(누르면 상세), 시공→차량 매칭에 사수 폴백 */
+     목록도 오늘 먼저·차량별 묶음·지난 날은 접힘, 차량별 현황은 한 줄(누르면 상세), 시공→차량 매칭에 사수 폴백
+   v5 (2026-09-17e) 목적 재정의(대장): 차에 싣고 나가서 판 만큼 빼고 나머지를 거짓 없이 가져왔는지 → 하루 단위 대조
+     · 차량 카드 = 오늘 [출고 − 입고 − 시공보고 판매갯수] 판정(딱 맞음 / +N장 안 돌아옴 / 차 재고 사용 / 미보고 / 입고 전), 직원 폰은 내 차량(마지막 기록 차량)만, 당번 모드는 전 차량
+     · 실사 구간 누적(있어야 할 장수)은 펼쳤을 때만. 날짜 묶음·공유 화면의 차량 머리에도 그날 대조 줄. 공유 화면 사진 확대, 제품 줄 두 줄 */
 (function(){
 'use strict';
-const IO_VER='2026.09.17c';
+const IO_VER='2026.09.17e';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -50,6 +53,7 @@ function dowOf(ds){const p=ds.split('-');return DOWK[new Date(+p[0],+p[1]-1,+p[2
 function fmtD(ds){const p=ds.split('-');return (+p[1])+'/'+(+p[2])+' ('+dowOf(ds)+')'}
 function fmtMD(ds){const p=String(ds||'').split('-');return p.length===3?(+p[1])+'/'+(+p[2]):String(ds||'')}
 function hm(dt){return String(dt||'').slice(11,16)}
+function addDays(ds,n){const q=String(ds).split('-');const d=new Date(Date.UTC(+q[0],+q[1]-1,+q[2]+n));return d.toISOString().slice(0,10)}
 function prod(k){return PRODUCTS.find(p=>p.k===k)}
 function normPlate(p){return String(p||'').replace(/\s/g,'')}
 function ioToast(msg,err){
@@ -97,7 +101,11 @@ const CSS=`
 .io-veh-l1 .e{font-size:11px;color:var(--dim);font-weight:700;white-space:nowrap;text-align:right}
 .io-veh-l1 .e b{font-size:17px;font-weight:900;color:var(--text);margin-left:4px}
 .io-veh-l1 .e b.neg{color:var(--red)}
-.io-veh-l2{display:none;font-size:11px;color:var(--dim);margin-top:4px;line-height:1.55}
+.io-veh-eq{font-size:12px;color:var(--sub);margin-top:4px;line-height:1.5}
+.io-veh-eq b{color:var(--text);font-weight:800}
+.io-veh-eq .warn{color:var(--orange);font-weight:700}
+.io-veh-l2{display:none;font-size:11px;color:var(--dim);margin-top:5px;line-height:1.55}
+.io-veh-l2 b{color:var(--sub);font-weight:700}
 .io-veh.open .io-veh-l2{display:block}
 .io-veh-l2 b{color:var(--sub);font-weight:700}
 .io-veh-l2 .warn{color:var(--orange);font-weight:700}
@@ -105,6 +113,9 @@ const CSS=`
 .io-veh-diff.ok{background:rgba(48,209,88,.12);color:var(--green)}
 .io-veh-diff.plus{background:rgba(255,69,58,.12);color:var(--red)}
 .io-veh-diff.minus{background:rgba(90,200,250,.12);color:var(--blue)}
+.io-veh-diff.warn{background:rgba(255,159,10,.14);color:var(--orange)}
+.io-veh-diff.dim{background:rgba(255,255,255,.06);color:var(--dim)}
+.io-veh-diff.big{font-size:12px;padding:4px 9px;margin:0}
 .io-veh-dt{display:none;margin-top:7px;font-size:11px;color:var(--sub);line-height:1.6;border-top:1px dashed var(--border);padding-top:6px}
 .io-veh-dt div{display:flex;justify-content:space-between;gap:8px}
 .io-veh-dt div span:last-child{white-space:nowrap;font-weight:700}
@@ -116,15 +127,17 @@ const CSS=`
 .io-day-hd b{font-size:15px;font-weight:900}
 .io-day-hd span{font-size:11px;color:var(--dim);font-weight:700}
 .io-day-hd .arr{margin-left:auto;font-size:11px;color:var(--dim)}
-.io-vh{display:flex;align-items:baseline;gap:6px;font-size:13px;font-weight:900;padding:8px 2px 5px}
+.io-vh{display:flex;align-items:baseline;gap:6px;font-size:13px;font-weight:900;padding:8px 2px 2px}
 .io-vh small{font-size:12px;color:var(--sub);font-weight:600}
+.io-vh-rc{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--dim);padding:0 2px 6px}
+.io-vh-rc b{color:var(--sub);font-weight:700}
 .io-sum{background:var(--card);border-radius:12px;padding:9px 14px;margin-bottom:8px;font-size:12px;line-height:1.7;color:var(--sub)}
 .io-sum b{color:var(--text);font-weight:800}
 .io-sum .t{display:inline-block;min-width:40px;font-weight:800}
 .io-sum .t.out{color:var(--green)}.io-sum .t.in{color:var(--cyan)}
 .io-card{display:flex;gap:10px;background:var(--card);border-radius:14px;padding:10px;margin-bottom:8px}
 .io-card.void{opacity:.45}
-.io-th{width:66px;height:66px;border-radius:10px;background:var(--card2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.4;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.io-th{width:78px;height:78px;border-radius:10px;background:var(--card2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.4;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .io-th img{width:100%;height:100%;object-fit:cover;display:block}
 .io-body{flex:1;min-width:0}
 .io-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
@@ -136,9 +149,9 @@ const CSS=`
 .io-tag.void{background:rgba(255,69,58,.15);color:var(--red)}
 .io-l1 .tm{font-size:13px;font-weight:800}
 .io-l1 .who{font-size:12px;color:var(--sub);font-weight:600}
-.io-item{font-size:13px;line-height:1.5;color:var(--text)}
+.io-item{font-size:13px;line-height:1.4;color:var(--text);margin-top:3px}
 .io-item b{font-weight:800;white-space:nowrap}
-.io-item .q{color:var(--sub)}
+.io-item .q{display:block;color:var(--sub);font-size:12px;margin-top:1px}
 .io-note{font-size:11px;color:var(--dim);margin-top:4px}
 .io-x{align-self:flex-start;background:none;border:1px solid var(--border);color:var(--dim);border-radius:8px;padding:5px 8px;font-size:11px;font-family:var(--font);cursor:pointer;flex-shrink:0}
 .io-empty{text-align:center;color:var(--dim);font-size:13px;padding:30px 0;line-height:1.7}
@@ -247,11 +260,13 @@ const CSS=`
 .io-sh-row .b{flex:1;min-width:0}
 .io-sh-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
 .io-sh-l1 b{font-size:13px;font-weight:900}
-.io-sh-line{font-size:13px;line-height:1.45}
+.io-sh-line{font-size:13.5px;line-height:1.4;margin-top:4px}
 .io-sh-line b{font-weight:900}
-.io-sh-line .q{color:var(--sub);font-size:12px}
+.io-sh-line .q{display:block;color:var(--sub);font-size:12px;margin-top:1px}
+.io-sh-rc{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim);padding:2px 0 6px}
+.io-sh-rc b{color:var(--sub);font-weight:700}
 .io-sh-memo{font-size:11px;color:var(--dim);margin-top:2px}
-.io-sh-th{width:58px;height:58px;border-radius:8px;background:var(--card2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.3;cursor:pointer}
+.io-sh-th{width:92px;height:92px;border-radius:8px;background:var(--card2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.3;cursor:pointer}
 .io-sh-th img{width:100%;height:100%;object-fit:cover;display:block}
 .io-sh-tot{background:var(--card2);border-radius:12px;padding:10px 14px;font-size:12px;line-height:1.7;color:var(--sub);margin-top:4px}
 .io-sh-tot b{color:var(--text);font-weight:800}
@@ -385,6 +400,34 @@ function jobsOf(plate,fromDate,toDate){ // 스케줄(J)에서 이 차량의 시�
   });
   return o;
 }
+function firstRecordDate(){ // 이 지역 입출고 기록 중 가장 이른 날짜 (불러온 14일 범위 안)
+  const {all}=allRecords();let d='';
+  Object.values(all).forEach(r=>{if(r&&r.date&&r.status!=='void'&&(!d||r.date<d))d=r.date});
+  return d;
+}
+function myPlate(){const v=localStorage.getItem('io_last_vehicle')||'';return Object.keys(vehicles()).includes(v)?v:''}
+function dayRecon(plate,date){ // 그날 이 차량: 출고 − 입고 − 시공보고 판매갯수 = 차이 (0이면 판 만큼 빼고 다 가져온 것)
+  const np=normPlate(plate);const {all}=allRecords();
+  const recs=Object.values(all).filter(r=>r&&r.date===date&&r.status!=='void'&&normPlate(r.vehicle)===np);
+  const io=sumIO(recs,()=>true);const jb=jobsOf(plate,addDays(date,-1),date);
+  return {date,out:io.out,inn:io.inn,n:io.n,hasIn:recs.some(r=>r.type==='in'),sold:jb.sold,miss:jb.miss,jobsN:jb.n,list:jb.list,diff:io.out-io.inn-jb.sold};
+}
+function verdictTag(R,big){ // 판정 배지
+  const c=big?' big':'';let cls='dim',txt='';
+  if(!R.n&&!R.jobsN&&!R.miss){txt='기록 없음'}
+  else if(R.miss){cls='warn';txt='시공보고 미입력 '+R.miss+'건'}
+  else if(!R.out&&(R.inn||R.sold)){cls='warn';txt='출고 기록 없음'}
+  else if(!R.hasIn){txt='입고 전'}
+  else if(R.diff===0){cls='ok';txt='딱 맞음 ✓'}
+  else if(R.diff>0){cls='plus';txt='+'+R.diff+'장 안 돌아옴'}
+  else {cls='minus';txt=R.diff+'장 차 재고 사용'}
+  return `<span class="io-veh-diff ${cls}${c}">${txt}</span>`;
+}
+function reconEq(R){return `출고 <b>${R.out}</b> − 입고 <b>${R.inn}</b> − 시공보고 <b>${R.sold}</b>`}
+function verdictText(R){
+  if(!R.n&&!R.jobsN&&!R.miss)return '기록 없음';if(R.miss)return '시공보고 미입력 '+R.miss+'건';if(!R.out&&(R.inn||R.sold))return '출고 기록 없음';if(!R.hasIn)return '입고 전';
+  return R.diff===0?'딱 맞음':R.diff>0?'+'+R.diff+'장 안 돌아옴':R.diff+'장 차 재고 사용';
+}
 function vehicleLedger(plate){
   const svs=vehicleSurveys(plate);const s1=svs[svs.length-1]||null;const s0=svs.length>1?svs[svs.length-2]:null;
   const np=normPlate(plate);const {all}=allRecords();
@@ -395,49 +438,47 @@ function vehicleLedger(plate){
     const io=sumIO(recs,r=>afterSurvey(r,s1));const jb=jobsOf(plate,s1.date,today);
     L.cur={io,jb,expect:s1.all+io.out-io.inn-jb.sold};
   }
-  if(s0&&s1&&s0.date>=kstDate(-DAYS)){ // 직전 구간이 불러온 기록 범위(14일) 안일 때만
+  // 직전 구간 비교는 그 구간 시작 전부터 이 지역에 입출고 기록이 있었을 때만 (기록 시작 전 구간은 출고가 빠져 '잉여'로 보이는 허수가 됨)
+  const first=firstRecordDate();
+  if(s0&&s1&&s0.date>=kstDate(-DAYS)&&first&&first<=s0.date){
     const io=sumIO(recs,r=>afterSurvey(r,s0)&&!afterSurvey(r,s1));const jb=jobsOf(plate,s0.date,s1.date);
     if(io.n)L.prev={io,jb,expect:s0.all+io.out-io.inn-jb.sold,diff:s1.all-(s0.all+io.out-io.inn-jb.sold)};
   }
   return L;
 }
 function renderLedger(){
-  const plates=Object.keys(vehicles());if(!plates.length)return '';
-  if(!INV){loadInventory(false).then(()=>renderList());return `<div class="io-led"><div class="io-led-hd"><b>🚚 차량별 매트 현황</b></div><div class="io-empty" style="padding:14px 0">실사 기록 불러오는 중…</div></div>`}
-  let h=`<div class="io-led"><div class="io-led-hd"><div><b>🚚 차량별 매트 현황</b><small>있어야 할 장수</small></div><button type="button" onclick="ioLedgerReload()">↻</button></div>`;
+  const allPlates=Object.keys(vehicles());if(!allPlates.length)return '';
+  const mine=myPlate();const showAll=admin()||!mine;const plates=showAll?allPlates:[mine];
+  const today=kstDate(0);
+  if(!INV)loadInventory(false).then(()=>renderList());
+  let h=`<div class="io-led"><div class="io-led-hd"><div><b>🚚 ${showAll?'차량별 현황':'내 차량'}</b><small>오늘 ${fmtD(today)}</small></div><button type="button" onclick="ioLedgerReload()">↻</button></div>`;
   let anyNoSold=false;
   plates.forEach(pl=>{
-    const L=vehicleLedger(pl);const who=vehicles()[pl]||'';const open=!!LED_OPEN[pl];
-    h+=`<div class="io-veh${open?' open':''}" onclick="ioLedgerToggle('${esc(pl)}')"><div class="io-veh-l1"><span class="p">${esc(pl)}${who?`<small>${esc(who)}</small>`:''}</span>`;
-    if(!L.s1){h+=`<span class="e">실사 기록 없음</span></div><div class="io-veh-l2">이 차량으로 제출된 재고조사가 최근 45일 안에 없어요</div></div>`;return}
-    const c=L.cur;const neg=c.expect<0;
-    if(c.jb.noSold)anyNoSold=true;
-    let tag='';
-    if(L.prev){const d=L.prev.diff;const cls=d===0?'ok':d>0?'plus':'minus';tag=`<span class="io-veh-diff ${cls}">지난 실사 ${d===0?'일치':(d>0?'+':'')+d}</span>`}
-    h+=`<span class="e">${tag}${neg?'':'있어야 할'}<b class="${neg?'neg':''}">${neg?'기록 누락 '+c.expect:c.expect}장</b></span></div>`;
-    h+=`<div class="io-veh-l2">실사 ${fmtMD(L.s1.date)} <b>${L.s1.all}</b> · +출고 <b>${c.io.out}</b> · −입고 <b>${c.io.inn}</b> · −시공 <b>${c.jb.sold}</b>${c.jb.miss?` · <span class="warn">보고 안 된 시공 ${c.jb.miss}건</span>`:''}${neg?` · <span class="warn">출고 기록이 빠진 것 같아요</span>`:''}</div>`;
-    h+=`<div class="io-veh-dt">`;
-    h+=`<div><span>기록: 출고·입고 ${c.io.n}건 · 시공보고 ${c.jb.n}건</span><span>${fmtMD(L.s1.date)} ${esc(L.s1.time)} 실사 이후</span></div>`;
-    c.jb.list.slice(-6).forEach(j=>{h+=`<div><span>${fmtMD(j.date)} ${esc(j.addr)}</span><span>−${j.q}장</span></div>`});
-    if(c.jb.list.length>6)h+=`<div><span>… 외 ${c.jb.list.length-6}건</span><span></span></div>`;
-    if(L.prev)h+=`<div><span>직전 구간 ${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)}: 실사 ${L.s0.all} +출고 ${L.prev.io.out} −입고 ${L.prev.io.inn} −시공 ${L.prev.jb.sold} = 예상 ${L.prev.expect}</span><span>실사 ${L.s1.all}</span></div>`;
-    else if(L.s0)h+=`<div><span>직전 구간(${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)})은 출고·입고 기록이 없어 비교 생략</span><span></span></div>`;
+    const R=dayRecon(pl,today);const L=INV?vehicleLedger(pl):null;const who=vehicles()[pl]||'';const open=!!LED_OPEN[pl];
+    h+=`<div class="io-veh${open?' open':''}" onclick="ioLedgerToggle('${esc(pl)}')"><div class="io-veh-l1"><span class="p">${esc(pl)}${who?`<small>${esc(who)}</small>`:''}</span><span class="e">${verdictTag(R,true)}</span></div>`;
+    h+=`<div class="io-veh-eq">${reconEq(R)}${R.diff!==0&&R.hasIn&&!R.miss&&R.out?` = <b>${R.diff>0?'+':''}${R.diff}</b>`:''}</div>`;
+    // 펼침: 오늘 시공 내역 + 실사 구간 누적
+    h+=`<div class="io-veh-l2">`;
+    if(R.list.length)h+=`오늘 시공: ${R.list.map(j=>esc(j.addr)+' '+j.q+'장').join(' · ')}<br>`;
+    if(!L)h+=`실사 기록 불러오는 중…`;
+    else if(!L.s1)h+=`실사 기록 없음 (최근 45일)`;
+    else{const c=L.cur;if(c.jb.noSold)anyNoSold=true;
+      h+=`이번 주 있어야 할 <b>${c.expect}장</b> = ${fmtMD(L.s1.date)} 실사 ${L.s1.all} + 출고 ${c.io.out} − 입고 ${c.io.inn} − 시공 ${c.jb.sold}${c.jb.miss?` <span class="warn">· 미보고 ${c.jb.miss}건</span>`:''}${c.expect<0?` <span class="warn">· 출고 기록 누락</span>`:''}`;
+      if(L.prev){const d=L.prev.diff;h+=`<br>지난 구간 ${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)}: 실사 ${L.s1.all} vs 예상 ${L.prev.expect} → <b>${d===0?'일치':(d>0?'+':'')+d+'장 '+(d>0?'잉여':'부족')}</b>`}}
     h+=`</div></div>`;
   });
-  h+=`<div class="io-led-note">${anyNoSold?'⚠️ 스케줄러가 판매갯수를 아직 안 넘겨줘요 — 업데이트 후 다시 보세요.<br>':''}지난 실사 + 출고 − 입고 − 시공보고 판매갯수(10T 포함). 누르면 상세.</div></div>`;
+  h+=`<div class="io-led-note">${anyNoSold?'⚠️ 스케줄러가 판매갯수를 아직 안 넘겨줘요 — 업데이트 후 다시 보세요.<br>':''}${showAll&&!admin()?'출고·입고를 한 번 기록하면 내 차량만 보여요. ':''}싣고 나간 것 − 도로 내린 것 − 판 것(시공보고 판매갯수, 10T 포함) = 0이면 정상. 누르면 상세.</div></div>`;
   return h;
 }
 function ioLedgerToggle(pl){LED_OPEN[pl]=!LED_OPEN[pl];renderList()}
-function ioLedgerReload(){INV=null;invAt=0;try{if(typeof refreshSheet==='function')refreshSheet(false)}catch(e){}renderList()}
+function ioLedgerReload(){INV=null;invAt=0;try{if(typeof refreshSheet==='function')refreshSheet(false)}catch(e){}renderList();ioToast('새로고침')}
 
 /* ---------- 목록 ---------- */
 function itemQty(it,k){return num(it[k])} // 장수 (작성 중 폼)
 function itemTotal(it){return itemQty(it,'c')+itemQty(it,'s')+itemQty(it,'k')}
-function itemLine(it){ // 저장된 기록(items 평탄화)용 — 장 단위로 표시
-  const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
-  let s='<b>'+esc(it.product)+'</b> <span class="q">'+esc(parts.join(' · '))+'</span>'+(num(it.total)?' = <b>'+num(it.total)+'장</b>':'');
-  if(num(it.tQty))s+='<span class="q"> · 10T '+num(it.tQty)+'장</span>';
-  return s;
+function itemLine(it){ // 저장된 기록(items 평탄화)용 — 제품 + 장수, 아래 줄에 형태별
+  const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
+  return '<b>'+esc(it.product)+'</b> <b>'+(num(it.total)+num(it.tQty))+'장</b><span class="q">'+esc(parts.join(' · '))+'</span>';
 }
 function thumbUrl(id,w){return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(w||400)}
 function viewUrl(id){return 'https://drive.google.com/file/d/'+id+'/view'}
@@ -480,7 +521,7 @@ function dayBlock(d,rs,local,forceOpen){
   const sum={out:{},in:{}};live.forEach(r=>{(r.items||[]).forEach(it=>{const s=sum[r.type==='in'?'in':'out'];s[it.product]=s[it.product]||{q:0,t:0};s[it.product].q+=num(it.total);s[it.product].t+=num(it.tQty)})});
   const sumLine=k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span> ${keys.map(pk=>'<b>'+esc(pk)+'</b> '+(sum[k][pk].q+sum[k][pk].t)+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`};
   const sl=sumLine('out')+sumLine('in');if(sl)h+=`<div class="io-sum">${sl}</div>`;
-  groupByVehicle(rs).forEach(g=>{h+=`<div class="io-vh">🚚 ${vehLabel(g.plate)}</div>`+g.recs.map(r=>recCard(r,local)).join('')});
+  groupByVehicle(rs).forEach(g=>{const R=dayRecon(g.plate,d);h+=`<div class="io-vh">🚚 ${vehLabel(g.plate)}</div><div class="io-vh-rc"><span>${reconEq(R)}</span>${verdictTag(R)}</div>`+g.recs.map(r=>recCard(r,local)).join('')});
   return h+'</div>';
 }
 function renderList(){
@@ -554,7 +595,7 @@ function recText(r){
 function shareText(){
   const {recs}=shareRecords();if(!recs.length)return '';
   let t='';
-  groupByVehicle(recs).forEach(g=>{const who=vehicles()[g.plate]||'';t+='🚚 '+g.plate+(who?' · '+who:'')+'\n'+g.recs.map(recText).join('\n\n')+'\n\n──────────\n\n'});
+  groupByVehicle(recs).forEach(g=>{const who=vehicles()[g.plate]||'';const R=dayRecon(g.plate,SH.date);t+='🚚 '+g.plate+(who?' · '+who:'')+'\n출고 '+R.out+' − 입고 '+R.inn+' − 시공보고 '+R.sold+' → '+verdictText(R)+'\n\n'+g.recs.map(recText).join('\n\n')+'\n\n──────────\n\n'});
   const sum=sumByProduct(recs);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);
   t+=fmtD(SH.date)+' '+RN+(sl.length?'\n'+sl.join('\n'):'');
   return t;
@@ -565,7 +606,8 @@ function renderShare(){
   let h=`<div class="io-sh-hd"><div><div class="io-sh-t">📦 입·출고</div><div class="io-sh-s">돌봄매트 ${RN} · ${fmtD(SH.date)}</div></div></div>`;
   if(!recs.length){h+=`<div class="io-empty">이날 기록이 없어요.</div>`;box.innerHTML=h;return}
   groupByVehicle(recs).forEach(g=>{
-    h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div>`;
+    const R=dayRecon(g.plate,SH.date);
+    h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div><div class="io-sh-rc"><span>${reconEq(R)}</span>${verdictTag(R)}</div>`;
     g.recs.forEach(r=>{
       const k=r.type==='in'?'in':'out';const lp=local[r.id];const pending=!!lp||r.status==='pending';
       let th;
@@ -573,7 +615,7 @@ function renderShare(){
       else if(r.photoId)th=`<div class="io-sh-th" onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,300)}" alt="" onerror="this.parentNode.innerHTML='사진<br>실패'"></div>`;
       else th=`<div class="io-sh-th">사진<br>전송 중</div>`;
       const items=(r.items||[]).map(it=>{const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
-        return `<div class="io-sh-line"><b>${esc(it.product)}</b> <b>${num(it.total)+num(it.tQty)}장</b> <span class="q">(${esc(parts.join(' · '))})</span></div>`}).join('');
+        return `<div class="io-sh-line"><b>${esc(it.product)}</b> <b>${num(it.total)+num(it.tQty)}장</b><span class="q">${esc(parts.join(' · '))}</span></div>`}).join('');
       h+=`<div class="io-sh-row"><div class="b"><div class="io-sh-l1"><span class="io-tag ${k}">${TYPE[k].n}</span><b>${esc(hm(r.at))}</b>${r.worker?`<span class="q" style="font-size:12px;color:var(--sub)">${esc(r.worker)}</span>`:''}${pending?'<span class="io-tag wait">사진 전송 중</span>':''}${r.late?'<span class="io-tag late">지연 입력</span>':''}</div>${items}${r.note?`<div class="io-sh-memo">${esc(r.note)}</div>`:''}</div>${th}</div>`;
     });
     h+=`</div>`;
