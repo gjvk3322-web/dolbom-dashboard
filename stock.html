@@ -203,7 +203,9 @@ const SPP=Object.fromEntries(PR.map(p=>[p.id,p.bpb*p.bpp]));  // 1파레트당 �
 // 📐 재고조사 단위 = 장 (2026-09-17 박스→장 전환)
 //    Firebase inventory 기록에 unit:'장'이 있으면 장 그대로, 없으면 옛 박스 기록 → 박스×bpb로 환산해서 읽음
 //    → 화면의 모든 재고조사 숫자는 항상 '장' 기준 (과거 기록과 새 기록을 섞어 비교해도 안전)
-function bpbOfKey(k){const pr=PR.find(x=>String(k).indexOf(x.id+'_')===0);return pr?pr.bpb:1}
+// 📦 형태별 박스당 장수 — 10T는 다름 (500 10T: 24장 · 1000 10T: 8장, 2026-09-09 확인). 그 외는 PR.bpb
+function bpbOf(p,t){return t==='10T'?(p.id==='500'?24:8):p.bpb}
+function bpbOfKey(k){const pr=PR.find(x=>String(k).indexOf(x.id+'_')===0);return pr?bpbOf(pr,String(k).split('_').pop()):1}
 function normInvLoc(d){if(!d||!d.data||d.unit==='장')return d;const nd={};Object.entries(d.data).forEach(([k,v])=>{nd[k]=(+v||0)*bpbOfKey(k)});return Object.assign({},d,{data:nd,unit:'장'})}
 function normInvTeam(val){if(!val)return val;const o={};Object.keys(val).forEach(k=>{o[k]=normInvLoc(val[k])});return o}
 let team=null,loc=null,tab='summary';
@@ -661,20 +663,45 @@ const STD={
   '1000_17':{25:{센터:5,사이드:1,코너:1,'10T':0},30:{센터:6,사이드:1,코너:1,'10T':0},35:{센터:6,사이드:1,코너:1,'10T':0}}
 };
 let stockCache=null;
+// 🆕 2026-09-17 로딩 안정화: 팀별 캐시 · 같은 팀 중복 요청 합치기 · 대기 시간 표시 · 150초 초과 시 실패 처리
+let stockCacheByTeam={};   // {팀:{d,at}} — 부산↔경기 왔다갔다 할 때 매번 서버 안 부르게
+let stockInflight={};      // {팀:Promise} — 같은 팀 요청이 이미 가는 중이면 새로 안 보내고 기다림
+let stockRenderSeq=0;      // 늦게 도착한 옛 응답이 화면을 덮어쓰지 않게 하는 순번
+let stockForce=false;      // 🔄 새로고침 버튼·5분 자동갱신 → 캐시 무시
+const STOCK_CACHE_MS=3*60*1000;
+const STOCK_TIMEOUT_MS=150*1000;
 
-async function fetchStockData(){
-  try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:team})});
-    const txt=await r.text();
-    try{const d=JSON.parse(txt);stockCache=d;
-      // 🆕 디버그: 콘솔에서 어떤 데이터가 왔는지 바로 확인 (문제 추적용)
-      console.log('[stock] getStock 응답:',{team,calcResult:d.calcResult,futureTotal:d.futureTotal,lastSurveyDate:d.lastSurveyDate,incomingCount:(d.incoming||[]).length});
-      return d;
-    }catch(e){console.error('JSON parse error:',txt);return {error:txt}}
-  }catch(e){console.error('fetch error:',e);return {error:e.message}}
+async function fetchStockData(force,forTeam){
+  const myTeam=forTeam||team;
+  const c=stockCacheByTeam[myTeam];
+  if(!force&&c&&Date.now()-c.at<STOCK_CACHE_MS){if(myTeam===team)stockCache=c.d;return c.d}
+  if(!stockInflight[myTeam]){
+    stockInflight[myTeam]=(async()=>{
+      const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),STOCK_TIMEOUT_MS);const t0=Date.now();
+      try{
+        const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:myTeam}),signal:ctrl.signal});
+        const txt=await r.text();
+        const sec=((Date.now()-t0)/1000).toFixed(1);
+        try{const d=JSON.parse(txt);
+          if(!d.error)stockCacheByTeam[myTeam]={d,at:Date.now()};
+          // 디버그: 콘솔에서 팀별 서버 응답 시간 + 받은 데이터 확인
+          console.log('[stock] getStock 응답 ('+myTeam+' · '+sec+'초):',{calcResult:d.calcResult,futureTotal:d.futureTotal,lastSurveyDate:d.lastSurveyDate,incomingCount:(d.incoming||[]).length});
+          return d;
+        }catch(e){console.error('[stock] JSON parse error ('+myTeam+' · '+sec+'초):',txt.slice(0,800));return {error:'서버 응답이 JSON이 아님 ('+sec+'초) — 콘솔 확인'}}
+      }catch(e){
+        const sec=((Date.now()-t0)/1000).toFixed(0);
+        const msg=e.name==='AbortError'?('서버 응답 '+sec+'초 초과'):(e.message||String(e));
+        console.error('[stock] fetch error ('+myTeam+'):',msg);return {error:msg};
+      }finally{clearTimeout(timer);delete stockInflight[myTeam]}
+    })();
+  }
+  const d=await stockInflight[myTeam];
+  if(myTeam===team&&d&&!d.error)stockCache=d;
+  return d;
 }
 
 async function renderSummary(){
+  const mySeq=++stockRenderSeq;const myTeam=team;
   let h=renderTabs();const T=TEAMS[team];
   // 📅 지난 조사 기록 드롭다운 (처음 열 때 날짜 목록을 백그라운드로 불러옴)
   if(histDates===null){histDates=[];loadHistDates().then(()=>{const s=document.getElementById('histSel');if(s&&histDates.length)s.innerHTML=histSelOpts('')})}
@@ -694,8 +721,13 @@ async function renderSummary(){
   h+=`<div id="stockLoading" style="text-align:center;padding:12px;font-size:12px;color:var(--dim)">📡 데이터 로딩 중...</div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
 
-  const sd=await fetchStockData();
-  if(tab!=='summary')return;  // 🆕 데이터 기다리는 동안 발주 등 다른 탭으로 갔으면 화면 건드리지 않음
+  const _force=stockForce;stockForce=false;
+  const _t0=Date.now();
+  const _tick=setInterval(()=>{const el=document.getElementById('stockLoading');if(!el||mySeq!==stockRenderSeq){clearInterval(_tick);return}
+    const sec=Math.floor((Date.now()-_t0)/1000);el.textContent='📡 데이터 로딩 중... '+sec+'초'+(sec>=20?' · 서버 응답이 느림':'');},1000);
+  const sd=await fetchStockData(_force,myTeam);
+  clearInterval(_tick);
+  if(tab!=='summary'||team!==myTeam||mySeq!==stockRenderSeq)return;  // 🆕 기다리는 동안 다른 탭·다른 팀으로 갔거나 더 새 요청이 있으면 옛 응답으로 화면 안 덮음
   h=renderTabs();
   // 🆕 두 번째 렌더링에도 조사 이력 드롭다운 + 과거 데이터 배너 유지
   h+=`<select id="histSel" onchange="if(this.value)openHist(this.value)" style="width:100%;padding:8px 10px;margin-bottom:8px;background:var(--card);border:.5px solid var(--border);border-radius:8px;color:var(--dim);font-size:12px;font-family:inherit">${histSelOpts('')}</select>`;
@@ -832,7 +864,7 @@ async function renderSummary(){
     const _now=new Date();const _hh=String(_now.getHours()).padStart(2,'0');const _mm=String(_now.getMinutes()).padStart(2,'0');
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:14px;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:2px;text-align:center">📊 ${team} 실시간 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 + 입고${hasTin?' + 이동입고':''} − 시공보고 사용분${hasOut?' − 출고':''})</span></div>`;
-    h+=`<div style="font-size:10px;color:var(--dim);margin-bottom:10px;text-align:center;opacity:.7">${_hh}:${_mm} 갱신 · <span onclick="render()" style="cursor:pointer;text-decoration:underline">🔄 새로고침</span> · 5분마다 자동 갱신</div>`;
+    h+=`<div style="font-size:10px;color:var(--dim);margin-bottom:10px;text-align:center;opacity:.7">${_hh}:${_mm} 갱신 · <span onclick="stockForce=true;render()" style="cursor:pointer;text-decoration:underline">🔄 새로고침</span> · 5분마다 자동 갱신</div>`;
     h+=`<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">`;
     prodOrder.forEach(pid=>{
       const pt=prodTotals[pid]||{sheets:0,pallets:0};
@@ -1137,7 +1169,7 @@ async function renderSummary(){
     sd.incoming.forEach(i=>{const pName=(i.product||'').replace('매트','').trim();h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:var(--dim)">${i.date}${pName?' · '+pName:''} · ${i.color} ${i.type}</span><span style="color:var(--orange);font-weight:700">+${i.qty}박스</span></div>`});
     h+=`</div></div>`;
   }
-  if(sd&&sd.error)h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패</div>`;
+  if(sd&&sd.error)h+=`<div style="margin-top:8px;background:#1a0505;border:.5px solid #3d1111;border-radius:12px;padding:14px;font-size:12px;color:var(--red)">⚠️ 데이터 로딩 실패 <span style="color:var(--dim)">— ${String(sd.error).replace(/[<>&]/g,'')}</span> · <span onclick="stockForce=true;render()" style="cursor:pointer;text-decoration:underline">🔄 다시 시도</span></div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='none';
   renderLedgerBox(); // 📒 실사 이후 일별 흐름 장부
   renderLossLedgerBox(); // 📒 구간 장부 (로스율 카드 안)
@@ -1207,7 +1239,7 @@ function buildLedger(sd){
   (sd.usedList||[]).forEach(u=>{const dt=normLedgerDate(u.date);if(!dt)return;evs.push({date:dt,kind:'used',key:u.key||'',sheets:+u.sold||0,addr:u.addr||'',sasu:u.sasu||'',tt:u.timeType||''})});
   // 입고 목록: 실사일 이후만. 서버가 실사 당일 입고를 포함해 세는지(<) 제외하는지(<=)는 표 합계와 맞는 쪽을 자동 선택
   const tableIn=Object.values(cr).reduce((s,d)=>s+(d.incoming||0),0);
-  const inRows=(sd.incoming||[]).map(i=>{const dt=normLedgerDate(i.date);const pid=prodKeyOf(i.product);const bpb=(PR.find(p=>p.id===pid)||{bpb:1}).bpb;return {dt,ev:{date:dt,kind:'in',key:pid+'_'+(i.color||''),sheets:(+i.qty||0)*bpb,type:i.type||'',qty:+i.qty||0}}}).filter(x=>x.dt);
+  const inRows=(sd.incoming||[]).map(i=>{const dt=normLedgerDate(i.date);const pid=prodKeyOf(i.product);const _pr=PR.find(p=>p.id===pid);const bpb=_pr?bpbOf(_pr,i.type||''):1;return {dt,ev:{date:dt,kind:'in',key:pid+'_'+(i.color||''),sheets:(i.sheets!=null&&i.sheets!=='')?(+i.sheets||0):(+i.qty||0)*bpb,type:i.type||'',qty:+i.qty||0}}}).filter(x=>x.dt);
   const pick=excl=>inRows.filter(x=>!surveyDate||(excl?x.dt>surveyDate:x.dt>=surveyDate));
   const sumIn=rows=>rows.reduce((s,x)=>s+x.ev.sheets,0);
   let chosen=pick(true);let inListSum=sumIn(chosen);
@@ -1293,7 +1325,7 @@ function buildLossLedger(sd){
   if(!LL||!Array.isArray(LL.usedList)){lossLedgerData={evs:[],from:'',to:'',ok:false,missing:[],err:sd&&sd.lossLedgerError?String(sd.lossLedgerError):''};return}
   const evs=[];
   LL.usedList.forEach(u=>{const dt=normLedgerDate(u.date);if(!dt)return;evs.push({date:dt,kind:'used',key:u.key||'',sheets:+u.sold||0,addr:u.addr||'',sasu:u.sasu||'',tt:u.timeType||''})});
-  (LL.incoming||[]).forEach(i=>{const dt=normLedgerDate(i.date);if(!dt)return;const pid=prodKeyOf(i.product);const bpb=(PR.find(p=>p.id===pid)||{bpb:1}).bpb;const sheets=(i.sheets!=null&&i.sheets!=='')?(+i.sheets||0):(+i.qty||0)*bpb;evs.push({date:dt,kind:'in',key:pid+'_'+(i.color||''),sheets,type:i.type||'',qty:+i.qty||0})});
+  (LL.incoming||[]).forEach(i=>{const dt=normLedgerDate(i.date);if(!dt)return;const pid=prodKeyOf(i.product);const _pr=PR.find(p=>p.id===pid);const bpb=_pr?bpbOf(_pr,i.type||''):1;const sheets=(i.sheets!=null&&i.sheets!=='')?(+i.sheets||0):(+i.qty||0)*bpb;evs.push({date:dt,kind:'in',key:pid+'_'+(i.color||''),sheets,type:i.type||'',qty:+i.qty||0})});
   (LL.outgoingList||[]).forEach(o=>{const dt=normLedgerDate(o.date);if(!dt)return;evs.push({date:dt,kind:o.dir==='in'?'tin':'out',key:o.key||'',sheets:+o.sheets||0,okind:o.kind||'',toTeam:o.toTeam||'',fromTeam:o.fromTeam||'',memo:o.memo||'',type:o.type||'',qty:+o.qty||0,unit:o.unit||''})});
   lossLedgerData={evs,from:normLedgerDate(LL.from)||'',to:normLedgerDate(LL.to)||'',ok:true,missing:Array.isArray(LL.usedMissing)?LL.usedMissing:[]};
 }
@@ -1558,8 +1590,8 @@ async function aiDraftOrder(){
     // 1) 데이터 수집: 사용량+미도착(신규 API) / 현재고+예약(기존 getStock)
     const [sugR,stB,stG]=await Promise.all([
       fetch(SCRIPT_URL+'?type=orderSuggest').then(r=>r.json()),
-      fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:'부산'})}).then(r=>r.json()),
-      fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getStock',team:'경기'})}).then(r=>r.json())
+      fetchStockData(false,'부산'),
+      fetchStockData(false,'경기')
     ]);
     if(!sugR.success)throw new Error(sugR.error||'orderSuggest 실패 (Code.gs 라우팅 확인)');
     window._aiData={sug:sugR,stock:{'부산':(stB&&stB.calcResult)||{},'경기':(stG&&stG.calcResult)||{}}};
@@ -1931,7 +1963,7 @@ async function saveMonthlyOrder(){
 }
 
 function buildTable(pfx,ex,ref){let h='';PR.forEach(p=>{
-  const unitTag=pfx==='inv'?'장 단위 (박스째면 박스×장수)':((pfx==='out'&&outUnit==='장')?'낱장 단위':`1박스=${p.bpb}장`);
+  const unitTag=pfx==='inv'?'장 단위 (박스째면 박스×장수)':((pfx==='out'&&outUnit==='장')?'낱장 단위':`1박스=${p.bpb}장 · 10T ${bpbOf(p,'10T')}장`);
   h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">${unitTag}</span><span class="ph-sum" id="ps_${pfx}_${p.id}">0장</span></div>`;
   h+=`<div class="g"><div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
   p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
@@ -1940,8 +1972,8 @@ function buildTable(pfx,ex,ref){let h='';PR.forEach(p=>{
       const pv=(ex&&ex.data&&ex.data[k]!==undefined&&ex.data[k]!==null)?ex.data[k]:(pfx==='inv'?0:'');
       h+=`<div class="ce ${pfx==='in'?'incoming':(pfx==='out'?'out':'')}"><input type="number" inputmode="numeric" min="0" id="${pfx}_${k}" value="${pv}" class="${ex?'edit':''}" onfocus="this.select()" oninput="calc('${pfx}')"></div>`});h+=`</div>`});h+=`</div>`});return h}
 
-function calc(pfx){const perSheet=(pfx==='inv')||(pfx==='out'&&outUnit==='장');let g=0;PR.forEach(p=>{let pb=0;p.colors.forEach(c=>{TY.forEach(t=>{const el=document.getElementById(`${pfx}_${p.id}_${c}_${t}`);const v=parseInt(el?.value)||0;pb+=v;if(el){el.classList.toggle('filled',v>0);el.classList.toggle('zero',el.value!==''&&v===0)}})});g+=pb*(perSheet?1:p.bpb);
-  const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=perSheet?pb+'장':(pb+'박스 / '+pb*p.bpb+'장')});document.getElementById('gt').textContent=g.toLocaleString()}
+function calc(pfx){const perSheet=(pfx==='inv')||(pfx==='out'&&outUnit==='장');let g=0;PR.forEach(p=>{let pb=0,ps=0;p.colors.forEach(c=>{TY.forEach(t=>{const el=document.getElementById(`${pfx}_${p.id}_${c}_${t}`);const v=parseInt(el?.value)||0;pb+=v;ps+=perSheet?v:v*bpbOf(p,t);if(el){el.classList.toggle('filled',v>0);el.classList.toggle('zero',el.value!==''&&v===0)}})});g+=ps;
+  const e=document.getElementById(`ps_${pfx}_${p.id}`);if(e)e.textContent=perSheet?ps+'장':(pb+'박스 / '+ps+'장')});document.getElementById('gt').textContent=g.toLocaleString()}
 
 async function submitInv(){if(!loc||!team)return;
   // 🆕 요일 제한 없음 (아무 요일이나 제출 가능)
@@ -1988,7 +2020,7 @@ async function submitInv(){if(!loc||!team)return;
   }
   const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const dm={},items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const k=p.id+'_'+c+'_'+t;const v=parseInt(document.getElementById(`inv_${k}`)?.value)||0;dm[k]=v; // v = 장
-    items.push({product:p.name+' '+p.badge,color:c,type:t,qty:Math.round(v/p.bpb*100)/100,sheets:v,unit:'장'})})})});
+    items.push({product:p.name+' '+p.badge,color:c,type:t,qty:Math.round(v/bpbOf(p,t)*100)/100,sheets:v,unit:'장'})})})});
   const memo=document.getElementById('invMemo')?.value||'';
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
   const fb={time:hm,unit:'장',data:dm};if(loc==='사무실'&&memo)fb.memo=memo;
@@ -2017,7 +2049,7 @@ async function submitInv(){if(!loc||!team)return;
   // 4) 결과 안내 — 명확하게
   console.log('[stock] submitInv 결과:',{team,loc,fbOK,gsOK,itemCount:items.length,nonZeroCount:items.filter(i=>i.qty>0).length,gsResp:gsResp.substring(0,200)});
   if(fbOK&&gsOK){
-    stockCache=null; // 🆕 종합 탭 캐시 무효화
+    stockCache=null;stockCacheByTeam={}; // 🆕 종합 탭 캐시 무효화 (팀별 캐시 포함)
     toast((isEdit?'✏️ ':'✅ ')+team+' '+loc+(isEdit?' 수정 완료!':' 저장 완료!')+' (시트도 OK · 기준일:'+subDate+')');
   }else if(fbOK&&!gsOK){
     toast('⚠️ '+loc+' Firebase OK / 시트 저장 실패 — 종합 계산에 반영 안 됨!');
@@ -2035,7 +2067,7 @@ async function submitOut(){if(!team)return;
   const kd=OUT_KINDS.find(x=>x.id===outKind)||OUT_KINDS[0];
   const btn=document.getElementById('sbtn');
   const items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`out_${p.id}_${c}_${t}`)?.value)||0;
-    if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,unit:outUnit,sheets:outUnit==='장'?v:v*p.bpb})})})});
+    if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,unit:outUnit,sheets:outUnit==='장'?v:v*bpbOf(p,t)})})})});
   if(items.length===0){toast('수량을 입력하세요');return}
   const memo=(document.getElementById('outMemo')?.value||'').trim();
   if(outKind==='기타'&&!memo){toast('기타는 사유를 적어주세요');return}
@@ -2065,13 +2097,13 @@ async function submitOut(){if(!team)return;
   PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const it=items.find(i=>i.product===p.name+' '+p.badge&&i.color===c&&i.type===t);if(it){s+=c+'('+t+') : '+it.qty+it.unit+(it.unit==='박스'?'('+it.sheets+'장)':'')+'\n';has=true}})});if(has)txt+=s+'\n'});
   txt+='합계 '+totalSheets+'장\n';if(memo)txt+='비고: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
   console.log('[stock] submitOut 결과:',{team,outKind,toTeam,fbOK,gsOK,itemCount:items.length,totalSheets,gsResp:gsResp.substring(0,200)});
-  if(fbOK&&gsOK){stockCache=null;toast('✅ '+title+' 기록 완료! ('+totalSheets.toLocaleString()+'장 · 시트 OK)');outgoingDate=null;render();}
+  if(fbOK&&gsOK){stockCache=null;stockCacheByTeam={};toast('✅ '+title+' 기록 완료! ('+totalSheets.toLocaleString()+'장 · 시트 OK)');outgoingDate=null;render();}
   else if(fbOK&&!gsOK){toast('⚠️ Firebase OK / 시트 저장 실패 — 종합 재고에 반영 안 됨! (Code.gs outgoing 라우팅 확인)');btn.disabled=false;btn.textContent='출고 기록 저장'}
 }
 
 async function submitIn(){if(!team)return;const btn=document.getElementById('sbtn');btn.disabled=true;btn.textContent='저장 중...';
   const items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;
-    if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*p.bpb})})})});
+    if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*bpbOf(p,t)})})})});
   if(items.length===0){toast('수량을 입력하세요');btn.disabled=false;btn.textContent='입고 기록 저장';return}
   const memo=document.getElementById('inMemo')?.value||'';
   const selDate=document.getElementById('inDate')?.value||dateKey;
@@ -2090,11 +2122,11 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
       if(!gsOK)console.error('Apps Script 응답 오류:',res.status,await res.text());
     }catch(e){console.error('Apps Script fetch 실패:',e);gsOK=false}
     // 3) 카톡 복사용 텍스트
-    let txt=mm+dd+' '+team+' 입고\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*p.bpb+'장)\n';has=true}})});if(has)txt+=s+'\n'});
+    let txt=mm+dd+' '+team+' 입고\n\n';PR.forEach(p=>{let has=false,s='【'+p.name+' '+p.badge+'】\n';p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;if(v>0){s+=c+'('+t+') : '+v+'박스('+v*bpbOf(p,t)+'장)\n';has=true}})});if(has)txt+=s+'\n'});
     if(memo)txt+='비고: '+memo+'\n';try{await navigator.clipboard.writeText(txt)}catch(e){}
     // 4) 결과 안내 — 두 저장소 상태에 따라 메시지 다르게
     if(fbOK&&gsOK){
-      stockCache=null; // 🆕 종합 탭 캐시 무효화 → 다음 진입 시 최신 데이터 fetch
+      stockCache=null;stockCacheByTeam={}; // 🆕 종합 탭 캐시 무효화 → 다음 진입 시 최신 데이터 fetch
       toast('✅ '+team+' 입고 완료! (재고 갱신됨)');
     }else if(fbOK&&!gsOK){
       toast('⚠️ Firebase 저장 OK / 시트 저장 실패 — 종합 재고에 반영 안 됨!');
@@ -2113,7 +2145,7 @@ window.addEventListener('wheel',function(e){
 
 // 🆕 실시간 재고 자동 갱신 — 종합 탭(현재 화면)일 때만 5분마다 새로 불러옴
 setInterval(function(){
-  if(team&&tab==='summary'&&!viewDate)render();
+  if(team&&tab==='summary'&&!viewDate){stockForce=true;render();}
 },5*60*1000);
 </script>
 </body>
