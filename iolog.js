@@ -2,6 +2,8 @@
    차에 실은(출고) / 창고로 내린(입고) 자재를 시각 스탬프 사진과 함께 기록
    저장: Apps Script IoLog.gs(입출고기록 시트 + 드라이브 '입출고사진' 폴더) ← 원본, Firebase io_logs/{bs|gg} ← 앱 실시간 목록
    로드: scheduler.html / scheduler-gg.html 맨 아래 guide.js 다음 <script src="./iolog.js?v=..."> (코드 수정 시 v 값도 변경)
+   v11 (2026-09-17k) 별도 📦 탭을 없애고 🚗 차량 탭(p-fair) 맨 위에 붙임 — 하단 탭 5개. 차량 탭을 열면(sw('fair')) 갱신·첫 도움말·재전송.
+     p-fair가 없는 페이지에서는 예전처럼 별도 탭을 만듦
 
    v2 (2026-09-17)
    · 입력 단위를 박스+낱장 → 장(枚)으로 통일 (재고조사와 동일). 박스째면 [+박스] 버튼으로 12/4/6장(10T 24/8장)씩 더함.
@@ -21,10 +23,13 @@
      출고 기본값: 15시 이후면 내일(일요일 건너뜀), 입고 기본값: 10시 전이면 어제. 목록·대조·공유 화면은 전부 작업일로 묶고,
      오늘 대조 = 작업일이 오늘인 출고 − 작업일이 오늘인 입고 − 오늘 시공보고. 옛 기록(wdate 없음)은 기록 날짜를 작업일로 봄
    v9 (2026-09-17i) 작업일 선택 UI 제거 — 직원은 출고/입고만 누르고, 작업일은 시각으로 자동(15시 이후 출고=내일, 10시 전 입고=어제).
-     자동값이 오늘이 아닐 때만 한 줄 안내, 맨 아래 '지연 입력' 링크로만 날짜 변경. 사유는 Apps Script(ioReason)로도 전송 → '입출고사유' 시트 */
+     자동값이 오늘이 아닐 때만 한 줄 안내, 맨 아래 '지연 입력' 링크로만 날짜 변경. 사유는 Apps Script(ioReason)로도 전송 → '입출고사유' 시트
+   v10 (2026-09-17j) 🔥 긴급 수정 — 실사 불러오는 중에 renderList가 두 번 불리면(io_logs·io_recon 콜백) loadInventory가 '이미 끝난 약속'을 돌려줘
+     renderList→loadInventory→renderList… 마이크로태스크 무한 루프 → 스케줄러 전체가 멈춤(클릭 불가·시트 로딩 정지). 같은 진행 중 약속을 돌려주고
+     한 번만 대기하도록 고침 + renderList 과다 호출 차단기 추가 */
 (function(){
 'use strict';
-const IO_VER='2026.09.17i';
+const IO_VER='2026.09.17k';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -90,6 +95,7 @@ function apiUrl(){try{return SHEET_REPORT_URL}catch(e){return ''}}
 const CSS=`
 .nav a{white-space:nowrap;padding-left:2px;padding-right:2px;letter-spacing:-.2px;overflow:hidden}
 #p-io{padding-bottom:40px}
+.io-sep{height:1px;background:var(--border);margin:22px 0 14px}
 .io-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 2px}
 .io-hd h2{font-size:18px;font-weight:900;letter-spacing:-.3px}
 .io-hd .r{display:flex;align-items:center;gap:6px}
@@ -324,7 +330,9 @@ let flushing=false;
 let SH={open:false,date:''}; // 공유 화면 상태 (그날 전체)
 let INV=null;        // Firebase inventory 최근 45일 {날짜:{팀:{위치:{time,unit,data}}}}
 let invAt=0;         // INV 불러온 시각
-let invBusy=false;
+let invPromise=null; // 진행 중인 실사 불러오기 약속 — 재진입 시 같은 약속을 돌려줌 (루프 방지)
+let invWaiting=false;// 실사 도착 후 renderList 한 번만 예약
+let _rlN=0,_rlT=0;   // renderList 과다 호출 차단기
 let LED_OPEN={};     // 차량별 현황 펼침 상태 {plate:true}
 let LIST_ALL=false;  // 목록 14일 전체 보기
 let DAY_OPEN={};     // 지난 날짜 펼침 상태 {date:true}
@@ -334,13 +342,20 @@ let RS=null;         // 사유 입력 중 {plate,date,reason,note}
 
 /* ---------- 껍데기 ---------- */
 function ensureShell(){
-  if($('p-io'))return;
+  if($('ioView'))return;
   const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
-  const pane=document.createElement('div');pane.className='pane';pane.id='p-io';pane.innerHTML='<div id="ioView"></div>';
-  const panes=document.querySelectorAll('.pane');const last=panes[panes.length-1];
-  if(last&&last.parentNode)last.parentNode.insertBefore(pane,last.nextSibling);else document.body.appendChild(pane);
-  const nav=document.querySelector('.nav');
-  if(nav){const a=document.createElement('a');a.href='#';a.id='ioNavBtn';a.setAttribute('onclick','ioShow();return false');a.innerHTML='<span>📦</span>입출고';nav.appendChild(a)}
+  const host=$('p-fair'); // 🚗 차량 탭 맨 위 (차량 배정·공정성 위)
+  if(host){
+    const box=document.createElement('div');box.id='ioView';const sep=document.createElement('div');sep.className='io-sep';
+    host.insertBefore(sep,host.firstChild);host.insertBefore(box,sep);
+    try{const _sw=window.sw;if(typeof _sw==='function'&&!_sw._io){const w=function(n){const r=_sw.apply(this,arguments);if(n==='fair')onTabOpen();return r};w._io=true;window.sw=w}}catch(e){}
+  }else{ // 차량 탭이 없는 페이지: 예전처럼 별도 패널 + 하단 탭
+    const pane=document.createElement('div');pane.className='pane';pane.id='p-io';pane.innerHTML='<div id="ioView"></div>';
+    const panes=document.querySelectorAll('.pane');const last=panes[panes.length-1];
+    if(last&&last.parentNode)last.parentNode.insertBefore(pane,last.nextSibling);else document.body.appendChild(pane);
+    const nav=document.querySelector('.nav');
+    if(nav){const a=document.createElement('a');a.href='#';a.id='ioNavBtn';a.setAttribute('onclick','ioShow();return false');a.innerHTML='<span>📦</span>입출고';nav.appendChild(a)}
+  }
   const ov=document.createElement('div');ov.className='io-ov';ov.id='ioOv';
   ov.innerHTML=`<div class="io-ov-in">
     <div class="io-ov-hd"><b id="ioOvTitle">출고 기록</b><button type="button" onclick="ioClose()">✕ 닫기</button></div>
@@ -370,14 +385,19 @@ function ensureShell(){
   document.body.appendChild(rs);
 }
 
-function ioShow(){
-  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  $('ioNavBtn').classList.add('on');$('p-io').classList.add('on');
-  try{currentTab='io'}catch(e){}
-  window.scrollTo(0,0);renderList();
+function onTabOpen(){ // 차량 탭이 열릴 때
+  try{window.scrollTo(0,0)}catch(e){}
+  renderList();
   if(obGet().length)ioFlush(false);
   if(!localStorage.getItem('io_help_seen'))ioHelp();
+}
+function ioShow(){
+  if($('p-fair')&&typeof window.sw==='function'){window.sw('fair');return} // 차량 탭에 붙어 있으면 그 탭으로 (sw 래퍼가 onTabOpen 호출)
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  if($('ioNavBtn'))$('ioNavBtn').classList.add('on');if($('p-io'))$('p-io').classList.add('on');
+  try{currentTab='io'}catch(e){}
+  onTabOpen();
 }
 function ioHelp(){$('ioHelp').classList.add('show')}
 function ioHelpClose(){$('ioHelp').classList.remove('show');localStorage.setItem('io_help_seen','1')}
@@ -396,12 +416,14 @@ function locSheets(d){ // 실사 1곳 {time,unit,data} → {all:전체 장수(10
 }
 function loadInventory(force){
   if(!force&&INV&&Date.now()-invAt<5*60000)return Promise.resolve(INV);
-  if(invBusy)return Promise.resolve(INV||{});
-  invBusy=true;
-  return db.ref('inventory').orderByKey().startAt(kstDate(-45)).endAt(kstDate(0)+'\uf8ff').once('value')
-    .then(s=>{INV=s.val()||{};invAt=Date.now();return INV})
-    .catch(e=>{console.warn('[io] inventory',e);INV=INV||{};invAt=Date.now();return INV})
-    .finally(()=>{invBusy=false});
+  if(invPromise)return invPromise; // 이미 불러오는 중이면 그 약속을 그대로 (끝난 약속을 돌려주면 renderList 무한 루프)
+  try{
+    invPromise=db.ref('inventory').orderByKey().startAt(kstDate(-45)).endAt(kstDate(0)+'\uf8ff').once('value')
+      .then(s=>{INV=s.val()||{};invAt=Date.now();return INV})
+      .catch(e=>{console.warn('[io] inventory',e);INV=INV||{};invAt=Date.now();return INV})
+      .finally(()=>{invPromise=null});
+  }catch(e){console.warn('[io] inventory',e);INV=INV||{};invAt=Date.now();invPromise=null;return Promise.resolve(INV)}
+  return invPromise;
 }
 function vehicleSurveys(plate){ // 이 차량의 실사 목록 (오래된순) [{date,time,all,t10}]
   const np=normPlate(plate);const out=[];
@@ -554,7 +576,7 @@ function renderLedger(){
   const allPlates=Object.keys(vehicles());if(!allPlates.length)return '';
   const mine=myPlate();const showAll=admin()||!mine;const plates=showAll?allPlates:[mine];
   const today=kstDate(0);
-  if(!INV)loadInventory(false).then(()=>renderList());
+  if(!INV&&!invWaiting){invWaiting=true;loadInventory(false).then(()=>{invWaiting=false;renderList()})}
   let h=`<div class="io-led"><div class="io-led-hd"><div><b>🚚 ${showAll?'차량별 현황':'내 차량'}</b><small>오늘 ${fmtD(today)}</small></div><button type="button" onclick="ioLedgerReload()">↻</button></div>`;
   let anyNoSold=false;
   plates.forEach(pl=>{
@@ -577,7 +599,7 @@ function renderLedger(){
   return h;
 }
 function ioLedgerToggle(pl){LED_OPEN[pl]=!LED_OPEN[pl];renderList()}
-function ioLedgerReload(){INV=null;invAt=0;try{if(typeof refreshSheet==='function')refreshSheet(false)}catch(e){}renderList();ioToast('새로고침')}
+function ioLedgerReload(){INV=null;invAt=0;invWaiting=false;try{if(typeof refreshSheet==='function')refreshSheet(false)}catch(e){}renderList();ioToast('새로고침')}
 
 /* ---------- 목록 ---------- */
 function itemQty(it,k){return num(it[k])} // 장수 (작성 중 폼)
@@ -634,6 +656,7 @@ function dayBlock(d,rs,local,forceOpen){
 }
 function renderList(){
   const v=$('ioView');if(!v)return;
+  const _now=Date.now();if(_now-_rlT>2000){_rlT=_now;_rlN=0}if(++_rlN>60){if(_rlN===61)console.warn('[io] renderList 과다 호출 차단');return} // 어떤 이유로든 폭주하면 스케줄러를 지키기 위해 멈춤
   const {all,local,ob}=allRecords();
   const from=kstDate(-(LIST_ALL?DAYS:LIST_DAYS));const today=kstDate(0);
   const list=Object.values(all).filter(r=>r&&wd(r)&&wd(r)>=from);
