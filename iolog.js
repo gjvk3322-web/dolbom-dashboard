@@ -7,11 +7,13 @@
    · 입력 단위를 박스+낱장 → 장(枚)으로 통일 (재고조사와 동일). 박스째면 [+박스] 버튼으로 12/4/6장(10T 24/8장)씩 더함.
      시트로 보내는 형식(cBox/cEa/cQty…)은 그대로 — 장수를 박스+낱장으로 나눠서 채우므로 IoLog.gs 수정 불필요
    · 🚚 차량별 매트 현황: 지난 실사(Firebase inventory) + 출고 − 입고 − 시공보고 판매갯수(스케줄 J.sold) = 차에 있어야 할 장수,
-     실사가 2번 이상이면 직전 구간 실사 vs 예상 차이(팀별 로스)까지 표시
-   · 첫 사용 시 1회 도움말(❔ 버튼으로 다시 열람), 상단 설명 문단 제거 */
+     실사가 2번 이상이면 직전 구간 실사 vs 예상 차이(팀별 로스)까지 표시. 10T도 같은 값에 받으므로 판매갯수에 포함 → 전부 한 묶음으로 계산
+   · 첫 사용 시 1회 도움말(? 버튼으로 다시 열람), 상단 설명 문단 제거
+   v3 (2026-09-17c) 대장 피드백 반영: 버튼 부제·[+박스]·'왜 하나요' 제거(장수만 입력), 제출 후 공유 화면은 그날 전체를 차량별로,
+     목록도 오늘 먼저·차량별 묶음·지난 날은 접힘, 차량별 현황은 한 줄(누르면 상세), 시공→차량 매칭에 사수 폴백 */
 (function(){
 'use strict';
-const IO_VER='2026.09.17';
+const IO_VER='2026.09.17c';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -33,7 +35,7 @@ const PRODUCTS=[
   {k:'1M 17T 베이지',g:'1M 매트',c:'17T 베이지', per:6,  per10:8,  cls:'beige',  pid:'1000_17', col:'베이지'}
 ];
 const PART=[{k:'c',n:'센터'},{k:'s',n:'사이드'},{k:'k',n:'코너'},{k:'t',n:'10T'}];
-const TYPE={out:{n:'출고',sub:'창고 → 차',ico:'🚚'},in:{n:'입고',sub:'차 → 창고',ico:'↩️'}};
+const TYPE={out:{n:'출고',sub:'창고 → 차',ico:'🚚'},in:{n:'입고',sub:'차 → 창고',ico:'↩️'}}; // sub는 사진 스탬프 띠에만 씀
 
 /* ---------- 유틸 ---------- */
 const $=id=>document.getElementById(id);
@@ -73,12 +75,11 @@ const CSS=`
 .io-hd .r span{font-size:11px;color:var(--dim);font-weight:700}
 .io-q{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--sub);font-weight:900;font-size:14px;cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent}
 .io-start{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 6px}
-.io-start button{padding:15px 12px;border-radius:16px;border:none;font-family:var(--font);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.io-start button{padding:16px 12px;border-radius:16px;border:none;font-family:var(--font);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:transform .1s}
 .io-start button:active{transform:scale(.97)}
 .io-start .out{background:var(--green);color:#03170a}
 .io-start .in{background:var(--card2);color:var(--text);border:1px solid rgba(255,255,255,.08)}
-.io-start b{display:block;font-size:17px;font-weight:900;letter-spacing:-.3px}
-.io-start small{display:block;font-size:12px;opacity:.75;margin-top:3px;font-weight:600}
+.io-start b{display:block;font-size:18px;font-weight:900;letter-spacing:-.3px}
 .io-status{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700;margin:8px 0}
 .io-status.wait{background:rgba(255,214,10,.1);color:var(--yellow)}
 .io-status.err{background:rgba(255,69,58,.12);color:var(--red)}
@@ -89,17 +90,18 @@ const CSS=`
 .io-led-hd b{font-size:13px;font-weight:900}
 .io-led-hd small{font-size:10.5px;color:var(--dim);font-weight:600;margin-left:6px}
 .io-led-hd button{background:none;border:none;color:var(--dim);font-size:11px;font-family:var(--font);cursor:pointer;padding:4px 6px;font-weight:700}
-.io-veh{padding:9px 0;border-top:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.io-veh{padding:10px 0;border-top:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .io-veh-l1{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .io-veh-l1 .p{font-size:14px;font-weight:900;white-space:nowrap}
 .io-veh-l1 .p small{font-size:12px;color:var(--sub);font-weight:600;margin-left:4px}
 .io-veh-l1 .e{font-size:11px;color:var(--dim);font-weight:700;white-space:nowrap;text-align:right}
 .io-veh-l1 .e b{font-size:17px;font-weight:900;color:var(--text);margin-left:4px}
 .io-veh-l1 .e b.neg{color:var(--red)}
-.io-veh-l2{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.55}
+.io-veh-l2{display:none;font-size:11px;color:var(--dim);margin-top:4px;line-height:1.55}
+.io-veh.open .io-veh-l2{display:block}
 .io-veh-l2 b{color:var(--sub);font-weight:700}
 .io-veh-l2 .warn{color:var(--orange);font-weight:700}
-.io-veh-diff{display:inline-block;margin-top:5px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:800}
+.io-veh-diff{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10.5px;font-weight:800;margin-right:6px;vertical-align:1px}
 .io-veh-diff.ok{background:rgba(48,209,88,.12);color:var(--green)}
 .io-veh-diff.plus{background:rgba(255,69,58,.12);color:var(--red)}
 .io-veh-diff.minus{background:rgba(90,200,250,.12);color:var(--blue)}
@@ -110,9 +112,12 @@ const CSS=`
 .io-led-note{font-size:10.5px;color:var(--dim);padding:7px 0 6px;line-height:1.5;border-top:1px solid var(--border)}
 /* 목록 */
 .io-day{margin-top:16px}
-.io-day-hd{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px 8px}
+.io-day-hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 2px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .io-day-hd b{font-size:15px;font-weight:900}
 .io-day-hd span{font-size:11px;color:var(--dim);font-weight:700}
+.io-day-hd .arr{margin-left:auto;font-size:11px;color:var(--dim)}
+.io-vh{display:flex;align-items:baseline;gap:6px;font-size:13px;font-weight:900;padding:8px 2px 5px}
+.io-vh small{font-size:12px;color:var(--sub);font-weight:600}
 .io-sum{background:var(--card);border-radius:12px;padding:9px 14px;margin-bottom:8px;font-size:12px;line-height:1.7;color:var(--sub)}
 .io-sum b{color:var(--text);font-weight:800}
 .io-sum .t{display:inline-block;min-width:40px;font-weight:800}
@@ -137,6 +142,7 @@ const CSS=`
 .io-note{font-size:11px;color:var(--dim);margin-top:4px}
 .io-x{align-self:flex-start;background:none;border:1px solid var(--border);color:var(--dim);border-radius:8px;padding:5px 8px;font-size:11px;font-family:var(--font);cursor:pointer;flex-shrink:0}
 .io-empty{text-align:center;color:var(--dim);font-size:13px;padding:30px 0;line-height:1.7}
+.io-today-empty{text-align:center;color:var(--dim);font-size:12px;padding:14px 0 4px}
 .io-more{width:100%;margin-top:6px;padding:11px;border-radius:12px;border:1px dashed rgba(255,255,255,.15);background:transparent;color:var(--sub);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer}
 /* 작성 화면 */
 .io-ov{display:none;position:fixed;inset:0;background:var(--bg);z-index:990;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
@@ -156,8 +162,9 @@ const CSS=`
 .io-lb .lnk{font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;padding:4px 6px}
 .io-photo{position:relative;border-radius:16px;overflow:hidden;background:var(--card);border:2px dashed rgba(255,255,255,.14);min-height:150px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .io-photo.has{border-style:solid;border-color:rgba(48,209,88,.4)}
-.io-photo .ph{text-align:center;color:var(--sub);padding:22px 16px}
-.io-photo .ph .i{font-size:40px;line-height:1;margin-bottom:8px}
+.io-photo{min-height:130px}
+.io-photo .ph{text-align:center;color:var(--sub);padding:18px 16px}
+.io-photo .ph .i{font-size:36px;line-height:1;margin-bottom:6px}
 .io-photo .ph b{display:block;font-size:16px;font-weight:900;color:var(--text);margin-bottom:5px}
 .io-photo .ph small{font-size:12px;color:var(--dim);line-height:1.5}
 .io-photo img{width:100%;display:block}
@@ -187,7 +194,7 @@ const CSS=`
 .io-pchip.modern{color:#ff8a80}.io-pchip.beige{color:var(--yellow)}.io-pchip.marble{color:var(--blue)}.io-pchip.cotton{color:var(--green)}
 .io-pchip.on{border-color:currentColor;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px currentColor}
 .io-grid{margin-top:12px;border-top:1px solid var(--border)}
-.io-row{display:grid;grid-template-columns:54px 1fr 82px;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.io-row{display:grid;grid-template-columns:60px 1fr;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
 .io-row .n{font-size:14px;font-weight:800}
 .io-row .n.t{color:var(--purple)}
 .io-row .u{position:relative}
@@ -196,13 +203,6 @@ const CSS=`
 .io-row input:focus{border-color:rgba(90,200,250,.6);background:var(--bg)}
 .io-row input.z{color:var(--dim);font-weight:600}
 .io-row .u i{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-style:normal;font-size:12px;color:var(--dim);font-weight:700;pointer-events:none}
-.io-box{padding:9px 4px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:12px;font-weight:800;font-family:var(--font);cursor:pointer;line-height:1.15;-webkit-tap-highlight-color:transparent;user-select:none}
-.io-box small{display:block;font-size:10px;color:var(--dim);font-weight:700}
-.io-box:active{transform:scale(.95);background:var(--card)}
-.io-box:disabled{opacity:.35}
-.io-ghd{display:grid;grid-template-columns:54px 1fr 82px;gap:8px;padding:8px 0 4px;font-size:11px;color:var(--dim);font-weight:700}
-.io-ghd span:nth-child(2){text-align:right;padding-right:10px}
-.io-ghd span:nth-child(3){text-align:center}
 .io-pc-ft{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;font-size:12px;color:var(--sub)}
 .io-pc-ft b{font-size:16px;font-weight:900;color:var(--text)}
 .io-add{width:100%;padding:14px;border-radius:14px;border:1.5px dashed rgba(255,255,255,.18);background:transparent;color:var(--text);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer}
@@ -212,7 +212,6 @@ const CSS=`
 .io-submit{width:100%;padding:17px;border-radius:16px;border:none;font-size:17px;font-weight:900;font-family:var(--font);cursor:pointer;background:var(--green);color:#03170a;letter-spacing:-.2px}
 .io-submit.in{background:var(--cyan);color:#001b24}
 .io-submit:disabled{opacity:.5}
-.io-submit small{display:block;font-size:12px;font-weight:700;opacity:.8;margin-top:2px}
 .io-view{display:none;position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:995;align-items:center;justify-content:center;padding:10px}
 .io-view.show{display:flex}
 .io-view img{max-width:100%;max-height:100%;border-radius:8px}
@@ -225,13 +224,12 @@ const CSS=`
 .io-help{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:996;align-items:flex-end;justify-content:center}
 .io-help.show{display:flex}
 .io-help-in{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:520px;padding:18px 18px;padding-bottom:max(18px,env(safe-area-inset-bottom));font-size:13px;line-height:1.55;color:var(--text)}
-.io-help-in h3{font-size:16px;font-weight:900;margin-bottom:12px}
-.io-help-in .st{display:flex;gap:10px;align-items:flex-start;margin:9px 0}
-.io-help-in .st b{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--green);color:#03170a;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.io-help-in .st span b{display:inline;width:auto;height:auto;background:none;color:var(--text);font-weight:800;font-size:13px;margin:0}
-.io-help-in .why{background:var(--card2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);margin-top:12px;line-height:1.55}
-.io-help-in .why b{color:var(--text)}
-.io-help-in button{width:100%;margin-top:14px;padding:13px;border-radius:12px;border:none;background:var(--green);color:#03170a;font-size:15px;font-weight:900;font-family:var(--font);cursor:pointer}
+.io-help-in h3{font-size:15px;font-weight:900;margin-bottom:10px}
+.io-help-in .st{display:flex;gap:8px;align-items:flex-start;margin:7px 0;color:var(--text)}
+.io-help-in .st b{flex-shrink:0;color:var(--dim);font-weight:800}
+.io-help-in .st span b{color:var(--text)}
+.io-help-in .ref{font-size:12px;color:var(--dim);margin-top:8px}
+.io-help-in button{width:100%;margin-top:12px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer}
 /* 공유 화면 (스크린샷·텍스트 복사용) */
 .io-sh{display:none;position:fixed;inset:0;background:var(--bg);z-index:992;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .io-sh.show{display:block}
@@ -242,22 +240,19 @@ const CSS=`
 .io-sh-hd button{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;color:var(--text);font-size:13px;font-family:var(--font);cursor:pointer;flex-shrink:0}
 .io-sh-hint{display:flex;align-items:center;justify-content:space-between;background:rgba(255,214,10,.1);color:var(--yellow);border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700;margin-bottom:10px}
 .io-sh-hint span{cursor:pointer;text-decoration:underline}
-.io-sh-rec{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px;border-left:4px solid var(--green)}
-.io-sh-rec.in{border-left-color:var(--cyan)}
-.io-sh-body{min-width:0}
-.io-sh-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.io-sh-l1 b{font-size:14px;font-weight:900}
-.io-sh-l1 .v{font-size:13px;font-weight:700;color:var(--text)}
-.io-sh-l1 .hide{margin-left:auto;background:none;border:none;color:var(--dim);font-size:11px;font-family:var(--font);cursor:pointer;padding:2px 4px}
-.io-sh-line{font-size:13px;line-height:1.45;padding:5px 0;border-top:1px solid var(--border)}
-.io-sh-line .io-sh-pr{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.io-sh-veh{background:var(--card);border-radius:14px;padding:8px 12px 4px;margin-bottom:8px}
+.io-sh-vh{font-size:14px;font-weight:900;padding:4px 0 6px}
+.io-sh-vh small{font-size:12px;color:var(--sub);font-weight:600;margin-left:5px}
+.io-sh-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border)}
+.io-sh-row .b{flex:1;min-width:0}
+.io-sh-l1{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.io-sh-l1 b{font-size:13px;font-weight:900}
+.io-sh-line{font-size:13px;line-height:1.45}
 .io-sh-line b{font-weight:900}
-.io-sh-line span{color:var(--sub);display:block;font-size:12px;margin-top:1px}
-.io-sh-line em{font-style:normal;font-weight:900;color:var(--green);white-space:nowrap;font-size:14px}
-.io-sh-line em small{font-weight:800;color:var(--purple);font-size:11px;margin-left:4px}
-.io-sh-memo{font-size:12px;color:var(--dim);margin-top:4px}
-.io-sh-th{width:100%;height:150px;margin-top:10px;border-radius:10px;background:var(--card2);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);text-align:center;line-height:1.4;cursor:pointer}
-.io-sh-th img{width:100%;height:100%;object-fit:cover;object-position:center bottom;display:block}
+.io-sh-line .q{color:var(--sub);font-size:12px}
+.io-sh-memo{font-size:11px;color:var(--dim);margin-top:2px}
+.io-sh-th{width:58px;height:58px;border-radius:8px;background:var(--card2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.3;cursor:pointer}
+.io-sh-th img{width:100%;height:100%;object-fit:cover;display:block}
 .io-sh-tot{background:var(--card2);border-radius:12px;padding:10px 14px;font-size:12px;line-height:1.7;color:var(--sub);margin-top:4px}
 .io-sh-tot b{color:var(--text);font-weight:800}
 .io-sh-tot .t{font-weight:800;margin-right:4px}
@@ -277,12 +272,13 @@ let busy=false;      // 제출 진행 중
 let pingOk=+(localStorage.getItem('io_ping_ok')||0);
 let lastErr='';
 let flushing=false;
-let SH={open:false,date:'',ids:null,hidden:{}}; // 공유 화면 상태
+let SH={open:false,date:''}; // 공유 화면 상태 (그날 전체)
 let INV=null;        // Firebase inventory 최근 45일 {날짜:{팀:{위치:{time,unit,data}}}}
 let invAt=0;         // INV 불러온 시각
 let invBusy=false;
 let LED_OPEN={};     // 차량별 현황 펼침 상태 {plate:true}
 let LIST_ALL=false;  // 목록 14일 전체 보기
+let DAY_OPEN={};     // 지난 날짜 펼침 상태 {date:true}
 
 /* ---------- 껍데기 ---------- */
 function ensureShell(){
@@ -309,12 +305,12 @@ function ensureShell(){
   document.body.appendChild(vw);
   const hp=document.createElement('div');hp.className='io-help';hp.id='ioHelp';hp.setAttribute('onclick','if(event.target===this)ioHelpClose()');
   hp.innerHTML=`<div class="io-help-in">
-    <h3>📦 입출고, 이렇게만 하면 돼요</h3>
-    <div class="st"><b>1</b><span><b>차에 실으면 출고</b>, <b>창고로 내리면 입고</b>. 실을 때·내릴 때 매번 남겨요.</span></div>
-    <div class="st"><b>2</b><span><b>사진 먼저</b> (박스·낱장 다 보이게) → 차량 고르기 → <b>장수 입력</b>. 박스째면 [+박스]를 누르면 장수가 더해져요.</span></div>
-    <div class="st"><b>3</b><span>제출하면 공유 화면이 떠요. <b>스크린샷</b>해서 단톡방에 올리면 끝.</span></div>
-    <div class="why"><b>왜 하나요?</b> 지난 실사 + 출고 − 입고 − 시공보고 = <b>차에 남아 있어야 할 매트</b>. 이게 수요일 실사와 안 맞으면 어디서 빠졌는지 바로 보여요. 기록이 빠지면 그 차 숫자가 틀리게 나와요.</div>
-    <button type="button" onclick="ioHelpClose()">알겠어요</button>
+    <h3>입출고 기록</h3>
+    <div class="st"><b>1</b><span>차에 실으면 <b>출고</b>, 창고로 내리면 <b>입고</b>. 실을 때·내릴 때 매번 기록.</span></div>
+    <div class="st"><b>2</b><span>사진 → 차량 → 제품별 <b>장수</b> 입력.</span></div>
+    <div class="st"><b>3</b><span>제출하면 그날 화면이 떠요. 스크린샷해서 단톡방에.</span></div>
+    <div class="ref">박스는 장수로 환산: 500 12장 · 1M 22T 4장 · 1M 17T 6장 · 10T 24장(500)/8장(1M)</div>
+    <button type="button" onclick="ioHelpClose()">확인</button>
   </div>`;
   document.body.appendChild(hp);
 }
@@ -337,10 +333,10 @@ function keyPer(k){ // 재고조사 키 '500_모던_10T' → 박스당 장수 (�
   const t=String(k).split('_').pop();const pid=k.indexOf('1000_22')===0?'1000_22':k.indexOf('1000_17')===0?'1000_17':'500';
   return t==='10T'?(pid==='500'?24:8):PID_PER[pid];
 }
-function locSheets(d){ // 실사 1곳 {time,unit,data} → {main:센터·사이드·코너 장수, t10:10T 장수} (unit '장'이면 그대로, 없으면 박스×장수)
-  const o={main:0,t10:0};if(!d||!d.data)return o;
+function locSheets(d){ // 실사 1곳 {time,unit,data} → {all:전체 장수(10T 포함), t10:그중 10T} (unit '장'이면 그대로, 없으면 박스×장수)
+  const o={all:0,t10:0};if(!d||!d.data)return o;
   const isSheet=d.unit==='장';
-  Object.keys(d.data).forEach(k=>{const v=+d.data[k]||0;const n=isSheet?v:v*keyPer(k);if(/_10T$/.test(k))o.t10+=n;else o.main+=n});
+  Object.keys(d.data).forEach(k=>{const v=+d.data[k]||0;const n=isSheet?v:v*keyPer(k);o.all+=n;if(/_10T$/.test(k))o.t10+=n});
   return o;
 }
 function loadInventory(force){
@@ -352,12 +348,12 @@ function loadInventory(force){
     .catch(e=>{console.warn('[io] inventory',e);INV=INV||{};invAt=Date.now();return INV})
     .finally(()=>{invBusy=false});
 }
-function vehicleSurveys(plate){ // 이 차량의 실사 목록 (오래된순) [{date,time,main,t10}]
+function vehicleSurveys(plate){ // 이 차량의 실사 목록 (오래된순) [{date,time,all,t10}]
   const np=normPlate(plate);const out=[];
   Object.keys(INV||{}).sort().forEach(date=>{
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
     const team=(INV[date]||{})[RN];if(!team)return;
-    Object.keys(team).forEach(loc=>{if(normPlate(loc)!==np)return;const d=team[loc];if(!d||!d.time)return;const s=locSheets(d);out.push({date,time:String(d.time),main:s.main,t10:s.t10})});
+    Object.keys(team).forEach(loc=>{if(normPlate(loc)!==np)return;const d=team[loc];if(!d||!d.time)return;const s=locSheets(d);out.push({date,time:String(d.time),all:s.all,t10:s.t10})});
   });
   return out;
 }
@@ -365,17 +361,20 @@ function afterSurvey(rec,sv){ // 기록이 실사 뒤인지 — 같은 날은 �
   if(rec.date>sv.date)return true;if(rec.date<sv.date)return false;
   if(rec.late)return false;return hm(rec.at)>sv.time;
 }
-function sumIO(recs,pred){
-  const o={out:0,inn:0,out10:0,in10:0,n:0};
+function sumIO(recs,pred){ // 출고·입고 장수 합계 — 10T 포함 (판매갯수에 10T도 들어가므로 같은 묶음)
+  const o={out:0,inn:0,n:0};
   recs.forEach(r=>{if(!pred(r))return;o.n++;
-    const m=(r.items||[]).reduce((a,it)=>a+num(it.total),0),t=(r.items||[]).reduce((a,it)=>a+num(it.tQty),0);
-    if(r.type==='in'){o.inn+=m;o.in10+=t}else{o.out+=m;o.out10+=t}});
+    const m=(r.items||[]).reduce((a,it)=>a+num(it.total)+num(it.tQty),0);
+    if(r.type==='in')o.inn+=m;else o.out+=m});
   return o;
 }
-function jobsOf(plate,fromDate,toDate){ // 스케줄(J)에서 이 차량의 시공보고 판매갯수: fromDate 초과 ~ toDate 이하 (실측·차단 제외, AS는 판매갯수 있으면 포함)
+function jobsOf(plate,fromDate,toDate){ // 스케줄(J)에서 이 차량의 시공보고 판매갯수: fromDate 초과 ~ toDate 이하 (실측·차단 제외, AS는 판매갯수 있으면 포함). 차량번호 빈 행은 사수로 매칭
   const np=normPlate(plate);const o={sold:0,n:0,miss:0,list:[],noSold:false};
+  const owner=vehicles()[plate]||'';
   jobs().forEach(j=>{
-    if(!j||normPlate(j.vehicle)!==np)return;
+    if(!j)return;
+    const jv=normPlate(j.vehicle);
+    if(jv?jv!==np:!(owner&&String(j.sasu||'').trim()===owner))return; // 차량번호 있으면 그걸로, 없으면 사수=이 차 담당
     if(!(j.date>fromDate&&j.date<=toDate))return;
     const t=String(j.time||'').trim();if(t==='실측')return;
     if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return;
@@ -394,18 +393,18 @@ function vehicleLedger(plate){
   const L={plate,s1,s0,cur:null,prev:null};
   if(s1){
     const io=sumIO(recs,r=>afterSurvey(r,s1));const jb=jobsOf(plate,s1.date,today);
-    L.cur={io,jb,expect:s1.main+io.out-io.inn-jb.sold,expect10:s1.t10+io.out10-io.in10};
+    L.cur={io,jb,expect:s1.all+io.out-io.inn-jb.sold};
   }
   if(s0&&s1&&s0.date>=kstDate(-DAYS)){ // 직전 구간이 불러온 기록 범위(14일) 안일 때만
     const io=sumIO(recs,r=>afterSurvey(r,s0)&&!afterSurvey(r,s1));const jb=jobsOf(plate,s0.date,s1.date);
-    if(io.n)L.prev={io,jb,expect:s0.main+io.out-io.inn-jb.sold,diff:s1.main-(s0.main+io.out-io.inn-jb.sold)};
+    if(io.n)L.prev={io,jb,expect:s0.all+io.out-io.inn-jb.sold,diff:s1.all-(s0.all+io.out-io.inn-jb.sold)};
   }
   return L;
 }
 function renderLedger(){
   const plates=Object.keys(vehicles());if(!plates.length)return '';
   if(!INV){loadInventory(false).then(()=>renderList());return `<div class="io-led"><div class="io-led-hd"><b>🚚 차량별 매트 현황</b></div><div class="io-empty" style="padding:14px 0">실사 기록 불러오는 중…</div></div>`}
-  let h=`<div class="io-led"><div class="io-led-hd"><div><b>🚚 차량별 매트 현황</b><small>차에 있어야 할 장수</small></div><button type="button" onclick="ioLedgerReload()">↻ 새로고침</button></div>`;
+  let h=`<div class="io-led"><div class="io-led-hd"><div><b>🚚 차량별 매트 현황</b><small>있어야 할 장수</small></div><button type="button" onclick="ioLedgerReload()">↻</button></div>`;
   let anyNoSold=false;
   plates.forEach(pl=>{
     const L=vehicleLedger(pl);const who=vehicles()[pl]||'';const open=!!LED_OPEN[pl];
@@ -413,20 +412,19 @@ function renderLedger(){
     if(!L.s1){h+=`<span class="e">실사 기록 없음</span></div><div class="io-veh-l2">이 차량으로 제출된 재고조사가 최근 45일 안에 없어요</div></div>`;return}
     const c=L.cur;const neg=c.expect<0;
     if(c.jb.noSold)anyNoSold=true;
-    h+=`<span class="e">있어야 할 매트<b class="${neg?'neg':''}">${c.expect}장</b></span></div>`;
-    h+=`<div class="io-veh-l2">실사 ${fmtMD(L.s1.date)} <b>${L.s1.main}</b> · +출고 <b>${c.io.out}</b> · −입고 <b>${c.io.inn}</b> · −시공 <b>${c.jb.sold}</b>${c.jb.miss?` · <span class="warn">보고 안 된 시공 ${c.jb.miss}건</span>`:''}${neg?` · <span class="warn">출고 기록이 빠진 것 같아요</span>`:''}</div>`;
-    if(L.prev){const d=L.prev.diff;const cls=d===0?'ok':d>0?'plus':'minus';
-      h+=`<span class="io-veh-diff ${cls}">직전 구간 ${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)} · 실사 ${L.s1.main} vs 예상 ${L.prev.expect} → ${d===0?'딱 맞음 ✓':(d>0?'+':'')+d+'장 '+(d>0?'잉여':'부족')}</span>`}
+    let tag='';
+    if(L.prev){const d=L.prev.diff;const cls=d===0?'ok':d>0?'plus':'minus';tag=`<span class="io-veh-diff ${cls}">지난 실사 ${d===0?'일치':(d>0?'+':'')+d}</span>`}
+    h+=`<span class="e">${tag}${neg?'':'있어야 할'}<b class="${neg?'neg':''}">${neg?'기록 누락 '+c.expect:c.expect}장</b></span></div>`;
+    h+=`<div class="io-veh-l2">실사 ${fmtMD(L.s1.date)} <b>${L.s1.all}</b> · +출고 <b>${c.io.out}</b> · −입고 <b>${c.io.inn}</b> · −시공 <b>${c.jb.sold}</b>${c.jb.miss?` · <span class="warn">보고 안 된 시공 ${c.jb.miss}건</span>`:''}${neg?` · <span class="warn">출고 기록이 빠진 것 같아요</span>`:''}</div>`;
     h+=`<div class="io-veh-dt">`;
     h+=`<div><span>기록: 출고·입고 ${c.io.n}건 · 시공보고 ${c.jb.n}건</span><span>${fmtMD(L.s1.date)} ${esc(L.s1.time)} 실사 이후</span></div>`;
     c.jb.list.slice(-6).forEach(j=>{h+=`<div><span>${fmtMD(j.date)} ${esc(j.addr)}</span><span>−${j.q}장</span></div>`});
     if(c.jb.list.length>6)h+=`<div><span>… 외 ${c.jb.list.length-6}건</span><span></span></div>`;
-    h+=`<div><span>10T: 실사 ${L.s1.t10} +출고 ${c.io.out10} −입고 ${c.io.in10}</span><span>${c.expect10}장 (시공보고엔 10T 구분 없음)</span></div>`;
-    if(L.prev)h+=`<div><span>직전 구간: 실사 ${L.s0.main} +출고 ${L.prev.io.out} −입고 ${L.prev.io.inn} −시공 ${L.prev.jb.sold}</span><span>예상 ${L.prev.expect}</span></div>`;
+    if(L.prev)h+=`<div><span>직전 구간 ${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)}: 실사 ${L.s0.all} +출고 ${L.prev.io.out} −입고 ${L.prev.io.inn} −시공 ${L.prev.jb.sold} = 예상 ${L.prev.expect}</span><span>실사 ${L.s1.all}</span></div>`;
     else if(L.s0)h+=`<div><span>직전 구간(${fmtMD(L.s0.date)}→${fmtMD(L.s1.date)})은 출고·입고 기록이 없어 비교 생략</span><span></span></div>`;
     h+=`</div></div>`;
   });
-  h+=`<div class="io-led-note">${anyNoSold?'⚠️ 스케줄러가 판매갯수를 아직 안 넘겨줘요 — 새로고침(업데이트) 후 다시 보세요.<br>':''}시공 = 스케줄 시공보고의 판매갯수(같은 차량). 실사 당일 시공·실사 전 기록은 지난 실사에 포함으로 봐요. 눌러서 자세히.</div></div>`;
+  h+=`<div class="io-led-note">${anyNoSold?'⚠️ 스케줄러가 판매갯수를 아직 안 넘겨줘요 — 업데이트 후 다시 보세요.<br>':''}지난 실사 + 출고 − 입고 − 시공보고 판매갯수(10T 포함). 누르면 상세.</div></div>`;
   return h;
 }
 function ioLedgerToggle(pl){LED_OPEN[pl]=!LED_OPEN[pl];renderList()}
@@ -450,55 +448,68 @@ function allRecords(){ // Firebase 기록 + 이 폰의 전송 대기 기록 합�
   const all={...LOGS};Object.keys(local).forEach(id=>{if(!all[id])all[id]=local[id].rec});
   return {all,local,ob};
 }
+function vehLabel(plate){const who=vehicles()[plate]||'';return esc(plate||'-')+(who?`<small>${esc(who)}</small>`:'')}
+function groupByVehicle(recs){ // [{plate,recs}] — 차량 탭 등록 순서, 그 외 차량은 뒤에. 각 차량 안은 시간순
+  const plates=Object.keys(vehicles());const keys=plates.map(normPlate);const g={};
+  recs.forEach(r=>{const k=normPlate(r.vehicle)||'-';(g[k]=g[k]||[]).push(r)});
+  const order=[...keys,...Object.keys(g).filter(k=>!keys.includes(k))];
+  return order.filter(k=>g[k]).map(k=>({plate:g[k][0].vehicle||'-',recs:g[k].sort((a,b)=>(a.ts||0)-(b.ts||0))}));
+}
+function recCard(r,local){
+  const lp=local[r.id];const pending=!!lp||r.status==='pending';const isVoid=r.status==='void';
+  let th;
+  if(lp&&lp.photo)th=`<div class="io-th" onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
+  else if(r.photoId)th=`<div class="io-th" onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,300)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='사진<br>불러오기 실패'"></div>`;
+  else th=`<div class="io-th">사진<br>전송 중</div>`;
+  const late=r.late?'<span class="io-tag late">지연 입력</span>':'';
+  const gap=r.photoGap>=LATE_MIN?`<span class="io-tag late" title="사진 시각과 제출 시각 차이">사진 ${r.photoGap}분 전</span>`:'';
+  return `<div class="io-card${isVoid?' void':''}">${th}<div class="io-body">
+    <div class="io-l1"><span class="io-tag ${r.type==='in'?'in':'out'}">${TYPE[r.type==='in'?'in':'out'].n}</span><span class="tm">${esc(hm(r.at))}</span>${r.worker?`<span class="who">${esc(r.worker)}</span>`:''}${pending?'<span class="io-tag wait">전송 대기</span>':''}${late}${gap}${isVoid?'<span class="io-tag void">취소됨</span>':''}</div>
+    ${(r.items||[]).map(it=>`<div class="io-item">${itemLine(it)}</div>`).join('')}
+    ${r.note?`<div class="io-note">${esc(r.note)}</div>`:''}${isVoid&&r.voidReason?`<div class="io-note">취소 사유: ${esc(r.voidReason)}</div>`:''}
+  </div>${!isVoid&&canVoid(r)?`<div class="io-acts"><button type="button" class="io-x" onclick="ioVoid('${esc(r.id)}')">취소</button></div>`:''}</div>`;
+}
+function dayBlock(d,rs,local,forceOpen){
+  const live=rs.filter(r=>r.status!=='void');
+  const cnt={out:0,in:0};live.forEach(r=>cnt[r.type==='in'?'in':'out']++);
+  const today=kstDate(0),yest=kstDate(-1);
+  const label=d===today?'오늘 '+fmtD(d):d===yest?'어제 '+fmtD(d):fmtD(d);
+  const open=forceOpen||!!DAY_OPEN[d];
+  let h=`<div class="io-day"><div class="io-day-hd" onclick="${forceOpen?'':`ioDayToggle('${d}')`}"><b>${label}</b><span class="cnt">출고 ${cnt.out} · 입고 ${cnt.in}</span>${open&&live.length?`<button type="button" class="io-shb" onclick="event.stopPropagation();ioShare('${d}')">📤 공유</button>`:''}${forceOpen?'':`<span class="arr">${open?'▾':'▸'}</span>`}</div>`;
+  if(!open)return h+'</div>';
+  const sum={out:{},in:{}};live.forEach(r=>{(r.items||[]).forEach(it=>{const s=sum[r.type==='in'?'in':'out'];s[it.product]=s[it.product]||{q:0,t:0};s[it.product].q+=num(it.total);s[it.product].t+=num(it.tQty)})});
+  const sumLine=k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span> ${keys.map(pk=>'<b>'+esc(pk)+'</b> '+(sum[k][pk].q+sum[k][pk].t)+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`};
+  const sl=sumLine('out')+sumLine('in');if(sl)h+=`<div class="io-sum">${sl}</div>`;
+  groupByVehicle(rs).forEach(g=>{h+=`<div class="io-vh">🚚 ${vehLabel(g.plate)}</div>`+g.recs.map(r=>recCard(r,local)).join('')});
+  return h+'</div>';
+}
 function renderList(){
   const v=$('ioView');if(!v)return;
   const {all,local,ob}=allRecords();
-  const from=kstDate(-(LIST_ALL?DAYS:LIST_DAYS));
-  const list=Object.values(all).filter(r=>r&&r.date&&r.date>=from).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const from=kstDate(-(LIST_ALL?DAYS:LIST_DAYS));const today=kstDate(0);
+  const list=Object.values(all).filter(r=>r&&r.date&&r.date>=from);
   if(SH.open)renderShare();
   let h=`<div class="io-hd"><h2>📦 입출고</h2><div class="r"><span>${RN}</span><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
   <div class="io-start">
-    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b><small>${TYPE.out.sub}에 실은 만큼</small></button>
-    <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} 입고</b><small>${TYPE.in.sub}로 내린 만큼</small></button>
+    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b></button>
+    <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} 입고</b></button>
   </div>`;
   if(ob.length){
     const stuck=ob.some(e=>(e.tries||0)>=8);
     h+=`<div class="io-status ${stuck||lastErr?'err':'wait'}"><span>📤 전송 대기 ${ob.length}건${lastErr?' · '+esc(lastErr):''}</span><button type="button" onclick="ioFlush(true)">${flushing?'전송 중…':'지금 보내기'}</button></div>`;
   }
-  h+=renderLedger();
-  if(!list.length){h+=`<div class="io-empty">최근 ${LIST_ALL?DAYS:LIST_DAYS}일 기록이 없어요.<br>위 버튼으로 기록을 남겨보세요.</div>`;v.innerHTML=h;return}
-  // 날짜별 그룹
   const days={};list.forEach(r=>{(days[r.date]=days[r.date]||[]).push(r)});
-  const today=kstDate(0),yest=kstDate(-1);
-  Object.keys(days).sort().reverse().forEach(d=>{
-    const rs=days[d];const live=rs.filter(r=>r.status!=='void');
-    const cnt={out:0,in:0};live.forEach(r=>cnt[r.type==='in'?'in':'out']++);
-    const label=d===today?'오늘 '+fmtD(d):d===yest?'어제 '+fmtD(d):fmtD(d);
-    h+=`<div class="io-day"><div class="io-day-hd"><b>${label}</b><span class="cnt">출고 ${cnt.out} · 입고 ${cnt.in}</span>${live.length?`<button type="button" class="io-shb" onclick="ioShare('${d}')">📤 공유</button>`:''}</div>`;
-    // 합계
-    const sum={out:{},in:{}};live.forEach(r=>{(r.items||[]).forEach(it=>{const s=sum[r.type==='in'?'in':'out'];s[it.product]=s[it.product]||{q:0,t:0};s[it.product].q+=num(it.total);s[it.product].t+=num(it.tQty)})});
-    const sumLine=k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span> ${keys.map(pk=>'<b>'+esc(pk)+'</b> '+sum[k][pk].q+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`};
-    const sl=sumLine('out')+sumLine('in');if(sl)h+=`<div class="io-sum">${sl}</div>`;
-    rs.forEach(r=>{
-      const lp=local[r.id];const pending=!!lp||r.status==='pending';
-      const isVoid=r.status==='void';
-      let th;
-      if(lp&&lp.photo)th=`<div class="io-th" onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
-      else if(r.photoId)th=`<div class="io-th" onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,300)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='사진<br>불러오기 실패'"></div>`;
-      else th=`<div class="io-th">사진<br>전송 중</div>`;
-      const late=r.late?'<span class="io-tag late">지연 입력</span>':'';
-      const gap=r.photoGap>=LATE_MIN?`<span class="io-tag late" title="사진 시각과 제출 시각 차이">사진 ${r.photoGap}분 전</span>`:'';
-      h+=`<div class="io-card${isVoid?' void':''}">${th}<div class="io-body">
-        <div class="io-l1"><span class="io-tag ${r.type==='in'?'in':'out'}">${TYPE[r.type==='in'?'in':'out'].n}</span><span class="tm">${esc(hm(r.at))}</span><span class="who">${esc(r.vehicle||'')}${r.worker?' · '+esc(r.worker):''}</span>${pending?'<span class="io-tag wait">전송 대기</span>':''}${late}${gap}${isVoid?'<span class="io-tag void">취소됨</span>':''}</div>
-        ${(r.items||[]).map(it=>`<div class="io-item">${itemLine(it)}</div>`).join('')}
-        ${r.note?`<div class="io-note">${esc(r.note)}</div>`:''}${isVoid&&r.voidReason?`<div class="io-note">취소 사유: ${esc(r.voidReason)}</div>`:''}
-      </div>${isVoid?'':`<div class="io-acts"><button type="button" class="io-x" onclick="ioShare('${esc(r.date)}',['${esc(r.id)}'])">공유</button>${canVoid(r)?`<button type="button" class="io-x" onclick="ioVoid('${esc(r.id)}')">취소</button>`:''}</div>`}</div>`;
-    });
-    h+=`</div>`;
-  });
+  // 오늘 먼저 (항상 펼침)
+  if(days[today])h+=dayBlock(today,days[today],local,true);
+  else h+=`<div class="io-today-empty">오늘 ${fmtD(today)} 기록 없음</div>`;
+  // 차량별 현황
+  h+=renderLedger();
+  // 지난 날짜 (접힘)
+  Object.keys(days).filter(d=>d!==today).sort().reverse().forEach(d=>{h+=dayBlock(d,days[d],local,false)});
   if(!LIST_ALL){const older=Object.values(all).some(r=>r&&r.date&&r.date<from);if(older)h+=`<button type="button" class="io-more" onclick="ioListMore()">지난 ${DAYS}일 기록 더 보기</button>`}
   v.innerHTML=h;
 }
+function ioDayToggle(d){DAY_OPEN[d]=!DAY_OPEN[d];renderList()}
 function ioListMore(){LIST_ALL=true;renderList()}
 function ioView(id){const im=$('ioViewImg');im.src=thumbUrl(id,1600);const a=$('ioViewLink');a.href=viewUrl(id);a.style.display='block';$('ioViewer').classList.add('show')}
 function ioViewLocal(id){const e=obGet().find(x=>x.rec&&x.rec.id===id);if(!e||!e.payload||!e.payload.photo)return;$('ioViewImg').src=e.payload.photo;$('ioViewLink').style.display='none';$('ioViewer').classList.add('show')}
@@ -507,18 +518,15 @@ function ioViewClose(){$('ioViewer').classList.remove('show');$('ioViewImg').src
 /* ---------- 공유 화면 (스크린샷 · 카톡용 텍스트) ---------- */
 function shareRecords(){
   const {all,local}=allRecords();
-  let recs=Object.values(all).filter(r=>r&&r.date===SH.date&&r.status!=='void');
-  if(SH.ids)recs=recs.filter(r=>SH.ids.includes(r.id));
-  recs.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const recs=Object.values(all).filter(r=>r&&r.date===SH.date&&r.status!=='void').sort((a,b)=>(a.ts||0)-(b.ts||0));
   return {recs,local};
 }
-function ioShare(date,ids){
-  SH={open:true,date,ids:ids||null,hidden:{}};
+function ioShare(date){ // 그날 전체 (차량별) — 제출 직후·날짜 공유 버튼 공용
+  SH={open:true,date};
   renderShare();$('ioShare').classList.add('show');$('ioShare').scrollTop=0;
 }
 function ioShareClose(){SH.open=false;$('ioShare').classList.remove('show')}
-function ioShareHide(id){SH.hidden[id]=true;renderShare()}
-function ioShareShowAll(){SH.hidden={};renderShare()}
+
 function partsText(it){ // "센터 40 · 사이드 16 · 코너 2 · 10T 2"
   return [['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1])).join(' · ');
 }
@@ -530,53 +538,51 @@ function sumByProduct(recs){ // {out:{product:{q,t}}, in:{...}}
 function sumLineText(sum,k){
   const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));
   if(!keys.length)return '';
-  return TYPE[k].n+' 합계 · '+keys.map(pk=>pk+' '+sum[k][pk].q+'장'+(sum[k][pk].t?'(10T '+sum[k][pk].t+')':'')).join(' · ');
+  return TYPE[k].n+' 합계 · '+keys.map(pk=>pk+' '+(sum[k][pk].q+sum[k][pk].t)+'장'+(sum[k][pk].t?'(10T '+sum[k][pk].t+')':'')).join(' · ');
 }
 function recText(r){
   const T=TYPE[r.type==='in'?'in':'out'];
-  const lines=['['+T.n+'] '+fmtD(r.date)+' '+hm(r.at)+' · '+RN,'차량 '+(r.vehicle||'-')+(r.worker?' · '+r.worker:''),''];
-  (r.items||[]).forEach((it,i)=>{
-    lines.push((i+1)+'. '+it.product);
-    [['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].forEach(x=>{if(num(x[1])>0)lines.push(x[0]+' '+num(x[1])+'장')});
-    lines.push('합계 '+num(it.total)+'장'+(num(it.tQty)?' · 10T '+num(it.tQty)+'장':''));
-    lines.push('');
+  const lines=['['+T.n+'] '+hm(r.at)+(r.worker?' · '+r.worker:'')];
+  (r.items||[]).forEach(it=>{
+    const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1])+'장');
+    lines.push(it.product+' '+(num(it.total)+num(it.tQty))+'장 ('+parts.join(' · ')+')');
   });
   if(r.note)lines.push('메모: '+r.note);
   if(r.late)lines.push('※ 지연 입력');
-  lines.push('사진 '+(r.photoId?viewUrl(r.photoId):'전송 중 (앱에서 확인)'));
   return lines.join('\n');
 }
 function shareText(){
-  const {recs}=shareRecords();const shown=recs.filter(r=>!SH.hidden[r.id]);
-  if(!shown.length)return '';
-  let t=shown.map(recText).join('\n\n──────────\n\n');
-  if(shown.length>1){const sum=sumByProduct(shown);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);if(sl.length)t+='\n\n══════════\n'+fmtD(SH.date)+' '+sl.join('\n')}
+  const {recs}=shareRecords();if(!recs.length)return '';
+  let t='';
+  groupByVehicle(recs).forEach(g=>{const who=vehicles()[g.plate]||'';t+='🚚 '+g.plate+(who?' · '+who:'')+'\n'+g.recs.map(recText).join('\n\n')+'\n\n──────────\n\n'});
+  const sum=sumByProduct(recs);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);
+  t+=fmtD(SH.date)+' '+RN+(sl.length?'\n'+sl.join('\n'):'');
   return t;
 }
 function renderShare(){
   const box=$('ioShareIn');if(!box||!SH.open)return;
   const {recs,local}=shareRecords();
-  const shown=recs.filter(r=>!SH.hidden[r.id]);const hiddenN=recs.length-shown.length;
-  let h=`<div class="io-sh-hd"><div><div class="io-sh-t">📦 입·출고 기록</div><div class="io-sh-s">돌봄매트 ${RN} · ${fmtD(SH.date)}</div></div></div>`;
-  const ph=shown.length<=1?300:shown.length===2?170:120; // 기록 수에 따라 사진 높이 — 한 화면에 들어가게
-  if(hiddenN)h+=`<div class="io-sh-hint"><span style="text-decoration:none;cursor:default">${hiddenN}건 숨김</span><span onclick="ioShareShowAll()">전체 보기</span></div>`;
-  if(!shown.length){h+=`<div class="io-empty">공유할 기록이 없어요.</div>`;box.innerHTML=h;return}
-  shown.forEach(r=>{
-    const k=r.type==='in'?'in':'out';const lp=local[r.id];const pending=!!lp||r.status==='pending';
-    let th;const st=`style="height:${ph}px"`;
-    if(lp&&lp.photo)th=`<div class="io-sh-th" ${st} onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
-    else if(r.photoId)th=`<div class="io-sh-th" ${st} onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,800)}" alt="" onerror="this.parentNode.innerHTML='사진<br>불러오기 실패'"></div>`;
-    else th=`<div class="io-sh-th" ${st}>사진<br>전송 중</div>`;
-    h+=`<div class="io-sh-rec ${k}"><div class="io-sh-body">
-      <div class="io-sh-l1"><span class="io-tag ${k}">${TYPE[k].n}</span><b>${esc(hm(r.at))}</b><span class="v">${esc(r.vehicle||'')}${r.worker?' · '+esc(r.worker):''}</span>${pending?'<span class="io-tag wait">사진 전송 중</span>':''}${r.late?'<span class="io-tag late">지연 입력</span>':''}${recs.length>1?`<button type="button" class="hide" onclick="ioShareHide('${esc(r.id)}')">숨기기</button>`:''}</div>
-      ${(r.items||[]).map(it=>`<div class="io-sh-line"><div class="io-sh-pr"><b>${esc(it.product)}</b><em>${num(it.total)}장${num(it.tQty)?`<small>+10T ${num(it.tQty)}</small>`:''}</em></div><span>${esc(partsText(it))}</span></div>`).join('')}
-      ${r.note?`<div class="io-sh-memo">메모: ${esc(r.note)}</div>`:''}
-    </div>${th}</div>`;
+  let h=`<div class="io-sh-hd"><div><div class="io-sh-t">📦 입·출고</div><div class="io-sh-s">돌봄매트 ${RN} · ${fmtD(SH.date)}</div></div></div>`;
+  if(!recs.length){h+=`<div class="io-empty">이날 기록이 없어요.</div>`;box.innerHTML=h;return}
+  groupByVehicle(recs).forEach(g=>{
+    h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div>`;
+    g.recs.forEach(r=>{
+      const k=r.type==='in'?'in':'out';const lp=local[r.id];const pending=!!lp||r.status==='pending';
+      let th;
+      if(lp&&lp.photo)th=`<div class="io-sh-th" onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
+      else if(r.photoId)th=`<div class="io-sh-th" onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,300)}" alt="" onerror="this.parentNode.innerHTML='사진<br>실패'"></div>`;
+      else th=`<div class="io-sh-th">사진<br>전송 중</div>`;
+      const items=(r.items||[]).map(it=>{const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
+        return `<div class="io-sh-line"><b>${esc(it.product)}</b> <b>${num(it.total)+num(it.tQty)}장</b> <span class="q">(${esc(parts.join(' · '))})</span></div>`}).join('');
+      h+=`<div class="io-sh-row"><div class="b"><div class="io-sh-l1"><span class="io-tag ${k}">${TYPE[k].n}</span><b>${esc(hm(r.at))}</b>${r.worker?`<span class="q" style="font-size:12px;color:var(--sub)">${esc(r.worker)}</span>`:''}${pending?'<span class="io-tag wait">사진 전송 중</span>':''}${r.late?'<span class="io-tag late">지연 입력</span>':''}</div>${items}${r.note?`<div class="io-sh-memo">${esc(r.note)}</div>`:''}</div>${th}</div>`;
+    });
+    h+=`</div>`;
   });
-  if(shown.length>1){const sum=sumByProduct(shown);const parts=['out','in'].map(k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span>${keys.map(pk=>'<b>'+esc(pk)+'</b> '+sum[k][pk].q+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`}).filter(Boolean);if(parts.length)h+=`<div class="io-sh-tot">${parts.join('')}</div>`}
-  h+=`<div class="io-sh-note">이 화면을 그대로 스크린샷해서 단톡방에 올려주세요.${recs.length>1?'<br>내 기록만 올리려면 다른 기록은 숨기기.':''}</div>`;
+  const sum=sumByProduct(recs);const parts=['out','in'].map(k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span>${keys.map(pk=>'<b>'+esc(pk)+'</b> '+(sum[k][pk].q+sum[k][pk].t)+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`}).filter(Boolean);
+  if(parts.length)h+=`<div class="io-sh-tot">${parts.join('')}</div>`;
+  h+=`<div class="io-sh-note">이 화면을 스크린샷해서 단톡방에 올려주세요.</div>`;
   box.innerHTML=h;
-  const cb=$('ioShareCopyBtn');if(cb)cb.disabled=!shown.length;
+  const cb=$('ioShareCopyBtn');if(cb)cb.disabled=!recs.length;
 }
 function copyText(text,onOk){
   const fallback=()=>{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(ta);ta.focus();ta.select();try{ta.setSelectionRange(0,999999)}catch(e){}let ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);if(ok)onOk();else ioToast('복사가 안 돼요 · 스크린샷으로 올려주세요',true)};
@@ -584,8 +590,7 @@ function copyText(text,onOk){
 }
 function ioShareCopy(){
   const t=shareText();if(!t){ioToast('복사할 기록이 없어요',true);return}
-  const {recs}=shareRecords();const anyPending=recs.some(r=>!SH.hidden[r.id]&&!r.photoId&&r.status!=='void');
-  copyText(t,()=>ioToast(anyPending?'📋 복사됨 · 사진 링크는 전송 뒤 다시 복사하면 들어가요':'📋 복사됨 · 카톡에 붙여넣기'));
+  copyText(t,()=>ioToast('📋 복사됨 · 카톡에 붙여넣기'));
 }
 
 /* ---------- 작성 (장 단위) ---------- */
@@ -609,24 +614,24 @@ function renderForm(){
   if(!F)return;
   const T=TYPE[F.type];
   $('ioOvTitle').textContent=T.ico+' '+T.n+' 기록';
-  const sb=$('ioSubmitBtn');sb.className='io-submit '+F.type;sb.innerHTML=T.n+' 기록 제출<small>'+T.sub+'</small>';sb.disabled=busy;
+  const sb=$('ioSubmitBtn');sb.className='io-submit '+F.type;sb.textContent=T.n+' 기록 제출';sb.disabled=busy;
   const vs=vehicles();const plates=Object.keys(vs);
   const emps=employees();
   let h=`<div class="io-seg">
-    <button type="button" class="out${F.type==='out'?' on':''}" onclick="ioType('out')">${TYPE.out.ico} 출고<small>${TYPE.out.sub}</small></button>
-    <button type="button" class="in${F.type==='in'?' on':''}" onclick="ioType('in')">${TYPE.in.ico} 입고<small>${TYPE.in.sub}</small></button>
+    <button type="button" class="out${F.type==='out'?' on':''}" onclick="ioType('out')">${TYPE.out.ico} 출고</button>
+    <button type="button" class="in${F.type==='in'?' on':''}" onclick="ioType('in')">${TYPE.in.ico} 입고</button>
   </div>
-  <div class="io-sec"><div class="io-lb">사진 <small>촬영 시각이 사진 아래에 찍혀요</small></div>
-    <div class="io-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`<div class="ph"><div class="i">📷</div><b>${F.type==='in'?'창고에 내린 자재':'차에 실은 자재'}를 촬영</b><small>박스와 낱장이 다 보이게 찍어주세요</small></div>`}</div>
+  <div class="io-sec"><div class="io-lb">사진</div>
+    <div class="io-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`<div class="ph"><div class="i">📷</div><b>촬영</b><small>박스·낱장이 다 보이게</small></div>`}</div>
   </div>
   <div class="io-sec"><div class="io-lb">차량 <small>${plates.length?'':'차량·공정성 탭에 등록된 차량이 없어요'}</small></div>
     <div class="io-chips">${plates.map(p=>`<div class="io-chip${!F.custom&&F.vehicle===p?' on':''}" onclick="ioVehicle('${esc(p)}')">${esc(p)}<small>${esc(vs[p]||'미배정')}</small></div>`).join('')}<div class="io-chip dim${F.custom?' on':''}" onclick="ioVehicleCustom()">직접 입력</div></div>
     ${F.custom?`<input class="io-inp" id="ioVehicleIn" style="margin-top:8px" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value)">`:''}
   </div>
-  <div class="io-sec"><div class="io-lb">제품 <small>장수로 입력 · 박스째면 [+박스]</small></div><div id="ioItems"></div>
-    <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가<small>다른 색상·사이즈를 같이 실었을 때</small></button>
+  <div class="io-sec"><div class="io-lb">제품 <small>장수로 입력</small></div><div id="ioItems"></div>
+    <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가</button>
   </div>
-  <div class="io-sec"><div class="io-lb">담당 <small>차량을 고르면 사수가 자동으로 들어가요</small></div>
+  <div class="io-sec"><div class="io-lb">담당</div>
     <select class="io-sel" id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select>
   </div>
   <div class="io-sec"><div class="io-lb">날짜 <span class="lnk" onclick="ioDateToggle()">${F.dateEdit?'오늘로':'다른 날짜'}</span></div>
@@ -643,13 +648,12 @@ function renderItems(){
     const p=prod(it.product);
     const groups=[...new Set(PRODUCTS.map(x=>x.g))];
     const chips=groups.map(g=>`<div class="io-pg">${esc(g)}</div><div class="io-pchips">${PRODUCTS.filter(x=>x.g===g).map(x=>`<div class="io-pchip ${x.cls}${it.product===x.k?' on':''}" onclick="ioProduct(${i},'${esc(x.k)}')">${esc(x.c)}</div>`).join('')}</div>`).join('');
-    const rows=PART.map(pt=>{const q=itemQty(it,pt.k);const per=p?(pt.k==='t'?p.per10:p.per):0;
+    const rows=PART.map(pt=>{const q=itemQty(it,pt.k);
       return `<div class="io-row"><span class="n${pt.k==='t'?' t':''}">${pt.n}</span>
-        <span class="u"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" class="${q?'':'z'}" value="${q}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${pt.k}',this)"><i>장</i></span>
-        <button type="button" class="io-box" ${per?'':'disabled'} onclick="ioAddBox(${i},'${pt.k}')">+박스<small>${per?per+'장':'—'}</small></button></div>`}).join('');
+        <span class="u"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" class="${q?'':'z'}" value="${q}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${pt.k}',this)"><i>장</i></span></div>`}).join('');
     return `<div class="io-pc" id="ioPc_${i}"><div class="io-pc-hd"><b>제품 ${i+1}${p?' · '+esc(p.k):''}</b>${F.items.length>1?`<button type="button" onclick="ioDelItem(${i})">삭제</button>`:''}</div>
       ${chips}
-      <div class="io-grid"><div class="io-ghd"><span></span><span>장수</span><span>박스째</span></div>${rows}</div>
+      <div class="io-grid">${rows}</div>
       <div class="io-pc-ft"><span>${p?'1박스 = '+p.per+'장 · 10T '+p.per10+'장':'색상을 먼저 골라주세요'}</span><span>합계 <b id="iot_${i}">${itemTotal(it)}</b>장${itemQty(it,'t')?` <span style="color:var(--purple)">+10T ${itemQty(it,'t')}장</span>`:''}</span></div></div>`;
   }).join('');
 }
@@ -658,13 +662,7 @@ function updateItemTotals(i){
   const t=$('iot_'+i);if(t){t.textContent=itemTotal(it);const ft=t.parentNode;const t10=itemQty(it,'t');const extra=ft.querySelector('span');if(extra)extra.remove();if(t10){const s=document.createElement('span');s.style.color='var(--purple)';s.textContent=' +10T '+t10+'장';ft.appendChild(s)}}
 }
 function ioNum(i,k,el){const it=F.items[i];if(!it)return;const clean=el.value.replace(/[^0-9]/g,'');if(el.value!==clean)el.value=clean;const v=num(el.value);it[k]=v;updateItemTotals(i);el.classList.toggle('z',!v)}
-function ioAddBox(i,k){
-  const it=F.items[i];if(!it)return;const p=prod(it.product);
-  if(!p){ioToast('색상을 먼저 골라주세요',true);return}
-  const per=k==='t'?p.per10:p.per;it[k]=Math.min(9999,num(it[k])+per);
-  const row=$('ioPc_'+i);if(row){const inp=row.querySelectorAll('.io-row input')[PART.findIndex(x=>x.k===k)];if(inp){inp.value=it[k];inp.classList.remove('z')}}
-  updateItemTotals(i);
-}
+
 function ioFocus(el){if(el.value==='0'){el.value='';el.classList.add('z')}try{el.select()}catch(e){}}
 function ioBlur(el){if(el.value==='')el.value='0';el.classList.toggle('z',!num(el.value))}
 function ioProduct(i,k){F.items[i].product=k;renderItems()}
@@ -753,7 +751,7 @@ async function ioSubmit(){
     busy=false;F=null;P=null;$('ioFile').value='';$('ioOv').classList.remove('show');
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
-    ioShare(rec.date,[rec.id]); // 저장 직후 공유 화면 — 스크린샷해서 단톡방에
+    ioShare(rec.date); // 저장 직후 그날 전체 화면 — 스크린샷해서 단톡방에
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
 function ioVoid(id){
@@ -822,6 +820,6 @@ function init(){
   setInterval(()=>{if(obGet().length&&!flushing)ioFlush(false)},90000);
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
 }
-Object.assign(window,{ioShare,ioShareClose,ioShareHide,ioShareShowAll,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioAddBox,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore});
+Object.assign(window,{ioShare,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
