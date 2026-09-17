@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-WBCCZ3CN');</script>
+<!-- End Google Tag Manager -->
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>돌봄매트 무료 샘플 신청</title>
@@ -108,6 +116,11 @@ if(window.wcs){
 
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WBCCZ3CN"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
 
 <div class="hero">
   <div class="hero-badge">🎁 무료 샘플 신청</div>
@@ -498,7 +511,7 @@ function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
       method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
-      showSuccessPopup();
+      window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'sample_submit'});showSuccessPopup();
       // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
       try {
         if (window.wcs && window.wcs.trans) {
@@ -518,7 +531,7 @@ function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
     btn.textContent='신청 중...';
     fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
-      showSuccessPopup();
+      window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'sample_submit'});showSuccessPopup();
       // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
       try {
         if (window.wcs && window.wcs.trans) {
