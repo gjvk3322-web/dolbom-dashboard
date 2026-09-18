@@ -86,6 +86,28 @@
   .person .label{color:var(--muted);font-size:11px;margin:12px 0 5px;letter-spacing:.5px;font-weight:700}
   .person ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.8;color:#3D4844}
   .person .no{color:var(--muted)}
+  /* 업무 항목 상세(폴더) */
+  .person li.tk{list-style:none;margin-left:-18px}
+  .tk-row{display:flex;align-items:flex-start;gap:6px;cursor:pointer;padding:2px 6px;margin:0 -6px;border-radius:8px}
+  .tk-row:hover{background:var(--panel2)}
+  .tk-row:hover .tk-t{color:var(--accent-deep)}
+  .tk-row::before{content:"•";color:#9AA5A0;margin-right:2px}
+  .tk-t{flex:1}
+  .tk-badge{font-size:11px;line-height:1.8}
+  .tk-chev{color:#B8C2BE;font-size:11px;line-height:1.8;transition:transform .15s}
+  .tk.open .tk-chev{transform:rotate(180deg)}
+  .tk-detail{margin:4px 0 8px;padding:10px 12px;background:var(--panel2);border-radius:10px;font-size:12.5px;line-height:1.7;color:#3D4844}
+  .tk-text{white-space:pre-wrap;word-break:break-word}
+  .tk-empty{color:var(--muted);font-size:12px}
+  .tk-meta{color:var(--muted);font-size:11px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .tk-prog{display:inline-block;font-size:11px;color:var(--muted);font-weight:600;margin-left:8px;vertical-align:middle;background:var(--panel2);padding:2px 8px;border-radius:999px}
+  .tk-prog.done{color:var(--accent-deep);background:var(--tint)}
+  .chip.tk-chip{cursor:pointer}
+  .chip.tk-chip.has::after{content:" 📝";font-size:10px}
+  .chip.tk-chip.open{outline:2px solid var(--accent);outline-offset:1px}
+  .tk-orphan{margin-top:12px;padding:10px 12px;border:1px dashed #DDE5E1;border-radius:10px;font-size:12px;color:var(--muted)}
+  .tk-orphan select{width:auto;padding:4px 8px;font-size:12px;margin:0 4px}
+  .tk-sub{font-size:12px;color:var(--muted);margin-top:3px}
   .actions{display:flex;gap:6px;margin-top:14px;justify-content:flex-end}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap}
   .toolbar input,.toolbar select{width:auto;min-width:170px}
@@ -860,7 +882,7 @@
       <div class="topbar">
         <div>
           <h1>직원별 업무분장</h1>
-          <div class="lead">‘무엇을 시켰는가’가 아니라 ‘어떤 결과를 책임지는가’를 명확히 합니다. 업무마다 최종 책임자는 한 명입니다.</div>
+          <div class="lead">‘무엇을 시켰는가’가 아니라 ‘어떤 결과를 책임지는가’를 명확히 합니다. 업무마다 최종 책임자는 한 명입니다.<br>각 항목은 폴더예요 — 누르면 세부 내용(하는 법·주기·쓰는 도구·주의할 점)을 적을 수 있고, 그대로 인수인계서가 됩니다.</div>
         </div>
         <button class="btn primary" id="addPersonBtn">직원 추가</button>
       </div>
@@ -1323,6 +1345,20 @@
       <div class="field full"><label>하지 않는 업무 (줄바꿈 구분)</label><textarea id="pNot"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="personModal.close()">취소</button><button class="btn primary" id="savePersonBtn">저장</button></div>
+  </form>
+</dialog>
+
+<!-- 업무 항목 상세 모달 -->
+<dialog id="tkModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><div><strong id="tkModalTitle">상세 작성</strong><div class="tk-sub" id="tkModalSub"></div></div><button class="mini-btn" onclick="tkModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <input type="hidden" id="tkPid"><input type="hidden" id="tkKey">
+      <div class="field full"><label>세부 내용 — 이 업무를 처음 맡는 사람이 이것만 읽고 바로 할 수 있게</label>
+        <textarea id="tkText" style="min-height:230px" placeholder="예)&#10;• 언제·주기: 매주 월요일 오전&#10;• 하는 방법·순서: 1) … 2) … 3) …&#10;• 쓰는 도구·시트·링크:&#10;• 판단 기준·주의할 점:&#10;• 막히면 누구에게:"></textarea></div>
+      <div class="tk-meta" id="tkModalMeta"></div>
+    </div>
+    <div class="modal-foot"><button class="btn danger" id="tkDelBtn">삭제</button><button class="btn" onclick="tkModal.close()">취소</button><button class="btn primary" id="tkSaveBtn">저장</button></div>
   </form>
 </dialog>
 
@@ -3111,21 +3147,28 @@ function renderPeople(){
   const q = ($("searchInput").value || "").toLowerCase();
   const f = $("deptFilter").value || "";
   const list = entries(data.people).sort(byOrder).filter(p => {
-    const text = (p.name + " " + p.role).toLowerCase();
+    const details = Object.values(tkAll(p.id)).map(d => (d && d.text) || "").join(" ");
+    const text = (p.name + " " + p.role + " " + details).toLowerCase();
     return (!q || text.includes(q)) && (!f || p.dept === f);
   });
+  tkTitles = {};
   $("peopleGrid").innerHTML = list.map(p => {
     const dept = (data.departments || {})[p.dept]?.name || "";
-    const ul = arr => toArr(arr).map(x => `<li>${esc(x)}</li>`).join("") || `<li class="no">-</li>`;
-    return `<div class="card person">
-      <h3>${esc(p.name)}</h3>
+    const ul = (sec, arr) => toArr(arr).map(x => tkItemHtml(p, sec, x)).join("") || `<li class="no">-</li>`;
+    const kpis = toArr(p.kpis);
+    const st = tkStats(p);
+    return `<div class="card person" id="person_${p.id}">
+      <h3>${esc(p.name)}<span class="tk-prog ${st.total && st.done === st.total ? "done" : ""}" title="세부 내용이 적힌 항목 수">상세 ${st.done}/${st.total}</span></h3>
       <div class="role">${esc(dept)} · ${esc(p.role)}</div>
       <p><b>Mission</b><br>${esc(p.mission)}</p>
-      <div class="label">핵심 책임</div><ul>${ul(p.responsibilities)}</ul>
-      <div class="label">KPI</div><div>${toArr(p.kpis).map(x => `<span class="chip">${esc(x)}</span>`).join("") || "-"}</div>
-      <div class="label">혼자 결정 가능</div><ul>${ul(p.canDecide)}</ul>
-      <div class="label">하지 않는 업무</div><ul class="no">${ul(p.notMine)}</ul>
+      <div class="label">핵심 책임</div><ul>${ul("resp", p.responsibilities)}</ul>
+      <div class="label">KPI</div><div>${kpis.map(x => tkChipHtml(p, x)).join("") || "-"}</div>${kpis.map(x => tkChipDetailHtml(p, x)).join("")}
+      <div class="label">혼자 결정 가능</div><ul>${ul("can", p.canDecide)}</ul>
+      <div class="label">하지 않는 업무</div><ul class="no">${ul("not", p.notMine)}</ul>
+      ${tkOrphanHtml(p)}
       <div class="actions">
+        <button class="mini-btn" onclick="tkToggleAll('${p.id}')">${tkOpenAll[p.id] ? "상세 접기" : "상세 펼치기"}</button>
+        <button class="mini-btn" onclick="tkHandover('${p.id}')">📄 인수인계서</button>
         <button class="mini-btn" onclick="editPerson('${p.id}')">수정</button>
         <button class="mini-btn" onclick="deletePerson('${p.id}')">삭제</button>
       </div>
@@ -3350,7 +3393,151 @@ $("savePersonBtn").onclick = async () => {
   if (await safeWrite("직원", () => orgRef.child("people/" + id).set(payload), $("savePersonBtn"))){
     logAction($("personId").value ? "수정" : "추가", "직원: " + name);
     personModal.close();
+    try { await tkMigrateOnSave(id, payload); } catch(e){ console.error("상세 이어붙이기 오류", e); }
   }
+};
+
+/* ───────── 업무 항목 상세(폴더) — 항목을 누르면 세부 내용을 적는다 ─────────
+   저장 위치: org/taskDetails/{직원id}/{키} = { text, by, at, sec, title }
+   키 = 구분 + 항목명 해시. 직원 정보 저장(set)과 분리돼 있어 목록을 고쳐도 상세가 지워지지 않고,
+   항목명을 바꾸면 비슷한 이름의 새 항목으로 자동 이어붙임(못 찾으면 카드 아래 '📎'에 남겨 수동 연결). */
+const TK_SECS = { resp:"핵심 책임", kpi:"KPI", can:"혼자 결정 가능", not:"하지 않는 업무" };
+const tkNorm = s => String(s || "").toLowerCase().replace(/[\s·\-–—,.()\[\]/:;!?'"“”‘’~_+&]+/g, "");
+function tkHash(s){ let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
+const tkKey = (sec, title) => sec + "_" + tkHash(tkNorm(title));
+const tkAll = pid => (data && data.taskDetails || {})[pid] || {};
+const tkFmt = t => { if (!t) return ""; const d = new Date(t); return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`; };
+let tkOpen = {}, tkOpenAll = {}, tkTitles = {};
+function tkReg(pid, sec, title){ const key = tkKey(sec, title); (tkTitles[pid] = tkTitles[pid] || {})[key] = { sec, title }; return key; }
+function tkItems(p){
+  const out = [];
+  [["resp", p.responsibilities], ["kpi", p.kpis], ["can", p.canDecide], ["not", p.notMine]].forEach(([sec, arr]) => toArr(arr).forEach(t => out.push({ sec, title: t, key: tkKey(sec, t) })));
+  return out;
+}
+function tkStats(p){
+  const all = tkAll(p.id), items = tkItems(p);
+  return { total: items.length, done: items.filter(it => all[it.key] && all[it.key].text).length };
+}
+function tkDetailHtml(p, sec, key, has, d){
+  return `<div class="tk-detail">${has
+    ? `<div class="tk-text">${esc(d.text)}</div><div class="tk-meta"><span>${esc(d.by || "")} · ${tkFmt(d.at)}</span><button class="mini-btn" onclick="tkEditK('${p.id}','${key}')">✏️ 수정</button></div>`
+    : `<div class="tk-meta"><span class="tk-empty">아직 세부 내용이 없어요. 처음 맡는 사람이 읽고 바로 할 수 있게 적어주세요.</span><button class="mini-btn" onclick="tkEditK('${p.id}','${key}')">✏️ 작성</button></div>`}</div>`;
+}
+function tkItemHtml(p, sec, title){
+  const key = tkReg(p.id, sec, title), d = tkAll(p.id)[key], has = !!(d && d.text), open = !!(tkOpenAll[p.id] || tkOpen[p.id + key]);
+  return `<li class="tk ${has ? "has" : ""} ${open ? "open" : ""}">
+    <div class="tk-row" onclick="tkToggle('${p.id}','${key}')"><span class="tk-t">${esc(title)}</span>${has ? `<span class="tk-badge" title="세부 내용 있음">📝</span>` : ""}<span class="tk-chev">▾</span></div>
+    ${open ? tkDetailHtml(p, sec, key, has, d) : ""}</li>`;
+}
+function tkChipHtml(p, title){
+  const key = tkReg(p.id, "kpi", title), d = tkAll(p.id)[key], has = !!(d && d.text), open = !!(tkOpenAll[p.id] || tkOpen[p.id + key]);
+  return `<span class="chip tk-chip ${has ? "has" : ""} ${open ? "open" : ""}" onclick="tkToggle('${p.id}','${key}')" title="누르면 측정 방법·기준을 적을 수 있어요">${esc(title)}</span>`;
+}
+function tkChipDetailHtml(p, title){
+  const key = tkKey("kpi", title), d = tkAll(p.id)[key], has = !!(d && d.text), open = !!(tkOpenAll[p.id] || tkOpen[p.id + key]);
+  return open ? `<div style="margin-top:6px"><div class="tk-meta" style="margin:0 0 2px"><span>📌 ${esc(title)}</span></div>${tkDetailHtml(p, "kpi", key, has, d)}</div>` : "";
+}
+function tkOrphanHtml(p){
+  const all = tkAll(p.id), cur = {}; tkItems(p).forEach(it => cur[it.key] = it);
+  const orphan = Object.entries(all).filter(([k, v]) => !cur[k] && v && v.text);
+  if (!orphan.length) return "";
+  const opts = tkItems(p).map(it => `<option value="${it.key}">${esc(TK_SECS[it.sec])} · ${esc(it.title)}</option>`).join("");
+  return `<div class="tk-orphan">📎 항목명이 바뀌어 연결이 끊긴 세부 내용 ${orphan.length}개${orphan.map(([k, v]) => `
+    <div style="margin-top:6px;color:var(--text)"><b>${esc(v.title || "(제목 없음)")}</b> <span style="color:var(--muted)">— ${esc(String(v.text).slice(0, 40))}${String(v.text).length > 40 ? "…" : ""}</span><br>
+      <select id="tkRe_${p.id}_${k}">${opts}</select><button class="mini-btn" onclick="tkRelink('${p.id}','${k}')">연결</button> <button class="mini-btn" onclick="tkRemove('${p.id}','${k}')">삭제</button></div>`).join("")}</div>`;
+}
+window.tkToggle = (pid, key) => {
+  if (tkOpenAll[pid]) { // 전체 펼침 상태에서 하나를 누르면 그것만 접기
+    tkOpenAll[pid] = false;
+    const p = (data.people || {})[pid]; if (p) tkItems(Object.assign({ id: pid }, p)).forEach(it => tkOpen[pid + it.key] = it.key !== key);
+  } else tkOpen[pid + key] = !tkOpen[pid + key];
+  renderPeople();
+};
+window.tkToggleAll = pid => { tkOpenAll[pid] = !tkOpenAll[pid]; if (!tkOpenAll[pid]) Object.keys(tkOpen).forEach(k => { if (k.startsWith(pid)) delete tkOpen[k]; }); renderPeople(); };
+const tkModal = $("tkModal");
+window.tkEditK = (pid, key) => {
+  const p = (data.people || {})[pid]; if (!p) return;
+  const meta = (tkTitles[pid] || {})[key] || tkAll(pid)[key] || {}; const d = tkAll(pid)[key] || {};
+  $("tkPid").value = pid; $("tkKey").value = key;
+  $("tkModalTitle").textContent = (d.text ? "세부 내용 수정" : "세부 내용 작성");
+  $("tkModalSub").textContent = `${p.name} · ${TK_SECS[meta.sec] || ""} · ${meta.title || ""}`;
+  $("tkText").value = d.text || "";
+  $("tkModalMeta").innerHTML = d.text ? `<span>마지막 수정 ${esc(d.by || "")} · ${tkFmt(d.at)}</span>` : `<span>작성자로 <b>${esc(currentUser() || "?")}</b> 기록됩니다</span>`;
+  $("tkDelBtn").style.display = d.text ? "" : "none";
+  $("tkDelBtn").onclick = () => { if (confirm("이 세부 내용을 삭제할까요?")) tkRemove(pid, key).then(() => tkModal.close()); };
+  tkModal.showModal(); setTimeout(() => $("tkText").focus(), 50);
+};
+$("tkSaveBtn").onclick = async () => {
+  const pid = $("tkPid").value, key = $("tkKey").value, text = $("tkText").value.trim();
+  const p = (data.people || {})[pid]; if (!p) return;
+  const meta = (tkTitles[pid] || {})[key] || tkAll(pid)[key] || {};
+  if (!text) return alert("내용을 적어주세요. 지우려면 삭제 버튼을 쓰세요.");
+  const rec = { text, by: currentUser() || "?", at: Date.now(), sec: meta.sec || "", title: meta.title || "" };
+  if (await safeWrite("세부 내용", () => orgRef.child("taskDetails/" + pid + "/" + key).set(rec), $("tkSaveBtn"))){
+    logAction("상세 작성", `${p.name} · ${meta.title || key}`);
+    tkOpen[pid + key] = true; tkModal.close();
+  }
+};
+$("tkText").addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") $("tkSaveBtn").click(); });
+window.tkRemove = async (pid, key) => {
+  const p = (data.people || {})[pid] || {}; const d = tkAll(pid)[key] || {};
+  await orgRef.child("taskDetails/" + pid + "/" + key).remove();
+  logAction("상세 삭제", `${p.name || pid} · ${d.title || key}`);
+};
+window.tkRelink = async (pid, oldKey) => {
+  const sel = $("tkRe_" + pid + "_" + oldKey); if (!sel || !sel.value) return;
+  const newKey = sel.value, v = tkAll(pid)[oldKey]; if (!v) return;
+  const cur = tkAll(pid)[newKey];
+  if (cur && cur.text && !confirm("선택한 항목에 이미 세부 내용이 있어요. 덮어쓸까요?")) return;
+  const meta = (tkTitles[pid] || {})[newKey] || {};
+  const upd = {}; upd["taskDetails/" + pid + "/" + newKey] = Object.assign({}, v, { sec: meta.sec || v.sec, title: meta.title || v.title }); upd["taskDetails/" + pid + "/" + oldKey] = null;
+  await orgRef.update(upd); showToast("세부 내용을 연결했어요");
+};
+// 항목명이 바뀐 경우: 글자 유사도로 새 항목에 자동 이어붙이기 (같은 구분 안에서만)
+function tkSim(a, b){
+  a = tkNorm(a); b = tkNorm(b); if (!a || !b) return 0; if (a === b) return 1;
+  let pre = 0; while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
+  const grams = s => { const m = {}; for (let i = 0; i < s.length - 1; i++) m[s.slice(i, i + 2)] = (m[s.slice(i, i + 2)] || 0) + 1; return m; };
+  const ga = grams(a), gb = grams(b); let inter = 0; Object.keys(ga).forEach(g => inter += Math.min(ga[g], gb[g] || 0));
+  const dice = 2 * inter / Math.max(1, (a.length - 1) + (b.length - 1));
+  return Math.max(dice, pre >= 4 ? 0.6 : 0);
+}
+async function tkMigrateOnSave(pid, newP){
+  const all = tkAll(pid); if (!Object.keys(all).length) return;
+  const cur = {}; tkItems(Object.assign({ id: pid }, newP)).forEach(it => cur[it.key] = it);
+  const orphan = Object.entries(all).filter(([k, v]) => !cur[k] && v && v.text);
+  if (!orphan.length) return;
+  const upd = {}, taken = {};
+  orphan.forEach(([ok, v]) => {
+    let best = null, bs = 0;
+    Object.values(cur).forEach(it => {
+      if (it.sec !== v.sec || taken[it.key] || (all[it.key] && all[it.key].text)) return;
+      const sc = tkSim(v.title, it.title); if (sc > bs){ bs = sc; best = it; }
+    });
+    if (best && bs >= 0.5){ taken[best.key] = true; upd["taskDetails/" + pid + "/" + best.key] = Object.assign({}, v, { title: best.title, sec: best.sec }); upd["taskDetails/" + pid + "/" + ok] = null; }
+  });
+  if (Object.keys(upd).length) await orgRef.update(upd);
+}
+// 인수인계서 — 항목 + 세부 내용을 한 문서로 (새 창, 인쇄/PDF)
+window.tkHandover = pid => {
+  const p = (data.people || {})[pid]; if (!p) return;
+  const all = tkAll(pid), dept = (data.departments || {})[p.dept]?.name || "";
+  const sec = (title, arr, sc) => { const items = toArr(arr); if (!items.length) return ""; return `<h2>${esc(title)}</h2>` + items.map(t => { const d = all[tkKey(sc, t)]; return `<div class="it"><div class="t">${esc(t)}</div>${d && d.text ? `<div class="d">${esc(d.text)}</div><div class="m">${esc(d.by || "")} · ${tkFmt(d.at)}</div>` : `<div class="d none">세부 내용 없음</div>`}</div>`; }).join(""); };
+  const st = tkStats(Object.assign({ id: pid }, p));
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${esc(p.name)} 업무 인수인계서</title>
+<style>body{font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;color:#212B36;max-width:820px;margin:0 auto;padding:36px 28px;line-height:1.7}
+h1{font-size:24px;margin:0 0 4px}.sub{color:#7B8784;font-size:13px;margin-bottom:22px}.mission{background:#E9F8F1;border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:14px}
+h2{font-size:14px;color:#00915E;letter-spacing:.5px;margin:22px 0 8px;padding-bottom:5px;border-bottom:1px solid #E6EBE9}
+.it{margin:0 0 10px;padding-left:12px;border-left:3px solid #E6EBE9;break-inside:avoid}.t{font-weight:700;font-size:14px}.d{white-space:pre-wrap;font-size:13px;color:#3D4844;margin-top:2px}.d.none{color:#B8C2BE;font-style:italic}.m{font-size:11px;color:#9AA5A0}
+.foot{margin-top:28px;font-size:11px;color:#9AA5A0;border-top:1px solid #E6EBE9;padding-top:10px}.pbtn{position:fixed;top:14px;right:14px;padding:9px 16px;border-radius:999px;border:0;background:#00B173;color:#fff;font-weight:700;cursor:pointer}
+@media print{.pbtn{display:none}body{padding:0}}</style></head><body>
+<button class="pbtn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+<h1>${esc(p.name)} 업무 인수인계서</h1><div class="sub">${esc(dept)} · ${esc(p.role)} · 작성 기준 ${tkFmt(Date.now())} · 세부 내용 ${st.done}/${st.total}</div>
+<div class="mission"><b>Mission</b> — ${esc(p.mission || "-")}</div>
+${sec("핵심 책임", p.responsibilities, "resp")}${sec("KPI — 측정 방법·기준", p.kpis, "kpi")}${sec("혼자 결정 가능한 범위", p.canDecide, "can")}${sec("하지 않는 업무", p.notMine, "not")}
+<div class="foot">돌봄매트 조직 운영(org.html)에서 자동 생성 · 세부 내용은 각 항목을 눌러 수정할 수 있습니다.</div></body></html>`;
+  const w = window.open("", "_blank"); if (!w) return alert("팝업이 차단됐어요. 이 사이트의 팝업을 허용해 주세요.");
+  w.document.open(); w.document.write(html); w.document.close();
 };
 
 /* ───────── 부서 CRUD ───────── */
