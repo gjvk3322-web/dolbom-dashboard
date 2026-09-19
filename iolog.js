@@ -26,10 +26,23 @@
      자동값이 오늘이 아닐 때만 한 줄 안내, 맨 아래 '지연 입력' 링크로만 날짜 변경. 사유는 Apps Script(ioReason)로도 전송 → '입출고사유' 시트
    v10 (2026-09-17j) 🔥 긴급 수정 — 실사 불러오는 중에 renderList가 두 번 불리면(io_logs·io_recon 콜백) loadInventory가 '이미 끝난 약속'을 돌려줘
      renderList→loadInventory→renderList… 마이크로태스크 무한 루프 → 스케줄러 전체가 멈춤(클릭 불가·시트 로딩 정지). 같은 진행 중 약속을 돌려주고
-     한 번만 대기하도록 고침 + renderList 과다 호출 차단기 추가 */
+     한 번만 대기하도록 고침 + renderList 과다 호출 차단기 추가
+
+   v12 (2026-09-19) 대장 요청 4가지
+   · 입고 ↔ 출고 위치 교체 (시작 버튼·작성 화면 세그먼트 모두 입고가 왼쪽 — 실제 순서가 입고 → 출고)
+   · 작성 화면을 3단계로: [📷 사진 | 🚚 차량 | 📦 제품] 세그먼트 하나만 보이고 나머지는 접힘.
+     탭 라벨에 상태 배지(✓ 촬영 완료 / 6771 / 62장), 사진 찍으면 차량(이미 선택돼 있으면 제품)으로 자동 이동, 차량 고르면 제품으로 자동 이동.
+     담당은 차량 단계, 메모·지연 입력은 제품 단계로 이동. 제출 때 안 채운 단계가 있으면 그 단계로 자동 전환
+   · 🔴 작성 중 임시 저장(draft) 신설 — 지금까지는 폼이 메모리(F·P)에만 있어서 앱 전환·화면 꺼짐으로 페이지가 리로드되면 사진·장수가 통째로 날아갔음.
+     구분(입고/출고)별로 따로 저장: 텍스트는 localStorage(io_draft_{지역}_{구분}), 사진은 IndexedDB(dolbom_io/kv, 용량 때문에 localStorage 불가).
+     내용이 있을 때만 저장하므로 빈 폼이 기존 임시저장을 덮지 않음. 다시 열면 [이어쓰기 / 새로 시작]을 물어보고(자동 복원 아님 — 오조사 방지),
+     제출 성공·'새로 시작' 시 삭제, 날짜가 바뀐 임시저장은 자동 폐기. ✕ 닫기는 이제 지우지 않고 임시 저장
+   · 공유 화면에 다음 작업일 출고를 사진·내역까지 전부 표시 — 저녁엔 입고(작업일=오늘)와 출고(작업일=내일)가 다른 날짜로 묶여서
+     예전엔 출고가 요약 한 줄로만 나왔음. 이제 입고 사진 + 출고 사진이 한 화면에 → 스크린샷 1장으로 단톡방 보고 가능.
+     [내 차량 / 전체] 토글 추가(기본 내 차량 — 남의 기록 없이 본인 것만) */
 (function(){
 'use strict';
-const IO_VER='2026.09.17k';
+const IO_VER='2026.09.19a';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -105,7 +118,7 @@ const CSS=`
 .io-start button{padding:16px 12px;border-radius:16px;border:none;font-family:var(--font);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:transform .1s}
 .io-start button:active{transform:scale(.97)}
 .io-start .out{background:var(--green);color:#03170a}
-.io-start .in{background:var(--card2);color:var(--text);border:1px solid rgba(255,255,255,.08)}
+.io-start .in{background:var(--cyan);color:#001b24}
 .io-start b{display:block;font-size:18px;font-weight:900;letter-spacing:-.3px}
 .io-status{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700;margin:8px 0}
 .io-status.wait{background:rgba(255,214,10,.1);color:var(--yellow)}
@@ -317,6 +330,29 @@ const CSS=`
 .io-sh-ft-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:10px}
 .io-sh-btn{pointer-events:auto;padding:11px 26px;border-radius:22px;border:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;background:rgba(40,42,54,.92);color:var(--text);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .io-sh-btn.lnk{background:transparent;border-color:transparent;color:var(--dim);font-size:12px;font-weight:700;padding:11px 8px}
+/* 작성 3단계 (사진·차량·제품) */
+.io-step{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;background:var(--card);border-radius:14px;padding:4px;margin-bottom:14px}
+.io-step button{padding:9px 4px;border-radius:11px;border:none;background:transparent;color:var(--dim);font-family:var(--font);cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden;min-width:0}
+.io-step button b{display:block;font-size:13.5px;font-weight:900;letter-spacing:-.4px;white-space:nowrap}
+.io-step button small{display:block;font-size:10.5px;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)}
+.io-step button.done small{color:var(--green)}
+.io-step button.on{background:var(--card2);color:var(--text);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
+.io-step button.on b{color:var(--text)}
+.io-pane{display:none}
+.io-pane.on{display:block}
+.io-next{width:100%;padding:13px;border-radius:13px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;margin-top:2px;-webkit-tap-highlight-color:transparent}
+/* 작성 중 임시 저장 */
+.io-draft{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,214,10,.1);color:var(--yellow);border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:12px}
+.io-draft .g{flex:1;min-width:130px;line-height:1.5}
+.io-draft button{padding:8px 12px;border-radius:9px;border:none;font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;background:rgba(255,214,10,.9);color:#1a1400;white-space:nowrap}
+.io-draft button.ghost{background:rgba(255,255,255,.1);color:var(--sub)}
+/* 공유 화면 — 내 차량/전체, 다음 작업일 블록 */
+.io-sh-tabs{display:flex;gap:4px;background:var(--card);border-radius:11px;padding:3px;margin-bottom:10px}
+.io-sh-tabs button{flex:1;min-width:0;padding:8px 6px;border-radius:9px;border:none;background:transparent;color:var(--dim);font-family:var(--font);font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.io-sh-tabs button.on{background:var(--card2);color:var(--text)}
+.io-sh-nx{border:1px dashed rgba(255,255,255,.16);border-radius:14px;padding:4px 8px 8px;margin-top:10px}
+.io-sh-nxh{font-size:12.5px;font-weight:800;color:var(--sub);padding:8px 6px 2px}
+.io-sh-nx .io-sh-veh{background:transparent;padding:0 4px 4px}
 `;
 
 /* ---------- 상태 ---------- */
@@ -327,7 +363,7 @@ let busy=false;      // 제출 진행 중
 let pingOk=+(localStorage.getItem('io_ping_ok')||0);
 let lastErr='';
 let flushing=false;
-let SH={open:false,date:''}; // 공유 화면 상태 (그날 전체)
+let SH={open:false,date:'',mine:true}; // 공유 화면 상태 (그날 전체 / mine=내 차량만)
 let INV=null;        // Firebase inventory 최근 45일 {날짜:{팀:{위치:{time,unit,data}}}}
 let invAt=0;         // INV 불러온 시각
 let invPromise=null; // 진행 중인 실사 불러오기 약속 — 재진입 시 같은 약속을 돌려줌 (루프 방지)
@@ -339,6 +375,65 @@ let DAY_OPEN={};     // 지난 날짜 펼침 상태 {date:true}
 let VOID_OPEN={};    // 취소된 기록 펼침 {날짜|차량:true}
 let RECON={};        // 사유 {날짜:{차량:{reason,note,by,at,diff,verdict}}}
 let RS=null;         // 사유 입력 중 {plate,date,reason,note}
+
+/* ---------- 작성 중 임시 저장 (v12) ----------
+   텍스트는 localStorage, 사진은 IndexedDB. 구분(입고/출고)별로 따로 보관 →
+   입고 제출하고 1시간 뒤 출고를 쓰는 동안 서로 안 건드림. 내용이 있을 때만 저장(빈 폼이 덮어쓰지 않음) */
+let _idb=null,_dsT=null;
+function idb(){
+  if(_idb)return _idb;
+  _idb=new Promise((res,rej)=>{try{const q=indexedDB.open('dolbom_io',1);
+    q.onupgradeneeded=()=>{try{q.result.createObjectStore('kv')}catch(e){}};
+    q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}});
+  return _idb;
+}
+async function idbSet(k,v){try{const d=await idb();return new Promise(res=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res(1);t.onerror=()=>res(0)})}catch(e){return 0}}
+async function idbGet(k){try{const d=await idb();return new Promise(res=>{const t=d.transaction('kv','readonly');const r=t.objectStore('kv').get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}catch(e){return null}}
+async function idbDel(k){try{const d=await idb();return new Promise(res=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>res(1);t.onerror=()=>res(0)})}catch(e){return 0}}
+
+function draftKey(t){return 'io_draft_'+RK+'_'+t}
+function photoKey(t){return 'io_photo_'+RK+'_'+t}
+function formHasContent(){return !!F&&(!!P||F.items.some(it=>it.product||itemTotal(it)||itemQty(it,'t'))||!!F.note)}
+function draftWrite(){ // 즉시 저장
+  if(!F||busy||!formHasContent())return;
+  try{localStorage.setItem(draftKey(F.type),JSON.stringify({
+    type:F.type,date:F.date,wdate:F.wdate,dateEdit:!!F.dateEdit,vehicle:F.vehicle,custom:!!F.custom,
+    worker:F.worker||'',items:F.items,note:F.note||'',step:F.step||'photo',hasPhoto:!!P,savedAt:Date.now()
+  }))}catch(e){console.warn('[io] draft',e)}
+}
+function draftSave(){clearTimeout(_dsT);_dsT=setTimeout(draftWrite,400)} // 타이핑 중엔 묶어서
+function photoDraftSave(){ // 사진은 스탬프 없는 원본(1280px)으로 — 복원 후 차량·시각이 바뀌어도 다시 찍힘
+  if(!F||!P)return;
+  try{idbSet(photoKey(F.type),{data:baseDataURL(),at:P.at.getTime(),taken:P.taken||Date.now(),name:P.name||''})}catch(e){console.warn('[io] photo draft',e)}
+}
+function draftGet(t){
+  try{const d=JSON.parse(localStorage.getItem(draftKey(t))||'null');
+    if(!d||d.date!==kstDate(0))return null;                       // 날짜 넘어간 건 안 씀
+    if(Date.now()-(d.savedAt||0)>14*3600e3)return null;
+    const any=d.hasPhoto||d.note||(d.items||[]).some(it=>it.product||num(it.c)+num(it.s)+num(it.k)+num(it.t));
+    return any?d:null;
+  }catch(e){return null}
+}
+function draftClear(t){try{localStorage.removeItem(draftKey(t))}catch(e){}idbDel(photoKey(t))}
+function draftPurge(){['in','out'].forEach(t=>{try{const d=JSON.parse(localStorage.getItem(draftKey(t))||'null');if(d&&d.date!==kstDate(0))draftClear(t)}catch(e){}})}
+function draftWhen(d){try{const k=kst(new Date(d.savedAt));return pad(k.getHours())+':'+pad(k.getMinutes())+(d.hasPhoto?' · 사진 있음':'')}catch(e){return ''}}
+function ioDraftDrop(){if(!F)return;draftClear(F.type);F.draft=null;renderForm();ioToast('새로 시작할게요')}
+async function ioDraftResume(){
+  const d=F&&F.draft;if(!d)return;
+  F.type=d.type||F.type;F.wopts=wdOpts(F.type).opts;F.wdate=d.wdate||F.wdate;F.dateEdit=!!d.dateEdit;
+  F.vehicle=d.vehicle||'';F.custom=!!d.custom;F.worker=d.worker||'';
+  F.items=(d.items&&d.items.length)?d.items:[newItem()];F.note=d.note||'';F.step=d.step||'photo';F.draft=null;
+  renderForm();
+  if(!d.hasPhoto){ioToast('이어서 작성할게요');return}
+  const box=$('ioPhotoBox');if(box)box.insertAdjacentHTML('beforeend','<div class="busy" id="ioPhotoBusy">사진 불러오는 중…</div>');
+  const rec=await idbGet(photoKey(F.type));
+  const done=()=>{const b=$('ioPhotoBusy');if(b)b.remove()};
+  if(!rec||!rec.data){done();ioToast('사진은 못 살렸어요. 다시 촬영해주세요',true);return}
+  const img=new Image();
+  img.onload=()=>{P={img,at:new Date(rec.at||Date.now()),taken:rec.taken||Date.now(),name:rec.name||''};renderForm();ioToast('이어서 작성할게요')};
+  img.onerror=()=>{done();ioToast('사진은 못 살렸어요. 다시 촬영해주세요',true)};
+  img.src=rec.data;
+}
 
 /* ---------- 껍데기 ---------- */
 function ensureShell(){
@@ -374,8 +469,8 @@ function ensureShell(){
   hp.innerHTML=`<div class="io-help-in">
     <h3>입출고 기록</h3>
     <div class="st"><b>1</b><span>남은 것 내리면 <b>입고</b>, 내일 것 실으면 <b>출고</b>. 저녁 출고는 자동으로 내일 것으로 잡혀요.</span></div>
-    <div class="st"><b>2</b><span>사진 → 차량 → 제품별 <b>장수</b> 입력. 시공보고는 입고 전에.</span></div>
-    <div class="st"><b>3</b><span>제출하면 오늘 화면이 떠요. 스크린샷해서 단톡방에. 안 맞으면 <b>사유</b>.</span></div>
+    <div class="st"><b>2</b><span>위 <b>사진 · 차량 · 제품</b> 순서대로. 쓰던 내용은 자동으로 임시 저장돼서 나갔다 와도 <b>이어쓰기</b>가 떠요.</span></div>
+    <div class="st"><b>3</b><span>제출하면 그날 화면이 떠요(입고 + 내일 실은 것 같이). 스크린샷해서 단톡방에. 안 맞으면 <b>사유</b>.</span></div>
     <div class="ref">박스는 장수로 환산: 500 12장 · 1M 22T 4장 · 1M 17T 6장 · 10T 24장(500)/8장(1M)</div>
     <button type="button" onclick="ioHelpClose()">확인</button>
   </div>`;
@@ -663,8 +758,8 @@ function renderList(){
   if(SH.open)renderShare();
   let h=`<div class="io-hd"><h2>📦 입출고</h2><div class="r"><span>${RN}</span><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
   <div class="io-start">
-    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b></button>
     <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} 입고</b></button>
+    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} 출고</b></button>
   </div>`;
   if(ob.length){
     const stuck=ob.some(e=>(e.tries||0)>=8);
@@ -691,15 +786,23 @@ function ioViewLocal(id){const e=obGet().find(x=>x.rec&&x.rec.id===id);if(!e||!e
 function ioViewClose(){$('ioViewer').classList.remove('show');$('ioViewImg').src=''}
 
 /* ---------- 공유 화면 (스크린샷 · 카톡용 텍스트) ---------- */
-function shareRecords(){
-  const {all,local}=allRecords();
-  const recs=Object.values(all).filter(r=>r&&wd(r)===SH.date&&r.status!=='void').sort((a,b)=>(a.ts||0)-(b.ts||0));
-  return {recs,local};
+function shareFilter(recs){ // 내 차량만 보기
+  if(!SH.mine)return recs;
+  const mp=normPlate(myPlate());if(!mp)return recs;
+  return recs.filter(r=>normPlate(r.vehicle)===mp);
 }
-function ioShare(date){ // 그날 전체 (차량별) — 제출 직후·날짜 공유 버튼 공용
-  SH={open:true,date};
+function shareDay(date,onlyOut){
+  const {all,local}=allRecords();
+  let recs=Object.values(all).filter(r=>r&&wd(r)===date&&r.status!=='void');
+  if(onlyOut)recs=recs.filter(r=>r.type!=='in');
+  return {recs:shareFilter(recs).sort((a,b)=>(a.ts||0)-(b.ts||0)),local};
+}
+function shareRecords(){return shareDay(SH.date)} // 호환용
+function ioShare(date){ // 그날 전체(차량별) + 다음 작업일 출고 — 제출 직후·날짜 공유 버튼 공용
+  SH={open:true,date,mine:!!myPlate()};
   renderShare();$('ioShare').classList.add('show');$('ioShare').scrollTop=0;
 }
+function ioShareMine(v){SH.mine=!!v;renderShare();try{$('ioShare').scrollTop=0}catch(e){}}
 function ioShareClose(){SH.open=false;$('ioShare').classList.remove('show')}
 
 function partsText(it){ // "센터 40 · 사이드 16 · 코너 2 · 10T 2"
@@ -727,44 +830,69 @@ function recText(r){
   return lines.join('\n');
 }
 function shareText(){
-  const {recs}=shareRecords();if(!recs.length)return '';
+  const {recs}=shareDay(SH.date);
+  const nd=nextWorkDay(SH.date);const next=shareDay(nd,true).recs;
+  if(!recs.length&&!next.length)return '';
   let t='';
   groupByVehicle(recs).forEach(g=>{const who=vehicles()[g.plate]||'';const R=dayRecon(g.plate,SH.date);const pl=reconProdList(R);const rt=reasonText(g.plate,SH.date);t+='🚚 '+g.plate+(who?' · '+who:'')+'\n출고 '+R.out+' − 입고 '+R.inn+' − 시공보고 '+R.sold+' → '+verdictText(R)+(pl.length?'\n'+pl.map(x=>x.txt).join(' · '):'')+(rt?'\n'+rt:'')+'\n\n'+g.recs.map(recText).join('\n\n')+'\n\n──────────\n\n'});
-  const sum=sumByProduct(recs);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);
-  t+=fmtD(SH.date)+' 작업일 · '+RN+(sl.length?'\n'+sl.join('\n'):'');
-  return t;
+  if(recs.length){const sum=sumByProduct(recs);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);
+    t+=fmtD(SH.date)+' 작업일 · '+RN+(sl.length?'\n'+sl.join('\n'):'')+'\n';}
+  if(next.length){
+    t+='\n📦 '+fmtD(nd)+' 쓸 것 · 미리 실음\n\n';
+    groupByVehicle(next).forEach(g=>{const who=vehicles()[g.plate]||'';t+='🚚 '+g.plate+(who?' · '+who:'')+'\n'+g.recs.map(recText).join('\n\n')+'\n\n'});
+    const sum=sumByProduct(next);const sl=sumLineText(sum,'out');if(sl)t+=sl+'\n';
+  }
+  return t.trim();
+}
+function shareRow(r,local){ // 기록 한 줄 (사진 + 제품 내역)
+  const k=r.type==='in'?'in':'out';const lp=local[r.id];const pending=!!lp||r.status==='pending';
+  let th;
+  if(lp&&lp.photo)th=`<div class="io-sh-th" onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
+  else if(r.photoId)th=`<div class="io-sh-th" onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,300)}" alt="" onerror="this.parentNode.innerHTML='사진<br>실패'"></div>`;
+  else th=`<div class="io-sh-th">사진<br>전송 중</div>`;
+  const items=(r.items||[]).map(it=>{const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
+    return `<div class="io-sh-line"><b>${esc(it.product)}</b> <b>${num(it.total)+num(it.tQty)}장</b><span class="q">${esc(parts.join(' · '))}</span></div>`}).join('');
+  return `<div class="io-sh-row"><div class="b"><div class="io-sh-l1"><span class="io-tag ${k}">${TYPE[k].n}</span><b>${esc(hm(r.at))}</b>${r.worker?`<span class="q" style="font-size:12px;color:var(--sub)">${esc(r.worker)}</span>`:''}${pending?'<span class="io-tag wait">사진 전송 중</span>':''}${r.late?'<span class="io-tag late">지연 입력</span>':''}</div>${items}${r.note?`<div class="io-sh-memo">${esc(r.note)}</div>`:''}</div>${th}</div>`;
+}
+function sumHtml(sum,keysOnly){ // 합계 줄
+  return (keysOnly||['out','in']).map(k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';
+    return `<div><span class="t ${k}">${TYPE[k].n} 합계</span>${keys.map(pk=>'<b>'+esc(pk)+'</b> '+(sum[k][pk].q+sum[k][pk].t)+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`}).filter(Boolean).join('');
 }
 function renderShare(){
   const box=$('ioShareIn');if(!box||!SH.open)return;
-  const {recs,local}=shareRecords();
+  const {recs,local}=shareDay(SH.date);
+  const nd=nextWorkDay(SH.date);const next=shareDay(nd,true).recs;
+  const mp=myPlate();
   let h=`<div class="io-sh-hd"><div><div class="io-sh-t">📦 입·출고</div><div class="io-sh-s">돌봄매트 ${RN} · ${fmtD(SH.date)}</div></div></div>`;
-  if(!recs.length){h+=`<div class="io-empty">이날 기록이 없어요.</div>`;box.innerHTML=h;return}
-  groupByVehicle(recs).forEach(g=>{
-    const R=dayRecon(g.plate,SH.date);
-    h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div><div class="io-sh-rc"><span>${reconEq(R)}${reconProdHtml(R)}${reasonHtml(g.plate,SH.date,R,false)}</span>${verdictTag(R)}</div>`;
-    g.recs.forEach(r=>{
-      const k=r.type==='in'?'in':'out';const lp=local[r.id];const pending=!!lp||r.status==='pending';
-      let th;
-      if(lp&&lp.photo)th=`<div class="io-sh-th" onclick="ioViewLocal('${esc(r.id)}')"><img src="${lp.photo}" alt=""></div>`;
-      else if(r.photoId)th=`<div class="io-sh-th" onclick="ioView('${esc(r.photoId)}')"><img src="${thumbUrl(r.photoId,300)}" alt="" onerror="this.parentNode.innerHTML='사진<br>실패'"></div>`;
-      else th=`<div class="io-sh-th">사진<br>전송 중</div>`;
-      const items=(r.items||[]).map(it=>{const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>num(x[1])>0).map(x=>x[0]+' '+num(x[1]));
-        return `<div class="io-sh-line"><b>${esc(it.product)}</b> <b>${num(it.total)+num(it.tQty)}장</b><span class="q">${esc(parts.join(' · '))}</span></div>`}).join('');
-      h+=`<div class="io-sh-row"><div class="b"><div class="io-sh-l1"><span class="io-tag ${k}">${TYPE[k].n}</span><b>${esc(hm(r.at))}</b>${r.worker?`<span class="q" style="font-size:12px;color:var(--sub)">${esc(r.worker)}</span>`:''}${pending?'<span class="io-tag wait">사진 전송 중</span>':''}${r.late?'<span class="io-tag late">지연 입력</span>':''}</div>${items}${r.note?`<div class="io-sh-memo">${esc(r.note)}</div>`:''}</div>${th}</div>`;
+  // 차량이 둘 이상 섞여 있을 때만 토글
+  const {all}=allRecords();
+  const plateSet=new Set(Object.values(all).filter(r=>r&&r.status!=='void'&&(wd(r)===SH.date||wd(r)===nd)).map(r=>normPlate(r.vehicle)));
+  if(mp&&plateSet.size>1)h+=`<div class="io-sh-tabs"><button type="button" class="${SH.mine?'on':''}" onclick="ioShareMine(1)">내 차량 ${esc(mp)}</button><button type="button" class="${SH.mine?'':'on'}" onclick="ioShareMine(0)">전체</button></div>`;
+  if(!recs.length&&!next.length){h+=`<div class="io-empty">이날 기록이 없어요.${SH.mine&&mp?'<br><span style="font-size:12px">다른 차량 기록은 [전체]에서 볼 수 있어요.</span>':''}</div>`;box.innerHTML=h;
+    const cb0=$('ioShareCopyBtn');if(cb0)cb0.disabled=true;return}
+  if(recs.length){
+    groupByVehicle(recs).forEach(g=>{
+      const R=dayRecon(g.plate,SH.date);
+      h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div><div class="io-sh-rc"><span>${reconEq(R)}${reconProdHtml(R)}${reasonHtml(g.plate,SH.date,R,false)}</span>${verdictTag(R)}</div>`;
+      g.recs.forEach(r=>{h+=shareRow(r,local)});
+      h+=`</div>`;
     });
+    const p=sumHtml(sumByProduct(recs));if(p)h+=`<div class="io-sh-tot">${p}</div>`;
+  }
+  // 다음 작업일에 쓰려고 미리 실은 것 — 사진·내역까지 전부 (스크린샷 1장으로 입고+출고가 같이 나오게)
+  if(next.length){
+    h+=`<div class="io-sh-nx"><div class="io-sh-nxh">📦 ${fmtD(nd)} 쓸 것 · 미리 실음</div>`;
+    groupByVehicle(next).forEach(g=>{
+      h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div>`;
+      g.recs.forEach(r=>{h+=shareRow(r,local)});
+      h+=`</div>`;
+    });
+    const p=sumHtml(sumByProduct(next),['out']);if(p)h+=`<div class="io-sh-tot">${p}</div>`;
     h+=`</div>`;
-  });
-  // 다음 작업일에 쓰려고 미리 실은 것 (오늘 저녁 출고)
-  const nd=nextWorkDay(SH.date);const {all:allR}=allRecords();
-  const nextRecs=Object.values(allR).filter(r=>r&&wd(r)===nd&&r.type!=='in'&&r.status!=='void').sort((a,b)=>(a.ts||0)-(b.ts||0));
-  if(nextRecs.length){h+=`<div class="io-sh-veh" style="border:1px dashed rgba(255,255,255,.14)"><div class="io-sh-vh">📦 ${fmtD(nd)} 것 미리 실음</div>`;
-    groupByVehicle(nextRecs).forEach(g=>{const o=sumIO(g.recs,()=>true);h+=`<div class="io-sh-line"><b>${vehLabel(g.plate)}</b> 출고 <b>${o.out}장</b><span class="q">${g.recs.map(r=>(r.items||[]).map(it=>esc(it.product)+' '+(num(it.total)+num(it.tQty))).join(' · ')).join(' · ')}</span></div>`});
-    h+=`</div>`}
-  const sum=sumByProduct(recs);const parts=['out','in'].map(k=>{const keys=PRODUCTS.map(p=>p.k).filter(pk=>sum[k][pk]&&(sum[k][pk].q||sum[k][pk].t));if(!keys.length)return '';return `<div><span class="t ${k}">${TYPE[k].n} 합계</span>${keys.map(pk=>'<b>'+esc(pk)+'</b> '+(sum[k][pk].q+sum[k][pk].t)+'장'+(sum[k][pk].t?' (10T '+sum[k][pk].t+')':'')).join(' · ')}</div>`}).filter(Boolean);
-  if(parts.length)h+=`<div class="io-sh-tot">${parts.join('')}</div>`;
+  }
   h+=`<div class="io-sh-note">이 화면을 스크린샷해서 단톡방에 올려주세요.</div>`;
   box.innerHTML=h;
-  const cb=$('ioShareCopyBtn');if(cb)cb.disabled=!recs.length;
+  const cb=$('ioShareCopyBtn');if(cb)cb.disabled=false;
 }
 function copyText(text,onOk){
   const fallback=()=>{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(ta);ta.focus();ta.select();try{ta.setSelectionRange(0,999999)}catch(e){}let ok=false;try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(ta);if(ok)onOk();else ioToast('복사가 안 돼요 · 스크린샷으로 올려주세요',true)};
@@ -778,21 +906,40 @@ function ioShareCopy(){
 /* ---------- 작성 (장 단위) ---------- */
 function newItem(){return {product:'',c:0,s:0,k:0,t:0}}
 function ioOpen(type){
+  const t=type==='in'?'in':'out';
   const vs=Object.keys(vehicles());
   const lastV=localStorage.getItem('io_last_vehicle')||'';
   const vehicle=vs.includes(lastV)?lastV:(vs.length===1?vs[0]:'');
-  const w=wdOpts(type==='in'?'in':'out');
-  F={type:type==='in'?'in':'out',date:kstDate(0),wdate:w.def,wopts:w.opts,dateEdit:false,vehicle,custom:false,worker:vehicle?(vehicles()[vehicle]||''):'',items:[newItem()],note:''};
+  const w=wdOpts(t);
+  F={type:t,date:kstDate(0),wdate:w.def,wopts:w.opts,dateEdit:false,vehicle,custom:false,worker:vehicle?(vehicles()[vehicle]||''):'',items:[newItem()],note:'',step:'photo',draft:draftGet(t)};
   P=null;busy=false;
   renderForm();
   $('ioOv').classList.add('show');$('ioOv').scrollTop=0;
 }
 function ioClose(){
   if(busy)return;
-  if(F&&(P||F.items.some(it=>it.product||itemTotal(it)||itemQty(it,'t')))&&!confirm('작성 중인 내용을 지우고 닫을까요?'))return;
+  if(formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
   $('ioOv').classList.remove('show');F=null;P=null;$('ioFile').value='';
 }
-function ioType(t){F.type=t;const w=wdOpts(t);F.wopts=w.opts;if(!F.dateEdit)F.wdate=w.def;renderForm();drawPreview()}
+function ioType(t){
+  if(!F)return;const old=F.type;if(old===t){renderForm();return}
+  const had=formHasContent();
+  F.type=t;const w=wdOpts(t);F.wopts=w.opts;if(!F.dateEdit)F.wdate=w.def;
+  if(had){draftClear(old);F.draft=null;draftWrite();photoDraftSave()} // 쓰던 내용을 새 구분으로 옮김
+  else F.draft=draftGet(t);
+  renderForm();drawPreview();
+}
+/* 3단계 */
+function formTotal(){let s=0;F.items.forEach(it=>{s+=itemTotal(it)+itemQty(it,'t')});return s}
+function stepState(){
+  const tot=formTotal();
+  return {
+    photo:{done:!!P,txt:P?'촬영 완료':'필요'},
+    veh:{done:!!F.vehicle,txt:F.vehicle?String(F.vehicle).slice(-4):'선택'},
+    item:{done:tot>0&&F.items.some(it=>it.product),txt:tot?tot+'장':'입력'}
+  };
+}
+function ioStep(s){if(!F)return;F.step=s;renderForm();draftSave();try{$('ioOv').scrollTop=0}catch(e){}}
 function renderForm(){
   if(!F)return;
   const T=TYPE[F.type];
@@ -800,26 +947,38 @@ function renderForm(){
   const sb=$('ioSubmitBtn');sb.className='io-submit '+F.type;sb.textContent=T.n+' 기록 제출';sb.disabled=busy;
   const vs=vehicles();const plates=Object.keys(vs);
   const emps=employees();
+  const st=stepState();const step=F.step||'photo';
+  const tab=(k,ico,name)=>`<button type="button" class="${step===k?'on':''}${st[k].done?' done':''}" onclick="ioStep('${k}')"><b>${ico} ${name}</b><small>${st[k].done?'✓ ':''}${esc(st[k].txt)}</small></button>`;
   let h=`<div class="io-seg">
-    <button type="button" class="out${F.type==='out'?' on':''}" onclick="ioType('out')">${TYPE.out.ico} 출고</button>
     <button type="button" class="in${F.type==='in'?' on':''}" onclick="ioType('in')">${TYPE.in.ico} 입고</button>
+    <button type="button" class="out${F.type==='out'?' on':''}" onclick="ioType('out')">${TYPE.out.ico} 출고</button>
   </div>
+  ${F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
   ${F.wdate!==kstDate(0)&&!F.dateEdit?`<div class="io-auto">${F.type==='in'?'아침 입고는 <b>어제 작업하고 남은 것</b>':'저녁 출고는 <b>내일 쓸 것</b>'}으로 기록돼요 · ${fmtD(F.wdate)}</div>`:''}
-  <div class="io-sec"><div class="io-lb">사진</div>
-    <div class="io-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`<div class="ph"><div class="i">📷</div><b>촬영</b><small>박스·낱장이 다 보이게</small></div>`}</div>
+  <div class="io-step">${tab('photo','📷','사진')}${tab('veh','🚚','차량')}${tab('item','📦','제품')}</div>
+  <div class="io-pane${step==='photo'?' on':''}">
+    <div class="io-sec"><div class="io-lb">사진 <small>박스·낱장이 다 보이게</small></div>
+      <div class="io-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`<div class="ph"><div class="i">📷</div><b>촬영</b><small>박스·낱장이 다 보이게</small></div>`}</div>
+    </div>
+    ${P?`<button type="button" class="io-next" onclick="ioStep('veh')">다음 · 차량 선택 →</button>`:''}
   </div>
-  <div class="io-sec"><div class="io-lb">차량 <small>${plates.length?'':'차량·공정성 탭에 등록된 차량이 없어요'}</small></div>
-    <div class="io-chips">${plates.map(p=>`<div class="io-chip${!F.custom&&F.vehicle===p?' on':''}" onclick="ioVehicle('${esc(p)}')">${esc(p)}<small>${esc(vs[p]||'미배정')}</small></div>`).join('')}<div class="io-chip dim${F.custom?' on':''}" onclick="ioVehicleCustom()">직접 입력</div></div>
-    ${F.custom?`<input class="io-inp" id="ioVehicleIn" style="margin-top:8px" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value)">`:''}
+  <div class="io-pane${step==='veh'?' on':''}">
+    <div class="io-sec"><div class="io-lb">차량 <small>${plates.length?'':'차량·공정성 탭에 등록된 차량이 없어요'}</small></div>
+      <div class="io-chips">${plates.map(p=>`<div class="io-chip${!F.custom&&F.vehicle===p?' on':''}" onclick="ioVehicle('${esc(p)}')">${esc(p)}<small>${esc(vs[p]||'미배정')}</small></div>`).join('')}<div class="io-chip dim${F.custom?' on':''}" onclick="ioVehicleCustom()">직접 입력</div></div>
+      ${F.custom?`<input class="io-inp" id="ioVehicleIn" style="margin-top:8px" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value)">`:''}
+    </div>
+    <div class="io-sec"><div class="io-lb">담당</div>
+      <select class="io-sel" id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select>
+    </div>
+    ${F.vehicle?`<button type="button" class="io-next" onclick="ioStep('item')">다음 · 제품 입력 →</button>`:''}
   </div>
-  <div class="io-sec"><div class="io-lb">제품 <small>장수로 입력</small></div><div id="ioItems"></div>
-    <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가</button>
-  </div>
-  <div class="io-sec"><div class="io-lb">담당</div>
-    <select class="io-sel" id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select>
-  </div>
-  <div class="io-sec"><div class="io-lb">메모 <small>선택</small></div><input class="io-inp" id="ioNote" placeholder="예) 오후 현장용 추가 적재" value="${esc(F.note)}" oninput="ioNote(this.value)"></div>
-  <div class="io-late">${F.dateEdit?`<span>작업일</span><input type="date" id="ioDate" value="${F.wdate}" onchange="ioDateChange(this.value)"><span class="io-tag late">지연 입력</span><span class="lnk" onclick="ioWdate('${wdOpts(F.type).def}')">자동으로</span>`:`<span class="lnk" onclick="ioDateToggle()">지난 날짜 것을 지금 기록 (지연 입력)</span>`}</div>`;
+  <div class="io-pane${step==='item'?' on':''}">
+    <div class="io-sec"><div class="io-lb">제품 <small>장수로 입력</small></div><div id="ioItems"></div>
+      <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가</button>
+    </div>
+    <div class="io-sec"><div class="io-lb">메모 <small>선택</small></div><input class="io-inp" id="ioNote" placeholder="예) 오후 현장용 추가 적재" value="${esc(F.note)}" oninput="ioNote(this.value)"></div>
+    <div class="io-late">${F.dateEdit?`<span>작업일</span><input type="date" id="ioDate" value="${F.wdate}" onchange="ioDateChange(this.value)"><span class="io-tag late">지연 입력</span><span class="lnk" onclick="ioWdate('${wdOpts(F.type).def}')">자동으로</span>`:`<span class="lnk" onclick="ioDateToggle()">지난 날짜 것을 지금 기록 (지연 입력)</span>`}</div>
+  </div>`;
   $('ioForm').innerHTML=h;
   renderItems();
   if(P)drawPreview();
@@ -843,21 +1002,25 @@ function updateItemTotals(i){
   const it=F.items[i];
   const t=$('iot_'+i);if(t){t.textContent=itemTotal(it);const ft=t.parentNode;const t10=itemQty(it,'t');const extra=ft.querySelector('span');if(extra)extra.remove();if(t10){const s=document.createElement('span');s.style.color='var(--purple)';s.textContent=' +10T '+t10+'장';ft.appendChild(s)}}
 }
-function ioNum(i,k,el){const it=F.items[i];if(!it)return;const clean=el.value.replace(/[^0-9]/g,'');if(el.value!==clean)el.value=clean;const v=num(el.value);it[k]=v;updateItemTotals(i);el.classList.toggle('z',!v)}
+function ioNum(i,k,el){const it=F.items[i];if(!it)return;const clean=el.value.replace(/[^0-9]/g,'');if(el.value!==clean)el.value=clean;const v=num(el.value);it[k]=v;updateItemTotals(i);el.classList.toggle('z',!v);draftSave()}
 
 function ioFocus(el){if(el.value==='0'){el.value='';el.classList.add('z')}try{el.select()}catch(e){}}
 function ioBlur(el){if(el.value==='')el.value='0';el.classList.toggle('z',!num(el.value))}
-function ioProduct(i,k){F.items[i].product=k;renderItems()}
-function ioAddItem(){F.items.push(newItem());renderItems();const el=$('ioPc_'+(F.items.length-1));if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
-function ioDelItem(i){if(F.items.length<=1)return;const it=F.items[i];if((it.product||itemTotal(it)||itemQty(it,'t'))&&!confirm('제품 '+(i+1)+'을 지울까요?'))return;F.items.splice(i,1);renderItems()}
-function ioNote(v){F.note=v.slice(0,200)}
-function ioWdate(d){F.dateEdit=false;F.wdate=d;renderForm()}
-function ioDateToggle(){F.dateEdit=true;if(F.wdate>=kstDate(0))F.wdate=prevWorkDay(kstDate(0));renderForm()}
-function ioDateChange(v){if(/^\d{4}-\d{2}-\d{2}$/.test(v))F.wdate=v;renderForm()}
-function ioVehicle(p){F.custom=false;F.vehicle=p;const d=vehicles()[p];if(d)F.worker=d;renderForm();drawPreview()}
+function ioProduct(i,k){F.items[i].product=k;renderItems();draftSave()}
+function ioAddItem(){F.items.push(newItem());renderItems();const el=$('ioPc_'+(F.items.length-1));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});draftSave()}
+function ioDelItem(i){if(F.items.length<=1)return;const it=F.items[i];if((it.product||itemTotal(it)||itemQty(it,'t'))&&!confirm('제품 '+(i+1)+'을 지울까요?'))return;F.items.splice(i,1);renderItems();draftSave()}
+function ioNote(v){F.note=v.slice(0,200);draftSave()}
+function ioWdate(d){F.dateEdit=false;F.wdate=d;renderForm();draftSave()}
+function ioDateToggle(){F.dateEdit=true;if(F.wdate>=kstDate(0))F.wdate=prevWorkDay(kstDate(0));renderForm();draftSave()}
+function ioDateChange(v){if(/^\d{4}-\d{2}-\d{2}$/.test(v))F.wdate=v;renderForm();draftSave()}
+function ioVehicle(p){
+  F.custom=false;F.vehicle=p;const d=vehicles()[p];if(d)F.worker=d;
+  if(F.step==='veh')F.step='item';                 // 차량 고르면 바로 제품 단계로
+  renderForm();drawPreview();draftSave();
+}
 function ioVehicleCustom(){F.custom=true;F.vehicle='';renderForm();const el=$('ioVehicleIn');if(el)el.focus()}
-function ioVehicleType(v){F.vehicle=v.trim().slice(0,20);drawPreview()}
-function ioWorker(v){F.worker=v;drawPreview()}
+function ioVehicleType(v){F.vehicle=v.trim().slice(0,20);drawPreview();draftSave()}
+function ioWorker(v){F.worker=v;drawPreview();draftSave()}
 
 /* ---------- 사진 ---------- */
 function ioPickPhoto(){if(busy)return;const f=$('ioFile');f.value='';f.click()}
@@ -868,7 +1031,9 @@ function ioPhotoChange(inp){
   img.onload=()=>{
     P={img,at:new Date(),taken:file.lastModified||Date.now(),name:file.name||''};
     URL.revokeObjectURL(url);
+    if(F&&F.step==='photo')F.step=F.vehicle?'item':'veh'; // 차량이 이미 잡혀 있으면 제품으로 바로
     renderForm();
+    draftWrite();photoDraftSave();
   };
   img.onerror=()=>{URL.revokeObjectURL(url);const b=$('ioPhotoBusy');if(b)b.remove();ioToast('사진을 읽지 못했어요. 다시 촬영해주세요',true)};
   img.src=url;
@@ -878,6 +1043,12 @@ function stampLines(){
   const l1=kstDate(0,P.at)+' ('+DOWK[k.getDay()]+') '+pad(k.getHours())+':'+pad(k.getMinutes())+':'+pad(k.getSeconds());
   const l2=[RN,F.vehicle||'차량 미선택',F.worker||'',TYPE[F.type].n+' ('+TYPE[F.type].sub.replace(/ /g,'')+')',F.wdate&&F.wdate!==kstDate(0,P.at)?'작업일 '+fmtMD(F.wdate):''].filter(Boolean).join('  ·  ');
   return [l1,l2];
+}
+function baseDataURL(){ // 임시 저장용 — 스탬프 없이 1280px로만 줄인 원본
+  const img=P.img;const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  const sc=Math.min(1,MAX_PX/Math.max(iw,ih));const w=Math.max(1,Math.round(iw*sc)),h=Math.max(1,Math.round(ih*sc));
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+  return c.toDataURL('image/jpeg',JPG_Q);
 }
 function stampCanvas(maxPx){
   const img=P.img;const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
@@ -910,15 +1081,16 @@ function flatItem(it){ // 시트 형식(박스+낱장+장수)은 그대로 — �
 }
 async function ioSubmit(){
   if(!F||busy)return;
-  if(!P){ioToast('사진을 먼저 촬영해주세요',true);$('ioOv').scrollTop=0;return}
-  if(!F.vehicle){ioToast('차량을 선택해주세요',true);return}
+  const goStep=(s,msg)=>{F.step=s;renderForm();ioToast(msg,true);try{$('ioOv').scrollTop=0}catch(e){}};
+  if(!P){goStep('photo','사진을 먼저 촬영해주세요');return}
+  if(!F.vehicle){goStep('veh','차량을 선택해주세요');return}
   const items=[];
   for(let i=0;i<F.items.length;i++){const it=F.items[i];const any=itemTotal(it)||itemQty(it,'t');
     if(!it.product&&!any)continue;
-    if(!it.product){ioToast('제품 '+(i+1)+'의 색상을 골라주세요',true);return}
-    if(!any){ioToast('제품 '+(i+1)+'의 장수가 비어 있어요',true);return}
+    if(!it.product){goStep('item','제품 '+(i+1)+'의 색상을 골라주세요');return}
+    if(!any){goStep('item','제품 '+(i+1)+'의 장수가 비어 있어요');return}
     items.push(flatItem(it))}
-  if(!items.length){ioToast('제품과 장수를 입력해주세요',true);return}
+  if(!items.length){goStep('item','제품과 장수를 입력해주세요');return}
   busy=true;$('ioSubmitBtn').disabled=true;$('ioSubmitBtn').innerHTML='저장 중…';
   try{
     const now=new Date();const ts=now.getTime();
@@ -932,6 +1104,7 @@ async function ioSubmit(){
     if(!obAdd({kind:'log',id,rec,payload,tries:0,ts})){busy=false;renderForm();return}
     try{db.ref(NODE+'/'+id).set(rec)}catch(e){console.warn('[io] fb set',e)}
     localStorage.setItem('io_last_vehicle',F.vehicle);
+    clearTimeout(_dsT);draftClear(F.type); // 제출된 건 임시저장 삭제 — 다음에 열면 빈 폼
     busy=false;F=null;P=null;$('ioFile').value='';$('ioOv').classList.remove('show');
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
@@ -997,6 +1170,9 @@ async function ioFlush(manual){
 /* ---------- 시작 ---------- */
 function init(){
   ensureShell();
+  draftPurge(); // 날짜 지난 임시저장 폐기
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&F&&!busy){clearTimeout(_dsT);draftWrite();photoDraftSave()}});
+  window.addEventListener('pagehide',()=>{if(F&&!busy){clearTimeout(_dsT);draftWrite()}});
   try{db.ref(NODE).orderByChild('date').startAt(kstDate(-DAYS)).limitToLast(600).on('value',snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});LOGS=o;renderList()})}
   catch(e){console.warn('[io] fb listen',e);renderList()}
   try{db.ref('io_recon/'+RK).orderByKey().startAt(kstDate(-DAYS)).on('value',snap=>{RECON=snap.val()||{};renderList();if(SH.open)renderShare()})}catch(e){console.warn('[io] recon listen',e)}
@@ -1005,6 +1181,6 @@ function init(){
   setInterval(()=>{if(obGet().length&&!flushing)ioFlush(false)},90000);
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
 }
-Object.assign(window,{ioShare,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
