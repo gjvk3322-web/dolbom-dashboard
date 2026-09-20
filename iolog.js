@@ -68,10 +68,15 @@
    v16 (2026-09-20d) 📦 입출고가 독립 탭(예전 '차량' 탭 자리)으로 · '현장 입력'과 '입출고 취합'을 한 화면으로 합침
    · 화면(팀 카드·제품별 합계·원본 내역·엑셀 복사·월별 합계)은 ioadmin.js가 #ioView 안에 바로 그림 → 이 파일의 renderList()는 그쪽으로 넘기기만 함. ioadmin.js는 시작할 때 바로 불러옴
    · 팀 카드를 누르면 그 차량으로 [차로 출고 기록]·[사무실로 입고 기록] → ioOpen(type, 차량번호)로 차량이 미리 골라진 작성 화면
-   · 작성·최종 확인·제출·임시저장·전송 대기·사진 스탬프·취소·사유·그날 기록 화면(공유)은 그대로. 예전 목록/차량별 현황 그리기 코드는 호출만 안 함(남겨 둠) */
+   · 작성·최종 확인·제출·임시저장·전송 대기·사진 스탬프·취소·사유·그날 기록 화면(공유)은 그대로. 예전 목록/차량별 현황 그리기 코드는 호출만 안 함(남겨 둠)
+
+   v17 (2026-09-20e) 화면 정리
+   · 작성 화면: [차로 출고]를 왼쪽(시작점), [사무실로 입고]를 오른쪽으로. 작업일 고르는 줄을 다시 없앰(시각으로 자동: 15시 이후 출고=내일, 10시 전 입고=어제 — v9~v13과 같음)
+   · '○/○ (요일) 쓸 것 · 미리 실음', '○/○ 것', 최종 확인의 작업일 줄처럼 '어느 날 쓸 것인지' 알려주는 문구를 화면·공유 텍스트에서 뺌(기록 자체의 작업일·집계 방식은 그대로)
+   v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.09.20d';
+const IO_VER='2026.09.20h';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -645,7 +650,7 @@ function ensureShell(){
   const hp=document.createElement('div');hp.className='io-help';hp.id='ioHelp';hp.setAttribute('onclick','if(event.target===this)ioHelpClose()');
   hp.innerHTML=`<div class="io-help-in">
     <h3>입출고 기록</h3>
-    <div class="st"><b>1</b><span><b>내 팀 카드</b>를 누르고 — 남은 것을 사무실에 내리면 <b>사무실로 입고</b>, 내일 것을 차에 실으면 <b>차로 출고</b>. 아침 입고는 어제 것, 저녁 출고는 내일 것으로 자동으로 잡혀요.</span></div>
+    <div class="st"><b>1</b><span><b>내 팀 카드</b>를 누르고 — 차에 실으면 <b>차로 출고</b>, 남은 것을 사무실에 내리면 <b>사무실로 입고</b>. 아침 입고는 어제 것, 저녁 출고는 내일 것으로 자동으로 잡혀요.</span></div>
     <div class="st"><b>2</b><span>한 화면에서 <b>내 차량 → 제품과 수량 → 적재 사진</b>을 채우고 <b>입력 내용 확인</b> → 숫자를 한 번 더 보고 제출. 쓰던 내용은 자동으로 임시 저장돼서 나갔다 와도 <b>이어쓰기</b>가 떠요.</span></div>
     <div class="st"><b>3</b><span>제출 뒤 <b>그날 기록 화면 보기</b>를 누르면 그날 화면이 떠요(입고 + 내일 실은 것 같이). 스크린샷해서 단톡방에. 안 맞으면 <b>사유</b>.</span></div>
     <div class="ref">수량은 <b>박스</b> 칸과 <b>장</b>(낱장) 칸에 나눠 적으면 장수는 자동으로 계산돼요.<br>1박스 = 500 12장 · 1M 22T 4장 · 1M 17T 6장 · 10T 24장(500)/8장(1M)</div>
@@ -1038,9 +1043,9 @@ function shareText(){
   let t='';
   groupByVehicle(recs).forEach(g=>{const who=vehicles()[g.plate]||'';const R=dayRecon(g.plate,SH.date);const pl=reconProdList(R);const rt=reasonText(g.plate,SH.date);t+='🚚 '+g.plate+(who?' · '+who:'')+'\n출고 '+R.out+' − 입고 '+R.inn+' − 시공보고 '+R.sold+' → '+verdictText(R)+(pl.length?'\n'+pl.map(x=>x.txt).join(' · '):'')+(rt?'\n'+rt:'')+'\n\n'+g.recs.map(recText).join('\n\n')+'\n\n──────────\n\n'});
   if(recs.length){const sum=sumByProduct(recs);const sl=[sumLineText(sum,'out'),sumLineText(sum,'in')].filter(Boolean);
-    t+=fmtD(SH.date)+' 작업일 · '+RN+(sl.length?'\n'+sl.join('\n'):'')+'\n';}
+    t+=fmtD(SH.date)+' · '+RN+(sl.length?'\n'+sl.join('\n'):'')+'\n';}
   if(next.length){
-    t+='\n📦 '+fmtD(nd)+' 쓸 것 · 미리 실음\n\n';
+    t+='\n──────────\n\n';
     groupByVehicle(next).forEach(g=>{const who=vehicles()[g.plate]||'';t+='🚚 '+g.plate+(who?' · '+who:'')+'\n'+g.recs.map(recText).join('\n\n')+'\n\n'});
     const sum=sumByProduct(next);const sl=sumLineText(sum,'out');if(sl)t+=sl+'\n';
   }
@@ -1083,7 +1088,7 @@ function renderShare(){
   }
   // 다음 작업일에 쓰려고 미리 실은 것 — 사진·내역까지 전부 (스크린샷 1장으로 입고+출고가 같이 나오게)
   if(next.length){
-    h+=`<div class="io-sh-nx"><div class="io-sh-nxh">📦 ${fmtD(nd)} 쓸 것 · 미리 실음</div>`;
+    h+=`<div class="io-sh-nx">`; // v17: '○/○ 쓸 것 · 미리 실음' 제목 줄은 뺌
     groupByVehicle(next).forEach(g=>{
       h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${vehLabel(g.plate)}</div>`;
       g.recs.forEach(r=>{h+=shareRow(r,local)});
@@ -1166,14 +1171,14 @@ function ioVehPick(v){if(v==='__custom'){ioVehicleCustom();return}if(v){ioVehicl
 function reviewHtml(){
   const tot=formTotal();const items=F.items.filter(it=>it.product&&itemAny(it));
   return `<div class="iog-review"><span class="iog-st ok">최종 확인</span><div class="iog-reviewtitle">${tot}장, ${F.type==='out'?'차에 싣는 게':'사무실에 내리는 게'} 맞나요?</div><p class="iog-tiny">숫자와 차량을 한 번만 더 확인해주세요.</p>
-    <dl class="iog-reviewmeta"><dt>차량</dt><dd>${esc(F.vehicle)}${F.worker?' · '+esc(F.worker):''}</dd><dt>이동</dt><dd>${RN} ${F.type==='out'?'사무실 → 차량 · 출고':'차량 → 사무실 · 입고'}</dd><dt>작업일</dt><dd>${esc(fmtD(F.wdate))}</dd><dt>사진</dt><dd>${P?'1장 첨부':'없음'}</dd></dl>
+    <dl class="iog-reviewmeta"><dt>차량</dt><dd>${esc(F.vehicle)}${F.worker?' · '+esc(F.worker):''}</dd><dt>이동</dt><dd>${RN} ${F.type==='out'?'사무실 → 차량 · 출고':'차량 → 사무실 · 입고'}</dd><dt>사진</dt><dd>${P?'1장 첨부':'없음'}</dd></dl>
     ${items.map(it=>`<div class="iog-reviewitem"><b>${esc(it.product)}</b><div class="iog-recordparts">${PART.filter(pt=>itemQty(it,pt.k)>0).map(pt=>pt.n+' '+itemQty(it,pt.k)+'장'+(itemBox(it,pt.k)?` <i>(${itemBox(it,pt.k)}박스+${itemEa(it,pt.k)})</i>`:'')).join(' · ')}</div></div>`).join('')}
     ${F.note?`<p class="iog-tiny" style="margin-top:12px;white-space:pre-wrap">${esc(F.note)}</p>`:''}
     <button type="button" class="iog-button quiet full" style="margin-top:18px" onclick="ioEdit()">돌아가서 수정</button></div>`;
 }
 function successHtml(){
   const d=DONE;const other=d.type==='in'?'out':'in';
-  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장 · ${esc(fmtD(d.wdate))} 것<br>팀 카드와 합계에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.</p>
+  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장<br>팀 카드와 합계에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.</p>
     <button type="button" class="iog-button primary full" onclick="ioDoneShare()">그날 기록 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
     <button type="button" class="iog-button full" onclick="ioOpen('${other}')">이어서 ${TYPE[other].btn} 기록</button>
     <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기 · 팀 카드에서 확인</button></div>`;
@@ -1190,8 +1195,7 @@ function renderForm(){
     <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
       ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
     <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select></div></div>
-  <div class="iog-movetypes">${mt('in','warehouse','차량 → 사무실 · 입고')}${mt('out','truck','사무실 → 차량 · 출고')}</div>
-  <div class="iog-workerdate"><span>${gi('cal')} 작업일 <i>이 짐이 쓰이는 시공일</i></span><div class="iog-seg">${F.wopts.map(o=>`<button type="button" class="${F.wdate===o[0]?'on':''}" onclick="ioWdate('${o[0]}')">${o[1]} ${fmtMD(o[0])}</button>`).join('')}</div></div>
+  <div class="iog-movetypes" style="margin-bottom:20px">${mt('out','truck','사무실 → 차량 · 출고')}${mt('in','warehouse','차량 → 사무실 · 입고')}</div>
   <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
   <div id="ioItems"></div>
   <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
@@ -1344,6 +1348,7 @@ async function ioSubmit(){
     $('ioFoot').style.display='none';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){} // v15: 닫지 않고 완료 화면 — 그날 기록 화면(단톡방 공유용)은 버튼으로
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
+    try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(rec.wdate)}catch(e){} // v18: 기록이 들어간 날짜의 카드로 화면을 옮김(저녁 출고 → 다음 영업일 카드)
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
 function ioVoid(id){

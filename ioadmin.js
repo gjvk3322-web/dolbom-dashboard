@@ -26,13 +26,16 @@
      · 팀 카드: 'N팀 · 차량번호' + 차로 출고 / 사무실 반납 / 보고 사용(시공보고 자동) / 단순 차이 + 상태. 카드를 누르면 그 차량으로 출고·입고 기록
      · 월별 합계: 한 달 치 팀별 출고·반납·사용·순차이(판정 난 날만 합산, 로스와 차 재고 사용은 상쇄)와 제품별 합계
      · 엑셀 복사·반영 확인·입출고 없음 확인·이동일 지정·상세 필터는 당번 모드에서만. 지역 토글은 스케줄러 오른쪽 위 것을 그대로 씀(화면 안 토글 없앰). PC는 [넓게 보기]
+   v6 (2026-09-20h) 섹션 머리줄(입출고 | 지역 · 담당자 · 넓게 보기 · ?)을 없앰 — 담당자 변경은 '엑셀로 옮기기' 패널로, 도움말·넓게 보기는 맨 아래 작은 링크로
+   v5 (2026-09-20g) 팀 카드를 한 줄에 한 팀씩(넓게 보기는 두 팀) — 숫자 4개를 한 줄로, 그 아래에 무엇을 가져가고(출고) 가져왔고(반납) 썼는지(사용) 제품별·부위별 내역을 카드에서 바로 보이게
+   v4 (2026-09-20e) 화면 정리 — 제목·안내 문구, [월별 합계] 토글 버튼, 오늘·새로고침·상세 필터, '작업일 기준' 줄을 없애고 날짜 줄을 ‹ 달력 › + [일간|월간]만 남김(월간 버튼 자리가 눌러도 안 움직이게 고정 폭)
      · 집계 기준 기본값 = 작업일(직원 화면·입출고 목록·샘플과 같은 기준, 사용량·로스가 이 기준이어야 계산됨). 실제 이동일(사진 시각) 기준은 상세 필터에 남김. 반영 확인 이력은 기준별로 따로 봄 */
 (function(){
 'use strict';
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.09.20d';
+const IA_VER='2026.09.20h';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -203,6 +206,14 @@ function editText(x){
 }
 
 /* ---------- 모델 ---------- */
+function prodBreak(list,type){ // 이 차량의 제품별·부위별 장수 [{name,c,s,k,t}] — 재고표 순서
+  const map={};list.filter(x=>x.type===type).forEach(x=>x.items.forEach(it=>{const n=String(it.product||'(제품 없음)');const o=map[n]||(map[n]={name:n,c:0,s:0,k:0,t:0});PART.forEach(pt=>{o[pt.k]+=nn(it[pt.k+'Qty'])||0})}));
+  const ord=n=>{const i=PRODUCTS.findIndex(p=>p.k===n);return i<0?99:i};return Object.values(map).sort((a,b)=>ord(a.name)-ord(b.name));
+}
+function useBreak(list){ // 시공보고 사용량을 제품별로 [{name,q,n}]
+  const map={};(list||[]).forEach(j=>{const n=j.prod||'제품 미상';const o=map[n]||(map[n]={name:n,q:0,n:0});o.q+=j.q||0;o.n++});
+  const ord=n=>{const i=PRODUCTS.findIndex(p=>p.k===n);return i<0?99:i};return Object.values(map).sort((a,b)=>ord(a.name)-ord(b.name));
+}
 function teamOf(name){try{if(typeof teams==='undefined'||!Array.isArray(teams)||!name)return 0;const i=teams.findIndex(t=>Array.isArray(t)&&t.indexOf(name)>=0);return i>=0?i+1:0}catch(e){return 0}} // 팀설정의 N팀 (담당자 이름으로 찾음)
 function teamMembers(n){try{return n&&Array.isArray(teams[n-1])?teams[n-1].filter(Boolean):[]}catch(e){return []}}
 function qtyOf(list,type){return list.filter(x=>x.type===type).reduce((a,x)=>a+x.items.reduce((b,it)=>b+(nn(it.total)||0)+(nn(it.tQty)||0),0),0)}
@@ -223,6 +234,7 @@ function monthRecon(v,mine){ // 한 달: 날마다 대조해서 '판정이 난 �
   dayList(S.from,S.to).forEach(d=>{if(d>today)return;const r=reconDay(v.plate,d,mine.filter(x=>x.moveDate===d));if(!r||r.st==='none'||r.st==='nosold')return;
     R.days++;R.out+=r.out;R.inn+=r.inn;R.sold+=r.sold;
     if(r.decided){R.decDays++;R.net+=r.diff;if(r.diff>0)R.lossPos+=r.diff;else R.stockNeg-=r.diff}else R.undDays++});
+  try{R.list=X.jobsOf(v.plate,U.addDays(S.from,-1),S.to>today?today:S.to).list}catch(e){R.list=[]}
   return R;
 }
 function build(){
@@ -259,6 +271,7 @@ function build(){
       const row={rk,region:REG[rk].n,plate:v.plate,key:v.key,who:v.who,reg:v.reg,inN:sum('in').length,inQ:q(sum('in')),outN:sum('out').length,outQ:q(sum('out')),exN:ex.length,voidN:vd.length,flN:fl,last,st,nomove:nm};
       row.state=mine.length?'done':nm?'nomove':isDay()?'wait':'none';
       row.team=teamOf(v.who);row.pendN=mine.filter(x=>x.raw.status==='pending').length;
+      row.prodOut=prodBreak(mine,'out');row.prodIn=prodBreak(mine,'in');
       row.recon=S.basis!=='work'?null:isDay()?reconOf(row,mine):S.mode==='month'?monthRecon(row,mine):null;
       veh.push(row);
     })});
@@ -314,8 +327,22 @@ const CSS=`
 .ia-widebtn{border:1px solid var(--dm-line);background:transparent;color:var(--dm-muted);border-radius:8px;min-height:32px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap}
 .ia-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .ia-actions .ia-button{flex:1 1 130px}
-.ia-monthlabel{min-width:118px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--dm-line);border-radius:9px;background:var(--dm-panel);font-weight:800;font-size:15px;padding:0 12px}
-.ia-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px 8px;margin-top:11px}
+.ia-datebox{display:inline-flex;flex:1 1 0;min-width:0;max-width:190px}
+.ia-datebox input[type=date],.ia-datebox .ia-monthlabel{width:100%!important;min-width:0}
+.ia-filterbar{flex-wrap:nowrap!important}
+.ia-dategroup{flex:1 1 auto;flex-wrap:nowrap!important;min-width:0}
+.ia-dategroup .ia-iconbtn,#iaModeSeg{flex:none}
+@media(max-width:380px){.ia-filterbar{flex-wrap:wrap!important}.ia-datebox{max-width:none}}
+.ia-host .ia-seg button{min-height:34px;padding:6px 13px;font-size:13px}
+.ia-monthlabel{min-width:0;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--dm-line);border-radius:9px;background:var(--dm-panel);font-weight:800;font-size:15px;padding:0 12px}
+.ia-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 8px;margin-top:11px}
+.ia-prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 22px;border-top:1px solid var(--dm-line);margin-top:12px;padding-top:11px}
+.ia-prodsec .h{margin-bottom:6px}
+.ia-prodsec .p{margin-bottom:8px}.ia-prodsec .p:last-child{margin-bottom:0}
+.ia-prodsec .p b{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:700;color:var(--dm-ink)}
+.ia-prodsec .p b span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ia-prodsec .p>span{display:block;font-size:12px;color:var(--dm-muted);line-height:1.55;margin-top:1px}
+@media(max-width:420px){.ia-metrics b{font-size:19px}.ia-metrics span{font-size:11px}}
 .ia-metrics span{display:block;font-size:11.5px;color:var(--dm-muted)}
 .ia-metrics b{font-size:22px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums;color:var(--dm-ink)}
 .ia-metrics small{font-size:11px;color:var(--dm-muted);margin-left:2px}
@@ -384,8 +411,8 @@ const CSS=`
 .ia-notice.ok{background:var(--dm-greenbg);color:var(--dm-green)}.ia-notice.ok strong{color:var(--dm-green)}
 .ia-notice.bad{background:var(--dm-redbg);color:var(--red)}
 .ia-notice .ia-button{color:var(--dm-ink)}
-.ia-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:4px 0 20px}
-.ia-host.wide .ia-teams{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ia-teams{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:4px 0 20px}
+.ia-host.wide .ia-teams{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
 .ia-team{background:var(--dm-panel);border:1px solid var(--dm-line);border-radius:12px;padding:13px;text-align:left;min-width:0;display:block;width:100%}
 .ia-team.sel{border-color:var(--dm-green);box-shadow:inset 0 0 0 1px var(--dm-green)}
 .ia-teamtop{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
@@ -454,6 +481,9 @@ const CSS=`
 .ia-statusline.warn{color:var(--dm-amber)}.ia-statusline.bad{color:var(--red)}
 .ia-err{background:var(--dm-redbg);color:var(--red);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;margin-bottom:12px}
 .ia-note{font-size:11.5px;color:var(--dm-muted);line-height:1.6;margin-top:18px}
+.ia-note u{cursor:pointer;color:var(--dm-blue);text-decoration:none;margin-right:12px;font-weight:700}
+.ia-wideexit{position:fixed;top:12px;right:16px;z-index:994;border:1px solid var(--dm-line,#363d48);background:#20242b;color:#f1f4f7;border-radius:9px;min-height:36px;padding:6px 12px;font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer}
+@media(max-width:700px){.ia-widelink{display:none}}
 .ia-md{display:none;position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:994;align-items:center;justify-content:center;padding:14px;font-family:var(--font)}
 .ia-md.show{display:flex}
 .ia-md-in{background:var(--dm-panel);border:1px solid var(--dm-line);border-radius:16px;width:100%;max-width:640px;max-height:88vh;overflow:auto;padding:18px 18px 15px;font-size:13px;line-height:1.6;color:var(--dm-ink)}
@@ -463,7 +493,7 @@ const CSS=`
 .ia-md-in .kv span:nth-child(odd){color:var(--dm-muted);font-weight:700}
 .ia-md-in .kv span{word-break:break-all}
 .ia-md-in .box{background:var(--dm-bg);border-radius:10px;padding:9px 11px;margin-top:8px;font-size:12.5px}
-@media(max-width:900px){.ia-host.wide .ia-teams{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.ia-host.wide .ia-teams{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:700px){.ia-widebtn{display:none}}
 @media(max-width:640px){
   .ia-topbar{padding:12px 13px 4px}.ia-brand strong{font-size:17px}.ia-nav{padding:0 12px;gap:6px}.ia-navtabs{gap:15px}.ia-navtab{font-size:12.5px;gap:4px;min-height:46px}.ia-navtab svg{width:15px;height:15px}
@@ -481,8 +511,7 @@ function ensureShell(){ // 입출고 탭의 #ioView 안에 바로 그림 (iolog.
   if(!$('iaCss')){const st=document.createElement('style');st.id='iaCss';st.textContent=CSS;document.head.appendChild(st)}
   if(!$('iaBody')){
     host.classList.add('ia-host');
-    host.innerHTML=`<div class="iog-top"><div class="iog-brand"><span class="iog-mark">${ic('house')}</span><strong>입출고</strong><span class="iog-appname">${esc(REG[HOME].n)}</span></div><div class="ia-topr"><span class="ia-who" id="iaWho"></span><button type="button" class="ia-widebtn" id="iaWideBtn" onclick="ioAdmin.wide()">넓게 보기</button><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
-      <div class="ia-wrap"><div class="ia-page"><div id="iaFilters"></div><div id="iaBody"></div></div></div>`;
+    host.innerHTML=`<div class="ia-wrap"><div class="ia-page"><div id="iaFilters"></div><div id="iaBody"></div></div></div>`; // v6: 머리줄 없음(하단 탭 이름과 스케줄러 상단 지역 표시로 충분)
   }
   if(!$('iaMd')){
     const md=document.createElement('div');md.className='ia-md';md.id='iaMd';md.setAttribute('onclick','if(event.target===this)ioAdmin.mdClose()');
@@ -491,7 +520,12 @@ function ensureShell(){ // 입출고 탭의 #ioView 안에 바로 그림 (iolog.
   }
   return true;
 }
-function wide(){const h=$('ioView');if(!h)return;const on=h.classList.toggle('wide');const b=$('iaWideBtn');if(b)b.textContent=on?'좁게 보기':'넓게 보기';if(on)h.scrollTop=0}
+function wide(){
+  const h=$('ioView');if(!h)return;const on=h.classList.toggle('wide');let x=$('iaWideExit');
+  if(on){h.scrollTop=0;if(!x){x=document.createElement('button');x.type='button';x.id='iaWideExit';x.className='ia-wideexit';x.textContent='✕ 좁게 보기';x.setAttribute('onclick','ioAdmin.wide()');document.body.appendChild(x)}}
+  else if(x)x.remove();
+  renderBody();
+}
 function regionUrl(rk){return (rk==='gg'?'./scheduler-gg.html':'./scheduler.html')+'#ioadmin='+S.from}
 function goRegion(rk){if(rk===HOME||!REG[rk])return;try{localStorage.setItem('dolbom_region',rk)}catch(e){}location.href=regionUrl(rk)}
 
@@ -499,6 +533,8 @@ function goRegion(rk){if(rk===HOME||!REG[rk])return;try{localStorage.setItem('do
 function monthRange(ym){const y=+ym.slice(0,4),m=+ym.slice(5,7);const last=new Date(Date.UTC(y,m,0)).getUTCDate();return [ym+'-01',ym+'-'+String(last).padStart(2,'0')]}
 function setMode(m){ // 'today' | 'yest' | 'day' | 'range' | 'month' | 'thismonth'
   const t=U.kstDate(0);S.userDate=true;
+  if((m==='month'&&S.mode==='month')||(m==='day'&&S.mode==='day'))return;
+  if(m==='day'&&S.mode==='month')m='today'; // 월간 → 일간: 오늘로
   if(m==='today'){S.mode='day';S.from=S.to=t;S.userDate=false}else if(m==='yest'){S.mode='day';S.from=S.to=U.kstDate(-1)}
   else if(m==='range'){S.mode='range';if(!S.from)S.from=t;if(!S.to||S.to<S.from)S.to=S.from}
   else if(m==='month'||m==='thismonth'){const r=monthRange((m==='thismonth'?t:(S.from||t)).slice(0,7));S.mode='month';S.from=r[0];S.to=r[1];S.exportOpen=false}
@@ -509,6 +545,7 @@ function shiftDate(n){
   S.userDate=true;
   if(S.mode==='month'){const y=+S.from.slice(0,4),m=+S.from.slice(5,7)-1+n;const d=new Date(Date.UTC(y,m,1));const r=monthRange(d.toISOString().slice(0,7));S.from=r[0];S.to=r[1]}
   else{const span=dayList(S.from,S.to).length-1;S.from=U.addDays(S.from,n);S.to=S.mode==='range'?U.addDays(S.from,span):S.from}
+  if(S.mode==='day'&&S.from===U.kstDate(0))S.userDate=false;
   resub();renderFilters();renderBody();
 }
 function setDate(which,v){
@@ -516,6 +553,7 @@ function setDate(which,v){
   if(S.mode!=='range'){S.from=S.to=v}
   else{if(which==='from'){S.from=v;if(S.to<v)S.to=v}else{S.to=v;if(S.from>v)S.from=v}
     if(dayList(S.from,S.to).length>MAX_DAYS){S.to=U.addDays(S.from,MAX_DAYS-1);toast('기간은 최대 '+MAX_DAYS+'일까지 볼 수 있어요',true)}}
+  if(S.mode==='day'&&S.from===U.kstDate(0))S.userDate=false;
   resub();renderFilters();renderBody();
 }
 function setF(k,v){
@@ -526,22 +564,14 @@ function setF(k,v){
   if(k==='type'||k==='more')renderFilters();renderBody();
 }
 function basisName(){return S.basis==='work'?'작업일 기준':'실제 이동일 기준'}
-function renderFilters(){
+function renderFilters(){ // v4: ‹ 달력 › + [일간|월간] 만. 관리자(당번)에게는 그 위에 [엑셀용 복사]
   const el=$('iaFilters');if(!el)return;const adm=X.admin();S.adminSeen=adm;
-  const month=S.mode==='month',range=S.mode==='range';
-  const seg=(key,cur,opts)=>`<div class="ia-seg">${opts.map(o=>`<button type="button" class="${cur===o[0]?'on':''}" onclick="ioAdmin.f('${key}','${o[0]}')">${o[1]}</button>`).join('')}</div>`;
-  el.innerHTML=`<div class="ia-titlebar"><div><h2>${month?'월별 합계':'입출고'}</h2><p class="ia-subtitle">${month?'한 달 동안의 팀별 출고·반납·사용과 제품별 합계예요.':'내 팀 카드를 눌러 출고·입고를 기록하세요. 사용량은 시공보고에서 자동으로 들어와요.'}</p></div></div>
-  <div class="ia-actions">${adm?`<button type="button" class="ia-button primary" id="iaExportBtn" onclick="ioAdmin.exportOpen()">${ic('copy')} 엑셀용 복사</button>`:''}<button type="button" class="ia-button${month?' on':''}" id="iaMonthBtn" onclick="ioAdmin.mode('${month?'today':'month'}')">${ic('cal')} ${month?'하루 보기로':'월별 합계'}</button>${month?'':`<button type="button" class="ia-button" onclick="ioShare('${S.from}')">그날 기록 화면</button>`}</div>
-  <div class="ia-filterbar"><div class="ia-dategroup"><span class="ia-tiny">${month?'월':'작업일'}</span><button type="button" class="ia-iconbtn" onclick="ioAdmin.shift(-1)" aria-label="이전">${ic('left')}</button>
-      ${month?`<span class="ia-monthlabel" id="iaMonthLabel">${esc(monthLabel())}</span>`:`<input type="date" id="iaDate" aria-label="작업일" value="${S.from}" onchange="ioAdmin.date('from',this.value)">${range?`<span class="ia-tiny">~</span><input type="date" aria-label="기간 끝" value="${S.to}" onchange="ioAdmin.date('to',this.value)">`:''}`}
-      <button type="button" class="ia-iconbtn" onclick="ioAdmin.shift(1)" aria-label="다음">${ic('right')}</button>
-      <button type="button" class="ia-button quiet small" onclick="ioAdmin.mode('${month?'thismonth':'today'}')">${month?'이번 달':'오늘'}</button><button type="button" class="ia-button quiet small" onclick="ioAdmin.reload()">새로고침</button>
-      ${adm&&!month?`<button type="button" class="ia-button quiet small${S.more?' on':''}" onclick="ioAdmin.f('more')">${ic('sliders')}상세 필터</button>`:''}</div>
-    <div class="ia-datebasis">${ic('cal')}${basisName()} <span class="ia-status">${esc(REG[HOME].n)} 창고</span></div></div>
-  ${S.more&&adm&&!month?`<div class="ia-more"><div class="g"><label>보기</label><div class="ia-seg"><button type="button" class="${range?'':'on'}" onclick="ioAdmin.mode('day')">하루</button><button type="button" class="${range?'on':''}" onclick="ioAdmin.mode('range')">기간</button></div></div>
-    <div class="g"><label>구분</label>${seg('type',S.type,[['all','전체'],['in','입고'],['out','출고']])}</div>
-    <div class="g"><label>집계 기준</label>${seg('basis',S.basis,[['work','작업일'],['move','실제 이동일(사진 시각)']])}</div>
-    <div style="flex-basis:100%">${S.basis==='work'?'작업일 = 그 짐이 쓰이는 시공일. 저녁에 실은 내일 것은 내일로, 아침에 내린 어제 것은 어제로 묶여요. 사용·차이는 이 기준에서만 계산돼요.':'실제 이동일 = 짐 사진이 찍힌 날. 이 기준에서는 사용·차이를 계산하지 않아요.'} <b style="color:var(--dm-amber)">엑셀에는 한 가지 기준으로만 넣어주세요.</b></div></div>`:''}`;
+  const month=S.mode==='month';
+  el.innerHTML=`<div class="ia-actions">${adm?`<button type="button" class="ia-button primary" id="iaExportBtn" onclick="ioAdmin.exportOpen()">${ic('copy')} 엑셀용 복사</button>`:''}<button type="button" class="ia-button" id="iaShareBtn" ${month?'disabled':''} onclick="ioShare('${S.from}')">그날 기록 화면</button></div>
+  <div class="ia-filterbar"><div class="ia-dategroup"><button type="button" class="ia-iconbtn" onclick="ioAdmin.shift(-1)" aria-label="이전">${ic('left')}</button>
+      <span class="ia-datebox">${month?`<span class="ia-monthlabel" id="iaMonthLabel">${esc(monthLabel())}</span>`:`<input type="date" id="iaDate" aria-label="날짜" value="${S.from}" onchange="ioAdmin.date('from',this.value)">`}</span>
+      <button type="button" class="ia-iconbtn" onclick="ioAdmin.shift(1)" aria-label="다음">${ic('right')}</button></div>
+    <div class="ia-seg" id="iaModeSeg"><button type="button" class="${month?'':'on'}" onclick="ioAdmin.mode('day')">일간</button><button type="button" class="${month?'on':''}" id="iaMonthBtn" onclick="ioAdmin.mode('month')">월간</button></div></div>`;
   const w=$('iaWho');if(w)w.innerHTML=adm?'담당자 <b>'+esc(me()||'미지정')+'</b><u onclick="ioAdmin.name()">변경</u>':'';
 }
 function reload(){try{if(typeof refreshSheet==='function')refreshSheet(false)}catch(e){}resub();renderBody();toast('새로고침했어요 · 시공보고는 몇 초 뒤 반영돼요')}
@@ -574,6 +604,14 @@ function chipOf(v){ // 카드 오른쪽 위 상태
 }
 function cardTitle(v){return (v.team?v.team+'팀':esc(v.who||'담당 미지정'))+'<small>'+esc(v.plate)+(v.reg?'':' · 미등록')+'</small>'}
 function cardSub(v){const mem=teamMembers(v.team);return mem.length?mem.join(' · '):(v.who||'')}
+function prodSecHTML(v){ // 카드 안 제품 내역 — 출고 / 반납 / 사용
+  const secs=[];const parts=o=>PART.map(pt=>o[pt.k]?pt.n+' '+o[pt.k]:'').filter(Boolean).join(' · ');
+  const io=(tag,cls,list)=>{if(list&&list.length)secs.push(`<div class="ia-prodsec"><div class="h"><span class="ia-tag ${cls}">${tag}</span></div>${list.map(o=>`<div class="p"><b><span>${esc(o.name)}</span><span>${o.c+o.s+o.k+o.t}장</span></b><span>${esc(parts(o))}</span></div>`).join('')}</div>`)};
+  io('출고','out',v.prodOut);io('반납','in',v.prodIn);
+  const use=v.recon&&v.recon.list?useBreak(v.recon.list):[];
+  if(use.length)secs.push(`<div class="ia-prodsec"><div class="h"><span class="ia-tag dim">사용</span></div>${use.map(o=>`<div class="p"><b><span>${esc(o.name)}</span><span>${o.q}장</span></b><span>시공보고 ${o.n}건</span></div>`).join('')}</div>`);
+  return secs.length?`<div class="ia-prods">${secs.join('')}</div>`:'';
+}
 function cardHTML(v,i){
   const R=v.recon;const chip=chipOf(v);const month=S.mode==='month';const day=isDay();
   const m=(lab,val,cls)=>`<div><span>${lab}</span><b class="${cls||''}">${val}</b><small>${val==='–'?'':'장'}</small></div>`;
@@ -584,6 +622,7 @@ function cardHTML(v,i){
     metrics=m('차로 출고',v.outQ)+m('사무실 반납',v.inQ)+m('보고 사용',has?R.sold:'–',has?'':'dimv')+m('단순 차이',has?sgn(diff):'–',!has?'dimv':R.decided?(diff>0?'ia-loss':diff===0?'ia-fit':'ia-hold'):'dimv');
     if(day&&R){let rs=null;try{rs=X.reasonOf(v.plate,S.from)}catch(e){}
       if(rs)foot.push(`사유 <b>${esc(rs.reason||'')}</b>${rs.note?' · '+esc(rs.note):''}`);else if(R.st==='loss'||R.st==='carstock'||R.st==='prod')foot.push('<span class="ia-hold">사유를 적어주세요</span>');
+      if(R.decided&&R.byProd&&R.byProd.length&&R.st!=='ok')foot.push('제품별 차이 '+R.byProd.map(z=>`<b>${esc(z.k)} ${sgn(z.diff)}</b>`).join(' · '));
       if(R.st==='miss')foot.push(`시공보고 미입력 <b>${R.miss}건</b> · 보고 사용은 들어온 것만`);if(R.st==='noout'&&R.sold)foot.push(`보고 사용 <b>${R.sold}장</b>인데 출고 기록이 없어요`);if(R.st==='nosold')foot.push('사용량을 못 읽었어요 · 새로고침')}
     if(!R&&S.basis!=='work')foot.push('사용·차이는 작업일 기준에서만');
     if(v.pendN)foot.push(`전송 대기 <b>${v.pendN}건</b>`);
@@ -591,7 +630,7 @@ function cardHTML(v,i){
   if(v.exN)foot.push(`<span style="color:var(--red)">집계 제외 ${v.exN}건 · 확인 필요</span>`);
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===v.key}catch(e){}
   return `<button type="button" class="ia-team${S.vehicle===v.key?' sel':''}${mine?' mine':''}" onclick="ioAdmin.card(${i})"><div class="ia-teamtop"><span class="ia-teamname">${cardTitle(v)}</span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>
-    <div class="ia-teamplate">${esc(cardSub(v))}${mine?' · <span style="color:var(--dm-blue)">내 차량</span>':''}</div><div class="ia-metrics">${metrics}</div>${foot.length?`<div class="ia-teamfoot">${foot.join('<br>')}</div>`:''}</button>`;
+    <div class="ia-teamplate">${esc(cardSub(v))}${mine?' · <span style="color:var(--dm-blue)">내 차량</span>':''}</div><div class="ia-metrics">${metrics}</div>${prodSecHTML(v)}${foot.length?`<div class="ia-teamfoot">${foot.join('<br>')}</div>`:''}</button>`;
 }
 function renderBody(){
   const el=$('iaBody');if(!el||!S.open)return;
@@ -611,7 +650,7 @@ function renderBody(){
   else if(S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`;
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
-  h+=`<div class="ia-note">입출고 ${esc(X.ver||'')} · 보고 사용 = 그날 시공보고의 판매갯수 합(자동) · 단순 차이 = 차로 출고 − 사무실 반납 − 보고 사용. 0이면 판 만큼 쓰고 다 가져온 거예요.${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
+  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u><br>입출고 ${esc(X.ver||'')} · 보고 사용 = 그날 시공보고의 판매갯수 합(자동) · 단순 차이 = 차로 출고 − 사무실 반납 − 보고 사용. 0이면 판 만큼 쓰고 다 가져온 거예요.${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
   el.innerHTML=h;
   const ta=$('iaTsv');if(ta)ta.value=currentTSV(M);
 }
@@ -655,12 +694,12 @@ function sumTable(M){
 function recTable(M){ // 제출 원본 — 한 제출에 한 줄(읽기 편한 모양). 엑셀 내역과 같은 17열은 '전체 열'
   const vf=x=>(!S.vehicle||x.plate===S.vehicle)&&(S.type==='all'||x.type===S.type);
   const list=M.view.slice().sort((a,b)=>(a.moveAt||a.at)<(b.moveAt||b.at)?-1:1).map(x=>({x,off:false})).concat(S.showOff?M.excluded.concat(M.voids).filter(vf).map(x=>({x,off:true})):[]);
-  let h=`<div class="ia-tw"><table class="ia-tb rec"><thead><tr><th>구분 · 기록시각</th><th>차량</th><th>제품</th><th class="r">수량</th><th>작업일 · 사진 시각</th><th></th></tr></thead><tbody>`;
+  let h=`<div class="ia-tw"><table class="ia-tb rec"><thead><tr><th>구분 · 기록시각</th><th>차량</th><th>제품</th><th class="r">수량</th><th>사진 시각</th><th></th></tr></thead><tbody>`;
   list.forEach(o=>{const x=o.x;const i=M.all.indexOf(x);const tot=x.items.reduce((a,it)=>a+(nn(it.total)||0)+(nn(it.tQty)||0),0);
     const tags=[x.void?'<span class="ia-tag dim">취소됨</span>':'',o.off&&!x.void?'<span class="ia-tag ex">집계 제외</span>':'',x.rerec?'<span class="ia-tag st">재기록</span>':'',x.moveSrc==='fix'?'<span class="ia-tag nt">이동일 지정</span>':'',!o.off&&x.flags.length?'<span class="ia-tag nt">참고</span>':''].filter(Boolean).join(' ');
     h+=`<tr class="${o.off?'off':''}"><td>${typeTag(x.type)} <span class="ia-tiny">${esc(isDay()?x.at.slice(11,16):x.at.slice(5,16))}</span>${tags?'<br>'+tags:''}</td><td><b>${esc(x.vehicle)}</b><br><span class="ia-tiny">${esc(x.worker)}</span></td>
       <td class="pn w">${x.items.map(it=>`${esc(it.product||'(제품 없음)')}<small>${PART.map(pt=>{const q=nn(it[pt.k+'Qty']);return q?pt.n+' '+q:''}).filter(Boolean).join(' · ')}</small>`).join('')}</td><td class="r"><b>${tot}</b>장</td>
-      <td>${x.wdate?esc(U.fmtMD(x.wdate))+' <span class="dim">'+esc(U.dowOf(x.wdate))+'</span>':'<span class="dim">—</span>'}<br><span class="ia-tiny">${x.raw.photoAt?'사진 '+esc(String(x.raw.photoAt).slice(5,16)):'사진 시각 없음'}</span></td>
+      <td><span class="ia-tiny">${x.raw.photoAt?esc(String(x.raw.photoAt).slice(5,16)):'사진 시각 없음'}</span></td>
       <td>${photoBtn(x)} <button type="button" class="ia-btn sm" onclick="ioAdmin.detail(${i})">상세보기</button>${voidBtn(x)}</td></tr>`});
   return h+'</tbody></table></div>';
 }
@@ -707,6 +746,7 @@ function exportHTML(M){
     <textarea id="iaTsv" readonly aria-label="엑셀 붙여넣기용 데이터" onclick="this.select()"></textarea>
     <p class="ia-exnote">복사한 뒤 기존 엑셀의 <b>같은 범위에 전체를 붙여넣어 교체</b>해주세요(추가분만 따로 복사하지 않아요). ${S.kind==='det'?'제출 내역은 집계에 포함된 기록만 들어가요(집계표와 합이 맞아요).':''}</p>
     <div class="ia-exact"><button type="button" class="ia-button primary" ${n?'':'disabled'} onclick="ioAdmin.copy()">${ic('copy')} ${n}행 복사</button><button type="button" class="ia-button" ${canReflect&&todo.length?'':'disabled'} onclick="ioAdmin.reflect()">${ic('checks')} 붙여넣기 완료 표시${todo.length>1?' ('+todo.length+'일)':''}</button></div>${st}
+    <p class="ia-exnote" id="iaWhoLine">담당자 <b style="color:var(--dm-ink)">${esc(me()||'미지정')}</b> <u style="cursor:pointer;color:var(--dm-blue);text-decoration:none;margin-left:4px" onclick="ioAdmin.name()">변경</u> · 완료 표시·입출고 없음 확인에 이 이름이 남아요.</p>
     <p class="ia-exnote">${canReflect?'완료 표시는 <b>담당자가 확인한 상태</b>이며, 엑셀과 자동 연동되지는 않아요. 표시한 뒤에 새 제출·취소가 생기면 자동으로 \'재반영 필요\'로 바뀌어요.':'차량·구분을 고른 상태의 복사예요. 날짜 전체의 반영 완료는 전체 보기에서 표시해 주세요.'} '우리 엑셀 양식으로 복사'(열·제품 행 순서 맞춤)는 실제 엑셀 파일을 확인해야 만들 수 있어서 아직 없어요.</p></section>`;
 }
 function exportOpen(){S.exportOpen=true;S.copyErr='';renderBody();const e=$('iaExport');if(e&&e.scrollIntoView)try{e.scrollIntoView({behavior:'smooth',block:'start'})}catch(x){e.scrollIntoView()}}
@@ -885,14 +925,21 @@ function mount(){ // iolog.js의 renderList()가 부름 — 처음이면 껍데�
     S.mode='day';if(/^\d{4}-\d{2}-\d{2}$/.test(want||'')){S.from=S.to=want;S.userDate=true}else{S.from=S.to=t}
     resub();renderFilters();renderBody();
     clearInterval(S.timer);S.jsig=jobsSig();S.timer=setInterval(()=>{if(!S.open)return;const g=jobsSig();const d=U.kstDate(0);
+      if(S.mode==='day'&&S.from===d)S.userDate=false; // 오늘을 보고 있으면 자정에 다시 자동으로 넘어가게
       if(!S.userDate&&S.mode==='day'&&S.from!==d){S.from=S.to=d;resub();renderFilters();renderBody();return} // 자정이 지나면 오늘로
       if(g!==S.jsig){S.jsig=g;renderBody()}},4000);
     return}
   if(S.adminSeen!==X.admin())renderFilters();
   renderBody();
 }
+function gotoDate(d){ // 방금 제출한 기록이 들어간 날짜(작업일)의 카드로 화면을 옮김 — 저녁 출고는 다음 영업일 카드에 들어가므로, 제출 직후 그 카드가 바로 보이게
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d||'')||!S.open)return;
+  if(S.mode==='day'&&S.from===d){renderBody();return}
+  S.mode='day';S.from=S.to=d;S.userDate=d!==U.kstDate(0);S.vehicle='';S.exportOpen=false;
+  resub();renderFilters();renderBody();
+}
 function close(){mdClose();if(S.open){if(!X.admin()){S.exportOpen=false;S.more=false}renderFilters();renderBody()}} // 당번 모드를 끄면 관리자용 버튼만 접음
 
-window.ioAdmin={mount,open:mount,close,card:cardOpen,entry,cardFilter,cardReason,cardNomove,wide,reload,mode:setMode,date:setDate,shift:shiftDate,f:setF,region:goRegion,copy,exportOpen,exportClose,pending:pendingGo,drill,detail,photo,photoId,nomove,fix,fixSave,unfix,reflect,reflectSave,unit,revoke,mdClose,name:()=>{askName(true);renderFilters()},
+window.ioAdmin={mount,open:mount,close,goto:gotoDate,card:cardOpen,entry,cardFilter,cardReason,cardNomove,wide,reload,mode:setMode,date:setDate,shift:shiftDate,f:setF,region:goRegion,copy,exportOpen,exportClose,pending:pendingGo,drill,detail,photo,photoId,nomove,fix,fixSave,unfix,reflect,reflectSave,unit,revoke,mdClose,name:()=>{askName(true);renderFilters();renderBody()},
   _t:{S,build,aggTSV,detTSV,tText,tId,specOf,checkItem,moveInfo,regionUrl}}; // _t = 테스트용 내부 참조
 })();
