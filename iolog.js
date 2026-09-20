@@ -63,10 +63,15 @@
    · 섹션 머리: [현장 입력 | 입출고 취합] 탭(취합은 당번 모드에서만), 시작 버튼은 두 장의 카드(사무실로 입고 / 차로 출고)
    · 작성 화면: 3단계 탭을 없애고 한 화면에 — 내 차량(선택 상자)·담당 → 입고/출고 → 작업일 → 제품과 수량(제품 선택 상자 + 부위별 박스·낱장·합계 표) → 적재 사진 → 메모
      아래 고정 바에 '○개 제품 · 합계 N장' + [입력 내용 확인] → 최종 확인 화면(N장, 차에 싣는 게 맞나요?) → 제출 → 완료 화면(그날 기록 화면 보기 / 이어서 반대쪽 기록)
-   · 작업일은 기존 선택지(출고: 오늘·내일 / 입고: 어제·오늘) 안에서만 고를 수 있게 다시 보이게 함 — 자동 기본값은 그대로(15시 이후 출고=내일, 10시 전 입고=어제), 지난 날짜 자유 입력은 여전히 없음 */
+   · 작업일은 기존 선택지(출고: 오늘·내일 / 입고: 어제·오늘) 안에서만 고를 수 있게 다시 보이게 함 — 자동 기본값은 그대로(15시 이후 출고=내일, 10시 전 입고=어제), 지난 날짜 자유 입력은 여전히 없음
+
+   v16 (2026-09-20d) 📦 입출고가 독립 탭(예전 '차량' 탭 자리)으로 · '현장 입력'과 '입출고 취합'을 한 화면으로 합침
+   · 화면(팀 카드·제품별 합계·원본 내역·엑셀 복사·월별 합계)은 ioadmin.js가 #ioView 안에 바로 그림 → 이 파일의 renderList()는 그쪽으로 넘기기만 함. ioadmin.js는 시작할 때 바로 불러옴
+   · 팀 카드를 누르면 그 차량으로 [차로 출고 기록]·[사무실로 입고 기록] → ioOpen(type, 차량번호)로 차량이 미리 골라진 작성 화면
+   · 작성·최종 확인·제출·임시저장·전송 대기·사진 스탬프·취소·사유·그날 기록 화면(공유)은 그대로. 예전 목록/차량별 현황 그리기 코드는 호출만 안 함(남겨 둠) */
 (function(){
 'use strict';
-const IO_VER='2026.09.20c';
+const IO_VER='2026.09.20d';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -609,8 +614,9 @@ function ensureShell(){
   const st=document.createElement('style');st.textContent=CSS+CSS_G;document.head.appendChild(st);
   const host=$('p-fair'); // 🚗 차량 탭 맨 위 (차량 배정·공정성 위)
   if(host){
-    const box=document.createElement('div');box.id='ioView';const sep=document.createElement('div');sep.className='io-sep';
-    host.insertBefore(sep,host.firstChild);host.insertBefore(box,sep);
+    const box=document.createElement('div');box.id='ioView';
+    if(host.firstChild){const sep=document.createElement('div');sep.className='io-sep';host.insertBefore(sep,host.firstChild);host.insertBefore(box,sep)} // 예전 구조(차량 탭 위쪽에 끼워 넣기)
+    else host.appendChild(box);                                                                                                                  // v16: 입출고 전용 탭
     try{const _sw=window.sw;if(typeof _sw==='function'&&!_sw._io){const w=function(n){const r=_sw.apply(this,arguments);if(n==='fair')onTabOpen();return r};w._io=true;window.sw=w}}catch(e){}
     // 당번 모드를 켜고 끄면 [📊 취합] 버튼이 바로 뜨고 사라지게 — 끄면 열려 있던 취합 화면도 닫음
     ['adminOn','adminOff'].forEach(fn=>{try{const f=window[fn];if(typeof f==='function'&&!f._io){const w=function(){const r=f.apply(this,arguments);try{if(fn==='adminOff'&&window.ioAdmin&&window.ioAdmin.close)window.ioAdmin.close();renderList()}catch(e){}return r};w._io=true;window[fn]=w}}catch(e){}});
@@ -639,7 +645,7 @@ function ensureShell(){
   const hp=document.createElement('div');hp.className='io-help';hp.id='ioHelp';hp.setAttribute('onclick','if(event.target===this)ioHelpClose()');
   hp.innerHTML=`<div class="io-help-in">
     <h3>입출고 기록</h3>
-    <div class="st"><b>1</b><span>남은 것을 사무실에 내리면 <b>사무실로 입고</b>, 내일 것을 차에 실으면 <b>차로 출고</b>. 아침 입고는 어제 것, 저녁 출고는 내일 것으로 자동으로 잡혀요.</span></div>
+    <div class="st"><b>1</b><span><b>내 팀 카드</b>를 누르고 — 남은 것을 사무실에 내리면 <b>사무실로 입고</b>, 내일 것을 차에 실으면 <b>차로 출고</b>. 아침 입고는 어제 것, 저녁 출고는 내일 것으로 자동으로 잡혀요.</span></div>
     <div class="st"><b>2</b><span>한 화면에서 <b>내 차량 → 제품과 수량 → 적재 사진</b>을 채우고 <b>입력 내용 확인</b> → 숫자를 한 번 더 보고 제출. 쓰던 내용은 자동으로 임시 저장돼서 나갔다 와도 <b>이어쓰기</b>가 떠요.</span></div>
     <div class="st"><b>3</b><span>제출 뒤 <b>그날 기록 화면 보기</b>를 누르면 그날 화면이 떠요(입고 + 내일 실은 것 같이). 스크린샷해서 단톡방에. 안 맞으면 <b>사유</b>.</span></div>
     <div class="ref">수량은 <b>박스</b> 칸과 <b>장</b>(낱장) 칸에 나눠 적으면 장수는 자동으로 계산돼요.<br>1박스 = 500 12장 · 1M 22T 4장 · 1M 17T 6장 · 10T 24장(500)/8장(1M)</div>
@@ -925,7 +931,26 @@ function dayBlock(d,rs,local,forceOpen){
     if(voids.length)h+=VOID_OPEN[vk]?voids.map(r=>recCard(r,local)).join('')+`<div class="io-void-fold" onclick="ioVoidToggle('${esc(vk)}')">취소된 기록 접기</div>`:`<div class="io-void-fold" onclick="ioVoidToggle('${esc(vk)}')">취소된 기록 ${voids.length}건 보기</div>`});
   return h+'</div>';
 }
-function renderList(){
+let _boardLoad=0; // 0 안 불러옴 · 1 불러오는 중 · 2 실패
+function loadBoard(){
+  if(_boardLoad===1||(window.ioAdmin&&window.ioAdmin.mount))return;_boardLoad=1;
+  const sc=document.createElement('script');sc.src='./ioadmin.js?v='+encodeURIComponent(IO_VER);
+  sc.onload=()=>{_boardLoad=0;renderList()};
+  sc.onerror=()=>{_boardLoad=2;try{sc.remove()}catch(e){}renderList()};
+  document.body.appendChild(sc);
+}
+function renderList(){ // v16: 화면은 ioadmin.js가 그림 — 여기서는 넘기기만
+  const v=$('ioView');if(!v)return;
+  const _now=Date.now();if(_now-_rlT>2000){_rlT=_now;_rlN=0}if(++_rlN>60){if(_rlN===61)console.warn('[io] renderList 과다 호출 차단');return}
+  if(SH.open)renderShare();
+  if(window.ioAdmin&&typeof window.ioAdmin.mount==='function'){window.ioAdmin.mount();return}
+  if(_boardLoad===2){v.innerHTML='<div class="iog-page" style="padding:28px 16px;text-align:center;color:var(--dm-muted);font-size:13px">입출고 화면을 불러오지 못했어요.<br><button type="button" class="iog-button" style="margin:12px auto 0" onclick="ioBoardRetry()">다시 시도</button></div>';return}
+  if(!v.firstChild)v.innerHTML='<div class="iog-page" style="padding:28px 16px;text-align:center;color:var(--dm-muted);font-size:13px">입출고 화면 불러오는 중…</div>';
+  loadBoard();
+}
+function ioBoardRetry(){_boardLoad=0;renderList()}
+function outboxInfo(){const ob=obGet();return {n:ob.length,stuck:ob.some(e=>(e.tries||0)>=8),err:lastErr||'',flushing:!!flushing}} // 전송 대기 띠용
+function renderListOld(){
   const v=$('ioView');if(!v)return;
   const _now=Date.now();if(_now-_rlT>2000){_rlT=_now;_rlN=0}if(++_rlN>60){if(_rlN===61)console.warn('[io] renderList 과다 호출 차단');return} // 어떤 이유로든 폭주하면 스케줄러를 지키기 위해 멈춤
   const {all,local,ob}=allRecords();
@@ -1082,13 +1107,14 @@ function ioShareCopy(){
 
 /* ---------- 작성 (장 단위) ---------- */
 function newItem(){return {product:'',cB:0,c:0,sB:0,s:0,kB:0,k:0,tB:0,t:0}} // cB=센터 박스, c=센터 낱장 …
-function ioOpen(type){
+function ioOpen(type,plate){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로)
   const t=type==='in'?'in':'out';
   const vs=Object.keys(vehicles());
   const lastV=localStorage.getItem('io_last_vehicle')||'';
-  const vehicle=vs.includes(lastV)?lastV:(vs.length===1?vs[0]:'');
+  const want=String(plate||'').trim();const reg=want?vs.find(p=>normPlate(p)===normPlate(want)):'';
+  const vehicle=reg||want||(vs.includes(lastV)?lastV:(vs.length===1?vs[0]:''));
   const w=wdOpts(t);
-  F={type:t,date:kstDate(0),wdate:w.def,wopts:w.opts,dateEdit:false,vehicle,custom:false,worker:vehicle?(vehicles()[vehicle]||''):'',items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
+  F={type:t,date:kstDate(0),wdate:w.def,wopts:w.opts,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:vehicle?(vehicles()[vehicle]||''):'',items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
   P=null;busy=false;DONE=null;
   $('ioFoot').style.display='';
   renderForm();
@@ -1147,11 +1173,10 @@ function reviewHtml(){
 }
 function successHtml(){
   const d=DONE;const other=d.type==='in'?'out':'in';
-  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장 · ${esc(fmtD(d.wdate))} 것<br>담당자 취합 화면에도 바로 반영돼요. 사진은 뒤에서 전송 중이에요.</p>
+  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장 · ${esc(fmtD(d.wdate))} 것<br>팀 카드와 합계에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.</p>
     <button type="button" class="iog-button primary full" onclick="ioDoneShare()">그날 기록 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
     <button type="button" class="iog-button full" onclick="ioOpen('${other}')">이어서 ${TYPE[other].btn} 기록</button>
-    ${admin()?`<button type="button" class="iog-button full" onclick="ioDoneAdmin()">${gi('table')} 취합 화면에서 확인</button>`:''}
-    <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기</button></div>`;
+    <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기 · 팀 카드에서 확인</button></div>`;
 }
 function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(d)ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // 내일 것 실은 건 오늘 화면에 '내일 실은 것'으로 같이
 function ioDoneAdmin(){$('ioOv').classList.remove('show');DONE=null;ioAdminOpen()}
@@ -1162,7 +1187,7 @@ function renderForm(){
   const mt=(t,ico,sub)=>`<button type="button" class="iog-movetype ${t}" aria-pressed="${F.type===t}" onclick="ioType('${t}')">${gi(ico)}<span><strong>${TYPE[t].btn}</strong><small>${sub}</small></span></button>`;
   let h=`${F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
   <div class="iog-vehicle" id="ioSecVeh"><span class="iog-vehicleicon">${gi('truck')}</span>
-    <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 차량 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
+    <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
       ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
     <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select></div></div>
   <div class="iog-movetypes">${mt('in','warehouse','차량 → 사무실 · 입고')}${mt('out','truck','사무실 → 차량 · 출고')}</div>
@@ -1379,26 +1404,17 @@ async function ioFlush(manual){
 
 /* ---------- 📊 입출고 취합 (관리자용) — ioadmin.js를 누를 때만 불러옴 ---------- */
 let _admLoading=false;
-function ioAdminOpen(){
-  if(!admin()){ioToast('당번 모드(🔑)를 켠 뒤에 열 수 있어요',true);return} // 화면 잠금일 뿐 — 데이터 접근 통제는 Firebase 규칙 몫
-  if(window.ioAdmin&&typeof window.ioAdmin.open==='function'){window.ioAdmin.open();return}
-  if(_admLoading)return;_admLoading=true;ioToast('취합 화면 불러오는 중…');
-  const sc=document.createElement('script');sc.src='./ioadmin.js?v='+encodeURIComponent(IO_VER);
-  sc.onload=()=>{_admLoading=false;if(window.ioAdmin&&typeof window.ioAdmin.open==='function')window.ioAdmin.open();else ioToast('취합 화면을 못 불러왔어요',true)};
-  sc.onerror=()=>{_admLoading=false;try{sc.remove()}catch(e){}ioToast('취합 화면을 못 불러왔어요 · 인터넷 확인 후 다시 눌러주세요',true)};
-  document.body.appendChild(sc);
-}
+function ioAdminOpen(){ioShow()} // v16: 취합이 입출고 탭 한 화면으로 합쳐짐 — 예전 호출은 탭을 여는 것으로
 // 취합 화면에서 부산↔경기 토글을 누르면 그 지역 스케줄러로 넘어오면서 주소 끝에 #ioadmin=날짜 가 붙음 → 같은 날짜의 취합 화면을 바로 다시 엶(당번 모드일 때만)
 function adminAutoOpen(){
   const m=/^#ioadmin(?:=(\d{4}-\d{2}-\d{2}))?$/.exec(location.hash||'');if(!m)return;
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   if(!admin())return;
   window.__ioAdminDate=m[1]||'';
-  try{if(typeof window.sw==='function')window.sw('fair')}catch(e){}
-  ioAdminOpen();
+  ioShow();
 }
 // ioadmin.js가 같은 제품 정의·박스 환산 기준·날짜 헬퍼를 그대로 쓰도록 내보냄 (값을 따로 복사해 두지 않기 위해)
-window.__io={ver:IO_VER,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,view:ioView,toast:ioToast,
+window.__io={ver:IO_VER,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
   util:{esc,num,kstDate,kstDT,addDays,fmtD,fmtMD,hm,dowOf,normPlate,thumbUrl,viewUrl}};
 
 /* ---------- 시작 ---------- */
@@ -1416,6 +1432,6 @@ function init(){
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
   setTimeout(adminAutoOpen,0);
 }
-Object.assign(window,{ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
