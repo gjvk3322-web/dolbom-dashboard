@@ -52,10 +52,15 @@
    · 🔴 수량 입력을 [박스] + [장(낱장)] 두 칸으로 — 직원이 박스를 장으로 직접 환산하다 틀리는 걸 막음.
      줄마다 '= N장', 카드 아래 합계 자동 계산(박스당 500 12 / 1M 22T 4 / 1M 17T 6, 10T는 24 / 8). 색상을 고르기 전 박스 수는 '색상?'으로 표시.
      폼 항목은 {product, cB,c, sB,s, kB,k, tB,t} (cB=박스, c=낱장). 옛 임시저장(c…=장수)은 낱장으로 읽혀 합계가 그대로.
-     시트 전송 형식(cBox/cEa/cQty…)은 그대로 — 이제 박스·낱장은 입력한 그대로, Qty는 환산 장수. IoLog.gs 수정 불필요 */
+     시트 전송 형식(cBox/cEa/cQty…)은 그대로 — 이제 박스·낱장은 입력한 그대로, Qty는 환산 장수. IoLog.gs 수정 불필요
+
+   v14 (2026-09-20b) 📊 입출고 취합(관리자용) 진입점만 추가 — 모바일 입력·저장 형식·대조 계산은 그대로
+   · 당번 모드(🔑)일 때만 '📦 입출고' 제목 옆에 [📊 취합] 버튼. 누르면 ioadmin.js를 그때 불러옴(직원 폰은 평소에 안 받음, 캐시 값은 IO_VER를 따라감)
+   · ioadmin.js가 쓰도록 window.__io 로 상수·헬퍼를 읽기 전용으로 내보냄. 당번 모드를 켜고 끌 때 목록을 다시 그려 버튼이 바로 뜨고 사라지게 함
+   · 주소 끝이 #ioadmin=날짜 면(취합 화면의 부산↔경기 토글로 넘어온 경우) 그 날짜의 취합 화면을 바로 엶 */
 (function(){
 'use strict';
-const IO_VER='2026.09.20a';
+const IO_VER='2026.09.20b';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -131,6 +136,7 @@ const CSS=`
 .io-hd h2{font-size:15px;font-weight:900;letter-spacing:-.3px;min-width:0;text-align:left}
 .io-hd .r{display:flex;align-items:center;gap:6px}
 .io-hd .r span{font-size:11px;color:var(--dim);font-weight:700}
+.io-adm{padding:5px 10px;border-radius:8px;border:1px solid rgba(90,200,250,.35);background:rgba(90,200,250,.1);color:var(--blue);font-size:12px;font-weight:800;font-family:var(--font);cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .io-q{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--sub);font-weight:900;font-size:12px;padding:0;cursor:pointer;font-family:var(--font);-webkit-tap-highlight-color:transparent}
 .io-start{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 6px}
 .io-start button{padding:10px 6px;border-radius:13px;border:none;font-family:var(--font);cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:transform .1s}
@@ -471,6 +477,8 @@ function ensureShell(){
     const box=document.createElement('div');box.id='ioView';const sep=document.createElement('div');sep.className='io-sep';
     host.insertBefore(sep,host.firstChild);host.insertBefore(box,sep);
     try{const _sw=window.sw;if(typeof _sw==='function'&&!_sw._io){const w=function(n){const r=_sw.apply(this,arguments);if(n==='fair')onTabOpen();return r};w._io=true;window.sw=w}}catch(e){}
+    // 당번 모드를 켜고 끄면 [📊 취합] 버튼이 바로 뜨고 사라지게 — 끄면 열려 있던 취합 화면도 닫음
+    ['adminOn','adminOff'].forEach(fn=>{try{const f=window[fn];if(typeof f==='function'&&!f._io){const w=function(){const r=f.apply(this,arguments);try{if(fn==='adminOff'&&window.ioAdmin&&window.ioAdmin.close)window.ioAdmin.close();renderList()}catch(e){}return r};w._io=true;window[fn]=w}}catch(e){}});
   }else{ // 차량 탭이 없는 페이지: 예전처럼 별도 패널 + 하단 탭
     const pane=document.createElement('div');pane.className='pane';pane.id='p-io';pane.innerHTML='<div id="ioView"></div>';
     const panes=document.querySelectorAll('.pane');const last=panes[panes.length-1];
@@ -788,7 +796,7 @@ function renderList(){
   const from=kstDate(-(LIST_ALL?DAYS:LIST_DAYS));const today=kstDate(0);
   const list=Object.values(all).filter(r=>r&&wd(r)&&wd(r)>=from);
   if(SH.open)renderShare();
-  let h=`<div class="io-hd"><h2>📦 입출고</h2><div class="r"><span>${RN}</span><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
+  let h=`<div class="io-hd"><h2>📦 입출고</h2><div class="r">${admin()?'<button type="button" class="io-adm" onclick="ioAdminOpen()" title="관리자용 입출고 취합 · 엑셀 복사">📊 취합</button>':''}<span>${RN}</span><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
   <div class="io-start">
     <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} ${TYPE.in.btn}</b></button>
     <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} ${TYPE.out.btn}</b></button>
@@ -1219,6 +1227,30 @@ async function ioFlush(manual){
   }finally{flushing=false;renderList()}
 }
 
+/* ---------- 📊 입출고 취합 (관리자용) — ioadmin.js를 누를 때만 불러옴 ---------- */
+let _admLoading=false;
+function ioAdminOpen(){
+  if(!admin()){ioToast('당번 모드(🔑)를 켠 뒤에 열 수 있어요',true);return} // 화면 잠금일 뿐 — 데이터 접근 통제는 Firebase 규칙 몫
+  if(window.ioAdmin&&typeof window.ioAdmin.open==='function'){window.ioAdmin.open();return}
+  if(_admLoading)return;_admLoading=true;ioToast('취합 화면 불러오는 중…');
+  const sc=document.createElement('script');sc.src='./ioadmin.js?v='+encodeURIComponent(IO_VER);
+  sc.onload=()=>{_admLoading=false;if(window.ioAdmin&&typeof window.ioAdmin.open==='function')window.ioAdmin.open();else ioToast('취합 화면을 못 불러왔어요',true)};
+  sc.onerror=()=>{_admLoading=false;try{sc.remove()}catch(e){}ioToast('취합 화면을 못 불러왔어요 · 인터넷 확인 후 다시 눌러주세요',true)};
+  document.body.appendChild(sc);
+}
+// 취합 화면에서 부산↔경기 토글을 누르면 그 지역 스케줄러로 넘어오면서 주소 끝에 #ioadmin=날짜 가 붙음 → 같은 날짜의 취합 화면을 바로 다시 엶(당번 모드일 때만)
+function adminAutoOpen(){
+  const m=/^#ioadmin(?:=(\d{4}-\d{2}-\d{2}))?$/.exec(location.hash||'');if(!m)return;
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  if(!admin())return;
+  window.__ioAdminDate=m[1]||'';
+  try{if(typeof window.sw==='function')window.sw('fair')}catch(e){}
+  ioAdminOpen();
+}
+// ioadmin.js가 같은 제품 정의·박스 환산 기준·날짜 헬퍼를 그대로 쓰도록 내보냄 (값을 따로 복사해 두지 않기 위해)
+window.__io={ver:IO_VER,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,view:ioView,toast:ioToast,
+  util:{esc,num,kstDate,kstDT,addDays,fmtD,fmtMD,hm,dowOf,normPlate,thumbUrl,viewUrl}};
+
 /* ---------- 시작 ---------- */
 function init(){
   ensureShell();
@@ -1232,7 +1264,8 @@ function init(){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&obGet().length)ioFlush(false)});
   setInterval(()=>{if(obGet().length&&!flushing)ioFlush(false)},90000);
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
+  setTimeout(adminAutoOpen,0);
 }
-Object.assign(window,{ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
