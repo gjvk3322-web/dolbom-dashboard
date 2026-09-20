@@ -57,10 +57,16 @@
    v14 (2026-09-20b) 📊 입출고 취합(관리자용) 진입점만 추가 — 모바일 입력·저장 형식·대조 계산은 그대로
    · 당번 모드(🔑)일 때만 '📦 입출고' 제목 옆에 [📊 취합] 버튼. 누르면 ioadmin.js를 그때 불러옴(직원 폰은 평소에 안 받음, 캐시 값은 IO_VER를 따라감)
    · ioadmin.js가 쓰도록 window.__io 로 상수·헬퍼를 읽기 전용으로 내보냄. 당번 모드를 켜고 끌 때 목록을 다시 그려 버튼이 바로 뜨고 사라지게 함
-   · 주소 끝이 #ioadmin=날짜 면(취합 화면의 부산↔경기 토글로 넘어온 경우) 그 날짜의 취합 화면을 바로 엶 */
+   · 주소 끝이 #ioadmin=날짜 면(취합 화면의 부산↔경기 토글로 넘어온 경우) 그 날짜의 취합 화면을 바로 엶
+
+   v15 (2026-09-20c) 🎨 입출고 섹션 전체를 새 디자인(카드형·차분한 색)으로 교체 — 저장 형식·사진 스탬프·임시저장·전송 대기·대조·공유·취소는 그대로
+   · 섹션 머리: [현장 입력 | 입출고 취합] 탭(취합은 당번 모드에서만), 시작 버튼은 두 장의 카드(사무실로 입고 / 차로 출고)
+   · 작성 화면: 3단계 탭을 없애고 한 화면에 — 내 차량(선택 상자)·담당 → 입고/출고 → 작업일 → 제품과 수량(제품 선택 상자 + 부위별 박스·낱장·합계 표) → 적재 사진 → 메모
+     아래 고정 바에 '○개 제품 · 합계 N장' + [입력 내용 확인] → 최종 확인 화면(N장, 차에 싣는 게 맞나요?) → 제출 → 완료 화면(그날 기록 화면 보기 / 이어서 반대쪽 기록)
+   · 작업일은 기존 선택지(출고: 오늘·내일 / 입고: 어제·오늘) 안에서만 고를 수 있게 다시 보이게 함 — 자동 기본값은 그대로(15시 이후 출고=내일, 10시 전 입고=어제), 지난 날짜 자유 입력은 여전히 없음 */
 (function(){
 'use strict';
-const IO_VER='2026.09.20b';
+const IO_VER='2026.09.20c';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE='io_logs/'+RK;
@@ -388,9 +394,138 @@ const CSS=`
 .io-sh-nx .io-sh-veh{background:transparent;padding:0 4px 4px}
 `;
 
+/* ---------- v15 새 디자인: 아이콘 + 추가 CSS (기존 CSS 뒤에 붙어 덮어씀) ---------- */
+const GI={ // lucide 선 아이콘 (인라인)
+  house:'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  truck:'<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>',
+  warehouse:'<path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/>',
+  table:'<path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>',
+  cal:'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  pkg:'<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',check:'<path d="M20 6 9 17l-5-5"/>'
+};
+function gi(n){return '<svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(GI[n]||'')+'</svg>'}
+const CSS_G=`
+#ioView,.io-ov,.io-sh,.io-help{--dm-bg:#14171c;--dm-panel:#20242b;--dm-ink:#f1f4f7;--dm-muted:#a5afbd;--dm-line:#363d48;--dm-soft:#292f38;--dm-brand:#ff8b7e;--dm-brandbg:#462e2c;--dm-green:#70d6ad;--dm-greenbg:#203b32;--dm-blue:#8bbcff;--dm-bluebg:#26364f;--dm-amber:#f2c574;--dm-amberbg:#403522;--dm-solid:#d4efe3;--dm-on-solid:#172d24;
+  --bg:var(--dm-bg);--card:var(--dm-panel);--card2:var(--dm-soft);--text:var(--dm-ink);--dim:var(--dm-muted);--sub:var(--dm-muted);--border:var(--dm-line);--blue:var(--dm-blue);--green:var(--dm-green);--cyan:var(--dm-blue);--orange:var(--dm-amber);--yellow:var(--dm-amber);--red:#ff8b7e}
+svg.gi{width:18px;height:18px;flex-shrink:0}
+#ioView{background:var(--dm-bg);border:1px solid var(--dm-line);border-radius:20px;overflow:hidden;color:var(--dm-ink)}
+#ioView button,.io-ov button{font-family:var(--font);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.iog-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px 4px;background:var(--dm-panel)}
+.iog-brand{display:flex;align-items:center;gap:9px;white-space:nowrap}
+.iog-brand strong{font-size:19px;font-weight:800;letter-spacing:-.8px}
+.iog-mark{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:var(--dm-brandbg);color:var(--dm-brand)}
+.iog-appname{font-size:13px;padding-left:12px;margin-left:4px;border-left:1px solid var(--dm-line);color:var(--dm-muted)}
+.iog-nav{display:flex;gap:22px;padding:0 16px;background:var(--dm-panel);border-bottom:1px solid var(--dm-line)}
+.iog-navtab{border:0;border-bottom:3px solid transparent;background:none;display:flex;align-items:center;gap:7px;min-height:48px;padding:4px 0;font-size:14px;font-weight:700;color:var(--dm-muted);cursor:pointer;white-space:nowrap}
+.iog-navtab.on{border-bottom-color:var(--dm-brand);color:var(--dm-ink)}
+.iog-page{padding:16px 14px 14px}
+.iog-movetypes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+.iog-movetype{border:1px solid var(--dm-line);background:var(--dm-panel);border-radius:12px;padding:12px;text-align:left;display:flex;gap:9px;align-items:center;color:var(--dm-ink);cursor:pointer;min-width:0}
+.iog-movetype span{min-width:0}
+.iog-movetype strong{display:block;font-size:14px;font-weight:800;white-space:nowrap}
+.iog-movetype small{display:block;color:var(--dm-muted);font-size:11px;margin-top:2px;line-height:1.35}
+.iog-movetype.in svg{color:var(--dm-blue)}.iog-movetype.out svg{color:var(--dm-green)}
+.iog-movetype[aria-pressed=true]{background:var(--dm-greenbg);border-color:var(--dm-green);color:var(--dm-green)}
+.iog-movetype.in[aria-pressed=true]{background:var(--dm-bluebg);border-color:var(--dm-blue);color:var(--dm-blue)}
+.iog-movetypes.start .iog-movetype{min-height:70px;padding:14px 13px}
+.iog-movetypes.start .iog-movetype strong{font-size:15.5px}
+.iog-movetypes.start svg.gi{width:22px;height:22px}
+.iog-st{display:inline-flex;gap:5px;align-items:center;font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px;background:var(--dm-soft);color:var(--dm-muted);white-space:nowrap}
+.iog-st.ok{background:var(--dm-greenbg);color:var(--dm-green)}
+.iog-tiny{font-size:12px;color:var(--dm-muted);font-weight:500}
+.io-ov{background:var(--dm-panel);color:var(--dm-ink)}
+.io-ov-in{max-width:520px;padding:0 16px 210px}
+.iog-phonehead{position:sticky;top:0;z-index:5;background:var(--dm-panel);display:flex;align-items:center;gap:10px;padding:16px 0 13px;padding-top:max(16px,env(safe-area-inset-top));border-bottom:1px solid var(--dm-line);margin-bottom:16px}
+.iog-phonehead h2{font-size:22px;font-weight:800;letter-spacing:-.8px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iog-close{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dm-line);background:var(--dm-panel);color:var(--dm-muted);border-radius:9px;min-height:36px;padding:6px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.iog-close svg.gi{width:15px;height:15px}
+.iog-vehicle{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--dm-soft);margin-bottom:12px}
+.iog-vehicleicon{display:grid;place-items:center;color:var(--dm-muted)}
+.iog-vehicle .f{flex:1;min-width:0}
+.iog-vehicle .f.w{flex:0 0 92px;border-left:1px solid var(--dm-line);padding-left:12px}
+.iog-vehicle label{font-size:11px;color:var(--dm-muted);display:block}
+.iog-vehicle select{border:0;background:transparent;font-size:16px;font-weight:700;padding:3px 0;margin:0;width:100%;max-width:100%;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none}
+.iog-inp{width:100%;margin-top:7px;height:40px;border:1px solid var(--dm-line);border-radius:8px;background:var(--dm-panel);color:var(--dm-ink);padding:6px 10px;font-size:16px;font-family:var(--font)}
+.iog-workerdate{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:20px;font-size:12px;color:var(--dm-muted)}
+.iog-workerdate>span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.iog-workerdate i{font-style:normal;font-size:11px;opacity:.75}
+.iog-workerdate svg.gi{width:15px;height:15px}
+.iog-seg{display:inline-flex;background:var(--dm-soft);border-radius:9px;padding:3px;gap:2px}
+.iog-seg button{padding:5px 11px;min-height:32px;border-radius:6px;border:none;background:transparent;color:var(--dm-muted);font-size:12.5px;font-weight:700;white-space:nowrap;cursor:pointer}
+.iog-seg button.on{background:var(--dm-panel);color:var(--dm-ink);box-shadow:0 1px 3px #0000003a}
+.iog-sectionlabel{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;font-weight:800}
+.iog-item{border:1px solid var(--dm-line);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.iog-itemhead{padding:10px 12px;background:var(--dm-soft);display:flex;align-items:center;gap:7px;color:var(--dm-muted)}
+.iog-productselect{flex:1;min-width:0;border:0;background:transparent;font-weight:800;font-size:16px;padding:5px 0;margin:0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none}
+.iog-productselect.none{color:var(--dm-amber)}
+.iog-x{border:0;background:transparent;color:var(--dm-muted);width:34px;height:34px;display:grid;place-items:center;border-radius:8px;cursor:pointer;flex:none}
+.iog-packhint{font-size:11px;color:var(--dm-muted);padding:9px 12px 0}
+.iog-packhint .w{color:var(--dm-amber)}
+.iog-qtygrid{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) 58px;gap:7px;align-items:center;padding:11px 12px}
+.iog-qtyhead{font-size:11px;color:var(--dm-muted);text-align:center}
+.iog-partname{font-size:12.5px;font-weight:700}
+.iog-partname.t{color:var(--dm-muted)}
+.iog-qtyinput{min-width:0;width:100%;height:42px;padding:7px 4px;margin:0;text-align:center;border:1px solid var(--dm-line);background:var(--dm-panel);border-radius:8px;font-size:17px;font-weight:700;color:var(--dm-ink);font-family:var(--font);font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none;appearance:none}
+.iog-qtyinput.z{color:var(--dm-muted);font-weight:500}
+.iog-qtyinput:focus{border-color:var(--dm-blue);box-shadow:0 0 0 2px var(--dm-bluebg)}
+.iog-qtygrid .eq{text-align:right;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.iog-qtygrid .eq b{font-weight:800}
+.iog-qtygrid .eq small{font-size:11px;color:var(--dm-muted);font-weight:400;margin-left:1px}
+.iog-qtygrid .eq.z{color:var(--dm-muted);font-weight:500}.iog-qtygrid .eq.z b{font-weight:500}
+.iog-qtygrid .eq.w{color:var(--dm-amber);font-size:12px}
+.iog-qtygrid .eq.l{font-size:12.5px}
+.iog-itemfoot{padding:10px 12px;background:var(--dm-soft);font-size:12px;color:var(--dm-muted);text-align:right}
+.iog-itemfoot strong{font-weight:800;font-size:15px;color:var(--dm-ink);margin-left:3px}
+.iog-itemfoot em{font-style:normal;margin-left:4px}
+.iog-addproduct{width:100%;border:1px dashed var(--dm-line);border-radius:10px;min-height:44px;background:transparent;color:var(--dm-muted);font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:23px;cursor:pointer}
+.iog-addproduct:disabled{opacity:.4}
+.iog-photo{position:relative;width:100%;border:1px dashed var(--dm-line);border-radius:11px;padding:16px;background:var(--dm-bg);display:flex;align-items:center;gap:12px;text-align:left;min-height:78px;cursor:pointer;overflow:hidden;color:var(--dm-muted)}
+.iog-photo svg.gi{width:24px;height:24px}
+.iog-photo strong{display:block;font-size:14px;font-weight:700;color:var(--dm-ink)}
+.iog-photo small{display:block;font-size:11.5px;color:var(--dm-muted);margin-top:3px}
+.iog-photo.has{padding:0;border-style:solid;border-color:var(--dm-green);display:block}
+.iog-photo img{width:100%;display:block}
+.iog-photo .re{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.62);color:#fff;border:none;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer}
+.iog-photo .busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:14px}
+.iog-memonote{margin-top:15px}
+.iog-memonote summary{font-size:12.5px;color:var(--dm-muted);min-height:32px;cursor:pointer;font-weight:700}
+.iog-memonote textarea{width:100%;min-height:68px;margin-top:6px;padding:9px;border:1px solid var(--dm-line);border-radius:8px;background:var(--dm-panel);color:var(--dm-ink);resize:vertical;font-size:16px;font-family:var(--font)}
+.io-foot{background:var(--dm-panel);border-top:1px solid var(--dm-line);padding:13px 16px;padding-bottom:max(13px,env(safe-area-inset-bottom))}
+.iog-total{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:13px;color:var(--dm-muted)}
+.iog-total strong{font-size:25px;font-weight:800;letter-spacing:-.8px;color:var(--dm-ink);font-variant-numeric:tabular-nums;line-height:1.1}
+.iog-total strong small{font-size:14px;font-weight:500;margin-left:3px}
+.io-submit,.io-submit.in{display:flex;gap:7px;align-items:center;justify-content:center;width:100%;min-height:50px;padding:12px;border-radius:12px;border:1px solid var(--dm-solid);background:var(--dm-solid);color:var(--dm-on-solid);font-size:16px;font-weight:800;letter-spacing:-.2px;cursor:pointer}
+.io-submit:disabled{opacity:.42;cursor:not-allowed}
+.iog-hint{font-size:11.5px;color:var(--dm-muted);text-align:center;margin-top:8px;min-height:17px}
+.iog-button{display:flex;gap:7px;align-items:center;justify-content:center;min-height:46px;border:1px solid var(--dm-line);background:var(--dm-panel);color:var(--dm-ink);padding:10px 14px;border-radius:10px;font-size:14.5px;font-weight:700;cursor:pointer;flex-wrap:wrap}
+.iog-button.full{width:100%}
+.iog-button.primary{background:var(--dm-solid);color:var(--dm-on-solid);border-color:var(--dm-solid)}
+.iog-button.quiet{background:transparent;border-color:transparent;color:var(--dm-muted)}
+.iog-button small{font-size:11.5px;font-weight:600;opacity:.75}
+.iog-review{padding:6px 2px 0}
+.iog-reviewtitle{font-size:21px;font-weight:800;letter-spacing:-.7px;margin:10px 0 5px}
+.iog-reviewmeta{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:13px;margin:20px 0 4px;padding:16px 0;border-top:1px solid var(--dm-line);border-bottom:1px solid var(--dm-line)}
+.iog-reviewmeta dt{color:var(--dm-muted)}
+.iog-reviewmeta dd{margin:0;text-align:right;font-weight:700}
+.iog-reviewitem{padding:12px 0;border-bottom:1px solid var(--dm-line)}
+.iog-reviewitem b{font-weight:800;font-size:14.5px}
+.iog-recordparts{font-size:12.5px;color:var(--dm-muted);margin-top:3px;line-height:1.6}
+.iog-recordparts i{font-style:normal;opacity:.7}
+.iog-success{padding:30px 8px;text-align:center}
+.iog-successmark{width:64px;height:64px;border-radius:50%;background:var(--dm-greenbg);color:var(--dm-green);display:grid;place-items:center;margin:0 auto 20px}
+.iog-successmark svg.gi{width:30px;height:30px}
+.iog-success h3{font-size:23px;letter-spacing:-.7px;font-weight:800;margin:0}
+.iog-success p{font-size:13px;color:var(--dm-muted);margin:10px 0 24px;line-height:1.6}
+.iog-success .iog-button{margin-top:9px}
+@media(max-width:380px){.iog-movetype{padding:10px 8px;gap:6px}.iog-movetype strong{font-size:13px}.iog-movetypes.start .iog-movetype strong{font-size:14px}.iog-qtygrid{grid-template-columns:47px minmax(0,1fr) minmax(0,1fr) 52px;gap:5px;padding:10px 8px}.iog-vehicle .f.w{flex-basis:78px}}
+`;
+
 /* ---------- 상태 ---------- */
 let LOGS={};         // Firebase 최근 기록 {id:rec}
 let F=null;          // 작성 중 폼
+let DONE=null;     // 방금 제출한 기록 요약(완료 화면용) {type,vehicle,wdate,total}
 let P=null;          // 촬영 사진 {img, at(Date), taken(ms), name}
 let busy=false;      // 제출 진행 중
 let pingOk=+(localStorage.getItem('io_ping_ok')||0);
@@ -471,7 +606,7 @@ async function ioDraftResume(){
 /* ---------- 껍데기 ---------- */
 function ensureShell(){
   if($('ioView'))return;
-  const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
+  const st=document.createElement('style');st.textContent=CSS+CSS_G;document.head.appendChild(st);
   const host=$('p-fair'); // 🚗 차량 탭 맨 위 (차량 배정·공정성 위)
   if(host){
     const box=document.createElement('div');box.id='ioView';const sep=document.createElement('div');sep.className='io-sep';
@@ -488,10 +623,11 @@ function ensureShell(){
   }
   const ov=document.createElement('div');ov.className='io-ov';ov.id='ioOv';
   ov.innerHTML=`<div class="io-ov-in">
-    <div class="io-ov-hd"><b id="ioOvTitle">출고 기록</b><button type="button" onclick="ioClose()">✕ 닫기</button></div>
+    <div class="iog-phonehead"><h2 id="ioOvTitle">입출고 기록</h2><span class="iog-st">${RN}</span><button type="button" class="iog-close" onclick="ioClose()">${gi('x')} 닫기</button></div>
     <div id="ioForm"></div>
   </div>
-  <div class="io-foot"><div class="io-foot-in"><button type="button" class="io-submit" id="ioSubmitBtn" onclick="ioSubmit()">출고 기록 제출</button></div></div>
+  <div class="io-foot" id="ioFoot"><div class="io-foot-in"><div class="iog-total"><span id="ioFootCnt">1개 제품 · 합계</span><strong><span id="ioFootTot">0</span><small>장</small></strong></div>
+    <button type="button" class="io-submit" id="ioSubmitBtn" onclick="ioNext()">입력 내용 확인</button><div class="iog-hint" id="ioFootHint"></div></div></div>
   <input type="file" id="ioFile" accept="image/*" capture="environment" style="display:none" onchange="ioPhotoChange(this)">`;
   document.body.appendChild(ov);
   const sh=document.createElement('div');sh.className='io-sh';sh.id='ioShare';
@@ -504,8 +640,8 @@ function ensureShell(){
   hp.innerHTML=`<div class="io-help-in">
     <h3>입출고 기록</h3>
     <div class="st"><b>1</b><span>남은 것을 사무실에 내리면 <b>사무실로 입고</b>, 내일 것을 차에 실으면 <b>차로 출고</b>. 아침 입고는 어제 것, 저녁 출고는 내일 것으로 자동으로 잡혀요.</span></div>
-    <div class="st"><b>2</b><span>위 <b>차량 · 사진 · 제품</b> 순서대로. 쓰던 내용은 자동으로 임시 저장돼서 나갔다 와도 <b>이어쓰기</b>가 떠요.</span></div>
-    <div class="st"><b>3</b><span>제출하면 그날 화면이 떠요(입고 + 내일 실은 것 같이). 스크린샷해서 단톡방에. 안 맞으면 <b>사유</b>.</span></div>
+    <div class="st"><b>2</b><span>한 화면에서 <b>내 차량 → 제품과 수량 → 적재 사진</b>을 채우고 <b>입력 내용 확인</b> → 숫자를 한 번 더 보고 제출. 쓰던 내용은 자동으로 임시 저장돼서 나갔다 와도 <b>이어쓰기</b>가 떠요.</span></div>
+    <div class="st"><b>3</b><span>제출 뒤 <b>그날 기록 화면 보기</b>를 누르면 그날 화면이 떠요(입고 + 내일 실은 것 같이). 스크린샷해서 단톡방에. 안 맞으면 <b>사유</b>.</span></div>
     <div class="ref">수량은 <b>박스</b> 칸과 <b>장</b>(낱장) 칸에 나눠 적으면 장수는 자동으로 계산돼요.<br>1박스 = 500 12장 · 1M 22T 4장 · 1M 17T 6장 · 10T 24장(500)/8장(1M)</div>
     <button type="button" onclick="ioHelpClose()">확인</button>
   </div>`;
@@ -796,10 +932,11 @@ function renderList(){
   const from=kstDate(-(LIST_ALL?DAYS:LIST_DAYS));const today=kstDate(0);
   const list=Object.values(all).filter(r=>r&&wd(r)&&wd(r)>=from);
   if(SH.open)renderShare();
-  let h=`<div class="io-hd"><h2>📦 입출고</h2><div class="r">${admin()?'<button type="button" class="io-adm" onclick="ioAdminOpen()" title="관리자용 입출고 취합 · 엑셀 복사">📊 취합</button>':''}<span>${RN}</span><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div></div>
-  <div class="io-start">
-    <button type="button" class="in" onclick="ioOpen('in')"><b>${TYPE.in.ico} ${TYPE.in.btn}</b></button>
-    <button type="button" class="out" onclick="ioOpen('out')"><b>${TYPE.out.ico} ${TYPE.out.btn}</b></button>
+  let h=`<div class="iog-top"><div class="iog-brand"><span class="iog-mark">${gi('house')}</span><strong>입출고</strong><span class="iog-appname">${RN}</span></div><button type="button" class="io-q" onclick="ioHelp()" title="도움말">?</button></div>
+  <div class="iog-nav"><button type="button" class="iog-navtab on">${gi('truck')}현장 입력</button>${admin()?`<button type="button" class="iog-navtab io-adm" onclick="ioAdminOpen()" title="관리자용 입출고 취합 · 엑셀 복사">${gi('table')}입출고 취합</button>`:''}</div>
+  <div class="iog-page"><div class="iog-movetypes start">
+    <button type="button" class="iog-movetype in" onclick="ioOpen('in')">${gi('warehouse')}<span><strong>${TYPE.in.btn}</strong><small>차량 → 사무실 · 남은 것 내리기</small></span></button>
+    <button type="button" class="iog-movetype out" onclick="ioOpen('out')">${gi('truck')}<span><strong>${TYPE.out.btn}</strong><small>사무실 → 차량 · 싣고 나가기</small></span></button>
   </div>`;
   if(ob.length){
     const stuck=ob.some(e=>(e.tries||0)>=8);
@@ -816,7 +953,7 @@ function renderList(){
   // 지난 작업일 (접힘)
   Object.keys(days).filter(d=>d<today).sort().reverse().forEach(d=>{h+=dayBlock(d,days[d],local,false)});
   if(!LIST_ALL){const older=Object.values(all).some(r=>r&&wd(r)&&wd(r)<from);if(older)h+=`<button type="button" class="io-more" onclick="ioListMore()">지난 ${DAYS}일 기록 더 보기</button>`}
-  v.innerHTML=h;
+  v.innerHTML=h+'</div>';
 }
 function ioDayToggle(d){DAY_OPEN[d]=!DAY_OPEN[d];renderList()}
 function ioVoidToggle(k){VOID_OPEN[k]=!VOID_OPEN[k];renderList()}
@@ -951,15 +1088,16 @@ function ioOpen(type){
   const lastV=localStorage.getItem('io_last_vehicle')||'';
   const vehicle=vs.includes(lastV)?lastV:(vs.length===1?vs[0]:'');
   const w=wdOpts(t);
-  F={type:t,date:kstDate(0),wdate:w.def,wopts:w.opts,dateEdit:false,vehicle,custom:false,worker:vehicle?(vehicles()[vehicle]||''):'',items:[newItem()],note:'',step:vehicle?'photo':'veh',draft:draftGet(t)};
-  P=null;busy=false;
+  F={type:t,date:kstDate(0),wdate:w.def,wopts:w.opts,dateEdit:false,vehicle,custom:false,worker:vehicle?(vehicles()[vehicle]||''):'',items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
+  P=null;busy=false;DONE=null;
+  $('ioFoot').style.display='';
   renderForm();
   $('ioOv').classList.add('show');$('ioOv').scrollTop=0;
 }
 function ioClose(){
   if(busy)return;
-  if(formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
-  $('ioOv').classList.remove('show');F=null;P=null;$('ioFile').value='';
+  if(F&&formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
+  $('ioOv').classList.remove('show');F=null;P=null;DONE=null;$('ioFile').value='';
 }
 function ioType(t){
   if(!F)return;const old=F.type;if(old===t){renderForm();return}
@@ -971,87 +1109,99 @@ function ioType(t){
 }
 /* 3단계 */
 function formTotal(){let s=0;F.items.forEach(it=>{s+=itemTotal(it)+itemQty(it,'t')});return s}
-function stepState(){
-  const tot=formTotal();
-  return {
-    veh:{done:!!F.vehicle,txt:F.vehicle?String(F.vehicle).slice(-4):''},
-    photo:{done:!!P,txt:''},
-    item:{done:tot>0&&F.items.some(it=>it.product),txt:tot?tot+'장':''}
-  };
+function ioStep(){} // v15: 3단계 탭을 없앰 (예전 호출과의 호환용 빈 함수)
+function formMissing(){ // 다음으로 못 넘어가는 이유 {sec,msg} — 화면 순서(차량 → 제품 → 사진)대로
+  if(!F.vehicle)return {sec:'ioSecVeh',msg:'차량을 선택해주세요'};
+  let n=0;
+  for(let i=0;i<F.items.length;i++){const it=F.items[i];const any=itemAny(it);if(!it.product&&!any)continue;
+    if(!it.product)return {sec:'ioPc_'+i,msg:'제품 '+(i+1)+'을 골라주세요'};
+    if(!any)return {sec:'ioPc_'+i,msg:'제품 '+(i+1)+'의 수량이 비어 있어요'};n++}
+  if(!n||!formTotal())return {sec:'ioItems',msg:'수량을 1장 이상 입력해주세요'};
+  if(!P)return {sec:'ioSecPhoto',msg:'사진을 촬영하면 다음으로 넘어갈 수 있어요'};
+  return null;
 }
-function stepTabsHtml(){ // 한 줄 탭 — 완료하면 이름 옆에 '✓ 6771' / '✓' / '✓ 90장'
-  const st=stepState();const step=F.step||'veh';
-  const tab=(k,ico,name)=>`<button type="button" class="${step===k?'on':''}${st[k].done?' done':''}" onclick="ioStep('${k}')"><b>${ico} ${name}</b>${st[k].done?`<small>✓${st[k].txt?' '+esc(st[k].txt):''}</small>`:(st[k].txt?`<small>${esc(st[k].txt)}</small>`:'')}</button>`;
-  return tab('veh','🚚','차량')+tab('photo','📷','사진')+tab('item','📦','제품');
+function refreshSteps(){ // v15: 아래 고정 바(제품 수·합계·버튼·안내) 갱신 — 입력할 때마다 불림
+  if(!F||!$('ioFoot'))return;
+  const tot=formTotal();const n=F.items.filter(it=>it.product||itemAny(it)).length||1;const review=F.stage==='review';const miss=formMissing();
+  $('ioFootCnt').textContent=n+'개 제품 · 합계';$('ioFootTot').textContent=tot;
+  const sb=$('ioSubmitBtn');sb.className='io-submit '+F.type+(review?' go':'');
+  sb.innerHTML=busy?'저장 중…':review?tot+'장 '+TYPE[F.type].n+' 제출':'입력 내용 확인 '+gi('arrow');
+  sb.disabled=busy||(!review&&!!miss);
+  $('ioFootHint').textContent=review?'제출하면 바로 저장돼요. 틀린 데가 있으면 위의 [돌아가서 수정].':(miss?miss.msg+'.':'차량 · 제품 · 수량을 마지막으로 확인해요.');
 }
-function refreshSteps(){const el=$('ioSteps');if(el&&F)el.innerHTML=stepTabsHtml()}
-function ioStep(s){if(!F)return;F.step=s;renderForm();draftSave();try{$('ioOv').scrollTop=0}catch(e){}}
+function ioNext(){ // 고정 바의 큰 버튼: 작성 중엔 최종 확인으로, 최종 확인에선 제출
+  if(!F||busy)return;
+  if(F.stage==='review'){ioSubmit();return}
+  const m=formMissing();if(m){ioToast(m.msg,true);const el=$(m.sec);if(el)try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}return}
+  F.stage='review';renderForm();try{$('ioOv').scrollTop=0}catch(e){}
+}
+function ioEdit(){if(!F||busy)return;F.stage='edit';renderForm();try{$('ioOv').scrollTop=0}catch(e){}}
+function ioVehPick(v){if(v==='__custom'){ioVehicleCustom();return}if(v){ioVehicle(v);return}F.custom=false;F.vehicle='';renderForm();draftSave()}
+function reviewHtml(){
+  const tot=formTotal();const items=F.items.filter(it=>it.product&&itemAny(it));
+  return `<div class="iog-review"><span class="iog-st ok">최종 확인</span><div class="iog-reviewtitle">${tot}장, ${F.type==='out'?'차에 싣는 게':'사무실에 내리는 게'} 맞나요?</div><p class="iog-tiny">숫자와 차량을 한 번만 더 확인해주세요.</p>
+    <dl class="iog-reviewmeta"><dt>차량</dt><dd>${esc(F.vehicle)}${F.worker?' · '+esc(F.worker):''}</dd><dt>이동</dt><dd>${RN} ${F.type==='out'?'사무실 → 차량 · 출고':'차량 → 사무실 · 입고'}</dd><dt>작업일</dt><dd>${esc(fmtD(F.wdate))}</dd><dt>사진</dt><dd>${P?'1장 첨부':'없음'}</dd></dl>
+    ${items.map(it=>`<div class="iog-reviewitem"><b>${esc(it.product)}</b><div class="iog-recordparts">${PART.filter(pt=>itemQty(it,pt.k)>0).map(pt=>pt.n+' '+itemQty(it,pt.k)+'장'+(itemBox(it,pt.k)?` <i>(${itemBox(it,pt.k)}박스+${itemEa(it,pt.k)})</i>`:'')).join(' · ')}</div></div>`).join('')}
+    ${F.note?`<p class="iog-tiny" style="margin-top:12px;white-space:pre-wrap">${esc(F.note)}</p>`:''}
+    <button type="button" class="iog-button quiet full" style="margin-top:18px" onclick="ioEdit()">돌아가서 수정</button></div>`;
+}
+function successHtml(){
+  const d=DONE;const other=d.type==='in'?'out':'in';
+  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장 · ${esc(fmtD(d.wdate))} 것<br>담당자 취합 화면에도 바로 반영돼요. 사진은 뒤에서 전송 중이에요.</p>
+    <button type="button" class="iog-button primary full" onclick="ioDoneShare()">그날 기록 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
+    <button type="button" class="iog-button full" onclick="ioOpen('${other}')">이어서 ${TYPE[other].btn} 기록</button>
+    ${admin()?`<button type="button" class="iog-button full" onclick="ioDoneAdmin()">${gi('table')} 취합 화면에서 확인</button>`:''}
+    <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기</button></div>`;
+}
+function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(d)ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // 내일 것 실은 건 오늘 화면에 '내일 실은 것'으로 같이
+function ioDoneAdmin(){$('ioOv').classList.remove('show');DONE=null;ioAdminOpen()}
 function renderForm(){
   if(!F)return;
-  const T=TYPE[F.type];
-  // 작업일이 오늘이 아니면(아침 입고=어제 것, 저녁 출고=내일 것) 제목 옆에 작게만 — 안내 칸은 없앰
-  $('ioOvTitle').innerHTML=T.ico+' '+T.n+' 기록'+(F.wdate&&F.wdate!==kstDate(0)?`<small>${esc(fmtD(F.wdate))} 것</small>`:'');
-  const sb=$('ioSubmitBtn');sb.className='io-submit '+F.type;sb.textContent=T.n+' 기록 제출';sb.disabled=busy;
-  const vs=vehicles();const plates=Object.keys(vs);
-  const emps=employees();
-  const step=F.step||'veh';
-  let h=`<div class="io-seg">
-    <button type="button" class="in${F.type==='in'?' on':''}" onclick="ioType('in')">${TYPE.in.ico} ${TYPE.in.btn}</button>
-    <button type="button" class="out${F.type==='out'?' on':''}" onclick="ioType('out')">${TYPE.out.ico} ${TYPE.out.btn}</button>
-  </div>
-  ${F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
-  <div class="io-step" id="ioSteps">${stepTabsHtml()}</div>
-  <div class="io-pane${step==='veh'?' on':''}">
-    <div class="io-sec"><div class="io-lb">차량 <small>${plates.length?'':'차량·공정성 탭에 등록된 차량이 없어요'}</small></div>
-      <div class="io-chips">${plates.map(p=>`<div class="io-chip${!F.custom&&F.vehicle===p?' on':''}" onclick="ioVehicle('${esc(p)}')">${esc(p)}<small>${esc(vs[p]||'미배정')}</small></div>`).join('')}<div class="io-chip dim${F.custom?' on':''}" onclick="ioVehicleCustom()">직접 입력</div></div>
-      ${F.custom?`<input class="io-inp" id="ioVehicleIn" style="margin-top:8px" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value)">`:''}
-    </div>
-    <div class="io-sec"><div class="io-lb">담당</div>
-      <select class="io-sel" id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select>
-    </div>
-    ${F.vehicle?`<button type="button" class="io-next" onclick="ioStep('${P?'item':'photo'}')">${P?'다음 · 제품 입력 →':'다음 · 사진 촬영 →'}</button>`:''}
-  </div>
-  <div class="io-pane${step==='photo'?' on':''}">
-    <div class="io-sec"><div class="io-lb">사진 <small>박스·낱장이 다 보이게</small></div>
-      <div class="io-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`<div class="ph"><div class="i">📷</div><b>촬영</b><small>박스·낱장이 다 보이게</small></div>`}</div>
-    </div>
-    ${P?`<button type="button" class="io-next" onclick="ioStep('${F.vehicle?'item':'veh'}')">${F.vehicle?'다음 · 제품 입력 →':'다음 · 차량 선택 →'}</button>`:''}
-  </div>
-  <div class="io-pane${step==='item'?' on':''}">
-    <div id="ioItems"></div>
-    <button type="button" class="io-add" onclick="ioAddItem()">＋ 제품 추가</button>
-    <div class="io-sec" style="margin-top:14px"><div class="io-lb">메모 <small>선택</small></div><input class="io-inp" id="ioNote" placeholder="예) 오후 현장용 추가 적재" value="${esc(F.note)}" oninput="ioNote(this.value)"></div>
-  </div>`;
+  if(F.stage==='review'){$('ioForm').innerHTML=reviewHtml();refreshSteps();return}
+  const vs=vehicles();const plates=Object.keys(vs);const emps=employees();
+  const mt=(t,ico,sub)=>`<button type="button" class="iog-movetype ${t}" aria-pressed="${F.type===t}" onclick="ioType('${t}')">${gi(ico)}<span><strong>${TYPE[t].btn}</strong><small>${sub}</small></span></button>`;
+  let h=`${F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
+  <div class="iog-vehicle" id="ioSecVeh"><span class="iog-vehicleicon">${gi('truck')}</span>
+    <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 차량 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
+      ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
+    <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select></div></div>
+  <div class="iog-movetypes">${mt('in','warehouse','차량 → 사무실 · 입고')}${mt('out','truck','사무실 → 차량 · 출고')}</div>
+  <div class="iog-workerdate"><span>${gi('cal')} 작업일 <i>이 짐이 쓰이는 시공일</i></span><div class="iog-seg">${F.wopts.map(o=>`<button type="button" class="${F.wdate===o[0]?'on':''}" onclick="ioWdate('${o[0]}')">${o[1]} ${fmtMD(o[0])}</button>`).join('')}</div></div>
+  <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
+  <div id="ioItems"></div>
+  <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
+  <div class="iog-sectionlabel" id="ioSecPhoto"><span>적재 사진</span><span class="iog-st${P?' ok':''}">${P?'사진 1장':'필수'}</span></div>
+  <div class="iog-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`${gi('camera')}<span><strong>사진 촬영하기</strong><small>박스와 낱장이 함께 보이는 사진</small></span>`}</div>
+  <details class="iog-memonote"${F.note?' open':''}><summary>메모 남기기 <span class="iog-tiny">선택</span></summary><textarea id="ioNote" placeholder="예) 오후 현장용 추가 적재" maxlength="200" oninput="ioNote(this.value)">${esc(F.note)}</textarea></details>`;
   $('ioForm').innerHTML=h;
   renderItems();
   if(P)drawPreview();
+  refreshSteps();
 }
 function rowEq(it,k){ // 줄 합계 '= N장' — 색상을 고르기 전에 박스를 적으면 환산을 못 하므로 '색상?'
   const q=itemQty(it,k);
-  if(itemBox(it,k)&&!prod(it.product))return {cls:' w',html:'색상?'};
-  return {cls:(q?'':' z')+(q>9999?' l':''),html:'= <b>'+q+'</b>장'};
+  if(itemBox(it,k)&&!prod(it.product))return {cls:' w',html:'제품?'};
+  return {cls:(q?'':' z')+(q>9999?' l':''),html:'<b>'+q+'</b><small>장</small>'};
 }
 function ftHint(it){ // 카드 아래 왼쪽 안내 — 박스당 장수
   const p=prod(it.product);
-  if(p)return '1박스 = '+p.per+'장 · 10T '+p.per10+'장';
-  return PART.some(pt=>itemBox(it,pt.k))?'<span class="w">색상을 골라야 박스가 계산돼요</span>':'색상을 먼저 골라주세요';
+  if(p)return '1박스 = '+p.per+'장 <span>· 10T는 '+p.per10+'장</span>';
+  return PART.some(pt=>itemBox(it,pt.k))?'<span class="w">제품을 골라야 박스가 계산돼요</span>':'제품을 먼저 골라주세요';
 }
 function renderItems(){
   const box=$('ioItems');if(!box||!F)return;
+  const groups=[];PRODUCTS.forEach(p=>{let g=groups.find(x=>x.g===p.g);if(!g){g={g:p.g,list:[]};groups.push(g)}g.list.push(p)});
   box.innerHTML=F.items.map((it,i)=>{
-    const p=prod(it.product);
-    const chips=CHIP_ROWS.map(r=>`<div class="io-pg">${esc(r.g)}</div><div class="io-pchips${r.sets.length>1?'':' wide'}">${r.sets.map(set=>`<div class="io-pset">${set.map(k=>{const x=prod(k);return x?`<div class="io-pchip ${x.cls}${it.product===k?' on':''}" onclick="ioProduct(${i},'${esc(k)}')">${esc(x.c)}</div>`:''}).join('')}</div>`).join('')}</div>`).join('');
-    const inp=(f,max,v)=>`<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="${max}" autocomplete="off" class="${v?'':'z'}" value="${v}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${f}',this)">`;
+    const used=k=>F.items.some((o,j)=>j!==i&&o.product===k);
+    const opts=groups.map(g=>`<optgroup label="${esc(g.g)}">${g.list.map(p=>`<option value="${esc(p.k)}"${it.product===p.k?' selected':''}${used(p.k)?' disabled':''}>${esc(p.k)}</option>`).join('')}</optgroup>`).join('');
+    const inp=(f,max,v,lab)=>`<input class="iog-qtyinput${v?'':' z'}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="${max}" autocomplete="off" aria-label="${lab}" value="${v}" onfocus="ioFocus(this)" onblur="ioBlur(this)" oninput="ioNum(${i},'${f}',this)">`;
     const rows=PART.map(pt=>{const e=rowEq(it,pt.k);
-      return `<div class="io-row"><span class="n${pt.k==='t'?' t':''}">${pt.n}</span>
-        <span class="u bx">${inp(pt.k+'B',3,itemBox(it,pt.k))}<i>박스</i></span>
-        <span class="u">${inp(pt.k,4,itemEa(it,pt.k))}<i>장</i></span>
-        <span class="eq${e.cls}" id="ior_${i}_${pt.k}">${e.html}</span></div>`}).join('');
+      return `<span class="iog-partname${pt.k==='t'?' t':''}">${pt.n}</span>${inp(pt.k+'B',3,itemBox(it,pt.k),'제품 '+(i+1)+' '+pt.n+' 박스')}${inp(pt.k,4,itemEa(it,pt.k),'제품 '+(i+1)+' '+pt.n+' 낱장')}<span class="eq${e.cls}" id="ior_${i}_${pt.k}">${e.html}</span>`}).join('');
     const t10=itemQty(it,'t');
-    return `<div class="io-item-w" id="ioPc_${i}"><div class="io-lb"><span>제품 #${i+1}${p?`<small class="pn"> · ${esc(p.k)}</small>`:''}</span>${F.items.length>1?`<span class="del" onclick="ioDelItem(${i})">삭제</span>`:''}</div>
-      <div class="io-pc">${chips}
-      <div class="io-grid">${rows}</div>
-      <div class="io-pc-ft"><span id="iof_${i}">${ftHint(it)}</span><span>합계<b id="iot_${i}">${itemTotal(it)}</b>장<em id="iot10_${i}">${t10?' +10T '+t10+'장':''}</em></span></div></div></div>`;
+    return `<div class="iog-item" id="ioPc_${i}"><div class="iog-itemhead">${gi('pkg')}<select class="iog-productselect${it.product?'':' none'}" aria-label="제품 ${i+1} 선택" onchange="ioProduct(${i},this.value)"><option value="">제품 선택</option>${opts}</select>${F.items.length>1?`<button type="button" class="iog-x" onclick="ioDelItem(${i})" aria-label="제품 ${i+1} 빼기">${gi('x')}</button>`:''}</div>
+      <div class="iog-packhint" id="iof_${i}">${ftHint(it)}</div>
+      <div class="iog-qtygrid"><span></span><span class="iog-qtyhead">박스</span><span class="iog-qtyhead">낱장</span><span class="iog-qtyhead" style="text-align:right">합계</span>${rows}</div>
+      <div class="iog-itemfoot">제품 합계 <strong id="iot_${i}">${itemTotal(it)}</strong>장<em id="iot10_${i}">${t10?' +10T '+t10+'장':''}</em></div></div>`;
   }).join('');
 }
 function updateItemTotals(i){ // 입력 중엔 다시 그리지 않고 숫자만 갱신 (포커스 유지)
@@ -1066,9 +1216,9 @@ function ioNum(i,k,el){const it=F.items[i];if(!it)return;const clean=el.value.re
 
 function ioFocus(el){if(el.value==='0'){el.value='';el.classList.add('z')}try{el.select()}catch(e){}}
 function ioBlur(el){if(el.value==='')el.value='0';el.classList.toggle('z',!num(el.value))}
-function ioProduct(i,k){F.items[i].product=k;renderItems();refreshSteps();draftSave()}
-function ioAddItem(){F.items.push(newItem());renderItems();const el=$('ioPc_'+(F.items.length-1));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});draftSave()}
-function ioDelItem(i){if(F.items.length<=1)return;const it=F.items[i];if((it.product||itemAny(it))&&!confirm('제품 #'+(i+1)+'을 지울까요?'))return;F.items.splice(i,1);renderItems();refreshSteps();draftSave()}
+function ioProduct(i,k){F.items[i].product=prod(k)?k:'';renderItems();refreshSteps();draftSave()}
+function ioAddItem(){if(F.items.length>=PRODUCTS.length)return;F.items.push(newItem());renderForm();const el=$('ioPc_'+(F.items.length-1));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});draftSave()}
+function ioDelItem(i){if(F.items.length<=1)return;const it=F.items[i];if((it.product||itemAny(it))&&!confirm('제품 '+(i+1)+'을 뺄까요?'))return;F.items.splice(i,1);renderItems();refreshSteps();draftSave()}
 function ioNote(v){F.note=v.slice(0,200);draftSave()}
 // v13: '지난 날짜 것을 지금 기록(지연 입력)' 링크를 화면에서 뺌 — 아래 3개는 호출하는 곳이 없음(되살릴 때를 위해 남겨 둠)
 function ioWdate(d){F.dateEdit=false;F.wdate=d;renderForm();draftSave()}
@@ -1076,7 +1226,6 @@ function ioDateToggle(){F.dateEdit=true;if(F.wdate>=kstDate(0))F.wdate=prevWorkD
 function ioDateChange(v){if(/^\d{4}-\d{2}-\d{2}$/.test(v))F.wdate=v;renderForm();draftSave()}
 function ioVehicle(p){
   F.custom=false;F.vehicle=p;const d=vehicles()[p];if(d)F.worker=d;
-  if(F.step==='veh')F.step=P?'item':'photo';       // 차량 고르면 바로 사진(이미 찍었으면 제품) 단계로
   renderForm();drawPreview();draftSave();
 }
 function ioVehicleCustom(){F.custom=true;F.vehicle='';renderForm();const el=$('ioVehicleIn');if(el)el.focus()}
@@ -1141,16 +1290,16 @@ function flatItem(it){ // 시트 형식(박스+낱장+장수)은 그대로 — v
 }
 async function ioSubmit(){
   if(!F||busy)return;
-  const goStep=(s,msg)=>{F.step=s;renderForm();ioToast(msg,true);try{$('ioOv').scrollTop=0}catch(e){}};
-  if(!F.vehicle){goStep('veh','차량을 선택해주세요');return}
-  if(!P){goStep('photo','사진을 촬영해주세요');return}
+  const goStep=(sec,msg)=>{F.stage='edit';renderForm();ioToast(msg,true);const el=$(sec);if(el)try{el.scrollIntoView({block:'center'})}catch(e){}};
+  if(!F.vehicle){goStep('ioSecVeh','차량을 선택해주세요');return}
   const items=[];
   for(let i=0;i<F.items.length;i++){const it=F.items[i];const any=itemAny(it);
     if(!it.product&&!any)continue;
-    if(!it.product){goStep('item','제품 #'+(i+1)+'의 색상을 골라주세요');return}
-    if(!any){goStep('item','제품 #'+(i+1)+'의 수량이 비어 있어요');return}
+    if(!it.product){goStep('ioPc_'+i,'제품 '+(i+1)+'을 골라주세요');return}
+    if(!any){goStep('ioPc_'+i,'제품 '+(i+1)+'의 수량이 비어 있어요');return}
     items.push(flatItem(it))}
-  if(!items.length){goStep('item','제품과 장수를 입력해주세요');return}
+  if(!items.length){goStep('ioItems','제품과 장수를 입력해주세요');return}
+  if(!P){goStep('ioSecPhoto','사진을 촬영해주세요');return}
   busy=true;$('ioSubmitBtn').disabled=true;$('ioSubmitBtn').innerHTML='저장 중…';
   try{
     const now=new Date();const ts=now.getTime();
@@ -1165,10 +1314,11 @@ async function ioSubmit(){
     try{db.ref(NODE+'/'+id).set(rec)}catch(e){console.warn('[io] fb set',e)}
     localStorage.setItem('io_last_vehicle',F.vehicle);
     clearTimeout(_dsT);draftClear(F.type); // 제출된 건 임시저장 삭제 — 다음에 열면 빈 폼
-    busy=false;F=null;P=null;$('ioFile').value='';$('ioOv').classList.remove('show');
+    DONE={type:rec.type,vehicle:rec.vehicle,wdate:rec.wdate,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0)};
+    busy=false;F=null;P=null;$('ioFile').value='';
+    $('ioFoot').style.display='none';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){} // v15: 닫지 않고 완료 화면 — 그날 기록 화면(단톡방 공유용)은 버튼으로
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
-    ioShare(rec.wdate>kstDate(0)?kstDate(0):rec.wdate); // 저장 직후 그 작업일 전체 화면 (내일 것 실은 건 오늘 화면에 '내일 실은 것'으로 같이) — 스크린샷해서 단톡방에
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
 function ioVoid(id){
@@ -1266,6 +1416,6 @@ function init(){
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
   setTimeout(adminAutoOpen,0);
 }
-Object.assign(window,{ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
