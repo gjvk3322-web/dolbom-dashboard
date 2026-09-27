@@ -525,7 +525,7 @@ async function fillLossV2(){
 }
 // ═══════ 누적 로스율 끝 ═══════
 
-function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;viewDate=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1020px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
+function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;viewDate=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1200px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
 function render(){if(!team)return renderTeamSelect();if(tab==='summary')return viewDate?renderHistory():renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
@@ -1418,9 +1418,15 @@ function initDefaultDeliveries(){
   for(let i=0;i<7;i++){
     const id=++delIdCounter;
     const d=new Date();d.setDate(d.getDate()+7*i);
-    deliveries.push({id:id,loc:'부산',date:d.toISOString().split('T')[0]});
+    deliveries.push({id:id,loc:defaultDelLoc(),date:d.toISOString().split('T')[0]});
   }
 }
+// 🆕 새 배송 열의 기본 위치 = 보고 있는 팀 페이지 (경기 페이지면 안산) — 헤더 클릭으로 언제든 토글 가능
+function defaultDelLoc(){return team==='경기'?'안산':'부산';}
+// 🆕 발주 합계·비율 요약 열 (오른쪽) — 배송 열의 위치(부산/안산)별로 자동 묶음
+const ORDER_LOC_META={'부산':{label:'부산',color:'#e53935',bg:'#ffebee',border:'#f5c6c6'},'안산':{label:'경기(안산)',color:'#1565c0',bg:'#e3f2fd',border:'#c6d9f5'}};
+function orderSumLocs(){return ['부산','안산'].filter(l=>deliveries.some(d=>d.loc===l));}
+function shapeStdPct(pid,shape){const r=SHAPE_RATIO[pid];return (r&&r[shape]!=null)?Math.round(r[shape]*100):null;}
 
 function saveOrderToStorage(){
   try{
@@ -1754,7 +1760,11 @@ function renderOrder(){
   h+=`<div id="aiDraftBox"></div>`;
 
   const cols=deliveries.length;
-  const gcols=`130px repeat(${cols},minmax(90px,1fr))`;
+  // 🆕 오른쪽 요약 열: 배송 열에 있는 위치(부산/안산)만 자동으로 생김 — 배송 추가·위치 토글 시 다시 그려짐
+  const sumLocs=orderSumLocs();
+  const gcols=`130px repeat(${cols},minmax(90px,1fr))`+(sumLocs.length?` 12px repeat(${sumLocs.length},122px)`:'');
+  const sumCell=(idPrefix,extra)=>sumLocs.map(l=>{const m=ORDER_LOC_META[l];return `<div id="${idPrefix}_${l}" style="text-align:center;background:${m.bg}66;border:1px solid ${m.border};border-radius:6px;padding:3px 4px;font-size:12px;line-height:1.25;display:flex;flex-direction:column;justify-content:center;${extra||''}">—</div>`}).join('');
+  const spacer=sumLocs.length?`<div></div>`:'';
 
   // 배송 헤더 (위치 클릭=토글, 날짜 클릭=달력)
   h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;margin-bottom:4px">`;
@@ -1775,6 +1785,15 @@ function renderOrder(){
     h+=`<input type="date" id="ddate_${d.id}" value="${d.date}" onchange="this.closest('div').querySelector('div:nth-child(2)');calcMonthlyOrder();renderOrder()" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none">`;
     h+=`</div>`;
   });
+  // 🆕 요약 열 헤더 (위치별 합계·비율)
+  h+=spacer;
+  sumLocs.forEach(l=>{
+    const m=ORDER_LOC_META[l];const n=deliveries.filter(d=>d.loc===l).length;
+    h+=`<div style="text-align:center;padding:6px 2px;background:${m.bg};border:1px solid ${m.border};border-radius:8px">`;
+    h+=`<div style="font-size:12px;font-weight:800;color:${m.color}">${m.label} 합계</div>`;
+    h+=`<div style="margin-top:3px;font-size:10px;color:#777;line-height:1.3;white-space:nowrap">배송 ${n}회 · 박스<span style="color:#999">/비율</span></div>`;
+    h+=`</div>`;
+  });
   h+=`</div>`;
 
   // 제품별 행 (코튼 제외)
@@ -1793,11 +1812,14 @@ function renderOrder(){
 
   allRows.forEach(row=>{
     if(row.type==='header'){
-      h+=`<div style="margin-top:10px;padding:8px 10px;font-size:13px;font-weight:800;color:#2E7D32;background:#e8f5e9;border-radius:6px;display:inline-block">${row.label} <span style="font-size:10px;font-weight:500;color:#888">${row.pallet}</span></div>`;
+      const std=SHAPE_RATIO[row.pid];
+      const stdTxt=(std&&sumLocs.length)?` · <span title="발주 형태 기준 비율 (센터/사이드/코너, 10T 제외)">기준 센터 ${Math.round(std['센터']*100)} · 사이드 ${Math.round(std['사이드']*100)} · 코너 ${Math.round(std['코너']*100)}%</span>`:'';
+      h+=`<div style="margin-top:10px;padding:8px 10px;font-size:13px;font-weight:800;color:#2E7D32;background:#e8f5e9;border-radius:6px;display:inline-block">${row.label} <span style="font-size:10px;font-weight:500;color:#888">${row.pallet}${stdTxt}</span></div>`;
     } else if(row.type==='subtotal'){
       h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;border-top:1px solid #e0e0e0;margin-top:2px">`;
       h+=`<div style="padding:5px 10px;font-size:11px;font-weight:700;color:#888">파레트</div>`;
       deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:11px;font-weight:700;padding:4px 2px;color:#2E7D32;line-height:1.25" id="palsub_${d.id}_${row.pid}">0</div>`);
+      h+=spacer+sumCell('osub_'+row.pid,'font-size:11px;font-weight:700;color:#2E7D32;padding:4px 3px');
       h+=`</div>`;
     } else {
       h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px">`;
@@ -1809,6 +1831,7 @@ function renderOrder(){
         const focusBg=d.loc==='부산'?'#ffe8e8':'#e0eeff';
         h+=`<div style="padding:2px"><input type="number" inputmode="numeric" min="0" id="${cellId}" value="" oninput="aiTouched(this);calcMonthlyOrder();saveOrderDraft()" style="width:100%;height:32px;background:${cellBg};border:1.5px solid ${cellBorder};border-radius:6px;color:#1a1a1a;font-size:14px;font-weight:700;text-align:center;outline:none;font-family:inherit;transition:border .2s" onfocus="this.style.borderColor='${d.loc==='부산'?'#e53935':'#1565c0'}';this.style.background='${focusBg}'" onblur="this.style.borderColor='${cellBorder}';this.style.background='${cellBg}'"></div>`;
       });
+      h+=spacer+sumCell(`osum_${row.pid}_${row.color}_${row.shape}`,'margin:2px 0');
       h+=`</div>`;
     }
   });
@@ -1817,12 +1840,14 @@ function renderOrder(){
   h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px;margin-top:10px;border-top:2px solid #c8e6c9;padding-top:8px">`;
   h+=`<div style="padding:7px 10px;font-size:14px;font-weight:800;color:#1a1a1a">수량</div>`;
   deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:15px;font-weight:800;padding:7px;color:#2E7D32" id="dsum_${d.id}">0</div>`);
+  h+=spacer+sumCell('osumall','font-size:15px;font-weight:800;color:#2E7D32;padding:7px 4px');
   h+=`</div>`;
 
   // 파레트 행
   h+=`<div style="display:grid;grid-template-columns:${gcols};gap:2px">`;
   h+=`<div style="padding:7px 10px;font-size:14px;font-weight:800;color:#1a1a1a">파레트</div>`;
   deliveries.forEach(d=>h+=`<div style="text-align:center;font-size:15px;font-weight:800;padding:7px;color:#555" id="dpal_${d.id}">0</div>`);
+  h+=spacer+sumCell('opalall','font-size:15px;font-weight:800;color:#555;padding:7px 4px');
   h+=`</div>`;
 
   // 메모
@@ -1831,7 +1856,7 @@ function renderOrder(){
   h+=`</div>`;// orderSheet
 
   document.getElementById('app').innerHTML=h;
-  document.querySelector('.wrap').style.maxWidth='1020px';
+  document.querySelector('.wrap').style.maxWidth='1200px';  // 🆕 요약 열 공간 (1020→1200)
 
   document.getElementById('barEl').style.display='block';
   document.getElementById('bl').innerHTML=`📋 <b>돌봄 ${orderMonth}월 발주서</b>`;
@@ -1847,7 +1872,7 @@ function addDelivery(){
   const d=new Date();
   d.setDate(d.getDate()+7*deliveries.length);
   const ds=d.toISOString().split('T')[0];
-  deliveries.push({id:id,loc:'부산',date:ds});
+  deliveries.push({id:id,loc:defaultDelLoc(),date:ds});
 }
 
 function removeDelivery(id){
@@ -1858,21 +1883,29 @@ function removeDelivery(id){
 
 function calcMonthlyOrder(){
   let grandTotal=0;
+  // 🆕 위치(부산/안산)별 집계 — agg[loc][pid][color][shape]=박스, locPal[loc]=파레트 합, locBox[loc]=박스 합
+  const agg={},locPal={},locBox={},locN={};
 
   deliveries.forEach(d=>{
     const dateEl=document.getElementById('ddate_'+d.id);
     if(dateEl)d.date=dateEl.value;
+    const L=d.loc;
+    if(!agg[L]){agg[L]={};locPal[L]=0;locBox[L]=0;locN[L]=0;}
+    locN[L]++;
 
     let colTotal=0;
     let totalPallets=0;
     PR.forEach(p=>{
       const shapes=ORDER_SHAPES[p.id]||['센터','사이드','코너'];
       let pBox=0;
+      if(!agg[L][p.id])agg[L][p.id]={};
       (ORDER_COLORS[p.id]||[]).forEach(c=>{
+        if(!agg[L][p.id][c])agg[L][p.id][c]={};
         shapes.forEach(t=>{
           const v=parseInt(document.getElementById('oc_'+d.id+'_'+p.id+'_'+c+'_'+t)?.value)||0;
           colTotal+=v;
           pBox+=v;
+          agg[L][p.id][c][t]=(agg[L][p.id][c][t]||0)+v;
         });
       });
       const bpp=BPP[p.id];
@@ -1895,9 +1928,63 @@ function calcMonthlyOrder(){
     if(sumEl)sumEl.textContent=colTotal;
     if(palEl){palEl.textContent=totalPallets+'/'+maxP;palEl.style.color=totalPallets>maxP?'#e53935':'#555'}
     grandTotal+=colTotal;
+    locPal[L]+=totalPallets;locBox[L]+=colTotal;
   });
   const gtEl=document.getElementById('gt');
   if(gtEl)gtEl.textContent=grandTotal.toLocaleString();
+  renderOrderSummary(agg,locPal,locBox,locN);
+}
+
+// 🆕 오른쪽 요약 열 채우기 — 위치별 합계 박스 + 형태 비율(색상별 센터/사이드/코너, 10T 제외) + 색상 비율
+//    기준(SHAPE_RATIO)과 5%p 넘게 벗어나면 주황, 10%p 넘으면 빨강. 배송 추가·위치 토글·숫자 입력 때마다 다시 계산됨
+function renderOrderSummary(agg,locPal,locBox,locN){
+  const CORE=['센터','사이드','코너'];
+  const pct=(a,b)=>b>0?Math.round(a/b*100):null;
+  const devColor=(diff)=>Math.abs(diff)<=5?'#2E7D32':(Math.abs(diff)<=10?'#f59e0b':'#e53935');
+  orderSumLocs().forEach(L=>{
+    const A=agg[L]||{};
+    PR.forEach(p=>{
+      const P=A[p.id]||{};
+      const shapes=ORDER_SHAPES[p.id]||CORE;
+      const colors=ORDER_COLORS[p.id]||[];
+      // 색상별 핵심(센터+사이드+코너) 박스 → 색상 비율의 분모
+      const coreByColor={};let coreAll=0;
+      colors.forEach(c=>{const C=P[c]||{};coreByColor[c]=CORE.reduce((s,t)=>s+(C[t]||0),0);coreAll+=coreByColor[c];});
+      let pBoxAll=0;
+      colors.forEach(c=>{
+        const C=P[c]||{};
+        shapes.forEach(t=>{
+          const v=C[t]||0;pBoxAll+=v;
+          const el=document.getElementById(`osum_${p.id}_${c}_${t}_${L}`);
+          if(!el)return;
+          if(CORE.indexOf(t)<0){ // 10T: 박스만
+            el.innerHTML=v?`<b style="color:#1a1a1a">${v}</b><span style="font-size:10px;color:#aaa">비율 제외</span>`:`<span style="color:#ccc">—</span>`;
+            el.title='10T는 형태 비율 계산에서 제외';
+            return;
+          }
+          const share=pct(v,coreByColor[c]);
+          if(share==null){el.innerHTML=`<span style="color:#ccc">—</span>`;el.title='';return;}
+          const std=shapeStdPct(p.id,t);const diff=std==null?0:share-std;
+          el.innerHTML=`<b style="color:#1a1a1a">${v}</b><span style="font-size:11px;font-weight:700;color:${std==null?'#555':devColor(diff)}">${t} ${share}%</span>`;
+          el.title=`${c} ${t}: ${v}박스 / ${c} 센터+사이드+코너 ${coreByColor[c]}박스 = ${share}%`+(std!=null?` · 기준 ${std}% (${diff>0?'+':''}${diff}p)`:'');
+        });
+      });
+      // 제품 소계: 박스·파레트 + 색상 비율
+      const sub=document.getElementById(`osub_${p.id}_${L}`);
+      if(sub){
+        if(!pBoxAll){sub.innerHTML=`<span style="color:#ccc">—</span>`;sub.title='';}
+        else{
+          const bpp=BPP[p.id]||24;const fullP=Math.floor(pBoxAll/bpp),rem=pBoxAll%bpp;
+          const palTxt=rem===0?`${pBoxAll}박스·${fullP}P`:`${pBoxAll}박스(${fullP}P+${rem})`;
+          const colTxt=colors.filter(c=>coreByColor[c]>0).map(c=>`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${ORDER_CL[c]||'#888'};margin-right:2px;vertical-align:1px"></span>${c} ${pct(coreByColor[c],coreAll)}%`).join(' · ');
+          sub.innerHTML=`<span>${palTxt}</span><span style="font-size:10px;font-weight:600;color:#666;margin-top:2px">${colTxt||'—'}</span>`;
+          sub.title=`${ORDER_LOC_META[L].label} ${p.name} ${p.badge} 합계 · 색상 비율은 센터+사이드+코너 박스 기준(10T 제외)`;
+        }
+      }
+    });
+    const all=document.getElementById(`osumall_${L}`);if(all)all.textContent=locBox[L]||0;
+    const pal=document.getElementById(`opalall_${L}`);if(pal){pal.innerHTML=`<span>${locPal[L]||0}P</span><span style="font-size:10px;font-weight:600;color:#999">배송 ${locN[L]||0}회 합계</span>`;}
+  });
 }
 
 async function saveMonthlyOrder(){
