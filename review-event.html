@@ -221,6 +221,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .chip.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark)}
 .etc-input{display:none;width:100%;margin-top:8px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
 .etc-input.show{display:block}
+/* q1 맘카페 선택 시 카페명 후속 질문 (2026-09-28) */
+.cafe-follow{display:none;margin-top:12px;padding:12px 12px 11px;background:var(--primary-light);border-radius:12px}
+.cafe-follow.show{display:block;animation:fadeUp .2s ease}
+.cafe-follow .cf-q{font-size:13px;font-weight:700;color:var(--primary-dark);line-height:1.5;word-break:keep-all}
+.cafe-follow .cf-sub{font-size:11.5px;color:var(--text3);margin:3px 0 8px;line-height:1.5}
+.cafe-follow input{display:block;width:100%;padding:11px 12px;border:1.5px solid var(--primary);border-radius:8px;font-size:13.5px;font-family:inherit;background:#fff;color:var(--text)}
+.cafe-follow input:focus{outline:none;border-color:var(--primary-dark);box-shadow:0 0 0 3px rgba(232,115,108,.15)}
 .nps-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .nps-btn{min-height:44px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:12.5px;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;padding:0}
 .nps-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -741,7 +748,7 @@ const MISSIONS=[
   {id:'review2',short:'당일후기2',icon:'🌟',title:'시공 당일 후기 ②',reward:20000,
     desc:_row('어디에','셀인 · 강사모 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
   {id:'instagram',short:'인스타',icon:'📸',title:'인스타그램 후기',reward:10000,
-    desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진·짧은 이야기와 함께 후기 작성')+_row('추천','@dolbomstore 태그 · 해시태그 3~5개')},
+    desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진·짧은 이야기와 함께 후기 작성')+_row('추천','@dolbommat 태그 · 해시태그 3~5개')},
   {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',reward:10000,
     desc:_row('어디에','쓰레드 (주제 태그 1개 선택 — 예: 매트시공)')+_row('무엇을','짧은 경험담과 사진 1~3장')+_row('추천','본문에 돌봄매트 자연스럽게 언급')},
   {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,
@@ -849,11 +856,11 @@ const PLATFORM_GUIDES={
     photos:['입주 직후 빈 집','시공 후 거실','컬러 디테일','전체 분위기'],
     tips:['예산·일정 이야기가 예비부부에게 도움돼요','육아 얘기보다 새집·인테리어 중심으로','다른 카페 글과 내용·사진을 다르게 해주세요']},
   instagram:{name:'인스타그램',disc:'cashback',
-    quick:['평소 피드처럼 자유롭게 올리기','시공 사진 또는 짧은 릴 올리기','@dolbomstore 태그하기'],
+    quick:['평소 피드처럼 자유롭게 올리기','시공 사진 또는 짧은 릴 올리기','@dolbommat 태그하기'],
     titles:[],
     body:['형식 제한 없어요 — 내 계정 분위기대로, 지인들에게 소개하듯 편하게 올려주세요'],
     photos:['시공 전후 사진이나 완성 모습, 아이와 함께 있는 모습 등 자유롭게'],
-    tips:['@dolbomstore 태그만 꼭 해주세요 — 저희 계정에서 소개될 수 있어요','문구·해시태그는 자유예요','짧은 릴(완성→전→과정→완성)도 반응이 좋아요']},
+    tips:['@dolbommat 태그만 꼭 해주세요 — 저희 계정에서 소개될 수 있어요','문구·해시태그는 자유예요','짧은 릴(완성→전→과정→완성)도 반응이 좋아요']},
   threads:{name:'쓰레드',disc:'cashback',
     quick:['첫 줄에 내 경험 한 문장','2~4문장으로 짧게','사진 1~3장','올린 글에 내 댓글 하나 달기'],
     titles:['아기 뛰기 시작하면서 층간소음 때문에 고민하다가 오늘 시공매트 했어요.','\'{c}\' 걱정돼서 미루다가 결국 시공매트 깔았습니다.','{r} 집에 매트시공 완료. 생각보다 집 분위기가 안 깨져서 다행이네요.','층간소음매트 오늘 시공했는데, 확실히 발소리가 다르네요.'],
@@ -1323,6 +1330,14 @@ function renderSvyQ(){
     const q=meta.key;
     h+='<div class="chip-grid">'+SVY_OPTS[q].map(o=>chipHTML(q,o)).join('')+'</div>';
     h+='<input class="etc-input'+(svySel[q].indexOf('기타')>=0?' show':'')+'" id="svyEtc" placeholder="기타 내용을 적어주세요" value="'+svyEsc(svyEtc[q])+'" oninput="svyEtc[\''+q+'\']=this.value">';
+    // q1 맘카페 선택 시 카페명 주관식 (2026-09-28) — 시트 '맘카페명' 열에 별도 저장
+    if(q==='q1'){
+      h+='<div class="cafe-follow'+(svySel.q1.indexOf('맘카페')>=0?' show':'')+'" id="svyCafeWrap">'
+        +'<div class="cf-q">어느 맘카페에서 보셨나요?</div>'
+        +'<div class="cf-sub">카페 이름을 적어주세요</div>'
+        +'<input type="text" id="svyCafe" maxlength="40" placeholder="카페 이름" value="'+svyEsc(svyCafe)+'" oninput="svyCafe=this.value" autocomplete="off">'
+        +'</div>';
+    }
   }else if(svyStep===5){
     h+='<div class="q6-btns">'
       +'<div class="q6-btn'+(q6Choice==='none'?' on':'')+'" onclick="pickQ6(\'none\')">없었어요 🙂</div>'
@@ -1351,6 +1366,7 @@ function renderSvyQ(){
 }
 
 let svyEtc={q1:'',q2:'',q3:'',q4:'',q5:''};
+let svyCafe='';   // q1=맘카페일 때 카페명 (주관식)
 function pickChip(q,optIdx,el){
   const opt=SVY_OPTS[q][optIdx];
   const cfg=SVY_CFG[q];const sel=svySel[q];
@@ -1370,6 +1386,13 @@ function pickChip(q,optIdx,el){
   const etc=document.getElementById('svyEtc');
   if(etc)etc.classList.toggle('show',svySel[q].indexOf('기타')>=0);
   if(!cfg.multi&&opt==='기타'&&svySel[q].indexOf('기타')>=0){const e=document.getElementById('svyEtc');if(e)e.focus();}
+  // q1 맘카페 → 카페명 입력칸 표시 + 포커스 (다른 경로 선택 시 숨김)
+  if(q==='q1'){
+    const wrap=document.getElementById('svyCafeWrap');
+    const isCafe=svySel.q1.indexOf('맘카페')>=0;
+    if(wrap)wrap.classList.toggle('show',isCafe);
+    if(isCafe&&opt==='맘카페'){const c=document.getElementById('svyCafe');if(c)setTimeout(()=>c.focus(),60);}
+  }
 }
 function pickQ6(v){
   q6Choice=v;
@@ -1393,6 +1416,11 @@ function npsFollowHTML(){
 function svyValidate(step){
   const key=SVY_META[step].key;
   if(step===0&&svySel.q1.length!==1){showToast('경로를 선택해 주세요');return false;}
+  if(step===0&&svySel.q1[0]==='맘카페'&&!svyCafe.trim()){
+    showToast('어느 맘카페인지 카페 이름을 적어주세요');
+    const c=document.getElementById('svyCafe');if(c)c.focus();
+    return false;
+  }
   if(step===1&&svySel.q2.length<1){showToast('계기를 1개 이상 선택해 주세요');return false;}
   if(step===2&&svySel.q3.length<1){showToast('고민됐던 부분을 선택해 주세요');return false;}
   if(step===3&&svySel.q4.length<1){showToast('선택 이유를 골라주세요');return false;}
@@ -1419,7 +1447,9 @@ async function submitSurvey(){
   const q6Final=q6Choice==='none'?'없음':(q6Text.trim()||'(내용 미작성)');
   try{
     const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({type:'survey',phone:PHONE,q1:svyVal('q1')[0]||'',q2:svyVal('q2'),q3:svyVal('q3'),q4:svyVal('q4'),q5:svyVal('q5'),
+      body:JSON.stringify({type:'survey',phone:PHONE,q1:svyVal('q1')[0]||'',
+        q1Cafe:(svySel.q1[0]==='맘카페'?svyCafe.trim():''),   // 맘카페명 (별도 열) · 2026-09-28
+        q2:svyVal('q2'),q3:svyVal('q3'),q4:svyVal('q4'),q5:svyVal('q5'),
         q6:q6Final,nps:svyNps,npsReason:npsReason.trim(),submittedAt:new Date().toISOString()})});
     const txt=await res.text();let result={};try{result=JSON.parse(txt)}catch(e){}
     if(result.error){btn.disabled=false;btn.textContent='설문 제출하기';showToast('제출 실패: '+result.error);return;}
