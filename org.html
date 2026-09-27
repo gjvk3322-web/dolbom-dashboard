@@ -445,6 +445,23 @@
   .rg-rate.low{color:#D64545}
   .rg-rate.high{color:var(--accent-deep)}
   .region-level.active{background:var(--tint);color:var(--accent-deep);border-color:var(--accent);font-weight:700}
+  .region-team{border-color:transparent;background:transparent}
+  .region-team.active{background:#fff;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .region-team.active[data-team="busan"]{color:#D64545}
+  .region-team.active[data-team="gg"]{color:#3B6FD4}
+  .rg-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .rg-dot.busan{background:#D64545}.rg-dot.gg{background:#3B6FD4}.rg-dot.none{background:#C9D3CE}
+  .rg-team{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rg-team .card{padding:14px 18px;border-top:3px solid #D6DEDA}
+  .rg-team .card.busan{border-color:#E5E9E7;border-top-color:#D64545}.rg-team .card.gg{border-color:#E5E9E7;border-top-color:#3B6FD4}
+  .rg-team-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .rg-team-head b{font-size:14px}
+  .rg-team-nums{display:flex;gap:18px;font-size:12.5px;color:#5B6763;flex-wrap:wrap}
+  .rg-team-nums b{font-size:17px;color:#3D4844;margin-right:2px}
+  .rg-team-top{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6}
+  .rg-split{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:8px}
+  .rg-split div{height:100%}
+  @media (max-width:760px){.rg-team{grid-template-columns:1fr}}
   @media (max-width:760px){
     .rg-row{grid-template-columns:1fr 1fr;grid-template-areas:"name rate" "s i";gap:6px 10px}
     .rg-name{grid-area:name}.rg-rate{grid-area:rate}.rg-s{grid-area:s}.rg-i{grid-area:i}
@@ -751,6 +768,11 @@
           <option value="3m" selected>최근 3개월</option>
           <option value="all">전체</option>
         </select>
+        <span style="display:inline-flex;gap:4px;padding:2px;border-radius:9px;background:#F1F4F2">
+          <button class="mini-btn region-team active" data-team="all">전체</button>
+          <button class="mini-btn region-team" data-team="busan">🔴 부산팀</button>
+          <button class="mini-btn region-team" data-team="gg">🔵 경기팀</button>
+        </span>
         <button class="mini-btn region-level active" data-level="city">시·군</button>
         <button class="mini-btn region-level" data-level="sido">시·도</button>
         <select id="regionSort" class="mini-btn" style="cursor:pointer;width:auto;padding:4px 26px 4px 11px">
@@ -761,12 +783,13 @@
         <label class="hint" style="display:flex;gap:4px;align-items:center;cursor:pointer;white-space:nowrap;margin-left:4px"><input type="checkbox" id="regionMove" style="width:auto;margin:0"> 이전설치 포함</label>
       </div>
       <div class="grid kpis" id="regionCards" style="margin-bottom:12px"></div>
+      <div id="regionTeamBox" style="margin-bottom:12px"></div>
       <div class="card" style="padding:16px 20px">
         <div class="rg-row rg-head"><span>지역</span><span>샘플 접수</span><span>시공 예약</span><span style="text-align:right">시공/샘플</span></div>
         <div id="regionRows" class="hint">불러오는 중…</div>
         <div id="regionMore" style="margin-top:10px"></div>
       </div>
-      <div class="hint" style="margin:8px 0 22px">샘플·시공 모두 접수일 기준 (예약접수 페이지 "일별 접수"와 같은 집계, 접수일 없는 옛 행은 시공일로 대체) &middot; 시·군 단위는 부산·울산·대구 같은 광역시는 통째로, 경남·경기 같은 도는 시·군(김해시·평택시)까지만 나눔 &middot; 시공/샘플은 같은 기간 안의 단순 비율이라 참고용</div>
+      <div class="hint" style="margin:8px 0 22px">샘플·시공 모두 접수일 기준 (예약접수 페이지 "일별 접수"와 같은 집계, 접수일 없는 옛 행은 시공일로 대체) &middot; 시·군 단위는 부산·울산·대구 같은 광역시는 통째로, 경남·경기 같은 도는 시·군(김해시·평택시)까지만 나눔 &middot; 시공/샘플은 같은 기간 안의 단순 비율이라 참고용 &middot; 팀 분류는 시·도 기준(부산팀: 부산·울산·대구·경남·경북 / 경기팀: 서울·인천·경기·대전·세종·충북·충남·강원)</div>
       </div>
 
       <div class="dash-sec" data-dash="cohort" data-cat="mkt">
@@ -6089,8 +6112,15 @@ async function dashCust(){
 }
 
 /* ── 지역별 유입 (샘플·시공) — regionstats.gs regionStats API ── */
-let regionData = null, regionLevel = "city", regionShowAll = false;
+let regionData = null, regionLevel = "city", regionShowAll = false, regionTeam = "all";
 const REGION_METRO = { "서울":1, "부산":1, "대구":1, "인천":1, "광주":1, "대전":1, "울산":1, "세종":1 };
+/* 시·도 → 담당 시공팀 (부산팀: 영남권 / 경기팀: 수도권·충청·강원) */
+const REGION_TEAM = {
+  "부산":"busan", "울산":"busan", "대구":"busan", "경남":"busan", "경북":"busan",
+  "서울":"gg", "인천":"gg", "경기":"gg", "대전":"gg", "세종":"gg", "충북":"gg", "충남":"gg", "강원":"gg"
+};
+const REGION_TEAM_NM = { busan:"🔴 부산팀", gg:"🔵 경기팀" }, REGION_TEAM_COLOR = { busan:"#D64545", gg:"#3B6FD4" };
+const regionTeamOf = sido => REGION_TEAM[(sido || "").replace(/특별시|광역시|특별자치시|특별자치도|도$/g, "")] || "";
 /* 시·군 단위: 광역시·특별시는 통째로, 도는 시·군까지 (구 제외 → 창원시 성산구 = 창원시) */
 const regionCity = r => REGION_METRO[r.sido] ? "" : (r.sgg || "").split(" ")[0];
 async function dashRegion(){
@@ -6123,15 +6153,20 @@ function renderRegion(){
   const sort = document.getElementById("regionSort").value;
   const map = {};
   let tS = 0, tI = 0;
+  const teamTot = { busan:{ sample:0, install:0 }, gg:{ sample:0, install:0 }, "":{ sample:0, install:0 } };
   regionData.forEach(r => {
     if (yms && !yms.includes(r.ym)) return;
     if (r.kind === "install" && r.move && !inclMove) return;
+    const team = regionTeamOf(r.sido);
+    if (r.kind === "sample") teamTot[team].sample += r.n; else teamTot[team].install += r.n;
+    if (regionTeam !== "all" && team !== regionTeam) return;
     const city = regionCity(r);
     const key = regionLevel === "sido" ? r.sido : (r.sido + "|" + city);
-    const o = map[key] || (map[key] = { sido: r.sido, city, sample: 0, install: 0 });
+    const o = map[key] || (map[key] = { sido: r.sido, city, team, sample: 0, install: 0 });
     if (r.kind === "sample"){ o.sample += r.n; tS += r.n; } else { o.install += r.n; tI += r.n; }
   });
   const full = Object.values(map);
+  renderRegionTeams(teamTot, full);
   let list = [...full];
   const rate = o => o.sample > 0 ? o.install / o.sample : null;
   if (sort === "sample") list.sort((a, b) => b.sample - a.sample || b.install - a.install);
@@ -6145,9 +6180,10 @@ function renderRegion(){
   const top5 = [...full].sort((a, b) => b.install - a.install).slice(0, 5);
   const top5I = top5.reduce((a, o) => a + o.install, 0);
   const nm = o => regionLevel === "sido" || !o.city ? o.sido : (REGION_METRO[o.sido] ? o.sido : (o.city === "" ? o.sido + " (시·군 미확인)" : o.city));
+  const tSuf = regionTeam === "all" ? "" : " · " + REGION_TEAM_NM[regionTeam].slice(2);
   cards.innerHTML =
-    dashCard("샘플 접수", tS.toLocaleString(), "건", `${full.filter(o => o.sample).length}개 지역`) +
-    dashCard("시공", tI.toLocaleString(), "건", `${full.filter(o => o.install).length}개 지역`) +
+    dashCard("샘플 접수" + tSuf, tS.toLocaleString(), "건", `${full.filter(o => o.sample).length}개 지역`) +
+    dashCard("시공" + tSuf, tI.toLocaleString(), "건", `${full.filter(o => o.install).length}개 지역`) +
     dashCard("상위 5개 지역 비중", tI > 0 ? Math.round(top5I / tI * 100) : "-", "%", "시공 기준") +
     dashCard("시공 1위", top5[0] ? nm(top5[0]) : "-", "", top5[0] ? `${top5[0].install}건${regionLevel === "city" && top5[0].city ? " · " + top5[0].sido : ""}` : "");
 
@@ -6159,7 +6195,7 @@ function renderRegion(){
     const rTxt = r === null ? (o.install ? "샘플 0" : "-") : Math.round(r * 100) + "%";
     const cls = r === null ? "" : (o.sample >= 10 && r < 0.25 ? "low" : (o.sample >= 10 && r >= 0.5 ? "high" : ""));
     return `<div class="rg-row">
-      <span class="rg-name">${esc(nm(o))}${regionLevel === "city" && o.city ? `<small>${esc(o.sido)}</small>` : ""}</span>
+      <span class="rg-name" title="${o.team ? REGION_TEAM_NM[o.team].slice(2) : "담당팀 미지정"}"><i class="rg-dot ${o.team || "none"}"></i>${esc(nm(o))}${regionLevel === "city" && o.city ? `<small>${esc(o.sido)}</small>` : ""}</span>
       <span class="rg-bar rg-s"><div class="rowbar-track"><div class="rowbar-fill" style="width:${Math.round(o.sample / maxS * 100)}%;background:#9AD6BC"></div></div><b>${o.sample}</b></span>
       <span class="rg-bar rg-i"><div class="rowbar-track"><div class="rowbar-fill" style="width:${Math.round(o.install / maxI * 100)}%"></div></div><b>${o.install}</b></span>
       <span class="rg-rate ${cls}">${rTxt}</span>
@@ -6169,6 +6205,40 @@ function renderRegion(){
     ? `<button class="mini-btn" onclick="regionShowAll=!regionShowAll;renderRegion()">${regionShowAll ? "상위 20개만 보기" : `전체 ${list.length}개 지역 보기`}</button>`
     : "";
 }
+/* 팀별 요약 카드: 전체 보기 → 부산팀·경기팀 나란히 비교, 팀 선택 → 해당 팀만 + 시·도별 내역 */
+function renderRegionTeams(tot, full){
+  const box = document.getElementById("regionTeamBox");
+  const allS = tot.busan.sample + tot.gg.sample + tot[""].sample, allI = tot.busan.install + tot.gg.install + tot[""].install;
+  const pct = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
+  const teams = regionTeam === "all" ? ["busan", "gg"] : [regionTeam];
+  const nm = o => !o.city || REGION_METRO[o.sido] ? o.sido : o.city;
+  box.innerHTML = '<div class="rg-team">' + teams.map(t => {
+    const s = tot[t].sample, i = tot[t].install, c = REGION_TEAM_COLOR[t];
+    const mine = full.filter(o => o.team === t);
+    let detail = "";
+    if (regionTeam === "all"){
+      const top = [...mine].sort((a, b) => b.install - a.install).slice(0, 3).map(o => `${esc(nm(o))} ${o.install}`).join(" · ");
+      detail = `<div class="rg-team-top">시공 상위: ${top || "-"}</div>`;
+    } else {
+      /* 팀 선택 시 시·도별 내역 (시·군 모드에서도 시·도 합계로 묶어 표시) */
+      const bySido = {};
+      mine.forEach(o => { const x = bySido[o.sido] || (bySido[o.sido] = { sample:0, install:0 }); x.sample += o.sample; x.install += o.install; });
+      detail = '<div class="rg-team-top">' + Object.entries(bySido).sort((a, b) => b[1].install - a[1].install)
+        .map(([sd, x]) => `<b style="color:#3D4844">${esc(sd)}</b> 샘플 ${x.sample} · 시공 ${x.install} (${x.sample ? pct(x.install, x.sample) + "%" : "-"})`).join('<span style="margin:0 8px;color:#C9D3CE">|</span>') + '</div>';
+    }
+    return `<div class="card ${t}">
+      <div class="rg-team-head"><b style="color:${c}">${REGION_TEAM_NM[t]}</b><span class="hint">시공 비중 ${pct(i, allI)}% · 샘플 비중 ${pct(s, allS)}%</span></div>
+      <div class="rg-team-nums"><span><b>${s.toLocaleString()}</b>샘플</span><span><b>${i.toLocaleString()}</b>시공</span><span><b style="color:${c}">${s ? pct(i, s) + "%" : "-"}</b>시공/샘플</span><span><b>${mine.length}</b>지역</span></div>
+      <div class="rg-split"><div style="width:${pct(i, allI)}%;background:${c}"></div><div style="flex:1;background:#EFF3F1"></div></div>
+      ${detail}
+    </div>`;
+  }).join("") + '</div>' +
+  (tot[""].sample + tot[""].install > 0 ? `<div class="hint" style="margin-top:6px">담당팀 미지정 지역(광주·전남 등): 샘플 ${tot[""].sample} · 시공 ${tot[""].install} — 전체 합계에는 포함, 팀 카드에는 제외</div>` : "");
+}
+document.querySelectorAll(".region-team").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".region-team").forEach(x => x.classList.toggle("active", x === b));
+  regionTeam = b.dataset.team; regionShowAll = false; renderRegion();
+});
 document.getElementById("regionPeriod").onchange = renderRegion;
 document.getElementById("regionSort").onchange = renderRegion;
 document.getElementById("regionMove").onchange = renderRegion;
