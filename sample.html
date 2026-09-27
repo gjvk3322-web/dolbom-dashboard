@@ -282,6 +282,17 @@ function findMyLocation(){var b=document.getElementById('locBtn');b.textContent=
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 
+// ===== 샘플 신청 퍼널 추적 (2026-09-28) =====
+// · sample_apply_click      : '무료 샘플 신청하기' 버튼 클릭마다 (입력 검증 전이라 검증 실패 클릭도 포함)
+// · sample_request_complete : '접수하기' → 서버 접수 성공 시 1회 (기존 sample_submit과 같은 시점) — 중복 신청·지역 불가·전송 실패는 미집계
+// · 전송 경로: tracking.js의 dolbomTrack(GA4 G-Z98MT8N5WK + 메타 trackCustom) + dataLayer.push(GTM 맞춤 이벤트 트리거용, sample_submit과 같은 방식)
+//   이름·연락처·주소 같은 개인정보는 파라미터에 넣지 않음
+function sampleTrack(name,params){
+  params=params||{};
+  try{if(typeof window.dolbomTrack==='function')window.dolbomTrack(name,Object.assign({page_path:location.pathname},params));}catch(e){}
+  try{window.dataLayer=window.dataLayer||[];window.dataLayer.push(Object.assign({event:name},params));}catch(e){}
+}
+
 const urlParams=new URLSearchParams(window.location.search);
 const chParam=urlParams.get('ch')||'';
 if(chParam){
@@ -406,6 +417,7 @@ function getAddrDetail(){
 }
 
 function showConfirm(){
+  sampleTrack('sample_apply_click',{event_category:'conversion',event_label:'무료 샘플 신청하기'});
   const name=document.getElementById('fName').value.trim();
   const phone=document.getElementById('fPhone').value.trim();
   const address=document.getElementById('fAddress').value.trim();
@@ -512,6 +524,7 @@ function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
       body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
       window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'sample_submit'});showSuccessPopup();
+      sampleTrack('sample_request_complete',{event_category:'conversion',event_label:'샘플 접수 완료',timing:timing,purpose:purpose});
       // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
       try {
         if (window.wcs && window.wcs.trans) {
@@ -532,6 +545,7 @@ function _doSampleSubmit(name,phone,fullAddr,timing,purpose,route){
     fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'sample',name,phone,address:fullAddr,timing,purpose,route,channel:chParam,consent:'Y',date:new Date().toISOString()})
     }).then(()=>{
       window.dataLayer=window.dataLayer||[];window.dataLayer.push({event:'sample_submit'});showSuccessPopup();
+      sampleTrack('sample_request_complete',{event_category:'conversion',event_label:'샘플 접수 완료',timing:timing,purpose:purpose});
       // ═══ 네이버 광고 전환 추적 (lead) - 검수 통과용 ═══
       try {
         if (window.wcs && window.wcs.trans) {
