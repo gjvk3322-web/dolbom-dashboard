@@ -63,6 +63,8 @@ body{font-family:'Pretendard Variable',-apple-system,sans-serif;background:var(-
 .ce.incoming input:focus{border-color:var(--orange);background:#1a1400}
 .g-row .rv{padding:7px 0;text-align:center;font-size:14px;font-weight:700;color:var(--text)}
 .g-row .rv.zero{color:#333}
+.g-row .rv .rv-sub{font-size:9.5px;font-weight:500;color:var(--dim);line-height:1.25;margin-top:1px;white-space:nowrap}
+.g-row .rv.zero .rv-sub{display:none}
 .loc-sub{font-size:11px;color:var(--dim);padding:4px 10px;border-bottom:.5px solid var(--border);display:flex;gap:10px;flex-wrap:wrap}
 .loc-sub b{font-weight:700;color:var(--text)}
 .memo-sec{margin-top:12px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden}
@@ -252,7 +254,13 @@ function pickTeam(t){
   // URL 업데이트 (새로고침 없이)
   const url=new URL(window.location);url.searchParams.set('team',t);window.history.replaceState({},'',url);
   // 🆕 발주 탭이면 Firebase 응답 기다리지 말고 즉시 렌더 (재고 데이터와 무관)
-  if(tab==='order'){renderOrder();return;}
+  //    → 재고 구독은 안 걸어두고(fbInRef=null), 나중에 다른 탭으로 옮길 때 setTab이 걸어줌
+  if(tab==='order'){if(fbInRef)fbInRef.off();fbInRef=null;renderOrder();return;}
+  subscribeInventory();
+}
+// 🆕 오늘 재고조사 구독 (없으면 최근 7일 탐색) — pickTeam과 setTab(발주→다른 탭)이 공용으로 사용
+//    2026-09-28 버그 수정: 발주 탭으로 열고 종합 탭으로 옮기면 구독이 없어서 "오늘 날짜 · 0장"으로 보이던 문제
+function subscribeInventory(){
   if(fbInRef)fbInRef.off();
   // 오늘 데이터 먼저 확인
   fbInRef=db.ref('inventory/'+dateKey+'/'+team);
@@ -365,12 +373,18 @@ async function renderHistory(){
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=data[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB;gs+=pS;
-    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">장 단위</span><span class="ph-sum">${pS.toLocaleString()}장</span></div>`;
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box" title="${svHeadTip(p)}">장 · 박스환산 · 비율</span><span class="ph-sum">${pS.toLocaleString()}장</span></div>`;
     h+=`<div class="g">`;
     if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}장</b></span>`});h+=`</div>`}
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
+    // 🆕 과거 조사 보기도 종합 탭과 같은 칸 구성(장 · 박스환산 · 비율)
+    const _hs={};TY.forEach(t=>_hs[t]=0);
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;h+=`<div class="rv ${v===0?'zero':''}" title="${v}장">${v}</div>`});h+=`</div>`});
+      const core=['센터','사이드','코너'].reduce((s,t)=>s+(totals[p.id+'_'+c+'_'+t]||0),0);
+      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;_hs[t]+=v;h+=svCell(p,t,v,core)});h+=`</div>`});
+    const _hcore=['센터','사이드','코너'].reduce((s,t)=>s+(_hs[t]||0),0);
+    h+=`<div class="g-row" style="border-top:1px dashed var(--border);margin-top:4px;padding-top:4px"><div class="cl" style="font-weight:700;color:var(--accent)">합계</div>`;
+    TY.forEach(t=>{h+=svCell(p,t,_hs[t]||0,_hcore,true)});h+=`</div>`;
     h+=`</div>`});
   h+=`<div style="padding:10px 0 4px;border-top:.5px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:800"><span>총 재고</span><span style="color:var(--accent)">${gs.toLocaleString()}장</span></div>`;
   h+=`</div></div>`;
@@ -525,7 +539,7 @@ async function fillLossV2(){
 }
 // ═══════ 누적 로스율 끝 ═══════
 
-function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;viewDate=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}document.querySelector('.wrap').style.maxWidth=t==='order'?'1200px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
+function setTab(t){if(tab==='order')saveOrderInputs();tab=t;loc=null;viewDate=null;if(t==='order'){deliveries=[];delIdCounter=0;orderInputs={};}if(t!=='order'&&team&&!fbInRef)subscribeInventory(); /* 🆕 발주 탭에서 넘어올 땐 재고 구독이 없어서 걸어줌 (데이터 오면 다시 그림) */document.querySelector('.wrap').style.maxWidth=t==='order'?'1200px':'520px';const url=new URL(window.location);url.searchParams.set('tab',t);window.history.replaceState({},'',url);render()}
 function render(){if(!team)return renderTeamSelect();if(tab==='summary')return viewDate?renderHistory():renderSummary();if(tab==='incoming')return renderIncoming();if(tab==='order')return renderOrder();renderInventory()}
 
 function renderTeamSelect(){
@@ -700,6 +714,32 @@ async function fetchStockData(force,forTeam){
   return d;
 }
 
+// 🆕 제출 재고 총합 칸: 장수(기준) + 박스 환산(박스+낱장) + 형태 비율 (2026-09-28)
+function svHeadTip(p){
+  const r=SHAPE_RATIO[p.id];
+  return '큰 숫자=장(기준) · 작은 글씨=박스 환산(박스+낱장, 1박스='+p.bpb+'장 · 10T '+bpbOf(p,'10T')+'장) · %=그 색상의 센터+사이드+코너 중 비율'
+    +(r?(' (기준 '+['센터','사이드','코너'].map(t=>t+' '+Math.round(r[t]*100)).join(' · ')+'%)'):'');
+}
+function sheetsToBoxTxt(p,t,v){
+  const b=bpbOf(p,t);if(!v||!b)return '';
+  const q=Math.floor(v/b),r=v%b;
+  return q?(q+'박스'+(r?'+'+r:'')):('낱장 '+r);
+}
+function svCell(p,t,v,core,isTotal){
+  const isCore=['센터','사이드','코너'].indexOf(t)>=0;
+  const share=(isCore&&core>0)?Math.round(v/core*100):null;
+  const std=(isCore&&SHAPE_RATIO[p.id])?Math.round(SHAPE_RATIO[p.id][t]*100):null;
+  const low=(share!=null&&std!=null&&t!=='센터'&&share<std-5);   // 사이드·코너가 기준보다 5%p 넘게 적음 → 먼저 떨어질 형태
+  const high=(share!=null&&std!=null&&t==='센터'&&share>std+5);  // 센터만 많음 = 사이드·코너 상대 부족
+  const shareCol=(low||high)?'var(--orange)':'var(--dim)';
+  const bx=sheetsToBoxTxt(p,t,v);
+  const tip=`${v}장`+(bx?` = ${bx}`:'')+(share!=null?` · ${t} ${share}%`+(std!=null?` (기준 ${std}%)`:''):(t==='10T'?' · 10T는 비율 제외':''));
+  const mainStyle=isTotal?`font-weight:700;color:${v>0?'var(--accent)':'var(--dim)'}`:'';
+  return `<div class="rv ${v===0&&!isTotal?'zero':''}" style="${mainStyle}" title="${tip}">${v}`
+    +(bx?`<div class="rv-sub">${bx}</div>`:'')
+    +(share!=null?`<div class="rv-sub" style="color:${shareCol};font-weight:${(low||high)?700:500}">${share}%${(low||high)?' ⚠':''}</div>`:'')
+    +`</div>`;
+}
 async function renderSummary(){
   const mySeq=++stockRenderSeq;const myTeam=team;
   let h=renderTabs();const T=TEAMS[team];
@@ -751,18 +791,21 @@ async function renderSummary(){
   PR.forEach(p=>{let pB=0;const ls={};
     T.locs.forEach(l=>{const d=fbInvData[fk(l)];if(d&&d.data){let lb=0;p.colors.forEach(c=>{TY.forEach(t=>{lb+=(d.data[p.id+'_'+c+'_'+t]||0)})});if(lb>0)ls[l]=lb}});
     p.colors.forEach(c=>{TY.forEach(t=>{pB+=(totals[p.id+'_'+c+'_'+t]||0)})});const pS=pB;gs+=pS;
-    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box">장 단위</span><span class="ph-sum">${pS.toLocaleString()}장</span></div>`;
+    h+=`<div class="ph"><span class="ph-name">${p.name}</span><span class="ph-tag">${p.badge}</span><span class="ph-box" title="${svHeadTip(p)}">장 · 박스환산 · 비율</span><span class="ph-sum">${pS.toLocaleString()}장</span></div>`;
     h+=`<div class="g">`;
     if(Object.keys(ls).length){h+=`<div class="loc-sub">`;Object.entries(ls).forEach(([l,b])=>{h+=`<span>${l==='사무실'?'🏢':'🚛'}${l}: <b>${b}장</b></span>`});h+=`</div>`}
     h+=`<div class="g-hd"><div></div><div>센터</div><div>사이드</div><div>코너</div><div>10T</div></div>`;
-    // 색상별 행 (장 단위)
+    // 색상별 행 (장 단위) — 🆕 2026-09-28: 장수 아래에 박스 환산 + 센터/사이드/코너 비율(색상별) 표시
+    //   비율 = 그 색상의 센터+사이드+코너 합 대비 %, 기준은 발주 형태 비율(SHAPE_RATIO). 사이드·코너가 기준보다 5%p 넘게 적으면 주황(먼저 떨어질 형태)
     const _sizeSums={};TY.forEach(t=>_sizeSums[t]=0);
     p.colors.forEach(c=>{h+=`<div class="g-row"><div class="cl"><div class="cd" style="background:${CL[c]}"></div>${c}</div>`;
-      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;_sizeSums[t]+=v;h+=`<div class="rv ${v===0?'zero':''}" title="${v}장">${v}</div>`});h+=`</div>`});
-    // 🆕 사이즈별 합계 행
+      const core=['센터','사이드','코너'].reduce((s,t)=>s+(totals[p.id+'_'+c+'_'+t]||0),0);
+      TY.forEach(t=>{const v=totals[p.id+'_'+c+'_'+t]||0;_sizeSums[t]+=v;h+=svCell(p,t,v,core)});h+=`</div>`});
+    // 🆕 사이즈별 합계 행 (제품 전체 비율)
+    const _coreAll=['센터','사이드','코너'].reduce((s,t)=>s+(_sizeSums[t]||0),0);
     h+=`<div class="g-row" style="border-top:1px dashed var(--border);margin-top:4px;padding-top:4px">`;
     h+=`<div class="cl" style="font-weight:700;color:var(--accent)">합계</div>`;
-    TY.forEach(t=>{const s=_sizeSums[t]||0;h+=`<div class="rv" style="font-weight:700;color:${s>0?'var(--accent)':'var(--dim)'}" title="${s}장">${s}</div>`});
+    TY.forEach(t=>{const s=_sizeSums[t]||0;h+=svCell(p,t,s,_coreAll,true)});
     h+=`</div>`;
     h+=`</div>`});
   h+=`</div></div>`;
