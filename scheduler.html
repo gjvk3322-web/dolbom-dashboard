@@ -323,7 +323,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.09.20.72';
+const VER='2026.09.29.74';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -336,6 +336,15 @@ let recvDaily={};
 let CSV_OFF_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1624486217';
 let CSV_OFF_GG_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1383634653';
 const CSV_TEAM_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=79962735';
+// [perf 2026-09-29] CSV 공용 다운로더 — 항상 캐시 무력화(&_=시각) + 같은 시트를 20초 안에 여러 곳에서 요청하면 한 번만 내려받아 공유
+const _csvShare={};const CSV_SHARE_MS=20*1000;
+function csvFetch(url,force){
+const k=url.split('&_=')[0];const c=_csvShare[k];
+if(!force&&c&&Date.now()-c.ts<CSV_SHARE_MS)return c.p;
+const p=fetch(k+'&_='+Date.now()).then(r=>{if(!r.ok)throw new Error('csv '+r.status);return r.text()});
+_csvShare[k]={ts:Date.now(),p};
+p.catch(()=>{if(_csvShare[k]&&_csvShare[k].p===p)delete _csvShare[k]});
+return p}
 const SHEET_REPORT_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 const OFF_B={lat:35.1253,lng:128.9736};
 const OFF_A={lat:37.3159,lng:126.8233};
@@ -692,8 +701,8 @@ recvDaily[ds]=(recvDaily[ds]||0)+1;
 async function loadRecvDaily(){
 try{
 const [bs,gg]=await Promise.all([
-fetch(RECV_CSV_BS+'&_='+Date.now()).then(r=>r.text()),
-fetch(RECV_CSV_GG+'&_='+Date.now()).then(r=>r.text())
+csvFetch(RECV_CSV_BS),
+csvFetch(RECV_CSV_GG)
 ]);
 recvDaily={};
 accumRecvDaily(bs,false);
@@ -785,7 +794,7 @@ toast('⏳ 자동 배정 중...','ok');
 const _snapA=JSON.parse(JSON.stringify(A));
 
 // 거리 계산
-for(const j of J){if(j.addr&&!j.offOnly&&!j.dist){j.dist=await calcDist(j.addr)}}
+{const _need=J.filter(j=>j.addr&&!j.offOnly&&!j.dist);for(let i=0;i<_need.length;i+=5){await Promise.all(_need.slice(i,i+5).map(async j=>{j.dist=await calcDist(j.addr)}))}} // [perf] 5개씩 동시 지오코딩
 
 const bd={};J.filter(j=>!j.offOnly).forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
 const empDist={};E.forEach(e=>empDist[e]=0);
@@ -1527,8 +1536,8 @@ return out}
 async function fetchPrevHistory(){
 if(PREV_HIST_CACHE&&Date.now()-PREV_HIST_TS<5*60*1000)return PREV_HIST_CACHE;
 const [bs,gg]=await Promise.all([
-fetch(PREV_CSV_BS+'&_='+Date.now()).then(r=>r.text()),
-fetch(PREV_CSV_GG+'&_='+Date.now()).then(r=>r.text())
+csvFetch(PREV_CSV_BS),
+csvFetch(PREV_CSV_GG)
 ]);
 PREV_HIST_CACHE=[...parsePrevRows(bs,'부산'),...parsePrevRows(gg,'경기')];
 PREV_HIST_TS=Date.now();
@@ -1855,6 +1864,15 @@ const ta=document.createElement('textarea');ta.value=addr;document.body.appendCh
 toast('📋 주소 복사됨!','copy')})}
 
 // ===== Render Schedule =====
+// [perf] 배정 편집 버튼은 ✏️를 눌러 열 때만 생성 (예전엔 모든 건×모든 직원 버튼을 숨겨둔 채 미리 만들었음)
+function buildEditBtns(jobId){
+const j=J.find(x=>x.id===jobId);if(!j)return '';
+const dayOffSet=new Set();J.forEach(jj=>{if(jj.date===j.date)jj.doff.forEach(n=>dayOffSet.add(n))});
+const curTeam=(A[jobId]||[]).filter(e=>!dayOffSet.has(e));
+const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
+return E.map((e,ei)=>{
+const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[ei%10];
+return `<button onclick="event.stopPropagation();ma('${jobId}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('')}
 function renderSched(){
 const bd={};J.forEach(j=>{if(!bd[j.date])bd[j.date]=[];bd[j.date].push(j)});
 const jobDates=Object.keys(bd).sort();
@@ -1964,9 +1982,6 @@ const safeChatUrl=j.chatUrl?j.chatUrl.replace(/'/g,"\\'"):'https://business.kaka
 const safeChName=j.channelName?(j.channelName+'').replace(/'/g,"\\'"):'';
 const curTeam=RA[j.id]||[];
 const empColors=['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)','var(--orange)','var(--cyan)','var(--lime)','var(--rose)','var(--teal)'];
-const editBtns=E.map((e,ei)=>{
-const isOff=dayOffSet.has(e);const isIn=curTeam.includes(e);const ec=empColors[ei%10];
-return `<button onclick="event.stopPropagation();ma('${j.id}','${e}')" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:2px solid ${isIn?ec:'var(--border)'};background:${isIn?ec+'22':'var(--card2)'};color:${isOff?'var(--red)':isIn?ec:'var(--text)'};cursor:pointer;font-family:var(--font);margin:1px;${isOff&&!isIn?'opacity:.3;text-decoration:line-through;pointer-events:none':''}">${e}${isIn?' ✓':''}</button>`}).join('');
 
 return `<div style="padding:6px 0;${j!==sorted[0]?'border-top:1px solid var(--border);':''}">
 <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
@@ -1985,11 +2000,11 @@ isMeasure?
 `<span onclick="event.stopPropagation();openReport('${j.id}')" style="padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(167,139,250,.15);color:var(--purple);cursor:pointer;border:1px solid rgba(167,139,250,.3)">보고서</span>`}
 <span style="margin-left:auto;display:flex;gap:3px">
 ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)">🔒</span>${LOCK_REASONS[j.id]?`<span style="font-size:9px;color:var(--green);opacity:.8;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${LOCK_REASONS[j.id]}">${LOCK_REASONS[j.id]}</span>`:''}`:`<span onclick="event.stopPropagation();lockJob('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;cursor:pointer;opacity:.35;border:1px solid var(--border)">🔓</span>`}
-<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
+<span onclick="event.stopPropagation();const el=document.getElementById('edit_${j.id}');if(!el.dataset.b){el.innerHTML=buildEditBtns('${j.id}');el.dataset.b=1}el.style.display=el.style.display==='flex'?'none':'flex'" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid var(--border)">✏️</span>
 <span onclick="event.stopPropagation();unassign('${j.id}')" style="padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;color:var(--red);cursor:pointer;border:1px solid rgba(248,113,113,.2)">✕</span>
 </span>
 </div>
-<div id="edit_${j.id}" style="display:none;margin-top:3px;flex-wrap:wrap;gap:2px">${editBtns}</div>
+<div id="edit_${j.id}" style="display:none;margin-top:3px;flex-wrap:wrap;gap:2px"></div>
 </div>`}).join('');
 
 return `<div class="tjob">
@@ -2085,11 +2100,11 @@ html+=`<div style="margin-top:24px"><div class="sec">👷 직원 관리</div>
 document.getElementById('teamView').innerHTML=html;
 initDnD();}
 
-function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
-function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
-function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function addTeam(){teams.push([]);fbSave('teams',teams);renderTeam();syncTeamsToSheet()}
+function delTeam(i){if(!confirm((i+1)+'팀 삭제?'))return;teams.splice(i,1);fbSave('teams',teams);renderTeam();syncTeamsToSheet()}
+function rmMem(ti,name){teams[ti]=teams[ti].filter(m=>m!==name);fbSave('teams',teams);renderTeam();syncTeamsToSheet()}
 function addEmp(){const n=document.getElementById('ne');const v=n.value.trim();if(!v||E.includes(v))return;E.push(v);n.value='';fbSave('employees',E);renderTeam();toast(v+' 추가!','ok')}
-function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam();syncTeamsToSheet();syncTeamsToSheet()}
+function delEmp(name){if(!confirm(name+' 삭제?'))return;E=E.filter(e=>e!==name);teams=teams.map(t=>t.filter(m=>m!==name));fbSave('employees',E);fbSave('teams',teams);renderTeam();syncTeamsToSheet()}
 
 // 드래그앤드롭으로 팀 이동 처리
 function moveMember(name,fromType,fromTi,toType,toTi){
@@ -2546,9 +2561,18 @@ if(n==='month')renderMonth();
 renderAll()}
 
 let renderTimer=null;
+// [perf] 4개 화면을 매번 전부 다시 그리지 않고 지금 보이는 탭만 그림 (탭 전환 시 sw()가 renderAll을 호출하므로 다른 탭은 열 때 최신으로 그려짐)
+// 렌더 전 스크롤 위치를 기억했다가 복원 → 갱신 때 화면이 위로 튀지 않음
+function _renderTab(){
+if(currentTab==='sched')renderSched();
+else if(currentTab==='team'){renderTeam();renderFair();renderCars()}}
 function renderAll(){
 if(renderTimer)clearTimeout(renderTimer);
-renderTimer=setTimeout(()=>{renderSched();renderTeam();renderFair();renderCars()},150);
+renderTimer=setTimeout(()=>{renderTimer=null;
+const sy=window.scrollY;
+_renderTab();
+if(currentTab==='sched'||currentTab==='team')requestAnimationFrame(()=>{if(Math.abs(window.scrollY-sy)>2)window.scrollTo(0,sy)});
+},150);
 }
 
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast toast-'+(type||'ok');t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
@@ -3001,12 +3025,17 @@ document.getElementById('sub').textContent='구글시트 불러오는 중...';
 try{
 // 휴무 데이터 먼저 로딩
 OFFS={};DUTY={};
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL);const offText=await offR.text();parseOffCSV(offText)}catch(e){}}
-
-const r=await fetch(CSV_URL);const text=await r.text();parseCSV(text);
-try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){}
+// [perf] 휴무·시공·샘플·팀설정 CSV를 순서대로가 아니라 동시에 내려받음 (파싱 순서는 기존과 동일)
+const [offText,text,sText,tText]=await Promise.all([
+CSV_OFF_URL?csvFetch(CSV_OFF_URL,true).catch(()=>''):Promise.resolve(''),
+csvFetch(CSV_URL,true),
+csvFetch(SAMPLE_CSV,true).catch(()=>''),
+csvFetch(CSV_TEAM_URL,true).catch(()=>'')]);
+if(offText){try{parseOffCSV(offText)}catch(e){}}
+parseCSV(text);
+if(sText){try{parseSampleDaily(sText)}catch(e){}}
 loadRecvDaily();
-try{const tR=await fetch(CSV_TEAM_URL+'&_='+Date.now());const tText=await tR.text();parseTeamConfigCSV(tText)}catch(e){}
+if(tText){try{parseTeamConfigCSV(tText)}catch(e){}}
 lastCSVHash=text.length+'-'+text.slice(0,200);
 
 // 새 일정 감지
@@ -3087,10 +3116,11 @@ const sub=document.getElementById('sub');
 if(showToast)sub.textContent='🔄 갱신 중...';
 
 // 휴무 데이터 먼저 갱신
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
-
-const r=await fetch(CSV_URL+'&_='+Date.now());
-const text=await r.text();
+const [offText,text,sText]=await Promise.all([
+CSV_OFF_URL?csvFetch(CSV_OFF_URL,true).catch(()=>''):Promise.resolve(''),
+csvFetch(CSV_URL,true),
+csvFetch(SAMPLE_CSV,true).catch(()=>'')]);
+if(offText){try{OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
 
 // 변경 감지 (행 수 변화 = 새 예약 추가일 때만 자동배정)
 const newHash=text.length+'-'+text.slice(0,200);
@@ -3101,7 +3131,7 @@ lastCSVHash=newHash;
 lastCSVRowCount=newRowCount;
 
 parseCSV(text);
-try{const sR=await fetch(SAMPLE_CSV+'&_='+Date.now());const sText=await sR.text();parseSampleDaily(sText)}catch(e){}
+if(sText){try{parseSampleDaily(sText)}catch(e){}}
 loadRecvDaily();
 
 // 새 예약이 추가됐을 때만 자동 배정 (기존 배정 보호)
@@ -3166,9 +3196,10 @@ document.getElementById('confirmOkBtn').style.display='none';
 document.getElementById('confirmOverlay').classList.add('show');
 
 try{
-if(CSV_OFF_URL){try{const offR=await fetch(CSV_OFF_URL+'&_='+Date.now());const offText=await offR.text();OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
-const r=await fetch(CSV_URL+'&_='+Date.now());
-const text=await r.text();
+const [offText,text]=await Promise.all([
+CSV_OFF_URL?csvFetch(CSV_OFF_URL,true).catch(()=>''):Promise.resolve(''),
+csvFetch(CSV_URL,true)]);
+if(offText){try{OFFS={};DUTY={};parseOffCSV(offText)}catch(e){}}
 parseCSV(text);
 renderAll();
 }catch(e){}
@@ -3232,13 +3263,19 @@ function closeConfirm(){document.getElementById('confirmOverlay').classList.remo
 // 1분마다 구글시트 자동 갱신
 setInterval(()=>refreshSheet(false),180*1000);
 
-// 5분마다 새 버전 체크
+// 5분마다 새 버전 체크 — [perf] HTML 전체(200KB)를 다시 받지 않고 HEAD 요청으로 ETag만 비교, ETag가 없으면 기존 방식으로
+let _pageTag='';
+function _headTag(){return fetch(location.pathname+'?_='+Date.now(),{method:'HEAD',cache:'no-store'}).then(r=>r.headers.get('etag')||r.headers.get('last-modified')||'')}
+_headTag().then(t=>{_pageTag=t}).catch(()=>{});
 setInterval(()=>{
+if(_pageTag){_headTag().then(t=>{if(t&&t!==_pageTag)document.getElementById('updateBar').style.display='block'}).catch(()=>{});return}
 fetch(location.href+'?_='+Date.now()).then(r=>r.text()).then(html=>{
 const m=html.match(/const VER='([^']+)'/);
 if(m&&m[1]!==VER)document.getElementById('updateBar').style.display='block'
 }).catch(()=>{})
 },5*60*1000);
+// [perf] 서비스워커: SDK·폰트·아이콘만 캐시 (HTML·guide.js·iolog.js·시트 CSV·Firebase·Apps Script는 항상 네트워크)
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 </script>
 <!-- 현장 대응 프로세스 탭 (부산·경기 공용) — 내용 수정은 guide.js 배포 없이 앱 안에서 -->
 <script src="./guide.js?v=20260908b"></script>
