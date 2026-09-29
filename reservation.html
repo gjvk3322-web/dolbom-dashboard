@@ -58,6 +58,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 .card{background:var(--card);margin:12px 16px;border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
 
+/* ───── 🔗 CS팀 참고 링크 줄 (검색창 아래) ───── */
+.cs-links{display:flex;gap:8px;flex-wrap:wrap;margin:10px 16px 0;}
+.cs-links a{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;font-size:12.5px;font-weight:600;color:var(--text2);text-decoration:none;box-shadow:var(--shadow);transition:all .15s;}
+.cs-links a:hover{border-color:var(--accent);color:var(--accent);}
+.cs-links a:active{transform:scale(.97);}
+
 /* ───── 📝 인수인계 메모 스트립 (오전CS·오후CS·기타 공유) — 제목 줄 없이 메모 줄 + 입력 줄만 ───── */
 .memo-strip{margin:12px 16px 0;background:var(--card);border:1.5px solid #ffd8a8;border-radius:12px;box-shadow:var(--shadow);padding:4px 12px 8px;}
 .memo-list{display:none;max-height:152px;overflow-y:auto;}
@@ -226,6 +232,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 <div class="search-results" id="searchResults">
   <h4 id="searchTitle"></h4>
   <div id="searchList"></div>
+</div>
+
+<!-- 🔗 CS팀 참고 링크 (검색창 바로 아래) -->
+<div class="cs-links">
+  <a href="https://my.dolbommat.com/scheduler.html" target="_blank" rel="noopener">📅 부산팀 스케줄</a>
+  <a href="https://my.dolbommat.com/scheduler-gg.html" target="_blank" rel="noopener">📅 경기팀 스케줄</a>
+  <a href="https://docs.google.com/spreadsheets/d/1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ/edit" target="_blank" rel="noopener">📊 상담 참고 시트</a>
 </div>
 
 <!-- 📝 인수인계 메모 — 오전CS·오후CS·기타가 공유하는 한 줄 메모 (Firebase csMemo, 부산/경기 공통) -->
