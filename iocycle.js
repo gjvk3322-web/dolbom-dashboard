@@ -19,8 +19,9 @@ const X=window.__io;
 if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
-const NODE='io_cycle/'+RK;
-const CY_VER='2026.09.30a';
+const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
+const CY_VER='2026.09.30c';
+const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
 let OV={};          // 오버라이드 {plateKey:{startTs:{...}}}
@@ -58,7 +59,7 @@ function save(cy,patch){
 /* ---------- 순환 만들기 ---------- */
 function cyclesOf(plate){
   const np=NP(plate);const today=U.kstDate(0);
-  const recs=Object.values(records()).filter(r=>r&&r.status!=='void'&&NP(r.vehicle)===np&&r.ts).sort((a,b)=>a.ts-b.ts);
+  const recs=Object.values(records()).filter(r=>r&&r.status!=='void'&&NP(r.vehicle)===np&&r.ts&&String(r.date||'')>=CY_START).sort((a,b)=>a.ts-b.ts);
   const list=[];let cur=null;
   const mk=r=>({plate:r.vehicle||plate,startTs:r.ts,startAt:r.at,outs:[],ins:[],crew:crewOf(r)});
   recs.forEach(r=>{
@@ -156,7 +157,7 @@ const CSS=`
 .cy-people span{display:inline-flex;gap:5px;align-items:center;padding:4px 9px;border-radius:7px;background:var(--dm-soft);font-size:12px;color:var(--dm-muted)}
 .cy-people span b{color:var(--dm-ink)}
 .cy-people span.bad b{color:var(--red)}
-.cy-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.cy-acts{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:8px;margin-top:12px}
 .cy-acts .ia-button{min-height:46px}
 .cy-acts .ia-button.zero{grid-column:1/-1;min-height:40px;background:transparent;color:var(--dm-muted)}
 .cy-hist{margin-top:10px;font-size:12px}
@@ -211,7 +212,7 @@ function cardHTML(v){
   const tn=teamNo(who);const chip=cur?stChip(cur):['','기록 없음'];
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
   let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀':esc(who[0]||'담당 미지정')}<small>${esc(v.plate)}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
-  h+=`<div class="cy-crew">담당 <b>${esc(who.join(' · ')||'미지정')}</b>${cur?`<u onclick="ioCycle.openBy('${esc(v.plate)}',${cur.startTs})">수정</u>`:''}${cur?` <span class="ia-tiny">· ${esc(cyLabel(cur))}${cur.open?' 출고 '+esc(String(cur.startAt||'').slice(5,16)):' 반납 '+esc(String(cur.endAt||'').slice(5,16))}</span>`:''}${mine?' <span style="color:var(--dm-blue)">내 차량</span>':''}</div>`;
+  h+=`<div class="cy-crew">담당 <b>${esc(who.join(' · ')||'미지정')}</b>${cur?` <span class="ia-tiny">· ${esc(cyLabel(cur))}${cur.open?' 출고 '+esc(String(cur.startAt||'').slice(5,16)):' 반납 '+esc(String(cur.endAt||'').slice(5,16))}</span>`:''}${mine?' <span style="color:var(--dm-blue)">내 차량</span>':''}</div>`;
   if(cur){h+=`<div class="ia-metrics">${metrics(cur)}</div>${prodLines(cur)}${jobLines(cur)}${!cur.open?peopleLines(cur):''}`;
     const foot=[];
     if(cur.miss.length)foot.push(`시공보고 미입력 <b>${cur.miss.length}건</b> — 들어오면 자동 반영`);
@@ -220,9 +221,9 @@ function cardHTML(v){
     if(cur.zero&&!cur.open)foot.push('반납 0장(다 씀)으로 닫힘');
     if(cur.ov.confirm)foot.push(`확정 ${esc(cur.ov.confirm.by||'')} ${esc(String(cur.ov.confirm.at||'').slice(5,16))}`);
     if(foot.length)h+=`<div class="ia-teamfoot">${foot.join('<br>')}</div>`;
-  }else h+=`<div class="ia-tiny" style="margin-top:6px">아직 이 차량의 출고 기록이 없어요. 차에 실으면 [출고 기록]을 눌러주세요.</div>`;
+  }else h+=`<div class="ia-tiny" style="margin-top:6px">아직 출고 기록이 없어요. 차에 실으면 [출고]를 눌러주세요.</div>`;
   const open=!!(cur&&cur.open);
-  h+=`<div class="cy-acts"><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">🚚 출고 기록</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">↩️ 반납 기록</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 — 다 써서 남은 게 없음</button>`:''}</div>`;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" ${cur?`onclick="ioCycle.openBy('${esc(v.plate)}',${cur.startTs})"`:'disabled'}>✏️ 수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">🚚 출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">↩️ 반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list);
   return h+'</div>';
 }
