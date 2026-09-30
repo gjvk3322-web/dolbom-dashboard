@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.09.20n';
+const IA_VER='2026.09.30a';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -662,7 +662,10 @@ function renderBody(){
   let ob={n:0};try{ob=X.outbox()}catch(e){}
   if(ob.n)h+=`<div class="ia-notice${ob.stuck||ob.err?' bad':''}">${ic('alert')}<div class="c"><strong>전송 대기 ${ob.n}건</strong>${ob.err?' · '+esc(ob.err):''}<br><span>수량은 이미 반영됐고 사진·시트 전송만 남았어요.</span></div><button type="button" class="ia-button quiet small" onclick="ioFlush(true)">${ob.flushing?'전송 중…':'지금 보내기'}</button></div>`;
   if(M.flagged.length)h+=`<div class="ia-notice${M.excluded.length?' bad':''}">${ic('alert')}<div class="c"><strong>확인 필요 ${M.flagged.length}건</strong> · 집계에서 빠진 기록 ${M.excluded.length}건 · 참고 ${M.flagged.length-M.excluded.length}건</div><button type="button" class="ia-button quiet small" onclick="ioAdmin.f('tab','flag')">보기</button></div>`;
-  if(M.veh.length)h+=`<div class="ia-teams">${M.veh.map(cardHTML).join('')}</div>`;
+  // v2026.09.30: 순환(출고→사용→반납→로스) 카드는 iocycle.js가 그림 — 없거나 실패하면 기존 날짜 카드로. 기간(range) 모드는 기존 카드 유지
+  let cyOK=false;
+  if(M.veh.length&&window.ioCycle&&S.mode!=='range'){try{h+=ioCycle.cardsHTML(M,S);cyOK=true}catch(e){console.warn('[ioadmin] iocycle',e)}}
+  if(M.veh.length&&!cyOK)h+=`<div class="ia-teams">${M.veh.map(cardHTML).join('')}</div>`;
   else if(S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`;
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
