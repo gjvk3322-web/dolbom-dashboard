@@ -12,6 +12,7 @@
      양수 = 부족(안 돌아옴), 음수 = 초과(원인 확인). 시공보고 미입력·AS보고 미제출·반납 전이면 확정 안 함
    ■ 개인 적용 = 그 순환의 담당 2명(출고 때 자동, 카드에서 변경) 각각에 같은 로스·자투리를 '공동작업 기준'으로 표시. 회사 집계는 1번
    ■ 저장 (원본 io_logs는 안 건드림): Firebase io_cycle/{bs|gg}/{차량키}/{시작ts} = {crew:[a,b], add:{jobId:1}, del:{jobId:1}, scrap:{제품:장}, confirm:{by,at}, by, at}
+     차량 기준 설정: io_cycle/{bs|gg}/{차량키}/_veh = {crew:[a,b], add:{jobId:1}, del:{jobId:1}} — 사람은 차량에 넣었다 빼는 개념(팀원이 바뀌어도 차량은 그대로), 갈 현장 넣기·빼기도 여기. 순환별 값이 있으면 그게 우선
    ■ 자투리 입력·확정은 당번 모드. 담당 변경·시공 연결 수정은 누구나 */
 (function(){
 'use strict';
@@ -20,7 +21,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.09.30e';
+const CY_VER='2026.09.30f';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -51,6 +52,12 @@ function asOf(id){ // AS보고서 — 없으면 한 번 불러오고 도착하�
 }
 function rerender(){try{if(window.ioAdmin&&ioAdmin.mount)ioAdmin.mount()}catch(e){}}
 function ovOf(cy){return ((OV[NP(cy.plate)]||{})[String(cy.startTs)])||{}}
+function vehOv(plate){return (OV[NP(plate)]||{})._veh||{}}
+function vehCrew(plate){const v=vehOv(plate);if(Array.isArray(v.crew)&&v.crew.length)return v.crew.filter(Boolean).slice(0,2);const o=vehicles()[plate]||'';return o?[o,partnerOf(o)].filter(Boolean):[]}
+function saveVeh(plate,patch){
+  const o=Object.assign({},patch,{by:(localStorage.getItem('io_admin_name')||'').trim()||'',at:U.kstDT(new Date()),ver:CY_VER});
+  return db.ref(NODE+'/'+NP(plate)+'/_veh').update(o);
+}
 function save(cy,patch){
   const o=Object.assign({},patch,{by:(localStorage.getItem('io_admin_name')||X.myPlate&&vehicles()[X.myPlate()]||'').trim()||'',at:U.kstDT(new Date()),plate:cy.plate,ver:CY_VER});
   return db.ref(NODE+'/'+NP(cy.plate)+'/'+cy.startTs).update(o);
@@ -71,7 +78,8 @@ function cyclesOf(plate){
   list.forEach(cy=>{
     const ov=ovOf(cy);
     cy.ov=ov;cy.open=!cy.ins.length;
-    if(Array.isArray(ov.crew))cy.crew=ov.crew.filter(Boolean).slice(0,2);
+    if(Array.isArray(ov.crew)&&ov.crew.length)cy.crew=ov.crew.filter(Boolean).slice(0,2);
+    else if(!cy.crew.length)cy.crew=vehCrew(cy.plate);
     const wds=cy.outs.map(r=>r.wdate||r.date).filter(Boolean).sort();
     cy.fromW=wds[0]||U.kstDate(0,new Date(cy.startTs));
     const iws=cy.ins.map(r=>r.wdate||r.date).filter(Boolean).sort();
@@ -90,7 +98,8 @@ function jobMatches(j,cy){
 }
 function jobOK(j){const t=String(j.time||'').trim();if(t==='실측')return false;if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return false;return !!(j.addr&&j.addr.trim())}
 function compute(cy){
-  const ov=cy.ov||{};const add=ov.add||{},del=ov.del||{};
+  const ov=cy.ov||{};const vo=vehOv(cy.plate);const add=Object.assign({},vo.add||{},ov.add||{}),del=Object.assign({},vo.del||{},ov.del||{});
+  Object.keys(ov.add||{}).forEach(k=>{delete del[k]});Object.keys(ov.del||{}).forEach(k=>{delete add[k]}); // 순환별 결정이 차량 설정보다 우선
   const by={};const P=k=>by[k]||(by[k]={out:0,inn:0,sold:0,asFree:0,scrap:0});
   cy.outs.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).out+=t[k]})});
   cy.ins.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).inn+=t[k]})});
@@ -210,17 +219,17 @@ function histHTML(plate,list){
 }
 function upcomingHTML(v,cur,S){ // 갈 현장: 선택 날짜(S.from) 이후 이 차량의 첫 시공일 목록 — 순환에 이미 연결된 건 제외 (출고 전 실을 양 참고)
   const linked=new Set(cur?cur.jobs.map(r=>r.id):[]);const from=(S&&S.from)||U.kstDate(0);
-  const crew=cur?cur.crew:[vehicles()[v.plate],partnerOf(vehicles()[v.plate]||'')].filter(Boolean);
+  const crew=cur?cur.crew:vehCrew(v.plate);const vo=vehOv(v.plate);const add=vo.add||{},del=vo.del||{};
   const fake={plate:v.plate,crew};
-  const list=jobs().filter(j=>j&&jobOK(j)&&j.date>=from&&!linked.has(j.id)&&jobMatches(j,fake)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.time).localeCompare(String(b.time)));
+  const list=jobs().filter(j=>j&&jobOK(j)&&j.date>=from&&!linked.has(j.id)&&!del[j.id]&&(jobMatches(j,fake)||add[j.id])).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.time).localeCompare(String(b.time)));
   if(!list.length)return '';
   const d=list[0].date;const day=list.filter(j=>j.date===d);
   const prod=j=>{const k=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):''};
-  return `<div class="cy-jobs cy-next"><div class="nh">${esc(U.fmtMD(d))} 갈 현장 ${day.length}곳${d===from?'':' <small>(다음 시공일)</small>'}</div>${day.map(j=>`<div class="j"><span>${esc(String(j.time||'').slice(0,2))} ${/^AS$/i.test(j.time)?'<span style="color:var(--red)">AS</span> ':''}${esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,18))}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
+  return `<div class="cy-jobs cy-next"><div class="nh">${esc(U.fmtMD(d))} 갈 현장 ${day.length}곳${d===from?'':' <small>(다음 시공일)</small>'}</div>${day.map(j=>`<div class="j"><span>${/^AS$/i.test(j.time)?'<span style="color:var(--red)">AS</span>':esc(String(j.time||'').slice(0,2))} ${esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,18))}${add[j.id]?' <span style="color:var(--dm-blue)">수동</span>':''}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
 }
 function cardHTML(v){
   const S_=cardHTML.S||{};
-  const {cur,list}=latestOf(v.plate);const who=cur?cur.crew:[vehicles()[v.plate],partnerOf(vehicles()[v.plate]||'')].filter(Boolean);
+  const {cur,list}=latestOf(v.plate);const who=cur?cur.crew:vehCrew(v.plate);
   const tn=teamNo(who);const chip=cur?stChip(cur):['','기록 없음'];
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
   let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀 · ':''}${esc(who.join('·')||'담당 미지정')}<small>${esc(v.plate)}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
@@ -236,7 +245,7 @@ function cardHTML(v){
   }else h+=`<div class="ia-tiny" style="margin-top:6px">아직 출고 기록이 없어요. 차에 실으면 [출고]를 눌러주세요.</div>`;
   h+=upcomingHTML(v,cur,S_);
   const open=!!(cur&&cur.open);
-  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" ${cur?`onclick="ioCycle.openBy('${esc(v.plate)}',${cur.startTs})"`:'disabled'}>수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list);
   return h+'</div>';
 }
@@ -268,33 +277,56 @@ function cardsHTML(M,S){
 /* ---------- 수정 모달 ---------- */
 function md(html){let m=$('cyMd');if(!m){m=document.createElement('div');m.className='ia-md';m.id='cyMd';m.setAttribute('onclick','if(event.target===this)ioCycle.close()');m.innerHTML='<div class="ia-md-in cy-md" id="cyMdIn"></div>';document.body.appendChild(m)}$('cyMdIn').innerHTML=html;m.classList.add('show')}
 function close(){const m=$('cyMd');if(m)m.classList.remove('show');SEL=null}
-function cur(){if(!SEL)return null;return cyclesOf(SEL.plate).find(c=>c.startTs===SEL.startTs)||null}
+function cur(){if(!SEL||!SEL.startTs)return null;return cyclesOf(SEL.plate).find(c=>c.startTs===SEL.startTs)||null}
 function openBy(plate,startTs){SEL={plate,startTs:+startTs};render()}
+function upcomingFor(plate,cy){ // 모달용 갈 현장 후보: 선택 날짜 이후 첫 시공일의 이 지역 시공 전부 (이 차량 것은 체크됨)
+  const S=cardHTML.S||{};const from=S.from||U.kstDate(0);const linked=new Set(cy?cy.jobs.map(r=>r.id):[]);
+  const vo=vehOv(plate);const add=vo.add||{},del=vo.del||{};const crew=cy?cy.crew:vehCrew(plate);const fake={plate,crew};
+  const all=jobs().filter(j=>j&&jobOK(j)&&j.date>=from&&!linked.has(j.id));
+  const mineL=all.filter(j=>!del[j.id]&&(jobMatches(j,fake)||add[j.id])).sort((a,b)=>a.date<b.date?-1:1);
+  const d=mineL.length?mineL[0].date:(all.length?all.slice().sort((a,b)=>a.date<b.date?-1:1)[0].date:'');
+  if(!d)return {date:'',list:[]};
+  return {date:d,list:all.filter(j=>j.date===d).map(j=>({j,on:!del[j.id]&&(jobMatches(j,fake)||add[j.id]),auto:jobMatches(j,fake)}))};
+}
 function render(){
-  const cy=cur();if(!cy){close();return}
+  const cy=cur();if(!SEL){close();return}
+  const plate=SEL.plate;
   const E=emps();const opt=sel=>`<option value="">선택</option>${E.map(n=>`<option value="${esc(n)}"${sel===n?' selected':''}>${esc(n)}</option>`).join('')}${sel&&!E.includes(sel)?`<option value="${esc(sel)}" selected>${esc(sel)}</option>`:''}`;
-  const chip=stChip(cy);const adm=admin();
+  const adm=admin();const crew=cy?cy.crew:vehCrew(plate);
+  const up=upcomingFor(plate,cy);
+  let h;
+  if(cy){const chip=stChip(cy);
+    h=`<h3>${esc(plate)} · ${esc(cyLabel(cy))} <span class="ia-status ${chip[0]}">${chip[1]}</span></h3>
+    <div class="ia-tiny">출고 ${cy.out} − 사용 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''}${cy.scrap?' (자투리 −'+cy.scrap+')':''} − 반납 ${cy.open?'(전)':cy.inn} = ${cy.open?'잔량 '+cy.remain:'로스 '+sgn(cy.diff)}</div>`;
+  }else h=`<h3>${esc(plate)} <span class="ia-status">차량 설정</span></h3><div class="ia-tiny">아직 순환 기록이 없어요. 이 차량의 담당과 갈 현장을 정해두면 출고부터 그대로 적용돼요.</div>`;
+  h+=`<label>담당 2명 <span class="ia-tiny">(차량 기준 · 팀원이 바뀌면 여기서 넣고 빼기)</span></label>
+    <div class="row"><select id="cyC1">${opt(crew[0]||'')}</select><select id="cyC2">${opt(crew[1]||'')}</select></div>`;
+  if(cy){
   // 후보 시공: 기간 안 이 지역 시공 중 이 순환에 안 붙은 것(차량 다름) — 넣을 수 있게
   const linkedIds=new Set(cy.jobs.map(r=>r.id));
   const cand=jobs().filter(j=>j&&jobOK(j)&&j.date>=cy.fromW&&j.date<=cy.toW&&!linkedIds.has(j.id)&&!(cy.ov.del||{})[j.id]).slice(0,12);
-  let h=`<h3>${esc(cy.plate)} · ${esc(cyLabel(cy))} <span class="ia-status ${chip[0]}">${chip[1]}</span></h3>
-    <div class="ia-tiny">출고 ${cy.out} − 사용 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''}${cy.scrap?' (자투리 −'+cy.scrap+')':''} − 반납 ${cy.open?'(전)':cy.inn} = ${cy.open?'잔량 '+cy.remain:'로스 '+sgn(cy.diff)}</div>
-    <label>담당 2명 <span class="ia-tiny">(출고 때 자동 · 대타·팀 변경이면 여기서 고침)</span></label>
-    <div class="row"><select id="cyC1">${opt(cy.crew[0]||'')}</select><select id="cyC2">${opt(cy.crew[1]||'')}</select></div>
-    <label>연결된 시공 <span class="ia-tiny">(체크 해제 = 이 순환에서 뺌)</span></label>`;
+  h+=`<label>연결된 시공 <span class="ia-tiny">(체크 해제 = 이 순환에서 뺌)</span></label>`;
   h+=cy.jobs.map(r=>`<div class="jl"><input type="checkbox" checked data-id="${esc(r.id)}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'AS ':''}${esc(r.addr)} <span class="ia-tiny">${esc([r.sasu,r.busasu].filter(Boolean).join('·'))}</span></span><b>${r.sold?r.sold+'장':r.asFree?'AS '+r.asFree:r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':'0'}</b></div>`).join('')||'<div class="ia-tiny">없음</div>';
   if(cand.length)h+=`<label>같은 기간 다른 시공 <span class="ia-tiny">(체크 = 이 순환에 넣음)</span></label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc([j.sasu,j.busasu].filter(Boolean).join('·'))}${j.vehicle?' · '+esc(j.vehicle):''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
-  if(adm){h+=`<label>자투리 활용 (장) <span class="ia-tiny">(당번 · 별도로 가져간 기존 자투리로 판매한 장수 — 판매에서 뺌)</span></label>`;
+  }
+  if(up.list.length)h+=`<label>${esc(U.fmtMD(up.date))} 갈 현장 <span class="ia-tiny">(체크 = 이 차량이 감)</span></label>`+up.list.map(x=>`<div class="jl${x.on?'':' cand'}"><input type="checkbox" ${x.on?'checked':''} data-up="${esc(x.j.id)}" data-auto="${x.auto?1:0}"><span>${/^AS$/i.test(x.j.time)?'AS ':esc(String(x.j.time||'').slice(0,2))+' '}${esc(String(x.j.addr||'').replace(/\(.*?\)/g,'').slice(0,18))} <span class="ia-tiny">${esc([x.j.sasu,x.j.busasu].filter(Boolean).join('·'))}${x.j.vehicle?' · '+esc(x.j.vehicle):''}</span></span><b>${esc((X.prodKeyOfCode(x.j.mat&&x.j.mat[0]&&x.j.mat[0].t)||'').replace('1M ','1M·'))}${x.j.py?' · '+esc(x.j.py)+'평':''}</b></div>`).join('');
+  if(adm&&cy){h+=`<label>자투리 활용 (장) <span class="ia-tiny">(당번 · 별도로 가져간 기존 자투리로 판매한 장수 — 판매에서 뺌)</span></label>`;
     const ks=PRODUCTS.map(p=>p.k).filter(k=>cy.byProd.some(b=>b.k===k)||(cy.ov.scrap||{})[k]);
     h+=(ks.length?ks:PRODUCTS.slice(0,1).map(p=>p.k)).map(k=>`<div class="sc"><span>${esc(k)}</span><input type="number" min="0" inputmode="numeric" data-scrap="${esc(k)}" value="${nn((cy.ov.scrap||{})[k])||''}" placeholder="0"></div>`).join('')}
-  h+=`<div class="cy-note">로스 = 출고 − (판매 − 자투리 + 무상 AS) − 반납. 시공보고가 나중에 들어오면 자동으로 다시 계산돼요.${cy.ov.at?'<br>마지막 수정 '+esc(cy.ov.by||'')+' '+esc(String(cy.ov.at||'').slice(5,16)):''}</div>`;
-  h+=`<div class="bt"><button type="button" class="ia-btn" onclick="ioCycle.close()">닫기</button>${adm&&cy.decided?`<button type="button" class="ia-btn ${cy.confirmed?'':'ok'}" onclick="ioCycle.confirm(${cy.confirmed?0:1})">${cy.confirmed?'확정 해제':'로스 확정'}</button>`:''}<button type="button" class="ia-btn pri" onclick="ioCycle.save()">저장</button></div>`;
+  const last=(cy&&cy.ov.at)?cy.ov:vehOv(plate);
+  h+=`<div class="cy-note">${cy?'로스 = 출고 − (판매 − 자투리 + 무상 AS) − 반납. 시공보고가 나중에 들어오면 자동으로 다시 계산돼요.':'담당은 이 차량의 다음 출고부터, 갈 현장은 카드와 출고 화면 목록에 바로 반영돼요.'}${last.at?'<br>마지막 수정 '+esc(last.by||'')+' '+esc(String(last.at||'').slice(5,16)):''}</div>`;
+  h+=`<div class="bt"><button type="button" class="ia-btn" onclick="ioCycle.close()">닫기</button>${adm&&cy&&cy.decided?`<button type="button" class="ia-btn ${cy.confirmed?'':'ok'}" onclick="ioCycle.confirm(${cy.confirmed?0:1})">${cy.confirmed?'확정 해제':'로스 확정'}</button>`:''}<button type="button" class="ia-btn pri" onclick="ioCycle.save()">저장</button></div>`;
   md(h);
 }
 function saveEdit(){
-  const cy=cur();if(!cy)return;
+  if(!SEL)return;const cy=cur();const plate=SEL.plate;
   const c1=($('cyC1')||{}).value||'',c2=($('cyC2')||{}).value||'';
   const crew=[c1,c2].filter(Boolean);if(!crew.length){X.toast('담당을 한 명 이상 골라주세요',true);return}
+  // 차량 설정: 담당 + 갈 현장
+  const vo=vehOv(plate);const vadd=Object.assign({},vo.add||{}),vdel=Object.assign({},vo.del||{});
+  document.querySelectorAll('#cyMdIn input[data-up]').forEach(el=>{const id=el.dataset.up,auto=el.dataset.auto==='1';if(el.checked){delete vdel[id];if(!auto)vadd[id]=1;else delete vadd[id]}else{delete vadd[id];if(auto)vdel[id]=1}});
+  const vpatch={crew,add:Object.keys(vadd).length?vadd:null,del:Object.keys(vdel).length?vdel:null};
+  if(!cy){saveVeh(plate,vpatch).then(()=>{X.toast('저장했어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));return}
   const del=Object.assign({},cy.ov.del||{}),add=Object.assign({},cy.ov.add||{});
   document.querySelectorAll('#cyMdIn input[data-id]').forEach(el=>{const id=el.dataset.id;const row=cy.jobs.find(r=>r.id===id);if(!el.checked){if(row&&row.auto)del[id]=1;delete add[id]}else{delete del[id];if(row&&!row.auto)add[id]=1}});
   document.querySelectorAll('#cyMdIn input[data-add]').forEach(el=>{if(el.checked){add[el.dataset.add]=1;delete del[el.dataset.add]}});
@@ -302,7 +334,7 @@ function saveEdit(){
   if(admin()){const scrap={};document.querySelectorAll('#cyMdIn input[data-scrap]').forEach(el=>{const v=nn(el.value);if(v>0)scrap[el.dataset.scrap]=v});patch.scrap=Object.keys(scrap).length?scrap:null}
   if(cy.confirmed&&!confirm('확정된 순환이에요. 수정하면 확정이 풀리고 다시 계산돼요. 계속할까요?'))return;
   patch.confirm=null;
-  save(cy,patch).then(()=>{X.toast('저장했어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
+  Promise.all([save(cy,patch),saveVeh(plate,vpatch)]).then(()=>{X.toast('저장했어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
 }
 function confirmCy(on){
   const cy=cur();if(!cy||!admin())return;
@@ -342,5 +374,5 @@ function shareText(date,onlyPlate){
 
 /* ---------- 시작 ---------- */
 try{db.ref(NODE).on('value',s=>{OV=s.val()||{};rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty}};
+window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty}};
 })();
