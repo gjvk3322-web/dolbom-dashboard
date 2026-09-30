@@ -82,7 +82,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.09.30c';
+const IO_VER='2026.09.30d';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -479,6 +479,12 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-seg button.on{background:var(--dm-panel);color:var(--dm-ink);box-shadow:0 1px 3px #0000003a}
 .iog-when{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px;font-size:12.5px;color:var(--dm-muted);flex-wrap:wrap}
 .iog-when .iog-seg{flex:1;min-width:0}.iog-when .iog-seg button{flex:1;padding:6px 8px;font-size:12.5px}
+.iog-jobs{border:1px solid var(--dm-line);border-radius:12px;padding:10px 12px;margin:-8px 0 18px;font-size:12.5px;line-height:1.55}
+.iog-jobs .h{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:13px;margin-bottom:4px}.iog-jobs .h small{font-weight:600;color:var(--dm-muted)}
+.iog-jobs .j{display:flex;justify-content:space-between;gap:8px;color:var(--dm-muted);border-top:1px dashed var(--dm-line);padding:5px 0}
+.iog-jobs .j span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.iog-jobs .j b{color:var(--dm-ink);white-space:nowrap}
+.iog-jobs .j.as span:first-child::before{content:'AS ';color:var(--red);font-weight:800}.iog-jobs .j b.miss{color:var(--dm-amber)}.iog-jobs .j b.free{color:var(--dm-blue)}
+.iog-jobs .sum{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--dm-line);padding-top:6px;margin-top:2px;font-weight:800}
 .iog-sectionlabel{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;font-weight:800}
 .iog-item{border:1px solid var(--dm-line);border-radius:12px;margin-bottom:12px;overflow:hidden}
 .iog-itemhead{padding:10px 12px;background:var(--dm-soft);display:flex;align-items:center;gap:7px;color:var(--dm-muted)}
@@ -1204,6 +1210,28 @@ function successHtml(){
 }
 function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(d)ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // 내일 것 실은 건 오늘 화면에 '내일 실은 것'으로 같이
 function ioDoneAdmin(){$('ioOv').classList.remove('show');DONE=null;ioAdminOpen()}
+function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장, 반납 = 이번 순환에서 돈 현장 + 판매갯수 (iocycle 있으면 순환 기준, 없으면 작업일 기준)
+  if(!F.vehicle||F.custom)return '';
+  const np=normPlate(F.vehicle);const owner=vehicles()[F.vehicle]||'';const crew=[F.worker,F.crew2].filter(Boolean);
+  const mine=j=>{const jv=normPlate(j.vehicle);if(jv)return jv===np;const s=String(j.sasu||'').trim();return !!s&&(crew.indexOf(s)>=0||s===owner)};
+  const ok=j=>j&&j.addr&&String(j.time||'').trim()!=='실측'&&!/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim());
+  const addr=j=>esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20));
+  const prod=j=>{const k=prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):''};
+  if(F.type==='out'){
+    const d=F.wdate||kstDate(0);const list=jobs().filter(j=>ok(j)&&j.date===d&&mine(j)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    if(!list.length)return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장</span><small>스케줄에 이 차량 배정 없음</small></div></div>`;
+    return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span><small>실을 양 참고</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${esc(String(j.time||'').slice(0,2))} ${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
+  }
+  let cy=null;try{if(window.ioCycle)cy=ioCycle.latestOf(F.vehicle).cur}catch(e){}
+  if(cy&&cy.open&&cy.jobs.length){
+    const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
+    return `<div class="iog-jobs"><div class="h"><span>이번 순환에 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${esc(fmtMD(r.date))} ${esc(r.addr)}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div></div>`;
+  }
+  if(cy&&cy.open)return `<div class="iog-jobs"><div class="h"><span>이번 순환</span><small>출고 ${cy.out}장 · 연결된 시공 아직 없음</small></div></div>`;
+  const d=F.wdate||kstDate(0);const jb=jobsOf(F.vehicle,addDays(d,-1),d);
+  if(!jb.list.length)return '';
+  return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 돈 현장 ${jb.list.length}곳</span><small>판매 ${jb.sold}장</small></div>${jb.list.map(j=>`<div class="j"><span>${esc(j.addr)}</span><b>${j.q}장</b></div>`).join('')}</div>`;
+}
 function renderForm(){
   if(!F)return;
   if(F.stage==='review'){$('ioForm').innerHTML=reviewHtml();refreshSteps();return}
@@ -1216,6 +1244,7 @@ function renderForm(){
     <div class="f w"><label for="ioWorker">담당 2명</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)" style="margin-top:4px"><option value="">(같이 탄 사람 없음)</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div></div>
   <div class="iog-movetypes" style="margin-bottom:${F.type==='out'&&admin()?'10':'20'}px">${mt('out','truck','차에 실은 만큼 · 순환 시작')}${mt('in','warehouse','남은 것 전부 · 순환 마감')}</div>
   ${F.type==='out'&&admin()?`<div class="iog-when" id="ioWhen"><span>쓸 날 <i style="font-style:normal;opacity:.7">(당번)</i></span><div class="iog-seg">${F.wopts.slice().reverse().map(o=>`<button type="button" class="${F.wdate===o[0]?'on':''}" onclick="ioWdate('${o[0]}')">${o[0]===kstDate(0)?'오늘 쓸 것':'미리 싣기 · '+fmtMD(o[0])+' 시공 것'}</button>`).join('')}</div></div>`:''}
+  ${formJobsHTML()}
   <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
   <div id="ioItems"></div>
   <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
