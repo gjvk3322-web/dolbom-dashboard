@@ -82,7 +82,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.09.30f';
+const IO_VER='2026.09.30g';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -152,7 +152,8 @@ function vehicles(){try{return (typeof VEHICLES==='object'&&VEHICLES)?VEHICLES:{
 function employees(){try{return Array.isArray(E)?E.filter(Boolean):[]}catch(e){return []}}
 function jobs(){try{return Array.isArray(J)?J:[]}catch(e){return []}}
 function admin(){try{return !!isAdmin}catch(e){return false}}
-function defaultCrew(p){try{if(window.ioCycle&&ioCycle.vehCrew){const c=ioCycle.vehCrew(p);if(c&&c.length)return c}}catch(e){}const o=vehicles()[p]||'';return o?[o,partnerOf(o)].filter(Boolean):[]} // v29: 차량 기준 담당(입출고 카드 [수정]에서 정한 것) > 팀설정
+function defaultCrew(p,date){try{if(window.ioCycle&&ioCycle.crewFor){const c=ioCycle.crewFor(p,date||kstDate(0));if(c&&c.length)return c}}catch(e){}const o=vehicles()[p]||'';return o?[o,partnerOf(o)].filter(Boolean):[]} // v30: 그 작업일에 이 차량으로 잡힌 스케줄의 사수·부사수 (카드 [수정]으로 고친 값 우선) > 팀설정 짝
+function applyCrew(){if(!F||!F.vehicle||F.custom||F.crewTouched)return;const c=defaultCrew(F.vehicle,F.wdate);F.worker=c[0]||'';F.crew2=c[1]||''} // 작업일·차량이 바뀌면 담당도 그날 스케줄로 (직접 고친 뒤엔 그대로)
 function partnerOf(name){try{const t=(Array.isArray(teams)?teams:[]).find(t=>Array.isArray(t)&&t.indexOf(name)>=0);return t?(t.filter(m=>m&&m!==name)[0]||''):''}catch(e){return ''}} // 팀설정에서 같은 팀 나머지 한 명 (v27)
 function apiUrl(){try{return SHEET_REPORT_URL}catch(e){return ''}}
 
@@ -1145,7 +1146,8 @@ function ioOpen(type,plate){ // plate: 팀 카드에서 열 때 그 차량을 �
   const want=String(plate||'').trim();const reg=want?vs.find(p=>normPlate(p)===normPlate(want)):'';
   const vehicle=reg||want||(vs.includes(lastV)?lastV:(vs.length===1?vs[0]:''));
   const w=wdOpts(t);
-  F={type:t,date:kstDate(0),wdate:wdDefault(t,vehicle),wopts:w.opts,wpick:false,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:vehicle?(defaultCrew(vehicle)[0]||''):'',crew2:vehicle?(defaultCrew(vehicle)[1]||''):'',items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
+  const wd0=wdDefault(t,vehicle);const c0=vehicle?defaultCrew(vehicle,wd0):[];
+  F={type:t,date:kstDate(0),wdate:wd0,wopts:w.opts,wpick:false,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:false,items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
   P=null;busy=false;DONE=null;
   $('ioFoot').style.display='';
   renderForm();
@@ -1159,7 +1161,7 @@ function ioClose(){
 function ioType(t){
   if(!F)return;const old=F.type;if(old===t){renderForm();return}
   const had=formHasContent();
-  F.type=t;const w=wdOpts(t);F.wopts=w.opts;F.wpick=false;F.wdate=wdDefault(t,F.vehicle);
+  F.type=t;const w=wdOpts(t);F.wopts=w.opts;F.wpick=false;F.wdate=wdDefault(t,F.vehicle);applyCrew();
   if(had){draftClear(old);F.draft=null;draftWrite();photoDraftSave()} // 쓰던 내용을 새 구분으로 옮김
   else F.draft=draftGet(t);
   renderForm();drawPreview();
@@ -1218,9 +1220,11 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
   const mine=j=>{if(vdel[j.id])return false;if(vadd[j.id])return true;const jv=normPlate(j.vehicle);if(jv)return jv===np;const s=String(j.sasu||'').trim();return !!s&&(crew.indexOf(s)>=0||s===owner)};
   const ok=j=>j&&j.addr&&String(j.time||'').trim()!=='실측'&&!/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim());
   const addr=j=>esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20));
-  const prod=j=>{const k=prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):''};
+  const prod=j=>{try{if(window.ioCycle&&ioCycle.prodLabel)return ioCycle.prodLabel(j)}catch(e){}const k=prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):''};
   if(F.type==='out'){
-    const d=F.wdate||kstDate(0);const list=jobs().filter(j=>ok(j)&&j.date===d&&mine(j)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    const d=F.wdate||kstDate(0);let list=null;
+    try{if(window.ioCycle&&ioCycle.schedJobs)list=ioCycle.schedJobs(F.vehicle,d)}catch(e){list=null}
+    if(!list)list=jobs().filter(j=>ok(j)&&j.date===d&&mine(j)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
     if(!list.length)return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장</span><small>스케줄에 이 차량 배정 없음</small></div></div>`;
     return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span><small>실을 양 참고</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${/^AS$/i.test(j.time)?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
   }
@@ -1243,7 +1247,7 @@ function renderForm(){
   <div class="iog-vehicle" id="ioSecVeh"><span class="iog-vehicleicon">${gi('truck')}</span>
     <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
       ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
-    <div class="f w"><label for="ioWorker">담당 2명</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)" style="margin-top:4px"><option value="">(같이 탄 사람 없음)</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div></div>
+    <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)" style="margin-top:4px"><option value="">(같이 탄 사람 없음)</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div></div>
   <div class="iog-movetypes" style="margin-bottom:10px">${mt('out','truck','')}${mt('in','warehouse','')}</div>
   <div class="iog-when" id="ioWhen"><span>작업일</span><div class="iog-seg">${F.wopts.map(o=>`<button type="button" class="${F.wdate===o[0]?'on':''}" onclick="ioWdate('${o[0]}')">${fmtMD(o[0])} 작업${o[0]===kstDate(0)?' (오늘)':''}</button>`).join('')}</div></div>
   ${formJobsHTML()}
@@ -1301,18 +1305,19 @@ function ioAddItem(){if(F.items.length>=PRODUCTS.length)return;F.items.push(newI
 function ioDelItem(i){if(F.items.length<=1)return;const it=F.items[i];if((it.product||itemAny(it))&&!confirm('제품 '+(i+1)+'을 뺄까요?'))return;F.items.splice(i,1);renderItems();refreshSteps();draftSave()}
 function ioNote(v){F.note=v.slice(0,200);draftSave()}
 // v13: '지난 날짜 것을 지금 기록(지연 입력)' 링크를 화면에서 뺌 — 아래 3개는 호출하는 곳이 없음(되살릴 때를 위해 남겨 둠)
-function ioWdate(d){if(!F||!F.wopts.some(o=>o[0]===d))return;F.dateEdit=false;F.wpick=true;F.wdate=d;renderForm();draftSave()}
+function ioWdate(d){if(!F||!F.wopts.some(o=>o[0]===d))return;F.dateEdit=false;F.wpick=true;F.wdate=d;applyCrew();renderForm();draftSave()}
 function ioDateToggle(){F.dateEdit=true;if(F.wdate>=kstDate(0))F.wdate=prevWorkDay(kstDate(0));renderForm();draftSave()}
 function ioDateChange(v){if(/^\d{4}-\d{2}-\d{2}$/.test(v))F.wdate=v;renderForm();draftSave()}
 function ioVehicle(p){
-  F.custom=false;F.vehicle=p;const dc=defaultCrew(p);if(dc.length){F.worker=dc[0]||'';F.crew2=dc[1]||''}
+  F.custom=false;F.vehicle=p;
   if(!F.wpick)F.wdate=wdDefault(F.type,p); // 차량이 바뀌면 추측도 다시(직접 고른 뒤엔 그대로)
+  F.crewTouched=false;applyCrew();
   renderForm();drawPreview();draftSave();
 }
 function ioVehicleCustom(){F.custom=true;F.vehicle='';renderForm();const el=$('ioVehicleIn');if(el)el.focus()}
 function ioVehicleType(v){F.vehicle=v.trim().slice(0,20);drawPreview();draftSave()}
-function ioWorker(v){F.worker=v;if(v&&!F.crew2)F.crew2=partnerOf(v);if(F.crew2===v)F.crew2='';renderForm();drawPreview();draftSave()}
-function ioCrew2(v){F.crew2=v===F.worker?'':v;drawPreview();draftSave()} // v27 담당 2번째
+function ioWorker(v){F.worker=v;F.crewTouched=true;if(v&&!F.crew2)F.crew2=partnerOf(v);if(F.crew2===v)F.crew2='';renderForm();drawPreview();draftSave()}
+function ioCrew2(v){F.crew2=v===F.worker?'':v;F.crewTouched=true;drawPreview();draftSave()} // v27 담당 2번째
 
 /* ---------- 사진 ---------- */
 function ioPickPhoto(){if(busy)return;const f=$('ioFile');f.value='';f.click()}
@@ -1408,8 +1413,8 @@ async function ioSubmit(){
 function ioZeroReturn(plate){ // v27: 다 써서 남은 게 없을 때 '반납 0장'으로 순환을 닫는 입고 기록 (사진·제품 없음, 시트엔 메모만 남음)
   const p=String(plate||'').trim();if(!p){ioToast('차량이 없어요',true);return}
   const now=new Date();const ts=now.getTime();const id='io_'+ts+'_'+Math.random().toString(36).slice(2,7);
-  const crew=defaultCrew(p);const worker=crew[0]||'';
   const wdate=wdDefault('in',p);
+  const crew=defaultCrew(p,wdate);const worker=crew[0]||'';
   const rec={id,region:RN,rk:RK,type:'in',date:kstDate(0),wdate,at:kstDT(now),ts,vehicle:p,worker,crew,items:[],note:'반납 0장 (다 씀)',late:false,zero:true,photoAt:'',photoGap:0,dev:devId(),ver:IO_VER,status:'pending'};
   const payload={action:'ioLog',id,region:RN,type:'in',date:rec.date,wdate,at:rec.at,vehicle:p,worker,crew,items:[{product:'',total:0}],note:rec.note,late:false,zero:true,photoAt:'',photoGap:0,dev:rec.dev,photo:'',photoName:''};
   if(!obAdd({kind:'log',id,rec,payload,tries:0,ts}))return;
