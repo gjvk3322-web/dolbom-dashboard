@@ -20,7 +20,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.09.30c';
+const CY_VER='2026.09.30e';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -153,6 +153,7 @@ const CSS=`
 .cy-jobs .j span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cy-jobs .j b{color:var(--dm-ink);white-space:nowrap}
 .cy-jobs .j.miss b{color:var(--dm-amber)}.cy-jobs .j.free b{color:var(--dm-blue)}
+.cy-next .nh{font-weight:800;color:var(--dm-ink);font-size:12.5px;margin-bottom:2px}.cy-next .nh small{font-weight:600;color:var(--dm-muted)}
 .cy-people{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .cy-people span{display:inline-flex;gap:5px;align-items:center;padding:4px 9px;border-radius:7px;background:var(--dm-soft);font-size:12px;color:var(--dm-muted)}
 .cy-people span b{color:var(--dm-ink)}
@@ -207,12 +208,23 @@ function histHTML(plate,list){
   const k=NP(plate);
   return `<details class="cy-hist" ${HIST_OPEN[k]?'open':''} ontoggle="ioCycle.hist('${esc(k)}',this.open)"><summary>지난 순환 ${past.length}건</summary>${past.map(c=>`<div class="h" onclick="ioCycle.openBy('${esc(plate)}',${c.startTs})"><span>${esc(cyLabel(c))} · ${esc(c.crew.join('·'))}</span><b class="${c.decided?(c.diff>0?'bad':c.diff===0?'ok':''):''}">${c.decided?(c.diff===0?'일치':sgn(c.diff)):stChip(c)[1]}</b></div>`).join('')}</details>`;
 }
+function upcomingHTML(v,cur,S){ // 갈 현장: 선택 날짜(S.from) 이후 이 차량의 첫 시공일 목록 — 순환에 이미 연결된 건 제외 (출고 전 실을 양 참고)
+  const linked=new Set(cur?cur.jobs.map(r=>r.id):[]);const from=(S&&S.from)||U.kstDate(0);
+  const crew=cur?cur.crew:[vehicles()[v.plate],partnerOf(vehicles()[v.plate]||'')].filter(Boolean);
+  const fake={plate:v.plate,crew};
+  const list=jobs().filter(j=>j&&jobOK(j)&&j.date>=from&&!linked.has(j.id)&&jobMatches(j,fake)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:String(a.time).localeCompare(String(b.time)));
+  if(!list.length)return '';
+  const d=list[0].date;const day=list.filter(j=>j.date===d);
+  const prod=j=>{const k=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):''};
+  return `<div class="cy-jobs cy-next"><div class="nh">${esc(U.fmtMD(d))} 갈 현장 ${day.length}곳${d===from?'':' <small>(다음 시공일)</small>'}</div>${day.map(j=>`<div class="j"><span>${esc(String(j.time||'').slice(0,2))} ${/^AS$/i.test(j.time)?'<span style="color:var(--red)">AS</span> ':''}${esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,18))}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
+}
 function cardHTML(v){
+  const S_=cardHTML.S||{};
   const {cur,list}=latestOf(v.plate);const who=cur?cur.crew:[vehicles()[v.plate],partnerOf(vehicles()[v.plate]||'')].filter(Boolean);
   const tn=teamNo(who);const chip=cur?stChip(cur):['','기록 없음'];
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
-  let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀':esc(who[0]||'담당 미지정')}<small>${esc(v.plate)}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
-  h+=`<div class="cy-crew">담당 <b>${esc(who.join(' · ')||'미지정')}</b>${cur?` <span class="ia-tiny">· ${esc(cyLabel(cur))}${cur.open?' 출고 '+esc(String(cur.startAt||'').slice(5,16)):' 반납 '+esc(String(cur.endAt||'').slice(5,16))}</span>`:''}${mine?' <span style="color:var(--dm-blue)">내 차량</span>':''}</div>`;
+  let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀 · ':''}${esc(who.join('·')||'담당 미지정')}<small>${esc(v.plate)}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
+  if(cur||mine)h+=`<div class="cy-crew">${cur?`<span class="ia-tiny">${esc(cyLabel(cur))} · ${cur.open?'출고 '+esc(String(cur.startAt||'').slice(5,16)):'반납 '+esc(String(cur.endAt||'').slice(5,16))}</span>`:''}${mine?' <span style="color:var(--dm-blue)">내 차량</span>':''}</div>`;
   if(cur){h+=`<div class="ia-metrics">${metrics(cur)}</div>${prodLines(cur)}${jobLines(cur)}${!cur.open?peopleLines(cur):''}`;
     const foot=[];
     if(cur.miss.length)foot.push(`시공보고 미입력 <b>${cur.miss.length}건</b> — 들어오면 자동 반영`);
@@ -222,8 +234,9 @@ function cardHTML(v){
     if(cur.ov.confirm)foot.push(`확정 ${esc(cur.ov.confirm.by||'')} ${esc(String(cur.ov.confirm.at||'').slice(5,16))}`);
     if(foot.length)h+=`<div class="ia-teamfoot">${foot.join('<br>')}</div>`;
   }else h+=`<div class="ia-tiny" style="margin-top:6px">아직 출고 기록이 없어요. 차에 실으면 [출고]를 눌러주세요.</div>`;
+  h+=upcomingHTML(v,cur,S_);
   const open=!!(cur&&cur.open);
-  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" ${cur?`onclick="ioCycle.openBy('${esc(v.plate)}',${cur.startTs})"`:'disabled'}>✏️ 수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">🚚 출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">↩️ 반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" ${cur?`onclick="ioCycle.openBy('${esc(v.plate)}',${cur.startTs})"`:'disabled'}>수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list);
   return h+'</div>';
 }
@@ -248,6 +261,7 @@ function monthHTML(vehs,from,to){
 function cardsHTML(M,S){
   ensureCss();
   if(S.mode==='month')return `<div class="ia-teams">${monthHTML(M.veh,S.from,S.to)}</div>`;
+  cardHTML.S=S;
   return `<div class="ia-teams">${M.veh.map(cardHTML).join('')}</div>`;
 }
 
