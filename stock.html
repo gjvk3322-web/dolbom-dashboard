@@ -684,6 +684,10 @@ let stockRenderSeq=0;      // 늦게 도착한 옛 응답이 화면을 덮어쓰
 let stockForce=false;      // 🔄 새로고침 버튼·5분 자동갱신 → 캐시 무시
 const STOCK_CACHE_MS=3*60*1000;
 const STOCK_TIMEOUT_MS=150*1000;
+// 🆕 2026-09-30 즉시 표시: 마지막으로 받은 서버 응답을 브라우저(localStorage)에 저장해 두고, 다음 진입 때 먼저 그린 뒤 최신 데이터로 갈아끼움
+//   → 새로고침·재접속해도 10초 빈 화면 없이 바로 보임. 저장본은 "HH:MM 기준 (저장본)"으로 표시되고 최신이 오면 자동 교체
+function loadStoredStock(t){try{const o=JSON.parse(localStorage.getItem('dolbom_stock_last_'+t)||'null');return (o&&o.d&&!o.d.error&&o.at)?o:null}catch(e){return null}}
+function saveStoredStock(t,d){try{localStorage.setItem('dolbom_stock_last_'+t,JSON.stringify({d:d,at:Date.now()}))}catch(e){}}
 
 async function fetchStockData(force,forTeam){
   const myTeam=forTeam||team;
@@ -697,7 +701,7 @@ async function fetchStockData(force,forTeam){
         const txt=await r.text();
         const sec=((Date.now()-t0)/1000).toFixed(1);
         try{const d=JSON.parse(txt);
-          if(!d.error)stockCacheByTeam[myTeam]={d,at:Date.now()};
+          if(!d.error){stockCacheByTeam[myTeam]={d,at:Date.now()};saveStoredStock(myTeam,d);}
           // 디버그: 콘솔에서 팀별 서버 응답 시간 + 받은 데이터 확인
           console.log('[stock] getStock 응답 ('+myTeam+' · '+sec+'초):',{calcResult:d.calcResult,futureTotal:d.futureTotal,lastSurveyDate:d.lastSurveyDate,incomingCount:(d.incoming||[]).length});
           return d;
@@ -765,7 +769,22 @@ async function renderSummary(){
   const _t0=Date.now();
   const _tick=setInterval(()=>{const el=document.getElementById('stockLoading');if(!el||mySeq!==stockRenderSeq){clearInterval(_tick);return}
     const sec=Math.floor((Date.now()-_t0)/1000);el.textContent='📡 데이터 로딩 중... '+sec+'초'+(sec>=20?' · 서버 응답이 느림':'');},1000);
-  const sd=await fetchStockData(_force,myTeam);
+  // 🆕 2026-09-30 즉시 표시: 이미 있는 데이터(메모리 캐시 또는 마지막 저장본)가 있으면 그걸로 바로 그리고, 최신은 뒤에서 받아 화면만 갈아끼움
+  //   아무것도 없을 때(첫 접속)만 "로딩 중" 화면. 뒤에서 받기 실패해도 저장본은 그대로 두고 라벨만 ⚠️로 바꿈 (무한 재시도 없음)
+  let sd,_stale=0;
+  const _mem=stockCacheByTeam[myTeam];
+  const _fresh=!_force&&_mem&&Date.now()-_mem.at<STOCK_CACHE_MS;
+  const _prev=_fresh?null:(_mem?{d:_mem.d,at:_mem.at}:loadStoredStock(myTeam));
+  if(_prev){
+    sd=_prev.d;_stale=_prev.at;
+    fetchStockData(true,myTeam).then(d=>{
+      if(tab!=='summary'||team!==myTeam||mySeq!==stockRenderSeq)return;
+      if(d&&!d.error){render();return}
+      const el=document.getElementById('stockStaleLbl');if(el)el.innerHTML='⚠️ 최신 데이터 못 받음 ('+((d&&d.error)||'오류')+') · 저장본 표시 중 · <span onclick="stockForce=true;render()" style="cursor:pointer;text-decoration:underline">🔄 다시 시도</span>';
+    });
+  }else{
+    sd=await fetchStockData(_force,myTeam);
+  }
   clearInterval(_tick);
   if(tab!=='summary'||team!==myTeam||mySeq!==stockRenderSeq)return;  // 🆕 기다리는 동안 다른 탭·다른 팀으로 갔거나 더 새 요청이 있으면 옛 응답으로 화면 안 덮음
   h=renderTabs();
@@ -904,10 +923,11 @@ async function renderSummary(){
       prodColorCalc[key]=cr[key].calculated;
     });
     
-    const _now=new Date();const _hh=String(_now.getHours()).padStart(2,'0');const _mm=String(_now.getMinutes()).padStart(2,'0');
+    const _now=_stale?new Date(_stale):new Date();const _hh=String(_now.getHours()).padStart(2,'0');const _mm=String(_now.getMinutes()).padStart(2,'0');
+    const _srvAt=sd&&sd.cachedAt?' · 서버 '+sd.cachedAt+' 계산분':'';
     h+=`<div style="margin-top:4px;background:var(--card);border:.5px solid var(--border);border-radius:12px;overflow:hidden">`;
     h+=`<div style="padding:14px;border-bottom:.5px solid var(--border)"><div style="font-size:12px;color:var(--dim);margin-bottom:2px;text-align:center">📊 ${team} 실시간 재고 <span style="font-size:10px;opacity:.6">(${sdp[1]}.${sdp[2]} 실사 + 입고${hasTin?' + 이동입고':''} − 시공보고 사용분${hasOut?' − 출고':''})</span></div>`;
-    h+=`<div style="font-size:10px;color:var(--dim);margin-bottom:10px;text-align:center;opacity:.7">${_hh}:${_mm} 갱신 · <span onclick="stockForce=true;render()" style="cursor:pointer;text-decoration:underline">🔄 새로고침</span> · 5분마다 자동 갱신</div>`;
+    h+=`<div id="stockStaleLbl" style="font-size:10px;color:var(--dim);margin-bottom:10px;text-align:center;opacity:.9">${_hh}:${_mm} ${_stale?'기준 (저장본) · <span style="color:var(--orange);font-weight:700">🔄 최신 데이터 불러오는 중…</span>':'갱신'+_srvAt+' · <span onclick="stockForce=true;render()" style="cursor:pointer;text-decoration:underline">🔄 새로고침</span> · 5분마다 자동 갱신'}</div>`;
     h+=`<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">`;
     prodOrder.forEach(pid=>{
       const pt=prodTotals[pid]||{sheets:0,pallets:0};
