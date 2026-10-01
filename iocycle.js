@@ -24,7 +24,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01j';
+const CY_VER='2026.10.01m';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -33,6 +33,7 @@ let AS={};          // asReports 캐시 {jobId: rec|null}
 let asWait={};      // 불러오는 중
 let SEL=null;       // 모달이 잡은 순환 {plate,startTs}
 let HIST_OPEN={};   // 지난 순환 펼침 {plateKey:true}
+let REP=null;       // 보고 화면 {plate,startTs}
 
 /* ---------- 데이터 ---------- */
 function admin(){try{return X.admin()}catch(e){return false}}
@@ -43,7 +44,8 @@ function partnerOf(name){const t=teamsArr().find(t=>Array.isArray(t)&&t.indexOf(
 function teamNo(names,plate){ // 팀 번호: 차량 탭 사수가 속한 팀 > 담당과 가장 많이 겹치는 팀(사수 자리가 같으면 우선). 한 명이 두 팀을 오가도 안 겹침
   const T=teamsArr().map(t=>Array.isArray(t)?t.filter(Boolean):[]);
   if(plate){const o=ownerOf(plate);if(o){let i=T.findIndex(t=>t[0]===o);if(i<0)i=T.findIndex(t=>t.indexOf(o)>=0);if(i>=0)return i+1}}
-  let best=0,bi=0;(names||[]).length&&T.forEach((t,i)=>{let sc=names.filter(n=>n&&t.indexOf(n)>=0).length;if(!sc)return;if(t[0]===names[0])sc+=0.5;if(sc>best){best=sc;bi=i+1}});
+  // 차량 탭 사수가 없으면: 그 팀의 사수(맨 앞 사람)가 담당에 있어야 그 팀. 부사수만 겹치는 임시 조합(승민·경준 등)은 팀 번호 없음
+  let best=0,bi=0;(names||[]).length&&T.forEach((t,i)=>{if(!t.length||names.indexOf(t[0])<0)return;const sc=names.filter(n=>n&&t.indexOf(n)>=0).length;if(sc>best){best=sc;bi=i+1}});
   return bi;
 }
 function records(){try{return X.records().all||{}}catch(e){return {}}}
@@ -69,7 +71,7 @@ function asOf(id){ // AS보고서 — 없으면 한 번 불러오고 도착하�
   try{db.ref('asReports/'+id).once('value').then(s=>{AS[id]=s.val()||null;delete asWait[id];rerender()}).catch(()=>{AS[id]=null;delete asWait[id]})}catch(e){AS[id]=null}
   return undefined;
 }
-function rerender(){try{if(window.ioAdmin&&ioAdmin.mount)ioAdmin.mount()}catch(e){}}
+function rerender(){try{if(window.ioAdmin&&ioAdmin.mount)ioAdmin.mount()}catch(e){}try{if(REP)renderReport()}catch(e){}}
 function ovOf(cy){return ((OV[NP(cy.plate)]||{})[String(cy.startTs)])||{}}
 function vehOv(plate){return (OV[NP(plate)]||{})._veh||{}}
 function vehCrew(plate){const v=vehOv(plate);const c=arr(v.crew).filter(Boolean);if(c.length)return c.slice(0,3);const o=ownerOf(plate);return o?[o,partnerOf(o)].filter(Boolean):[]} // 차량 기본 담당
@@ -158,7 +160,7 @@ function compute(cy,consumed){
     if(!(ov.add||{})[j.id]&&claimedElsewhere(j.id,cy.plate))return; // 다른 차량 카드가 가져간 시공
     const isAs=/^AS$/i.test(String(j.time||'').trim());
     const pk=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t)||'';
-    const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,18),sasu:j.sasu||'',busasu:j.busasu||'',isAs,auto,sold:0,asFree:0,pk,st:''};
+    const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20),time:String(j.time||'').slice(0,2),py:String(j.py||'').trim(),prod:prodLabel(j),sasu:j.sasu||'',busasu:j.busasu||'',isAs,auto,sold:0,asFree:0,pk,st:''};
     const sold=+j.sold||0;
     if(sold>0){row.sold=sold;P(pk||'?').sold+=sold;row.st='ok'}
     else if(isAs){
@@ -210,13 +212,14 @@ const CSS=`
 .cy-jobs .j{display:flex;gap:8px;justify-content:space-between}
 .cy-jobs .j span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cy-jobs .j b{color:var(--dm-ink);white-space:nowrap}
+.cy-jobs .j small{display:block;font-size:11px;color:var(--dm-muted);opacity:.85}
 .cy-jobs .j.miss b{color:var(--dm-amber)}.cy-jobs .j.free b{color:var(--dm-blue)}
 .cy-next .nh{font-weight:800;color:var(--dm-ink);font-size:12.5px;margin-bottom:2px}.cy-next .nh small{font-weight:600;color:var(--dm-muted)}
 .cy-people{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .cy-people span{display:inline-flex;gap:5px;align-items:center;padding:4px 9px;border-radius:7px;background:var(--dm-soft);font-size:12px;color:var(--dm-muted)}
 .cy-people span b{color:var(--dm-ink)}
 .cy-people span.bad b{color:var(--red)}
-.cy-acts{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:8px;margin-top:12px}
+.cy-acts{display:grid;grid-template-columns:.72fr 1fr 1fr .72fr;gap:7px;margin-top:12px}
 .cy-acts .ia-button{min-height:46px}
 .cy-acts .ia-button.zero{grid-column:1/-1;min-height:40px;background:transparent;color:var(--dm-muted)}
 .cy-hist{margin-top:10px;font-size:12px}
@@ -249,7 +252,7 @@ function prodLines(cy){
 function jobLines(cy){
   if(!cy.jobs.length)return `<div class="cy-jobs">연결된 시공 없음${cy.open?' · 시공보고가 들어오면 자동으로 붙어요':''}</div>`;
   const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='load'?'확인 중':r.st==='future'?'예정':r.st==='zero'?'0장':r.asFree?'AS 무상 '+r.asFree:r.sold+'장';
-  return `<div class="cy-jobs">${cy.jobs.map(r=>`<div class="j ${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'<span style="color:var(--red)">AS</span> ':''}${esc(r.addr)}${r.auto?'':' <span style="color:var(--dm-blue)">수동</span>'}</span><b>${lab(r)}</b></div>`).join('')}</div>`;
+  return `<div class="cy-jobs">${cy.jobs.map(r=>`<div class="j ${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'<span style="color:var(--red)">AS</span> ':''}${esc(r.addr)}${r.auto?'':' <span style="color:var(--dm-blue)">수동</span>'}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b>${lab(r)}</b></div>`).join('')}</div>`;
 }
 function peopleLines(cy){
   if(!cy.crew.length)return '';
@@ -292,7 +295,7 @@ function cardHTML(v){
     if(foot.length)h+=`<div class="ia-teamfoot">${foot.join('<br>')}</div>`;
   }else h+=`<div class="ia-tiny" style="margin-top:6px">아직 출고 기록이 없어요. 차에 실으면 [출고]를 눌러주세요.</div>`;
   h+=upcomingHTML(v,up,from);
-  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}')">반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}')">반납</button><button type="button" class="ia-button quiet" ${cur?`onclick="ioCycle.report('${esc(v.plate)}')"`:'disabled'}>보고</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list);
   return h+'</div>';
 }
@@ -426,7 +429,110 @@ function shareText(date,onlyPlate){
   return out.join('\n\n');
 }
 
+/* ---------- 보고 화면 — 차량 한 대 · 현재 순환, 휴대폰 한 화면 스크린샷 → 단톡방 ---------- */
+const REP_CSS=`
+#cyRep{display:none;position:fixed;inset:0;background:var(--bg);z-index:993;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#cyRep.show{display:block}
+.cyr-in{max-width:520px;margin:0 auto;padding:0 14px 84px}
+.cyr-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:14px 0 10px;padding-top:max(14px,env(safe-area-inset-top))}
+.cyr-t{font-size:18px;font-weight:900;letter-spacing:-.4px}
+.cyr-s{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:3px;line-height:1.4}
+.cyr-chip{display:inline-block;padding:3px 9px;border-radius:7px;font-size:11.5px;font-weight:800;background:var(--card2);color:var(--sub);white-space:nowrap}
+.cyr-chip.bad{background:rgba(255,69,58,.16);color:var(--red)}.cyr-chip.ok{background:rgba(48,209,88,.16);color:var(--green)}.cyr-chip.warn{background:rgba(255,214,10,.14);color:var(--yellow)}.cyr-chip.blue{background:rgba(100,210,255,.14);color:var(--cyan)}
+.cyr-sec{background:var(--card);border-radius:14px;padding:9px 12px;margin-bottom:8px}
+.cyr-sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;font-weight:900}
+.cyr-sh small{font-size:11.5px;color:var(--sub);font-weight:600;white-space:nowrap}
+.cyr-row{display:flex;gap:10px;align-items:flex-start;padding:7px 0 4px;border-top:1px solid var(--border);margin-top:6px}
+.cyr-row:first-of-type{border-top:none;margin-top:2px}
+.cyr-row .b{flex:1;min-width:0;font-size:13px;line-height:1.5}
+.cyr-row .b .l{color:var(--sub);font-size:12px}
+.cyr-row .b .l b{color:var(--text);font-weight:800}
+.cyr-th{width:60px;height:60px;border-radius:8px;overflow:hidden;background:var(--card2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);text-align:center;line-height:1.3}
+.cyr-th img{width:100%;height:100%;object-fit:cover;display:block}
+.cyr-j{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0;color:var(--sub)}
+.cyr-j span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cyr-j b{color:var(--text);white-space:nowrap}.cyr-j b.miss{color:var(--yellow)}.cyr-j b.free{color:var(--cyan)}
+.cyr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;font-size:12.5px;color:var(--sub);margin-top:4px}
+.cyr-grid div{display:flex;justify-content:space-between;gap:6px}.cyr-grid b{color:var(--text)}.cyr-grid b.bad{color:var(--red)}.cyr-grid b.ok{color:var(--green)}
+.cyr-tot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:14px;font-weight:900}
+.cyr-tot .bad{color:var(--red)}.cyr-tot .ok{color:var(--green)}.cyr-tot .warn{color:var(--yellow)}
+.cyr-people{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:12px;color:var(--sub)}
+.cyr-people span{background:var(--card2);border-radius:7px;padding:3px 8px}.cyr-people b{color:var(--text)}.cyr-people b.bad{color:var(--red)}
+.cyr-note{font-size:11px;color:var(--dim);text-align:center;margin-top:8px;line-height:1.5}
+.cyr-ft{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;padding-bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:10px;pointer-events:none;z-index:6}
+.cyr-ft button{pointer-events:auto;padding:11px 26px;border-radius:22px;border:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;background:rgba(40,42,50,.92);color:var(--text);backdrop-filter:blur(8px)}
+.cyr-ft button.lnk{background:transparent;border-color:transparent;color:var(--dim);font-size:12px;font-weight:700;padding:11px 8px}
+`;
+function ensureRep(){
+  if(!$('cyRepCss')){const st=document.createElement('style');st.id='cyRepCss';st.textContent=REP_CSS;document.head.appendChild(st)}
+  if(!$('cyRep')){const d=document.createElement('div');d.id='cyRep';d.innerHTML='<div class="cyr-in" id="cyRepIn"></div><div class="cyr-ft"><button type="button" onclick="ioCycle.reportClose()">✕ 닫기</button><button type="button" class="lnk" onclick="ioCycle.reportCopy()">텍스트로 복사</button></div>';document.body.appendChild(d)}
+}
+function recThumb(r){
+  let local={};try{local=X.records().local||{}}catch(e){}
+  const lp=local[r.id];
+  if(lp&&lp.photo)return `<div class="cyr-th"><img src="${lp.photo}" alt=""></div>`;
+  if(r.photoId)return `<div class="cyr-th" onclick="ioView('${esc(r.photoId)}')"><img src="${U.thumbUrl(r.photoId,240)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='사진<br>실패'"></div>`;
+  if(r.zero)return '';
+  return `<div class="cyr-th">사진<br>전송 중</div>`;
+}
+function recLines(r){ // 기록 1건의 제품별 줄
+  return (r.items||[]).filter(it=>it&&(nn(it.total)||nn(it.tQty))).map(it=>{const parts=[['센터',it.cQty],['사이드',it.sQty],['코너',it.kQty],['10T',it.tQty]].filter(x=>nn(x[1])>0).map(x=>x[0]+' '+nn(x[1]));
+    return `<div class="l"><b>${esc(it.product||'')}</b> <b>${nn(it.total)+nn(it.tQty)}장</b>${parts.length?' <span>'+esc(parts.join(' · '))+'</span>':''}</div>`}).join('');
+}
+function recRow(r){
+  const q=recQty(r);
+  return `<div class="cyr-row"><div class="b"><div><b>${esc(U.hm(r.at))}</b> ${r.type==='in'?'반납':'출고'} <b>${q}장</b>${r.zero?' <span class="l">다 써서 없음</span>':''}${r.late?' <span class="cyr-chip warn" style="padding:1px 6px">지연 입력</span>':''}${r.wdate&&r.wdate!==r.date?` <span class="l">${esc(U.fmtMD(r.wdate))} 것</span>`:''}</div>${recLines(r)}${r.note&&!r.zero?`<div class="l">${esc(String(r.note).slice(0,60))}</div>`:''}</div>${recThumb(r)}</div>`;
+}
+function jobLabel(r){return r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='load'?'확인 중':r.st==='future'?'예정':r.st==='zero'?'0장':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장'}
+function reportHTML(cy){
+  const tn=teamNo(cy.crew,cy.plate);const chip=stChip(cy);
+  const chipCls=chip[0]==='bad'?'bad':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':chip[0]==='blue'?'blue':'';
+  let h=`<div class="cyr-hd"><div><div class="cyr-t">📦 출고·반납 보고</div><div class="cyr-s">${esc(RN)} ${tn?tn+'팀 · ':''}${esc(cy.crew.join('·'))} · ${esc(cy.plate)}<br>${esc(U.fmtD(cy.fromW))}${!cy.open&&cy.toW!==cy.fromW?' ~ '+esc(U.fmtD(cy.toW)):''}${cy.open?' · 반납 전':' · 반납 '+esc(String(cy.endAt||'').slice(5,16))}</div></div><span class="cyr-chip ${chipCls}">${chip[1]}</span></div>`;
+  // 출고
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>출고 ${cy.out}장</span><small>${cy.outs.length}회${cy.outs.length?' · 마지막 '+esc(String(cy.outs[cy.outs.length-1].at||'').slice(5,16)):''}</small></div>${cy.outs.map(recRow).join('')||'<div class="cyr-j"><span>출고 기록 없음</span></div>'}</div>`;
+  // 사용
+  const useSub=[`시공 ${cy.sold}`].concat(cy.asFree?['AS 무상 '+cy.asFree]:[]).concat(cy.scrap?['자투리 −'+cy.scrap]:[]).join(' · ');
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>사용 ${cy.used}장</span><small>${esc(useSub)}</small></div>${cy.jobs.map(r=>`<div class="cyr-j"><span>${r.isAs?'<span style="color:var(--red)">AS</span> ':esc(r.time||'')+' '}${esc(r.addr)}${r.prod?' <span style="opacity:.75">· '+esc(r.prod)+'</span>':''}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${jobLabel(r)}</b></div>`).join('')||'<div class="cyr-j"><span>연결된 시공 없음</span></div>'}</div>`;
+  // 반납
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>반납 ${cy.open?'전':cy.inn+'장'}</span><small>${cy.open?'차 잔량 '+cy.remain+'장':cy.zero?'다 써서 없음':cy.ins.length+'회'}</small></div>${cy.open?`<div class="cyr-j"><span>아직 반납 전 — 남은 매트를 사무실에 내리면 반납을 찍어주세요</span></div>`:cy.ins.map(recRow).join('')}</div>`;
+  // 로스
+  const totCls=cy.decided?(cy.diff>0?'bad':cy.diff===0?'ok':'warn'):'warn';
+  const totTxt=cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 · 로스 0':cy.diff>0?'로스 +'+cy.diff+'장':'초과 '+cy.diff+'장 · 확인 필요'):'대조 대기';
+  const waitWhy=[].concat(cy.miss.length?['시공보고 미입력 '+cy.miss.length]:[]).concat(cy.asMiss.length?['AS보고 없음 '+cy.asMiss.length]:[]).join(' · ');
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>로스</span><small>출고 − 사용 − 반납 · 제품별</small></div>
+    <div class="cyr-grid">${cy.byProd.map(b=>`<div><span>${esc(b.k)}</span><b class="${cy.open||!cy.decided?'':b.diff>0?'bad':b.diff===0?'ok':''}">${cy.open?'잔 '+(b.out-b.used):cy.decided?sgn(b.diff):'—'}</b></div>`).join('')}</div>
+    <div class="cyr-tot"><span>${cy.open?'차 잔량':'합계'}</span><span class="${cy.open?'':totCls}">${cy.open?cy.remain+'장':totTxt}${waitWhy&&!cy.open?' <small style="font-weight:600;color:var(--sub)">('+esc(waitWhy)+')</small>':''}</span></div>
+    ${!cy.open&&cy.crew.length?`<div class="cyr-people">${cy.crew.map(n=>`<span>${esc(n)} <b class="${cy.decided&&cy.diff>0?'bad':''}">${cy.decided?(cy.diff>0?'로스 '+cy.diff:cy.diff<0?'초과 '+(-cy.diff):'0'):'—'}</b></span>`).join('')}<span>공동작업 기준</span></div>`:''}
+    ${cy.ov&&cy.ov.confirm?`<div class="cyr-note">확정 ${esc(cy.ov.confirm.by||'')} ${esc(String(cy.ov.confirm.at||'').slice(5,16))}</div>`:''}</div>`;
+  h+=`<div class="cyr-note">${esc(U.kstDT(new Date()).slice(0,16))} 기준 · 시공보고가 들어오면 자동 갱신</div>`;
+  return h;
+}
+function reportText(cy){
+  const tn=teamNo(cy.crew,cy.plate);const L=[];
+  L.push(`[${RN}${tn?' '+tn+'팀':''} · ${cy.plate}] 출고·반납 보고 ${cy.open?U.fmtMD(cy.fromW):cyLabel(cy)}`);
+  L.push('담당: '+cy.crew.join(' / '));
+  L.push('출고 '+cy.out+'장');cy.outs.forEach(r=>{L.push('  '+U.hm(r.at)+' '+recQty(r)+'장: '+(r.items||[]).filter(it=>nn(it.total)||nn(it.tQty)).map(it=>it.product+' '+(nn(it.total)+nn(it.tQty))).join(', '))});
+  L.push('사용 '+cy.used+'장 (시공 '+cy.sold+(cy.asFree?' / AS 무상 '+cy.asFree:'')+(cy.scrap?' / 자투리 −'+cy.scrap:'')+')');cy.jobs.forEach(r=>{L.push('  '+(r.isAs?'AS ':'')+r.addr+' — '+jobLabel(r))});
+  if(cy.open)L.push('반납 전 · 차 잔량 '+cy.remain+'장');else{L.push('반납 '+cy.inn+'장'+(cy.zero?' (다 써서 없음)':''));cy.ins.forEach(r=>{if(recQty(r))L.push('  '+U.hm(r.at)+' '+recQty(r)+'장: '+(r.items||[]).filter(it=>nn(it.total)||nn(it.tQty)).map(it=>it.product+' '+(nn(it.total)+nn(it.tQty))).join(', '))})}
+  L.push('로스: '+(cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 0':sgn(cy.diff)+'장'):'대조 대기')+((cy.open||cy.decided)&&cy.byProd.length?' ('+cy.byProd.map(b=>b.k+' '+(cy.open?'잔 '+(b.out-b.used):sgn(b.diff))).join(', ')+')':''));
+  if(!cy.open&&cy.decided)L.push(cy.crew.map(n=>n+': 공동작업 로스 '+cy.diff).join(' / ')+' · 회사 로스 '+cy.diff+'장');
+  L.push('상태: '+stChip(cy)[1]);
+  return L.join('\n');
+}
+function repCycle(){if(!REP)return null;const {cur,list}=latestOf(REP.plate);return REP.startTs?(list.find(c=>c.startTs===REP.startTs)||null):cur}
+function renderReport(){const cy=repCycle();if(!cy){reportClose();return}ensureRep();$('cyRepIn').innerHTML=reportHTML(cy)}
+function report(plate,startTs){
+  const {cur}=latestOf(plate);if(!cur&&!startTs){X.toast('아직 출고 기록이 없어요');return}
+  REP={plate,startTs:startTs?+startTs:0};ensureRep();renderReport();$('cyRep').classList.add('show');$('cyRep').scrollTop=0;
+}
+function reportClose(){REP=null;const d=$('cyRep');if(d)d.classList.remove('show')}
+function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
+  const done=()=>X.toast('복사했어요 — 단톡방에 붙여넣기');
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>{prompt('복사해서 쓰세요',t)});return}}catch(e){}
+  prompt('복사해서 쓰세요',t);
+}
+
 /* ---------- 시작 ---------- */
 try{db.ref(NODE).on('value',s=>{OV=s.val()||{};rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty}};
+window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText}};
 })();

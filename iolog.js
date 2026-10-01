@@ -82,7 +82,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.01j';
+const IO_VER='2026.10.01m';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -486,6 +486,7 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-jobs .h{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:13px;margin-bottom:4px}.iog-jobs .h small{font-weight:600;color:var(--dm-muted)}
 .iog-jobs .j{display:flex;justify-content:space-between;gap:8px;color:var(--dm-muted);border-top:1px dashed var(--dm-line);padding:5px 0}
 .iog-jobs .j span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.iog-jobs .j b{color:var(--dm-ink);white-space:nowrap}
+.iog-jobs .j small{display:block;font-size:11px;color:var(--dm-muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iog-jobs .j.as span:first-child::before{content:'AS ';color:var(--red);font-weight:800}.iog-jobs .j b.miss{color:var(--dm-amber)}.iog-jobs .j b.free{color:var(--dm-blue)}
 .iog-jobs .sum{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--dm-line);padding-top:6px;margin-top:2px;font-weight:800}
 .iog-sectionlabel{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;font-weight:800}
@@ -1210,11 +1211,10 @@ function reviewHtml(){
 function successHtml(){
   const d=DONE;const other=d.type==='in'?'out':'in';
   return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장${d.wdate&&d.wdate!==kstDate(0)?' · <b>'+esc(fmtMD(d.wdate))+' 것</b>':''}<br>팀 카드에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.${d.type==='in'?'<br><b>반납으로 이번 순환이 닫혔어요</b> — 카드에서 로스를 확인하세요.':''}</p>
-    <button type="button" class="iog-button primary full" onclick="ioDoneShare()">그날 기록 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
-    <button type="button" class="iog-button full" onclick="ioOpen('${other}')">이어서 ${TYPE[other].btn} 기록</button>
+    <button type="button" class="iog-button primary full" onclick="ioDoneShare()">보고 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
     <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기 · 팀 카드에서 확인</button></div>`;
 }
-function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(d)ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // 내일 것 실은 건 오늘 화면에 '내일 실은 것'으로 같이
+function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(!d)return;try{if(window.ioCycle&&ioCycle.report&&d.vehicle){ioCycle.report(d.vehicle);return}}catch(e){}ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // v31: 제출 직후엔 그 차량 순환 보고 화면(한 화면 스크린샷용), iocycle 없으면 옛 그날 화면
 function ioDoneAdmin(){$('ioOv').classList.remove('show');DONE=null;ioAdminOpen()}
 function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장, 반납 = 이번 순환에서 돈 현장 + 판매갯수 (iocycle 있으면 순환 기준, 없으면 작업일 기준)
   if(!F.vehicle||F.custom)return '';
@@ -1234,7 +1234,7 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
   let cy=null;try{if(window.ioCycle)cy=ioCycle.latestOf(F.vehicle).cur}catch(e){}
   if(cy&&cy.open&&cy.jobs.length){
     const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
-    return `<div class="iog-jobs"><div class="h"><span>이번 순환에 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${esc(fmtMD(r.date))} ${esc(r.addr)}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div></div>`;
+    return `<div class="iog-jobs"><div class="h"><span>이번 순환에 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${r.isAs?'':esc(r.time||'')+' '}${esc(r.addr)}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div></div>`;
   }
   if(cy&&cy.open)return `<div class="iog-jobs"><div class="h"><span>이번 순환</span><small>출고 ${cy.out}장 · 연결된 시공 아직 없음</small></div></div>`;
   const d=F.wdate||kstDate(0);const jb=jobsOf(F.vehicle,addDays(d,-1),d);

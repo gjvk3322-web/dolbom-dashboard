@@ -40,19 +40,19 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.09.30a';
+const IA_VER='2026.10.01b';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
 const REG={bs:{n:'부산',veh:'vehicles'},gg:{n:'경기',veh:'gg_vehicles'}};
 const RKS=['bs','gg'];
-const ROOT='io_admin';
+const ROOT=X.beta?'io_admin_beta':'io_admin';
 const MAX_DAYS=31;
 // 두께: stock.html PR 배지와 같은 값 (500매트 22T · 1000매트 22T · 1000매트 17T)
 const PID_SPEC={'500':{size:'500',thick:'22T'},'1000_22':{size:'1M',thick:'22T'},'1000_17':{size:'1M',thick:'17T'}};
 const COLOR_ORD=['모던','마블','코튼','베이지'];
-const AGG_HEAD=['집계일','지역·창고','규격','제품명·색상','두께','부위','입고 장수','출고 장수','창고 증감'];
-const AGG_HEAD_S=['날짜','지역','규격','색상','두께','부위','입고','출고','증감']; // 폰 화면용 짧은 머리글(복사되는 제목 행은 항상 AGG_HEAD)
+const AGG_HEAD=['집계일','지역·창고','규격','제품명·색상','두께','부위','반납(입고) 장수','출고 장수','창고 증감'];
+const AGG_HEAD_S=['날짜','지역','규격','색상','두께','부위','반납','출고','증감']; // 폰 화면용 짧은 머리글(복사되는 제목 행은 항상 AGG_HEAD)
 const DET_HEAD=['기록 ID','실제 이동일시','시공 예정일','작성일시','지역·창고','차량','제출자','입고·출고','제품','부위','박스','낱장','박스당 장수','환산 장수','메모','사진','수정 여부'];
 
 /* ---------- 상태 ---------- */
@@ -301,7 +301,7 @@ function resub(){
   // 작성일(date) 색인으로 읽음. 작업일 기준: 토요일 저녁에 실은 월요일 것(−2일)·다음 날 아침 입고(+1일)·지연 입력까지 넉넉히 / 이동일 기준: 자정 걸친 제출 대비 하루씩
   const qa=U.addDays(S.from,S.basis==='work'?-4:-1),qb=U.addDays(S.to,S.basis==='work'?7:1);
   scopeRks().forEach(rk=>{
-    sub(db.ref('io_logs/'+rk).orderByChild('date').startAt(qa).endAt(qb),snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});S.data[rk]=o;S.loaded['d'+rk]=1;renderBody()});
+    sub(db.ref((X.beta?'io_logs_beta/':'io_logs/')+rk).orderByChild('date').startAt(qa).endAt(qb),snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});S.data[rk]=o;S.loaded['d'+rk]=1;renderBody()});
     sub(db.ref(REG[rk].veh),snap=>{S.veh[rk]=snap.val()||{};S.loaded['v'+rk]=1;renderFilters();renderBody()});
     sub(db.ref(ROOT+'/reflect/'+rk).orderByKey().startAt(S.from).endAt(S.to),snap=>{S.reflect[rk]=snap.val()||{};renderBody()});
     sub(db.ref(ROOT+'/nomove/'+rk).orderByKey().startAt(S.from).endAt(S.to),snap=>{S.nomove[rk]=snap.val()||{};renderBody()});
@@ -310,7 +310,7 @@ function resub(){
 }
 function fetchExtras(rk){ // 이동일 지정으로 이 기간에 들어온 기록 중 작성일 창 밖에 있는 것
   Object.keys(S.datefix[rk]||{}).forEach(id=>{const f=S.datefix[rk][id];if(!f||!inRange(f.date)||S.data[rk][id]||S.extra[rk][id])return;
-    try{db.ref('io_logs/'+rk+'/'+id).once('value').then(s=>{const v=s.val();if(v){S.extra[rk][id]=v;renderBody()}}).catch(()=>{})}catch(e){}});
+    try{db.ref((X.beta?'io_logs_beta/':'io_logs/')+rk+'/'+id).once('value').then(s=>{const v=s.val();if(v){S.extra[rk][id]=v;renderBody()}}).catch(()=>{})}catch(e){}});
 }
 
 /* ---------- 껍데기 · CSS (v2 — 카드형 화면) ---------- */
@@ -635,10 +635,10 @@ function cardHTML(v,i){
   const R=v.recon;const chip=chipOf(v);const month=S.mode==='month';const day=isDay();
   const m=(lab,val,cls)=>`<div><span>${lab}</span><b class="${cls||''}">${val}</b><small>${val==='–'?'':'장'}</small></div>`;
   let metrics='',foot=[];
-  if(month&&R){metrics=m('차로 출고',R.out)+m('보고 사용',R.sold)+m('사무실 반납',R.inn)+m('순차이',R.decDays?sgn(R.net):'–',R.net>0?'ia-loss':R.decDays?'':'dimv');
+  if(month&&R){metrics=m('출고',R.out)+m('사용',R.sold)+m('반납',R.inn)+m('순차이',R.decDays?sgn(R.net):'–',R.net>0?'ia-loss':R.decDays?'':'dimv');
     if(R.days)foot.push(`판정 <b>${R.decDays}일</b>${R.undDays?` · 미판정 <b>${R.undDays}일</b>`:''}`);if(R.lossPos||R.stockNeg)foot.push(`안 돌아옴 <b>+${R.lossPos}</b> · 차 재고 사용 <b>−${R.stockNeg}</b>`)}
   else{const has=R&&R.st!=='nosold';const diff=has?v.outQ-v.inQ-R.sold:null;
-    metrics=m('차로 출고',v.outQ)+m('보고 사용',has?R.sold:'–',has?'':'dimv')+m('사무실 반납',v.inQ)+m('단순 차이',has?sgn(diff):'–',!has?'dimv':R.decided?(diff>0?'ia-loss':diff===0?'ia-fit':'ia-hold'):'dimv');
+    metrics=m('출고',v.outQ)+m('사용',has?R.sold:'–',has?'':'dimv')+m('반납',v.inQ)+m('차이',has?sgn(diff):'–',!has?'dimv':R.decided?(diff>0?'ia-loss':diff===0?'ia-fit':'ia-hold'):'dimv');
     if(day&&R){let rs=null;try{rs=X.reasonOf(v.plate,S.from)}catch(e){}
       if(rs)foot.push(`사유 <b>${esc(rs.reason||'')}</b>${rs.note?' · '+esc(rs.note):''}`);else if(R.st==='loss'||R.st==='carstock'||R.st==='prod')foot.push('<span class="ia-hold">사유를 적어주세요</span>');
       if(R.decided&&R.byProd&&R.byProd.length&&R.st!=='ok')foot.push('제품별 차이 '+R.byProd.map(z=>`<b>${esc(z.k)} ${sgn(z.diff)}</b>`).join(' · '));
@@ -659,6 +659,7 @@ function renderBody(){
   const loading=!S.loaded['d'+HOME];const day=isDay();const adm=X.admin();
   let h='';
   if(S.err)h+=`<div class="ia-err">${esc(S.err)}</div>`;
+  if(X.beta)h+=`<div class="ia-notice">${ic('alert')}<div class="c"><strong>🧪 테스트 화면</strong> · 여기서 기록한 건 실제 재고·시트에 안 들어가요. 실제 입력은 원래 스케줄러에서.</div></div>`;
   let ob={n:0};try{ob=X.outbox()}catch(e){}
   if(ob.n)h+=`<div class="ia-notice${ob.stuck||ob.err?' bad':''}">${ic('alert')}<div class="c"><strong>전송 대기 ${ob.n}건</strong>${ob.err?' · '+esc(ob.err):''}<br><span>수량은 이미 반영됐고 사진·시트 전송만 남았어요.</span></div><button type="button" class="ia-button quiet small" onclick="ioFlush(true)">${ob.flushing?'전송 중…':'지금 보내기'}</button></div>`;
   if(M.flagged.length)h+=`<div class="ia-notice${M.excluded.length?' bad':''}">${ic('alert')}<div class="c"><strong>확인 필요 ${M.flagged.length}건</strong> · 집계에서 빠진 기록 ${M.excluded.length}건 · 참고 ${M.flagged.length-M.excluded.length}건</div><button type="button" class="ia-button quiet small" onclick="ioAdmin.f('tab','flag')">보기</button></div>`;
@@ -669,7 +670,7 @@ function renderBody(){
   else if(S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`;
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
-  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<br>입출고 ${esc(X.ver||'')} · 보고 사용 = 그날 시공보고의 판매갯수 합(자동) · 단순 차이 = 차로 출고 − 보고 사용 − 사무실 반납. 0이면 실은 것에서 쓴 만큼 빼고 다 가져온 거예요. 출고는 다음 시공일 카드로 들어가고, 입고(반납)를 찍어야 그날 차이가 확정돼요. 다 써서 남은 게 없는 날은 입고 없이도 맞은 걸로 봐요.${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
+  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<br>입출고 ${esc(X.ver||'')} · 사용 = 시공보고 판매갯수 합(자동, AS 무상분 포함) · 로스 = 출고 − 사용 − 반납. 출고는 반납 전까지 누적되고, 반납을 찍어야 그 순환의 로스가 확정돼요. 다 써서 남은 게 없으면 [반납 0장].${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
   el.innerHTML=h;
   const ta=$('iaTsv');if(ta)ta.value=currentTSV(M);
 }
@@ -682,29 +683,29 @@ function panelHTML(M,loading){
   else if(S.basis==='work'&&isDay()){const list=(sel?[sel]:M.veh).filter(v=>v.recon&&v.recon.st!=='none'&&v.recon.st!=='nosold');
     if(list.length){const sold=list.reduce((a,v)=>a+v.recon.sold,0);const dec=list.filter(v=>v.recon.decided);const loss=dec.reduce((a,v)=>a+Math.max(0,v.recon.diff),0);
       use=`<span>사용<b>${sold}</b>장</span><span>안 돌아옴<b class="${loss?'ia-loss':''}">${dec.length?loss:'–'}</b>${dec.length?'장':''}${dec.length<list.length?` <span class="ia-hold">(${list.length-dec.length}대 대기)</span>`:''}</span>`}}
-  let h=`<div class="ia-panel" id="iaPanel"><div class="ia-panelhead"><div><h3>${sel?(sel.team?sel.team+'팀 · ':'')+esc(sel.plate)+(sel.who?' <span class="ia-tiny">'+esc(sel.who)+'</span>':''):'전체 차량 · 확정 입출고'}</h3><p class="ia-tiny">센터·사이드·코너·10T를 따로 집계해요.</p></div><div class="ia-totals"><span>입고<b>${tin}</b>장</span><span>출고<b>${tout}</b>장</span>${use}</div></div>
+  let h=`<div class="ia-panel" id="iaPanel"><div class="ia-panelhead"><div><h3>${sel?(sel.team?sel.team+'팀 · ':'')+esc(sel.plate)+(sel.who?' <span class="ia-tiny">'+esc(sel.who)+'</span>':''):'전체 차량 · 확정 입출고'}</h3><p class="ia-tiny">센터·사이드·코너·10T를 따로 집계해요.</p></div><div class="ia-totals"><span>출고<b>${tout}</b>장</span><span>반납<b>${tin}</b>장</span>${use}</div></div>
     <div class="ia-tabs"><button type="button" class="t${S.tab==='sum'?' on':''}" onclick="ioAdmin.f('tab','sum')">제품별 합계</button><button type="button" class="t${S.tab==='rec'?' on':''}" onclick="ioAdmin.f('tab','rec')">제출 원본 ${M.view.length}</button>${M.flagged.length?`<button type="button" class="t${S.tab==='flag'?' on':''}" onclick="ioAdmin.f('tab','flag')">확인 필요 ${M.flagged.length}</button>`:''}
       ${S.vehicle?`<button type="button" class="ia-button quiet small" onclick="ioAdmin.f('vehicle','${esc(S.vehicle)}')">전체 보기</button>`:''}<span class="sp"></span>
       ${S.tab==='rec'?`<label><input type="checkbox" ${S.showOff?'checked':''} onchange="ioAdmin.f('showOff',this.checked)">취소·제외도 보기 (${M.excluded.length+M.voids.length})</label><label><input type="checkbox" ${S.fullCols?'checked':''} onchange="ioAdmin.f('full',this.checked)">전체 열</label>`:''}</div>`;
   if(S.tab==='flag')h+=flaggedHTML(M);
   else if(S.tab==='rec')h+=(M.view.length||(S.showOff&&M.detOff.length))?(S.fullCols?fullTable(M):recTable(M)):emptyHTML(M,sel,loading);
   else h+=rows.length?sumTable(M):emptyHTML(M,sel,loading);
-  h+=`<div class="ia-tablefoot"><span>${M.view.length}건의 제출 · ${rows.length}개 품목·부위${M.excluded.length?` · <span style="color:var(--red)">집계 제외 ${M.excluded.length}건</span>`:''}${M.voids.length?` · 취소 ${M.voids.length}건`:''}</span><span>단위: 장 · 증감 = 입고 − 출고 (재고·로스 아님)</span></div></div>`;
+  h+=`<div class="ia-tablefoot"><span>${M.view.length}건의 제출 · ${rows.length}개 품목·부위${M.excluded.length?` · <span style="color:var(--red)">집계 제외 ${M.excluded.length}건</span>`:''}${M.voids.length?` · 취소 ${M.voids.length}건`:''}</span><span>단위: 장 · 증감 = 반납 − 출고 (창고 기준 · 재고·로스 아님)</span></div></div>`;
   return h;
 }
 function emptyHTML(M,sel,loading){
   if(loading)return `<div class="ia-empty">${ic('inbox')}<strong>불러오는 중…</strong></div>`;
   const day=isDay();const adm=X.admin();const wait=sel&&sel.state==='wait';
-  const entry=sel?`<div class="ia-acts" style="max-width:420px;margin:16px auto 0"><button type="button" class="ia-button primary" onclick="ioOpen('out','${esc(sel.plate)}')">${ic('truck')} 차로 출고 기록</button><button type="button" class="ia-button" onclick="ioOpen('in','${esc(sel.plate)}')">${ic('inbox')} 사무실로 입고 기록</button></div>`:'';
+  const entry=sel?`<div class="ia-acts" style="max-width:420px;margin:16px auto 0"><button type="button" class="ia-button primary" onclick="ioOpen('out','${esc(sel.plate)}')">${ic('truck')} 출고</button><button type="button" class="ia-button" onclick="ioOpen('in','${esc(sel.plate)}')">${ic('inbox')} 반납</button></div>`:'';
   if(sel&&sel.nomove)return `<div class="ia-empty">${ic('ok')}<strong>입출고 없음으로 확인됨</strong><p class="ia-tiny">${esc(sel.nomove.by||'')} · ${esc(String(sel.nomove.at||'').slice(5,16))}</p>${entry}${adm?`<div style="margin-top:12px"><button type="button" class="ia-button small" onclick="ioAdmin.nomove(0)">확인 해제</button></div>`:''}</div>`;
   return `<div class="ia-empty">${ic('inbox')}<strong>${wait?'아직 제출된 기록이 없어요':'집계할 입출고가 없어요'}</strong><p class="ia-tiny">${wait?'0장으로 처리하지 않고 확인을 기다려요.':sel?'':'팀 카드를 눌러 기록하거나 다른 날짜를 골라보세요.'}</p>${entry}${wait&&day&&adm?`<div style="margin-top:12px"><button type="button" class="ia-button small" onclick="ioAdmin.nomove(1)">입출고 없음 확인</button></div>`:''}</div>`;
 }
 function sumTable(M){
   const day=isDay()||S.mode==='month';const cols=day?5:6;
-  let h=`<div class="ia-tw"><table class="ia-tb agg"><thead><tr>${day?'':'<th>날짜</th>'}<th>제품</th><th>부위</th><th class="r">입고</th><th class="r">출고</th><th class="r">증감</th></tr></thead><tbody>`;
+  let h=`<div class="ia-tw"><table class="ia-tb agg"><thead><tr>${day?'':'<th>날짜</th>'}<th>제품</th><th>부위</th><th class="r">출고</th><th class="r">반납</th><th class="r">증감</th></tr></thead><tbody>`;
   M.agg.forEach((r,i)=>{const d=r.in-r.out;const open=S.drill[r.key];
     const nb=(col,v)=>v?`<button type="button" class="ia-num ${col}${open===col?' on':''}" onclick="ioAdmin.drill(${i},'${col}')" title="어떤 기록이 들어갔는지 보기">${v}</button>`:'<span class="ia-num z">0</span>';
-    h+=`<tr>${day?'':`<td>${esc(U.fmtMD(r.date))} <span class="dim">${esc(U.dowOf(r.date))}</span></td>`}<td class="pn">${esc(rowName(r))}${r.shared?'<small>17T·22T 공용</small>':''}</td><td>${esc(r.part)}</td><td class="r">${nb('in',r.in)}</td><td class="r">${nb('out',r.out)}</td><td class="r">${d>0?'+':''}${d}</td></tr>`;
+    h+=`<tr>${day?'':`<td>${esc(U.fmtMD(r.date))} <span class="dim">${esc(U.dowOf(r.date))}</span></td>`}<td class="pn">${esc(rowName(r))}${r.shared?'<small>17T·22T 공용</small>':''}</td><td>${esc(r.part)}</td><td class="r">${nb('out',r.out)}</td><td class="r">${nb('in',r.in)}</td><td class="r">${d>0?'+':''}${d}</td></tr>`;
     if(open){const src=r.src.filter(s=>s.type===open);
       h+=`<tr><td colspan="${cols}" style="padding-top:0"><div class="ia-dl"><span class="ia-tiny">${TYPE[open].n} ${r[open]}장 · 제출 근거 ${src.length}건</span>${src.map(s=>`<div><span class="q">${s.q}장</span><span><b>${esc(s.vehicle)}</b> ${esc(s.worker)}</span><span class="ia-tiny">${esc(String(s.at).slice(5,16))} · ${s.box}박스 + ${s.ea}장${s.per?' (당시 1박스='+s.per+'장)':''}${r.shared?' · '+esc(s.product)+' 밑에 입력':''}</span><span class="mono" style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--dm-muted)">${esc(s.id)}</span></div>`).join('')}</div></td></tr>`}
   });
@@ -779,8 +780,8 @@ function cardOpen(i){
   const need=day&&R&&(R.st==='loss'||R.st==='carstock'||R.st==='prod');
   const nums=S.mode==='month'&&R?`출고 <b>${R.out}</b> · 반납 <b>${R.inn}</b> · 사용 <b>${R.sold}</b> · 순차이 <b>${R.decDays?sgn(R.net):'–'}</b>`:`출고 <b>${v.outQ}</b> · 반납 <b>${v.inQ}</b>${R&&R.st!=='nosold'?` · 사용 <b>${R.sold}</b> · 차이 <b>${sgn(v.outQ-v.inQ-R.sold)}</b>`:''}`;
   md(`<h3>${cardTitle(v)} <span class="ia-status ${chip[0]}" style="margin-left:6px">${chip[1]}</span></h3><div class="ia-tiny">${esc(cardSub(v))}</div>
-    <div class="ia-acts"><button type="button" class="ia-button${R&&R.st==='beforein'?'':' primary'}" onclick="ioAdmin.entry('out')">${ic('truck')} 차로 출고 기록</button><button type="button" class="ia-button${R&&R.st==='beforein'?' primary':''}" onclick="ioAdmin.entry('in')">${ic('inbox')} 사무실로 입고 기록</button></div>
-    ${R&&R.st==='beforein'?`<div class="ia-tiny" style="margin-top:8px;color:var(--dm-amber)">남은 것을 내리고 <b>입고</b>를 찍어야 이 날 차이(로스)가 계산돼요.</div>`:''}
+    <div class="ia-acts"><button type="button" class="ia-button${R&&R.st==='beforein'?'':' primary'}" onclick="ioAdmin.entry('out')">${ic('truck')} 출고</button><button type="button" class="ia-button${R&&R.st==='beforein'?' primary':''}" onclick="ioAdmin.entry('in')">${ic('inbox')} 반납</button></div>
+    ${R&&R.st==='beforein'?`<div class="ia-tiny" style="margin-top:8px;color:var(--dm-amber)">남은 것을 내리고 <b>반납</b>을 찍어야 이 날 차이(로스)가 계산돼요.</div>`:''}
     <div class="box">${esc(rangeLabel())} — ${nums}${rs?`<br>사유 <b>${esc(rs.reason||'')}</b>${rs.note?' · '+esc(rs.note):''}`:''}${R&&R.st==='miss'?`<br><span style="color:var(--dm-amber)">시공보고 미입력 ${R.miss}건 — 보고가 들어오면 사용·차이가 자동으로 채워져요.</span>`:''}</div>
     <div class="bt"><button type="button" class="ia-btn" onclick="ioAdmin.cardFilter()">이 차량 내역만 보기</button>${need?`<button type="button" class="ia-btn" onclick="ioAdmin.cardReason()">${rs?'사유 수정':'사유 입력'}</button>`:''}${adm&&day&&v.state==='wait'?`<button type="button" class="ia-btn" onclick="ioAdmin.cardNomove(1)">입출고 없음 확인</button>`:''}${adm&&day&&v.state==='nomove'?`<button type="button" class="ia-btn" onclick="ioAdmin.cardNomove(0)">없음 확인 해제</button>`:''}<button type="button" class="ia-btn" onclick="ioAdmin.mdClose()">닫기</button></div>`);
   S.cardKey=v.key;
