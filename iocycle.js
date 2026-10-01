@@ -25,7 +25,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01r';
+const CY_VER='2026.10.01s';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -36,6 +36,7 @@ let SEL=null;       // 모달이 잡은 순환 {plate,startTs}
 let HIST_OPEN={};   // 지난 순환 펼침 {plateKey:true}
 let REP=null;       // 보고 화면 {plate,startTs}
 let PSEL=(function(){try{return localStorage.getItem('io_person')||''}catch(e){return ''}})(); // 직원별 달력에서 고른 사람
+let PPL_OPEN=(function(){try{return localStorage.getItem('io_ppl_open')==='1'}catch(e){return false}})(); // 직원별 섹션 펼침 — 펼친 폰만 전체 기록을 내려받음
 
 /* ---------- 데이터 ---------- */
 function admin(){try{return X.admin()}catch(e){return false}}
@@ -400,14 +401,16 @@ function calHTML(name,ym,all){
     ${entries.length?`<div class="cy-led">${entries.slice().reverse().map(e=>`<div class="r"><span>${esc(U.fmtMD(e.date))} ${e.kind==='as'?'<span style="color:var(--dm-amber)">AS</span> ':''}${esc(e.note)}</span><b class="${e.amt<0?'bad':e.amt>0?'ok':''}">${e.amt>0?'+':''}${e.amt}</b></div>`).join('')}</div>`:''}</div>`;
 }
 function peopleSection(ym){
+  if(!PPL_OPEN)return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small><u style="cursor:pointer;color:var(--dm-blue)" onclick="ioCycle.pplToggle()">보기</u></small></div></div>`;
   loadAll();
   const {L,asLoading,asNoPrev}=ledgerAll();
   const names=emps().slice();Object.keys(L).forEach(n=>{if(names.indexOf(n)<0)names.push(n)});
   if(!names.length)return '';
   if(PSEL&&names.indexOf(PSEL)<0)PSEL='';
   const chips=names.map(n=>{const S=personSum(L[n]);const v=S.net;return `<span class="cy-chip${PSEL===n?' on':''}" onclick="ioCycle.person('${esc(n)}')">${esc(n)}<b class="${v<0?'bad':v>0?'ok':'dim'}">${L[n]?(v>0?'+':'')+v:'–'}</b></span>`}).join('');
-  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${MLOAD.all?'불러오는 중…':asLoading?'AS보고 확인 중…':'누적 · 로스 − / 자투리 +'}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''}</small></div><div class="cy-chips">${chips}</div>${PSEL?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
+  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${MLOAD.all?'불러오는 중…':asLoading?'AS보고 확인 중…':'누적 · 로스 − / 자투리 +'}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''} · <u style="cursor:pointer;color:var(--dm-blue)" onclick="ioCycle.pplToggle()">접기</u></small></div><div class="cy-chips">${chips}</div>${PSEL?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
 }
+function pplToggle(){PPL_OPEN=!PPL_OPEN;try{localStorage.setItem('io_ppl_open',PPL_OPEN?'1':'0')}catch(e){}rerender()}
 function person(n){PSEL=(PSEL===n)?'':n;try{localStorage.setItem('io_person',PSEL)}catch(e){}rerender()}
 
 /* ---------- 수정 모달 ---------- */
@@ -649,5 +652,5 @@ function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
 
 /* ---------- 시작 ---------- */
 try{db.ref(NODE).on('value',s=>{OV=s.val()||{};rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText}};
+window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText}};
 })();
