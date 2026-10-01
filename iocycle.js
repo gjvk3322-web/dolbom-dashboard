@@ -25,7 +25,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01p';
+const CY_VER='2026.10.01r';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -53,12 +53,11 @@ function teamNo(names,plate){ // 팀 번호: 차량 탭 사수가 속한 팀 > �
 function records(){try{return X.records().all||{}}catch(e){return {}}}
 let MREC={};        // 월별 기록 캐시 {YYYY-MM:{id:rec}} — 직원별 달력용 (iolog는 최근 14일만 들고 있어서 따로 읽음)
 let MLOAD={};
-function loadMonth(ym){ // 그 달(앞 3일 포함) 기록을 한 번 읽어 캐시
-  if(MREC[ym]||MLOAD[ym])return;MLOAD[ym]=1;
-  const from=U.addDays(ym+'-01',-3),to=ym+'-31';
-  try{db.ref('io_logs/'+RK).orderByChild('date').startAt(from).endAt(to).once('value').then(s=>{const o={};s.forEach(ch=>{o[ch.key]=ch.val()});MREC[ym]=o;delete MLOAD[ym];rerender()}).catch(()=>{MREC[ym]={};delete MLOAD[ym]})}catch(e){MREC[ym]={};delete MLOAD[ym]}
+function loadAll(){ // 순환 시작일(CY_START) 이후 전체 기록 — 직원별 누적 장부용. 한 번 읽고 캐시, 이후 변경은 iolog 실시간 기록과 병합
+  if(MREC.all||MLOAD.all)return;MLOAD.all=1;
+  try{db.ref('io_logs/'+RK).orderByChild('date').startAt(CY_START).once('value').then(s=>{const o={};s.forEach(ch=>{o[ch.key]=ch.val()});MREC.all=o;delete MLOAD.all;rerender()}).catch(()=>{MREC.all={};delete MLOAD.all})}catch(e){MREC.all={};delete MLOAD.all}
 }
-function recordsFor(ym){const o=Object.assign({},MREC[ym]||{});const live=records();Object.keys(live).forEach(k=>{o[k]=live[k]});return o}
+function recordsAll(){const o=Object.assign({},MREC.all||{});const live=records();Object.keys(live).forEach(k=>{o[k]=live[k]});return o}
 function jobs(){try{return X.jobs()}catch(e){return []}}
 function parseQty(q){const s=String(q||'');if(/자투리/.test(s))return 0;const m=s.match(/\d+/);return m?+m[0]:0}
 function recQty(r){return (r.items||[]).reduce((a,it)=>a+nn(it.total)+nn(it.tQty),0)}
@@ -365,16 +364,15 @@ function cardsHTML(M,S){
 }
 
 /* ---------- 직원별 로스 기록 (달력) ---------- */
-function ledgerFor(ym){ // {name:[{date,amt,kind,note,used}]} — amt: 로스 −, 자투리 +. 순환은 반납 작업일 기준, AS 시공하자 무상분은 이전 작업자에게 −
+function ledgerAll(){ // {name:[{date,amt,kind,note,used}]} — 순환 시작일 이후 누적. amt: 로스 −, 자투리 +. 순환은 반납 작업일 기준, 시공하자 AS 무상분은 이전 작업자에게 −
   const L={};const add=(n,e)=>{if(!n)return;(L[n]=L[n]||[]).push(e)};
-  const recs=recordsFor(ym);const from=ym+'-01',to=ym+'-31';let asLoading=false,asNoPrev=0;
+  const recs=recordsAll();const today=U.kstDate(0);let asLoading=false,asNoPrev=0;
   Object.keys(vehicles()).forEach(p=>{
-    const list=cyclesOf(p,recs);
-    list.forEach(c=>{if(c.open||!c.decided||c.toW<from||c.toW>to)return;
+    cyclesOf(p,recs).forEach(c=>{if(c.open||!c.decided||c.toW<CY_START)return;
       c.crew.forEach(n=>add(n,{date:c.toW,amt:-c.diff,kind:'cycle',note:p+' · 출고 '+c.out+' 사용 '+c.used+' 반납 '+c.inn,used:c.used,plate:p,startTs:c.startTs}))});
   });
   jobs().forEach(j=>{
-    if(!j||!jobOK(j)||j.date<from||j.date>to)return;
+    if(!j||!jobOK(j)||j.date<CY_START||j.date>today)return;
     if(!/^AS$/i.test(String(j.time||'').trim())||!/시공하자/.test(String(j.category||'')))return;
     const a=asOf(j.id);if(a===undefined){asLoading=true;return}
     if(!a||String(a.pay||'')!=='무료')return;
@@ -385,8 +383,9 @@ function ledgerFor(ym){ // {name:[{date,amt,kind,note,used}]} — amt: 로스 �
   Object.values(L).forEach(a=>a.sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:0));
   return {L,asLoading,asNoPrev};
 }
-function personSum(arr){const o={loss:0,scrap:0,as:0,net:0,n:0,used:0};(arr||[]).forEach(e=>{o.net+=e.amt;if(e.kind==='as')o.as+=-e.amt;else{o.n++;o.used+=e.used||0;if(e.amt<0)o.loss+=-e.amt;else o.scrap+=e.amt}});o.rate=o.used?Math.round((o.loss+o.as)/o.used*1000)/10:null;return o}
-function calHTML(name,ym,entries){
+function personSum(arr){const o={net:0,as:0,asN:0,n:0,used:0};(arr||[]).forEach(e=>{o.net+=e.amt;if(e.kind==='as'){o.as+=-e.amt;o.asN++}else{o.n++;o.used+=e.used||0}});o.rate=o.used&&o.net<0?Math.round(-o.net/o.used*1000)/10:(o.used?0:null);return o}
+function calHTML(name,ym,all){
+  const entries=(all||[]).filter(e=>e.date.slice(0,7)===ym);
   const y=+ym.slice(0,4),m=+ym.slice(5,7);const first=new Date(Date.UTC(y,m-1,1));const dow=first.getUTCDay();const days=new Date(Date.UTC(y,m,0)).getUTCDate();
   const byDay={};entries.forEach(e=>{const d=+e.date.slice(8,10);(byDay[d]=byDay[d]||{amt:0,as:false});byDay[d].amt+=e.amt;if(e.kind==='as')byDay[d].as=true});
   const today=U.kstDate(0);
@@ -394,20 +393,20 @@ function calHTML(name,ym,entries){
   for(let i=0;i<dow;i++)cells+='<div class="cy-cell off"></div>';
   for(let d=1;d<=days;d++){const ds=ym+'-'+String(d).padStart(2,'0');const b=byDay[d];
     cells+=`<div class="cy-cell${ds===today?' today':''}"><span class="n">${d}</span>${b?`<span class="v ${b.amt<0?'bad':b.amt>0?'ok':'zero'}">${b.amt>0?'+':''}${b.amt}</span>${b.as?'<span class="as">AS</span>':''}`:''}</div>`}
-  const S=personSum(entries);
-  return `<div class="cy-cal"><div class="ttl"><span>${esc(name)} · ${m}월</span><small>로스 − / 자투리 + · 공동작업 기준</small></div><div class="cy-grid">${cells}</div>
-    <div class="cy-sum"><div><span>로스</span><b class="${S.loss?'bad':''}">${S.loss?'−'+S.loss:'0'}</b></div><div><span>자투리</span><b class="${S.scrap?'ok':''}">${S.scrap?'+'+S.scrap:'0'}</b></div><div><span>하자 AS</span><b class="${S.as?'bad':''}">${S.as?'−'+S.as:'0'}</b></div><div><span>로스율</span><b class="${S.rate>3?'bad':''}">${S.rate==null?'–':S.rate+'%'}</b></div></div>
-    <div class="ia-tiny" style="margin-top:6px">순환 ${S.n}회 · 사용 ${S.used}장 · 로스율 = (로스 + 하자 AS) ÷ 사용</div>
-    ${entries.length?`<div class="cy-led">${entries.slice().reverse().map(e=>`<div class="r"><span>${esc(U.fmtMD(e.date))} ${e.kind==='as'?'<span style="color:var(--dm-amber)">AS</span> ':''}${esc(e.note)}</span><b class="${e.amt<0?'bad':e.amt>0?'ok':''}">${e.amt>0?'+':''}${e.amt}</b></div>`).join('')}</div>`:'<div class="ia-tiny" style="margin-top:8px">이 달 기록 없음</div>'}</div>`;
+  const S=personSum(all);const first0=(all&&all.length)?all[0].date:'';
+  return `<div class="cy-cal"><div class="ttl"><span>${esc(name)}</span><small>누적${first0?' · '+esc(U.fmtMD(first0))+'부터':''} · 로스 − / 자투리 +</small></div>
+    <div class="cy-sum" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div><span>로스 누적</span><b class="${S.net<0?'bad':S.net>0?'ok':''}">${S.net>0?'+':''}${S.net}</b>${S.as?`<span style="margin-top:3px">하자 AS −${S.as}장 ${S.asN}건 포함</span>`:''}</div><div><span>로스율</span><b class="${S.rate>3?'bad':''}">${S.rate==null?'–':S.rate+'%'}</b><span style="margin-top:3px">사용 ${S.used}장 기준</span></div></div>
+    <div class="ttl" style="margin-top:10px"><span>${m}월</span><small>순환 ${entries.filter(e=>e.kind==='cycle').length}회</small></div><div class="cy-grid">${cells}</div>
+    ${entries.length?`<div class="cy-led">${entries.slice().reverse().map(e=>`<div class="r"><span>${esc(U.fmtMD(e.date))} ${e.kind==='as'?'<span style="color:var(--dm-amber)">AS</span> ':''}${esc(e.note)}</span><b class="${e.amt<0?'bad':e.amt>0?'ok':''}">${e.amt>0?'+':''}${e.amt}</b></div>`).join('')}</div>`:''}</div>`;
 }
 function peopleSection(ym){
-  loadMonth(ym);
-  const {L,asLoading,asNoPrev}=ledgerFor(ym);
+  loadAll();
+  const {L,asLoading,asNoPrev}=ledgerAll();
   const names=emps().slice();Object.keys(L).forEach(n=>{if(names.indexOf(n)<0)names.push(n)});
   if(!names.length)return '';
   if(PSEL&&names.indexOf(PSEL)<0)PSEL='';
   const chips=names.map(n=>{const S=personSum(L[n]);const v=S.net;return `<span class="cy-chip${PSEL===n?' on':''}" onclick="ioCycle.person('${esc(n)}')">${esc(n)}<b class="${v<0?'bad':v>0?'ok':'dim'}">${L[n]?(v>0?'+':'')+v:'–'}</b></span>`}).join('');
-  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록 · ${+ym.slice(5,7)}월</span><small>${MLOAD[ym]?'불러오는 중…':asLoading?'AS보고 확인 중…':'이름을 누르면 달력'}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''}</small></div><div class="cy-chips">${chips}</div>${PSEL?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
+  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${MLOAD.all?'불러오는 중…':asLoading?'AS보고 확인 중…':'누적 · 로스 − / 자투리 +'}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''}</small></div><div class="cy-chips">${chips}</div>${PSEL?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
 }
 function person(n){PSEL=(PSEL===n)?'':n;try{localStorage.setItem('io_person',PSEL)}catch(e){}rerender()}
 
@@ -650,5 +649,5 @@ function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
 
 /* ---------- 시작 ---------- */
 try{db.ref(NODE).on('value',s=>{OV=s.val()||{};rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,ledgerFor,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText}};
+window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText}};
 })();
