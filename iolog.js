@@ -79,10 +79,13 @@
      입고는 그대로 '방금 끝난 시공의 남은 것'(10시 전에 내리면 직전 시공일 것)
    v23 (2026-09-20k) 다음 시공일 것을 '전날 오후'에 미리 싣는 운영에 맞춤 — 15시 전에 찍는 출고만 [오늘 시공 것 | ○/○ 시공 것 · 미리 싣기] 선택이 보임(15시 이후는 지금처럼 자동으로 다음 시공일).
      15시 전 기본값은 추측: 오늘 그 차량 시공이 없거나, 12시 이후인데 오후 시공이 없으면 '미리 싣기', 아니면 '오늘 시공 것'. 직원이 누르면 그 선택이 우선
+   v32 (2026-10-01v) 기록 수정 — 그 작업일에 이미 남긴 출고/반납이 있으면 카드의 [출고]/[반납]이 빈 폼 대신 그 기록을 채워서 열고, 저장하면 그 기록을 고침(Firebase 즉시, 카드·로스 바로 반영).
+     기존 사진은 유지(다시 촬영 가능), [따로 추가]로 같은 날 새 기록, [이 기록 취소]. 본인 기록(같은 폰)은 작업일 다음 날까지, 그 뒤엔 당번 모드(취소도 같은 규칙으로 — 예전 30분 제한 대체).
+     시트엔 ioEdit 액션으로 보내는데 IoLog.gs가 ioPing에 ioEdit:true 를 돌려줄 때만 전송(그 전엔 '시트 반영 대기'로 둠 — 모르는 액션이 새 행으로 들어가는 사고 방지). 고친 횟수·원래 값은 기록에 hist로 남고 보고 화면에 '수정 N회 · 원래 M장'
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.01u';
+const IO_VER='2026.10.01v';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -597,7 +600,7 @@ function draftKey(t){return 'io_draft_'+RK+'_'+t}
 function photoKey(t){return 'io_photo_'+RK+'_'+t}
 function formHasContent(){return !!F&&(!!P||F.items.some(it=>it.product||itemAny(it))||!!F.note)}
 function draftWrite(){ // 즉시 저장
-  if(!F||busy||!formHasContent())return;
+  if(!F||busy||F.edit||!formHasContent())return; // 수정 중엔 임시 저장 안 함(기록 자체가 원본)
   try{localStorage.setItem(draftKey(F.type),JSON.stringify({
     type:F.type,date:F.date,wdate:F.wdate,dateEdit:!!F.dateEdit,vehicle:F.vehicle,custom:!!F.custom,
     worker:F.worker||'',crew2:F.crew2||'',items:F.items,note:F.note||'',step:F.step||'veh',hasPhoto:!!P,savedAt:Date.now()
@@ -605,7 +608,7 @@ function draftWrite(){ // 즉시 저장
 }
 function draftSave(){clearTimeout(_dsT);_dsT=setTimeout(draftWrite,400)} // 타이핑 중엔 묶어서
 function photoDraftSave(){ // 사진은 스탬프 없는 원본(1280px)으로 — 복원 후 차량·시각이 바뀌어도 다시 찍힘
-  if(!F||!P)return;
+  if(!F||!P||F.edit)return;
   try{idbSet(photoKey(F.type),{data:baseDataURL(),at:P.at.getTime(),taken:P.taken||Date.now(),name:P.name||''})}catch(e){console.warn('[io] photo draft',e)}
 }
 function draftGet(t){
@@ -916,7 +919,17 @@ function itemLine(it){ // 저장된 기록(items 평탄화)용 — 제품 + 장�
 }
 function thumbUrl(id,w){return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(w||400)}
 function viewUrl(id){return 'https://drive.google.com/file/d/'+id+'/view'}
-function canVoid(r){if(admin())return true;return r.dev===devId()&&(Date.now()-(r.ts||0))<OWN_MIN*60000}
+function canFix(r){ // v32: 본인 기록(같은 폰)은 작업일 다음 날까지 수정·취소, 그 뒤엔 당번 모드 (예전엔 OWN_MIN분)
+  if(admin())return true;if(!r||r.dev!==devId())return false;
+  return kstDate(0)<=addDays(r.wdate||r.date||kstDate(0),1);
+}
+function canVoid(r){return canFix(r)}
+function recById(id){return LOGS[id]||(obGet().find(e=>e.kind==='log'&&e.rec&&e.rec.id===id)||{}).rec||null}
+function toFormItem(it){ // 저장된 항목(cBox/cEa/cQty…) → 입력 항목(cB/c…). 옛 기록(박스·낱장 없이 장수만)은 낱장으로
+  const o={product:it&&it.product||''};
+  PART.forEach(pt=>{const b=num(it&&it[pt.k+'Box']),e=num(it&&it[pt.k+'Ea']),q=num(it&&it[pt.k+'Qty']);o[pt.k+'B']=b;o[pt.k]=(!b&&!e&&q)?q:e});
+  return o;
+}
 
 function allRecords(){ // Firebase 기록 + 이 폰의 전송 대기 기록 합치기
   const ob=obGet();const local={};ob.forEach(e=>{if(e.kind==='log'&&e.rec)local[e.rec.id]={photo:e.payload&&e.payload.photo,rec:e.rec,tries:e.tries||0}});
@@ -1141,25 +1154,36 @@ function ioShareCopy(){
 
 /* ---------- 작성 (장 단위) ---------- */
 function newItem(){return {product:'',cB:0,c:0,sB:0,s:0,kB:0,k:0,tB:0,t:0}} // cB=센터 박스, c=센터 낱장 …
-function ioOpen(type,plate,wdate){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로). wdate: 카드가 정한 작업일(달력 날짜·순환 날짜) — 넘어오면 그대로 고정
+function ioOpen(type,plate,wdate,editId){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로). wdate: 카드가 정한 작업일(달력 날짜·순환 날짜) — 넘어오면 그대로 고정
+  // editId(v32): 그 날짜에 이미 남긴 기록 — 빈 폼 대신 그 기록을 채워서 열고, 저장하면 새 기록이 아니라 그 기록을 고침
   const t=type==='in'?'in':'out';
+  const r=editId?recById(editId):null;
+  if(editId&&!r){ioToast('기록을 찾지 못했어요. 새로고침 후 다시 열어주세요',true);return}
+  if(r&&!canFix(r)){ioToast(fmtMD(r.wdate||r.date)+' '+TYPE[r.type==='in'?'in':'out'].n+' 기록은 본인 폰에서 작업일 다음 날까지만 고칠 수 있어요. 그 뒤엔 당번 모드에서',true);return}
   const vs=Object.keys(vehicles());
   const lastV=localStorage.getItem('io_last_vehicle')||'';
-  const want=String(plate||'').trim();const reg=want?vs.find(p=>normPlate(p)===normPlate(want)):'';
+  const want=String(r?r.vehicle:plate||'').trim();const reg=want?vs.find(p=>normPlate(p)===normPlate(want)):'';
   const vehicle=reg||want||(vs.includes(lastV)?lastV:(vs.length===1?vs[0]:''));
   const w=wdOpts(t);
-  const fixedW=/^\d{4}-\d{2}-\d{2}$/.test(String(wdate||''));
-  const wd0=fixedW?String(wdate):wdDefault(t,vehicle);const c0=vehicle?defaultCrew(vehicle,wd0):[];
-  F={type:t,date:kstDate(0),wdate:wd0,fixedW,wopts:w.opts,wpick:fixedW,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:false,items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
+  const fixedW=!!r||/^\d{4}-\d{2}-\d{2}$/.test(String(wdate||''));
+  const wd0=r?(r.wdate||r.date):fixedW?String(wdate):wdDefault(t,vehicle);const c0=r?(Array.isArray(r.crew)&&r.crew.length?r.crew:[r.worker]).filter(Boolean):(vehicle?defaultCrew(vehicle,wd0):[]);
+  F={type:t,date:kstDate(0),wdate:wd0,fixedW,wopts:w.opts,wpick:fixedW,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:!!r,items:r?((r.items||[]).length?r.items.map(toFormItem):[newItem()]):[newItem()],note:r?String(r.note||''):'',step:'veh',stage:'edit',draft:r?null:draftGet(t),
+     edit:r?{id:r.id,at:r.at||'',photoId:r.photoId||'',pending:!!obGet().find(e=>e.kind==='log'&&e.rec&&e.rec.id===r.id),zero:!!r.zero,editN:num(r.editN)}:null};
   P=null;busy=false;DONE=null;
   $('ioFoot').style.display='';
-  const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+' 기록';
+  const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+(r?' 기록 수정':' 기록');
   renderForm();
   $('ioOv').classList.add('show');$('ioOv').scrollTop=0;
 }
+function ioEditNew(){ // 수정 화면에서 '따로 추가' — 같은 날짜에 새 기록으로 (같은 날 두 번 실은 경우)
+  if(!F||!F.edit||busy)return;const t=F.type,v=F.vehicle,w=F.wdate;
+  F.edit=null;F.items=[newItem()];F.note='';F.crewTouched=false;const c0=v?defaultCrew(v,w):[];F.worker=c0[0]||'';F.crew2=c0[1]||'';P=null;
+  const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+' 기록';renderForm();try{$('ioOv').scrollTop=0}catch(e){}
+}
+function ioVoidFromForm(){if(!F||!F.edit||busy)return;const id=F.edit.id;ioClose();ioVoid(id)}
 function ioClose(){
   if(busy)return;
-  if(F&&formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
+  if(F&&!F.edit&&formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
   $('ioOv').classList.remove('show');F=null;P=null;DONE=null;$('ioFile').value='';
 }
 function ioType(t){
@@ -1180,7 +1204,7 @@ function formMissing(){ // 다음으로 못 넘어가는 이유 {sec,msg} — �
     if(!it.product)return {sec:'ioPc_'+i,msg:'제품 '+(i+1)+'을 골라주세요'};
     if(!any)return {sec:'ioPc_'+i,msg:'제품 '+(i+1)+'의 수량이 비어 있어요'};n++}
   if(!n||!formTotal())return {sec:'ioItems',msg:'수량을 1장 이상 입력해주세요'};
-  if(!P)return {sec:'ioSecPhoto',msg:'사진을 촬영하면 다음으로 넘어갈 수 있어요'};
+  if(!P&&!(F.edit&&F.edit.photoId))return {sec:'ioSecPhoto',msg:'사진을 촬영하면 다음으로 넘어갈 수 있어요'}; // 수정 땐 기존 사진 유지 가능
   return null;
 }
 function refreshSteps(){ // v15: 아래 고정 바(제품 수·합계·버튼·안내) 갱신 — 입력할 때마다 불림
@@ -1202,15 +1226,16 @@ function ioEdit(){if(!F||busy)return;F.stage='edit';renderForm();try{$('ioOv').s
 function ioVehPick(v){if(v==='__custom'){ioVehicleCustom();return}if(v){ioVehicle(v);return}F.custom=false;F.vehicle='';renderForm();draftSave()}
 function reviewHtml(){
   const tot=formTotal();const items=F.items.filter(it=>it.product&&itemAny(it));
-  return `<div class="iog-review"><span class="iog-st ok">최종 확인</span><div class="iog-reviewtitle">${tot}장, ${F.type==='out'?'차에 싣는 게':'사무실에 내리는 게'} 맞나요?</div><p class="iog-tiny">숫자와 차량을 한 번만 더 확인해주세요.</p>
-    <dl class="iog-reviewmeta"><dt>차량</dt><dd>${esc(F.vehicle)}${F.worker?' · '+esc([F.worker,F.crew2].filter(Boolean).join(' / ')):''}</dd><dt>구분</dt><dd>${RN} ${F.type==='out'?'출고 · 차에 실음':'반납 · 사무실에 내림'}</dd>${F.wdate&&F.wdate!==kstDate(0)?`<dt>쓰는 날</dt><dd>${esc(fmtD(F.wdate))} 시공 것</dd>`:''}<dt>사진</dt><dd>${P?'1장 첨부':'없음'}</dd></dl>
+  const E=F.edit;
+  return `<div class="iog-review"><span class="iog-st ok">최종 확인</span><div class="iog-reviewtitle">${E?`${tot}장으로 고치는 게 맞나요?`:`${tot}장, ${F.type==='out'?'차에 싣는 게':'사무실에 내리는 게'} 맞나요?`}</div><p class="iog-tiny">${E?esc(String(E.at||'').slice(5,16))+' 기록을 이 내용으로 바꿔요. 카드와 로스 계산에 바로 반영돼요.':'숫자와 차량을 한 번만 더 확인해주세요.'}</p>
+    <dl class="iog-reviewmeta"><dt>차량</dt><dd>${esc(F.vehicle)}${F.worker?' · '+esc([F.worker,F.crew2].filter(Boolean).join(' / ')):''}</dd><dt>구분</dt><dd>${RN} ${F.type==='out'?'출고 · 차에 실음':'반납 · 사무실에 내림'}</dd>${F.wdate&&F.wdate!==kstDate(0)?`<dt>쓰는 날</dt><dd>${esc(fmtD(F.wdate))} 시공 것</dd>`:''}<dt>사진</dt><dd>${P?(E?'새로 촬영':'1장 첨부'):E&&E.photoId?'기존 사진 유지':'없음'}</dd></dl>
     ${items.map(it=>`<div class="iog-reviewitem"><b>${esc(it.product)}</b><div class="iog-recordparts">${PART.filter(pt=>itemQty(it,pt.k)>0).map(pt=>pt.n+' '+itemQty(it,pt.k)+'장'+(itemBox(it,pt.k)?` <i>(${itemBox(it,pt.k)}박스+${itemEa(it,pt.k)})</i>`:'')).join(' · ')}</div></div>`).join('')}
     ${F.note?`<p class="iog-tiny" style="margin-top:12px;white-space:pre-wrap">${esc(F.note)}</p>`:''}
     <button type="button" class="iog-button quiet full" style="margin-top:18px" onclick="ioEdit()">돌아가서 수정</button></div>`;
 }
 function successHtml(){
   const d=DONE;const other=d.type==='in'?'out':'in';
-  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>기록을 남겼어요.</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장${d.wdate&&d.wdate!==kstDate(0)?' · <b>'+esc(fmtMD(d.wdate))+' 것</b>':''}<br>팀 카드에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.${d.type==='in'?'<br><b>반납으로 이번 순환이 닫혔어요</b> — 카드에서 로스를 확인하세요.':''}</p>
+  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>${d.edit?'기록을 고쳤어요.':'기록을 남겼어요.'}</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장${d.wdate&&d.wdate!==kstDate(0)?' · <b>'+esc(fmtMD(d.wdate))+' 것</b>':''}<br>${d.edit?'팀 카드와 로스 계산에 바로 반영돼요.':'팀 카드에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.'}${d.type==='in'&&!d.edit?'<br><b>반납으로 이번 순환이 닫혔어요</b> — 카드에서 로스를 확인하세요.':''}</p>
     <button type="button" class="iog-button primary full" onclick="ioDoneShare()">보고 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
     <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기 · 팀 카드에서 확인</button></div>`;
 }
@@ -1257,7 +1282,8 @@ function renderForm(){
   if(F.stage==='review'){$('ioForm').innerHTML=reviewHtml();refreshSteps();return}
   const vs=vehicles();const plates=Object.keys(vs);const emps=employees();
   const mt=(t,ico,sub)=>`<button type="button" class="iog-movetype ${t}" aria-pressed="${F.type===t}" onclick="ioType('${t}')">${gi(ico)}<span><strong>${TYPE[t].btn}</strong>${sub?`<small>${sub}</small>`:''}</span></button>`;
-  let h=`${F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
+  const E=F.edit;const hasPhoto=!!(P||(E&&E.photoId));
+  let h=`${E?`<div class="io-draft"><span class="g">${esc(String(E.at||'').slice(5,16))}에 남긴 ${TYPE[F.type].n} 기록을 고치는 중${E.editN?' · 수정 '+E.editN+'회':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
   <div class="iog-vehicle" id="ioSecVeh"><span class="iog-vehicleicon">${gi('truck')}</span>
     <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
       ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
@@ -1267,9 +1293,10 @@ function renderForm(){
   <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
   <div id="ioItems"></div>
   <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
-  <div class="iog-sectionlabel" id="ioSecPhoto"><span>적재 사진</span><span class="iog-st${P?' ok':''}">${P?'사진 1장':'필수'}</span></div>
-  <div class="iog-photo${P?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`${gi('camera')}<span><strong>사진 촬영하기</strong><small>박스와 낱장이 함께 보이는 사진</small></span>`}</div>
-  <details class="iog-memonote"${F.note?' open':''}><summary>메모 남기기 <span class="iog-tiny">선택</span></summary><textarea id="ioNote" placeholder="예) 오후 현장용 추가 적재" maxlength="200" oninput="ioNote(this.value)">${esc(F.note)}</textarea></details>`;
+  <div class="iog-sectionlabel" id="ioSecPhoto"><span>적재 사진</span><span class="iog-st${hasPhoto?' ok':''}">${P?'사진 1장':E&&E.photoId?'기존 사진':'필수'}</span></div>
+  <div class="iog-photo${hasPhoto?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:E&&E.photoId?`<img src="${thumbUrl(E.photoId,800)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`${gi('camera')}<span><strong>사진 촬영하기</strong><small>박스와 낱장이 함께 보이는 사진</small></span>`}</div>
+  <details class="iog-memonote"${F.note?' open':''}><summary>메모 남기기 <span class="iog-tiny">선택</span></summary><textarea id="ioNote" placeholder="예) 오후 현장용 추가 적재" maxlength="200" oninput="ioNote(this.value)">${esc(F.note)}</textarea></details>
+  ${E?`<button type="button" class="iog-button quiet full" style="margin-top:14px" onclick="ioVoidFromForm()">이 기록 취소</button>`:''}`;
   $('ioForm').innerHTML=h;
   renderItems();
   if(P)drawPreview();
@@ -1399,6 +1426,7 @@ async function ioSubmit(){
     if(!any){goStep('ioPc_'+i,'제품 '+(i+1)+'의 수량이 비어 있어요');return}
     items.push(flatItem(it))}
   if(!items.length){goStep('ioItems','제품과 장수를 입력해주세요');return}
+  if(F.edit){await ioSubmitEdit(items);return}
   if(!P){goStep('ioSecPhoto','사진을 촬영해주세요');return}
   busy=true;$('ioSubmitBtn').disabled=true;$('ioSubmitBtn').innerHTML='저장 중…';
   try{
@@ -1420,8 +1448,38 @@ async function ioSubmit(){
     $('ioFoot').style.display='none';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){} // v15: 닫지 않고 완료 화면 — 그날 기록 화면(단톡방 공유용)은 버튼으로
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
-    try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(kstDate(0))}catch(e){} // v22: 오늘 화면으로 — 다음 날 것으로 들어간 출고도 오늘 카드 아래에 '○/○ 것 실음'으로 보임 // v18: 기록이 들어간 날짜의 카드로 화면을 옮김(저녁 출고 → 다음 영업일 카드)
+    try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(rec.wdate||kstDate(0))}catch(e){} // v32: 카드가 달력 날짜 기준이라 기록이 들어간 작업일 카드로 (내일 것 출고 → 내일 카드)
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
+}
+async function ioSubmitEdit(items){ // v32: 기존 기록 고치기 — Firebase 기록을 바로 고치고(카드·로스 즉시 반영), 시트엔 ioEdit으로 전송(IoLog.gs가 지원할 때만, 아니면 전송 대기)
+  const E=F.edit;const r=recById(E.id);
+  if(!r){ioToast('기록을 찾지 못했어요',true);return}
+  if(!canFix(r)){ioToast('작업일 다음 날까지만 본인이 고칠 수 있어요. 그 뒤엔 당번 모드에서',true);return}
+  if(!P&&!E.photoId){F.stage='edit';renderForm();ioToast('사진을 촬영해주세요',true);return}
+  busy=true;$('ioSubmitBtn').disabled=true;$('ioSubmitBtn').innerHTML='저장 중…';
+  try{
+    const now=new Date();const crew=[F.worker,F.crew2].filter(Boolean);const by=admin()?'당번':'본인';
+    const chg={items,worker:F.worker||'',crew,note:F.note||'',zero:null,editN:num(r.editN)+1,editAt:kstDT(now),editBy:by,
+      hist:(Array.isArray(r.hist)?r.hist:[]).concat([{at:r.editAt||r.at||'',by:r.editBy||'',items:r.items||[],worker:r.worker||'',crew:r.crew||[],note:r.note||'',zero:!!r.zero}]).slice(-5)};
+    let photo='',photoName='';
+    if(P){photo=stampCanvas(MAX_PX).toDataURL('image/jpeg',JPG_Q);photoName=F.date+'_'+hm(kstDT(now)).replace(':','')+'_'+RN+'_'+String(F.vehicle).replace(/[\\/:*?"<>|\s]/g,'')+'_'+TYPE[F.type].n+'_'+r.id+'_수정.jpg';chg.photoAt=kstDT(P.at);chg.photoGap=Math.max(0,Math.round((P.at.getTime()-P.taken)/60000))}
+    const ob=obGet();const pend=ob.find(e=>e.kind==='log'&&e.rec&&e.rec.id===r.id);
+    if(pend){ // 아직 시트로 안 간 기록: 대기함 안의 기록 자체를 고침 (시트엔 고친 내용이 처음부터 감)
+      Object.assign(pend.rec,chg);delete pend.rec.hist;pend.rec.editN=0;Object.assign(pend.payload,{items,worker:chg.worker,crew,note:chg.note});
+      if(photo){pend.payload.photo=photo;pend.payload.photoName=photoName;pend.payload.photoAt=chg.photoAt;pend.payload.photoGap=chg.photoGap}
+      obSet(ob);try{db.ref(NODE+'/'+r.id).set(pend.rec)}catch(e){}
+    }else{
+      try{await db.ref(NODE+'/'+r.id).update(chg)}catch(e){console.warn('[io] fb edit',e)}
+      const payload={action:'ioEdit',id:r.id,region:RN,type:r.type,date:r.date,wdate:r.wdate||r.date,at:r.at,vehicle:F.vehicle,worker:chg.worker,crew,items,note:chg.note,late:!!r.late,editAt:chg.editAt,editBy:by,editN:chg.editN,photo,photoName,photoAt:chg.photoAt||'',photoGap:chg.photoGap||0};
+      if(!obAdd({kind:'edit',id:'edit_'+r.id+'_'+now.getTime(),rid:r.id,payload,tries:0,ts:now.getTime()})){busy=false;renderForm();return}
+    }
+    DONE={type:r.type,vehicle:F.vehicle,wdate:r.wdate||r.date,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0),edit:true};
+    busy=false;F=null;P=null;$('ioFile').value='';
+    $('ioFoot').style.display='none';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){}
+    ioToast('✅ '+TYPE[DONE.type].n+' 기록 수정');
+    renderList();ioFlush(false);
+    try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(DONE.wdate)}catch(e){}
+  }catch(e){console.warn('[io] edit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
 function ioZeroReturn(plate,wdateIn){ // v27: 다 써서 남은 게 없을 때 '반납 0장'으로 순환을 닫는 입고 기록 (사진·제품 없음, 시트엔 메모만 남음)
   const p=String(plate||'').trim();if(!p){ioToast('차량이 없어요',true);return}
@@ -1459,10 +1517,12 @@ async function ping(){
   const u=apiUrl();if(!u)return false;
   try{const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),20000);
     const r=await fetch(u+'?type=ioPing&_='+Date.now(),{signal:ctl.signal});clearTimeout(t);const txt=await r.text();
-    if(/"io"\s*:\s*true/.test(txt)){pingOk=Date.now();localStorage.setItem('io_ping_ok',String(pingOk));return true}
+    if(/"io"\s*:\s*true/.test(txt)){pingOk=Date.now();localStorage.setItem('io_ping_ok',String(pingOk));
+      const edit=/"ioEdit"\s*:\s*true/.test(txt);localStorage.setItem('io_caps',JSON.stringify({edit,at:pingOk}));return true} // v32: 서버가 기록 수정(ioEdit)을 받는지
   }catch(e){}
   return false;
 }
+function caps(){try{return JSON.parse(localStorage.getItem('io_caps')||'{}')||{}}catch(e){return {}}}
 async function post(payload){
   if(IO_BETA){await new Promise(r=>setTimeout(r,300));return {ok:true,beta:true}} // 베타: 시트·드라이브에 안 보냄
   const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),90000);
@@ -1475,13 +1535,17 @@ async function ioFlush(manual){
   if(!navigator.onLine){lastErr='오프라인';if(manual)ioToast('인터넷 연결 후 다시 시도해주세요',true);renderList();return}
   flushing=true;renderList();
   try{
+    if(ob.some(e=>e.kind==='edit')&&!caps().edit&&Date.now()-(caps().at||0)>600e3)pingOk=0; // 수정 전송이 밀려 있으면 10분마다 서버 지원 여부 다시 확인
     if(!(await ping())){lastErr='서버 준비 중(Apps Script 배포 확인)';if(manual)ioToast(lastErr,true);return}
     lastErr='';
     for(const e of obGet()){
+      if(e.kind==='edit'&&!caps().edit){const a=obGet();const x=a.find(y=>y.id===e.id);if(x){x.err='시트 반영 대기 (IoLog.gs 업데이트 필요)';obSet(a)}continue} // 서버가 아직 ioEdit을 모르면 보내지 않고 둠 (중복 행 방지)
       let res;try{res=await post(e.payload)}catch(err){lastErr='네트워크 오류';break}
       if(res&&res.ok){
         if(e.kind==='log'){const rec={...e.rec,status:'ok',photoId:res.photoId||'',photoUrl:res.photoId?viewUrl(res.photoId):'',sheetAt:kstDT(new Date())};
           try{await db.ref(NODE+'/'+rec.id).set(rec)}catch(err){console.warn('[io] fb',err)}}
+        else if(e.kind==='edit'&&e.rid){const upd={sheetEditAt:kstDT(new Date())};if(res.photoId){upd.photoId=res.photoId;upd.photoUrl=viewUrl(res.photoId)}
+          try{await db.ref(NODE+'/'+e.rid).update(upd)}catch(err){console.warn('[io] fb',err)}}
         obRemove(e.id);renderList();
       }else{
         const a=obGet();const x=a.find(y=>y.id===e.id);if(x){x.tries=(x.tries||0)+1;x.err=res&&res.error||'';obSet(a)}
@@ -1523,6 +1587,6 @@ function init(){
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
   setTimeout(adminAutoOpen,0);
 }
-Object.assign(window,{ioZeroReturn,ioCrew2,ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioZeroReturn,ioEditNew,ioVoidFromForm,ioCrew2,ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

@@ -29,7 +29,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01u';
+const CY_VER='2026.10.01v';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -338,6 +338,10 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
   const tn=teamNo(who,v.plate);const chip=cur?stChip(cur):dayJobs.length?['','출고 전']:['','시공 없음'];
   const tgt=cur||prev; // 반납·보고 대상: 그 날짜의 순환, 없으면 바로 앞 순환(어제 실은 걸 오늘 반납)
   const outW=D,inW=tgt?(tgt.open?tgt.lastW:tgt.toW):D;
+  // 그 작업일에 이미 남긴 기록이 있으면 [출고]/[반납]은 빈 폼 대신 그 기록을 열어 고침 (v32). 같은 날 두 번 실었으면 수정 화면의 [따로 추가]
+  const lastOf=(arr,w)=>arr.filter(r=>(r.wdate||r.date)===w).sort((a,b)=>a.ts-b.ts).pop()||null;
+  const outRec=cur?lastOf(cur.outs,outW):null,inRec=tgt?lastOf(tgt.ins,inW):null;
+  const edited=(cur?cur.outs.concat(cur.ins):[]).filter(r=>nn(r.editN)>0).length;
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
   let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀 · ':''}${esc(who.join('·')||'담당 미지정')}<small>${esc(v.plate)}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
   h+=`<div class="cy-crew"><span class="ia-tiny">${cur?esc(cyLabel(cur))+' · '+(cur.open?'출고 '+esc(String(cur.startAt||'').slice(5,16)):'반납 '+esc(String(cur.endAt||'').slice(5,16))):esc(U.fmtMD(D))}</span>${mine?' <span style="color:var(--dm-blue)">내 차량</span>':''}</div>`;
@@ -348,6 +352,7 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
     if(cur.st==='scrap')foot.push(`가져간 것보다 ${-cur.diff}장 더 깔았어요 → 자투리 활용 +${-cur.diff}로 기록`);
     if(cur.zero&&!cur.open)foot.push('반납 0장(다 씀)으로 닫힘');
     if(cur.ov.confirm)foot.push(`확정 ${esc(cur.ov.confirm.by||'')} ${esc(String(cur.ov.confirm.at||'').slice(5,16))}`);
+    if(edited)foot.push(`고친 기록 <b>${edited}건</b> — [보고]에서 원래 값 확인`);
     if(!cur.open){ // 닫힌 순환: 다음 실을 날로 가는 길 (출고는 그 날짜 카드에서)
       if(next)foot.push(`${goLink(next.fromW,esc(U.fmtMD(next.fromW))+' 출고 기록 있음')} · ${next.out}장`);
       else{const nx=upcomingOf(v.plate,U.addDays(cur.toW,1),consumed);if(nx.date)foot.push(`다음 시공 ${goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳')} — 실을 땐 그 날짜에서 [출고]`)}
@@ -361,7 +366,7 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
     if(lines.length)h+=`<div class="ia-tiny" style="margin-top:6px;line-height:1.7">${lines.join('<br>')}</div>`;
   }
   if(showUp)h+=upcomingHTML(v,{date:D,list:dayJobs},D);
-  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}')">반납</button><button type="button" class="ia-button quiet" ${tgt?`onclick="ioCycle.report('${esc(v.plate)}',${tgt.startTs})"`:'disabled'}>보고</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}','${outRec?esc(outRec.id):''}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}','${inRec?esc(inRec.id):''}')">반납</button><button type="button" class="ia-button quiet" ${tgt?`onclick="ioCycle.report('${esc(v.plate)}',${tgt.startTs})"`:'disabled'}>보고</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list,cur);
   return h+'</div>';
 }
@@ -646,6 +651,8 @@ function ensureRep(){
   if(!$('cyRepCss')){const st=document.createElement('style');st.id='cyRepCss';st.textContent=REP_CSS;document.head.appendChild(st)}
   if(!$('cyRep')){const d=document.createElement('div');d.id='cyRep';d.innerHTML='<div class="cyr-in" id="cyRepIn"></div><div class="cyr-ft"><button type="button" onclick="ioCycle.reportClose()">✕ 닫기</button><button type="button" class="lnk" onclick="ioCycle.reportCopy()">텍스트로 복사</button></div>';document.body.appendChild(d)}
 }
+function origTxt(r){const h=arr(r.hist);if(!h.length)return '';const o=h[0];const q=(arr(o.items)).reduce((a,it)=>a+nn(it.total)+nn(it.tQty),0);return o.zero?' · 원래 0장':q?' · 원래 '+q+'장':''}
+function editTag(r){return nn(r.editN)?` <span class="cyr-chip warn" style="padding:1px 6px">수정 ${nn(r.editN)}회${esc(origTxt(r))}</span>`:''}
 function recThumb(r){
   let local={};try{local=X.records().local||{}}catch(e){}
   const lp=local[r.id];
@@ -660,7 +667,7 @@ function recLines(r){ // 기록 1건의 제품별 줄
 }
 function recRow(r){
   const q=recQty(r);
-  return `<div class="cyr-row"><div class="b"><div><b>${esc(U.hm(r.at))}</b> ${r.type==='in'?'반납':'출고'} <b>${q}장</b>${r.zero?' <span class="l">다 써서 없음</span>':''}${r.late?' <span class="cyr-chip warn" style="padding:1px 6px">지연 입력</span>':''}${r.wdate&&r.wdate!==r.date?` <span class="l">${esc(U.fmtMD(r.wdate))} 것</span>`:''}</div>${recLines(r)}${r.note&&!r.zero?`<div class="l">${esc(String(r.note).slice(0,60))}</div>`:''}</div>${recThumb(r)}</div>`;
+  return `<div class="cyr-row"><div class="b"><div><b>${esc(U.hm(r.at))}</b> ${r.type==='in'?'반납':'출고'} <b>${q}장</b>${r.zero?' <span class="l">다 써서 없음</span>':''}${r.late?' <span class="cyr-chip warn" style="padding:1px 6px">지연 입력</span>':''}${r.wdate&&r.wdate!==r.date?` <span class="l">${esc(U.fmtMD(r.wdate))} 것</span>`:''}${editTag(r)}</div>${recLines(r)}${r.note&&!r.zero?`<div class="l">${esc(String(r.note).slice(0,60))}</div>`:''}</div>${recThumb(r)}</div>`;
 }
 function partsByProd(recs){ // 기록들 → {제품:{c,s,k,t,total}}
   const o={};recs.forEach(r=>{(r.items||[]).forEach(it=>{const k=it.product||'?';const x=o[k]||(o[k]={c:0,s:0,k:0,t:0,total:0});x.c+=nn(it.cQty);x.s+=nn(it.sQty);x.k+=nn(it.kQty);x.t+=nn(it.tQty);x.total+=nn(it.total)+nn(it.tQty)})});return o;
@@ -672,7 +679,7 @@ function reportHTML(cy){
   const chipCls=chip[0]==='bad'?'bad':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':chip[0]==='blue'?'blue':'';
   let h=`<div class="cyr-hd"><div><div class="cyr-t">📦 출고·반납 보고</div><div class="cyr-s">${esc(RN)} ${tn?tn+'팀 · ':''}${esc(cy.crew.join('·'))} · ${esc(cy.plate)}<br>${esc(U.fmtD(cy.fromW))}${!cy.open&&cy.toW!==cy.fromW?' ~ '+esc(U.fmtD(cy.toW)):''}${cy.open?' · 반납 전':' · 반납 '+esc(String(cy.endAt||'').slice(5,16))}</div></div><span class="cyr-chip ${chipCls}">${chip[1]}</span></div>`;
   // 기록 띠: 출고·반납 기록(시각·장수·사진) 한 줄
-  const recChip=r=>`<div class="cyr-rec">${recThumb(r)}<div class="t"><span class="cyr-tag ${r.type==='in'?'in':'out'}">${r.type==='in'?'반납':'출고'}</span> ${esc(U.hm(r.at))}${r.wdate&&r.wdate!==r.date?' <span style="color:var(--sub)">'+esc(U.fmtMD(r.wdate))+' 것</span>':''}<b>${recQty(r)}장${r.zero?' · 다 써서 없음':''}${r.late?' · <span style="color:var(--yellow)">지연</span>':''}</b></div></div>`;
+  const recChip=r=>`<div class="cyr-rec">${recThumb(r)}<div class="t"><span class="cyr-tag ${r.type==='in'?'in':'out'}">${r.type==='in'?'반납':'출고'}</span> ${esc(U.hm(r.at))}${r.wdate&&r.wdate!==r.date?' <span style="color:var(--sub)">'+esc(U.fmtMD(r.wdate))+' 것</span>':''}<b>${recQty(r)}장${r.zero?' · 다 써서 없음':''}${r.late?' · <span style="color:var(--yellow)">지연</span>':''}${nn(r.editN)?' · <span style="color:var(--yellow)">수정 '+nn(r.editN)+'회'+origTxt(r)+'</span>':''}</b></div></div>`;
   h+=`<div class="cyr-sec"><div class="cyr-recs">${cy.outs.map(recChip).join('')}${cy.ins.map(recChip).join('')}${cy.open?`<div class="cyr-rec"><div class="t"><span class="cyr-tag in">반납</span> 전<b>차 잔량 ${cy.remain}장</b></div></div>`:''}</div></div>`;
   // 제품별 대조: 출고 / 사용 / 반납 나란히 + 로스
   const PO=partsByProd(cy.outs),PI=partsByProd(cy.ins);
