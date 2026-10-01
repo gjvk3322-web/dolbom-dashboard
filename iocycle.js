@@ -29,7 +29,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01v';
+const CY_VER='2026.10.01w';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -310,7 +310,7 @@ function jobLines(cy){
 function peopleLines(cy){
   if(!cy.crew.length)return '';
   const on=cy.decided;
-  return `<div class="cy-people">${cy.crew.map(n=>`<span class="${on&&cy.diff>0?'bad':''}">${esc(n)} <b>${on?netTxt(cy.diff):'—'}</b></span>`).join('')}<span class="ia-tiny">공동작업 기준 · 로스 − / 자투리 +</span></div>`;
+  return `<div class="cy-people">${cy.crew.map(n=>`<span class="${on&&cy.diff>0?'bad':''}">${esc(n)} <b>${on?netTxt(cy.diff):'—'}</b></span>`).join('')}</div>`;
 }
 function metrics(cy){
   const m=(lab,val,cls)=>`<div><span>${lab}</span><b class="${cls||''}">${val}</b><small>장</small></div>`;
@@ -472,9 +472,9 @@ function calHTML(name,ym,all){
   for(let d=1;d<=days;d++){const ds=ym+'-'+String(d).padStart(2,'0');const b=byDay[d];
     cells+=`<div class="cy-cell${ds===today?' today':''}"><span class="n">${d}</span>${b?`<span class="v ${b.amt<0?'bad':b.amt>0?'ok':'zero'}">${b.amt>0?'+':''}${b.amt}</span>${b.as?'<span class="as">AS</span>':''}`:''}</div>`}
   const S=personSum(all);const first0=(all&&all.length)?all[0].date:'';
-  return `<div class="cy-cal"><div class="ttl"><span>${esc(name)}</span><small>누적${first0?' · '+esc(U.fmtMD(first0))+'부터':''} · 로스 − / 자투리 +</small></div>
+  return `<div class="cy-cal"><div class="ttl"><span>${esc(name)}</span><small>${first0?esc(U.fmtMD(first0))+'부터':''}</small></div>
     <div class="cy-sum" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div><span>로스 누적</span><b class="${S.net<0?'bad':S.net>0?'ok':''}">${S.net>0?'+':''}${S.net}</b>${S.as?`<span style="margin-top:3px">하자 AS −${S.as}장 ${S.asN}건 포함</span>`:''}</div><div><span>로스율</span><b class="${S.rate>3?'bad':''}">${S.rate==null?'–':S.rate+'%'}</b><span style="margin-top:3px">사용 ${S.used}장 기준</span></div></div>
-    <div class="ttl" style="margin-top:10px"><span>${m}월</span><small>순환 ${entries.filter(e=>e.kind==='cycle').length}회</small></div><div class="cy-grid">${cells}</div>
+    <div class="ttl" style="margin-top:10px"><span>${m}월</span></div><div class="cy-grid">${cells}</div>
     ${entries.length?`<div class="cy-led">${entries.slice().reverse().map(e=>`<div class="r"><span>${esc(U.fmtMD(e.date))} ${e.kind==='as'?'<span style="color:var(--dm-amber)">AS</span> ':''}${esc(e.note)}</span><b class="${e.amt<0?'bad':e.amt>0?'ok':''}">${e.amt>0?'+':''}${e.amt}</b></div>`).join('')}</div>`:''}</div>`;
 }
 function peopleSection(ym){
@@ -490,9 +490,8 @@ function peopleSection(ym){
   if(!names.length)return '';
   if(PSEL&&names.indexOf(PSEL)<0)PSEL='';
   const chips=loading?'':names.map(n=>{const P=personSum(L[n]);const v=P.net;return `<span class="cy-chip${PSEL===n?' on':''}" onclick="ioCycle.person('${esc(n)}')">${esc(n)}<b class="${v<0?'bad':v>0?'ok':'dim'}">${L[n]?(v>0?'+':'')+v:'–'}</b></span>`}).join('');
-  const st=loading?'불러오는 중…':SNAP_BUSY?'누적 저장 중…':asLoading?'AS보고 확인 중…':'누적 · 로스 − / 자투리 +';
-  const adm=admin()&&S&&!loading?` · ${esc(U.fmtMD(S.cutoff))}까지 저장 · ${lnk('relearn','다시 계산')}`:'';
-  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${st}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''}${adm} · ${lnk('pplToggle','접기')}</small></div><div class="cy-chips">${chips}</div>${PSEL&&!loading?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
+  const parts=[loading?'불러오는 중…':SNAP_BUSY?'누적 저장 중…':asLoading?'AS보고 확인 중…':'',asNoPrev?'이전작업자 미기재 AS '+asNoPrev+'건':'',admin()&&S&&!loading?`${esc(U.fmtMD(S.cutoff))}까지 저장 · ${lnk('relearn','다시 계산')}`:'',lnk('pplToggle','접기')].filter(Boolean);
+  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${parts.join(' · ')}</small></div><div class="cy-chips">${chips}</div>${PSEL&&!loading?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
 }
 function pplToggle(){PPL_OPEN=!PPL_OPEN;try{localStorage.setItem('io_ppl_open',PPL_OPEN?'1':'0')}catch(e){}rerender()}
 function person(n){PSEL=(PSEL===n)?'':n;try{localStorage.setItem('io_person',PSEL)}catch(e){}rerender()}

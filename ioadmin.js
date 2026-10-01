@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.01c';
+const IA_VER='2026.10.01d';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -58,7 +58,7 @@ const DET_HEAD=['기록 ID','실제 이동일시','시공 예정일','작성일�
 /* ---------- 상태 ---------- */
 const S={open:false,mode:'day',from:'',to:'',region:HOME,vehicle:'',type:'all',merge:false,head:true,showOff:false,
   basis:'work',tab:'sum',kind:'agg',exportOpen:false,more:false,fullCols:false,copyErr:'',jsig:'',timer:0,userDate:false,adminSeen:null,cardKey:'',
-  drill:{},subs:[],data:{bs:{},gg:{}},extra:{bs:{},gg:{}},veh:{bs:{},gg:{}},reflect:{bs:{},gg:{}},nomove:{bs:{},gg:{}},datefix:{bs:{},gg:{}},
+  drill:{},subs:[],data:{bs:{},gg:{}},extra:{bs:{},gg:{}},veh:{bs:{},gg:{}},reflect:{bs:{},gg:{}},nomove:{bs:{},gg:{}},ack:{bs:{},gg:{}},datefix:{bs:{},gg:{}},
   loaded:{},err:'',copied:null,M:null,
   copySig:{},   // 마지막 '전체 집계 복사' 때의 날짜·지역별 기록 묶음 표식 — 복사 뒤에 기록이 바뀌었는데 반영 완료를 누르는 걸 막음
   sel:null};    // 모달이 잡고 있는 대상 {rk,id} | {rk,date} (화면이 새로 그려져도 엉뚱한 기록을 가리키지 않게)
@@ -297,7 +297,7 @@ function unsubAll(){S.subs.forEach(s=>{try{s.ref.off('value',s.cb)}catch(e){}});
 function sub(ref,cb){const onErr=e=>{S.err='데이터를 읽지 못했어요: '+String(e&&(e.code||e.message)||e);renderBody()};try{ref.on('value',cb,onErr);S.subs.push({ref,cb})}catch(e){onErr(e)}}
 function resub(){
   unsubAll();S.loaded={};S.err='';S.drill={};S.copied=null;
-  RKS.forEach(rk=>{S.data[rk]={};S.extra[rk]={};S.reflect[rk]={};S.nomove[rk]={}});
+  RKS.forEach(rk=>{S.data[rk]={};S.extra[rk]={};S.reflect[rk]={};S.nomove[rk]={};S.ack[rk]={}});
   // 작성일(date) 색인으로 읽음. 작업일 기준: 토요일 저녁에 실은 월요일 것(−2일)·다음 날 아침 입고(+1일)·지연 입력까지 넉넉히 / 이동일 기준: 자정 걸친 제출 대비 하루씩
   const qa=U.addDays(S.from,S.basis==='work'?-4:-1),qb=U.addDays(S.to,S.basis==='work'?7:1);
   scopeRks().forEach(rk=>{
@@ -305,6 +305,7 @@ function resub(){
     sub(db.ref(REG[rk].veh),snap=>{S.veh[rk]=snap.val()||{};S.loaded['v'+rk]=1;renderFilters();renderBody()});
     sub(db.ref(ROOT+'/reflect/'+rk).orderByKey().startAt(S.from).endAt(S.to),snap=>{S.reflect[rk]=snap.val()||{};renderBody()});
     sub(db.ref(ROOT+'/nomove/'+rk).orderByKey().startAt(S.from).endAt(S.to),snap=>{S.nomove[rk]=snap.val()||{};renderBody()});
+    sub(db.ref(ROOT+'/ack/'+rk).orderByKey().startAt(S.from).endAt(S.to),snap=>{S.ack[rk]=snap.val()||{};renderBody()}); // 확인 필요 '확인함' 표시
     sub(db.ref(ROOT+'/datefix/'+rk),snap=>{S.datefix[rk]=snap.val()||{};fetchExtras(rk);renderBody()});
   });
 }
@@ -662,7 +663,11 @@ function renderBody(){
   if(X.beta)h+=`<div class="ia-notice">${ic('alert')}<div class="c"><strong>🧪 테스트 화면</strong> · 여기서 기록한 건 실제 재고·시트에 안 들어가요. 실제 입력은 원래 스케줄러에서.</div></div>`;
   let ob={n:0};try{ob=X.outbox()}catch(e){}
   if(ob.n)h+=`<div class="ia-notice${ob.stuck||ob.err?' bad':''}">${ic('alert')}<div class="c"><strong>전송 대기 ${ob.n}건</strong>${ob.err?' · '+esc(ob.err):''}<br><span>수량은 이미 반영됐고 사진·시트 전송만 남았어요.</span></div><button type="button" class="ia-button quiet small" onclick="ioFlush(true)">${ob.flushing?'전송 중…':'지금 보내기'}</button></div>`;
-  if(M.flagged.length)h+=`<div class="ia-notice${M.excluded.length?' bad':''}">${ic('alert')}<div class="c"><strong>확인 필요 ${M.flagged.length}건</strong> · 집계에서 빠진 기록 ${M.excluded.length}건 · 참고 ${M.flagged.length-M.excluded.length}건</div><button type="button" class="ia-button quiet small" onclick="ioAdmin.f('tab','flag')">보기</button></div>`;
+  if(M.flagged.length){ // 확인 필요: 당번이 [확인함]을 누르면 그 날짜는 한 줄로 접힘. 확인한 뒤 내용이 바뀌면(기록 추가·수정) 다시 띄움
+    const sig=flagSig(M);const a=isDay()?(((S.ack[HOME]||{})[S.from])||null):null;const done=!!(a&&a.sig===sig);
+    if(done)h+=`<div class="ia-tiny" style="margin:0 2px 12px">확인 필요 ${M.flagged.length}건 · 확인함 ${esc(a.by||'')} ${esc(String(a.at||'').slice(5,16))} · <u style="cursor:pointer" onclick="ioAdmin.f('tab','flag')">보기</u>${X.admin()?` · <u style="cursor:pointer" onclick="ioAdmin.ack(0)">해제</u>`:''}</div>`;
+    else h+=`<div class="ia-notice${M.excluded.length?' bad':''}">${ic('alert')}<div class="c"><strong>확인 필요 ${M.flagged.length}건</strong> · 집계에서 빠진 기록 ${M.excluded.length}건 · 참고 ${M.flagged.length-M.excluded.length}건${a?'<br><span>확인한 뒤 바뀐 내용이 있어요</span>':''}</div><button type="button" class="ia-button quiet small" onclick="ioAdmin.f('tab','flag')">보기</button>${X.admin()&&isDay()?`<button type="button" class="ia-button quiet small" onclick="ioAdmin.ack(1)">확인함</button>`:''}</div>`;
+  }
   // v2026.09.30: 순환(출고→사용→반납→로스) 카드는 iocycle.js가 그림 — 없거나 실패하면 기존 날짜 카드로. 기간(range) 모드는 기존 카드 유지
   let cyOK=false;
   if(M.veh.length&&window.ioCycle&&S.mode!=='range'){try{h+=ioCycle.cardsHTML(M,S);cyOK=true}catch(e){console.warn('[ioadmin] iocycle',e)}}
@@ -858,6 +863,13 @@ function photoId(pid){if(!/^[\w-]+$/.test(String(pid||'')))return;try{X.view(pid
 function drill(i,col){const r=S.M&&S.M.agg[i];if(!r)return;S.drill[r.key]=S.drill[r.key]===col?'':col;renderBody()}
 
 /* ---------- 쓰기: 입출고 없음 · 이동일 지정 · 반영 확인 (전부 io_admin 아래에만) ---------- */
+function flagSig(M){return hash(M.flagged.map(x=>x.id+':'+(x.flags||[]).join('|')+':'+(Array.isArray(x.why)?x.why.join('|'):String(x.why||''))).sort().join(','))}
+function ack(on){ // 확인 필요 띠 [확인함] — io_admin/ack/{지역}/{날짜} = {by, at, n, sig}. 내용이 바뀌면(sig 다름) 띠가 다시 뜸
+  if(!isDay()||!S.M)return;const by=guard();if(!by)return;
+  const ref=db.ref(ROOT+'/ack/'+HOME+'/'+S.from);
+  const p=on?ref.set({by,at:U.kstDT(new Date()),n:S.M.flagged.length,sig:flagSig(S.M)}):ref.remove();
+  Promise.resolve(p).then(()=>toast(on?'확인함으로 표시했어요':'확인을 해제했어요')).catch(e=>toast(fbErr(e),true));
+}
 function nomove(on,key){
   const v=S.M&&S.M.veh.find(z=>z.key===(key||S.vehicle));if(!v||!isDay())return;const by=guard();if(!by)return;
   const ref=db.ref(ROOT+'/nomove/'+v.rk+'/'+S.from+'/'+fbKey(v.key));
@@ -961,6 +973,6 @@ function gotoDate(d){ // 방금 제출한 기록이 들어간 날짜(작업일)�
 }
 function close(){mdClose();if(S.open){if(!X.admin()){S.exportOpen=false;S.more=false}renderFilters();renderBody()}} // 당번 모드를 끄면 관리자용 버튼만 접음
 
-window.ioAdmin={mount,open:mount,close,goto:gotoDate,card:cardOpen,entry,cardFilter,cardReason,cardNomove,wide,reload,mode:setMode,date:setDate,shift:shiftDate,f:setF,region:goRegion,copy,exportOpen,exportClose,pending:pendingGo,drill,detail,photo,photoId,nomove,fix,fixSave,unfix,reflect,reflectSave,unit,revoke,mdClose,name:()=>{askName(true);renderFilters();renderBody()},
+window.ioAdmin={mount,open:mount,close,goto:gotoDate,ack,card:cardOpen,entry,cardFilter,cardReason,cardNomove,wide,reload,mode:setMode,date:setDate,shift:shiftDate,f:setF,region:goRegion,copy,exportOpen,exportClose,pending:pendingGo,drill,detail,photo,photoId,nomove,fix,fixSave,unfix,reflect,reflectSave,unit,revoke,mdClose,name:()=>{askName(true);renderFilters();renderBody()},
   _t:{S,build,aggTSV,detTSV,tText,tId,specOf,checkItem,moveInfo,regionUrl}}; // _t = 테스트용 내부 참조
 })();
