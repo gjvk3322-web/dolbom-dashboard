@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.01b';
+const IA_VER='2026.10.01c';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -136,7 +136,7 @@ function normRec(r,rk){
   const why=[];const flags=[];
   if(!mv.date)why.push(mv.why);
   const items=Array.isArray(r.items)?r.items:[];
-  if(!items.length)why.push('제품 내역 없음');
+  if(!items.length&&!r.zero)why.push('제품 내역 없음'); // 반납 0장(다 써서 없음)은 제품 내역이 없는 게 정상 — 집계 제외·확인 필요 아님
   items.forEach(it=>{const c=checkItem(it||{});c.hard.forEach(t=>why.push((it&&it.product?it.product+' ':'')+t));c.soft.forEach(t=>flags.push((it&&it.product?it.product+' ':'')+t))});
   const isVoid=r.status==='void';
   if(mv.src==='fix')flags.push('이동일을 담당자가 지정함('+(mv.by||'-')+')');

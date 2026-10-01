@@ -82,7 +82,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.01m';
+const IO_VER='2026.10.01n';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1232,12 +1232,23 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
     return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span><small>실을 양 참고</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${/^AS$/i.test(j.time)?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
   }
   let cy=null;try{if(window.ioCycle)cy=ioCycle.latestOf(F.vehicle).cur}catch(e){}
-  if(cy&&cy.open&&cy.jobs.length){
+  const d=F.wdate||kstDate(0);
+  // 열린 순환, 또는 닫힌 순환에 같은 작업일로 추가 반납 → 그 순환에 연결된 현장 (제품·평수·판매 장수)
+  if(cy&&cy.jobs.length&&(cy.open||(d>=cy.fromW&&d<=cy.toW))){
     const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
-    return `<div class="iog-jobs"><div class="h"><span>이번 순환에 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${r.isAs?'':esc(r.time||'')+' '}${esc(r.addr)}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div></div>`;
+    const sumLine=cy.open?`<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div>`:`<div class="sum"><span>이미 반납 ${cy.inn}장 기록됨</span><span>${cy.decided?'로스 '+(cy.diff>0?'+':'')+cy.diff:'대조 대기'}</span></div>`;
+    return `<div class="iog-jobs"><div class="h"><span>${cy.open?'이번 순환에':esc(fmtMD(d))} 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${r.isAs?'':esc(r.time||'')+' '}${esc(r.addr)}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}${sumLine}</div>`;
   }
   if(cy&&cy.open)return `<div class="iog-jobs"><div class="h"><span>이번 순환</span><small>출고 ${cy.out}장 · 연결된 시공 아직 없음</small></div></div>`;
-  const d=F.wdate||kstDate(0);const jb=jobsOf(F.vehicle,addDays(d,-1),d);
+  // 순환 없음 → 그 작업일에 이 차량이 돈 현장 (출고 화면과 같은 형식)
+  let list=null;try{if(window.ioCycle&&ioCycle.schedJobs)list=ioCycle.schedJobs(F.vehicle,d)}catch(e){list=null}
+  if(list){
+    if(!list.length)return '';
+    const sold=list.reduce((a,j)=>a+(+j.sold||0),0);
+    const lab=j=>{const q=+j.sold||0;if(q>0)return q+'장';if(/^AS$/i.test(String(j.time||'')))return 'AS';if(j.date>kstDate(0))return '예정';return String(j.sasu||'').trim()?'미입력':'—'};
+    return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 돈 현장 ${list.length}곳</span><small>판매 ${sold}장</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(String(j.time||''))?' as':''}"><span>${/^AS$/i.test(String(j.time||''))?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}<small>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</small></span><b class="${lab(j)==='미입력'?'miss':''}">${lab(j)}</b></div>`).join('')}</div>`;
+  }
+  const jb=jobsOf(F.vehicle,addDays(d,-1),d);
   if(!jb.list.length)return '';
   return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 돈 현장 ${jb.list.length}곳</span><small>판매 ${jb.sold}장</small></div>${jb.list.map(j=>`<div class="j"><span>${esc(j.addr)}</span><b>${j.q}장</b></div>`).join('')}</div>`;
 }
