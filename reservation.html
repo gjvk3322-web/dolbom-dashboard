@@ -2059,7 +2059,7 @@ function copyReservationConfirm(){
   if(time==='오전'||time==='오전(이전설치)'){
     timeFormatted='오전 (9~10시 사이 도착)';
   } else if(time==='오후'||time==='오후(이전설치)'){
-    timeFormatted='오후 (오전 시공 마친 뒤 이동, 13~15시 사이 도착)';
+    timeFormatted='오후 (방문 시간은 당일 11~12시 사이에 안내드립니다)';
   }
   
   // 제품명 한글화 (모던1m17 → 모던화이트 1M 17T)
@@ -2084,7 +2084,6 @@ function copyReservationConfirm(){
     t2+='· 연락처: '+phoneFormatted+'\n';
     if(isAs) t2+='· 제품: '+productName+'\n\n';
     else t2+='· '+size+'평'+(scope?' · 시공범위: '+scope:'')+'\n\n';
-    if(!isAs) t2+='✨ 실측 후 정확한 수량과 견적을 안내드립니다.\n';
     t2+='✨ 현장 상황이나 교통으로 도착이 늦어질 경우, 미리 연락드립니다.\n\n';
     t2+='궁금하신 점은 언제든 카카오톡 채널로 문의 주세요.';
     if(navigator.clipboard&&navigator.clipboard.writeText){
