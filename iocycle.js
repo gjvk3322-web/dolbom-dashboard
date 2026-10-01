@@ -24,7 +24,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01h';
+const CY_VER='2026.10.01i';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -121,10 +121,16 @@ function cyclesOf(plate){
   list.consumed=consumed;
   return list;
 }
-function jobMatches(j,plate){ // 스케줄 차량번호가 있으면 그걸로, 없으면 사수 = 차량 탭 사수 (담당 이름으로는 안 붙임 — 같은 팀원이 다른 차로 간 날 섞이지 않게)
+function plateOfName(name){const V=vehicles();const k=Object.keys(V).find(p=>String(V[p]||'').trim()===name);return k?NP(k):''} // 차량 탭에서 이 사람이 사수인 차량
+function fallbackPlate(j){ // 스케줄 차량번호가 빈 행: 사수 → 부사수 순으로 차량 탭 사수인 사람의 차량 (한 건은 한 차량에만 붙게)
+  const names=splitNames(j.sasu).concat(splitNames(j.busasu));
+  for(const n of names){const pk=plateOfName(n);if(pk)return pk}
+  return '';
+}
+function jobMatches(j,plate){ // 스케줄 차량번호가 있으면 그걸로. 없으면 그 행 사수·부사수 중 차량 탭 사수인 사람의 차량 (시트 사수가 입사일 순이라 팀 사수가 부사수 칸에 적히는 경우 대비)
   const jv=U.normPlate(j.vehicle);
   if(jv)return jv===NP(plate);
-  const o=ownerOf(plate);const s=String(j.sasu||'').trim();return !!o&&s===o;
+  return fallbackPlate(j)===NP(plate);
 }
 function jobOK(j){const t=String(j.time||'').trim();if(t==='실측')return false;if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return false;return !!(j.addr&&j.addr.trim())}
 function compute(cy,consumed){
