@@ -82,7 +82,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.01t';
+const IO_VER='2026.10.01u';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1214,7 +1214,7 @@ function successHtml(){
     <button type="button" class="iog-button primary full" onclick="ioDoneShare()">보고 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
     <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기 · 팀 카드에서 확인</button></div>`;
 }
-function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(!d)return;try{if(window.ioCycle&&ioCycle.report&&d.vehicle){ioCycle.report(d.vehicle);return}}catch(e){}ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // v31: 제출 직후엔 그 차량 순환 보고 화면(한 화면 스크린샷용), iocycle 없으면 옛 그날 화면
+function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(!d)return;try{if(window.ioCycle&&ioCycle.report&&d.vehicle){let ts=0;try{const c=ioCycle.cycleOn?ioCycle.cycleOn(d.vehicle,d.wdate||kstDate(0)).cur:null;ts=c?c.startTs:0}catch(e){}ioCycle.report(d.vehicle,ts||undefined);return}}catch(e){}ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // v31: 제출 직후엔 그 차량 순환 보고 화면(한 화면 스크린샷용), iocycle 없으면 옛 그날 화면
 function ioDoneAdmin(){$('ioOv').classList.remove('show');DONE=null;ioAdminOpen()}
 function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장, 반납 = 이번 순환에서 돈 현장 + 판매갯수 (iocycle 있으면 순환 기준, 없으면 작업일 기준)
   if(!F.vehicle||F.custom)return '';
@@ -1231,8 +1231,8 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
     if(!list.length)return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장</span><small>스케줄에 이 차량 배정 없음</small></div></div>`;
     return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span><small>실을 양 참고</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${/^AS$/i.test(j.time)?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
   }
-  let cy=null;try{if(window.ioCycle)cy=ioCycle.latestOf(F.vehicle).cur}catch(e){}
   const d=F.wdate||kstDate(0);
+  let cy=null;try{if(window.ioCycle)cy=ioCycle.cycleOn?ioCycle.cycleOn(F.vehicle,d).cur:ioCycle.latestOf(F.vehicle).cur}catch(e){} // 작업일이 들어가는 순환 (카드가 달력 날짜 기준이라 그 순환에 반납)
   // 열린 순환, 또는 닫힌 순환에 같은 작업일로 추가 반납 → 그 순환에 연결된 현장 (제품·평수·판매 장수)
   if(cy&&cy.jobs.length&&(cy.open||(d>=cy.fromW&&d<=cy.toW))){
     const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
