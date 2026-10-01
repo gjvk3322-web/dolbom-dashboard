@@ -82,7 +82,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.09.30g';
+const IO_VER='2026.10.01h';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -481,6 +481,7 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-seg button.on{background:var(--dm-panel);color:var(--dm-ink);box-shadow:0 1px 3px #0000003a}
 .iog-when{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px;font-size:12.5px;color:var(--dm-muted);flex-wrap:wrap}
 .iog-when .iog-seg{flex:1;min-width:0}.iog-when .iog-seg button{flex:1;padding:6px 8px;font-size:12.5px}
+.iog-when b{color:var(--dm-ink);font-size:15px;font-weight:800}.iog-when b small{font-weight:600;color:var(--dm-muted);font-size:12px;margin-left:4px}
 .iog-jobs{border:1px solid var(--dm-line);border-radius:12px;padding:10px 12px;margin:-8px 0 18px;font-size:12.5px;line-height:1.55}
 .iog-jobs .h{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:13px;margin-bottom:4px}.iog-jobs .h small{font-weight:600;color:var(--dm-muted)}
 .iog-jobs .j{display:flex;justify-content:space-between;gap:8px;color:var(--dm-muted);border-top:1px dashed var(--dm-line);padding:5px 0}
@@ -620,7 +621,7 @@ function draftWhen(d){try{const k=kst(new Date(d.savedAt));return pad(k.getHours
 function ioDraftDrop(){if(!F)return;draftClear(F.type);F.draft=null;renderForm();ioToast('새로 시작할게요')}
 async function ioDraftResume(){
   const d=F&&F.draft;if(!d)return;
-  F.type=d.type||F.type;F.wopts=wdOpts(F.type).opts;F.wpick=false;F.dateEdit=false;F.wdate=wdDefault(F.type,d.vehicle||''); // 이어쓰기: 작업일은 지금 시각·차량 기준으로 다시 잡음
+  F.type=d.type||F.type;F.wopts=wdOpts(F.type).opts;F.dateEdit=false;if(!F.fixedW){F.wpick=false;F.wdate=wdDefault(F.type,d.vehicle||'')} // 이어쓰기: 작업일은 지금 시각·차량 기준으로 다시 잡음
   F.vehicle=d.vehicle||'';F.custom=!!d.custom;F.worker=d.worker||'';F.crew2=d.crew2||(F.worker?partnerOf(F.worker):'');
   F.items=(d.items&&d.items.length)?d.items:[newItem()];F.note=d.note||'';F.step=d.step||(F.vehicle?'photo':'veh');F.draft=null;
   renderForm();
@@ -1139,17 +1140,19 @@ function ioShareCopy(){
 
 /* ---------- 작성 (장 단위) ---------- */
 function newItem(){return {product:'',cB:0,c:0,sB:0,s:0,kB:0,k:0,tB:0,t:0}} // cB=센터 박스, c=센터 낱장 …
-function ioOpen(type,plate){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로)
+function ioOpen(type,plate,wdate){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로). wdate: 카드가 정한 작업일(달력 날짜·순환 날짜) — 넘어오면 그대로 고정
   const t=type==='in'?'in':'out';
   const vs=Object.keys(vehicles());
   const lastV=localStorage.getItem('io_last_vehicle')||'';
   const want=String(plate||'').trim();const reg=want?vs.find(p=>normPlate(p)===normPlate(want)):'';
   const vehicle=reg||want||(vs.includes(lastV)?lastV:(vs.length===1?vs[0]:''));
   const w=wdOpts(t);
-  const wd0=wdDefault(t,vehicle);const c0=vehicle?defaultCrew(vehicle,wd0):[];
-  F={type:t,date:kstDate(0),wdate:wd0,wopts:w.opts,wpick:false,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:false,items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
+  const fixedW=/^\d{4}-\d{2}-\d{2}$/.test(String(wdate||''));
+  const wd0=fixedW?String(wdate):wdDefault(t,vehicle);const c0=vehicle?defaultCrew(vehicle,wd0):[];
+  F={type:t,date:kstDate(0),wdate:wd0,fixedW,wopts:w.opts,wpick:fixedW,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:false,items:[newItem()],note:'',step:'veh',stage:'edit',draft:draftGet(t)};
   P=null;busy=false;DONE=null;
   $('ioFoot').style.display='';
+  const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+' 기록';
   renderForm();
   $('ioOv').classList.add('show');$('ioOv').scrollTop=0;
 }
@@ -1161,7 +1164,7 @@ function ioClose(){
 function ioType(t){
   if(!F)return;const old=F.type;if(old===t){renderForm();return}
   const had=formHasContent();
-  F.type=t;const w=wdOpts(t);F.wopts=w.opts;F.wpick=false;F.wdate=wdDefault(t,F.vehicle);applyCrew();
+  F.type=t;const w=wdOpts(t);F.wopts=w.opts;if(!F.fixedW){F.wpick=false;F.wdate=wdDefault(t,F.vehicle)}applyCrew();const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+' 기록';
   if(had){draftClear(old);F.draft=null;draftWrite();photoDraftSave()} // 쓰던 내용을 새 구분으로 옮김
   else F.draft=draftGet(t);
   renderForm();drawPreview();
@@ -1248,8 +1251,7 @@ function renderForm(){
     <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
       ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
     <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)" style="margin-top:4px"><option value="">(같이 탄 사람 없음)</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div></div>
-  <div class="iog-movetypes" style="margin-bottom:10px">${mt('out','truck','')}${mt('in','warehouse','')}</div>
-  <div class="iog-when" id="ioWhen"><span>작업일</span><div class="iog-seg">${F.wopts.map(o=>`<button type="button" class="${F.wdate===o[0]?'on':''}" onclick="ioWdate('${o[0]}')">${fmtMD(o[0])} 작업${o[0]===kstDate(0)?' (오늘)':''}</button>`).join('')}</div></div>
+  <div class="iog-when" id="ioWhen"><span>작업일</span><b>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}</b></div>
   ${formJobsHTML()}
   <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
   <div id="ioItems"></div>
@@ -1392,7 +1394,7 @@ async function ioSubmit(){
     const now=new Date();const ts=now.getTime();
     const id='io_'+ts+'_'+Math.random().toString(36).slice(2,7);
     const photoGap=Math.max(0,Math.round((P.at.getTime()-P.taken)/60000));
-    const late=!F.wopts.some(o=>o[0]===F.wdate);
+    const late=F.type==='in'?F.wdate<prevWorkDay(kstDate(0)):F.wdate<kstDate(0); // 지연 입력 = 작업일이 이미 지난 기록 (미리 싣는 건 지연 아님)
     const crew=[F.worker,F.crew2].filter(Boolean); // v27 출고 시점 담당 2명 스냅샷 (순환 개인 적용 기준)
     const rec={id,region:RN,rk:RK,type:F.type,date:F.date,wdate:F.wdate,at:kstDT(now),ts,vehicle:F.vehicle,worker:F.worker||'',crew,items,note:F.note||'',late,photoAt:kstDT(P.at),photoGap,dev:devId(),ver:IO_VER,status:'pending'};
     const photo=stampCanvas(MAX_PX).toDataURL('image/jpeg',JPG_Q);
@@ -1410,10 +1412,10 @@ async function ioSubmit(){
     try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(kstDate(0))}catch(e){} // v22: 오늘 화면으로 — 다음 날 것으로 들어간 출고도 오늘 카드 아래에 '○/○ 것 실음'으로 보임 // v18: 기록이 들어간 날짜의 카드로 화면을 옮김(저녁 출고 → 다음 영업일 카드)
   }catch(e){console.warn('[io] submit',e);busy=false;renderForm();ioToast('저장 실패: '+(e.message||e),true)}
 }
-function ioZeroReturn(plate){ // v27: 다 써서 남은 게 없을 때 '반납 0장'으로 순환을 닫는 입고 기록 (사진·제품 없음, 시트엔 메모만 남음)
+function ioZeroReturn(plate,wdateIn){ // v27: 다 써서 남은 게 없을 때 '반납 0장'으로 순환을 닫는 입고 기록 (사진·제품 없음, 시트엔 메모만 남음)
   const p=String(plate||'').trim();if(!p){ioToast('차량이 없어요',true);return}
   const now=new Date();const ts=now.getTime();const id='io_'+ts+'_'+Math.random().toString(36).slice(2,7);
-  const wdate=wdDefault('in',p);
+  const wdate=/^\d{4}-\d{2}-\d{2}$/.test(String(wdateIn||''))?String(wdateIn):wdDefault('in',p);
   const crew=defaultCrew(p,wdate);const worker=crew[0]||'';
   const rec={id,region:RN,rk:RK,type:'in',date:kstDate(0),wdate,at:kstDT(now),ts,vehicle:p,worker,crew,items:[],note:'반납 0장 (다 씀)',late:false,zero:true,photoAt:'',photoGap:0,dev:devId(),ver:IO_VER,status:'pending'};
   const payload={action:'ioLog',id,region:RN,type:'in',date:rec.date,wdate,at:rec.at,vehicle:p,worker,crew,items:[{product:'',total:0}],note:rec.note,late:false,zero:true,photoAt:'',photoGap:0,dev:rec.dev,photo:'',photoName:''};

@@ -24,7 +24,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.09.30g';
+const CY_VER='2026.10.01h';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -40,7 +40,12 @@ function vehicles(){try{return X.vehicles()}catch(e){return {}}}
 function emps(){try{return X.employees()}catch(e){return []}}
 function teamsArr(){try{return Array.isArray(teams)?teams:[]}catch(e){return []}}
 function partnerOf(name){const t=teamsArr().find(t=>Array.isArray(t)&&t.indexOf(name)>=0);if(!t)return '';return t.filter(m=>m&&m!==name)[0]||''}
-function teamNo(names){const T=teamsArr();for(let i=0;i<T.length;i++){if(Array.isArray(T[i])&&names.some(n=>n&&T[i].indexOf(n)>=0))return i+1}return 0}
+function teamNo(names,plate){ // 팀 번호: 차량 탭 사수가 속한 팀 > 담당과 가장 많이 겹치는 팀(사수 자리가 같으면 우선). 한 명이 두 팀을 오가도 안 겹침
+  const T=teamsArr().map(t=>Array.isArray(t)?t.filter(Boolean):[]);
+  if(plate){const o=ownerOf(plate);if(o){let i=T.findIndex(t=>t[0]===o);if(i<0)i=T.findIndex(t=>t.indexOf(o)>=0);if(i>=0)return i+1}}
+  let best=0,bi=0;(names||[]).length&&T.forEach((t,i)=>{let sc=names.filter(n=>n&&t.indexOf(n)>=0).length;if(!sc)return;if(t[0]===names[0])sc+=0.5;if(sc>best){best=sc;bi=i+1}});
+  return bi;
+}
 function records(){try{return X.records().all||{}}catch(e){return {}}}
 function jobs(){try{return X.jobs()}catch(e){return []}}
 function parseQty(q){const s=String(q||'');if(/자투리/.test(s))return 0;const m=s.match(/\d+/);return m?+m[0]:0}
@@ -104,7 +109,7 @@ function cyclesOf(plate){
     const ov=ovOf(cy);
     cy.ov=ov;cy.open=!cy.ins.length;
     const wds=cy.outs.map(r=>r.wdate||r.date).filter(Boolean).sort();
-    cy.fromW=wds[0]||U.kstDate(0,new Date(cy.startTs));
+    cy.fromW=wds[0]||U.kstDate(0,new Date(cy.startTs));cy.lastW=wds[wds.length-1]||cy.fromW;
     const iws=cy.ins.map(r=>r.wdate||r.date).filter(Boolean).sort();
     cy.toW=cy.open?today:(iws[iws.length-1]||cy.fromW);
     if(cy.toW<cy.fromW)cy.toW=cy.fromW;
@@ -259,7 +264,8 @@ function cardHTML(v){
   const open=!!(cur&&cur.open);
   const up=open?{date:'',list:[]}:upcomingOf(v.plate,from,consumed); // 열린 순환이 있으면 연결된 시공 목록이 곧 갈 현장
   const who=open?cur.crew:(up.date?crewFor(v.plate,up.date):vehCrew(v.plate)); // 그날 실제 팀은 스케줄 기준
-  const tn=teamNo(who)||teamNo(vehCrew(v.plate));const chip=cur?stChip(cur):['','기록 없음'];
+  const tn=teamNo(who,v.plate);const chip=cur?stChip(cur):['','기록 없음'];
+  const outW=open?cur.lastW:(up.date||from),inW=open?cur.lastW:from; // 출고 작업일 = 카드에 보이는 갈 현장 날짜(순환 중이면 그 순환 날짜), 반납 = 그 순환 날짜
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
   let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀 · ':''}${esc(who.join('·')||'담당 미지정')}<small>${esc(v.plate)}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
   if(cur||mine)h+=`<div class="cy-crew">${cur?`<span class="ia-tiny">${esc(cyLabel(cur))} · ${cur.open?'출고 '+esc(String(cur.startAt||'').slice(5,16)):'반납 '+esc(String(cur.endAt||'').slice(5,16))}</span>`:''}${mine?' <span style="color:var(--dm-blue)">내 차량</span>':''}</div>`;
@@ -273,7 +279,7 @@ function cardHTML(v){
     if(foot.length)h+=`<div class="ia-teamfoot">${foot.join('<br>')}</div>`;
   }else h+=`<div class="ia-tiny" style="margin-top:6px">아직 출고 기록이 없어요. 차에 실으면 [출고]를 눌러주세요.</div>`;
   h+=upcomingHTML(v,up,from);
-  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}')">반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}')">반납</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list);
   return h+'</div>';
 }
@@ -285,7 +291,7 @@ function monthHTML(vehs,from,to){
     const t={out:0,used:0,inn:0,diff:0,n:0,und:0,scrap:0};
     cys.forEach(c=>{if(c.decided){t.n++;t.out+=c.out;t.used+=c.used;t.inn+=c.inn;t.diff+=c.diff;t.scrap+=c.scrap;c.crew.forEach(n=>{per[n]=per[n]||{n:0,loss:0,scrap:0};per[n].n++;per[n].loss+=c.diff;per[n].scrap+=c.scrap})}else t.und++});
     ['out','used','inn','diff','n','und'].forEach(f=>tot[f]+=t[f]);
-    const tn=teamNo(cys[cys.length-1].crew);
+    const tn=teamNo(cys[cys.length-1].crew,v.plate);
     h+=`<div class="ia-team cy-card"><div class="ia-teamtop"><span class="ia-teamname">${tn?tn+'팀':''}<small>${esc(v.plate)}</small></span><span class="ia-status ${t.diff>0?'bad':t.n?'ok':''}">${t.n?'확정 '+t.n+'회'+(t.und?' · 대기 '+t.und:''):'대기 '+t.und}</span></div>
       <div class="ia-metrics"><div><span>출고</span><b>${t.out}</b><small>장</small></div><div><span>사용</span><b>${t.used}</b><small>장</small></div><div><span>반납</span><b>${t.inn}</b><small>장</small></div><div><span>로스 합계</span><b class="${t.diff>0?'ia-loss':t.n?'ia-fit':'dimv'}">${t.n?sgn(t.diff):'–'}</b><small>장</small></div></div>
       ${t.scrap?`<div class="ia-tiny" style="margin-top:6px">자투리 활용 ${t.scrap}장</div>`:''}</div>`;
@@ -381,7 +387,7 @@ function zero(plate){
   const {cur:cy}=latestOf(plate);
   if(!cy||!cy.open){X.toast('열려 있는 순환이 없어요',true);return}
   if(!confirm(plate+' · 출고 '+cy.out+'장 / 사용 '+cy.used+'장\n\n남은 매트가 0장이라 반납할 게 없나요?\n이 순환을 "반납 0장"으로 닫아요.'+(cy.remain>0?'\n\n⚠ 계산상 잔량 '+cy.remain+'장이 남아 있어야 해요. 그대로 닫으면 '+cy.remain+'장이 로스로 잡혀요.':'')))return;
-  try{window.ioZeroReturn(plate)}catch(e){X.toast('반납 0장 기록을 못 만들었어요 (iolog.js 버전 확인)',true)}
+  try{window.ioZeroReturn(plate,cy.lastW)}catch(e){X.toast('반납 0장 기록을 못 만들었어요 (iolog.js 버전 확인)',true)}
 }
 function hist(k,open){HIST_OPEN[k]=!!open}
 
@@ -390,7 +396,7 @@ function shareHTML(date,onlyPlate){
   const plates=Object.keys(vehicles()).filter(p=>!onlyPlate||NP(p)===NP(onlyPlate));
   let h='';
   plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>(c.open&&c.fromW<=date)||(!c.open&&c.toW===date)).forEach(c=>{
-    const tn=teamNo(c.crew);const chip=stChip(c);
+    const tn=teamNo(c.crew,p);const chip=stChip(c);
     h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${tn?tn+'팀 · ':''}${esc(p)}<small>${esc(c.crew.join(' / '))}</small></div>
       <div class="io-sh-rc"><span>출고 <b>${c.out}</b> − 사용 <b>${c.used}</b>${c.asFree?' (AS '+c.asFree+')':''} − 반납 <b>${c.open?'–':c.inn}</b>${c.open?' → 차 잔량 <b>'+c.remain+'</b>':' → '+(c.decided?'로스 <b>'+sgn(c.diff)+'</b>':'대조 대기')}</span><span class="io-veh-diff ${chip[0]==='bad'?'plus':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':'dim'}">${chip[1]}</span></div>
       ${c.byProd.length?`<div class="io-rc-prod">${c.byProd.map(b=>esc(b.k)+' '+(c.open?'잔 '+(b.out-b.used):sgn(b.diff))).join(' · ')}</div>`:''}
@@ -401,7 +407,7 @@ function shareHTML(date,onlyPlate){
 function shareText(date,onlyPlate){
   const plates=Object.keys(vehicles()).filter(p=>!onlyPlate||NP(p)===NP(onlyPlate));const out=[];
   plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>(c.open&&c.fromW<=date)||(!c.open&&c.toW===date)).forEach(c=>{
-    const tn=teamNo(c.crew);
+    const tn=teamNo(c.crew,p);
     out.push((tn?RN+' '+tn+'팀 · ':'')+p+' · 순환 정산 ('+cyLabel(c)+')\n담당: '+c.crew.join(' / ')+'\n출고 '+c.out+'장\n사용 '+c.used+'장 — 시공 '+c.sold+'장'+(c.asFree?' / AS 무상 '+c.asFree+'장':'')+(c.scrap?' / 자투리 −'+c.scrap:'')+'\n반납 '+(c.open?'(전) · 차 잔량 '+c.remain+'장':c.inn+'장')+(c.open?'':'\n로스 '+(c.decided?sgn(c.diff)+'장':'대조 대기'))+(c.decided?'\n'+c.crew.map(n=>n+': 공동작업 로스 '+c.diff).join('\n')+'\n회사 실제 재고 로스: '+c.diff+'장':'')+'\n상태: '+stChip(c)[1]);
   })});
   return out.join('\n\n');
