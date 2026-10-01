@@ -24,7 +24,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01i';
+const CY_VER='2026.10.01j';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -54,7 +54,14 @@ function recByProd(r,into){(r.items||[]).forEach(it=>{const k=it.product||'?';in
 function crewOf(r){if(Array.isArray(r.crew)&&r.crew.length)return r.crew.filter(Boolean).slice(0,3);const w=r.worker||'';return w?[w,partnerOf(w)].filter(Boolean):[]}
 function arr(v){return Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[])} // Firebase가 배열을 객체로 줄 때 대비
 function splitNames(v){return String(v||'').split(/[,·\/]/).map(x=>x.trim()).filter(Boolean)}
-function crewFromJobs(list){const out=[];list.forEach(j=>{splitNames(j.sasu).concat(splitNames(j.busasu)).forEach(n=>{if(out.indexOf(n)<0)out.push(n)})});return out.slice(0,3)}
+function orderCrew(names){ // 표시 순서 = 팀설정 기준: 팀설정 사수(맨 앞 사람)가 있으면 먼저, 나머지는 팀 번호·팀 내 순서 (시트 사수 칸이 입사일 순이어도 카드는 팀설정대로)
+  const T=teamsArr().map(t=>Array.isArray(t)?t:[]);
+  const pos=n=>{for(let i=0;i<T.length;i++){const k=T[i].indexOf(n);if(k>=0)return i*100+k}return 9999};
+  const lead=names.find(n=>T.some(t=>t[0]===n));
+  const rest=names.filter(n=>n!==lead).slice().sort((a,b)=>pos(a)-pos(b));
+  return lead?[lead].concat(rest):rest;
+}
+function crewFromJobs(list){const out=[];list.forEach(j=>{splitNames(j.sasu).concat(splitNames(j.busasu)).forEach(n=>{if(out.indexOf(n)<0)out.push(n)})});return orderCrew(out).slice(0,3)}
 function ownerOf(plate){const np=NP(plate);const V=vehicles();const k=Object.keys(V).find(p=>NP(p)===np);return k?String(V[k]||'').trim():''} // 차량 탭에 적힌 사수
 function asOf(id){ // AS보고서 — 없으면 한 번 불러오고 도착하면 다시 그림
   if(id in AS)return AS[id];
@@ -75,9 +82,9 @@ function schedJobs(plate,date){ // 그 날짜에 이 차량이 가는 시공 (�
   return jobs().filter(j=>j&&jobOK(j)&&j.date===date&&!del[j.id]&&(jobMatches(j,plate)||add[j.id])&&!claimedElsewhere(j.id,plate)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
 }
 function crewFor(plate,date,seed){ // 그 날짜 이 차량의 담당 — 날짜별 수정 > 스케줄 > seed(출고 때 적은 담당) > 차량 기본
-  const bd=arr((vehOv(plate).crewByDate||{})[date]).filter(Boolean);if(bd.length)return bd.slice(0,3);
+  const bd=arr((vehOv(plate).crewByDate||{})[date]).filter(Boolean);if(bd.length)return orderCrew(bd).slice(0,3);
   const c=crewFromJobs(schedJobs(plate,date));if(c.length)return c;
-  if(seed&&seed.length)return seed;return vehCrew(plate);
+  if(seed&&seed.length)return orderCrew(seed);return vehCrew(plate);
 }
 function upcomingOf(plate,from,skip){ // 선택 날짜 이후 이 차량의 첫 시공일과 그날 갈 현장 (skip: 이미 순환에 쓰인 시공 id)
   const dates=[];jobs().forEach(j=>{if(j&&jobOK(j)&&j.date>=from&&dates.indexOf(j.date)<0)dates.push(j.date)});dates.sort();
@@ -169,7 +176,7 @@ function compute(cy,consumed){
   linked.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
   // 담당: 순환별 수정 > 날짜별 수정 > 스케줄(연결된 시공의 사수·부사수) > 출고 때 적은 담당 > 차량 기본
   const ovc=arr(ov.crew).filter(Boolean);const bd=arr((vo.crewByDate||{})[cy.fromW]).filter(Boolean);const sc=crewFromJobs(linked);
-  cy.crew=(ovc.length?ovc:bd.length?bd:sc.length?sc:cy.seed.length?cy.seed:vehCrew(cy.plate)).slice(0,3);
+  cy.crew=orderCrew(ovc.length?ovc:bd.length?bd:sc.length?sc:cy.seed.length?cy.seed:vehCrew(cy.plate)).slice(0,3);
   cy.crewSrc=ovc.length?'수정':bd.length?'수정':sc.length?'스케줄':cy.seed.length?'출고':'기본';
   const prods=PRODUCTS.map(p=>p.k).filter(k=>by[k]).concat(Object.keys(by).filter(k=>!PRODUCTS.some(p=>p.k===k)));
   cy.byProd=prods.map(k=>{const b=by[k];const used=b.sold-b.scrap+b.asFree;return {k,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,scrap:b.scrap,used,diff:b.out-used-b.inn}});

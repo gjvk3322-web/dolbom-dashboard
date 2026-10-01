@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.10.01.83';
+const VER='2026.10.01.84';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -552,14 +552,14 @@ sheetSyncTimer=setTimeout(()=>{
       if(teams.length){teamOrder=teams.find(t=>crew.every(c=>t.includes(c)))}
       if(teamOrder){
         // 팀 순서대로: 첫번째=사수
-        const ordered=teamOrder.filter(m=>crew.includes(m)).sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
+        const ordered=teamOrder.filter(m=>crew.includes(m)); // 팀설정 순서 그대로: 맨 앞 = 사수 (입사일 정렬 제거)
         sasu=ordered[0]||crew[0];
         // 나머지 전부 부사수 (3명 이상 대응)
         const rest=crew.filter(e=>e!==sasu);
         busasu=rest.join(',');
       }else{
         // 다른 팀 조합: 입사일 기준 정렬
-        const sorted=[...crew].sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'));
+        const leads=teams.map(t=>t[0]).filter(Boolean);const sorted=[...crew].sort((a,b)=>(leads.includes(b)-leads.includes(a))||(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999')); // 팀 밖 조합: 팀설정 사수인 사람 먼저, 그다음 입사일
         sasu=sorted[0];
         busasu=sorted.slice(1).join(',');
       }
@@ -3226,7 +3226,7 @@ await refreshSheet(false);
 J.forEach(j=>{
   if(j.offOnly||LOCK.has(j.id))return;
   const crew=A[j.id];if(!crew||!crew.length)return;
-  const sa=crew.sort((a,b)=>(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'))[0];
+  const _t=teams.find(t=>crew.every(c=>t.includes(c)));const _l=teams.map(t=>t[0]).filter(Boolean);const sa=_t?_t.filter(m=>crew.includes(m))[0]:[...crew].sort((a,b)=>(_l.includes(b)-_l.includes(a))||(hireDate[a]||'9999').localeCompare(hireDate[b]||'9999'))[0]; // 사수 = 팀설정 기준
   const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';
   if(autoV)j.vehicle=autoV;
 });
@@ -3337,6 +3337,6 @@ document.addEventListener('visibilitychange',()=>{
 <!-- 현장 대응 프로세스 탭 (부산·경기 공용) — 내용 수정은 guide.js 배포 없이 앱 안에서 -->
 <script src="./guide.js?v=20260908b"></script>
 <!-- 📦 입·출고 기록 탭 (부산·경기 공용) — 사진 시각 스탬프 + 입출고기록 시트 + 드라이브 사진 -->
-<script src="./iolog.js?v=20261001i"></script>
+<script src="./iolog.js?v=20261001j"></script>
 </body>
 </html>
