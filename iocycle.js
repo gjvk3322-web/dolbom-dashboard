@@ -17,6 +17,8 @@
    ■ 담당(그날 실제 팀)은 스케줄에서 자동: 그 날짜에 이 차량(시트 L열 차량번호, 없으면 차량 탭 사수)으로 잡힌 시공의 사수·부사수.
      우선순위: 순환별 수정 > 날짜별 수정(_veh.crewByDate) > 스케줄 > 출고 때 적은 담당 > 차량 기본(_veh.crew > 차량 탭 사수 + 팀설정 짝)
    ■ 시공 연결은 차량번호 기준(없으면 사수=차량 탭 사수). 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙고, 다른 차량 카드에서 수동으로 가져간 시공은 이 차량에서 빠짐
+   ■ 직원별 누적은 Firebase io_ledger/{bs|gg}에 '지난달까지' 저장본을 두고(매달 10일부터, 처음 여는 폰이 자동 저장) 그 뒤 기록만 읽어 더함 — 기록이 쌓여도 열 때 읽는 양이 안 늘어남.
+     저장은 매번 전체 기록으로 다시 계산하므로 옛 기록을 고치면 다음 달 저장 때 반영, 당장 반영하려면 당번 모드 [다시 계산]
    ■ 자투리 입력·확정은 당번 모드. 담당 변경·시공 연결 수정은 누구나 */
 (function(){
 'use strict';
@@ -25,7 +27,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01s';
+const CY_VER='2026.10.01t';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -52,11 +54,13 @@ function teamNo(names,plate){ // 팀 번호: 차량 탭 사수가 속한 팀 > �
   return bi;
 }
 function records(){try{return X.records().all||{}}catch(e){return {}}}
-let MREC={};        // 월별 기록 캐시 {YYYY-MM:{id:rec}} — 직원별 달력용 (iolog는 최근 14일만 들고 있어서 따로 읽음)
+let MREC={};        // 기록 캐시 {all:{id:rec}, from:'기록일'} — 직원별 장부용. iolog는 최근 14일만 들고 있어서 from 이후를 따로 읽음
 let MLOAD={};
-function loadAll(){ // 순환 시작일(CY_START) 이후 전체 기록 — 직원별 누적 장부용. 한 번 읽고 캐시, 이후 변경은 iolog 실시간 기록과 병합
-  if(MREC.all||MLOAD.all)return;MLOAD.all=1;
-  try{db.ref('io_logs/'+RK).orderByChild('date').startAt(CY_START).once('value').then(s=>{const o={};s.forEach(ch=>{o[ch.key]=ch.val()});MREC.all=o;delete MLOAD.all;rerender()}).catch(()=>{MREC.all={};delete MLOAD.all})}catch(e){MREC.all={};delete MLOAD.all}
+function loadRecs(from){ // io_logs를 from(기록일) 이후로 한 번 읽어 캐시. 더 이른 from이 필요해지면 다시 읽음. 이후 변경은 iolog 실시간 기록과 병합
+  from=from||CY_START;
+  if(MLOAD.all||(MREC.from&&MREC.from<=from))return;MLOAD.all=1;
+  const fail=()=>{MREC.all=MREC.all||{};MREC.from=from;delete MLOAD.all;rerender()};
+  try{db.ref('io_logs/'+RK).orderByChild('date').startAt(from).once('value').then(s=>{const o={};s.forEach(ch=>{o[ch.key]=ch.val()});MREC.all=o;MREC.from=from;delete MLOAD.all;rerender()}).catch(fail)}catch(e){fail()}
 }
 function recordsAll(){const o=Object.assign({},MREC.all||{});const live=records();Object.keys(live).forEach(k=>{o[k]=live[k]});return o}
 function jobs(){try{return X.jobs()}catch(e){return []}}
@@ -113,10 +117,10 @@ function save(cy,patch){
 }
 
 /* ---------- 순환 만들기 ---------- */
-function cyclesOf(plate,recMap){
+function cyclesOf(plate,recMap,seed){ // seed: 앞서(저장본에서) 이미 정산된 시공 id — 이 차량의 새 순환에 다시 안 붙음
   const np=NP(plate);const today=U.kstDate(0);
   const recs=Object.values(recMap||records()).filter(r=>r&&r.status!=='void'&&NP(r.vehicle)===np&&r.ts&&String(r.date||'')>=CY_START).sort((a,b)=>a.ts-b.ts);
-  const list=[];let cur=null;const consumed=new Set();
+  const list=[];let cur=null;const consumed=new Set(seed||[]);
   const mk=r=>({plate:r.vehicle||plate,startTs:r.ts,startAt:r.at,outs:[],ins:[],seed:crewOf(r),crew:[]});
   recs.forEach(r=>{
     if(r.type==='in'){if(!cur)cur=Object.assign(mk(r),{orphan:true});cur.ins.push(r);return}
@@ -364,16 +368,46 @@ function cardsHTML(M,S){
   return `<div class="ia-teams">${M.veh.map(cardHTML).join('')}</div>`+peopleSection(ym);
 }
 
-/* ---------- 직원별 로스 기록 (달력) ---------- */
-function ledgerAll(){ // {name:[{date,amt,kind,note,used}]} — 순환 시작일 이후 누적. amt: 로스 −, 자투리 +. 순환은 반납 작업일 기준, 시공하자 AS 무상분은 이전 작업자에게 −
-  const L={};const add=(n,e)=>{if(!n)return;(L[n]=L[n]||[]).push(e)};
-  const recs=recordsAll();const today=U.kstDate(0);let asLoading=false,asNoPrev=0;
-  Object.keys(vehicles()).forEach(p=>{
-    cyclesOf(p,recs).forEach(c=>{if(c.open||!c.decided||c.toW<CY_START)return;
-      c.crew.forEach(n=>add(n,{date:c.toW,amt:-c.diff,kind:'cycle',note:p+' · 출고 '+c.out+' 사용 '+c.used+' 반납 '+c.inn,used:c.used,plate:p,startTs:c.startTs}))});
+/* ---------- 직원별 로스 기록 (달력) — 누적 저장본(io_ledger) + 그 뒤 기록 ----------
+   · 매달 SNAP_DAY(10일)부터는 '지난달 말일까지'를 직원별 기록으로 계산해 Firebase io_ledger/{bs|gg}에 저장 (처음 여는 폰이 자동으로, 먼저 저장한 쪽이 이김)
+   · 평소엔 저장본(작은 것) + 저장본 이후 기록만 읽어서 계산 → 기록이 몇 년 쌓여도 열 때 읽는 양이 안 늘어남
+   · 저장은 매번 전체 기록으로 다시 계산 → 옛 순환을 수정하거나 시공보고·AS보고를 늦게 넣어도 다음 저장 때 반영. 당장 반영하려면 당번 모드 [다시 계산]
+   · 저장본 = {cutoff:마지막 날, openFrom:이후 기록을 읽기 시작할 기록일, upto:{차량키:ts — 이 ts까지는 저장본에 들어감}, used:[정산된 시공 id], entries:[{n,date,amt,kind,note,used,...}]}
+     차량별로 '앞에서부터 확정된 순환까지'만 저장본에 넣고(그 뒤 열린·미확정 순환은 평소 계산 몫), 닫힌 지 60일 넘은 미확정 순환은 넘어감(다음 저장 때 다시 봄) */
+const LNODE=(X.beta?'io_ledger_beta/':'io_ledger/')+RK;
+const SNAP_DAY=10,LV=1; // LV: 장부 계산 규칙 버전 — 바꾸면 저장본을 다시 만듦
+let SNAP;            // undefined=아직 안 읽음, null=저장본 없음
+let SNAP_FORCE=false,SNAP_BUSY=false,SNAP_FAIL=0;
+function loadSnap(){if(SNAP!==undefined||MLOAD.snap)return;MLOAD.snap=1;
+  const done=v=>{SNAP=v||null;delete MLOAD.snap;rerender()};
+  try{db.ref(LNODE).once('value').then(s=>done(s.val())).catch(()=>done(null))}catch(e){done(null)}}
+function snapCutoff(){ // 지금 저장본이 담아야 할 마지막 날: 매달 SNAP_DAY부터 지난달 말일, 그 전엔 전전달 말일. 순환 시작 전이면 ''
+  const t=U.kstDate(0);let y=+t.slice(0,4),m=+t.slice(5,7);const d=+t.slice(8,10);
+  m-=(d>=SNAP_DAY?1:2);while(m<1){m+=12;y--}
+  const c=y+'-'+String(m).padStart(2,'0')+'-'+String(new Date(Date.UTC(y,m,0)).getUTCDate()).padStart(2,'0');
+  return c>=CY_START?c:'';
+}
+function addDays(d,n){const b=new Date(d+'T00:00:00Z');b.setUTCDate(b.getUTCDate()+n);return b.toISOString().slice(0,10)}
+function snapOK(s){return !!(s&&s.cutoff&&nn(s.lv)===LV)}
+function ledgerCalc(recs,o){ // 직원별 기록 계산. o.build=저장본 만들기(to=cutoff까지), 아니면 저장본(upto·used) 이후 기록으로 평소 계산
+  // 반환 {entries:[{n,date,amt,kind,note,used,...}], asLoading, asNoPrev, upto, used, openFrom}. amt: 로스 −, 자투리 +. 순환은 반납 작업일, 시공하자 AS 무상분은 이전 작업자에게 −
+  o=o||{};const E=[];const add=(n,e)=>{if(n)E.push(Object.assign({n},e))};
+  const today=U.kstDate(0),to=o.to||today;const upto=Object.assign({},o.upto||{});const used=new Set(arr(o.used));
+  let asLoading=false,asNoPrev=0,openFrom='';const stale=o.build?addDays(to,-60):'';
+  Object.keys(vehicles()).forEach(p=>{const np=NP(p);
+    const rm={};Object.keys(recs||{}).forEach(k=>{const r=recs[k];if(r&&NP(r.vehicle)===np&&nn(r.ts)>(upto[np]||0))rm[k]=r});
+    let cut=true;
+    cyclesOf(p,rm,arr(o.used)).forEach(c=>{
+      const settled=!c.open&&c.decided&&c.toW>=CY_START&&c.toW<=to;
+      const put=()=>c.crew.forEach(n=>add(n,{date:c.toW,amt:-c.diff,kind:'cycle',note:p+' · 출고 '+c.out+' 사용 '+c.used+' 반납 '+c.inn,used:c.used,plate:p,startTs:c.startTs}));
+      if(!o.build){if(settled)put();return}
+      if(cut&&(settled||(!c.open&&c.toW<=stale))){if(settled)put();c.jobs.forEach(r=>used.add(r.id));upto[np]=Math.max(upto[np]||0,...c.outs.concat(c.ins).map(r=>nn(r.ts)))}
+      else{cut=false;const d0=c.outs.concat(c.ins).map(r=>String(r.date||'')).filter(Boolean).sort()[0]||'';if(d0&&(!openFrom||d0<openFrom))openFrom=d0}
+    });
   });
+  const asFrom=o.asFrom||CY_START,asTo=o.asTo||today;
   jobs().forEach(j=>{
-    if(!j||!jobOK(j)||j.date<CY_START||j.date>today)return;
+    if(!j||!jobOK(j)||j.date<asFrom||j.date>asTo||j.date>today)return;
     if(!/^AS$/i.test(String(j.time||'').trim())||!/시공하자/.test(String(j.category||'')))return;
     const a=asOf(j.id);if(a===undefined){asLoading=true;return}
     if(!a||String(a.pay||'')!=='무료')return;
@@ -381,9 +415,27 @@ function ledgerAll(){ // {name:[{date,amt,kind,note,used}]} — 순환 시작일
     const prev=splitNames(a.prevWorker);if(!prev.length){asNoPrev++;return}
     prev.forEach(n=>add(n,{date:j.date,amt:-q,kind:'as',note:'시공하자 AS 무상 '+q+'장 · '+String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,16),used:0,id:j.id}));
   });
-  Object.values(L).forEach(a=>a.sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:0));
-  return {L,asLoading,asNoPrev};
+  return {entries:E,asLoading,asNoPrev,upto,used:Array.from(used),openFrom};
 }
+function ledgerAll(){ // {L:{name:[entries]},asLoading,asNoPrev} = 저장본 entries + 저장본 이후 기록으로 계산한 것 (저장본 없으면 전부 계산)
+  const S=snapOK(SNAP)?SNAP:null;
+  const live=ledgerCalc(recordsAll(),S?{upto:S.upto||{},used:S.used,asFrom:addDays(S.cutoff,1)}:{});
+  const L={};(S?arr(S.entries):[]).concat(live.entries).forEach(e=>{if(e&&e.n)(L[e.n]=L[e.n]||[]).push(e)});
+  Object.values(L).forEach(a=>a.sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:0));
+  return {L,asLoading:live.asLoading,asNoPrev:live.asNoPrev+(S?nn(S.asNoPrev):0)};
+}
+function snapBuild(){ // 저장본 만들기: 전체 기록을 읽어 cutoff까지 계산 → io_ledger에 저장. 다른 폰이 먼저 저장했으면 그걸 받음
+  const cutoff=snapCutoff();if(!cutoff||SNAP_BUSY||Date.now()-SNAP_FAIL<60000)return;
+  if(!(MREC.from&&MREC.from<=CY_START)){loadRecs(CY_START);return}
+  if(MLOAD.all)return;
+  const r=ledgerCalc(recordsAll(),{build:true,to:cutoff,asTo:cutoff});
+  if(r.asLoading)return; // AS보고서가 다 오면 rerender → 다시 시도
+  const today=U.kstDate(0);const force=SNAP_FORCE;SNAP_FORCE=false;SNAP_BUSY=true;
+  const snap={lv:LV,cutoff,openFrom:(r.openFrom&&r.openFrom<today)?r.openFrom:today,upto:r.upto,used:r.used,entries:r.entries,asNoPrev:r.asNoPrev,n:r.entries.length,builtAt:U.kstDT(new Date()),by:(localStorage.getItem('io_admin_name')||'').trim()||'',ver:CY_VER};
+  const end=v=>{SNAP_BUSY=false;SNAP=v;rerender()};
+  try{db.ref(LNODE).transaction(cur=>{if(!force&&snapOK(cur)&&cur.cutoff>=cutoff)return;return snap}).then(res=>{const v=res&&res.snapshot&&res.snapshot.val();end(v||snap)}).catch(()=>{SNAP_FAIL=Date.now();end(SNAP||null)})}catch(e){SNAP_FAIL=Date.now();end(SNAP||null)}
+}
+function relearn(){if(!admin())return;SNAP_FORCE=true;rerender()}
 function personSum(arr){const o={net:0,as:0,asN:0,n:0,used:0};(arr||[]).forEach(e=>{o.net+=e.amt;if(e.kind==='as'){o.as+=-e.amt;o.asN++}else{o.n++;o.used+=e.used||0}});o.rate=o.used&&o.net<0?Math.round(-o.net/o.used*1000)/10:(o.used?0:null);return o}
 function calHTML(name,ym,all){
   const entries=(all||[]).filter(e=>e.date.slice(0,7)===ym);
@@ -401,14 +453,21 @@ function calHTML(name,ym,all){
     ${entries.length?`<div class="cy-led">${entries.slice().reverse().map(e=>`<div class="r"><span>${esc(U.fmtMD(e.date))} ${e.kind==='as'?'<span style="color:var(--dm-amber)">AS</span> ':''}${esc(e.note)}</span><b class="${e.amt<0?'bad':e.amt>0?'ok':''}">${e.amt>0?'+':''}${e.amt}</b></div>`).join('')}</div>`:''}</div>`;
 }
 function peopleSection(ym){
-  if(!PPL_OPEN)return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small><u style="cursor:pointer;color:var(--dm-blue)" onclick="ioCycle.pplToggle()">보기</u></small></div></div>`;
-  loadAll();
-  const {L,asLoading,asNoPrev}=ledgerAll();
+  const lnk=(f,t)=>`<u style="cursor:pointer;color:var(--dm-blue)" onclick="ioCycle.${f}()">${t}</u>`;
+  if(!PPL_OPEN)return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${lnk('pplToggle','보기')}</small></div></div>`;
+  loadSnap();
+  const S=snapOK(SNAP)?SNAP:null;const want=snapCutoff();
+  const due=SNAP!==undefined&&!!want&&(SNAP_FORCE||!S||S.cutoff<want);
+  if(due)snapBuild();else loadRecs(S?(S.openFrom||addDays(S.cutoff,1)):CY_START); // 저장할 때가 됐으면 전체를, 아니면 저장본 이후만
+  const loading=SNAP===undefined||!!MLOAD.all||!MREC.from;
+  const {L,asLoading,asNoPrev}=loading?{L:{},asLoading:false,asNoPrev:0}:ledgerAll();
   const names=emps().slice();Object.keys(L).forEach(n=>{if(names.indexOf(n)<0)names.push(n)});
   if(!names.length)return '';
   if(PSEL&&names.indexOf(PSEL)<0)PSEL='';
-  const chips=names.map(n=>{const S=personSum(L[n]);const v=S.net;return `<span class="cy-chip${PSEL===n?' on':''}" onclick="ioCycle.person('${esc(n)}')">${esc(n)}<b class="${v<0?'bad':v>0?'ok':'dim'}">${L[n]?(v>0?'+':'')+v:'–'}</b></span>`}).join('');
-  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${MLOAD.all?'불러오는 중…':asLoading?'AS보고 확인 중…':'누적 · 로스 − / 자투리 +'}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''} · <u style="cursor:pointer;color:var(--dm-blue)" onclick="ioCycle.pplToggle()">접기</u></small></div><div class="cy-chips">${chips}</div>${PSEL?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
+  const chips=loading?'':names.map(n=>{const P=personSum(L[n]);const v=P.net;return `<span class="cy-chip${PSEL===n?' on':''}" onclick="ioCycle.person('${esc(n)}')">${esc(n)}<b class="${v<0?'bad':v>0?'ok':'dim'}">${L[n]?(v>0?'+':'')+v:'–'}</b></span>`}).join('');
+  const st=loading?'불러오는 중…':SNAP_BUSY?'누적 저장 중…':asLoading?'AS보고 확인 중…':'누적 · 로스 − / 자투리 +';
+  const adm=admin()&&S&&!loading?` · ${esc(U.fmtMD(S.cutoff))}까지 저장 · ${lnk('relearn','다시 계산')}`:'';
+  return `<div class="cy-ppl"><div class="hd"><span>👤 직원별 로스 기록</span><small>${st}${asNoPrev?' · 이전작업자 미기재 AS '+asNoPrev+'건':''}${adm} · ${lnk('pplToggle','접기')}</small></div><div class="cy-chips">${chips}</div>${PSEL&&!loading?calHTML(PSEL,ym,L[PSEL]||[]):''}</div>`;
 }
 function pplToggle(){PPL_OPEN=!PPL_OPEN;try{localStorage.setItem('io_ppl_open',PPL_OPEN?'1':'0')}catch(e){}rerender()}
 function person(n){PSEL=(PSEL===n)?'':n;try{localStorage.setItem('io_person',PSEL)}catch(e){}rerender()}
@@ -652,5 +711,5 @@ function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
 
 /* ---------- 시작 ---------- */
 try{db.ref(NODE).on('value',s=>{OV=s.val()||{};rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText}};
+window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,openBy,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,relearn,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText,ledgerCalc,snapCutoff,snapBuild,snap:()=>SNAP,setSnap:v=>{SNAP=v},mrec:()=>MREC}};
 })();
