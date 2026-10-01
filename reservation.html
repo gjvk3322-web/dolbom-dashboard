@@ -277,23 +277,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <!-- 3열: 상세 + 접수 -->
   <div style="flex:1;min-width:440px;max-height:calc(100vh - 180px);overflow-y:auto;margin-top:12px">
 
-<!-- 💰 예약금 입금 패널 — 기업은행 입금 문자 → 아이폰 단축어 → Apps Script(action=deposit) → '입금내역' 시트 → 여기 표시 -->
-<div class="card" id="depositSection" style="margin:0 0 12px 0;padding:12px 14px;border:2px solid #2E7D32;background:linear-gradient(135deg,#E8F5E9,#FFFFFF)">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <div style="font-size:14px;font-weight:700;color:#1B5E20">
-      💰 예약금 입금 <span id="depositCount" style="background:#2E7D32;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:6px">0</span>
-      <span id="depositSub" style="font-size:11px;font-weight:400;color:#666;margin-left:6px"></span>
-    </div>
-    <div style="display:flex;gap:4px;align-items:center">
-      <label style="font-size:11px;color:#555;cursor:pointer;display:flex;align-items:center;gap:3px"><input type="checkbox" id="depositShowDone" onchange="renderDeposits()" style="margin:0">확인건 보기</label>
-      <button onclick="loadDeposits(true)" style="padding:4px 10px;border:1px solid #2E7D32;background:#fff;color:#1B5E20;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">🔄 새로고침</button>
-    </div>
-  </div>
-  <div id="depositList" style="max-height:260px;overflow-y:auto">
-    <div style="text-align:center;color:#999;font-size:12px;padding:14px">로딩 중...</div>
-  </div>
-</div>
-
 <!-- 🆕 신규 예약 영역 (booking.html에서 자동 들어온 데이터) -->
 <div class="card" id="newBookingsSection" style="margin:0 0 12px 0;padding:14px;border:2px solid #FF9800;background:linear-gradient(135deg,#FFF8E1,#FFFFFF)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1716,7 +1699,6 @@ loadData().then(function(){
   if(_initRegion === '경기') switchTeam('경기');
   // 🆕 신규 예약 영역 초기 로드
   loadNewBookings();
-  loadDeposits(true);
 }).catch(function(){});
 
 // 🆕 30초마다 자동 새로고침
@@ -1737,8 +1719,6 @@ function loadNewBookings(){
       lastBookings=data.bookings||[];
       renderNewBookings(lastBookings);
       checkSmsExpiry();
-      if(lastDeposits.length)renderDeposits(); // 접수 목록 바뀌면 입금 매칭도 갱신
-      loadDeposits(false);
     })
     .catch(function(){
       document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">네트워크 오류</div>';
@@ -1798,115 +1778,6 @@ function renderNewBookings(bookings){
   }).join('');
   
   document.getElementById('newBookingsList').innerHTML=html;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 💰 예약금 입금 패널 (2026-09-30)
-// 흐름: 기업은행 입금 문자 → 아이폰 단축어 → Apps Script doPost action='deposit'
-//       → '입금내역' 시트 → doGet type=depositList → 여기서 신규접수와 입금자명 자동 매칭
-// 시트 열: 수신시각·거래일시·입금자명·금액·원문·매칭예약·확인
-// ═══════════════════════════════════════════════════════════════
-var DEPOSIT_AMOUNT=200000;   // 예약금
-var DEPOSIT_DAYS=7;          // 최근 N일 표시
-var lastDeposits=[];
-var depositLoadedAt=0;
-
-function loadDeposits(force){
-  if(!force&&Date.now()-depositLoadedAt<20000)return; // 신규접수 30초 주기와 겹쳐 연타 방지
-  depositLoadedAt=Date.now();
-  fetch(API_URL+'?type=depositList&days='+DEPOSIT_DAYS)
-    .then(function(r){return r.json()})
-    .then(function(d){
-      if(d.result!=='ok'){document.getElementById('depositList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:14px">조회 실패</div>';return;}
-      lastDeposits=d.list||[];
-      renderDeposits();
-    })
-    .catch(function(){document.getElementById('depositList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:14px">네트워크 오류 (Apps Script 새 버전 배포 확인)</div>';});
-}
-setInterval(function(){loadDeposits(false);},60000);
-
-// 이름 정규화: 공백·특수문자 제거, "님" 제거
-function normName_(s){return String(s||'').replace(/님$/,'').replace(/[\s()\-_.·]/g,'').trim();}
-// 입금자명 ↔ 접수자명 매칭 점수: 2=완전일치, 1=성 뺀 이름 일치·포함, 0=불일치
-function depositMatchScore_(depName,bookName){
-  var a=normName_(depName),b=normName_(bookName);
-  if(!a||!b)return 0;
-  if(a===b)return 2;
-  if(a.length>=2&&b.length>=2){
-    var a2=a.slice(1),b2=b.slice(1);           // 성 제외
-    if(a2===b2&&a2.length>=2)return 1;
-    if(a.indexOf(b)>=0||b.indexOf(a)>=0)return 1;
-  }
-  return 0;
-}
-// 입금 1건에 가장 잘 맞는 접수 카드 찾기 (입금완료 전 카드 우선)
-function findDepositMatch_(dep){
-  var best=null,bestScore=0;
-  (lastBookings||[]).forEach(function(b){
-    if(b.status==='입금완료'&&normName_(b.name)!==normName_(dep.name))return;
-    var s=depositMatchScore_(dep.name,b.name);
-    if(b.status==='입금완료')s-=0.5; // 이미 처리된 건은 후순위
-    if(s>bestScore){bestScore=s;best=b;}
-  });
-  return bestScore>0?{booking:best,score:bestScore}:null;
-}
-function fmtDepTime_(dep){
-  var w=String(dep.when||'');
-  if(/^\d{1,2}\/\d{1,2}\s+\d{1,2}:\d{2}$/.test(w))return w;            // "09/30 11:17" 그대로
-  var d=w?new Date(w):null;                                              // 시트가 날짜로 자동 변환한 경우
-  if(!d||isNaN(d.getTime()))d=new Date(dep.at);                          // 없으면 수신시각
-  return ('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getDate()).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
-}
-function renderDeposits(){
-  var showDone=document.getElementById('depositShowDone').checked;
-  var list=lastDeposits.filter(function(d){return showDone||!d.checked;});
-  var pending=lastDeposits.filter(function(d){return !d.checked;}).length;
-  document.getElementById('depositCount').textContent=pending;
-  document.getElementById('depositSub').textContent='최근 '+DEPOSIT_DAYS+'일 '+lastDeposits.length+'건';
-  var box=document.getElementById('depositList');
-  if(list.length===0){box.innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:10px">'+(lastDeposits.length?'미확인 입금 없음':'최근 입금 문자 없음')+'</div>';return;}
-  box.innerHTML=list.map(function(dep){
-    var amt=Number(dep.amount)||0;
-    var isDep=amt===DEPOSIT_AMOUNT;
-    var m=dep.checked?null:findDepositMatch_(dep);
-    var amtHtml='<strong style="color:'+(isDep?'#1B5E20':'#B71C1C')+'">'+(amt?amt.toLocaleString()+'원':'금액?')+'</strong>'+(isDep?'':' <span style="font-size:10px;color:#B71C1C">(예약금 아님)</span>');
-    var left='<span style="font-size:11px;color:#999">'+fmtDepTime_(dep)+'</span> <span style="font-weight:700;color:#1a1a1a;font-size:13px">'+(dep.name||'(입금자명?)')+'</span> '+amtHtml;
-    var right='';
-    if(dep.checked){
-      right='<span style="font-size:11px;color:#2E7D32">✓ 확인'+(dep.match?' · '+dep.match:'')+'</span>';
-    }else if(m){
-      var b=m.booking,done=b.status==='입금완료';
-      right='<span style="font-size:11px;background:'+(m.score>=2?'#2E7D32':'#F9A825')+';color:#fff;padding:2px 7px;border-radius:8px;font-weight:700">'+(m.score>=2?'일치':'유사')+' '+b.name+'</span>'+
-        (done?'<span style="font-size:11px;color:#2E7D32;margin-left:4px">이미 입금완료</span><button onclick="checkDeposit('+dep.row+',\''+b.name+'\')" style="margin-left:4px;padding:4px 8px;border:1px solid #2E7D32;background:#fff;color:#1B5E20;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">확인 처리</button>':
-        '<button onclick="confirmDepositMatch('+dep.row+','+b.rowNumber+',\''+b.name+'\')" style="margin-left:4px;padding:4px 10px;border:none;background:#2E7D32;color:#fff;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✅ 입금완료 처리</button>');
-    }else{
-      right='<span style="font-size:11px;color:#999">매칭 없음</span><button onclick="checkDeposit('+dep.row+',\'\')" style="margin-left:4px;padding:4px 8px;border:1px solid #ccc;background:#fff;color:#666;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">확인</button>';
-    }
-    return '<div title="'+String(dep.text||'').replace(/"/g,'&quot;')+'" style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:6px 8px;margin-bottom:4px;border-radius:8px;background:#fff;border:1px solid '+(dep.checked?'#e0e0e0':(m?'#A5D6A7':'#FFE0B2'))+';font-size:12px;'+(dep.checked?'opacity:.6':'')+'">'+
-      '<div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+left+'</div><div style="flex:none;display:flex;align-items:center">'+right+'</div></div>';
-  }).join('');
-}
-// 매칭 확정: 접수 카드 [입금완료] 처리 + 입금내역 시트에 확인 표시
-function confirmDepositMatch(depRow,bookingRow,name){
-  if(!confirm(name+' 고객님 입금으로 확인하고 접수를 [입금완료] 처리할까요?'))return;
-  fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'bookingStatus',rowNumber:bookingRow,status:'입금완료'})})
-    .then(function(r){return r.json()})
-    .then(function(d){
-      if(!d.success)throw new Error(d.message||'fail');
-      fbDb.ref('smsReminder/'+String((lastBookings.find(function(b){return b.rowNumber===bookingRow;})||{}).phone||'').replace(/[^0-9]/g,'')).remove();
-      return markDeposit_(depRow,name);
-    })
-    .then(function(){loadNewBookings();loadDeposits(true);})
-    .catch(function(e){alert('처리 실패: '+e.message);});
-}
-// 입금완료는 이미 됐거나 예약금이 아닌 건 → 확인 표시만
-function checkDeposit(depRow,name){
-  markDeposit_(depRow,name).then(function(){loadDeposits(true);}).catch(function(e){alert('처리 실패: '+e.message);});
-}
-function markDeposit_(depRow,name){
-  var dep=lastDeposits.find(function(d){return d.row===depRow;});if(dep){dep.checked='✓';dep.match=name||dep.match;renderDeposits();}
-  return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'depositCheck',row:depRow,match:name||''})})
-    .then(function(r){return r.json()}).then(function(d){if(d.result!=='ok')throw new Error(d.message||'depositCheck 실패');});
 }
 
 // ═══════════════════════════════════════════════════════════════
