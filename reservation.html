@@ -1719,17 +1719,27 @@ loadData().then(function(){
   loadDeposits(true);
 }).catch(function(){});
 
-// 🆕 30초마다 자동 새로고침
-setInterval(loadNewBookings, 30000);
+// 자동 새로고침 · 2026-10-01 Apps Script 과부하 대응
+//  - 탭이 백그라운드(안 보임)면 폴링 중단, 다시 보이면 즉시 1회 갱신
+//  - 이전 요청이 아직 안 끝났으면 다음 요청 안 보냄(요청 겹침 방지)
+//  - 주기 30초 → 60초 (CS 여러 탭 × 2종 요청이 Apps Script 대기열을 만들었음)
+var bookingsBusy=false;
+setInterval(function(){ if(!document.hidden) loadNewBookings(); }, 60000);
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){ loadNewBookings(); }
+});
 
 // ═══════════════════════════════════════════════════════════════
 // 🆕 신규 예약 관리 함수들 (5단계 booking.html 연동)
 // ═══════════════════════════════════════════════════════════════
 
 function loadNewBookings(){
+  if(bookingsBusy)return; // 이전 요청 응답 대기 중이면 건너뜀
+  bookingsBusy=true;
   fetch(API_URL+'?type=bookings')
     .then(function(r){return r.json()})
     .then(function(data){
+      bookingsBusy=false;
       if(!data.success){
         document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">조회 실패</div>';
         return;
@@ -1741,6 +1751,7 @@ function loadNewBookings(){
       loadDeposits(false);
     })
     .catch(function(){
+      bookingsBusy=false;
       document.getElementById('newBookingsList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:20px">네트워크 오류</div>';
     });
 }
@@ -1811,19 +1822,23 @@ var DEPOSIT_DAYS=7;          // 최근 N일 표시
 var lastDeposits=[];
 var depositLoadedAt=0;
 
+var depositBusy=false;
 function loadDeposits(force){
-  if(!force&&Date.now()-depositLoadedAt<20000)return; // 신규접수 30초 주기와 겹쳐 연타 방지
+  if(depositBusy)return; // 이전 요청 응답 대기 중이면 건너뜀
+  if(!force&&Date.now()-depositLoadedAt<50000)return; // 신규접수 60초 주기와 겹쳐 연타 방지
   depositLoadedAt=Date.now();
+  depositBusy=true;
   fetch(API_URL+'?type=depositList&days='+DEPOSIT_DAYS)
     .then(function(r){return r.json()})
     .then(function(d){
+      depositBusy=false;
       if(d.result!=='ok'){document.getElementById('depositList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:14px">조회 실패</div>';return;}
       lastDeposits=d.list||[];
       renderDeposits();
     })
-    .catch(function(){document.getElementById('depositList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:14px">네트워크 오류 (Apps Script 새 버전 배포 확인)</div>';});
+    .catch(function(){depositBusy=false;document.getElementById('depositList').innerHTML='<div style="text-align:center;color:#999;font-size:12px;padding:14px">네트워크 오류 (Apps Script 새 버전 배포 확인)</div>';});
 }
-setInterval(function(){loadDeposits(false);},60000);
+setInterval(function(){ if(!document.hidden) loadDeposits(false); },60000);
 
 // 이름 정규화: 공백·특수문자 제거, "님" 제거
 function normName_(s){return String(s||'').replace(/님$/,'').replace(/[\s()\-_.·]/g,'').trim();}
