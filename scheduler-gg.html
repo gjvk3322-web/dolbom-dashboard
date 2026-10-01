@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.09.30.80';
+const VER='2026.10.01.81';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -480,6 +480,42 @@ let VEHICLES={}; // {준형: "804서 6771", ...}
 db.ref('gg_vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
+
+// ===== 📢 시공팀 전달사항 메모 (당번 작성 → 전 직원 공유, Firebase gg_memo) · 2026-10-01 =====
+let MEMO={text:'',at:''};let memoEditing=false;
+db.ref('gg_memo').on('value',snap=>{const v=snap.val();MEMO=(v&&typeof v==='object'&&v.text)?v:{text:'',at:''};renderMemoBox()});
+function escH(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function renderMemoHtml(){
+if(memoEditing){
+return `<div style="background:var(--card);border:1px solid rgba(255,214,10,.35);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+<div style="font-size:12px;font-weight:800;color:var(--yellow);margin-bottom:8px">📢 시공팀 전달사항 작성</div>
+<textarea id="memoTa" rows="4" maxlength="400" placeholder="예) 양산 사송 302동 — 지하 2층 주차, 엘리베이터 보호대 필수" style="width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:#fff;font-size:15px;line-height:1.6;font-family:var(--font);resize:vertical;outline:none">${escH(MEMO.text)}</textarea>
+<div style="display:flex;gap:6px;margin-top:8px">
+<button onclick="memoSave()" style="flex:2;padding:10px;border-radius:10px;border:none;background:var(--yellow);color:#000;font-weight:800;font-size:13px;cursor:pointer;font-family:var(--font)">저장</button>
+${MEMO.text?`<button onclick="memoSave(true)" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,69,58,.3);background:rgba(255,69,58,.12);color:var(--red);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--font)">삭제</button>`:''}
+<button onclick="memoCancel()" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--dim);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--font)">취소</button>
+</div></div>`}
+if(!MEMO.text){return isAdmin?`<div onclick="memoEdit()" style="border:1px dashed rgba(255,214,10,.3);border-radius:12px;padding:10px;text-align:center;font-size:12px;color:var(--dim);cursor:pointer;margin-bottom:12px">📢 시공팀 전달사항 입력 (당번)</div>`:''}
+return `<div style="background:linear-gradient(135deg,rgba(255,214,10,.14),rgba(255,214,10,.05));border:1px solid rgba(255,214,10,.3);border-left:4px solid var(--yellow);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+<span style="font-size:12px;font-weight:800;color:var(--yellow)">📢 전달사항</span>
+${MEMO.at?`<span style="font-size:10px;color:var(--dim)">${escH(MEMO.at)}</span>`:''}
+${isAdmin?`<span onclick="memoEdit()" style="margin-left:auto;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;color:var(--yellow);border:1px solid rgba(255,214,10,.35);cursor:pointer">✏️ 수정</span>`:''}
+</div>
+<div style="font-size:15px;font-weight:500;color:#fff;line-height:1.65;white-space:pre-wrap;word-break:keep-all">${escH(MEMO.text)}</div>
+</div>`}
+function renderMemoBox(){const el=document.getElementById('memoBox');if(el)el.innerHTML=renderMemoHtml()}
+function memoEdit(){if(!requireAdmin())return;memoEditing=true;renderMemoBox();const ta=document.getElementById('memoTa');if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}}
+function memoCancel(){memoEditing=false;renderMemoBox()}
+function memoSave(del){
+if(!requireAdmin())return;
+if(del&&!confirm('전달사항을 삭제할까요?'))return;
+const ta=document.getElementById('memoTa');
+const v=del?'':((ta?ta.value:'')||'').trim();
+memoEditing=false;
+if(!v){MEMO={text:'',at:''};db.ref('gg_memo').set(null);renderMemoBox();toast('📢 전달사항 삭제됨','ok');return}
+const at=new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+MEMO={text:v,at};db.ref('gg_memo').set(MEMO);renderMemoBox();toast('📢 전달사항 저장됨','ok')}
 function saveLock(){const o={};LOCK.forEach(id=>o[id]=LOCK_REASONS[id]||true);db.ref('gg_lockedJobs').set(Object.keys(o).length?o:null)}
 function saveSkip(){const o={};SKIP.forEach(id=>o[id]=true);db.ref('gg_skipJobs').set(Object.keys(o).length?o:null)}
 
@@ -1934,6 +1970,7 @@ html+=`<div style="display:flex;gap:6px;margin-bottom:10px">
 <div id="refreshBtn" onclick="doRefresh()" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;font-size:11px;font-weight:600;color:var(--text)">🔄 최신화</div>
 <div onclick="reAssign()" style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;font-size:11px;font-weight:600;color:var(--yellow)">🤖 재배정</div>
 </div>`;
+html+='<div id="memoBox">'+renderMemoHtml()+'</div>';
 
 if(!jobDates.length){html+='<div style="text-align:center;padding:40px;color:var(--dim)">구글시트에 데이터를 입력하세요</div>';document.getElementById('schedView').innerHTML=html;return}
 
@@ -2577,7 +2614,7 @@ let renderTimer=null;
 // [perf] 4개 화면을 매번 전부 다시 그리지 않고 지금 보이는 탭만 그림 (탭 전환 시 sw()가 renderAll을 호출하므로 다른 탭은 열 때 최신으로 그려짐)
 // 렌더 전 스크롤 위치를 기억했다가 복원 → 갱신 때 화면이 위로 튀지 않음
 function _renderTab(){
-if(currentTab==='sched')renderSched();
+if(currentTab==='sched'){if(!memoEditing)renderSched()}
 else if(currentTab==='team'){renderTeam();renderFair();renderCars()}}
 function renderAll(){
 if(renderTimer)clearTimeout(renderTimer);
