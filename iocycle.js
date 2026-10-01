@@ -24,7 +24,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01m';
+const CY_VER='2026.10.01n';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -459,6 +459,19 @@ const REP_CSS=`
 .cyr-people{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;font-size:12px;color:var(--sub)}
 .cyr-people span{background:var(--card2);border-radius:7px;padding:3px 8px}.cyr-people b{color:var(--text)}.cyr-people b.bad{color:var(--red)}
 .cyr-note{font-size:11px;color:var(--dim);text-align:center;margin-top:8px;line-height:1.5}
+.cyr-recs{display:flex;gap:8px;flex-wrap:wrap}
+.cyr-rec{display:flex;align-items:center;gap:8px;background:var(--card2);border-radius:10px;padding:6px 8px 6px 6px;flex:1;min-width:140px}
+.cyr-rec .cyr-th{width:46px;height:46px}
+.cyr-rec .t{font-size:12.5px;line-height:1.35}.cyr-rec .t b{display:block;font-size:13px}
+.cyr-tag{display:inline-block;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:800;min-width:34px;text-align:center}
+.cyr-tag.out{background:rgba(48,209,88,.16);color:var(--green)}.cyr-tag.in{background:rgba(100,210,255,.16);color:var(--cyan)}.cyr-tag.use{background:rgba(255,255,255,.08);color:var(--sub)}
+.cyr-prod{padding:8px 0 6px;border-top:1px solid var(--border)}
+.cyr-prod:first-of-type{border-top:none;padding-top:4px}
+.cyr-ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;font-weight:900;margin-bottom:4px}
+.cyr-ph .d{font-size:13px}.cyr-ph .d.bad{color:var(--red)}.cyr-ph .d.ok{color:var(--green)}.cyr-ph .d.warn{color:var(--yellow)}.cyr-ph .d.dim{color:var(--sub);font-weight:700}
+.cyr-pl{display:flex;align-items:baseline;gap:7px;font-size:13px;padding:2px 0;line-height:1.4}
+.cyr-pl b{min-width:44px;text-align:right}.cyr-pl .q{color:var(--sub);font-size:12px;flex:1;min-width:0}
+.cyr-pl.out b{color:var(--green)}.cyr-pl.in b{color:var(--cyan)}.cyr-pl.use b{color:var(--text)}
 .cyr-ft{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;padding-bottom:max(14px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:10px;pointer-events:none;z-index:6}
 .cyr-ft button{pointer-events:auto;padding:11px 26px;border-radius:22px;border:1px solid rgba(255,255,255,.12);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;background:rgba(40,42,50,.92);color:var(--text);backdrop-filter:blur(8px)}
 .cyr-ft button.lnk{background:transparent;border-color:transparent;color:var(--dim);font-size:12px;font-weight:700;padding:11px 8px}
@@ -483,25 +496,41 @@ function recRow(r){
   const q=recQty(r);
   return `<div class="cyr-row"><div class="b"><div><b>${esc(U.hm(r.at))}</b> ${r.type==='in'?'반납':'출고'} <b>${q}장</b>${r.zero?' <span class="l">다 써서 없음</span>':''}${r.late?' <span class="cyr-chip warn" style="padding:1px 6px">지연 입력</span>':''}${r.wdate&&r.wdate!==r.date?` <span class="l">${esc(U.fmtMD(r.wdate))} 것</span>`:''}</div>${recLines(r)}${r.note&&!r.zero?`<div class="l">${esc(String(r.note).slice(0,60))}</div>`:''}</div>${recThumb(r)}</div>`;
 }
+function partsByProd(recs){ // 기록들 → {제품:{c,s,k,t,total}}
+  const o={};recs.forEach(r=>{(r.items||[]).forEach(it=>{const k=it.product||'?';const x=o[k]||(o[k]={c:0,s:0,k:0,t:0,total:0});x.c+=nn(it.cQty);x.s+=nn(it.sQty);x.k+=nn(it.kQty);x.t+=nn(it.tQty);x.total+=nn(it.total)+nn(it.tQty)})});return o;
+}
+function partsStr(x){if(!x)return '';return [['센터',x.c],['사이드',x.s],['코너',x.k],['10T',x.t]].filter(a=>a[1]>0).map(a=>a[0]+' '+a[1]).join(' · ')}
 function jobLabel(r){return r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='load'?'확인 중':r.st==='future'?'예정':r.st==='zero'?'0장':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장'}
 function reportHTML(cy){
   const tn=teamNo(cy.crew,cy.plate);const chip=stChip(cy);
   const chipCls=chip[0]==='bad'?'bad':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':chip[0]==='blue'?'blue':'';
   let h=`<div class="cyr-hd"><div><div class="cyr-t">📦 출고·반납 보고</div><div class="cyr-s">${esc(RN)} ${tn?tn+'팀 · ':''}${esc(cy.crew.join('·'))} · ${esc(cy.plate)}<br>${esc(U.fmtD(cy.fromW))}${!cy.open&&cy.toW!==cy.fromW?' ~ '+esc(U.fmtD(cy.toW)):''}${cy.open?' · 반납 전':' · 반납 '+esc(String(cy.endAt||'').slice(5,16))}</div></div><span class="cyr-chip ${chipCls}">${chip[1]}</span></div>`;
-  // 출고
-  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>출고 ${cy.out}장</span><small>${cy.outs.length}회${cy.outs.length?' · 마지막 '+esc(String(cy.outs[cy.outs.length-1].at||'').slice(5,16)):''}</small></div>${cy.outs.map(recRow).join('')||'<div class="cyr-j"><span>출고 기록 없음</span></div>'}</div>`;
-  // 사용
+  // 기록 띠: 출고·반납 기록(시각·장수·사진) 한 줄
+  const recChip=r=>`<div class="cyr-rec">${recThumb(r)}<div class="t"><span class="cyr-tag ${r.type==='in'?'in':'out'}">${r.type==='in'?'반납':'출고'}</span> ${esc(U.hm(r.at))}${r.wdate&&r.wdate!==r.date?' <span style="color:var(--sub)">'+esc(U.fmtMD(r.wdate))+' 것</span>':''}<b>${recQty(r)}장${r.zero?' · 다 써서 없음':''}${r.late?' · <span style="color:var(--yellow)">지연</span>':''}</b></div></div>`;
+  h+=`<div class="cyr-sec"><div class="cyr-recs">${cy.outs.map(recChip).join('')}${cy.ins.map(recChip).join('')}${cy.open?`<div class="cyr-rec"><div class="t"><span class="cyr-tag in">반납</span> 전<b>차 잔량 ${cy.remain}장</b></div></div>`:''}</div></div>`;
+  // 제품별 대조: 출고 / 사용 / 반납 나란히 + 로스
+  const PO=partsByProd(cy.outs),PI=partsByProd(cy.ins);
+  const keys=PRODUCTS.map(p=>p.k).filter(k=>PO[k]||PI[k]||cy.byProd.some(b=>b.k===k)).concat(Object.keys(Object.assign({},PO,PI)).filter(k=>!PRODUCTS.some(p=>p.k===k)));
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>제품별 대조</span><small>출고 − 사용 − 반납 = 로스</small></div>`;
+  keys.forEach(k=>{const b=cy.byProd.find(x=>x.k===k)||{out:0,inn:0,sold:0,asFree:0,scrap:0,used:0,diff:0};
+    const dTxt=cy.open?'잔 '+(b.out-b.used):cy.decided?(b.diff===0?'일치':'로스 '+sgn(b.diff)):'대기';
+    const dCls=cy.open?'dim':!cy.decided?'warn':b.diff>0?'bad':b.diff===0?'ok':'warn';
+    const useQ=[b.sold?'시공 '+b.sold:'',b.asFree?'AS 무상 '+b.asFree:'',b.scrap?'자투리 −'+b.scrap:''].filter(Boolean).join(' · ');
+    h+=`<div class="cyr-prod"><div class="cyr-ph"><span>${esc(k)}</span><span class="d ${dCls}">${dTxt}</span></div>
+      <div class="cyr-pl out"><span class="cyr-tag out">출고</span><b>${b.out}장</b><span class="q">${esc(partsStr(PO[k]))}</span></div>
+      <div class="cyr-pl use"><span class="cyr-tag use">사용</span><b>${b.used}장</b><span class="q">${esc(useQ)}</span></div>
+      <div class="cyr-pl in"><span class="cyr-tag in">반납</span><b>${cy.open?'–':b.inn+'장'}</b><span class="q">${cy.open?'반납 전':esc(partsStr(PI[k])||(cy.zero?'다 써서 없음':''))}</span></div></div>`;
+  });
+  h+=`</div>`;
+  // 사용 내역 (현장별)
   const useSub=[`시공 ${cy.sold}`].concat(cy.asFree?['AS 무상 '+cy.asFree]:[]).concat(cy.scrap?['자투리 −'+cy.scrap]:[]).join(' · ');
-  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>사용 ${cy.used}장</span><small>${esc(useSub)}</small></div>${cy.jobs.map(r=>`<div class="cyr-j"><span>${r.isAs?'<span style="color:var(--red)">AS</span> ':esc(r.time||'')+' '}${esc(r.addr)}${r.prod?' <span style="opacity:.75">· '+esc(r.prod)+'</span>':''}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${jobLabel(r)}</b></div>`).join('')||'<div class="cyr-j"><span>연결된 시공 없음</span></div>'}</div>`;
-  // 반납
-  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>반납 ${cy.open?'전':cy.inn+'장'}</span><small>${cy.open?'차 잔량 '+cy.remain+'장':cy.zero?'다 써서 없음':cy.ins.length+'회'}</small></div>${cy.open?`<div class="cyr-j"><span>아직 반납 전 — 남은 매트를 사무실에 내리면 반납을 찍어주세요</span></div>`:cy.ins.map(recRow).join('')}</div>`;
-  // 로스
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>사용 ${cy.used}장 · 현장</span><small>${esc(useSub)}</small></div>${cy.jobs.map(r=>`<div class="cyr-j"><span>${r.isAs?'<span style="color:var(--red)">AS</span> ':esc(r.time||'')+' '}${esc(r.addr)}${r.prod?' <span style="opacity:.75">· '+esc(r.prod)+'</span>':''}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${jobLabel(r)}</b></div>`).join('')||'<div class="cyr-j"><span>연결된 시공 없음</span></div>'}</div>`;
+  // 합계
   const totCls=cy.decided?(cy.diff>0?'bad':cy.diff===0?'ok':'warn'):'warn';
   const totTxt=cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 · 로스 0':cy.diff>0?'로스 +'+cy.diff+'장':'초과 '+cy.diff+'장 · 확인 필요'):'대조 대기';
   const waitWhy=[].concat(cy.miss.length?['시공보고 미입력 '+cy.miss.length]:[]).concat(cy.asMiss.length?['AS보고 없음 '+cy.asMiss.length]:[]).join(' · ');
-  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>로스</span><small>출고 − 사용 − 반납 · 제품별</small></div>
-    <div class="cyr-grid">${cy.byProd.map(b=>`<div><span>${esc(b.k)}</span><b class="${cy.open||!cy.decided?'':b.diff>0?'bad':b.diff===0?'ok':''}">${cy.open?'잔 '+(b.out-b.used):cy.decided?sgn(b.diff):'—'}</b></div>`).join('')}</div>
-    <div class="cyr-tot"><span>${cy.open?'차 잔량':'합계'}</span><span class="${cy.open?'':totCls}">${cy.open?cy.remain+'장':totTxt}${waitWhy&&!cy.open?' <small style="font-weight:600;color:var(--sub)">('+esc(waitWhy)+')</small>':''}</span></div>
+  h+=`<div class="cyr-sec"><div class="cyr-tot" style="margin-top:0;padding-top:0;border-top:none"><span>합계 · 출고 ${cy.out} − 사용 ${cy.used} − 반납 ${cy.open?'–':cy.inn}</span><span class="${cy.open?'':totCls}">${cy.open?'잔량 '+cy.remain+'장':totTxt}</span></div>
+    ${waitWhy&&!cy.open?`<div class="cyr-note" style="text-align:left;margin-top:4px">${esc(waitWhy)} — 들어오면 자동 반영</div>`:''}
     ${!cy.open&&cy.crew.length?`<div class="cyr-people">${cy.crew.map(n=>`<span>${esc(n)} <b class="${cy.decided&&cy.diff>0?'bad':''}">${cy.decided?(cy.diff>0?'로스 '+cy.diff:cy.diff<0?'초과 '+(-cy.diff):'0'):'—'}</b></span>`).join('')}<span>공동작업 기준</span></div>`:''}
     ${cy.ov&&cy.ov.confirm?`<div class="cyr-note">확정 ${esc(cy.ov.confirm.by||'')} ${esc(String(cy.ov.confirm.at||'').slice(5,16))}</div>`:''}</div>`;
   h+=`<div class="cyr-note">${esc(U.kstDT(new Date()).slice(0,16))} 기준 · 시공보고가 들어오면 자동 갱신</div>`;
@@ -511,10 +540,13 @@ function reportText(cy){
   const tn=teamNo(cy.crew,cy.plate);const L=[];
   L.push(`[${RN}${tn?' '+tn+'팀':''} · ${cy.plate}] 출고·반납 보고 ${cy.open?U.fmtMD(cy.fromW):cyLabel(cy)}`);
   L.push('담당: '+cy.crew.join(' / '));
-  L.push('출고 '+cy.out+'장');cy.outs.forEach(r=>{L.push('  '+U.hm(r.at)+' '+recQty(r)+'장: '+(r.items||[]).filter(it=>nn(it.total)||nn(it.tQty)).map(it=>it.product+' '+(nn(it.total)+nn(it.tQty))).join(', '))});
+  const PO=partsByProd(cy.outs),PI=partsByProd(cy.ins);
+  cy.outs.forEach(r=>L.push('출고 '+U.hm(r.at)+' '+recQty(r)+'장'+(r.late?' (지연 입력)':'')));
+  cy.ins.forEach(r=>L.push('반납 '+U.hm(r.at)+' '+recQty(r)+'장'+(r.zero?' (다 써서 없음)':'')));
+  if(cy.open)L.push('반납 전 · 차 잔량 '+cy.remain+'장');
+  cy.byProd.forEach(b=>{L.push('· '+b.k+': 출고 '+b.out+(PO[b.k]&&partsStr(PO[b.k])?' ('+partsStr(PO[b.k])+')':'')+' / 사용 '+b.used+' / 반납 '+(cy.open?'–':b.inn+(PI[b.k]&&partsStr(PI[b.k])?' ('+partsStr(PI[b.k])+')':''))+' → '+(cy.open?'잔 '+(b.out-b.used):cy.decided?(b.diff===0?'일치':'로스 '+sgn(b.diff)):'대기'))});
   L.push('사용 '+cy.used+'장 (시공 '+cy.sold+(cy.asFree?' / AS 무상 '+cy.asFree:'')+(cy.scrap?' / 자투리 −'+cy.scrap:'')+')');cy.jobs.forEach(r=>{L.push('  '+(r.isAs?'AS ':'')+r.addr+' — '+jobLabel(r))});
-  if(cy.open)L.push('반납 전 · 차 잔량 '+cy.remain+'장');else{L.push('반납 '+cy.inn+'장'+(cy.zero?' (다 써서 없음)':''));cy.ins.forEach(r=>{if(recQty(r))L.push('  '+U.hm(r.at)+' '+recQty(r)+'장: '+(r.items||[]).filter(it=>nn(it.total)||nn(it.tQty)).map(it=>it.product+' '+(nn(it.total)+nn(it.tQty))).join(', '))})}
-  L.push('로스: '+(cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 0':sgn(cy.diff)+'장'):'대조 대기')+((cy.open||cy.decided)&&cy.byProd.length?' ('+cy.byProd.map(b=>b.k+' '+(cy.open?'잔 '+(b.out-b.used):sgn(b.diff))).join(', ')+')':''));
+  L.push('로스 합계: '+(cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 0':sgn(cy.diff)+'장'):'대조 대기'));
   if(!cy.open&&cy.decided)L.push(cy.crew.map(n=>n+': 공동작업 로스 '+cy.diff).join(' / ')+' · 회사 로스 '+cy.diff+'장');
   L.push('상태: '+stChip(cy)[1]);
   return L.join('\n');
