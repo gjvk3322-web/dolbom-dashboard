@@ -2039,7 +2039,7 @@ function copyReservationConfirm(){
   var product=document.getElementById('fProduct1').value.trim();
   
   // 필수 입력 검증
-  if(!time||!date||!address||!phone||!size||!product){
+  if(!time||!date||!address||!phone||(time!=='AS'&&!size)||!product){
     alert('⚠️ 폼을 먼저 작성해주세요!\n\n필요한 항목:\n· 시간\n· 시공일\n· 주소\n· 연락처\n· 평수\n· 제품');
     return;
   }
@@ -2074,6 +2074,25 @@ function copyReservationConfirm(){
   };
   var productName=productMap[product]||product;
   
+  // 🆕 AS·실측은 전용 메시지 (설치 안내·견적 정산·후기이벤트 링크 제외)
+  if(time==='AS'||time==='실측'){
+    var isAs=(time==='AS');
+    var t2=(isAs?'🔧 AS 방문이':'📏 실측 방문이')+' 확정되었습니다!\n\n';
+    t2+='📋 방문 정보\n';
+    t2+='· 방문일: '+dateFormatted+'\n';
+    t2+='· 주소: '+address+'\n';
+    t2+='· 연락처: '+phoneFormatted+'\n';
+    if(isAs) t2+='· 제품: '+productName+'\n\n';
+    else t2+='· '+size+'평'+(scope?' · 시공범위: '+scope:'')+'\n\n';
+    if(!isAs) t2+='✨ 실측 후 정확한 수량과 견적을 안내드립니다.\n';
+    t2+='✨ 현장 상황이나 교통으로 도착이 늦어질 경우, 미리 연락드립니다.\n\n';
+    t2+='궁금하신 점은 언제든 카카오톡 채널로 문의 주세요.';
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t2).then(function(){showToast('✅ '+time+' 확정 메시지 복사 완료! 카톡에 붙여넣으세요');}).catch(function(){fallbackCopyText(t2);});
+    } else fallbackCopyText(t2);
+    return;
+  }
+
   // 메시지 조립
   var text='🎉 예약이 확정되었습니다!\n\n';
   text+='📋 시공 정보\n';
