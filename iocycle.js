@@ -17,6 +17,8 @@
    ■ 담당(그날 실제 팀)은 스케줄에서 자동: 그 날짜에 이 차량(시트 L열 차량번호, 없으면 차량 탭 사수)으로 잡힌 시공의 사수·부사수.
      우선순위: 순환별 수정 > 날짜별 수정(_veh.crewByDate) > 스케줄 > 출고 때 적은 담당 > 차량 기본(_veh.crew > 차량 탭 사수 + 팀설정 짝)
    ■ 시공 연결은 차량번호 기준(없으면 사수=차량 탭 사수). 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙고, 다른 차량 카드에서 수동으로 가져간 시공은 이 차량에서 빠짐
+     (2026-10-02) [수정]에서 수동으로 넣은 시공은 앞 순환의 자동 연결보다 우선 · 반납만 있는 순환(출고 없음)은 시공을 안 가져감 ·
+     같은 작업일에 순환이 둘이면: 앞 순환이 그날 정오 전에 반납으로 닫혔을 때(아침에 남은 걸 반납하고 다시 실음)만 그날 시공을 뒤 순환에 넘김, 저녁에 닫혔으면 앞 순환 것(뒤 출고는 작업일 실수)
    ■ 카드는 달력 날짜 기준(2026-10-01u): 그 날짜가 들어가는 순환을 보여 주고(열린 순환은 뒤로 계속), 없으면 '출고 전' + 그날 갈 현장. 출고 작업일 = 달력 날짜, 반납 작업일 = 그 순환의 마지막 작업일.
      내일 실을 땐 달력을 내일로 옮겨 [출고]. 닫힌 순환 카드엔 다음 시공일로 가는 링크, 순환 없는 날엔 지난 순환·미리 찍은 출고 링크
    ■ 직원별 누적은 Firebase io_ledger/{bs|gg}에 '지난달까지' 저장본을 두고(매달 10일부터, 처음 여는 폰이 자동 저장) 그 뒤 기록만 읽어 더함 — 기록이 쌓여도 열 때 읽는 양이 안 늘어남.
@@ -29,7 +31,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.01w';
+const CY_VER='2026.10.02a';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -130,9 +132,9 @@ function cyclesOf(plate,recMap,seed){ // seed: 앞서(저장본에서) 이미 �
     if(!cur)cur=mk(r);cur.outs.push(r);
   });
   if(cur)list.push(cur);
-  list.forEach(cy=>{
-    const ov=ovOf(cy);
-    cy.ov=ov;cy.open=!cy.ins.length;
+  const claim={};list.forEach(cy=>{Object.keys((ovOf(cy).add)||{}).forEach(id=>{claim[id]=cy.startTs})}); // 이 차량의 어느 순환에 수동으로 넣은 시공인지 — 그 순환이 가져가고 다른 순환(앞 순환 자동 연결 포함)에선 빠짐
+  list.forEach((cy,i)=>{ // 1) 기간부터 전부 정함 — 뒤 순환의 기간을 앞 순환 계산에서 봐야 하므로(같은 작업일이면 뒤 순환 몫)
+    cy.ov=ovOf(cy);cy.open=!cy.ins.length;cy.later=list.slice(i+1);
     const wds=cy.outs.map(r=>r.wdate||r.date).filter(Boolean).sort();
     cy.fromW=wds[0]||U.kstDate(0,new Date(cy.startTs));cy.lastW=wds[wds.length-1]||cy.fromW;
     const iws=cy.ins.map(r=>r.wdate||r.date).filter(Boolean).sort();
@@ -140,8 +142,10 @@ function cyclesOf(plate,recMap,seed){ // seed: 앞서(저장본에서) 이미 �
     if(cy.toW<cy.fromW)cy.toW=cy.fromW;
     cy.endAt=cy.open?'':cy.ins[cy.ins.length-1].at;
     cy.zero=!cy.open&&cy.ins.every(r=>r.zero||!recQty(r));
-    compute(cy,consumed);
-    if(!cy.open)cy.jobs.forEach(r=>consumed.add(r.id)); // 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙음
+  });
+  list.forEach(cy=>{ // 2) 시공 연결·계산
+    compute(cy,consumed,claim);
+    if(!cy.open&&cy.outs.length)cy.jobs.forEach(r=>consumed.add(r.id)); // 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙음 (출고 없는 반납만 있는 순환은 시공을 안 가져감)
   });
   list.consumed=consumed;
   return list;
@@ -158,21 +162,29 @@ function jobMatches(j,plate){ // 스케줄 차량번호가 있으면 그걸로. 
   return fallbackPlate(j)===NP(plate);
 }
 function jobOK(j){const t=String(j.time||'').trim();if(t==='실측')return false;if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return false;return !!(j.addr&&j.addr.trim())}
-function compute(cy,consumed){
+function laterCovers(cy,d){ // 같은 작업일을 이 차량의 뒤 순환도 덮을 때 그날 시공을 뒤 순환에 넘길지 (2026-10-02)
+  // 이 순환이 그날 정오 전에 반납으로 닫혔으면(아침에 남은 걸 먼저 반납하고 다시 실은 날) 그날 일은 뒤 순환이 한 것. 저녁에 닫혔으면 이 순환이 일한 것(뒤 순환은 작업일을 잘못 찍은 출고)
+  if(cy.open||!cy.ins.length||!cy.outs.length||d!==cy.toW)return false;
+  const at=String(cy.ins[cy.ins.length-1].at||'');if(at.slice(0,10)!==d||!(at<d+' 12:00'))return false; // 그날 정오 전에 찍은 반납일 때만
+  return (cy.later||[]).some(k=>{const a=k.fromW||'',b=k.open?'9999-12-31':(k.toW||'');return a&&a<=d&&d<=b});
+}
+function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 순환 startTs} — 수동 연결은 앞 순환의 자동 연결보다 우선
   const ov=cy.ov||{};const vo=vehOv(cy.plate);const add=Object.assign({},vo.add||{},ov.add||{}),del=Object.assign({},vo.del||{},ov.del||{});
   Object.keys(ov.add||{}).forEach(k=>{delete del[k]});Object.keys(ov.del||{}).forEach(k=>{delete add[k]}); // 순환별 결정이 차량 설정보다 우선
   const by={};const P=k=>by[k]||(by[k]={out:0,inn:0,sold:0,asFree:0});
   cy.outs.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).out+=t[k]})});
   cy.ins.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).inn+=t[k]})});
-  const J=jobs();const linked=[],miss=[],asMiss=[];let asLoading=false;
+  const J=cy.outs.length?jobs():[];const linked=[],miss=[],asMiss=[];let asLoading=false; // 출고 없이 반납만 있는 순환(아침에 남은 걸 먼저 반납)은 시공을 안 붙임 — 2026-10-02: 그게 그날 시공을 먹어서 진짜 순환에 자동 연결이 안 되던 문제
   J.forEach(j=>{
     if(!j||!jobOK(j))return;
-    if(consumed&&consumed.has(j.id))return; // 앞 순환에서 이미 정산된 시공
-    const inWin=j.date>=cy.fromW&&j.date<=cy.toW;
+    const mine=!!(ov.add||{})[j.id]; // 이 순환에 수동으로 넣은 시공
+    if(!mine&&claim&&claim[j.id]&&claim[j.id]!==cy.startTs)return; // 같은 차량의 다른 순환이 수동으로 가져감
+    if(!mine&&consumed&&consumed.has(j.id))return; // 앞 순환에서 이미 정산된 시공 (수동으로 넣은 건 예외 — 2026-10-02: 앞 순환이 같은 날 시공을 먹어 버려 [수정]에서 체크해도 안 붙던 문제)
+    const inWin=j.date>=cy.fromW&&j.date<=cy.toW&&!laterCovers(cy,j.date);
     const auto=inWin&&jobMatches(j,cy.plate);
     if(del[j.id])return;
     if(!auto&&!add[j.id])return;
-    if(!(ov.add||{})[j.id]&&claimedElsewhere(j.id,cy.plate))return; // 다른 차량 카드가 가져간 시공
+    if(!mine&&claimedElsewhere(j.id,cy.plate))return; // 다른 차량 카드가 가져간 시공
     const isAs=/^AS$/i.test(String(j.time||'').trim());
     const pk=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t)||'';
     const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20),time:String(j.time||'').slice(0,2),py:String(j.py||'').trim(),prod:prodLabel(j),sasu:j.sasu||'',busasu:j.busasu||'',isAs,defect:isAs&&/시공하자/.test(String(j.category||'')),prev:[],auto,sold:0,asFree:0,pk,st:''};
@@ -532,9 +544,10 @@ function render(){
   // 후보 시공: 기간 안 이 지역 시공 중 이 순환에 안 붙은 것(차량 다름) — 넣을 수 있게
   const linkedIds=new Set(cy.jobs.map(r=>r.id));
   const cand=jobs().filter(j=>j&&jobOK(j)&&j.date>=cy.fromW&&j.date<=cy.toW&&!linkedIds.has(j.id)&&!(cy.ov.del||{})[j.id]).slice(0,12);
+  const cons=latestOf(plate).consumed||new Set(); // 이 차량의 다른 순환에 이미 붙은 시공 — 체크하면 이 순환으로 옮겨 옴
   h+=`<label>연결된 시공</label>`;
   h+=cy.jobs.map(r=>`<div class="jl"><input type="checkbox" checked data-id="${esc(r.id)}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'AS ':''}${esc(r.addr)} <span class="ia-tiny">${esc([r.sasu,r.busasu].filter(Boolean).join('·'))}</span></span><b>${r.sold?r.sold+'장':r.asFree?'AS '+r.asFree:r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':'0'}</b></div>`).join('')||'<div class="ia-tiny">없음</div>';
-  if(cand.length)h+=`<label>같은 기간 다른 시공</label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc([j.sasu,j.busasu].filter(Boolean).join('·'))}${j.vehicle?' · '+esc(j.vehicle):''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
+  if(cand.length)h+=`<label>같은 기간 다른 시공</label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc([j.sasu,j.busasu].filter(Boolean).join('·'))}${j.vehicle?' · '+esc(j.vehicle):''}${cons.has(j.id)?' · <span style="color:var(--dm-amber)">이 차 다른 순환에 연결됨</span>':''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
   }
   if(up.list.length)h+=`<label>${esc(U.fmtMD(up.date))} 갈 현장</label>`+up.list.map(x=>`<div class="jl${x.on?'':' cand'}"><input type="checkbox" ${x.on?'checked':''} data-up="${esc(x.j.id)}" data-auto="${x.auto?1:0}"><span>${/^AS$/i.test(x.j.time)?'AS ':esc(String(x.j.time||'').slice(0,2))+' '}${esc(String(x.j.addr||'').replace(/\(.*?\)/g,'').slice(0,18))} <span class="ia-tiny">${esc([x.j.sasu,x.j.busasu].filter(Boolean).join('·'))}${x.j.vehicle?' · '+esc(x.j.vehicle):''}</span></span><b>${esc(prodLabel(x.j))}${x.j.py?' · '+esc(x.j.py)+'평':''}</b></div>`).join('');
   const last=(cy&&cy.ov.at)?cy.ov:vehOv(plate);
