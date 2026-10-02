@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.01d';
+const IA_VER='2026.10.02a';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -342,6 +342,9 @@ const CSS=`
 .ia-actions .ia-button{flex:1 1 130px}
 .ia-datebox{display:inline-flex;flex:1 1 0;min-width:0;max-width:190px}
 .ia-datebox input[type=date],.ia-datebox .ia-monthlabel{width:100%!important;min-width:0}
+.ia-datebox input[type=date]{-webkit-appearance:none;appearance:none;display:block;box-sizing:border-box;text-align:center;padding:0 8px!important;line-height:38px;font-variant-numeric:tabular-nums;overflow:hidden} /* iOS: 날짜칸이 제 폭을 넘어 > 버튼을 덮던 문제 */
+.ia-datebox input[type=date]::-webkit-date-and-time-value{text-align:center;min-height:1.3em;margin:0}
+.ia-datebox input[type=date]::-webkit-calendar-picker-indicator{opacity:.6;margin-left:4px}
 .ia-filterbar{flex-wrap:nowrap!important}
 .ia-dategroup{flex:1 1 auto;flex-wrap:nowrap!important;min-width:0}
 .ia-dategroup .ia-iconbtn,#iaModeSeg{flex:none}
