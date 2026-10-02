@@ -18,10 +18,10 @@
      우선순위: 순환별 수정 > 날짜별 수정(_veh.crewByDate) > 스케줄 > 출고 때 적은 담당 > 차량 기본(_veh.crew > 차량 탭 사수 + 팀설정 짝)
    ■ 시공 연결은 차량번호 기준(없으면 사수=차량 탭 사수). 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙고, 다른 차량 카드에서 수동으로 가져간 시공은 이 차량에서 빠짐
      (2026-10-02) [수정]에서 수동으로 넣은 시공은 앞 순환의 자동 연결보다 우선 · 반납만 있는 순환(출고 없음)은 시공을 안 가져감 ·
-     같은 작업일에 순환이 둘이면: 앞 순환이 그날 정오 전에 반납으로 닫혔을 때(아침에 남은 걸 반납하고 다시 실음)만 그날 시공을 뒤 순환에 넘김, 저녁에 닫혔으면 앞 순환 것(뒤 출고는 작업일 실수)
+     같은 작업일에 순환이 둘이면 앞 순환이 그날 시공을 가짐(뒤 출고는 작업일을 잘못 찍은 것 — 당번이 작업일을 고치면 바로 풀림). 시각 기준 규칙은 없음
    ■ 카드는 달력 날짜 기준(2026-10-01u): 그 날짜가 들어가는 순환을 보여 주고(열린 순환은 뒤로 계속), 없으면 '출고 전' + 그날 갈 현장. 출고 작업일 = 달력 날짜, 반납 작업일 = 그 순환의 마지막 작업일.
      내일 실을 땐 달력을 내일로 옮겨 [출고]. 닫힌 순환 카드엔 다음 시공일로 가는 링크, 순환 없는 날엔 지난 순환·미리 찍은 출고 링크
-     (2026-10-02d) 출고 작업일은 언제나 달력 날짜 — 자동으로 바꾸는 규칙 없음(대장 결정). 오늘 날짜에서 오후에 [출고]를 누르면 폼 안에 '내일 것으로' 링크만 보임
+     (2026-10-02e) 출고 작업일은 언제나 달력 날짜 — 시각·자동 규칙 없음(대장 결정). 작업자 흐름: 오늘 날짜에서 [반납] → 달력을 내일로 → 갈 현장 확인(틀리면 [수정]) → [출고]
    ■ 순환 묶기 규칙(2026-10-02b): 작업일이 더 뒤인 출고는 새 순환으로 시작(앞 순환은 반납이 오면 닫힘) · 반납의 작업일이 열린 순환의 첫 작업일보다 앞서면 앞 순환으로 감(저녁에 내일 것 출고 → 오늘 남은 것 반납 순서여도 됨) ·
      반납 없이 열린 순환 뒤에 또 순환이 생기면 다음 순환에 합침(2박 출장·반납 누락). 당번은 기록 수정에서 작업일을 바꿀 수 있음
    ■ 직원별 누적은 Firebase io_ledger/{bs|gg}에 '지난달까지' 저장본을 두고(매달 10일부터, 처음 여는 폰이 자동 저장) 그 뒤 기록만 읽어 더함 — 기록이 쌓여도 열 때 읽는 양이 안 늘어남.
@@ -34,7 +34,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.02d';
+const CY_VER='2026.10.02e';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -145,8 +145,8 @@ function cyclesOf(plate,recMap,seed){ // seed: 앞서(저장본에서) 이미 �
   // 반납 없이 열린 채로 뒤에 또 순환이 생겼으면(2박 출장처럼 출고를 이어 찍음, 또는 반납을 빼먹음) 다음 순환에 합쳐 하나로 봄
   for(let i=0;i<list.length-1;){const c=list[i];if(c.outs.length&&!c.ins.length){const n=list[i+1];n.outs=c.outs.concat(n.outs);n.startTs=c.startTs;n.startAt=c.startAt;n.seed=c.seed;n.orphan=false;list.splice(i,1)}else i++}
   const claim={};list.forEach(cy=>{Object.keys((ovOf(cy).add)||{}).forEach(id=>{claim[id]=cy.startTs})}); // 이 차량의 어느 순환에 수동으로 넣은 시공인지 — 그 순환이 가져가고 다른 순환(앞 순환 자동 연결 포함)에선 빠짐
-  list.forEach((cy,i)=>{ // 1) 기간부터 전부 정함 — 뒤 순환의 기간을 앞 순환 계산에서 봐야 하므로(같은 작업일이면 뒤 순환 몫)
-    cy.ov=ovOf(cy);cy.open=!cy.ins.length;cy.later=list.slice(i+1);
+  list.forEach(cy=>{ // 1) 기간부터 전부 정함
+    cy.ov=ovOf(cy);cy.open=!cy.ins.length;
     const wds=cy.outs.map(r=>r.wdate||r.date).filter(Boolean).sort();
     cy.fromW=wds[0]||U.kstDate(0,new Date(cy.startTs));cy.lastW=wds[wds.length-1]||cy.fromW;
     const iws=cy.ins.map(r=>r.wdate||r.date).filter(Boolean).sort();
@@ -174,12 +174,6 @@ function jobMatches(j,plate){ // 스케줄 차량번호가 있으면 그걸로. 
   return fallbackPlate(j)===NP(plate);
 }
 function jobOK(j){const t=String(j.time||'').trim();if(t==='실측')return false;if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return false;return !!(j.addr&&j.addr.trim())}
-function laterCovers(cy,d){ // 같은 작업일을 이 차량의 뒤 순환도 덮을 때 그날 시공을 뒤 순환에 넘길지 (2026-10-02)
-  // 이 순환이 그날 정오 전에 반납으로 닫혔으면(아침에 남은 걸 먼저 반납하고 다시 실은 날) 그날 일은 뒤 순환이 한 것. 저녁에 닫혔으면 이 순환이 일한 것(뒤 순환은 작업일을 잘못 찍은 출고)
-  if(cy.open||!cy.ins.length||!cy.outs.length||d!==cy.toW)return false;
-  const at=String(cy.ins[cy.ins.length-1].at||'');if(at.slice(0,10)!==d||!(at<d+' 12:00'))return false; // 그날 정오 전에 찍은 반납일 때만
-  return (cy.later||[]).some(k=>{const a=k.fromW||'',b=k.open?'9999-12-31':(k.toW||'');return a&&a<=d&&d<=b});
-}
 function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 순환 startTs} — 수동 연결은 앞 순환의 자동 연결보다 우선
   const ov=cy.ov||{};const vo=vehOv(cy.plate);const add=Object.assign({},vo.add||{},ov.add||{}),del=Object.assign({},vo.del||{},ov.del||{});
   Object.keys(ov.add||{}).forEach(k=>{delete del[k]});Object.keys(ov.del||{}).forEach(k=>{delete add[k]}); // 순환별 결정이 차량 설정보다 우선
@@ -192,7 +186,7 @@ function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 �
     const mine=!!(ov.add||{})[j.id]; // 이 순환에 수동으로 넣은 시공
     if(!mine&&claim&&claim[j.id]&&claim[j.id]!==cy.startTs)return; // 같은 차량의 다른 순환이 수동으로 가져감
     if(!mine&&consumed&&consumed.has(j.id))return; // 앞 순환에서 이미 정산된 시공 (수동으로 넣은 건 예외 — 2026-10-02: 앞 순환이 같은 날 시공을 먹어 버려 [수정]에서 체크해도 안 붙던 문제)
-    const inWin=j.date>=cy.fromW&&j.date<=cy.toW&&!laterCovers(cy,j.date);
+    const inWin=j.date>=cy.fromW&&j.date<=cy.toW;
     const auto=inWin&&jobMatches(j,cy.plate);
     if(del[j.id])return;
     if(!auto&&!add[j.id])return;
@@ -351,7 +345,6 @@ function upcomingHTML(v,up,from){ // 갈 현장: 선택 날짜 이후 이 차량
   if(!up.date)return '';const add=vehOv(v.plate).add||{};
   return `<div class="cy-jobs cy-next"><div class="nh">${esc(U.fmtMD(up.date))} 갈 현장 ${up.list.length}곳${up.date===from?'':' <small>다음 시공일</small>'}</div>${up.list.map(j=>`<div class="j"><span>${/^AS$/i.test(j.time)?'<span style="color:var(--red)">AS</span>':esc(String(j.time||'').slice(0,2))} ${esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,18))}${add[j.id]?' <span style="color:var(--dm-blue)">수동</span>':''}</span><b>${esc(prodLabel(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
 }
-function nextWorkDay(d){let x=U.addDays(d,1);while(new Date(x+'T00:00:00Z').getUTCDay()===0)x=U.addDays(x,1);return x} // 일요일만 쉼
 function goLink(d,txt){return `<u style="color:var(--dm-blue);cursor:pointer;text-decoration:none;font-weight:700" onclick="ioAdmin.goto('${esc(d)}')">${txt}</u>`}
 function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어가는 순환을 보여 주고, 없으면 그날 갈 현장 + [출고]. 출고 작업일 = D, 반납 작업일 = 그 순환의 마지막 작업일
   const S_=cardHTML.S||{};const D=S_.from||U.kstDate(0);
@@ -362,10 +355,7 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
   const who=cur?cur.crew:crewFor(v.plate,D); // 그날 실제 팀은 스케줄 기준
   const tn=teamNo(who,v.plate);const chip=cur?stChip(cur):dayJobs.length?['','출고 전']:['','시공 없음'];
   const tgt=cur||prev; // 반납·보고 대상: 그 날짜의 순환, 없으면 바로 앞 순환(어제 실은 걸 오늘 반납)
-  const today=U.kstDate(0);const hour=+String(U.kstDT(new Date())).slice(11,13);
-  const outW=D; // 출고 작업일 = 달력 날짜 (대장 결정 2026-10-02: 내일 것은 달력을 내일로 옮겨서 찍는다. 자동으로 바꾸는 규칙 없음)
-  let altW=''; // 오늘 날짜에서 오후에 [출고]를 누르면 폼 안에 '내일(다음 시공일) 것으로' 링크만 띄움 — 기본값은 그대로 달력 날짜
-  if(D===today&&hour>=12){const nx=upcomingOf(v.plate,U.addDays(today,1),consumed);altW=nx.date||nextWorkDay(today)}
+  const outW=D; // 출고 작업일 = 달력 날짜 (대장 결정 2026-10-02: 내일 것은 달력을 내일로 옮겨서 찍는다. 시각·자동 규칙 없음)
   const inW=tgt?(tgt.open?tgt.lastW:tgt.toW):D;
   // 그 작업일에 이미 남긴 기록이 있으면 [출고]/[반납]은 빈 폼 대신 그 기록을 열어 고침 (v32). 같은 날 두 번 실었으면 수정 화면의 [따로 추가]
   const lastOf=(arr,w)=>arr.filter(r=>(r.wdate||r.date)===w).sort((a,b)=>a.ts-b.ts).pop()||null;
@@ -395,8 +385,8 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
     if(lines.length)h+=`<div class="ia-tiny" style="margin-top:6px;line-height:1.7">${lines.join('<br>')}</div>`;
   }
   if(showUp)h+=upcomingHTML(v,{date:D,list:dayJobs},D);
-  const adm=admin(); // [수정](시공 연결·담당)은 당번만 — 직원 카드는 출고·반납·보고 세 개 (2026-10-02)
-  h+=`<div class="cy-acts"${adm?'':' style="grid-template-columns:1fr 1fr .72fr"'}>${adm?`<button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button>`:''}<button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}','${outRec?esc(outRec.id):''}','${esc(altW)}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}','${inRec?esc(inRec.id):''}')">반납</button><button type="button" class="ia-button quiet" ${tgt?`onclick="ioCycle.report('${esc(v.plate)}',${tgt.startTs})"`:'disabled'}>보고</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
+  // [수정]은 누구나: 작업자가 내일 날짜 카드에서 갈 현장이 맞는지 보고 틀리면 고친 뒤 [출고] (대장 결정 2026-10-02). 로스 확정·작업일 변경만 당번
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}','${outRec?esc(outRec.id):''}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}','${inRec?esc(inRec.id):''}')">반납</button><button type="button" class="ia-button quiet" ${tgt?`onclick="ioCycle.report('${esc(v.plate)}',${tgt.startTs})"`:'disabled'}>보고</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}')">반납 0장 (다 써서 없음)</button>`:''}</div>`;
   h+=histHTML(v.plate,list,cur);
   return h+'</div>';
 }

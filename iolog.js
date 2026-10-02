@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.02d';
+const IO_VER='2026.10.02e';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1154,9 +1154,8 @@ function ioShareCopy(){
 
 /* ---------- 작성 (장 단위) ---------- */
 function newItem(){return {product:'',cB:0,c:0,sB:0,s:0,kB:0,k:0,tB:0,t:0}} // cB=센터 박스, c=센터 낱장 …
-function ioOpen(type,plate,wdate,editId,altW){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로). wdate: 카드가 정한 작업일(달력 날짜·순환 날짜) — 넘어오면 그대로 고정
+function ioOpen(type,plate,wdate,editId){ // plate: 팀 카드에서 열 때 그 차량을 미리 고름 (등록 안 된 번호면 '직접 입력'으로). wdate: 카드가 정한 작업일(달력 날짜·순환 날짜) — 넘어오면 그대로 고정
   // editId(v32): 그 날짜에 이미 남긴 기록 — 빈 폼 대신 그 기록을 채워서 열고, 저장하면 새 기록이 아니라 그 기록을 고침
-  // altW(v33): 카드가 작업일을 달력 날짜와 다르게 잡았을 때(오늘 오후 출고 → 다음 시공일) 그 달력 날짜 — 폼에서 '오늘 것으로' 한 번에 바꿀 수 있게
   const t=type==='in'?'in':'out';
   const r=editId?recById(editId):null;
   if(editId&&!r){ioToast('기록을 찾지 못했어요. 새로고침 후 다시 열어주세요',true);return}
@@ -1169,22 +1168,19 @@ function ioOpen(type,plate,wdate,editId,altW){ // plate: 팀 카드에서 열 �
   const fixedW=!!r||/^\d{4}-\d{2}-\d{2}$/.test(String(wdate||''));
   const wd0=r?(r.wdate||r.date):fixedW?String(wdate):wdDefault(t,vehicle);const c0=r?(Array.isArray(r.crew)&&r.crew.length?r.crew:[r.worker]).filter(Boolean):(vehicle?defaultCrew(vehicle,wd0):[]);
   F={type:t,date:kstDate(0),wdate:wd0,fixedW,wopts:w.opts,wpick:fixedW,dateEdit:false,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:!!r,items:r?((r.items||[]).length?r.items.map(toFormItem):[newItem()]):[newItem()],note:r?String(r.note||''):'',step:'veh',stage:'edit',draft:r?null:draftGet(t),
-     edit:r?{id:r.id,at:r.at||'',photoId:r.photoId||'',pending:!!obGet().find(e=>e.kind==='log'&&e.rec&&e.rec.id===r.id),zero:!!r.zero,editN:num(r.editN)}:null,
-     alt:(!r&&/^\d{4}-\d{2}-\d{2}$/.test(String(altW||''))&&altW!==wd0)?{auto:wd0,other:String(altW)}:null,
-     altNew:(r&&/^\d{4}-\d{2}-\d{2}$/.test(String(altW||''))&&altW!==wd0)?String(altW):''}; // 수정 화면에서 '내일 것 새로 기록'
+     edit:r?{id:r.id,at:r.at||'',photoId:r.photoId||'',pending:!!obGet().find(e=>e.kind==='log'&&e.rec&&e.rec.id===r.id),zero:!!r.zero,editN:num(r.editN)}:null};
   P=null;busy=false;DONE=null;
   $('ioFoot').style.display='';
   const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+(r?' 기록 수정':' 기록');
   renderForm();
   $('ioOv').classList.add('show');$('ioOv').scrollTop=0;
 }
-function ioEditNew(wd){ // 수정 화면에서 '따로 추가' — 같은 날짜에 새 기록으로 (같은 날 두 번 실은 경우). wd를 주면 그 작업일로 새 기록(저녁에 오늘 카드에서 [출고] 눌렀을 때 '내일 것 새로')
-  if(!F||!F.edit||busy)return;const t=F.type,v=F.vehicle,w=/^\d{4}-\d{2}-\d{2}$/.test(String(wd||''))?String(wd):F.wdate;F.wdate=w;F.altNew='';
+function ioEditNew(){ // 수정 화면에서 '따로 추가' — 같은 날짜에 새 기록으로 (같은 날 두 번 실은 경우)
+  if(!F||!F.edit||busy)return;const t=F.type,v=F.vehicle,w=F.wdate;
   F.edit=null;F.items=[newItem()];F.note='';F.crewTouched=false;const c0=v?defaultCrew(v,w):[];F.worker=c0[0]||'';F.crew2=c0[1]||'';P=null;
   const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+' 기록';renderForm();try{$('ioOv').scrollTop=0}catch(e){}
 }
 function ioVoidFromForm(){if(!F||!F.edit||busy)return;const id=F.edit.id;ioClose();ioVoid(id)}
-function ioAltW(){if(!F||!F.alt||busy)return;F.wdate=F.wdate===F.alt.other?F.alt.auto:F.alt.other;applyCrew();renderForm();draftSave()} // 오늘 것 ↔ 다음 시공일 것
 function ioEditWdate(v){if(!F||!F.edit||!admin())return;if(!/^\d{4}-\d{2}-\d{2}$/.test(v||''))return;F.wdate=v;renderForm()} // 당번: 기록 수정 때 작업일 바꾸기 (저녁에 내일 것을 오늘 날짜로 찍은 출고 바로잡기)
 function ioClose(){
   if(busy)return;
@@ -1288,12 +1284,12 @@ function renderForm(){
   const vs=vehicles();const plates=Object.keys(vs);const emps=employees();
   const mt=(t,ico,sub)=>`<button type="button" class="iog-movetype ${t}" aria-pressed="${F.type===t}" onclick="ioType('${t}')">${gi(ico)}<span><strong>${TYPE[t].btn}</strong>${sub?`<small>${sub}</small>`:''}</span></button>`;
   const E=F.edit;const hasPhoto=!!(P||(E&&E.photoId));
-  let h=`${E?`<div class="io-draft"><span class="g">${esc(String(E.at||'').slice(5,16))}에 남긴 ${TYPE[F.type].n} 기록을 고치는 중${E.editN?' · 수정 '+E.editN+'회':''}</span>${F.altNew?`<button type="button" onclick="ioEditNew('${esc(F.altNew)}')">${esc(fmtMD(F.altNew))} 것 새로</button>`:`<button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button>`}</div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
+  let h=`${E?`<div class="io-draft"><span class="g">${esc(String(E.at||'').slice(5,16))}에 남긴 ${TYPE[F.type].n} 기록을 고치는 중${E.editN?' · 수정 '+E.editN+'회':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
   <div class="iog-vehicle" id="ioSecVeh"><span class="iog-vehicleicon">${gi('truck')}</span>
     <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
       ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
     <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)" style="margin-top:4px"><option value="">(같이 탄 사람 없음)</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div></div>
-  <div class="iog-when" id="ioWhen"><span>작업일</span>${E&&admin()?`<input type="date" class="iog-inp" style="width:auto;color-scheme:dark" value="${esc(F.wdate)}" onchange="ioEditWdate(this.value)">`:`<b>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}${F.alt?` <u style="font-weight:600;font-size:12px;color:var(--blue);text-decoration:none;margin-left:8px;cursor:pointer" onclick="ioAltW()">${F.wdate===F.alt.other?esc(fmtMD(F.alt.auto))+' 것으로':esc(fmtMD(F.alt.other))+' 것으로'}</u>`:''}</b>`}</div>
+  <div class="iog-when" id="ioWhen"><span>작업일</span>${E&&admin()?`<input type="date" class="iog-inp" style="width:auto;color-scheme:dark" value="${esc(F.wdate)}" onchange="ioEditWdate(this.value)">`:`<b>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}</b>`}</div>
   ${formJobsHTML()}
   <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
   <div id="ioItems"></div>
@@ -1593,6 +1589,6 @@ function init(){
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
   setTimeout(adminAutoOpen,0);
 }
-Object.assign(window,{ioZeroReturn,ioEditNew,ioVoidFromForm,ioEditWdate,ioAltW,ioCrew2,ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioZeroReturn,ioEditNew,ioVoidFromForm,ioEditWdate,ioCrew2,ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
