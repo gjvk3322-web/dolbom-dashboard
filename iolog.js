@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04a';
+const IO_VER='2026.10.04b';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1236,7 +1236,7 @@ function reviewHtml(){
 }
 function successHtml(){
   const d=DONE;const other=d.type==='in'?'out':'in';
-  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>${d.edit?'기록을 고쳤어요.':'기록을 남겼어요.'}</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장${d.wdate&&d.wdate!==kstDate(0)?' · <b>'+esc(fmtMD(d.wdate))+' 것</b>':''}<br>${d.edit?'팀 카드와 로스 계산에 바로 반영돼요.':'팀 카드에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.'}${d.type==='in'&&!d.edit?'<br><b>반납으로 이번 순환이 닫혔어요</b> — 카드에서 로스를 확인하세요.':''}</p>
+  return `<div class="iog-success"><div class="iog-successmark">${gi('check')}</div><h3>${d.edit?'기록을 고쳤어요.':'기록을 남겼어요.'}</h3><p>${esc(d.vehicle)} · ${TYPE[d.type].n} ${d.total}장${d.wdate&&d.wdate!==kstDate(0)?' · <b>'+esc(fmtMD(d.wdate))+' 것</b>':''}<br>${d.edit?'팀 카드와 로스 계산에 바로 반영돼요.':'팀 카드에 바로 반영돼요. 사진은 뒤에서 전송 중이에요.'}${d.type==='in'&&!d.edit?'<br><b>오늘 정산이 끝났어요</b> — 카드에서 로스를 확인하세요.':''}</p>
     <button type="button" class="iog-button primary full" onclick="ioDoneShare()">보고 화면 보기 <small>스크린샷 · 단톡방 공유</small></button>
     <button type="button" class="iog-button quiet full" onclick="ioClose()">닫기 · 팀 카드에서 확인</button></div>`;
 }
@@ -1263,9 +1263,9 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
   if(cy&&cy.jobs.length&&(cy.open||(d>=cy.fromW&&d<=cy.toW))){
     const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
     const sumLine=cy.open?`<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div>`:`<div class="sum"><span>이미 반납 ${cy.inn}장 기록됨</span><span>${cy.decided?(cy.diff>0?'로스 '+cy.diff:cy.diff<0?'자투리 +'+(-cy.diff):'일치'):'대조 대기'}</span></div>`;
-    return `<div class="iog-jobs"><div class="h"><span>${cy.open?'이번 순환에':esc(fmtMD(d))} 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${r.isAs?'':esc(r.time||'')+' '}${esc(r.addr)}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}${sumLine}</div>`;
+    return `<div class="iog-jobs"><div class="h"><span>${cy.open?'이번에':esc(fmtMD(d))} 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${r.isAs?'':esc(r.time||'')+' '}${esc(r.addr)}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}${sumLine}</div>`;
   }
-  if(cy&&cy.open)return `<div class="iog-jobs"><div class="h"><span>이번 순환</span><small>출고 ${cy.out}장 · 연결된 시공 아직 없음</small></div></div>`;
+  if(cy&&cy.open)return `<div class="iog-jobs"><div class="h"><span>이번 출고</span><small>${cy.out}장 · 연결된 시공 아직 없음</small></div></div>`;
   // 순환 없음 → 그 작업일에 이 차량이 돈 현장 (출고 화면과 같은 형식)
   let list=null;try{if(window.ioCycle&&ioCycle.schedJobs)list=ioCycle.schedJobs(F.vehicle,d)}catch(e){list=null}
   if(list){
