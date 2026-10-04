@@ -34,7 +34,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.02e';
+const CY_VER='2026.10.04a';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -217,12 +217,13 @@ function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 �
   cy.byProd=prods.map(k=>{const b=by[k];const used=b.sold+b.asFree;return {k,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,used,diff:b.out-used-b.inn}});
   const T=cy.byProd.reduce((t,b)=>{['out','inn','sold','asFree','used','diff'].forEach(f=>t[f]+=b[f]);return t},{out:0,inn:0,sold:0,asFree:0,used:0,diff:0});
   T.scrap=0;
-  Object.assign(cy,T,{jobs:linked,miss,asMiss,asLoading,jobsN:linked.filter(r=>r.sold||r.asFree).length});
+  const future=linked.filter(r=>r.st==='future'); // 아직 안 간 시공(작업일이 오늘 뒤) — 시공보고가 올 수 없으니 로스를 확정하면 안 됨 (2026-10-04: 10/6 것 출고 후 미리 반납 찍으면 '자투리 +2'로 확정되던 문제)
+  Object.assign(cy,T,{jobs:linked,miss,asMiss,future,asLoading,jobsN:linked.filter(r=>r.sold||r.asFree).length});
   cy.confirmed=!!(ov.confirm&&ov.confirm.at);
   if(cy.open)cy.st='open';
   else if(!cy.outs.length)cy.st='noout';
   else if(asLoading)cy.st='load';
-  else if(miss.length||asMiss.length)cy.st='wait';
+  else if(miss.length||asMiss.length||future.length)cy.st='wait';
   else if(cy.diff===0)cy.st='fit';
   else if(cy.diff>0)cy.st='loss';
   else cy.st='scrap'; // 가져간 것보다 더 깔았음 = 자투리 활용 (초과 확인 아님)
@@ -367,6 +368,7 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
   if(cur){h+=`<div class="ia-metrics">${metrics(cur)}</div>${prodLines(cur)}${jobLines(cur)}${!cur.open?peopleLines(cur):''}`;
     const foot=[];
     if(cur.miss.length)foot.push(`시공보고 미입력 <b>${cur.miss.length}건</b> — 들어오면 자동 반영`);
+    if(!cur.open&&(cur.future||[]).length)foot.push(`아직 안 간 시공 <b>${cur.future.length}건</b> — 시공 뒤 시공보고가 들어오면 확정`);
     if(cur.asMiss.length)foot.push(`AS보고서 미제출 <b>${cur.asMiss.length}건</b>`);
     if(cur.st==='scrap')foot.push(`가져간 것보다 ${-cur.diff}장 더 깔았어요 → 자투리 활용 +${-cur.diff}로 기록`);
     if(cur.zero&&!cur.open)foot.push('반납 0장(다 씀)으로 닫힘');

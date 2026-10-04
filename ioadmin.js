@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.02a';
+const IA_VER='2026.10.04a';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -675,7 +675,7 @@ function renderBody(){
   let cyOK=false;
   if(M.veh.length&&window.ioCycle&&S.mode!=='range'){try{h+=ioCycle.cardsHTML(M,S);cyOK=true}catch(e){console.warn('[ioadmin] iocycle',e)}}
   if(M.veh.length&&!cyOK)h+=`<div class="ia-teams">${M.veh.map(cardHTML).join('')}</div>`;
-  else if(S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`;
+  else if(!M.veh.length&&S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`; // 2026-10-04: 순환 카드가 그려졌는데도 이 안내가 밑에 같이 뜨던 버그
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
   h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<br>입출고 ${esc(X.ver||'')} · 사용 = 시공보고 판매갯수 합(자동, AS 무상분 포함) · 로스 = 출고 − 사용 − 반납. 출고는 반납 전까지 누적되고, 반납을 찍어야 그 순환의 로스가 확정돼요. 다 써서 남은 게 없으면 [반납 0장].${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
