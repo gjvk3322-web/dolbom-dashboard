@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04f';
+const IO_VER='2026.10.04h';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -154,6 +154,7 @@ function devId(){let d=localStorage.getItem('io_dev');if(!d){d=Math.random().toS
 function vehicles(){try{return (typeof VEHICLES==='object'&&VEHICLES)?VEHICLES:{}}catch(e){return {}}}
 function employees(){try{return Array.isArray(E)?E.filter(Boolean):[]}catch(e){return []}}
 function jobs(){try{return Array.isArray(J)?J:[]}catch(e){return []}}
+function assignOf(id){try{const a=A&&A[id];return Array.isArray(a)?a.map(n=>String(n||'').trim()).filter(Boolean):[]}catch(e){return []}} // 스케줄러 앱 안의 배정(Firebase assignments) — 시트의 사수·차량 칸이 비어 있을 때(배정 시트 저장 🔴실패) 대신 씀
 function admin(){try{return !!isAdmin}catch(e){return false}}
 function defaultCrew(p,date){try{if(window.ioCycle&&ioCycle.crewFor){const c=ioCycle.crewFor(p,date||kstDate(0));if(c&&c.length)return c}}catch(e){}const o=vehicles()[p]||'';return o?[o,partnerOf(o)].filter(Boolean):[]} // v30: 그 작업일에 이 차량으로 잡힌 스케줄의 사수·부사수 (카드 [수정]으로 고친 값 우선) > 팀설정 짝
 function applyCrew(){if(!F||!F.vehicle||F.custom||F.crewTouched)return;const c=defaultCrew(F.vehicle,F.wdate);F.worker=c[0]||'';F.crew2=c[1]||''} // 작업일·차량이 바뀌면 담당도 그날 스케줄로 (직접 고친 뒤엔 그대로)
@@ -474,7 +475,7 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-top1 .d{flex:none;margin-left:auto;font-size:15px;font-weight:800;color:var(--dm-ink);white-space:nowrap}.iog-top1 .d small{font-weight:600;color:var(--dm-muted);font-size:12px;margin-left:4px}
 .iog-top1 .d.ed{color:var(--dm-blue);cursor:pointer}
 .io-draft.ed{background:var(--dm-soft);color:var(--dm-muted)}
-.io-top .iog-jobs{margin:0 0 10px;padding:8px 10px;max-height:118px;overflow-y:auto}
+.io-top .iog-jobs{margin:0 0 10px;padding:8px 10px;max-height:150px;overflow-y:auto}
 .io-top .io-draft{margin:8px 0 4px;padding:8px 10px}
 .iog-phonehead h2{font-size:22px;font-weight:800;letter-spacing:-.8px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iog-close{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dm-line);background:var(--dm-panel);color:var(--dm-muted);border-radius:9px;min-height:36px;padding:6px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -503,6 +504,17 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-jobs .j small{display:block;font-size:11px;color:var(--dm-muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iog-jobs .j.as span:first-child::before{content:'AS ';color:var(--red);font-weight:800}.iog-jobs .j b.miss{color:var(--dm-amber)}.iog-jobs .j b.free{color:var(--dm-blue)}
 .iog-jobs .sum{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--dm-line);padding-top:6px;margin-top:2px;font-weight:800}
+.iog-jobs .j2{border-top:1px dashed var(--dm-line);padding:6px 0}.iog-jobs .j2:first-child{border-top:0;padding-top:0}
+.iog-jobs .l1{display:flex;align-items:center;gap:6px;color:var(--dm-ink);font-weight:700;font-size:13px}
+.iog-jobs .l1 .a{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iog-jobs .l1 .r{flex:none;white-space:nowrap;color:var(--dm-ink)}.iog-jobs .l1 .r.miss{color:var(--dm-amber)}.iog-jobs .l1 .r.free{color:var(--dm-blue)}
+.iog-jobs .t{flex:none;font-style:normal;font-size:10.5px;font-weight:800;padding:1px 5px;border-radius:5px;line-height:1.5}
+.iog-jobs .t.am{background:rgba(255,214,10,.14);color:var(--yellow,#FFD60A)}.iog-jobs .t.pm{background:rgba(191,90,242,.16);color:var(--purple,#BF5AF2)}.iog-jobs .t.as{background:rgba(191,90,242,.16);color:var(--purple,#BF5AF2)}
+.iog-jobs .l2{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;margin-top:3px;font-size:12px;color:var(--dm-muted);line-height:1.45}
+.iog-jobs .mat{font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:5px;line-height:1.5;white-space:nowrap}
+.iog-jobs .mat.mm{background:rgba(255,69,58,.12);color:var(--red,#FF453A)}.iog-jobs .mat.mb{background:rgba(255,214,10,.12);color:var(--yellow,#FFD60A)}.iog-jobs .mat.mr{background:rgba(90,200,250,.12);color:var(--blue,#5AC8FA)}.iog-jobs .mat.mc{background:rgba(48,209,88,.12);color:var(--green,#30D158)}.iog-jobs .mat.mn{background:var(--dm-line);color:var(--dm-muted)}
+.iog-jobs .cat{font-style:normal;color:var(--red,#FF453A);font-weight:800;font-size:11.5px}
+.iog-top1 .n{flex:none;font-size:12px;font-weight:700;color:var(--dm-muted);white-space:nowrap}
 .iog-sectionlabel{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;font-weight:800}
 .iog-item{border:1px solid var(--dm-line);border-radius:12px;margin-bottom:12px;overflow:hidden}
 .iog-itemhead{padding:10px 12px;background:var(--dm-soft);display:flex;align-items:center;gap:7px;color:var(--dm-muted)}
@@ -511,7 +523,7 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-no{flex:none;width:22px;height:22px;border-radius:6px;background:var(--dm-line);color:var(--dm-ink);font-size:12px;font-weight:800;display:grid;place-items:center}
 .iog-productselect.none{color:var(--dm-amber)}
 .iog-x{border:0;background:transparent;color:var(--dm-muted);width:34px;height:34px;display:grid;place-items:center;border-radius:8px;cursor:pointer;flex:none}
-.iog-packhint{font-size:11px;color:var(--dm-muted);padding:9px 12px 0}
+.iog-packhint{font-size:11px;color:var(--dm-muted);padding:9px 12px 0}.iog-packhint:empty{display:none}
 .iog-packhint .w{color:var(--dm-amber)}
 .iog-qtygrid{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1fr) 58px;gap:7px;align-items:center;padding:11px 12px}
 .iog-qtyhead{font-size:11px;color:var(--dm-muted);text-align:center}
@@ -1260,41 +1272,56 @@ function successHtml(){
 }
 function ioDoneShare(){const d=DONE;$('ioOv').classList.remove('show');DONE=null;if(!d)return;try{if(window.ioCycle&&ioCycle.report&&d.vehicle){let ts=0;try{const c=ioCycle.cycleOn?ioCycle.cycleOn(d.vehicle,d.wdate||kstDate(0)).cur:null;ts=c?c.startTs:0}catch(e){}ioCycle.report(d.vehicle,ts||undefined);return}}catch(e){}ioShare(d.wdate>kstDate(0)?kstDate(0):d.wdate)} // v31: 제출 직후엔 그 차량 순환 보고 화면(한 화면 스크린샷용), iocycle 없으면 옛 그날 화면
 function ioDoneAdmin(){$('ioOv').classList.remove('show');DONE=null;ioAdminOpen()}
-function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장, 반납 = 이번 순환에서 돈 현장 + 판매갯수 (iocycle 있으면 순환 기준, 없으면 작업일 기준)
-  if(!F.vehicle||F.custom)return '';
+function jobRowHTML(j,right,rightCls){ // v36: 갈 현장 한 건 = 두 줄 — ① 시간 · 주소 · (오른쪽 값) ② 제품 칩(색상별) · 평수 · 시공범위(스케줄 '범위' 칸: 얼마나·뭘 챙길지) · AS 구분
+  const t=String(j.time||'').trim();const isAs=/^AS$/i.test(t);
+  const tc=isAs?'as':/^오후/.test(t)?'pm':'am';const tl=isAs?'AS':(t.slice(0,2)||'시공');
+  const addr=String(j.addr||'').replace(/\(.*?\)/g,'').trim();
+  let mats=[];try{(Array.isArray(j.mat)?j.mat:[]).forEach(m=>{const k=m&&prodKeyOfCode(m.t);const l=k?k.replace('1M ','1M·'):(m&&m.t?String(m.t).trim():'');if(l&&mats.indexOf(l)<0)mats.push(l)})}catch(e){}
+  if(!mats.length)mats=[j._pl||prodLabelOf(j)];
+  const mc=l=>/베이지/.test(l)?'mb':/마블/.test(l)?'mr':/코튼/.test(l)?'mc':/모던/.test(l)?'mm':'mn';
+  const scope=String(j.scope||'').trim();const cat=isAs?String(j.category||'').trim():'';
+  const info=[j.py&&String(j.py).trim()&&String(j.py).trim()!=='0'?String(j.py).trim()+'평':'',scope].filter(Boolean).join(' · ');
+  return `<div class="j2"><div class="l1"><em class="t ${tc}">${esc(tl)}</em><span class="a">${esc(addr)}</span>${right?`<b class="r${rightCls?' '+rightCls:''}">${right}</b>`:''}</div><div class="l2">${mats.map(l=>`<span class="mat ${mc(l)}">${esc(l)}</span>`).join('')}${info?`<span class="s">${esc(info)}</span>`:''}${cat?`<em class="cat">${esc(cat)}</em>`:''}</div></div>`;
+}
+function prodLabelOf(j){try{if(window.ioCycle&&ioCycle.prodLabel)return ioCycle.prodLabel(j)}catch(e){}const k=prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):'제품 미정'}
+function rawJob(r){const j=jobs().find(x=>x&&x.id===r.id);return j||{time:r.isAs?'AS':(r.time||''),addr:r.addr||'',py:r.py||'',_pl:r.prod||''}} // 순환 행(요약) → 스케줄 원본 (범위·제품 칸 때문에)
+function formJobs(){ // v28/v36: 출고 = 작업일(F.wdate)에 이 차가 갈 현장, 반납 = 그 작업일이 들어가는 순환에서 돈 현장 + 판매 장수. {label: 상단 날짜 옆 "현장 N곳", html: 목록}
+  const R={label:'',html:''};
+  if(!F.vehicle||F.custom)return R;
   const np=normPlate(F.vehicle);const owner=vehicles()[F.vehicle]||'';const crew=[F.worker,F.crew2].filter(Boolean);
   let vo={};try{if(window.ioCycle&&ioCycle.vehOv)vo=ioCycle.vehOv(F.vehicle)||{}}catch(e){}const vadd=vo.add||{},vdel=vo.del||{};
   const mine=j=>{if(vdel[j.id])return false;if(vadd[j.id])return true;const jv=normPlate(j.vehicle);if(jv)return jv===np;const s=String(j.sasu||'').trim();return !!s&&(crew.indexOf(s)>=0||s===owner)};
   const ok=j=>j&&j.addr&&String(j.time||'').trim()!=='실측'&&!/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim());
-  const addr=j=>esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20));
-  const prod=j=>{try{if(window.ioCycle&&ioCycle.prodLabel)return ioCycle.prodLabel(j)}catch(e){}const k=prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);return k?k.replace('1M ','1M·'):''};
+  const d=F.wdate||kstDate(0);
   if(F.type==='out'){
-    const d=F.wdate||kstDate(0);let list=null;
+    let list=null;
     try{if(window.ioCycle&&ioCycle.schedJobs)list=ioCycle.schedJobs(F.vehicle,d)}catch(e){list=null}
     if(!list)list=jobs().filter(j=>ok(j)&&j.date===d&&mine(j)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
-    if(!list.length)return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장</span><small>스케줄에 이 차량 배정 없음</small></div></div>`;
-    return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${/^AS$/i.test(j.time)?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
+    if(!list.length){R.label='시공 없음';return R}
+    R.label='현장 '+list.length+'곳';R.html=`<div class="iog-jobs">${list.map(j=>jobRowHTML(j,'','')).join('')}</div>`;return R;
   }
-  const d=F.wdate||kstDate(0);
   let cy=null;try{if(window.ioCycle)cy=ioCycle.cycleOn?ioCycle.cycleOn(F.vehicle,d).cur:ioCycle.latestOf(F.vehicle).cur}catch(e){} // 작업일이 들어가는 순환 (카드가 달력 날짜 기준이라 그 순환에 반납)
   // 열린 순환, 또는 닫힌 순환에 같은 작업일로 추가 반납 → 그 순환에 연결된 현장 (제품·평수·판매 장수)
   if(cy&&cy.jobs.length&&(cy.open||(d>=cy.fromW&&d<=cy.toW))){
     const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
-    const sumLine=cy.open?`<div class="sum"><span>남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div>`:`<div class="sum"><span>이미 반납 ${cy.inn}장 기록됨</span><span>${cy.decided?(cy.diff>0?'로스 '+cy.diff:cy.diff<0?'자투리 +'+(-cy.diff):'일치'):'대조 대기'}</span></div>`;
-    return `<div class="iog-jobs"><div class="h"><span>${cy.open?'이번에':esc(fmtMD(d))} 돈 현장 ${cy.jobs.length}곳</span><small>출고 ${cy.out} · 사용 ${cy.used}</small></div>${cy.jobs.map(r=>`<div class="j${r.isAs?' as':''}"><span>${r.isAs?'':esc(r.time||'')+' '}${esc(r.addr)}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}</small></span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${lab(r)}</b></div>`).join('')}${sumLine}</div>`;
+    const sumLine=cy.open?`<div class="sum"><span>출고 ${cy.out} · 사용 ${cy.used} → 남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div>`:`<div class="sum"><span>이미 반납 ${cy.inn}장 기록됨</span><span>${cy.decided?(cy.diff>0?'로스 '+cy.diff:cy.diff<0?'자투리 +'+(-cy.diff):'일치'):'대조 대기'}</span></div>`;
+    R.label='현장 '+cy.jobs.length+'곳';
+    R.html=`<div class="iog-jobs">${cy.jobs.map(r=>jobRowHTML(rawJob(r),esc(lab(r)),r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':'')).join('')}${sumLine}</div>`;return R;
   }
-  if(cy&&cy.open)return `<div class="iog-jobs"><div class="h"><span>이번 출고</span><small>${cy.out}장 · 연결된 시공 아직 없음</small></div></div>`;
+  if(cy&&cy.open){R.label='연결된 시공 없음';R.html=`<div class="iog-jobs"><div class="sum" style="border-top:0;padding-top:0;margin-top:0"><span>이번 출고</span><span>${cy.out}장</span></div></div>`;return R}
   // 순환 없음 → 그 작업일에 이 차량이 돈 현장 (출고 화면과 같은 형식)
   let list=null;try{if(window.ioCycle&&ioCycle.schedJobs)list=ioCycle.schedJobs(F.vehicle,d)}catch(e){list=null}
   if(list){
-    if(!list.length)return '';
+    if(!list.length)return R;
     const sold=list.reduce((a,j)=>a+(+j.sold||0),0);
     const lab=j=>{const q=+j.sold||0;if(q>0)return q+'장';if(/^AS$/i.test(String(j.time||'')))return 'AS';if(j.date>kstDate(0))return '예정';return String(j.sasu||'').trim()?'미입력':'—'};
-    return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 돈 현장 ${list.length}곳</span><small>판매 ${sold}장</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(String(j.time||''))?' as':''}"><span>${/^AS$/i.test(String(j.time||''))?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}<small>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</small></span><b class="${lab(j)==='미입력'?'miss':''}">${lab(j)}</b></div>`).join('')}</div>`;
+    R.label='현장 '+list.length+'곳';
+    R.html=`<div class="iog-jobs">${list.map(j=>jobRowHTML(j,esc(lab(j)),lab(j)==='미입력'?'miss':'')).join('')}<div class="sum"><span>판매</span><span>${sold}장</span></div></div>`;return R;
   }
   const jb=jobsOf(F.vehicle,addDays(d,-1),d);
-  if(!jb.list.length)return '';
-  return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 돈 현장 ${jb.list.length}곳</span><small>판매 ${jb.sold}장</small></div>${jb.list.map(j=>`<div class="j"><span>${esc(j.addr)}</span><b>${j.q}장</b></div>`).join('')}</div>`;
+  if(!jb.list.length)return R;
+  R.label='현장 '+jb.list.length+'곳';
+  R.html=`<div class="iog-jobs">${jb.list.map(j=>`<div class="j"><span>${esc(j.addr)}</span><b>${j.q}장</b></div>`).join('')}<div class="sum"><span>판매</span><span>${jb.sold}장</span></div></div>`;return R;
 }
 function renderForm(){
   if(!F)return;
@@ -1304,12 +1331,13 @@ function renderForm(){
   const E=F.edit;const hasPhoto=!!(P||(E&&E.photoId));
   // 상단 고정 블록(v34): 차량 · 작업일 / 담당 두 명 한 줄 / 갈 현장 — 아래로 수량을 적는 동안에도 계속 보임
   const canDate=!!(E&&admin());
+  const FJ=formJobs();
   const top=`${E?`<div class="io-draft ed"><span class="g">${esc(String(E.at||'').slice(5,16))}에 적은 ${TYPE[F.type].n} 기록 수정 중${E.editN?' · '+E.editN+'번 고침':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
   <div class="iog-top1" id="ioSecVeh"><select id="ioVehSel" aria-label="차량" onchange="ioVehPick(this.value)"><option value="">차량 선택${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
     <select class="w" id="ioWorker" aria-label="담당" onchange="ioWorker(this.value)"><option value="">담당</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select class="w" id="ioCrew2" aria-label="담당 2" onchange="ioCrew2(this.value)"><option value="">—</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select>
-    <span class="d${canDate?' ed':''}" id="ioWhen" ${canDate?'onclick="ioPickDate()"':''}>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}</span>${canDate?`<input type="date" id="ioWd" value="${esc(F.wdate)}" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="ioEditWdate(this.value)">`:''}</div>
+    <span class="d${canDate?' ed':''}" id="ioWhen" ${canDate?'onclick="ioPickDate()"':''}>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}</span>${FJ.label?`<span class="n">${esc(FJ.label)}</span>`:''}${canDate?`<input type="date" id="ioWd" value="${esc(F.wdate)}" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="ioEditWdate(this.value)">`:''}</div>
   ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()" style="margin:0 0 8px">`:''}
-  ${formJobsHTML()}`;
+  ${FJ.html}`;
   if(head)head.innerHTML=top;
   let h=`<div id="ioItems"></div>
   <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
@@ -1330,7 +1358,7 @@ function rowEq(it,k){ // 줄 합계 '= N장' — 색상을 고르기 전에 박�
 function ftHint(it){ // 카드 아래 왼쪽 안내 — 박스당 장수
   const p=prod(it.product);
   if(p)return '1박스 = '+p.per+'장 <span>· 10T는 '+p.per10+'장</span>';
-  return PART.some(pt=>itemBox(it,pt.k))?'<span class="w">제품을 골라야 박스가 계산돼요</span>':'제품을 먼저 골라주세요';
+  return PART.some(pt=>itemBox(it,pt.k))?'<span class="w">제품을 골라야 박스가 계산돼요</span>':'';
 }
 function renderItems(){
   const box=$('ioItems');if(!box||!F)return;
@@ -1507,7 +1535,7 @@ function ioZeroReturn(plate,wdateIn){ // v27: 다 써서 남은 게 없을 때 '
   const now=new Date();const ts=now.getTime();const id='io_'+ts+'_'+Math.random().toString(36).slice(2,7);
   const wdate=/^\d{4}-\d{2}-\d{2}$/.test(String(wdateIn||''))?String(wdateIn):wdDefault('in',p);
   const crew=defaultCrew(p,wdate);const worker=crew[0]||'';
-  const rec={id,region:RN,rk:RK,type:'in',date:kstDate(0),wdate,at:kstDT(now),ts,vehicle:p,worker,crew,items:[],note:'반납 0장 (다 씀)',late:false,zero:true,photoAt:'',photoGap:0,dev:devId(),ver:IO_VER,status:'pending'};
+  const rec={id,region:RN,rk:RK,type:'in',date:kstDate(0),wdate,at:kstDT(now),ts,vehicle:p,worker,crew,items:[],note:'반납 0장',late:false,zero:true,photoAt:'',photoGap:0,dev:devId(),ver:IO_VER,status:'pending'};
   const payload={action:'ioLog',id,region:RN,type:'in',date:rec.date,wdate,at:rec.at,vehicle:p,worker,crew,items:[{product:'',total:0}],note:rec.note,late:false,zero:true,photoAt:'',photoGap:0,dev:rec.dev,photo:'',photoName:''};
   if(!obAdd({kind:'log',id,rec,payload,tries:0,ts}))return;
   try{db.ref(NODE+'/'+id).set(rec)}catch(e){console.warn('[io] fb set',e)}
@@ -1595,7 +1623,7 @@ function adminAutoOpen(){
   ioShow();
 }
 // ioadmin.js가 같은 제품 정의·박스 환산 기준·날짜 헬퍼를 그대로 쓰도록 내보냄 (값을 따로 복사해 두지 않기 위해)
-window.__io={ver:IO_VER,beta:IO_BETA,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,jobs,records:allRecords,prodKeyOfCode,partnerOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
+window.__io={ver:IO_VER,beta:IO_BETA,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,jobs,assignOf,records:allRecords,prodKeyOfCode,partnerOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
   util:{esc,num,kstDate,kstDT,addDays,fmtD,fmtMD,hm,dowOf,normPlate,thumbUrl,viewUrl}};
 
 /* ---------- 시작 ---------- */

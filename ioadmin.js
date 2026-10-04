@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.04b';
+const IA_VER='2026.10.04c';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -682,7 +682,7 @@ function renderBody(){
   else if(!M.veh.length&&S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`; // 2026-10-04: 순환 카드가 그려졌는데도 이 안내가 밑에 같이 뜨던 버그
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
-  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<br>입출고 ${esc(X.ver||'')} · 사용 = 시공보고 판매갯수 합(자동, AS 무상분 포함) · 로스 = 출고 − 사용 − 반납. 출고는 반납 전까지 누적되고, 반납을 찍어야 그 순환의 로스가 확정돼요. 다 써서 남은 게 없으면 [반납 0장].${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
+  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<u onclick="ioAdmin.resheet()">스케줄 새로 읽기${sheetAt()?' · '+sheetAt():''}</u><br>입출고 ${esc(X.ver||'')} · 사용 = 시공보고 판매갯수 합(자동, AS 무상분 포함) · 로스 = 출고 − 사용 − 반납. 출고는 반납 전까지 누적되고, 반납을 찍어야 그 순환의 로스가 확정돼요. 다 써서 남은 게 없으면 [반납 0장].${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
   el.innerHTML=h;
   const ta=$('iaTsv');if(ta)ta.value=currentTSV(M);
 }
@@ -958,6 +958,8 @@ function revoke(){
 
 /* ---------- 열기·닫기 ---------- */
 function jobsSig(){try{if(typeof J==='undefined'||!Array.isArray(J))return '';let n=0;for(const j of J)n+=(+j.sold||0);return J.length+':'+n}catch(e){return ''}} // 시공보고가 새로 들어오면(판매갯수 변화) 사용량·로스를 다시 그림
+function sheetAt(){try{const m=/(\d{2}:\d{2}):\d{2}\s*$/.exec(($('sub')||{}).textContent||'');return m?m[1]:''}catch(e){return ''}} // 스케줄러가 시트를 마지막으로 읽은 시각 (머리글 줄 끝의 HH:MM:SS)
+function resheet(){try{if(typeof refreshSheet==='function')refreshSheet(true);else X.toast('이 화면에선 새로 읽기를 쓸 수 없어요',true)}catch(e){}} // 3분 자동 갱신을 기다리지 않고 지금 시트를 다시 읽음 (읽은 뒤 카드도 다시 그려짐)
 function mount(){ // iolog.js의 renderList()가 부름 — 처음이면 껍데기·구독을 만들고, 그 뒤엔 다시 그리기만
   if(!ensureShell())return;
   const t=U.kstDate(0);
@@ -980,6 +982,6 @@ function gotoDate(d){ // 방금 제출한 기록이 들어간 날짜(작업일)�
 }
 function close(){mdClose();if(S.open){if(!X.admin()){S.exportOpen=false;S.more=false}renderFilters();renderBody()}} // 당번 모드를 끄면 관리자용 버튼만 접음
 
-window.ioAdmin={mount,open:mount,close,goto:gotoDate,ack,card:cardOpen,entry,cardFilter,cardReason,cardNomove,wide,reload,mode:setMode,date:setDate,shift:shiftDate,f:setF,region:goRegion,copy,exportOpen,exportClose,pending:pendingGo,drill,detail,photo,photoId,nomove,fix,fixSave,unfix,reflect,reflectSave,unit,revoke,mdClose,name:()=>{askName(true);renderFilters();renderBody()},
+window.ioAdmin={mount,open:mount,close,goto:gotoDate,ack,resheet,card:cardOpen,entry,cardFilter,cardReason,cardNomove,wide,reload,mode:setMode,date:setDate,shift:shiftDate,f:setF,region:goRegion,copy,exportOpen,exportClose,pending:pendingGo,drill,detail,photo,photoId,nomove,fix,fixSave,unfix,reflect,reflectSave,unit,revoke,mdClose,name:()=>{askName(true);renderFilters();renderBody()},
   _t:{S,build,aggTSV,detTSV,tText,tId,specOf,checkItem,moveInfo,regionUrl}}; // _t = 테스트용 내부 참조
 })();
