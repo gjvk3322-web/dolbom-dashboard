@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04b';
+const IO_VER='2026.10.04c';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -464,7 +464,17 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-tiny{font-size:12px;color:var(--dm-muted);font-weight:500}
 .io-ov{background:var(--dm-panel);color:var(--dm-ink)}
 .io-ov-in{max-width:520px;padding:0 16px 210px}
-.iog-phonehead{position:sticky;top:0;z-index:5;background:var(--dm-panel);display:flex;align-items:center;gap:10px;padding:16px 0 13px;padding-top:max(16px,env(safe-area-inset-top));border-bottom:1px solid var(--dm-line);margin-bottom:16px}
+.io-top{position:sticky;top:0;z-index:5;background:var(--dm-panel);margin-bottom:14px;box-shadow:0 8px 12px -10px rgba(0,0,0,.6)}
+.iog-phonehead{display:flex;align-items:center;gap:10px;padding:12px 0 9px;padding-top:max(12px,env(safe-area-inset-top));border-bottom:1px solid var(--dm-line)}
+#ioHead:empty{display:none}
+.iog-top1{display:flex;align-items:center;gap:10px;padding:9px 0 2px}
+.iog-top1 select{flex:0 1 auto;width:auto;max-width:62%;min-width:0;border:0;background:transparent;font-size:17px;font-weight:800;padding:4px 0;margin:0 auto 0 0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none}
+.iog-top1 .d{flex:none;font-size:15px;font-weight:800;color:var(--dm-ink);white-space:nowrap}.iog-top1 .d small{font-weight:600;color:var(--dm-muted);font-size:12px;margin-left:4px}
+.iog-top1 .d.ed{color:var(--dm-blue);cursor:pointer}
+.iog-top2{display:flex;align-items:center;gap:8px;padding:0 0 8px;font-size:12px;color:var(--dm-muted)}
+.iog-top2 select{flex:1;min-width:0;height:36px;border:1px solid var(--dm-line);border-radius:8px;background:var(--dm-soft);color:var(--dm-ink);padding:0 8px;font-size:15px;font-weight:700;font-family:var(--font);color-scheme:dark;outline:none}
+.io-top .iog-jobs{margin:0 0 10px;padding:8px 10px;max-height:118px;overflow-y:auto}
+.io-top .io-draft{margin:8px 0 4px;padding:8px 10px}
 .iog-phonehead h2{font-size:22px;font-weight:800;letter-spacing:-.8px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iog-close{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dm-line);background:var(--dm-panel);color:var(--dm-muted);border-radius:9px;min-height:36px;padding:6px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
 .iog-close svg.gi{width:15px;height:15px}
@@ -495,7 +505,8 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-sectionlabel{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:14px;font-weight:800}
 .iog-item{border:1px solid var(--dm-line);border-radius:12px;margin-bottom:12px;overflow:hidden}
 .iog-itemhead{padding:10px 12px;background:var(--dm-soft);display:flex;align-items:center;gap:7px;color:var(--dm-muted)}
-.iog-productselect{flex:1;min-width:0;border:0;background:transparent;font-weight:800;font-size:16px;padding:5px 0;margin:0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none}
+.iog-productselect{flex:0 1 auto;width:auto;max-width:calc(100% - 44px);min-width:0;border:0;background:transparent;font-weight:800;font-size:16px;padding:5px 0;margin:0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none} /* 2026-10-04: 폭을 글자만큼만 → 화살표가 제품명 바로 옆에 */
+.iog-itemhead .iog-x{margin-left:auto}
 .iog-productselect.none{color:var(--dm-amber)}
 .iog-x{border:0;background:transparent;color:var(--dm-muted);width:34px;height:34px;display:grid;place-items:center;border-radius:8px;cursor:pointer;flex:none}
 .iog-packhint{font-size:11px;color:var(--dm-muted);padding:9px 12px 0}
@@ -661,7 +672,7 @@ function ensureShell(){
   }
   const ov=document.createElement('div');ov.className='io-ov';ov.id='ioOv';
   ov.innerHTML=`<div class="io-ov-in">
-    <div class="iog-phonehead"><h2 id="ioOvTitle">입출고 기록</h2><span class="iog-st">${RN}</span><button type="button" class="iog-close" onclick="ioClose()">${gi('x')} 닫기</button></div>
+    <div class="io-top" id="ioTop"><div class="iog-phonehead"><h2 id="ioOvTitle">입출고 기록</h2><span class="iog-st">${RN}</span><button type="button" class="iog-close" onclick="ioClose()">${gi('x')} 닫기</button></div><div id="ioHead"></div></div>
     <div id="ioForm"></div>
   </div>
   <div class="io-foot" id="ioFoot"><div class="io-foot-in"><div class="iog-total"><span id="ioFootCnt">1개 제품 · 합계</span><strong><span id="ioFootTot">0</span><small>장</small></strong></div>
@@ -1181,11 +1192,12 @@ function ioEditNew(){ // 수정 화면에서 '따로 추가' — 같은 날짜�
   const tt=$('ioOvTitle');if(tt)tt.textContent=TYPE[t].n+' 기록';renderForm();try{$('ioOv').scrollTop=0}catch(e){}
 }
 function ioVoidFromForm(){if(!F||!F.edit||busy)return;const id=F.edit.id;ioClose();ioVoid(id)}
+function ioPickDate(){const i=$('ioWd');if(!i)return;try{i.showPicker()}catch(e){try{i.focus();i.click()}catch(_){}}}
 function ioEditWdate(v){if(!F||!F.edit||!admin())return;if(!/^\d{4}-\d{2}-\d{2}$/.test(v||''))return;F.wdate=v;renderForm()} // 당번: 기록 수정 때 작업일 바꾸기 (저녁에 내일 것을 오늘 날짜로 찍은 출고 바로잡기)
 function ioClose(){
   if(busy)return;
   if(F&&!F.edit&&formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
-  $('ioOv').classList.remove('show');F=null;P=null;DONE=null;$('ioFile').value='';
+  $('ioOv').classList.remove('show');F=null;P=null;DONE=null;$('ioFile').value='';{const hd=$('ioHead');if(hd)hd.innerHTML=''}
 }
 function ioType(t){
   if(!F)return;const old=F.type;if(old===t){renderForm();return}
@@ -1255,7 +1267,7 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
     try{if(window.ioCycle&&ioCycle.schedJobs)list=ioCycle.schedJobs(F.vehicle,d)}catch(e){list=null}
     if(!list)list=jobs().filter(j=>ok(j)&&j.date===d&&mine(j)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
     if(!list.length)return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장</span><small>스케줄에 이 차량 배정 없음</small></div></div>`;
-    return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span><small>실을 양 참고</small></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${/^AS$/i.test(j.time)?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
+    return `<div class="iog-jobs"><div class="h"><span>${esc(fmtMD(d))} 갈 현장 ${list.length}곳</span></div>${list.map(j=>`<div class="j${/^AS$/i.test(j.time)?' as':''}"><span>${/^AS$/i.test(j.time)?'':esc(String(j.time||'').slice(0,2))+' '}${addr(j)}</span><b>${esc(prod(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
   }
   const d=F.wdate||kstDate(0);
   let cy=null;try{if(window.ioCycle)cy=ioCycle.cycleOn?ioCycle.cycleOn(F.vehicle,d).cur:ioCycle.latestOf(F.vehicle).cur}catch(e){} // 작업일이 들어가는 순환 (카드가 달력 날짜 기준이라 그 순환에 반납)
@@ -1280,19 +1292,20 @@ function formJobsHTML(){ // v28: 출고 = 쓸 날(F.wdate) 이 차가 갈 현장
 }
 function renderForm(){
   if(!F)return;
-  if(F.stage==='review'){$('ioForm').innerHTML=reviewHtml();refreshSteps();return}
+  const head=$('ioHead');
+  if(F.stage==='review'){if(head)head.innerHTML='';$('ioForm').innerHTML=reviewHtml();refreshSteps();return}
   const vs=vehicles();const plates=Object.keys(vs);const emps=employees();
-  const mt=(t,ico,sub)=>`<button type="button" class="iog-movetype ${t}" aria-pressed="${F.type===t}" onclick="ioType('${t}')">${gi(ico)}<span><strong>${TYPE[t].btn}</strong>${sub?`<small>${sub}</small>`:''}</span></button>`;
   const E=F.edit;const hasPhoto=!!(P||(E&&E.photoId));
-  let h=`${E?`<div class="io-draft"><span class="g">${esc(String(E.at||'').slice(5,16))}에 남긴 ${TYPE[F.type].n} 기록을 고치는 중${E.editN?' · 수정 '+E.editN+'회':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
-  <div class="iog-vehicle" id="ioSecVeh"><span class="iog-vehicleicon">${gi('truck')}</span>
-    <div class="f"><label for="ioVehSel">내 차량${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</label><select id="ioVehSel" onchange="ioVehPick(this.value)"><option value="">차량 선택</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}${vs[p]?' · '+esc(vs[p]):''}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
-      ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()">`:''}</div>
-    <div class="f w"><label for="ioWorker">담당</label><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)" style="margin-top:4px"><option value="">(같이 탄 사람 없음)</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div></div>
-  <div class="iog-when" id="ioWhen"><span>작업일</span>${E&&admin()?`<input type="date" class="iog-inp" style="width:auto;color-scheme:dark" value="${esc(F.wdate)}" onchange="ioEditWdate(this.value)">`:`<b>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}</b>`}</div>
-  ${formJobsHTML()}
-  <div class="iog-sectionlabel"><span>제품과 수량</span><span class="iog-tiny">박스 + 낱장으로 입력</span></div>
-  <div id="ioItems"></div>
+  // 상단 고정 블록(v34): 차량 · 작업일 / 담당 두 명 한 줄 / 갈 현장 — 아래로 수량을 적는 동안에도 계속 보임
+  const canDate=!!(E&&admin());
+  const top=`${E?`<div class="io-draft"><span class="g">${esc(String(E.at||'').slice(5,16))}에 남긴 ${TYPE[F.type].n} 기록을 고치는 중${E.editN?' · 수정 '+E.editN+'회':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
+  <div class="iog-top1" id="ioSecVeh"><select id="ioVehSel" aria-label="차량" onchange="ioVehPick(this.value)"><option value="">차량 선택${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
+    <span class="d${canDate?' ed':''}" id="ioWhen" ${canDate?'onclick="ioPickDate()"':''}>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}${canDate?' <small>바꾸기</small>':''}</span>${canDate?`<input type="date" id="ioWd" value="${esc(F.wdate)}" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="ioEditWdate(this.value)">`:''}</div>
+  ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()" style="margin:0 0 8px">`:''}
+  <div class="iog-top2"><span>담당</span><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)"><option value="">없음</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div>
+  ${formJobsHTML()}`;
+  if(head)head.innerHTML=top;
+  let h=`<div id="ioItems"></div>
   <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
   <div class="iog-sectionlabel" id="ioSecPhoto"><span>적재 사진</span><span class="iog-st${hasPhoto?' ok':''}">${P?'사진 1장':E&&E.photoId?'기존 사진':'필수'}</span></div>
   <div class="iog-photo${hasPhoto?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:E&&E.photoId?`<img src="${thumbUrl(E.photoId,800)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`${gi('camera')}<span><strong>사진 촬영하기</strong><small>박스와 낱장이 함께 보이는 사진</small></span>`}</div>
@@ -1446,7 +1459,7 @@ async function ioSubmit(){
     clearTimeout(_dsT);draftClear(F.type); // 제출된 건 임시저장 삭제 — 다음에 열면 빈 폼
     DONE={type:rec.type,vehicle:rec.vehicle,wdate:rec.wdate,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0)};
     busy=false;F=null;P=null;$('ioFile').value='';
-    $('ioFoot').style.display='none';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){} // v15: 닫지 않고 완료 화면 — 그날 기록 화면(단톡방 공유용)은 버튼으로
+    $('ioFoot').style.display='none';const hd=$('ioHead');if(hd)hd.innerHTML='';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){} // v15: 닫지 않고 완료 화면 — 그날 기록 화면(단톡방 공유용)은 버튼으로
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
     try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(rec.wdate||kstDate(0))}catch(e){} // v32: 카드가 달력 날짜 기준이라 기록이 들어간 작업일 카드로 (내일 것 출고 → 내일 카드)
@@ -1477,7 +1490,7 @@ async function ioSubmitEdit(items){ // v32: 기존 기록 고치기 — Firebase
     }
     DONE={type:r.type,vehicle:F.vehicle,wdate:wd,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0),edit:true};
     busy=false;F=null;P=null;$('ioFile').value='';
-    $('ioFoot').style.display='none';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){}
+    $('ioFoot').style.display='none';{const hd=$('ioHead');if(hd)hd.innerHTML=''}$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){}
     ioToast('✅ '+TYPE[DONE.type].n+' 기록 수정');
     renderList();ioFlush(false);
     try{if(window.ioAdmin&&window.ioAdmin.goto)window.ioAdmin.goto(DONE.wdate)}catch(e){}
@@ -1589,6 +1602,6 @@ function init(){
   if(obGet().length)setTimeout(()=>ioFlush(false),1500);
   setTimeout(adminAutoOpen,0);
 }
-Object.assign(window,{ioZeroReturn,ioEditNew,ioVoidFromForm,ioEditWdate,ioCrew2,ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
+Object.assign(window,{ioZeroReturn,ioEditNew,ioVoidFromForm,ioEditWdate,ioPickDate,ioCrew2,ioBoardRetry,ioNext,ioEdit,ioVehPick,ioWdate,ioDoneShare,ioDoneAdmin,refreshSteps,ioAdminOpen,ioShare,ioShareMine,ioShareClose,ioShareCopy,ioShow,ioHelp,ioHelpClose,ioOpen,ioClose,ioType,ioStep,ioDraftResume,ioDraftDrop,ioPickPhoto,ioPhotoChange,ioDateToggle,ioDateChange,ioWdate,ioVehicle,ioVehicleCustom,ioVehicleType,ioWorker,ioProduct,ioNum,ioFocus,ioBlur,ioAddItem,ioDelItem,ioNote,ioSubmit,ioVoid,ioFlush,ioView,ioViewLocal,ioViewClose,ioLedgerToggle,ioLedgerReload,ioListMore,ioDayToggle,ioVoidToggle,ioReasonOpen,ioReasonPick,ioReasonNote,ioReasonClose,ioReasonSave,ioReasonDelete});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
