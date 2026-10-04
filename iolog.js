@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04c';
+const IO_VER='2026.10.04d';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -467,12 +467,13 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .io-top{position:sticky;top:0;z-index:5;background:var(--dm-panel);margin-bottom:14px;box-shadow:0 8px 12px -10px rgba(0,0,0,.6)}
 .iog-phonehead{display:flex;align-items:center;gap:10px;padding:12px 0 9px;padding-top:max(12px,env(safe-area-inset-top));border-bottom:1px solid var(--dm-line)}
 #ioHead:empty{display:none}
-.iog-top1{display:flex;align-items:center;gap:10px;padding:9px 0 2px}
-.iog-top1 select{flex:0 1 auto;width:auto;max-width:62%;min-width:0;border:0;background:transparent;font-size:17px;font-weight:800;padding:4px 0;margin:0 auto 0 0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none}
-.iog-top1 .d{flex:none;font-size:15px;font-weight:800;color:var(--dm-ink);white-space:nowrap}.iog-top1 .d small{font-weight:600;color:var(--dm-muted);font-size:12px;margin-left:4px}
+.iog-top1{display:flex;align-items:center;gap:6px;padding:9px 0 8px}
+.iog-top1 select{flex:0 1 auto;width:auto;min-width:0;border:0;background:transparent;font-size:17px;font-weight:800;padding:4px 0;margin:0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none}
+.iog-top1 select.w{font-size:15px;font-weight:700;color:var(--dm-muted);max-width:26%}
+.iog-top1 select:not(.w)+select.w{margin-left:4px}
+.iog-top1 .d{flex:none;margin-left:auto;font-size:15px;font-weight:800;color:var(--dm-ink);white-space:nowrap}.iog-top1 .d small{font-weight:600;color:var(--dm-muted);font-size:12px;margin-left:4px}
 .iog-top1 .d.ed{color:var(--dm-blue);cursor:pointer}
-.iog-top2{display:flex;align-items:center;gap:8px;padding:0 0 8px;font-size:12px;color:var(--dm-muted)}
-.iog-top2 select{flex:1;min-width:0;height:36px;border:1px solid var(--dm-line);border-radius:8px;background:var(--dm-soft);color:var(--dm-ink);padding:0 8px;font-size:15px;font-weight:700;font-family:var(--font);color-scheme:dark;outline:none}
+.io-draft.ed{background:var(--dm-soft);color:var(--dm-muted)}
 .io-top .iog-jobs{margin:0 0 10px;padding:8px 10px;max-height:118px;overflow-y:auto}
 .io-top .io-draft{margin:8px 0 4px;padding:8px 10px}
 .iog-phonehead h2{font-size:22px;font-weight:800;letter-spacing:-.8px;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -507,6 +508,7 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-itemhead{padding:10px 12px;background:var(--dm-soft);display:flex;align-items:center;gap:7px;color:var(--dm-muted)}
 .iog-productselect{flex:0 1 auto;width:auto;max-width:calc(100% - 44px);min-width:0;border:0;background:transparent;font-weight:800;font-size:16px;padding:5px 0;margin:0;color:var(--dm-ink);font-family:var(--font);color-scheme:dark;outline:none} /* 2026-10-04: 폭을 글자만큼만 → 화살표가 제품명 바로 옆에 */
 .iog-itemhead .iog-x{margin-left:auto}
+.iog-no{flex:none;width:22px;height:22px;border-radius:6px;background:var(--dm-line);color:var(--dm-ink);font-size:12px;font-weight:800;display:grid;place-items:center}
 .iog-productselect.none{color:var(--dm-amber)}
 .iog-x{border:0;background:transparent;color:var(--dm-muted);width:34px;height:34px;display:grid;place-items:center;border-radius:8px;cursor:pointer;flex:none}
 .iog-packhint{font-size:11px;color:var(--dm-muted);padding:9px 12px 0}
@@ -661,6 +663,8 @@ function ensureShell(){
     if(host.firstChild){const sep=document.createElement('div');sep.className='io-sep';host.insertBefore(sep,host.firstChild);host.insertBefore(box,sep)} // 예전 구조(차량 탭 위쪽에 끼워 넣기)
     else host.appendChild(box);                                                                                                                  // v16: 입출고 전용 탭
     try{const _sw=window.sw;if(typeof _sw==='function'&&!_sw._io){const w=function(n){const r=_sw.apply(this,arguments);if(n==='fair')onTabOpen();return r};w._io=true;window.sw=w}}catch(e){}
+    // v35: 스케줄러가 3분마다 시트를 다시 읽을 때(refreshSheet) 입출고 탭이 열려 있으면 카드도 다시 그림 — 새 예약·차량 배정 변경이 탭 안 바꿔도 반영되게
+    try{const _rs=window.refreshSheet;if(typeof _rs==='function'&&!_rs._io){const w=async function(){const r=await _rs.apply(this,arguments);try{const p=$('p-fair');if(p&&p.classList.contains('on'))renderList()}catch(e){}return r};w._io=true;window.refreshSheet=w}}catch(e){}
     // 당번 모드를 켜고 끄면 [📊 취합] 버튼이 바로 뜨고 사라지게 — 끄면 열려 있던 취합 화면도 닫음
     ['adminOn','adminOff'].forEach(fn=>{try{const f=window[fn];if(typeof f==='function'&&!f._io){const w=function(){const r=f.apply(this,arguments);try{if(fn==='adminOff'&&window.ioAdmin&&window.ioAdmin.close)window.ioAdmin.close();renderList()}catch(e){}return r};w._io=true;window[fn]=w}}catch(e){}});
   }else{ // 차량 탭이 없는 페이지: 예전처럼 별도 패널 + 하단 탭
@@ -1298,11 +1302,11 @@ function renderForm(){
   const E=F.edit;const hasPhoto=!!(P||(E&&E.photoId));
   // 상단 고정 블록(v34): 차량 · 작업일 / 담당 두 명 한 줄 / 갈 현장 — 아래로 수량을 적는 동안에도 계속 보임
   const canDate=!!(E&&admin());
-  const top=`${E?`<div class="io-draft"><span class="g">${esc(String(E.at||'').slice(5,16))}에 남긴 ${TYPE[F.type].n} 기록을 고치는 중${E.editN?' · 수정 '+E.editN+'회':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
+  const top=`${E?`<div class="io-draft ed"><span class="g">${esc(String(E.at||'').slice(5,16))}에 적은 ${TYPE[F.type].n} 기록 수정 중${E.editN?' · '+E.editN+'번 고침':''}</span><button type="button" class="ghost" onclick="ioEditNew()">따로 추가</button></div>`:F.draft?`<div class="io-draft"><span class="g">작성하던 ${esc(TYPE[F.draft.type]?TYPE[F.draft.type].n:'')} 기록이 있어요 · ${esc(draftWhen(F.draft))}</span><button type="button" onclick="ioDraftResume()">이어쓰기</button><button type="button" class="ghost" onclick="ioDraftDrop()">새로 시작</button></div>`:''}
   <div class="iog-top1" id="ioSecVeh"><select id="ioVehSel" aria-label="차량" onchange="ioVehPick(this.value)"><option value="">차량 선택${plates.length?'':' · 팀설정 탭에 등록된 차량이 없어요'}</option>${plates.map(p=>`<option value="${esc(p)}"${!F.custom&&F.vehicle===p?' selected':''}>${esc(p)}</option>`).join('')}<option value="__custom"${F.custom?' selected':''}>직접 입력…</option></select>
-    <span class="d${canDate?' ed':''}" id="ioWhen" ${canDate?'onclick="ioPickDate()"':''}>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}${canDate?' <small>바꾸기</small>':''}</span>${canDate?`<input type="date" id="ioWd" value="${esc(F.wdate)}" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="ioEditWdate(this.value)">`:''}</div>
+    <select class="w" id="ioWorker" aria-label="담당" onchange="ioWorker(this.value)"><option value="">담당</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select class="w" id="ioCrew2" aria-label="담당 2" onchange="ioCrew2(this.value)"><option value="">—</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select>
+    <span class="d${canDate?' ed':''}" id="ioWhen" ${canDate?'onclick="ioPickDate()"':''}>${esc(fmtD(F.wdate))}${F.wdate===kstDate(0)?' <small>오늘</small>':''}</span>${canDate?`<input type="date" id="ioWd" value="${esc(F.wdate)}" style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none" onchange="ioEditWdate(this.value)">`:''}</div>
   ${F.custom?`<input class="iog-inp" id="ioVehicleIn" placeholder="차량번호" value="${esc(F.vehicle)}" oninput="ioVehicleType(this.value);refreshSteps()" style="margin:0 0 8px">`:''}
-  <div class="iog-top2"><span>담당</span><select id="ioWorker" onchange="ioWorker(this.value)"><option value="">선택</option>${emps.map(n=>`<option value="${esc(n)}"${F.worker===n?' selected':''}>${esc(n)}</option>`).join('')}${F.worker&&!emps.includes(F.worker)?`<option value="${esc(F.worker)}" selected>${esc(F.worker)}</option>`:''}</select><select id="ioCrew2" onchange="ioCrew2(this.value)"><option value="">없음</option>${emps.filter(n=>n!==F.worker).map(n=>`<option value="${esc(n)}"${F.crew2===n?' selected':''}>${esc(n)}</option>`).join('')}${F.crew2&&!emps.includes(F.crew2)?`<option value="${esc(F.crew2)}" selected>${esc(F.crew2)}</option>`:''}</select></div>
   ${formJobsHTML()}`;
   if(head)head.innerHTML=top;
   let h=`<div id="ioItems"></div>
@@ -1336,7 +1340,7 @@ function renderItems(){
     const rows=PART.map(pt=>{const e=rowEq(it,pt.k);
       return `<span class="iog-partname${pt.k==='t'?' t':''}">${pt.n}</span>${inp(pt.k+'B',3,itemBox(it,pt.k),'제품 '+(i+1)+' '+pt.n+' 박스')}${inp(pt.k,4,itemEa(it,pt.k),'제품 '+(i+1)+' '+pt.n+' 낱장')}<span class="eq${e.cls}" id="ior_${i}_${pt.k}">${e.html}</span>`}).join('');
     const t10=itemQty(it,'t');
-    return `<div class="iog-item" id="ioPc_${i}"><div class="iog-itemhead">${gi('pkg')}<select class="iog-productselect${it.product?'':' none'}" aria-label="제품 ${i+1} 선택" onchange="ioProduct(${i},this.value)"><option value="">제품 선택</option>${opts}</select>${F.items.length>1?`<button type="button" class="iog-x" onclick="ioDelItem(${i})" aria-label="제품 ${i+1} 빼기">${gi('x')}</button>`:''}</div>
+    return `<div class="iog-item" id="ioPc_${i}"><div class="iog-itemhead"><span class="iog-no">${i+1}</span><select class="iog-productselect${it.product?'':' none'}" aria-label="제품 ${i+1} 선택" onchange="ioProduct(${i},this.value)"><option value="">제품 선택</option>${opts}</select>${F.items.length>1?`<button type="button" class="iog-x" onclick="ioDelItem(${i})" aria-label="제품 ${i+1} 빼기">${gi('x')}</button>`:''}</div>
       <div class="iog-packhint" id="iof_${i}">${ftHint(it)}</div>
       <div class="iog-qtygrid"><span></span><span class="iog-qtyhead">박스</span><span class="iog-qtyhead">낱장</span><span class="iog-qtyhead" style="text-align:right">합계</span>${rows}</div>
       <div class="iog-itemfoot">제품 합계 <strong id="iot_${i}">${itemTotal(it)}</strong>장<em id="iot10_${i}">${t10?' +10T '+t10+'장':''}</em></div></div>`;
