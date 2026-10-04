@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04i';
+const IO_VER='2026.10.04j';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -157,7 +157,7 @@ function jobs(){try{return Array.isArray(J)?J:[]}catch(e){return []}}
 function assignOf(id){try{const a=A&&A[id];return Array.isArray(a)?a.map(n=>String(n||'').trim()).filter(Boolean):[]}catch(e){return []}} // 스케줄러 앱 안의 배정(Firebase assignments)
 // v37: 시공 → 팀·차량은 스케줄 탭 팀 카드와 똑같은 규칙으로 (2026-10-04, 입출고와 스케줄 화면이 달라 보이던 문제)
 //  · 팀 = 앱 배정(A)에서 그날 휴무자를 뺀 멤버, 팀설정 순서(첫 사람 = 사수)
-//  · 차량 = 그 날짜 그 팀의 첫 시공 행에 적힌 시트 차량 칸, 비어 있으면 사수의 차(팀설정)  ← 스케줄 탭 카드의 🚗 선택이 보여주는 값 그대로
+//  · 차량 = 직접 고른 차(VOV) → 그 날짜 그 팀의 첫 시공 행에 적힌 시트 차량 칸 → 사수의 차(팀설정)  ← 스케줄 탭 카드의 🚗 선택이 보여주는 값 그대로
 //  시트의 차량·사수 칸(K·L·M열)은 당번이 바꾼 뒤 저장이 실패(🔴실패)하면 옛 값이 남아서, 그걸 기준으로 하면 스케줄 탭과 어긋남
 function crewOf(j){ // 그 건의 팀원 (앱 배정 − 휴무, 팀설정 순서). 배정 없으면 []
   try{const t=assignOf(j&&j.id);if(!t.length)return [];
@@ -180,7 +180,8 @@ function vehicleMap(){ // {시공id: 차량} — 스케줄 탭 팀 카드 규칙
       if(!g[k])g[k]={team,first:j,jobs:[]};
       g[k].jobs.push(j);
     });
-    Object.keys(g).forEach(k=>{const x=g[k];const cp=String(x.first.vehicle||'').trim()||carOf(x.team[0]);x.jobs.forEach(j=>{m[j.id]=cp})});
+    const O=(typeof VOV!=='undefined'&&VOV&&typeof VOV==='object')?VOV:{}; // 스케줄러 v2026.10.04.107+: 팀 카드 🚗로 직접 고른 차량 (시공별)
+    Object.keys(g).forEach(k=>{const x=g[k];const cp=String(O[x.first.id]||'').trim()||String(x.first.vehicle||'').trim()||carOf(x.team[0]);x.jobs.forEach(j=>{m[j.id]=cp})});
   }catch(e){}
   _vm={at:now,m};return m;
 }

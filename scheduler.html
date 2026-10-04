@@ -323,7 +323,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.10.04.106';
+const VER='2026.10.04.107';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -475,9 +475,12 @@ db.ref('skipJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object
 db.ref('lockedJobs').on('value',snap=>{const v=snap.val();if(v&&typeof v==='object'&&!Array.isArray(v)){LOCK=new Set(Object.keys(v));LOCK_REASONS={};Object.keys(v).forEach(k=>{if(typeof v[k]==='string')LOCK_REASONS[k]=v[k]})}else if(Array.isArray(v)){LOCK=new Set(v);LOCK_REASONS={}}else{LOCK=new Set();LOCK_REASONS={}}fbLoaded.lock=true;fbRender()});
 
 let VEHICLES={}; // {준형: "804서 6771", ...}
+let VOV={}; // 2026-10-04: 팀 카드 🚗로 직접 고른 차량 {시공id: 차량} — 자동배정·최신화·시트 저장이 사수 차로 되돌리지 않게 기억 (팀이 바뀌면 지움)
+db.ref('vehicleOverride').on('value',snap=>{const v=snap.val();VOV=(v&&typeof v==='object')?v:{};if(typeof renderAll==='function')renderAll()});
 db.ref('vehicles').on('value',snap=>{const v=snap.val();if(v)VEHICLES=v;else VEHICLES={};renderCars()});
 
 function fbSave(key,val){db.ref(key).set(val)}
+function vovClear_(jobId){if(!VOV[jobId])return;delete VOV[jobId];db.ref('vehicleOverride/'+jobId).remove()} // 팀이 바뀐 건의 수동 차량 해제 (차는 팀을 따라감)
 
 // ===== 📢 시공팀 전달사항 메모 (당번 작성 → 전 직원 공유, Firebase memo) · 2026-10-01 =====
 let MEMO={text:'',at:''};let memoEditing=false;
@@ -537,7 +540,7 @@ sheetSyncTimer=setTimeout(()=>{
     if(!j.date||!j.time)return;
     // 저장 기간(어제~+10일) 밖이면 건너뜀
     const _jDate=(j.date||'').toString().substring(0,10);
-    if(_jDate<_fromStr||_jDate>_toStr)return;
+    if((_jDate<_fromStr||_jDate>_toStr)&&!VOV[j.id])return; // 수동 차량을 고른 건은 범위 밖이어도 저장
     const crew=A[j.id];
     if(!crew||!crew.length)return;
     // 사수/부사수 분리: 팀설정에서 첫번째=사수, 나머지=부사수
@@ -565,7 +568,7 @@ sheetSyncTimer=setTimeout(()=>{
     if(isNaN(rowIdx)||rowIdx<2)return;
     const teamFirst=((teams.find(t=>crew.every(c=>t.includes(c)))||[]).find(m=>crew.includes(m)))||''; // 팀설정 순서상 맨 앞 사람(사수 자리)
     const autoVehicle=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sasu)||Object.keys(VEHICLES).find(p=>VEHICLES[p]===teamFirst)||Object.keys(VEHICLES).find(p=>crew.includes(VEHICLES[p]))||''; // 시트 사수 차량 → 팀 사수 자리 차량 → 팀원 중 차량 있는 사람
-    const finalVehicle=(LOCK.has(j.id)&&j.vehicle)?j.vehicle:autoVehicle;
+    const finalVehicle=VOV[j.id]||((LOCK.has(j.id)&&j.vehicle)?j.vehicle:autoVehicle); // 직접 고른 차 → 잠긴 건의 차 → 사수 차
     j.vehicle=finalVehicle;// 로컬도 동기화
     data.push({row:rowIdx,sasu,busasu,vehicle:finalVehicle,date:j.date,address:j.addr,phone:j.phone||'',time:j.time});
   });
@@ -579,10 +582,17 @@ sheetSyncTimer=setTimeout(()=>{
     body:JSON.stringify({action:'updateAssignments',data,gid:'144225567'})
   }).then(r=>r.text()).then(t=>{
     console.log('[sheet-sync] 응답:',t);
-    syncStatus=t.includes('OK')?'success':'error';renderAll();
-    if(syncStatus==='success')setTimeout(()=>{syncStatus='idle';renderAll()},3000);
-  }).catch(e=>{console.log('[sheet-sync] error:',e);syncStatus='error';renderAll();});
+    const ok=/^OK:/.test(String(t).trim()); // 'OK: N건'만 성공으로 (에러 페이지에 OK가 섞여 있어도 성공으로 안 봄)
+    syncStatus=ok?'success':'error';renderAll();
+    if(ok){_syncRetry=0;setTimeout(()=>{syncStatus='idle';renderAll()},3000);setTimeout(()=>{if(syncStatus!=='syncing')refreshSheet(false)},4000)} // 저장된 값을 시트에서 다시 읽어 화면·입출고에 바로 반영
+    else syncFail_(t);
+  }).catch(e=>{console.log('[sheet-sync] error:',e);syncStatus='error';renderAll();syncFail_(String(e));});
 },2000); // 2초 디바운스 (빠른 연속 변경 시 한 번만 전송)
+}
+let _syncRetry=0;
+function syncFail_(why){ // 배정 시트 저장 실패 — 15초 뒤 한 번 자동으로 다시, 그래도 안 되면 알림 (카드의 🔴실패를 누르면 다시 저장)
+  if(_syncRetry<1){_syncRetry++;setTimeout(()=>{if(syncStatus==='error')syncToSheet()},15000);return}
+  _syncRetry=0;toast('⚠️ 배정이 시트에 저장되지 않았어요 — 카드의 🔴실패를 누르면 다시 저장돼요','error');
 }
 
 
@@ -1180,7 +1190,7 @@ fbSave('prevJobIds',J.map(j=>j.id));
 const _changes={};
 Object.keys(A).forEach(k=>{if(JSON.stringify(A[k])!==JSON.stringify(_snapA[k]))_changes[k]=A[k]});
 Object.keys(_snapA).forEach(k=>{if(!A[k])_changes[k]=null});
-if(Object.keys(_changes).length)db.ref('assignments').update(_changes);
+if(Object.keys(_changes).length){db.ref('assignments').update(_changes);Object.keys(_changes).forEach(vovClear_)} // 팀이 바뀐 건은 직접 고른 차도 지움
 lastAHash=aHash(A);syncToSheet();
 //console.log('[autoAssign] 최종 배정:', JSON.stringify(A));
 toast('✅ 자동 배정 완료!','ok');
@@ -1205,7 +1215,7 @@ A[jobId]=[emp];
 }
 // 수동 배정하면 SKIP 해제
 if(SKIP.has(jobId)){SKIP.delete(jobId);saveSkip()}
-db.ref('assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
+vovClear_(jobId);db.ref('assignments/'+jobId).set(A[jobId]||null);lastAHash=aHash(A);syncToSheet();
 lastManualEdit=Date.now();
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('✅ 배정 업데이트','ok');renderAll()}
@@ -1217,7 +1227,7 @@ if(_isPastJob(jobId)){toast('🔒 지난 날짜 작업은 변경할 수 없어�
 delete A[jobId];
 SKIP.add(jobId);
 saveSkip();
-db.ref('assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
+vovClear_(jobId);db.ref('assignments/'+jobId).remove();lastAHash=aHash(A);syncToSheet();
 // 재배정 방지: 2초간 자동배정 차단
 isAssigning=true;setTimeout(()=>{isAssigning=false},2000);
 toast('배정 취소됨 (자동배정 제외)','ok');renderAll()}
@@ -2046,7 +2056,7 @@ ${LOCK.has(j.id)?`<span onclick="event.stopPropagation();unlockJob('${j.id}')" s
 </div>`}).join('');
 
 return `<div class="tjob">
-<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${colorIdx(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const cp=tg.jobs[0]&&tg.jobs[0].vehicle?tg.jobs[0].vehicle:autoV;const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){return (j.csvRow||0)+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
+<div style="margin-bottom:4px">${tg.team.map(m=>`<span class="tjob-team tc${colorIdx(m)%10}" style="margin-right:4px">${m}</span>`).join('')}${(()=>{const sa=tg.team[0];const autoV=Object.keys(VEHICLES).find(p=>VEHICLES[p]===sa)||'';const cp=(tg.jobs[0]&&(VOV[tg.jobs[0].id]||tg.jobs[0].vehicle))||autoV;const ap=Object.keys(VEHICLES);return isAdmin?'<select onchange="quickVehicle(\''+sa+'\',this.value,['+tg.jobs.map(function(j){return (j.csvRow||0)+1}).join(',')+'])" style="font-size:10px;padding:3px 6px;border-radius:6px;background:var(--card2);color:var(--dim);border:1px solid var(--border);font-family:var(--font);margin-left:4px">'+(ap.map(p=>'<option value="'+p+'"'+(p===cp?' selected':'')+'>🚗 '+p+'</option>').join(''))+'<option value=""'+(!cp?' selected':'')+'>미배정</option></select>':(cp?'<span style="font-size:10px;color:var(--dim);margin-left:4px">🚗 '+cp+'</span>':'')})()}${getSyncBadge()}${hasNew?'<span class="new-badge">🆕</span>':''}</div>
 ${jobRows}</div>`}).join('');
 
 if(un.length){
@@ -2562,9 +2572,11 @@ function quickVehicle(sasu,plate,rows){
     var lockedRows=[];
     rows.forEach(function(r){var job=J.find(function(j){return (j.csvRow||0)+1===r});if(job&&LOCK.has(job.id))lockedRows.push(r)});
     if(lockedRows.length>0){toast('🔒 잠긴 건이 포함되어 변경 불가','error');return;}
-    var vData=rows.map(function(r){var job=J.find(function(j){return (j.csvRow||0)+1===r});return{row:r,vehicle:plate,date:job?job.date:'',address:job?job.addr:'',phone:job?job.phone:''}});
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateAssignments',data:vData,gid:'144225567'})});
-    J.forEach(function(j){var ri=(j.csvRow||0)+1;if(rows.indexOf(ri)>=0)j.vehicle=plate});
+    // 2026-10-04: 고른 차를 시공별로 기억(VOV) → 시트 저장은 syncToSheet 공통 경로로 (응답 확인·🔴실패·자동 재시도). 전엔 응답도 안 보고 보냈고, 다음 저장 때 사수 차로 되돌아갔음
+    var ids=[];J.forEach(function(j){var ri=(j.csvRow||0)+1;if(rows.indexOf(ri)>=0){ids.push(j.id);j.vehicle=plate}});
+    var up={};ids.forEach(function(id){up[id]=plate||null;if(plate)VOV[id]=plate;else delete VOV[id]});
+    if(ids.length)db.ref('vehicleOverride').update(up);
+    syncToSheet();
     renderSched();
     toast('🚗 '+sasu+' → '+(plate||'미배정')+' (해당 날짜만)','ok');
     return;
@@ -3299,7 +3311,7 @@ renderAll();
 function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('show');pendingConfirmId=''}
 
 // 1분마다 구글시트 자동 갱신
-setInterval(()=>refreshSheet(false),180*1000);
+setInterval(()=>{if(syncStatus!=='syncing')refreshSheet(false)},180*1000); // 배정 저장 중엔 건너뜀 (쓰는 도중 읽으면 옛 값이 보임)
 
 // 5분마다 새 버전 체크 — [perf] HTML 전체(200KB)를 다시 받지 않고 HEAD 요청으로 ETag만 비교, ETag가 없으면 기존 방식으로
 let _pageTag='';
@@ -3318,6 +3330,6 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').cat
 <!-- 현장 대응 프로세스 탭 (부산·경기 공용) — 내용 수정은 guide.js 배포 없이 앱 안에서 -->
 <script src="./guide.js?v=20260908b"></script>
 <!-- 📦 입·출고 기록 탭 (부산·경기 공용) — 사진 시각 스탬프 + 입출고기록 시트 + 드라이브 사진 -->
-<script src="./iolog.js?v=20261004i"></script>
+<script src="./iolog.js?v=20261004j"></script>
 </body>
 </html>
