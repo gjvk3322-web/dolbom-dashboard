@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.04a';
+const IA_VER='2026.10.04b';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -664,8 +664,12 @@ function renderBody(){
   let h='';
   if(S.err)h+=`<div class="ia-err">${esc(S.err)}</div>`;
   if(X.beta)h+=`<div class="ia-notice">${ic('alert')}<div class="c"><strong>🧪 테스트 화면</strong> · 여기서 기록한 건 실제 재고·시트에 안 들어가요. 실제 입력은 원래 스케줄러에서.</div></div>`;
-  let ob={n:0};try{ob=X.outbox()}catch(e){}
-  if(ob.n)h+=`<div class="ia-notice${ob.stuck||ob.err?' bad':''}">${ic('alert')}<div class="c"><strong>전송 대기 ${ob.n}건</strong>${ob.err?' · '+esc(ob.err):''}<br><span>수량은 이미 반영됐고 사진·시트 전송만 남았어요.</span></div><button type="button" class="ia-button quiet small" onclick="ioFlush(true)">${ob.flushing?'전송 중…':'지금 보내기'}</button></div>`;
+  let ob={n:0,live:0,held:0};try{ob=X.outbox()}catch(e){}
+  // v: 전송 대기함은 이 폰 것만 보임(폰마다 따로). 평소 몇 초 안에 자동으로 나가니 작은 글씨로만, 계속 실패할 때만 경고색
+  const live=ob.live!=null?ob.live:ob.n;
+  if(live&&(ob.stuck||ob.err))h+=`<div class="ia-notice bad">${ic('alert')}<div class="c"><strong>전송 안 됨 ${live}건</strong>${ob.err?' · '+esc(ob.err):''}<br><span>수량은 이미 반영됐고 사진·시트 전송만 남았어요. 인터넷 연결을 확인해주세요.</span></div><button type="button" class="ia-button quiet small" onclick="ioFlush(true)">${ob.flushing?'전송 중…':'다시 보내기'}</button></div>`;
+  else if(live)h+=`<div class="ia-tiny" style="margin:0 2px 12px">사진·시트 전송 대기 ${live}건${ob.flushing?' · 전송 중…':' · 자동으로 보내는 중 · <u style="cursor:pointer" onclick="ioFlush(true)">지금 보내기</u>'}</div>`;
+  if(ob.held&&X.admin())h+=`<div class="ia-tiny" style="margin:0 2px 12px">이 폰의 수정 ${ob.held}건은 시트 쪽(IoLog.gs) 업데이트 뒤 자동 전송${ob.flushing?' · 확인 중…':' · <u style="cursor:pointer" onclick="ioFlush(true)">지금 확인</u>'}</div>`;
   if(M.flagged.length){ // 확인 필요: 당번이 [확인함]을 누르면 그 날짜는 한 줄로 접힘. 확인한 뒤 내용이 바뀌면(기록 추가·수정) 다시 띄움
     const sig=flagSig(M);const a=isDay()?(((S.ack[HOME]||{})[S.from])||null):null;const done=!!(a&&a.sig===sig);
     if(done)h+=`<div class="ia-tiny" style="margin:0 2px 12px">확인 필요 ${M.flagged.length}건 · 확인함 ${esc(a.by||'')} ${esc(String(a.at||'').slice(5,16))} · <u style="cursor:pointer" onclick="ioAdmin.f('tab','flag')">보기</u>${X.admin()?` · <u style="cursor:pointer" onclick="ioAdmin.ack(0)">해제</u>`:''}</div>`;

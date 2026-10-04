@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04d';
+const IO_VER='2026.10.04f';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1008,7 +1008,9 @@ function renderList(){ // v16: 화면은 ioadmin.js가 그림 — 여기서는 �
   loadBoard();
 }
 function ioBoardRetry(){_boardLoad=0;renderList()}
-function outboxInfo(){const ob=obGet();return {n:ob.length,stuck:ob.some(e=>(e.tries||0)>=8),err:lastErr||'',flushing:!!flushing}} // 전송 대기 띠용
+function outboxInfo(){ // 전송 대기 띠용 — live: 지금 보낼 수 있는 건, held: 서버(IoLog.gs)가 아직 ioEdit을 몰라 못 보내는 수정 건 (이 폰 것만 — 대기함은 폰마다 따로)
+  const ob=obGet();const canEdit=!!caps().edit;const held=canEdit?0:ob.filter(e=>e.kind==='edit').length;const live=ob.filter(e=>!(e.kind==='edit'&&!canEdit));
+  return {n:ob.length,live:live.length,held,stuck:live.some(e=>(e.tries||0)>=8),err:lastErr||'',flushing:!!flushing}}
 function renderListOld(){
   const v=$('ioView');if(!v)return;
   const _now=Date.now();if(_now-_rlT>2000){_rlT=_now;_rlN=0}if(++_rlN>60){if(_rlN===61)console.warn('[io] renderList 과다 호출 차단');return} // 어떤 이유로든 폭주하면 스케줄러를 지키기 위해 멈춤
@@ -1489,7 +1491,7 @@ async function ioSubmitEdit(items){ // v32: 기존 기록 고치기 — Firebase
       obSet(ob);try{db.ref(NODE+'/'+r.id).set(pend.rec)}catch(e){}
     }else{
       try{await db.ref(NODE+'/'+r.id).update(chg)}catch(e){console.warn('[io] fb edit',e)}
-      const payload={action:'ioEdit',id:r.id,region:RN,type:r.type,date:r.date,wdate:wd,at:r.at,vehicle:F.vehicle,worker:chg.worker,crew,items,note:chg.note,late:chg.late,editAt:chg.editAt,editBy:by,editN:chg.editN,photo,photoName,photoAt:chg.photoAt||'',photoGap:chg.photoGap||0};
+      const payload={action:'ioEdit',id:r.id,region:RN,type:r.type,date:r.date,wdate:wd,at:r.at,vehicle:F.vehicle,worker:chg.worker,crew,items,note:chg.note,late:chg.late,editAt:chg.editAt,editBy:by,editN:chg.editN,photo,photoName,photoAt:chg.photoAt||'',photoGap:chg.photoGap||0,photoId:r.photoId||''}; // photoId: 시트에 원본 행이 없을 때 사진 링크 복원용
       if(!obAdd({kind:'edit',id:'edit_'+r.id+'_'+now.getTime(),rid:r.id,payload,tries:0,ts:now.getTime()})){busy=false;renderForm();return}
     }
     DONE={type:r.type,vehicle:F.vehicle,wdate:wd,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0),edit:true};
@@ -1554,13 +1556,13 @@ async function ioFlush(manual){
   if(!navigator.onLine){lastErr='오프라인';if(manual)ioToast('인터넷 연결 후 다시 시도해주세요',true);renderList();return}
   flushing=true;renderList();
   try{
-    if(ob.some(e=>e.kind==='edit')&&!caps().edit&&Date.now()-(caps().at||0)>600e3)pingOk=0; // 수정 전송이 밀려 있으면 10분마다 서버 지원 여부 다시 확인
+    if(ob.some(e=>e.kind==='edit')&&!caps().edit&&(manual||Date.now()-(caps().at||0)>600e3))pingOk=0; // 수정 전송이 밀려 있으면 10분마다(수동이면 바로) 서버 지원 여부 다시 확인
     if(!(await ping())){lastErr='서버 준비 중(Apps Script 배포 확인)';if(manual)ioToast(lastErr,true);return}
-    lastErr='';
+    lastErr='';let sent=0;
     for(const e of obGet()){
       if(e.kind==='edit'&&!caps().edit){const a=obGet();const x=a.find(y=>y.id===e.id);if(x){x.err='시트 반영 대기 (IoLog.gs 업데이트 필요)';obSet(a)}continue} // 서버가 아직 ioEdit을 모르면 보내지 않고 둠 (중복 행 방지)
       let res;try{res=await post(e.payload)}catch(err){lastErr='네트워크 오류';break}
-      if(res&&res.ok){
+      if(res&&res.ok){sent++;
         if(e.kind==='log'){const rec={...e.rec,status:'ok',photoId:res.photoId||'',photoUrl:res.photoId?viewUrl(res.photoId):'',sheetAt:kstDT(new Date())};
           try{await db.ref(NODE+'/'+rec.id).set(rec)}catch(err){console.warn('[io] fb',err)}}
         else if(e.kind==='edit'&&e.rid){const upd={sheetEditAt:kstDT(new Date())};if(res.photoId){upd.photoId=res.photoId;upd.photoUrl=viewUrl(res.photoId)}
@@ -1572,7 +1574,12 @@ async function ioFlush(manual){
         if(res&&res._txt)console.warn('[io] 응답:',res._txt);
       }
     }
-    if(!obGet().length){ioToast('📤 전송 완료')}
+    const left=obGet();const heldN=caps().edit?0:left.filter(e=>e.kind==='edit').length;
+    if(!left.length){ioToast('📤 전송 완료')}
+    else if(manual&&!lastErr){ // v35: 수동으로 눌렀는데 남는 게 있으면 왜 남는지 알려줌 (전엔 아무 반응 없었음)
+      if(heldN&&heldN===left.length)ioToast((sent?'전송 '+sent+'건 완료 · ':'')+'수정 '+heldN+'건은 시트 쪽(IoLog.gs) 업데이트 뒤 자동으로 보내져요');
+      else ioToast(sent?'전송 '+sent+'건 완료 · '+left.length+'건 남음':'아직 보낼 수 없어요 · '+left.length+'건 대기');
+    }
   }finally{flushing=false;renderList()}
 }
 
