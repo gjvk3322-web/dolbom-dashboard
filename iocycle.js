@@ -34,7 +34,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.04d';
+const CY_VER='2026.10.04e';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -163,18 +163,21 @@ function cyclesOf(plate,recMap,seed){ // seed: 앞서(저장본에서) 이미 �
   return list;
 }
 function plateOfName(name){const V=vehicles();const k=Object.keys(V).find(p=>String(V[p]||'').trim()===name);return k?NP(k):''} // 차량 탭에서 이 사람이 사수인 차량
-function namesOf(j){ // 그 건의 담당 이름들: 시트 사수·부사수 → 비어 있으면 스케줄러 앱 배정(A) (당번이 배정했는데 시트 저장이 🔴실패한 경우)
-  let n=splitNames(j.sasu).concat(splitNames(j.busasu));
-  if(!n.length&&X.assignOf){try{n=arr(X.assignOf(j.id)).map(s=>String(s||'').trim()).filter(Boolean)}catch(e){n=[]}}
+function namesOf(j){ // 그 건의 담당 이름들: 스케줄러 앱 배정(A, 휴무 제외·팀설정 순서) → 배정이 없으면 시트 사수·부사수 (시트 칸은 저장 🔴실패 시 옛 값이 남으므로 앱 배정이 우선)
+  let n=[];
+  if(X.crewOf){try{n=arr(X.crewOf(j)).map(s=>String(s||'').trim()).filter(Boolean)}catch(e){n=[]}}
+  else if(X.assignOf){try{n=arr(X.assignOf(j.id)).map(s=>String(s||'').trim()).filter(Boolean)}catch(e){n=[]}}
+  if(!n.length)n=splitNames(j.sasu).concat(splitNames(j.busasu));
   return n;
 }
+function vehOfJob(j){return X.vehicleOf?U.normPlate(X.vehicleOf(j)):U.normPlate(j.vehicle)} // 시공이 가는 차량 — 스케줄 탭 팀 카드와 같은 규칙 (iolog.js vehicleOf)
 function fallbackPlate(j){ // 스케줄 차량번호가 빈 행: 사수 → 부사수 순으로 차량 탭 사수인 사람의 차량 (한 건은 한 차량에만 붙게)
   const names=namesOf(j);
   for(const n of names){const pk=plateOfName(n);if(pk)return pk}
   return '';
 }
-function jobMatches(j,plate){ // 스케줄 차량번호가 있으면 그걸로. 없으면 그 행 사수·부사수 중 차량 탭 사수인 사람의 차량 (시트 사수가 입사일 순이라 팀 사수가 부사수 칸에 적히는 경우 대비)
-  const jv=U.normPlate(j.vehicle);
+function jobMatches(j,plate){ // 차량이 정해져 있으면 그걸로(스케줄 탭 팀 카드 규칙). 없으면 담당 중 차량 탭 사수인 사람의 차량
+  const jv=vehOfJob(j);
   if(jv)return jv===NP(plate);
   return fallbackPlate(j)===NP(plate);
 }
@@ -198,7 +201,7 @@ function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 �
     if(!mine&&claimedElsewhere(j.id,cy.plate))return; // 다른 차량 카드가 가져간 시공
     const isAs=/^AS$/i.test(String(j.time||'').trim());
     const pk=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t)||'';
-    const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20),time:String(j.time||'').slice(0,2),py:String(j.py||'').trim(),prod:prodLabel(j),sasu:j.sasu||namesOf(j)[0]||'',busasu:j.busasu||(j.sasu?'':namesOf(j)[1]||''),isAs,defect:isAs&&/시공하자/.test(String(j.category||'')),prev:[],auto,sold:0,asFree:0,pk,st:''};
+    const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20),time:String(j.time||'').slice(0,2),py:String(j.py||'').trim(),prod:prodLabel(j),sasu:namesOf(j)[0]||'',busasu:namesOf(j).slice(1).join(','),isAs,defect:isAs&&/시공하자/.test(String(j.category||'')),prev:[],auto,sold:0,asFree:0,pk,st:''};
     const sold=+j.sold||0;
     if(sold>0){row.sold=sold;P(pk||'?').sold+=sold;row.st='ok'}
     else if(isAs){
@@ -560,9 +563,9 @@ function render(){
   const cons=latestOf(plate).consumed||new Set(); // 이 차량의 다른 순환에 이미 붙은 시공 — 체크하면 이 순환으로 옮겨 옴
   h+=`<label>연결된 시공</label>`;
   h+=cy.jobs.map(r=>`<div class="jl"><input type="checkbox" checked data-id="${esc(r.id)}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'AS ':''}${esc(r.addr)} <span class="ia-tiny">${esc([r.sasu,r.busasu].filter(Boolean).join('·'))}${r.auto?'':' · <span style="color:var(--dm-blue)">수동</span>'}</span></span><b>${r.sold?r.sold+'장':r.asFree?'AS '+r.asFree:r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':'0'}</b></div>`).join('')||'<div class="ia-tiny">없음</div>';
-  if(cand.length)h+=`<label>같은 기간 다른 시공</label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}" data-auto="${jobMatches(j,cy.plate)?1:0}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc([j.sasu,j.busasu].filter(Boolean).join('·'))}${j.vehicle?' · '+esc(j.vehicle):''}${dels[j.id]?' · <span style="color:var(--dm-amber)">뺀 시공</span>':cons.has(j.id)?' · <span style="color:var(--dm-amber)">이 차 다른 날에 연결됨</span>':''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
+  if(cand.length)h+=`<label>같은 기간 다른 시공</label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}" data-auto="${jobMatches(j,cy.plate)?1:0}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc(namesOf(j).join('·'))}${vehOfJob(j)?' · '+esc(X.vehicleOf?X.vehicleOf(j):j.vehicle):''}${dels[j.id]?' · <span style="color:var(--dm-amber)">뺀 시공</span>':cons.has(j.id)?' · <span style="color:var(--dm-amber)">이 차 다른 날에 연결됨</span>':''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
   }
-  if(up.list.length)h+=`<label>${esc(U.fmtMD(up.date))} 갈 현장</label>`+up.list.map(x=>`<div class="jl${x.on?'':' cand'}"><input type="checkbox" ${x.on?'checked':''} data-up="${esc(x.j.id)}" data-auto="${x.auto?1:0}"><span>${/^AS$/i.test(x.j.time)?'AS ':esc(String(x.j.time||'').slice(0,2))+' '}${esc(String(x.j.addr||'').replace(/\(.*?\)/g,'').slice(0,18))} <span class="ia-tiny">${esc([x.j.sasu,x.j.busasu].filter(Boolean).join('·'))}${x.j.vehicle?' · '+esc(x.j.vehicle):''}</span></span><b>${esc(prodLabel(x.j))}${x.j.py?' · '+esc(x.j.py)+'평':''}</b></div>`).join('');
+  if(up.list.length)h+=`<label>${esc(U.fmtMD(up.date))} 갈 현장</label>`+up.list.map(x=>`<div class="jl${x.on?'':' cand'}"><input type="checkbox" ${x.on?'checked':''} data-up="${esc(x.j.id)}" data-auto="${x.auto?1:0}"><span>${/^AS$/i.test(x.j.time)?'AS ':esc(String(x.j.time||'').slice(0,2))+' '}${esc(String(x.j.addr||'').replace(/\(.*?\)/g,'').slice(0,18))} <span class="ia-tiny">${esc(namesOf(x.j).join('·'))}${vehOfJob(x.j)?' · '+esc(X.vehicleOf?X.vehicleOf(x.j):x.j.vehicle):''}</span></span><b>${esc(prodLabel(x.j))}${x.j.py?' · '+esc(x.j.py)+'평':''}</b></div>`).join('');
   const last=(cy&&cy.ov.at)?cy.ov:vehOv(plate);
   if(last.at)h+=`<div class="cy-note">마지막 수정 ${esc(last.by||'')} ${esc(String(last.at||'').slice(5,16))}</div>`;
   const touched=!!(cy&&(cy.ov.add||cy.ov.del||(arr(cy.ov.crew).length)));

@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.04h';
+const IO_VER='2026.10.04i';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -154,7 +154,40 @@ function devId(){let d=localStorage.getItem('io_dev');if(!d){d=Math.random().toS
 function vehicles(){try{return (typeof VEHICLES==='object'&&VEHICLES)?VEHICLES:{}}catch(e){return {}}}
 function employees(){try{return Array.isArray(E)?E.filter(Boolean):[]}catch(e){return []}}
 function jobs(){try{return Array.isArray(J)?J:[]}catch(e){return []}}
-function assignOf(id){try{const a=A&&A[id];return Array.isArray(a)?a.map(n=>String(n||'').trim()).filter(Boolean):[]}catch(e){return []}} // 스케줄러 앱 안의 배정(Firebase assignments) — 시트의 사수·차량 칸이 비어 있을 때(배정 시트 저장 🔴실패) 대신 씀
+function assignOf(id){try{const a=A&&A[id];return Array.isArray(a)?a.map(n=>String(n||'').trim()).filter(Boolean):[]}catch(e){return []}} // 스케줄러 앱 안의 배정(Firebase assignments)
+// v37: 시공 → 팀·차량은 스케줄 탭 팀 카드와 똑같은 규칙으로 (2026-10-04, 입출고와 스케줄 화면이 달라 보이던 문제)
+//  · 팀 = 앱 배정(A)에서 그날 휴무자를 뺀 멤버, 팀설정 순서(첫 사람 = 사수)
+//  · 차량 = 그 날짜 그 팀의 첫 시공 행에 적힌 시트 차량 칸, 비어 있으면 사수의 차(팀설정)  ← 스케줄 탭 카드의 🚗 선택이 보여주는 값 그대로
+//  시트의 차량·사수 칸(K·L·M열)은 당번이 바꾼 뒤 저장이 실패(🔴실패)하면 옛 값이 남아서, 그걸 기준으로 하면 스케줄 탭과 어긋남
+function crewOf(j){ // 그 건의 팀원 (앱 배정 − 휴무, 팀설정 순서). 배정 없으면 []
+  try{const t=assignOf(j&&j.id);if(!t.length)return [];
+    const off=new Set(Array.isArray(j.doff)?j.doff:[]);const mem=t.filter(n=>!off.has(n));if(!mem.length)return [];
+    const T=(typeof teams!=='undefined'&&Array.isArray(teams))?teams:[];
+    return mem.slice().sort((a,b)=>{const ti=T.findIndex(tt=>Array.isArray(tt)&&tt.includes(a)&&tt.includes(b));if(ti>=0)return T[ti].indexOf(a)-T[ti].indexOf(b);return 0});
+  }catch(e){return []}
+}
+let _vm={at:0,sig:'',m:null};
+function vehicleMap(){ // {시공id: 차량} — 스케줄 탭 팀 카드 규칙. 2초 캐시 (순환 계산이 시공마다 부르므로)
+  const now=Date.now();if(_vm.m&&now-_vm.at<2000)return _vm.m;
+  const m={};
+  try{
+    const V=vehicles();const plates=Object.keys(V);const carOf=n=>plates.find(p=>String(V[p]||'').trim()===n)||'';
+    const g={};
+    jobs().forEach(j=>{
+      if(!j||!j.id||j.offOnly||!j.addr||!String(j.addr).trim())return; // 스케줄 탭 realJobs와 같은 조건
+      const team=crewOf(j);if(!team.length)return;
+      const k=j.date+'|'+team.slice().sort().join('+');
+      if(!g[k])g[k]={team,first:j,jobs:[]};
+      g[k].jobs.push(j);
+    });
+    Object.keys(g).forEach(k=>{const x=g[k];const cp=String(x.first.vehicle||'').trim()||carOf(x.team[0]);x.jobs.forEach(j=>{m[j.id]=cp})});
+  }catch(e){}
+  _vm={at:now,m};return m;
+}
+function vehicleOf(j){ // 이 시공이 가는 차량: 앱 배정이 있으면 팀 카드 규칙, 없으면(미배정·옛 건) 시트 차량 칸
+  if(!j)return '';const m=vehicleMap();if(j.id&&Object.prototype.hasOwnProperty.call(m,j.id))return m[j.id];
+  return String(j.vehicle||'').trim();
+}
 function admin(){try{return !!isAdmin}catch(e){return false}}
 function defaultCrew(p,date){try{if(window.ioCycle&&ioCycle.crewFor){const c=ioCycle.crewFor(p,date||kstDate(0));if(c&&c.length)return c}}catch(e){}const o=vehicles()[p]||'';return o?[o,partnerOf(o)].filter(Boolean):[]} // v30: 그 작업일에 이 차량으로 잡힌 스케줄의 사수·부사수 (카드 [수정]으로 고친 값 우선) > 팀설정 짝
 function applyCrew(){if(!F||!F.vehicle||F.custom||F.crewTouched)return;const c=defaultCrew(F.vehicle,F.wdate);F.worker=c[0]||'';F.crew2=c[1]||''} // 작업일·차량이 바뀌면 담당도 그날 스케줄로 (직접 고친 뒤엔 그대로)
@@ -676,7 +709,7 @@ function ensureShell(){
     else host.appendChild(box);                                                                                                                  // v16: 입출고 전용 탭
     try{const _sw=window.sw;if(typeof _sw==='function'&&!_sw._io){const w=function(n){const r=_sw.apply(this,arguments);if(n==='fair')onTabOpen();return r};w._io=true;window.sw=w}}catch(e){}
     // v35: 스케줄러가 3분마다 시트를 다시 읽을 때(refreshSheet) 입출고 탭이 열려 있으면 카드도 다시 그림 — 새 예약·차량 배정 변경이 탭 안 바꿔도 반영되게
-    try{const _rs=window.refreshSheet;if(typeof _rs==='function'&&!_rs._io){const w=async function(){const r=await _rs.apply(this,arguments);try{const p=$('p-fair');if(p&&p.classList.contains('on'))renderList()}catch(e){}return r};w._io=true;window.refreshSheet=w}}catch(e){}
+    try{const _rs=window.refreshSheet;if(typeof _rs==='function'&&!_rs._io){const w=async function(){const r=await _rs.apply(this,arguments);_vm.at=0;try{const p=$('p-fair');if(p&&p.classList.contains('on'))renderList()}catch(e){}return r};w._io=true;window.refreshSheet=w}}catch(e){}
     // 당번 모드를 켜고 끄면 [📊 취합] 버튼이 바로 뜨고 사라지게 — 끄면 열려 있던 취합 화면도 닫음
     ['adminOn','adminOff'].forEach(fn=>{try{const f=window[fn];if(typeof f==='function'&&!f._io){const w=function(){const r=f.apply(this,arguments);try{if(fn==='adminOff'&&window.ioAdmin&&window.ioAdmin.close)window.ioAdmin.close();renderList()}catch(e){}return r};w._io=true;window[fn]=w}}catch(e){}});
   }else{ // 차량 탭이 없는 페이지: 예전처럼 별도 패널 + 하단 탭
@@ -716,7 +749,7 @@ function ensureShell(){
   document.body.appendChild(rs);
 }
 
-function onTabOpen(){ // 차량 탭이 열릴 때
+function onTabOpen(){_vm.at=0; // 차량 탭이 열릴 때
   try{window.scrollTo(0,0)}catch(e){}
   renderList();
   if(obGet().length)ioFlush(false);
@@ -781,8 +814,8 @@ function jobsOf(plate,fromDate,toDate){ // 스케줄(J)에서 이 차량의 시�
   const owner=vehicles()[plate]||'';
   jobs().forEach(j=>{
     if(!j)return;
-    const jv=normPlate(j.vehicle);
-    if(jv?jv!==np:!(owner&&String(j.sasu||'').trim()===owner))return; // 차량번호 있으면 그걸로, 없으면 사수=이 차 담당
+    const jv=normPlate(vehicleOf(j));
+    if(jv?jv!==np:!(owner&&(crewOf(j)[0]||String(j.sasu||'').trim())===owner))return; // 차량 있으면 그걸로, 없으면 사수=이 차 담당
     if(!(j.date>fromDate&&j.date<=toDate))return;
     const t=String(j.time||'').trim();if(t==='실측')return;
     if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return;
@@ -1290,7 +1323,7 @@ function formJobs(){ // v28/v36: 출고 = 작업일(F.wdate)에 이 차가 갈 �
   if(!F.vehicle||F.custom)return R;
   const np=normPlate(F.vehicle);const owner=vehicles()[F.vehicle]||'';const crew=[F.worker,F.crew2].filter(Boolean);
   let vo={};try{if(window.ioCycle&&ioCycle.vehOv)vo=ioCycle.vehOv(F.vehicle)||{}}catch(e){}const vadd=vo.add||{},vdel=vo.del||{};
-  const mine=j=>{if(vdel[j.id])return false;if(vadd[j.id])return true;const jv=normPlate(j.vehicle);if(jv)return jv===np;const s=String(j.sasu||'').trim();return !!s&&(crew.indexOf(s)>=0||s===owner)};
+  const mine=j=>{if(vdel[j.id])return false;if(vadd[j.id])return true;const jv=normPlate(vehicleOf(j));if(jv)return jv===np;const s=crewOf(j)[0]||String(j.sasu||'').trim();return !!s&&(crew.indexOf(s)>=0||s===owner)};
   const ok=j=>j&&j.addr&&String(j.time||'').trim()!=='실측'&&!/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim());
   const d=F.wdate||kstDate(0);
   if(F.type==='out'){
@@ -1623,7 +1656,7 @@ function adminAutoOpen(){
   ioShow();
 }
 // ioadmin.js가 같은 제품 정의·박스 환산 기준·날짜 헬퍼를 그대로 쓰도록 내보냄 (값을 따로 복사해 두지 않기 위해)
-window.__io={ver:IO_VER,beta:IO_BETA,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,jobs,assignOf,records:allRecords,prodKeyOfCode,partnerOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
+window.__io={ver:IO_VER,beta:IO_BETA,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,jobs,assignOf,crewOf,vehicleOf,records:allRecords,prodKeyOfCode,partnerOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
   util:{esc,num,kstDate,kstDT,addDays,fmtD,fmtMD,hm,dowOf,normPlate,thumbUrl,viewUrl}};
 
 /* ---------- 시작 ---------- */
