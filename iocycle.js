@@ -34,7 +34,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.04e';
+const CY_VER='2026.10.05a';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -361,7 +361,9 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
   const open=!!(cur&&cur.open);
   const dayJobs=schedJobs(v.plate,D);
   const showUp=cur?(open&&D>cur.toW&&dayJobs.length>0):dayJobs.length>0; // 갈 현장: 순환 없으면 그날 현장, 열린 순환인데 그날(내일 이후) 현장이 아직 안 붙었으면 그것
-  const who=cur?cur.crew:crewFor(v.plate,D); // 그날 실제 팀은 스케줄 기준
+  // 2026-10-05: 그날 순환도 시공도 없으면 담당을 '미배정'으로 — 팀설정 짝(vehCrew)으로 채우면 휴무자나 다른 차에 탄 사람이 카드에 뜸(10/7 804 세욱·영호). 날짜별 수정만 예외
+  const bd=arr((vehOv(v.plate).crewByDate||{})[D]).filter(Boolean);
+  const who=cur?cur.crew:dayJobs.length?crewFor(v.plate,D):bd.length?orderCrew(bd).slice(0,3):[]; // 그날 실제 팀은 스케줄 기준
   const chip=cur?stChip(cur):dayJobs.length?['','출고 전']:['','시공 없음'];
   const tgt=cur||prev; // 반납·보고 대상: 그 날짜의 순환, 없으면 바로 앞 순환(어제 실은 걸 오늘 반납)
   const outW=D; // 출고 작업일 = 달력 날짜 (대장 결정 2026-10-02: 내일 것은 달력을 내일로 옮겨서 찍는다. 시각·자동 규칙 없음)
@@ -371,7 +373,7 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
   const outRec=cur?lastOf(cur.outs,outW):null,inRec=tgt?lastOf(tgt.ins,inW):null;
   const edited=(cur?cur.outs.concat(cur.ins):[]).filter(r=>nn(r.editN)>0).length;
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
-  let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(who.join('·')||'담당 미지정')}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`; // 2026-10-04: 팀 번호 대신 차량번호가 카드 이름 (차량 기준이니까)
+  let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(who.join('·')||'미배정')}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`; // 2026-10-04: 팀 번호 대신 차량번호가 카드 이름 (차량 기준이니까)
   h+=`<div class="cy-crew"><span class="ia-tiny">${cur?esc(cyLabel(cur))+' · '+(cur.open?'출고 '+esc(String(cur.startAt||'').slice(5,16)):'반납 '+esc(String(cur.endAt||'').slice(5,16))):esc(U.fmtMD(D))}</span></div>`;
   if(cur){h+=`<div class="ia-metrics">${metrics(cur)}</div>${prodLines(cur)}${jobLines(cur)}${!cur.open?peopleLines(cur):''}`;
     const foot=[];
@@ -389,7 +391,7 @@ function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어
     if(foot.length)h+=`<div class="ia-teamfoot">${foot.join('<br>')}</div>`;
   }else{ // 그날 기록 없음: 한 줄만 (시공 없음 · 다음 시공 · 미리 찍은 출고) — 2026-10-04 카드에 줄이 쌓이지 않게
     const parts=[];
-    if(!dayJobs.length){const nx=upcomingOf(v.plate,U.addDays(D,1),consumed);parts.push(`${esc(U.fmtMD(D))} 시공 없음`);if(nx.date)parts.push('다음 시공 '+goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳'))}
+    if(!dayJobs.length){const nx=upcomingOf(v.plate,U.addDays(D,1),consumed);parts.push(`${esc(U.fmtMD(D))} 시공 없음`);if(nx.date){const nc=crewFromJobs(nx.list);parts.push('다음 시공 '+goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳')+(nc.length?' · '+esc(nc.join('·')):''))}}
     if(next)parts.push(goLink(next.fromW,esc(U.fmtMD(next.fromW))+' 출고 '+next.out+'장 있음'));
     if(parts.length)h+=`<div class="ia-tiny" style="margin-top:6px;line-height:1.7">${parts.join(' · ')}</div>`;
   }
