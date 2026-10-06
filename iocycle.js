@@ -26,8 +26,8 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.06c';
-const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
+const CY_VER='2026.10.06d';
+const CY_START=(X.cyStart&&/^\d{4}-\d{2}-\d{2}$/.test(String(X.cyStart)))?String(X.cyStart):'2026-10-05'; // 입출고 시작일 (2026-10-06 초기화 기준일) — 이 날 전 작업일은 기록도 시공도 안 봄 (경고·장부·카드 전부). 테스트는 __io.cyStart로 바꿈
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
 let OV={};          // 오버라이드 {plateKey:{startTs:{...}}}

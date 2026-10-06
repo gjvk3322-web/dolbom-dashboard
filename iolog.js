@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.06c';
+const IO_VER='2026.10.06d';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1232,8 +1232,8 @@ function ioOpen(type,plate,wdate,editId){ // plate: 팀 카드에서 열 때 그
   const w=wdOpts(t);
   const fixedW=!!r||/^\d{4}-\d{2}-\d{2}$/.test(String(wdate||''));
   const wd0=r?(r.wdate||r.date):fixedW?String(wdate):wdDefault(t,vehicle);const c0=r?(Array.isArray(r.crew)&&r.crew.length?r.crew:[r.worker]).filter(Boolean):(vehicle?defaultCrew(vehicle,wd0):[]);
-  // 2026-10-06c: 오늘 카드에서 오늘 반납을 이미 찍은 뒤 또 [출고]면 내일 것일 가능성이 커서 '오늘 것 / 내일 것'을 고르게 함 (자동 규칙 없음 — 고르기 전엔 제출 안 됨)
-  const needDay=t==='out'&&!r&&fixedW&&String(wdate)===kstDate(0)&&!!vehicle&&hasInOn(vehicle,kstDate(0));
+  // 2026-10-06c/d: 오늘 카드에서 새 [출고]인데 오늘 반납을 이미 찍었거나 15시 이후면(저녁에 내일 것 싣기) '오늘 것 / 내일 것'을 고르게 함 — 자동으로 정하진 않고 묻기만, 고르기 전엔 제출 안 됨
+  const needDay=t==='out'&&!r&&fixedW&&String(wdate)===kstDate(0)&&!!vehicle&&(hasInOn(vehicle,kstDate(0))||kst(new Date()).getHours()>=15);
   F={type:t,date:kstDate(0),wdate:wd0,fixedW,wopts:w.opts,wpick:fixedW,dateEdit:false,needDay,vehicle,custom:!!(want&&!reg),worker:c0[0]||'',crew2:c0[1]||'',crewTouched:!!r,items:r?((r.items||[]).length?r.items.map(toFormItem):[newItem()]):[newItem()],note:r?String(r.note||''):'',step:'veh',stage:'edit',draft:r?null:draftGet(t),
      edit:r?{id:r.id,at:r.at||'',photoId:r.photoId||'',pending:!!obGet().find(e=>e.kind==='log'&&e.rec&&e.rec.id===r.id),zero:!!r.zero,editN:num(r.editN)}:null};
   P=null;busy=false;DONE=null;
