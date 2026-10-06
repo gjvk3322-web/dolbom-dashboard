@@ -272,6 +272,7 @@
   .at-badge.out{background:#FFF4D6;color:#9A6B00}
   .at-badge.noloc{background:#EEF3F0;color:#5B6763}
   .at-badge.leave{background:#E8EEFF;color:#3554B8}
+  .at-badge.home{background:#F0E9FF;color:#6B3FC9}
   .at-badge.miss{background:#FFE8E8;color:#B42323}
   .at-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
   .at-tbl td{font-size:12.5px;padding:8px 10px;white-space:nowrap}
@@ -2241,16 +2242,27 @@ function atGetPos(){
       () => res(null), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   });
 }
-function atLocOf(pos){
+/* 근무지 기준: 본인이 등록한 근무지(재택 등, attendanceCfg/homes/{이름})가 있으면 그 위치 반경 300m, 없으면 회사 사무실 */
+const AT_HOME_RADIUS = 300;
+const atHomeOf = name => (name && (atCfg().homes || {})[name]) || null;
+function atBaseOf(name){
+  const h = atHomeOf(name);
+  if (h && h.lat) return { base: h, kind: "home", radius: AT_HOME_RADIUS, label: "등록한 근무지" };
   const off = atCfg().office;
-  if (!off || !off.lat) return { loc: "nocfg", dist: null };
-  if (!pos) return { loc: "noloc", dist: null };
-  const d = Math.round(atDist(pos, off));
-  return { loc: d <= (off.radius || 300) ? "office" : "out", dist: d };
+  if (off && off.lat) return { base: off, kind: "office", radius: off.radius || 300, label: "사무실" };
+  return null;
+}
+function atLocOf(pos, name){
+  const b = atBaseOf(name);
+  if (!b) return { loc: "nocfg", dist: null, kind: "", radius: 0, label: "" };
+  if (!pos) return { loc: "noloc", dist: null, kind: b.kind, radius: b.radius, label: b.label };
+  const d = Math.round(atDist(pos, b.base));
+  return { loc: d <= b.radius ? b.kind : "out", dist: d, kind: b.kind, radius: b.radius, label: b.label };
 }
 function atLocBadge(loc, dist){
   if (loc === "office") return `<span class="at-badge office">사무실</span>`;
-  if (loc === "out") return `<span class="at-badge out" title="사무실에서 ${dist >= 1000 ? (dist / 1000).toFixed(1) + "km" : dist + "m"}">외근</span>`;
+  if (loc === "home") return `<span class="at-badge home">재택</span>`;
+  if (loc === "out") return `<span class="at-badge out" title="근무지에서 ${dist >= 1000 ? (dist / 1000).toFixed(1) + "km" : dist + "m"}">외근</span>`;
   if (loc === "noloc") return `<span class="at-badge noloc" title="위치 권한 없음/확인 실패">위치 없음</span>`;
   return "";
 }
@@ -2268,14 +2280,14 @@ window.atPunch = async (kind, btn) => {
   if (kind === "out" && rec.out && !confirm("퇴근이 이미 " + atFmtT(rec.out) + "에 기록됐어요. 지금 시각으로 다시 기록할까요?")) return;
   const old = btn.textContent; btn.disabled = true; btn.textContent = "위치 확인 중…";
   const pos = await atGetPos();
-  let { loc, dist } = atLocOf(pos);
-  const off = atCfg().office;
-  /* GPS 오차 보정: 오차범위를 감안하면 반경 안일 수 있으면 사무실로 인정 (PC 와이파이 위치 오차 대비) */
-  if (loc === "out" && pos && off && dist - Math.min(pos.acc || 0, 300) <= (off.radius || 300)) loc = "office";
-  if (kind === "in" && off && off.lat){
+  const r = atLocOf(pos, me);
+  let loc = r.loc; const dist = r.dist;
+  /* GPS 오차 보정: 오차범위를 감안하면 반경 안일 수 있으면 근무지로 인정 (PC 와이파이 위치 오차 대비) */
+  if (loc === "out" && pos && r.kind && dist - Math.min(pos.acc || 0, 300) <= r.radius) loc = r.kind;
+  if (kind === "in" && r.kind){
     const stop = msg => { btn.disabled = false; btn.textContent = old; alert(msg); };
     if (loc === "noloc") return stop("위치를 확인할 수 없어 출근 기록이 되지 않았어요.\n브라우저 위치 권한을 허용한 뒤 다시 눌러 주세요.");
-    if (loc === "out")   return stop("사무실 반경 밖이라 출근 기록이 되지 않았어요.\n(사무실에서 " + (dist >= 1000 ? (dist / 1000).toFixed(1) + "km" : dist + "m") + " 떨어진 위치)\n사무실 도착 후 다시 눌러 주세요.");
+    if (loc === "out")   return stop(r.label + " 반경 " + r.radius + "m 밖이라 출근 기록이 되지 않았어요.\n(" + r.label + "에서 " + (dist >= 1000 ? (dist / 1000).toFixed(1) + "km" : dist + "m") + " 떨어진 위치)\n" + (r.kind === "home" ? "재택 위치가 바뀌었다면 [내 근무지 등록]을 다시 눌러 주세요." : "사무실 도착 후 다시 눌러 주세요. 재택 근무자라면 [내 근무지 등록]을 먼저 해 주세요."));
   }
   btn.textContent = "저장 중…";
   const payload = {};
@@ -2322,6 +2334,15 @@ function renderAttendance(){
           <button class="in" onclick="atPunch('in',this)" ${my && my.in ? "disabled" : ""}>출근</button>
           <button class="out" onclick="atPunch('out',this)" ${!my || !my.in ? "disabled" : ""}>퇴근</button>
         </div>
+        ${(() => { const h = atHomeOf(me), b = atBaseOf(me);
+          return `<div class="hint" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+            <span>출근 기준: ${h && h.lat ? `<b style="color:var(--accent-deep)">내 근무지(재택)</b> 반경 ${AT_HOME_RADIUS}m · ${h.setAt ? new Date(h.setAt).toLocaleDateString("ko-KR") + " 등록" : ""}` : b ? `<b>회사 사무실</b> 반경 ${b.radius}m` : "<b>미설정</b> (위치 제한 없음)"}</span>
+            <span style="display:flex;gap:6px;margin-left:auto">
+              <button class="mini-btn" onclick="atSetHomeHere(this)">${h && h.lat ? "내 근무지 재등록" : "내 근무지 등록 (재택)"}</button>
+              ${h && h.lat ? `<button class="mini-btn" onclick="atClearHome('${esc(me)}')">사무실 기준으로</button>` : ""}
+              <button class="mini-btn" onclick="atTestHere(this)">내 위치 확인</button>
+            </span>
+          </div>`; })()}
       </div>`;
 
   // 2) 오늘 현황
@@ -2373,13 +2394,14 @@ function renderAttendance(){
       <tbody>${rows}
       <tr style="background:var(--panel2)"><td style="font-weight:800">합계</td>${members.map(n => { const diff = sum[n].hours - sum[n].days * AT_WORK;
         return `<td style="font-weight:700">${sum[n].days}일 · ${atFmtH(sum[n].hours)} <span class="hint" style="color:${diff < 0 ? "#B42323" : "var(--accent-deep)"}">(기준 대비 ${diff >= 0 ? "+" : ""}${atFmtH(diff)})</span></td>`; }).join("")}</tr></tbody></table></div>
-    <div class="hint" style="margin-top:6px">근무시간 = ${atPad(AT_START)}~${AT_END}시 안에서 출근~퇴근 − 휴게 ${AT_BREAK}시간. ${AT_WORK}시간 미만이면 빨간색으로 부족분 표시. 연차는 연차 관리 승인 건이 자동 표시.${admin ? " 칸을 누르면 수정할 수 있습니다." : ""}</div>`;
+    <div class="hint" style="margin-top:6px">근무시간 = ${atPad(AT_START)}~${AT_END}시 안에서 출근~퇴근 − 휴게 ${AT_BREAK}시간. ${AT_WORK}시간 미만이면 빨간색으로 부족분 표시. 연차는 연차 관리 승인 건이 자동 표시. 재택 근무자는 [내 근무지 등록] 후 그 위치 반경 ${AT_HOME_RADIUS}m 안에서 출근하면 <span class="at-badge home">재택</span>으로 표시.${admin ? " 칸을 누르면 수정할 수 있습니다." : ""}</div>`;
 
   // 4) 관리자 설정
   if (!admin){ $("atAdmin").innerHTML = ""; return; }
-  const off = atCfg().office || {}, mset = atCfg().members || {};
+  const off = atCfg().office || {}, mset = atCfg().members || {}, homes = atCfg().homes || {};
   const people = entries(data.people).sort(byOrder).map(p => p.name).filter(Boolean);
   const extra = Object.keys(mset).filter(n => mset[n] && !people.includes(n));
+  const homeNames = Object.keys(homes).filter(n => homes[n] && homes[n].lat);
   $("atAdmin").innerHTML = `
     <div class="section-title"><h2>설정 <span class="hint">관리자</span></h2></div>
     <div class="card" style="padding:14px 16px;margin-bottom:10px">
@@ -2387,8 +2409,16 @@ function renderAttendance(){
       ${people.concat(extra).map(n => `<span class="at-chip ${mset[n] ? "on" : ""}" onclick="atToggleMember('${esc(n)}')">${esc(n)}</span>`).join("")}
       <button class="mini-btn" onclick="atAddMemberName()">+ 이름 직접 추가</button>
     </div>
+    <div class="card" style="padding:14px 16px;margin-bottom:10px">
+      <div class="hint" style="margin-bottom:6px">재택(개인 근무지) 등록 직원 · 반경 ${AT_HOME_RADIUS}m 고정 — 본인이 출퇴근 화면의 [내 근무지 등록]으로 직접 등록</div>
+      ${homeNames.length ? homeNames.map(n => `<div style="display:flex;align-items:center;gap:10px;font-size:13px;padding:5px 0;border-top:1px solid #F1F5F3">
+          <b>${esc(n)}</b><span class="at-badge home">재택</span>
+          <span class="hint">${homes[n].setAt ? new Date(homes[n].setAt).toLocaleDateString("ko-KR") + " 등록" : ""}${homes[n].acc ? " · 정확도 ±" + homes[n].acc + "m" : ""}</span>
+          <button class="mini-btn" style="margin-left:auto;color:var(--bad)" onclick="atClearHome('${esc(n)}')">해제 (사무실 기준으로)</button>
+        </div>`).join("") : `<div class="hint">아직 없음</div>`}
+    </div>
     <div class="card" style="padding:14px 16px">
-      <div class="hint" style="margin-bottom:6px">사무실 위치</div>
+      <div class="hint" style="margin-bottom:6px">사무실 위치 (개인 근무지가 없는 직원의 기준)</div>
       ${off.lat ? `
       <div style="font-size:13.5px">✅ 등록됨 · 반경 <b>${off.radius || 300}m</b> <span class="hint">(${esc(off.setBy || "")} ${off.setAt ? new Date(off.setAt).toLocaleDateString("ko-KR") : ""})</span> — 반경 밖에서는 출근 버튼이 눌리지 않습니다</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
@@ -2426,12 +2456,37 @@ window.atSetRadius = async v => {
   const r = parseInt(v); if (!r || r < 50) return alert("50m 이상으로 입력해 주세요.");
   await orgRef.child("attendanceCfg/office/radius").set(r).catch(() => alert("저장 실패"));
 };
+window.atSetHomeHere = async btn => {
+  const me = currentUser();
+  if (!me) return alert("이름 확인 후 등록할 수 있어요.");
+  if (!atIsMember(me)) return alert("출퇴근 대상 명단에 없습니다. 관리자에게 요청해 주세요.");
+  const old = btn.textContent; btn.disabled = true; btn.textContent = "위치 확인 중…";
+  const pos = await atGetPos();
+  btn.disabled = false; btn.textContent = old;
+  if (!pos) return alert("위치를 가져오지 못했어요. 브라우저 위치 권한을 허용해 주세요.");
+  if (pos.acc > 500 && !confirm(`위치 정확도가 ±${pos.acc}m로 낮아요 (PC·와이파이 위치일 때 흔함).\n그래도 지금 위치를 내 근무지로 등록할까요? 휴대폰에서 등록하면 더 정확해요.`)) return;
+  if (!confirm(`지금 위치(정확도 ±${pos.acc}m)를 ${me}님의 근무지로 등록할까요?\n앞으로 이 위치 반경 ${AT_HOME_RADIUS}m 안에서만 출근을 찍을 수 있어요.`)) return;
+  try {
+    await orgRef.child("attendanceCfg/homes/" + me).set({ lat: pos.lat, lng: pos.lng, acc: pos.acc, setAt: Date.now() });
+    logAction("설정", "출퇴근 개인 근무지 등록: " + me);
+    showToast("내 근무지 등록 완료 — 이 위치 기준으로 출근이 기록돼요");
+  } catch(e){ alert("저장 실패. 인터넷 연결을 확인해 주세요."); }
+};
+window.atClearHome = async name => {
+  const me = currentUser();
+  if (name !== me && !isAdminUser()) return alert("본인 또는 관리자만 해제할 수 있어요.");
+  if (!confirm(`${name}님의 개인 근무지를 해제하고 사무실 기준으로 돌릴까요?`)) return;
+  try {
+    await orgRef.child("attendanceCfg/homes/" + name).remove();
+    logAction("해제", "출퇴근 개인 근무지 해제: " + name);
+  } catch(e){ alert("저장 실패. 인터넷 연결을 확인해 주세요."); }
+};
 window.atTestHere = async btn => {
   const old = btn.textContent; btn.disabled = true; btn.textContent = "확인 중…";
   const pos = await atGetPos(); btn.disabled = false; btn.textContent = old;
   if (!pos) return alert("위치를 가져오지 못했어요.");
-  const { loc, dist } = atLocOf(pos);
-  alert(`정확도 ±${pos.acc}m · 사무실까지 ${dist === null ? "(미등록)" : dist + "m"} → ${loc === "office" ? "사무실" : loc === "out" ? "외근" : "판정 불가"}`);
+  const r = atLocOf(pos, currentUser());
+  alert(`정확도 ±${pos.acc}m · ${r.label || "근무지"}까지 ${r.dist === null ? "(미등록)" : r.dist + "m"} (기준 반경 ${r.radius || "-"}m) → ${r.loc === "office" ? "사무실" : r.loc === "home" ? "재택(근무지 안)" : r.loc === "out" ? "외근" : "판정 불가"}`);
 };
 window.atOpenEdit = (date, name) => {
   if (!isAdminUser()) return;
@@ -2458,7 +2513,7 @@ window.atExportCsv = () => {
   Object.keys(att).filter(d => d.startsWith(atMonthSel)).sort().forEach(d => members.forEach(n => {
     const r = att[d][n]; if (!r || !r.in) return;
     const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-    const locK = l => ({ office: "사무실", out: "외근", noloc: "위치없음", nocfg: "미설정", edit: "수정" }[l] || "");
+    const locK = l => ({ office: "사무실", home: "재택", out: "외근", noloc: "위치없음", nocfg: "미설정", edit: "수정" }[l] || "");
     const h = atHours(r, d, null);
     lines.push([d, n, atFmtT(r.in), atFmtT(r.out), r.out ? Math.round(h * 100) / 100 : "", locK(r.inLoc), locK(r.outLoc), r.note || "", r.editedBy || ""].map(q).join(","));
   }));
