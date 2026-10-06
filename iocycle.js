@@ -11,11 +11,12 @@
    ■ 로스 = 출고 − (판매 + 무상 AS) − 반납   (제품·색상 합계 기준, 형태는 안 봄)
      양수 = 로스(안 돌아옴), 음수 = 자투리 활용(가져간 것보다 더 깔았음 → 개인 기록에 +). 시공보고 미입력·AS보고 미제출·반납 전이면 확정 안 함
    ■ 개인 기록 = 반납 + 사용 − 출고 (로스는 −, 자투리는 +). 시공하자 AS를 무료로 하며 새 매트가 들어가면 그 장수는 AS보고서의 이전 작업자에게 −로 기록
-   ■ 개인 적용 = 그 순환의 담당 2명(출고 때 자동, 카드에서 변경) 각각에 같은 로스·자투리를 '공동작업 기준'으로 표시. 회사 집계는 1번
+   ■ 개인 적용 = 그 순환의 담당(스케줄 탭 배정 그대로) 각각에 같은 로스·자투리를 '공동작업 기준'으로 표시. 회사 집계는 1번
    ■ 저장 (원본 io_logs는 안 건드림): Firebase io_cycle/{bs|gg}/{차량키}/{시작ts} = {crew:[a,b], add:{jobId:1}, del:{jobId:1}, scrap:{제품:장}, confirm:{by,at}, by, at}
-     차량 기준 설정: io_cycle/{bs|gg}/{차량키}/_veh = {crew:[..], crewByDate:{날짜:[..]}, add:{jobId:1}, del:{jobId:1}} — 갈 현장 넣기·빼기, 특정 날짜 담당 고정
+     차량 기준 설정: io_cycle/{bs|gg}/{차량키}/_veh = {add:{jobId:1}, del:{jobId:1}} — 갈 현장 넣기·빼기 (crew·crewByDate 는 옛 값, 2026-10-06b부터 안 봄)
    ■ 담당(그날 실제 팀)은 스케줄에서 자동: 그 날짜에 이 차량(시트 L열 차량번호, 없으면 차량 탭 사수)으로 잡힌 시공의 사수·부사수.
-     우선순위: 순환별 수정 > 날짜별 수정(_veh.crewByDate) > 스케줄 > 출고 때 적은 담당 > 차량 기본(_veh.crew > 차량 탭 사수 + 팀설정 짝)
+     우선순위: 스케줄(연결된 시공의 배정, 휴무 제외) > 출고 때 적은 담당 > 차량 기본(_veh.crew > 차량 탭 사수 + 팀설정 짝)
+     (2026-10-06b) 입출고에서 담당을 따로 고치는 기능 없앰 — 담당·일정·차량 전부 스케줄 탭이 기준, 틀리면 거기서 고치면 따라옴. 전에 저장된 순환별 crew·_veh.crewByDate 는 무시
    ■ 시공 연결은 차량번호 기준(없으면 사수=차량 탭 사수). 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙고, 다른 차량 카드에서 수동으로 가져간 시공은 이 차량에서 빠짐
      (2026-10-02) [수정]에서 수동으로 넣은 시공은 앞 순환의 자동 연결보다 우선 · 반납만 있는 순환(출고 없음)은 시공을 안 가져감 ·
      같은 작업일에 순환이 둘이면 앞 순환이 그날 시공을 가짐(뒤 출고는 작업일을 잘못 찍은 것 — 당번이 작업일을 고치면 바로 풀림). 시각 기준 규칙은 없음
@@ -34,7 +35,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.06a';
+const CY_VER='2026.10.06b';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -104,8 +105,7 @@ function schedJobs(plate,date){ // 그 날짜에 이 차량이 가는 시공 (�
   const vo=vehOv(plate);const add=vo.add||{},del=vo.del||{};
   return jobs().filter(j=>j&&jobOK(j)&&j.date===date&&!del[j.id]&&(jobMatches(j,plate)||add[j.id])&&!claimedElsewhere(j.id,plate)).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
 }
-function crewFor(plate,date,seed){ // 그 날짜 이 차량의 담당 — 날짜별 수정 > 스케줄 > seed(출고 때 적은 담당) > 차량 기본
-  const bd=arr((vehOv(plate).crewByDate||{})[date]).filter(Boolean);if(bd.length)return orderCrew(bd).slice(0,3);
+function crewFor(plate,date,seed){ // 그 날짜 이 차량의 담당 — 스케줄 > seed(출고 때 적은 담당) > 차량 기본 (2026-10-06b: 날짜별 수정 안 봄)
   const c=crewFromJobs(schedJobs(plate,date));if(c.length)return c;
   if(seed&&seed.length)return orderCrew(seed);return vehCrew(plate);
 }
@@ -217,10 +217,10 @@ function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 �
     linked.push(row);
   });
   linked.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-  // 담당: 순환별 수정 > 날짜별 수정 > 스케줄(연결된 시공의 사수·부사수) > 출고 때 적은 담당 > 차량 기본
-  const ovc=arr(ov.crew).filter(Boolean);const bd=arr((vo.crewByDate||{})[cy.fromW]).filter(Boolean);const sc=crewFromJobs(linked);
-  cy.crew=orderCrew(ovc.length?ovc:bd.length?bd:sc.length?sc:cy.seed.length?cy.seed:vehCrew(cy.plate)).slice(0,3);
-  cy.crewSrc=ovc.length?'수정':bd.length?'수정':sc.length?'스케줄':cy.seed.length?'출고':'기본';
+  // 담당: 스케줄(연결된 시공의 배정, 휴무 제외) > 출고 때 적은 담당 > 차량 기본 — 2026-10-06b: 순환별·날짜별 담당 수정은 안 봄 (입출고는 스케줄 탭을 따라감)
+  const sc=crewFromJobs(linked);
+  cy.crew=orderCrew(sc.length?sc:cy.seed.length?cy.seed:vehCrew(cy.plate)).slice(0,3);
+  cy.crewSrc=sc.length?'스케줄':cy.seed.length?'출고':'기본';
   const prods=PRODUCTS.map(p=>p.k).filter(k=>by[k]).concat(Object.keys(by).filter(k=>!PRODUCTS.some(p=>p.k===k)));
   cy.byProd=prods.map(k=>{const b=by[k];const used=b.sold+b.asFree;return {k,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,used,diff:b.out-used-b.inn}});
   const T=cy.byProd.reduce((t,b)=>{['out','inn','sold','asFree','used','diff'].forEach(f=>t[f]+=b[f]);return t},{out:0,inn:0,sold:0,asFree:0,used:0,diff:0});
@@ -546,7 +546,6 @@ function upcomingFor(plate,cy){ // 모달용 갈 현장 후보: 그 날짜의 �
 function render(){
   const cy=cur();if(!SEL){close();return}
   const plate=SEL.plate;
-  const E=emps();const opt=sel=>`<option value="">선택</option>${E.map(n=>`<option value="${esc(n)}"${sel===n?' selected':''}>${esc(n)}</option>`).join('')}${sel&&!E.includes(sel)?`<option value="${esc(sel)}" selected>${esc(sel)}</option>`:''}`;
   const adm=admin();
   const up=upcomingFor(plate,cy);
   const crew=cy?cy.crew:(up.date?crewFor(plate,up.date):vehCrew(plate));
@@ -555,9 +554,9 @@ function render(){
     h=`<h3>${esc(plate)} · ${esc(cyLabel(cy))} <span class="ia-status ${chip[0]}">${chip[1]}</span></h3>
     <div class="ia-tiny">출고 ${cy.out} − 사용 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''} − 반납 ${cy.open?'(전)':cy.inn} = ${cy.open?'잔량 '+cy.remain:cy.decided?diffTxt(cy.diff):'대조 대기'}</div>`;
   }else h=`<h3>${esc(plate)} <span class="ia-status">${up.date?esc(U.fmtMD(up.date))+' 준비':'기록 없음'}</span></h3>`;
-  const nSel=crew.length>=3?3:2;
-  h+=`<label>담당${cy?'':up.date?' · '+esc(U.fmtMD(up.date)):' · 기본'}</label>
-    <div class="row">${Array.from({length:nSel},(_,i)=>`<select id="cyC${i+1}">${opt(crew[i]||'')}</select>`).join('')}</div>`;
+  const src=cy?cy.crewSrc:(up.date&&crewFromJobs(schedJobs(plate,up.date)).length?'스케줄':'기본');
+  h+=`<label>담당${cy?'':up.date?' · '+esc(U.fmtMD(up.date)):''}</label>
+    <div class="ia-tiny" style="margin:2px 0 8px;line-height:1.6"><b style="font-size:15px;color:var(--dm-text,inherit)">${esc(crew.join(' · ')||'미지정')}</b> · ${src==='스케줄'?'스케줄 탭 배정 그대로 — 틀리면 스케줄 탭에서 고치면 따라와요':src==='출고'?'출고 때 적은 담당 (그날 스케줄 없음)':'팀설정 기본 (그날 스케줄 없음)'}</div>`;
   if(cy){
   // 후보 시공: 기간 안 이 지역 시공 중 이 순환에 안 붙은 것(차량 다름) — 넣을 수 있게
   const linkedIds=new Set(cy.jobs.map(r=>r.id));
@@ -571,26 +570,22 @@ function render(){
   if(up.list.length)h+=`<label>${esc(U.fmtMD(up.date))} 갈 현장</label>`+up.list.map(x=>`<div class="jl${x.on?'':' cand'}"><input type="checkbox" ${x.on?'checked':''} data-up="${esc(x.j.id)}" data-auto="${x.auto?1:0}"><span>${/^AS$/i.test(x.j.time)?'AS ':esc(String(x.j.time||'').slice(0,2))+' '}${esc(String(x.j.addr||'').replace(/\(.*?\)/g,'').slice(0,18))} <span class="ia-tiny">${esc(namesOf(x.j).join('·'))}${vehOfJob(x.j)?' · '+esc(X.vehicleOf?X.vehicleOf(x.j):x.j.vehicle):''}</span></span><b>${esc(prodLabel(x.j))}${x.j.py?' · '+esc(x.j.py)+'평':''}</b></div>`).join('');
   const last=(cy&&cy.ov.at)?cy.ov:vehOv(plate);
   if(last.at)h+=`<div class="cy-note">마지막 수정 ${esc(last.by||'')} ${esc(String(last.at||'').slice(5,16))}</div>`;
-  const touched=!!(cy&&(cy.ov.add||cy.ov.del||(arr(cy.ov.crew).length)));
+  const touched=!!(cy&&(cy.ov.add||cy.ov.del));
   h+=`<div class="bt"><button type="button" class="ia-btn" onclick="ioCycle.close()">닫기</button>${touched?`<button type="button" class="ia-btn" onclick="ioCycle.reset()">스케줄대로</button>`:''}${adm&&cy&&cy.decided?`<button type="button" class="ia-btn ${cy.confirmed?'':'ok'}" onclick="ioCycle.confirm(${cy.confirmed?0:1})">${cy.confirmed?'확정 해제':'로스 확정'}</button>`:''}<button type="button" class="ia-btn pri" onclick="ioCycle.save()">저장</button></div>`;
   md(h);
 }
 function saveEdit(){
   if(!SEL)return;const cy=cur();const plate=SEL.plate;
-  const crew=[];[1,2,3].forEach(i=>{const el=$('cyC'+i);const v=el?String(el.value||'').trim():'';if(v&&crew.indexOf(v)<0)crew.push(v)});
-  if(!crew.length){X.toast('담당을 한 명 이상 골라주세요',true);return}
-  // 차량 설정: 갈 현장 넣기·빼기 (+ 순환이 없을 땐 그 날짜 담당)
+  // 차량 설정: 갈 현장 넣기·빼기 (담당은 안 저장 — 2026-10-06b: 스케줄 탭 기준)
   const vo=vehOv(plate);const vadd=Object.assign({},vo.add||{}),vdel=Object.assign({},vo.del||{});
   document.querySelectorAll('#cyMdIn input[data-up]').forEach(el=>{const id=el.dataset.up,auto=el.dataset.auto==='1';if(el.checked){delete vdel[id];if(!auto)vadd[id]=1;else delete vadd[id]}else{delete vadd[id];if(auto)vdel[id]=1}});
   const vpatch={add:Object.keys(vadd).length?vadd:null,del:Object.keys(vdel).length?vdel:null};
   if(!cy){
-    const up=upcomingFor(plate,null);
-    if(up.date){const cbd=Object.assign({},vo.crewByDate||{});cbd[up.date]=crew;vpatch.crewByDate=cbd}else vpatch.crew=crew;
     saveVeh(plate,vpatch).then(()=>{X.toast('저장했어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));return}
   const del=Object.assign({},cy.ov.del||{}),add=Object.assign({},cy.ov.add||{});
   document.querySelectorAll('#cyMdIn input[data-id]').forEach(el=>{const id=el.dataset.id;const row=cy.jobs.find(r=>r.id===id);if(!el.checked){if(row&&row.auto)del[id]=1;delete add[id]}else{delete del[id];if(row&&!row.auto)add[id]=1}});
   document.querySelectorAll('#cyMdIn input[data-add]').forEach(el=>{if(el.checked){delete del[el.dataset.add];if(el.dataset.auto!=='1')add[el.dataset.add]=1}}); // 스케줄상 이 차량 시공이면 '뺀 것'만 풀고, 남의 시공이면 수동 추가
-  const patch={crew,add:Object.keys(add).length?add:null,del:Object.keys(del).length?del:null};
+  const patch={crew:null,add:Object.keys(add).length?add:null,del:Object.keys(del).length?del:null}; // crew:null — 전에 저장된 담당 수정도 지움
   patch.scrap=null; // 자투리 수동 입력 폐지 — 사용이 출고보다 많으면 자동으로 자투리 활용
   if(cy.confirmed&&!confirm('확정된 정산이에요. 수정하면 확정이 풀리고 다시 계산돼요. 계속할까요?'))return;
   patch.confirm=null;
@@ -598,7 +593,7 @@ function saveEdit(){
 }
 function reset(){ // 수동으로 넣고 뺀 것·담당 수정을 전부 지우고 스케줄 자동 연결로 되돌림
   const cy=cur();if(!cy)return;
-  if(!confirm('이 날의 수동 연결·담당 수정을 지우고 스케줄대로 되돌릴까요?'))return;
+  if(!confirm('이 날의 수동 연결을 지우고 스케줄대로 되돌릴까요?'))return;
   save(cy,{add:null,del:null,crew:null,confirm:null}).then(()=>{X.toast('스케줄대로 되돌렸어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
 }
 function confirmCy(on){
