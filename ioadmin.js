@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.06c';
+const IA_VER='2026.10.06f';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -684,7 +684,7 @@ function renderBody(){
   else if(!M.veh.length&&S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`; // 2026-10-04: 순환 카드가 그려졌는데도 이 안내가 밑에 같이 뜨던 버그
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
-  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<u onclick="ioAdmin.resheet()">스케줄 새로 읽기${sheetAt()?' · '+sheetAt():''}</u><br>입출고 ${esc(X.ver||'')} · 날짜(작업일) 기준: 그날 출고 − 사용(시공보고, AS 무상분 포함) − 반납 = 로스. 반납을 안 찍은 날은 잔량이 다음 날로 이월되고 '반납 없음'으로 떠요. 다 써서 남은 게 없으면 [반납 0장]. 담당·차량·일정은 스케줄 탭 그대로.${S.mode==='month'?' 월별은 반납한 날이 이 달인 것만 더해요.':''}</div>`;
+  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<u onclick="ioAdmin.resheet()">스케줄 새로 읽기${sheetAt()?' · '+sheetAt():''}</u><br>입출고 ${esc(X.ver||'')} · 날짜(작업일) 기준: 로스 = 반납 + 사용(시공보고, AS 무상분 포함) − 출고 − 이월 → −면 안 돌아온 것, +면 가져간 것보다 더 깐 것. 반납을 안 찍은 날은 잔량이 다음 날로 이월되고 '반납 없음'으로 떠요. 다 써서 남은 게 없으면 [반납 0장]. 담당·차량·일정은 스케줄 탭 그대로.${S.mode==='month'?' 월별은 반납한 날이 이 달인 것만 더해요.':''}</div>`;
   el.innerHTML=h;
   const ta=$('iaTsv');if(ta)ta.value=currentTSV(M);
 }

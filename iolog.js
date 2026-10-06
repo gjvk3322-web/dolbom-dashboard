@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.06e';
+const IO_VER='2026.10.06f';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1345,7 +1345,7 @@ function formJobs(){ // v28/v36: 출고 = 작업일(F.wdate)에 이 차가 갈 �
   // 열린 순환, 또는 닫힌 순환에 같은 작업일로 추가 반납 → 그 순환에 연결된 현장 (제품·평수·판매 장수)
   if(cy&&cy.jobs.length&&(cy.open||(d>=cy.fromW&&d<=cy.toW))){
     const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':r.asFree?'AS 무상 '+r.asFree:(r.sold||0)+'장';
-    const sumLine=cy.open?`<div class="sum"><span>${cy.carry?'이월 '+cy.carry+' · ':''}출고 ${cy.out} · 사용 ${cy.used} → 남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div>`:`<div class="sum"><span>이미 반납 ${cy.inn}장 기록됨</span><span>${cy.decided?(cy.diff>0?'로스 '+cy.diff:cy.diff<0?'자투리 +'+(-cy.diff):'일치'):'대조 대기'}</span></div>`;
+    const sumLine=cy.open?`<div class="sum"><span>${cy.carry?'이월 '+cy.carry+' · ':''}출고 ${cy.out} · 사용 ${cy.used} → 남아 있어야 할 장수</span><span>${cy.remain}장${cy.miss.length?' <small style="font-weight:600;color:var(--dm-amber)">(미입력 '+cy.miss.length+'건 제외)</small>':''}</span></div>`:`<div class="sum"><span>이미 반납 ${cy.inn}장 기록됨</span><span>${cy.decided?(cy.diff>0?'로스 −'+cy.diff:cy.diff<0?'로스 +'+(-cy.diff):'일치'):'대조 대기'}</span></div>`;
     R.label='현장 '+cy.jobs.length+'곳';
     R.html=`<div class="iog-jobs">${cy.jobs.map(r=>jobRowHTML(rawJob(r),esc(lab(r)),r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':'')).join('')}${sumLine}</div>`;return R;
   }
