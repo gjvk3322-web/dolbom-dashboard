@@ -1419,14 +1419,13 @@ function renderItems(){
     return `<div class="iog-item" id="ioPc_${i}"><div class="iog-itemhead"><span class="iog-no">${i+1}</span><select class="iog-productselect${it.product?'':' none'}" aria-label="제품 ${i+1} 선택" onchange="ioProduct(${i},this.value)"><option value="">제품 선택</option>${opts}</select>${F.items.length>1?`<button type="button" class="iog-x" onclick="ioDelItem(${i})" aria-label="제품 ${i+1} 빼기">${gi('x')}</button>`:''}</div>
       <div class="iog-packhint" id="iof_${i}">${ftHint(it)}</div>
       <div class="iog-qtygrid"><span></span><span class="iog-qtyhead">박스</span><span class="iog-qtyhead">낱장</span><span class="iog-qtyhead" style="text-align:right">합계</span>${rows}</div>
-      <div class="iog-itemfoot">제품 합계 <strong id="iot_${i}">${itemTotal(it)}</strong>장<em id="iot10_${i}">${t10?' +10T '+t10+'장':''}</em></div></div>`;
+      <div class="iog-itemfoot">제품 합계 <strong id="iot_${i}">${itemTotal(it)+t10}</strong>장</div></div>`;
   }).join('');
 }
 function updateItemTotals(i){ // 입력 중엔 다시 그리지 않고 숫자만 갱신 (포커스 유지)
   const it=F.items[i];if(!it)return;
   PART.forEach(pt=>{const el=$('ior_'+i+'_'+pt.k);if(el){const e=rowEq(it,pt.k);el.className='eq'+e.cls;el.innerHTML=e.html}});
-  const t=$('iot_'+i);if(t)t.textContent=itemTotal(it);
-  const x=$('iot10_'+i);if(x){const t10=itemQty(it,'t');x.textContent=t10?' +10T '+t10+'장':''}
+  const t=$('iot_'+i);if(t)t.textContent=itemTotal(it)+itemQty(it,'t'); // 2026-10-06d: 10T도 제품 합계에 포함해서 한 숫자로 (계산은 원래부터 포함)
   const f=$('iof_'+i);if(f)f.innerHTML=ftHint(it);
   refreshSteps();
 }
