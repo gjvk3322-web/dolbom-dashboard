@@ -40,7 +40,7 @@
 const X=window.__io;
 if(!X||!X.util){console.warn('[ioadmin] iolog.js(window.__io)가 먼저 필요해요');return}
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,TYPE=X.TYPE,LATE_MIN=X.LATE_MIN||30;
-const IA_VER='2026.10.04c';
+const IA_VER='2026.10.06c';
 const HOME=X.RK==='gg'?'gg':'bs'; // 지금 연 스케줄러의 지역 — 취합 화면은 항상 이 지역(시공보고 J가 이 지역 것만 있으므로)
 const $=id=>document.getElementById(id);
 const esc=U.esc;
@@ -670,6 +670,8 @@ function renderBody(){
   if(live&&(ob.stuck||ob.err))h+=`<div class="ia-notice bad">${ic('alert')}<div class="c"><strong>전송 안 됨 ${live}건</strong>${ob.err?' · '+esc(ob.err):''}<br><span>수량은 이미 반영됐고 사진·시트 전송만 남았어요. 인터넷 연결을 확인해주세요.</span></div><button type="button" class="ia-button quiet small" onclick="ioFlush(true)">${ob.flushing?'전송 중…':'다시 보내기'}</button></div>`;
   else if(live)h+=`<div class="ia-tiny" style="margin:0 2px 12px">사진·시트 전송 대기 ${live}건${ob.flushing?' · 전송 중…':' · 자동으로 보내는 중 · <u style="cursor:pointer" onclick="ioFlush(true)">지금 보내기</u>'}</div>`;
   if(ob.held&&X.admin())h+=`<div class="ia-tiny" style="margin:0 2px 12px">이 폰의 수정 ${ob.held}건은 시트 쪽(IoLog.gs) 업데이트 뒤 자동 전송${ob.flushing?' · 확인 중…':' · <u style="cursor:pointer" onclick="ioFlush(true)">지금 확인</u>'}</div>`;
+  // 2026-10-06c: 모두에게 보이는 경고 — 반납 없음 · 기록 없음 · 출고 없이 반납 · 반납 뒤 출고 (iocycle.js alertsHTML, 최근 30일). 누르면 그 날짜로
+  if(window.ioCycle&&ioCycle.alertsHTML&&S.mode!=='range'){try{h+=ioCycle.alertsHTML()}catch(e){console.warn('[ioadmin] alerts',e)}}
   if(M.flagged.length){ // 확인 필요: 당번이 [확인함]을 누르면 그 날짜는 한 줄로 접힘. 확인한 뒤 내용이 바뀌면(기록 추가·수정) 다시 띄움
     const sig=flagSig(M);const a=isDay()?(((S.ack[HOME]||{})[S.from])||null):null;const done=!!(a&&a.sig===sig);
     if(done)h+=`<div class="ia-tiny" style="margin:0 2px 12px">확인 필요 ${M.flagged.length}건 · 확인함 ${esc(a.by||'')} ${esc(String(a.at||'').slice(5,16))} · <u style="cursor:pointer" onclick="ioAdmin.f('tab','flag')">보기</u>${X.admin()?` · <u style="cursor:pointer" onclick="ioAdmin.ack(0)">해제</u>`:''}</div>`;
@@ -682,7 +684,7 @@ function renderBody(){
   else if(!M.veh.length&&S.loaded['v'+HOME])h+=`<div class="ia-notice">${ic('alert')}<div class="c">등록된 차량이 없어요. 팀설정 탭의 차량 배정에서 차량을 먼저 등록해주세요.</div></div>`; // 2026-10-04: 순환 카드가 그려졌는데도 이 안내가 밑에 같이 뜨던 버그
   h+=`<div style="text-align:center;margin:-8px 0 16px"><button type="button" class="ia-button quiet small" onclick="ioOpen('out','')">목록에 없는 차량으로 기록</button></div>`;
   h+=panelHTML(M,loading)+bottomHTML(M)+(S.exportOpen&&adm?exportHTML(M):'');
-  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<u onclick="ioAdmin.resheet()">스케줄 새로 읽기${sheetAt()?' · '+sheetAt():''}</u><br>입출고 ${esc(X.ver||'')} · 사용 = 시공보고 판매갯수 합(자동, AS 무상분 포함) · 로스 = 출고 − 사용 − 반납. 출고는 반납 전까지 누적되고, 반납을 찍어야 그 순환의 로스가 확정돼요. 다 써서 남은 게 없으면 [반납 0장].${S.mode==='month'?' 월별 순차이는 판정이 난 날만 더한 값이에요(남은 걸 차에 두고 다음 날 쓴 건 서로 상쇄).':''}</div>`;
+  h+=`<div class="ia-note"><u onclick="ioHelp()">도움말</u><u class="ia-widelink" onclick="ioAdmin.wide()">${$('ioView')&&$('ioView').classList.contains('wide')?'좁게 보기':'넓게 보기'}</u>${day?`<u id="iaShareBtn" onclick="ioShare('${S.from}')">그날 기록 화면</u>`:''}${adm?`<u id="iaExportBtn" onclick="ioAdmin.exportOpen()">엑셀용 복사</u>`:''}<u onclick="ioAdmin.resheet()">스케줄 새로 읽기${sheetAt()?' · '+sheetAt():''}</u><br>입출고 ${esc(X.ver||'')} · 날짜(작업일) 기준: 그날 출고 − 사용(시공보고, AS 무상분 포함) − 반납 = 로스. 반납을 안 찍은 날은 잔량이 다음 날로 이월되고 '반납 없음'으로 떠요. 다 써서 남은 게 없으면 [반납 0장]. 담당·차량·일정은 스케줄 탭 그대로.${S.mode==='month'?' 월별은 반납한 날이 이 달인 것만 더해요.':''}</div>`;
   el.innerHTML=h;
   const ta=$('iaTsv');if(ta)ta.value=currentTSV(M);
 }

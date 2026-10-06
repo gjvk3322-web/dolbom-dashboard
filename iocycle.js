@@ -1,33 +1,24 @@
-/* iocycle.js — 돌봄매트 입출고 '순환' 기준 팀 카드 (부산·경기 공용) · v1 2026-09-30
+/* iocycle.js — 돌봄매트 입출고 '날짜(작업일)' 기준 차량 카드 (부산·경기 공용) · v1 2026-09-30 순환 → 2026-10-06c 달력 기준으로 전환
    iolog.js(window.__io) 다음, ioadmin.js 다음에 불러옴 (iolog.js loadBoard가 순서대로 붙임).
 
-   ■ 순환(cycle) = 차량 기준으로 "출고를 찍은 순간 ~ 반납(입고)을 찍은 순간"
-     · 출고를 여러 번 찍어도 반납 전이면 같은 순환에 누적 (차 잔량 = 누적 출고 − 사용)
-     · 반납을 찍으면 순환이 닫힘. 규칙: 남은 매트는 무조건 반납 후 다시 출고 (이월·인계 없음). 다 써서 0장이면 [반납 0장]으로 닫음
-     · 반납 뒤 새 출고가 오면 새 순환 시작. 반납이 여러 번이면(부분 반납) 다음 출고 전까지 전부 같은 순환
-   ■ 사용(자동) = 순환 기간(첫 출고 작업일 ~ 마지막 반납 작업일, 열려 있으면 오늘)에 이 차량으로 잡힌 시공보고 판매갯수(시공스케줄 Y열)
-     + AS보고서(Firebase asReports)의 '들어간 장수' — 결제 무료면 A(무상 AS), 유상이면 판매로. '자투리사용'은 0장
-     시공 연결: 시트 L열 차량번호 우선, 없으면 그 순환 담당 2명 중 한 명이 사수인 건. 틀리면 카드에서 빼고 넣을 수 있음
-   ■ 로스 = 출고 − (판매 + 무상 AS) − 반납   (제품·색상 합계 기준, 형태는 안 봄)
-     양수 = 로스(안 돌아옴), 음수 = 자투리 활용(가져간 것보다 더 깔았음 → 개인 기록에 +). 시공보고 미입력·AS보고 미제출·반납 전이면 확정 안 함
-   ■ 개인 기록 = 반납 + 사용 − 출고 (로스는 −, 자투리는 +). 시공하자 AS를 무료로 하며 새 매트가 들어가면 그 장수는 AS보고서의 이전 작업자에게 −로 기록
-   ■ 개인 적용 = 그 순환의 담당(스케줄 탭 배정 그대로) 각각에 같은 로스·자투리를 '공동작업 기준'으로 표시. 회사 집계는 1번
-   ■ 저장 (원본 io_logs는 안 건드림): Firebase io_cycle/{bs|gg}/{차량키}/{시작ts} = {crew:[a,b], add:{jobId:1}, del:{jobId:1}, scrap:{제품:장}, confirm:{by,at}, by, at}
-     차량 기준 설정: io_cycle/{bs|gg}/{차량키}/_veh = {add:{jobId:1}, del:{jobId:1}} — 갈 현장 넣기·빼기 (crew·crewByDate 는 옛 값, 2026-10-06b부터 안 봄)
-   ■ 담당(그날 실제 팀)은 스케줄에서 자동: 그 날짜에 이 차량(시트 L열 차량번호, 없으면 차량 탭 사수)으로 잡힌 시공의 사수·부사수.
-     우선순위: 스케줄(연결된 시공의 배정, 휴무 제외) > 출고 때 적은 담당 > 차량 기본(_veh.crew > 차량 탭 사수 + 팀설정 짝)
-     (2026-10-06b) 입출고에서 담당을 따로 고치는 기능 없앰 — 담당·일정·차량 전부 스케줄 탭이 기준, 틀리면 거기서 고치면 따라옴. 전에 저장된 순환별 crew·_veh.crewByDate 는 무시
-   ■ 시공 연결은 차량번호 기준(없으면 사수=차량 탭 사수). 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙고, 다른 차량 카드에서 수동으로 가져간 시공은 이 차량에서 빠짐
-     (2026-10-02) [수정]에서 수동으로 넣은 시공은 앞 순환의 자동 연결보다 우선 · 반납만 있는 순환(출고 없음)은 시공을 안 가져감 ·
-     같은 작업일에 순환이 둘이면 앞 순환이 그날 시공을 가짐(뒤 출고는 작업일을 잘못 찍은 것 — 당번이 작업일을 고치면 바로 풀림). 시각 기준 규칙은 없음
-   ■ 카드는 달력 날짜 기준(2026-10-01u): 그 날짜가 들어가는 순환을 보여 주고(열린 순환은 뒤로 계속), 없으면 '출고 전' + 그날 갈 현장. 출고 작업일 = 달력 날짜, 반납 작업일 = 그 순환의 마지막 작업일.
-     내일 실을 땐 달력을 내일로 옮겨 [출고]. 닫힌 순환 카드엔 다음 시공일로 가는 링크, 순환 없는 날엔 지난 순환·미리 찍은 출고 링크
-     (2026-10-02e) 출고 작업일은 언제나 달력 날짜 — 시각·자동 규칙 없음(대장 결정). 작업자 흐름: 오늘 날짜에서 [반납] → 달력을 내일로 → 갈 현장 확인(틀리면 [수정]) → [출고]
-   ■ 순환 묶기 규칙(2026-10-02b): 작업일이 더 뒤인 출고는 새 순환으로 시작(앞 순환은 반납이 오면 닫힘) · 반납의 작업일이 열린 순환의 첫 작업일보다 앞서면 앞 순환으로 감(저녁에 내일 것 출고 → 오늘 남은 것 반납 순서여도 됨) ·
-     반납 없이 열린 순환 뒤에 또 순환이 생기면 다음 순환에 합침(2박 출장·반납 누락). 당번은 기록 수정에서 작업일을 바꿀 수 있음
-   ■ 직원별 누적은 Firebase io_ledger/{bs|gg}에 '지난달까지' 저장본을 두고(매달 10일부터, 처음 여는 폰이 자동 저장) 그 뒤 기록만 읽어 더함 — 기록이 쌓여도 열 때 읽는 양이 안 늘어남.
-     저장은 매번 전체 기록으로 다시 계산하므로 옛 기록을 고치면 다음 달 저장 때 반영, 당장 반영하려면 당번 모드 [다시 계산]
-   ■ 자투리 입력·확정은 당번 모드. 담당 변경·시공 연결 수정은 누구나 */
+   ■ 카드 = 차량 × 작업일. 그날 장부 = 이월(전날 반납 안 한 잔량) + 출고 − 사용 − 반납
+     · 기록은 '언제 찍었든' 작업일(wdate)만 본다. 10/4 저녁에 찍은 10/5 것 출고도, 나중에 당번이 넣은 출고도 그 작업일에 붙음. 찍은 시각 순서는 안 봄
+     · 반납이 있는 날 = 닫힘 → 로스(양수)/자투리(음수) 확정 (시공보고·AS보고가 다 들어오면). 다 써서 0장이면 [반납 0장]
+     · 반납이 없는 날 = 열림 → 잔량(제품별)이 다음 날로 이월. 어제 이전이면 '반납 없음'(상단 경고, 모두에게). 2박 출장처럼 일부러면 [이월 확인] → 경고 꺼짐
+     · 이월해 준 날의 시공보고가 비어 있으면 닫는 날도 '대조 대기'
+     · 오후 반납 뒤 같은 작업일로 또 찍은 출고(오늘 카드에서 내일 것을 찍음) = 그날에 더해지되 '반납 뒤 출고' 안내 → 당번이 작업일을 옮기면 끝. 출고 폼은 그 상황에서 '오늘 것/내일 것'을 고르게 함
+   ■ 사용(자동) = 그날 이 차량으로 잡힌 시공보고 판매갯수(시공스케줄 Y열) + AS보고서(Firebase asReports)의 '들어간 장수' — 결제 무료면 무상 AS, 유상이면 판매. '자투리사용'은 0장
+     시공 연결 = 스케줄 탭 팀 카드와 같은 차량 규칙(iolog.js vehicleOf) + 카드 [수정]에서 넣고 뺀 것(_veh.add/del). 시공은 자기 날짜에만 붙음
+   ■ 로스 = 이월 + 출고 − (판매 + 무상 AS) − 반납 (제품·색상 합계 기준, 형태는 안 봄). 개인 기록 = 그날 담당 각각에 같은 값(공동작업 기준, 로스 − / 자투리 +)
+     시공하자 AS를 무료로 하며 새 매트가 들어가면 그 장수는 AS보고서의 이전 작업자에게 −
+   ■ 담당 = 그날 스케줄 탭 배정(휴무 제외, 팀설정 순서) > 출고 때 적은 담당 > 차량 기본. 입출고에선 담당을 따로 안 고침 (2026-10-06b) — 담당·차량·일정 전부 스케줄 탭이 기준
+   ■ 저장 (원본 io_logs는 안 건드림): Firebase io_cycle/{bs|gg}/{차량키}/{작업일} = {confirm:{by,at,...}, carry:{by,at}(이월 확인), by, at}
+     차량 설정: io_cycle/{bs|gg}/{차량키}/_veh = {add:{jobId:1}, del:{jobId:1}} — 갈 현장 넣기·빼기
+     옛 순환 키(시작 ts)에 남은 add/del/confirm은 그 출고의 작업일로 읽음(호환), crew·crewByDate는 안 봄. [수정] 저장 때 옛 키는 정리
+   ■ 상단 경고(alertsHTML, 최근 30일, 모두에게): 반납 없음 · 기록 없음(시공은 갔는데 출고·반납 다 없음, AS만 있는 날 제외) · 출고 없이 반납만 · 반납 뒤 출고. 어제 것 반납 없음은 오전 10시까지 보류
+   ■ 직원별 누적은 Firebase io_ledger/{bs|gg}에 '지난달까지' 저장본(매달 10일부터, 처음 여는 폰이 자동 저장) + 그 뒤 기록만 읽어 더함. 이월 중인 날들은 닫는 날과 한 묶음으로 저장본에 들어감
+     저장은 매번 전체 기록으로 다시 계산 → 옛 기록을 고치면 다음 저장 때 반영, 당장 반영하려면 당번 모드 [다시 계산]
+   ■ 로스 확정은 당번 모드. 시공 연결 수정·이월 확인은 누구나 */
 (function(){
 'use strict';
 const X=window.__io;
@@ -35,7 +26,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.06b';
+const CY_VER='2026.10.06c';
 const CY_START='2026-09-30'; // 순환 시작일 — 이 날 이전 기록은 '반납→출고' 규칙 전이라 순환에서 제외 (옛 테스트 기록이 카드를 오염시키지 않게)
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -93,8 +84,7 @@ function asOf(id){ // AS보고서 — 없으면 한 번 불러오고 도착하�
   try{db.ref('asReports/'+id).once('value').then(s=>{AS[id]=s.val()||null;delete asWait[id];rerender()}).catch(()=>{AS[id]=null;delete asWait[id]})}catch(e){AS[id]=null}
   return undefined;
 }
-function rerender(){try{if(window.ioAdmin&&ioAdmin.mount)ioAdmin.mount()}catch(e){}try{if(REP)renderReport()}catch(e){}}
-function ovOf(cy){return ((OV[NP(cy.plate)]||{})[String(cy.startTs)])||{}}
+function rerender(){daysInvalidate();try{if(window.ioAdmin&&ioAdmin.mount)ioAdmin.mount()}catch(e){}try{if(REP)renderReport()}catch(e){}}
 function vehOv(plate){return (OV[NP(plate)]||{})._veh||{}}
 function vehCrew(plate){const v=vehOv(plate);const c=arr(v.crew).filter(Boolean);if(c.length)return c.slice(0,3);const o=ownerOf(plate);return o?[o,partnerOf(o)].filter(Boolean):[]} // 차량 기본 담당
 function claimedElsewhere(id,plate){ // 다른 차량 카드에서 수동으로 가져간 시공이면 true (이중 집계 방지)
@@ -118,50 +108,61 @@ function saveVeh(plate,patch){
   const o=Object.assign({},patch,{by:(localStorage.getItem('io_admin_name')||'').trim()||'',at:U.kstDT(new Date()),ver:CY_VER});
   return db.ref(NODE+'/'+NP(plate)+'/_veh').update(o);
 }
-function save(cy,patch){
-  const o=Object.assign({},patch,{by:(localStorage.getItem('io_admin_name')||X.myPlate&&vehicles()[X.myPlate()]||'').trim()||'',at:U.kstDT(new Date()),plate:cy.plate,ver:CY_VER});
-  return db.ref(NODE+'/'+NP(cy.plate)+'/'+cy.startTs).update(o);
+function save(day,patch){ // 날짜별 저장: io_cycle/{rk}/{차량키}/{작업일} = {confirm, carry, by, at}
+  const o=Object.assign({},patch,{by:(localStorage.getItem('io_admin_name')||X.myPlate&&vehicles()[X.myPlate()]||'').trim()||'',at:U.kstDT(new Date()),plate:day.plate,ver:CY_VER});
+  return db.ref(NODE+'/'+NP(day.plate)+'/'+day.D).update(o);
 }
 
-/* ---------- 순환 만들기 ---------- */
-function cyclesOf(plate,recMap,seed){ // seed: 앞서(저장본에서) 이미 정산된 시공 id — 이 차량의 새 순환에 다시 안 붙음
+/* ---------- 날짜(작업일) 장부 만들기 — 2026-10-06c: 순환 대신 달력 기준 ----------
+   하루(차량 × 작업일) = 이월(전날 반납 안 한 잔량) + 그날 출고 − 그날 사용(시공보고) − 그날 반납
+   · 반납이 있는 날 = 닫힘 → 로스/자투리 확정(시공보고가 다 들어오면). 이월은 0으로
+   · 반납이 없는 날 = 열림 → 잔량이 다음 날로 이월. 어제 이전이면 '반납 없음' 경고(상단 목록, 모두에게). 2박 출장처럼 일부러면 [이월 확인]
+   · 기록은 '언제 찍었든' 작업일만 본다 (나중에 당번이 넣은 출고도 그날에 붙음). 찍은 시각 순서는 안 봄
+   · 같은 작업일에 반납 뒤 또 찍은 출고(오늘 카드에서 내일 것을 찍은 경우) = 그날에 더해지되 '반납 뒤 출고' 안내 → 당번이 작업일을 옮기면 끝 */
+const DK=/^\d{4}-\d{2}-\d{2}$/;
+function wOf(r){return String(r.wdate||r.date||'')}
+function legacyOv(np,recs){ // 옛 순환 키(시작 ts) 저장값을 작업일 키로 (그 ts의 출고 작업일). confirm·add·del만 씀, crew는 안 봄
+  const o=OV[np]||{};const out={};
+  Object.keys(o).forEach(k=>{if(!/^\d+$/.test(k))return;const r=recs.find(x=>String(x.ts)===k);if(!r)return;const D=wOf(r);if(!out[D])out[D]={};Object.assign(out[D],o[k],{_legacyKey:k})});
+  return out;
+}
+let DAYS_CACHE={};let DAYS_AT=0; // 한 번 그릴 때 차량마다 여러 번 부르므로 잠깐 캐시 (그릴 때마다·데이터 바뀌면 비움)
+function daysInvalidate(){DAYS_CACHE={}}
+function daysOf(plate,recMap,seed){ // → [{D, outs, ins, carryIn, ...계산값}] 작업일 오름차순. seed: 호환용(안 씀)
   const np=NP(plate);const today=U.kstDate(0);
-  const recs=Object.values(recMap||records()).filter(r=>r&&r.status!=='void'&&NP(r.vehicle)===np&&r.ts&&String(r.date||'')>=CY_START).sort((a,b)=>a.ts-b.ts);
-  const list=[];let cur=null;const consumed=new Set(seed||[]);
-  const mk=r=>({plate:r.vehicle||plate,startTs:r.ts,startAt:r.at,outs:[],ins:[],seed:crewOf(r),crew:[]});
-  const wOf=r=>String(r.wdate||r.date||'');const minW=a=>a.map(wOf).sort()[0]||'',maxW=a=>a.map(wOf).sort().pop()||'';
-  recs.forEach(r=>{
-    if(r.type==='in'){
-      // 열린 순환의 첫 작업일이 이 반납의 작업일보다 뒤면(저녁에 내일 것 출고를 먼저 찍고 오늘 남은 걸 반납) 그 순환엔 안 붙고 앞 순환(오늘 것) 몫 — 2026-10-02
-      if(cur&&cur.outs.length&&!cur.ins.length&&wOf(r)<minW(cur.outs)){
-        if(list.length)list[list.length-1].ins.push(r);else list.push(Object.assign(mk(r),{orphan:true,ins:[r]}));
-        return}
-      if(!cur)cur=Object.assign(mk(r),{orphan:true});cur.ins.push(r);return}
-    if(cur&&cur.ins.length){list.push(cur);cur=null}
-    else if(cur&&cur.outs.length&&wOf(r)>maxW(cur.outs)){list.push(cur);cur=null} // 작업일이 더 뒤인 출고는 새 순환으로 (앞 순환은 반납이 오면 그때 닫힘)
-    if(!cur)cur=mk(r);cur.outs.push(r);
-  });
-  if(cur)list.push(cur);
-  // 반납 없이 열린 채로 뒤에 또 순환이 생겼으면(2박 출장처럼 출고를 이어 찍음, 또는 반납을 빼먹음) 다음 순환에 합쳐 하나로 봄
-  for(let i=0;i<list.length-1;){const c=list[i];if(c.outs.length&&!c.ins.length){const n=list[i+1];n.outs=c.outs.concat(n.outs);n.startTs=c.startTs;n.startAt=c.startAt;n.seed=c.seed;n.orphan=false;list.splice(i,1)}else i++}
-  const claim={};list.forEach(cy=>{Object.keys((ovOf(cy).add)||{}).forEach(id=>{claim[id]=cy.startTs})}); // 이 차량의 어느 순환에 수동으로 넣은 시공인지 — 그 순환이 가져가고 다른 순환(앞 순환 자동 연결 포함)에선 빠짐
-  list.forEach(cy=>{ // 1) 기간부터 전부 정함
-    cy.ov=ovOf(cy);cy.open=!cy.ins.length;
-    const wds=cy.outs.map(r=>r.wdate||r.date).filter(Boolean).sort();
-    cy.fromW=wds[0]||U.kstDate(0,new Date(cy.startTs));cy.lastW=wds[wds.length-1]||cy.fromW;
-    const iws=cy.ins.map(r=>r.wdate||r.date).filter(Boolean).sort();
-    cy.toW=cy.open?today:(iws[iws.length-1]||cy.fromW);
-    if(cy.toW<cy.fromW)cy.toW=cy.fromW;
-    cy.endAt=cy.open?'':cy.ins[cy.ins.length-1].at;
-    cy.zero=!cy.open&&cy.ins.every(r=>r.zero||!recQty(r));
-  });
-  list.forEach(cy=>{ // 2) 시공 연결·계산
-    compute(cy,consumed,claim);
-    if(!cy.open&&cy.outs.length)cy.jobs.forEach(r=>consumed.add(r.id)); // 닫힌 순환에 쓰인 시공은 다음 순환에 다시 안 붙음 (출고 없는 반납만 있는 순환은 시공을 안 가져감)
-  });
-  list.consumed=consumed;
+  if(!recMap){if(Date.now()-DAYS_AT>1500){DAYS_CACHE={};DAYS_AT=Date.now()}if(DAYS_CACHE[np])return DAYS_CACHE[np]}
+  const list=daysBuild(plate,np,today,recMap);
+  if(!recMap)DAYS_CACHE[np]=list;
   return list;
 }
+function daysBuild(plate,np,today,recMap){
+  const recs=Object.values(recMap||records()).filter(r=>r&&r.status!=='void'&&NP(r.vehicle)===np&&r.ts&&wOf(r)>=CY_START).sort((a,b)=>a.ts-b.ts);
+  const byD={};recs.forEach(r=>{const D=wOf(r);if(!DK.test(D))return;(byD[D]=byD[D]||{outs:[],ins:[]})[r.type==='in'?'ins':'outs'].push(r)});
+  // 기록은 없는데 시공은 있는 지난 날(기록 누락) — 오늘·내일은 '출고 전'으로 카드가 따로 보여 줌
+  const jd={};jobs().forEach(j=>{if(j&&j.date&&j.date<today&&j.date>=CY_START&&!byD[j.date]&&jobOK(j)&&!/^AS$/i.test(String(j.time||'').trim()))jd[j.date]=1}); // AS만 있는 날은 기록이 없어도 칸을 안 만듦 (자투리로 가는 일이 많아 '기록 없음'이 소음이 됨)
+  Object.keys(jd).forEach(D=>{if(schedJobs(plate,D).length)byD[D]={outs:[],ins:[]}});
+  const leg=legacyOv(np,recs);const vo=vehOv(plate);
+  const list=[];let carry={},carryFrom='',carryWait=null; // carryWait: 이월해 준 날들의 미확정 사유(시공보고 미입력 등) — 닫는 날도 그만큼 '대조 대기'
+  const keys=Object.keys(byD).sort();
+  // 마지막 날이 반납 없이 열려 있고(이월 중) 오늘 기록이 아직 없으면 오늘 칸을 하나 만들어 둠 — 오늘 카드에 이월 잔량·사용·차 잔량이 보이게
+  if(!recMap&&keys.length&&!byD[today]&&keys[keys.length-1]<today){const last=keys[keys.length-1];if(!byD[last].ins.length){byD[today]={outs:[],ins:[],virtual:true};keys.push(today)}}
+  keys.forEach(D=>{
+    const b=byD[D];const all=b.outs.concat(b.ins).sort((x,y)=>x.ts-y.ts);
+    const first=all[0]||null;
+    const day={plate,D,fromW:D,toW:D,lastW:D,outs:b.outs,ins:b.ins,startTs:first?first.ts:Date.parse(D+'T00:00:00+09:00'),startAt:(b.outs[0]||first||{}).at||'',
+      seed:first?crewOf(first):[],crew:[],carryIn:carry,carryFrom,carryWait,virtual:!!b.virtual,ov:Object.assign({},leg[D]||{},(OV[np]||{})[D]||{}),vo};
+    if(day.virtual&&!Object.keys(carry).length){return} // 이월할 게 없으면(다 썼거나 반납함) 오늘 칸 안 만듦
+    day.open=!day.ins.length;
+    day.endAt=day.open?'':day.ins[day.ins.length-1].at;
+    day.zero=!day.open&&day.ins.every(r=>r.zero||!recQty(r));
+    compute(day);
+    if(day.open){carry=day.carryOut;const flow=day.outs.length>0||day.carry>0;carryFrom=flow?D:'';if(!flow){carryWait=null;list.push(day);return}const w={miss:(carryWait?carryWait.miss:0)+day.miss.length,asMiss:(carryWait?carryWait.asMiss:0)+day.asMiss.length,load:!!(carryWait&&carryWait.load)||day.asLoading,future:(carryWait?carryWait.future:0)+day.future.length};carryWait=(w.miss||w.asMiss||w.load||w.future)?w:null}else{carry={};carryFrom='';carryWait=null}
+    list.push(day);
+  });
+  list.consumed=new Set(); // 호환용
+  return list;
+}
+const cyclesOf=daysOf; // 호환 이름
 function plateOfName(name){const V=vehicles();const k=Object.keys(V).find(p=>String(V[p]||'').trim()===name);return k?NP(k):''} // 차량 탭에서 이 사람이 사수인 차량
 function namesOf(j){ // 그 건의 담당 이름들: 스케줄러 앱 배정(A, 휴무 제외·팀설정 순서) → 배정이 없으면 시트 사수·부사수 (시트 칸은 저장 🔴실패 시 옛 값이 남으므로 앱 배정이 우선)
   let n=[];
@@ -182,26 +183,23 @@ function jobMatches(j,plate){ // 차량이 정해져 있으면 그걸로(스케�
   return fallbackPlate(j)===NP(plate);
 }
 function jobOK(j){const t=String(j.time||'').trim();if(t==='실측')return false;if(/^(오전|오후)?\s*예약\s*[xX✕×](\s|$)/.test(String(j.addr||'').trim()))return false;return !!(j.addr&&j.addr.trim())}
-function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 순환 startTs} — 수동 연결은 앞 순환의 자동 연결보다 우선
-  const ov=cy.ov||{};const vo=vehOv(cy.plate);const add=Object.assign({},vo.add||{},ov.add||{}),del=Object.assign({},vo.del||{},ov.del||{});
-  Object.keys(ov.add||{}).forEach(k=>{delete del[k]});Object.keys(ov.del||{}).forEach(k=>{delete add[k]}); // 순환별 결정이 차량 설정보다 우선
-  const by={};const P=k=>by[k]||(by[k]={out:0,inn:0,sold:0,asFree:0});
-  cy.outs.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).out+=t[k]})});
-  cy.ins.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).inn+=t[k]})});
-  const J=cy.outs.length?jobs():[];const linked=[],miss=[],asMiss=[];let asLoading=false; // 출고 없이 반납만 있는 순환(아침에 남은 걸 먼저 반납)은 시공을 안 붙임 — 2026-10-02: 그게 그날 시공을 먹어서 진짜 순환에 자동 연결이 안 되던 문제
-  J.forEach(j=>{
-    if(!j||!jobOK(j))return;
-    const mine=!!(ov.add||{})[j.id]; // 이 순환에 수동으로 넣은 시공
-    if(!mine&&claim&&claim[j.id]&&claim[j.id]!==cy.startTs)return; // 같은 차량의 다른 순환이 수동으로 가져감
-    if(!mine&&consumed&&consumed.has(j.id))return; // 앞 순환에서 이미 정산된 시공 (수동으로 넣은 건 예외 — 2026-10-02: 앞 순환이 같은 날 시공을 먹어 버려 [수정]에서 체크해도 안 붙던 문제)
-    const inWin=j.date>=cy.fromW&&j.date<=cy.toW;
-    const auto=inWin&&jobMatches(j,cy.plate);
-    if(del[j.id])return;
-    if(!auto&&!add[j.id])return;
-    if(!mine&&claimedElsewhere(j.id,cy.plate))return; // 다른 차량 카드가 가져간 시공
+function compute(day){ // 그날 시공 연결·계산. 시공은 자기 날짜에만 붙음: 스케줄 차량(차량 설정 add/del 반영) + 옛 순환별 add/del
+  const ov=day.ov||{};const vo=day.vo||vehOv(day.plate);const vadd=vo.add||{},vdel=vo.del||{};const ladd=ov.add||{},ldel=ov.del||{};
+  const by={};const P=k=>by[k]||(by[k]={carry:0,out:0,inn:0,sold:0,asFree:0});
+  Object.keys(day.carryIn||{}).forEach(k=>{if(day.carryIn[k]>0)P(k).carry+=day.carryIn[k]});
+  day.outs.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).out+=t[k]})});
+  day.ins.forEach(r=>{const t={};recByProd(r,t);Object.keys(t).forEach(k=>{P(k).inn+=t[k]})});
+  const linked=[],miss=[],asMiss=[];let asLoading=false;
+  jobs().forEach(j=>{
+    if(!j||!jobOK(j)||j.date!==day.D)return;
+    if(vdel[j.id]||ldel[j.id])return;
+    const manual=!!(vadd[j.id]||ladd[j.id]);
+    const auto=jobMatches(j,day.plate);
+    if(!auto&&!manual)return;
+    if(!manual&&claimedElsewhere(j.id,day.plate))return; // 다른 차량 카드가 가져간 시공
     const isAs=/^AS$/i.test(String(j.time||'').trim());
     const pk=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t)||'';
-    const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20),time:String(j.time||'').slice(0,2),py:String(j.py||'').trim(),prod:prodLabel(j),sasu:namesOf(j)[0]||'',busasu:namesOf(j).slice(1).join(','),isAs,defect:isAs&&/시공하자/.test(String(j.category||'')),prev:[],auto,sold:0,asFree:0,pk,st:''};
+    const row={id:j.id,date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,20),time:String(j.time||'').slice(0,2),py:String(j.py||'').trim(),prod:prodLabel(j),sasu:namesOf(j)[0]||'',busasu:namesOf(j).slice(1).join(','),isAs,defect:isAs&&/시공하자/.test(String(j.category||'')),prev:[],auto:auto&&!manual,sold:0,asFree:0,pk,st:''};
     const sold=+j.sold||0;
     if(sold>0){row.sold=sold;P(pk||'?').sold+=sold;row.st='ok'}
     else if(isAs){
@@ -216,39 +214,80 @@ function compute(cy,consumed,claim){ // claim: {시공id: 수동으로 넣은 �
     else row.st='none';
     linked.push(row);
   });
-  linked.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-  // 담당: 스케줄(연결된 시공의 배정, 휴무 제외) > 출고 때 적은 담당 > 차량 기본 — 2026-10-06b: 순환별·날짜별 담당 수정은 안 봄 (입출고는 스케줄 탭을 따라감)
+  linked.sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+  // 담당: 스케줄(그날 시공의 배정, 휴무 제외) > 출고 때 적은 담당 > 차량 기본 — 입출고에선 담당을 따로 안 고침 (2026-10-06b)
   const sc=crewFromJobs(linked);
-  cy.crew=orderCrew(sc.length?sc:cy.seed.length?cy.seed:vehCrew(cy.plate)).slice(0,3);
-  cy.crewSrc=sc.length?'스케줄':cy.seed.length?'출고':'기본';
+  day.crew=orderCrew(sc.length?sc:day.seed.length?day.seed:vehCrew(day.plate)).slice(0,3);
+  day.crewSrc=sc.length?'스케줄':day.seed.length?'출고':'기본';
   const prods=PRODUCTS.map(p=>p.k).filter(k=>by[k]).concat(Object.keys(by).filter(k=>!PRODUCTS.some(p=>p.k===k)));
-  cy.byProd=prods.map(k=>{const b=by[k];const used=b.sold+b.asFree;return {k,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,used,diff:b.out-used-b.inn}});
-  const T=cy.byProd.reduce((t,b)=>{['out','inn','sold','asFree','used','diff'].forEach(f=>t[f]+=b[f]);return t},{out:0,inn:0,sold:0,asFree:0,used:0,diff:0});
+  day.byProd=prods.map(k=>{const b=by[k];const used=b.sold+b.asFree;return {k,carry:b.carry,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,used,diff:b.carry+b.out-used-b.inn,remain:b.carry+b.out-used}});
+  const T=day.byProd.reduce((t,b)=>{['carry','out','inn','sold','asFree','used','diff','remain'].forEach(f=>t[f]+=b[f]);return t},{carry:0,out:0,inn:0,sold:0,asFree:0,used:0,diff:0,remain:0});
   T.scrap=0;
-  const future=linked.filter(r=>r.st==='future'); // 아직 안 간 시공(작업일이 오늘 뒤) — 시공보고가 올 수 없으니 로스를 확정하면 안 됨 (2026-10-04: 10/6 것 출고 후 미리 반납 찍으면 '자투리 +2'로 확정되던 문제)
-  Object.assign(cy,T,{jobs:linked,miss,asMiss,future,asLoading,jobsN:linked.filter(r=>r.sold||r.asFree).length});
-  cy.confirmed=!!(ov.confirm&&ov.confirm.at);
-  if(cy.open)cy.st='open';
-  else if(!cy.outs.length)cy.st='noout';
-  else if(asLoading)cy.st='load';
-  else if(miss.length||asMiss.length||future.length)cy.st='wait';
-  else if(cy.diff===0)cy.st='fit';
-  else if(cy.diff>0)cy.st='loss';
-  else cy.st='scrap'; // 가져간 것보다 더 깔았음 = 자투리 활용 (초과 확인 아님)
-  cy.decided=cy.st==='fit'||cy.st==='loss'||cy.st==='scrap';
-  cy.net=-cy.diff; // 개인 기록: 로스 −, 자투리 +
-  cy.remain=cy.out-cy.used; // 열린 순환의 차 잔량
+  const future=linked.filter(r=>r.st==='future');
+  Object.assign(day,T,{jobs:linked,miss,asMiss,future,asLoading,jobsN:linked.filter(r=>r.sold||r.asFree).length});
+  day.confirmed=!!(ov.confirm&&ov.confirm.at);
+  day.carried=!!(ov.carry&&ov.carry.at); // [이월 확인] — 일부러 반납 안 하고 다음 날로
+  // 오후 반납(퇴근 반납) 뒤에 같은 작업일로 또 찍은 출고 = 내일 것을 오늘 카드에서 찍었을 가능성 → 안내만 (계산엔 그날로 들어감). 아침 반납 뒤 출고는 정상이라 안 봄
+  const hourOf=r=>{const m=String(r.at||'').match(/ (\d{2}):/);return m?+m[1]:12};
+  const pmIns=day.ins.filter(r=>hourOf(r)>=14);const lastIn=pmIns.reduce((m,r)=>Math.max(m,nn(r.ts)),0);
+  const lateRecs=lastIn?day.outs.filter(r=>nn(r.ts)>lastIn&&String(r.date||'')===day.D):[];
+  day.lateOut=lateRecs.reduce((a,r)=>a+recQty(r),0);day.lateOutRecs=lateRecs;
+  const today=U.kstDate(0);
+  if(day.open){
+    // 이월은 제품별 잔량. 시공보고의 제품이 출고 제품과 다르게 잡혀 한쪽이 마이너스면(예: 500 모던을 싣고 1M 모던으로 보고) 그만큼 다른 제품 잔량에서 빼서 합계(= 전체 잔량)를 맞춤
+    day.carryOut={};let neg=day.byProd.reduce((a,b)=>a+(b.remain<0?-b.remain:0),0);
+    day.byProd.filter(b=>b.remain>0).sort((x,y)=>y.remain-x.remain).forEach(b=>{let q=b.remain;const take=Math.min(q,neg);q-=take;neg-=take;if(q>0)day.carryOut[b.k]=q});
+    day.st=day.D>=today?'open':(!day.outs.length&&!T.carry)?'norec':day.carried?'carry':'noret';
+    day.decided=false;
+  }else{
+    day.carryOut={};
+    const cw=day.carryWait||{};
+    if(!day.outs.length&&!T.carry&&!day.carryFrom)day.st='noout'; // 앞 날에서 이월된 흐름도 없이 반납만
+    else if(asLoading||cw.load)day.st='load';
+    else if(miss.length||asMiss.length||future.length||cw.miss||cw.asMiss||cw.future)day.st='wait';
+    else if(day.diff===0)day.st='fit';
+    else if(day.diff>0)day.st='loss';
+    else day.st='scrap'; // 가져간 것보다 더 깔았음 = 자투리 활용
+    day.decided=day.st==='fit'||day.st==='loss'||day.st==='scrap';
+  }
+  day.net=-day.diff; // 개인 기록: 로스 −, 자투리 +
 }
-function latestOf(plate){const l=cyclesOf(plate);return {cur:l[l.length-1]||null,list:l,consumed:l.consumed}}
-function cycleOn(plate,D){ // 달력 날짜 기준: cur = 그 날짜가 들어가는 순환(출고 작업일 ≤ D ≤ 반납 작업일, 열려 있으면 그 뒤로 계속), prev = 그 앞의 마지막 순환, next = 그 뒤 첫 순환(미리 찍어 둔 출고)
+function latestOf(plate){const l=daysOf(plate);return {cur:l[l.length-1]||null,list:l,consumed:l.consumed}}
+function findDay(plate,key){ // key: 작업일('2026-10-06') 또는 옛 시작 ts(숫자) — 호환
+  const l=daysOf(plate);const k=String(key||'');
+  return l.find(d=>d.D===k)||l.find(d=>String(d.startTs)===k||(d.ov&&d.ov._legacyKey===k))||null;
+}
+function cycleOn(plate,D){ // 달력 날짜 기준: cur = 그 작업일의 장부(없으면 null), prev = 그 앞의 마지막 날, next = 그 뒤 첫 날(미리 찍어 둔 출고 등)
   const {list,consumed}=latestOf(plate);let cur=null,prev=null,next=null;
-  let curEnds=false; // 2026-10-06: 그 날짜에 끝난 순환과 그 날짜에 시작한 순환이 겹치면(반납 찍고 같은 날짜 카드에서 또 출고) 그 날짜의 카드는 '그날 끝난 순환'을 보여 줌 — 전엔 뒤 순환이 덮어서 그날 반납 기록이 카드에서 안 보였음
-  list.forEach(c=>{const a=c.fromW,b=c.open?'9999-12-31':c.toW;if(a<=D&&D<=b){const e=!c.open&&c.toW===D;if(!cur||e||!curEnds){cur=c;curEnds=e}}else if(b<D)prev=c;else if(!next)next=c});
+  list.forEach(d=>{if(d.D===D)cur=d;else if(d.D<D)prev=d;else if(!next)next=d});
   return {cur,prev,next,list,consumed};
 }
-function cyLabel(cy){return U.fmtMD(cy.fromW)+(cy.toW!==cy.fromW?'~'+U.fmtMD(cy.toW):'')}
-function stChip(cy){
-  return ({open:['blue','진행중 · 반납 전'],noout:['wait','출고 기록 없음'],load:['','AS보고 확인 중'],wait:['wait','대조 대기'],fit:['ok',cy.confirmed?'확정 · 일치':'일치'],loss:['bad',(cy.confirmed?'확정 · ':'')+'로스 '+cy.diff+'장'],scrap:['ok',(cy.confirmed?'확정 · ':'')+'자투리 +'+(-cy.diff)]})[cy.st]||['','']
+const dayOn=cycleOn;
+function cyLabel(d){return U.fmtMD(d.D)}
+function stChip(d){
+  return ({open:['blue','진행중 · 반납 전'],noret:['bad','반납 없음'],norec:['bad','기록 없음'],carry:['blue','이월 · 다음 날 반납'],noout:['wait','출고 기록 없음'],load:['','AS보고 확인 중'],wait:['wait','대조 대기'],fit:['ok',d.confirmed?'확정 · 일치':'일치'],loss:['bad',(d.confirmed?'확정 · ':'')+'로스 '+d.diff+'장'],scrap:['ok',(d.confirmed?'확정 · ':'')+'자투리 +'+(-d.diff)]})[d.st]||['','']
+}
+function dowK(D){try{return U.dowOf?U.dowOf(D):['일','월','화','수','목','금','토'][new Date(D+'T00:00:00Z').getUTCDay()]}catch(e){return ''}}
+function alerts(){ // 모두에게 보이는 경고 — 어제 이전인데 반납 없음 / 기록 없음 / 출고 없이 반납만 / 반납 뒤 출고. 최근 30일
+  const today=U.kstDate(0),from=U.addDays(today,-30);const out=[];
+  const plates=Object.keys(vehicles());Object.values(records()).forEach(r=>{if(r&&r.vehicle&&!plates.some(p=>NP(p)===NP(r.vehicle)))plates.push(r.vehicle)});
+  plates.forEach(p=>{daysOf(p).forEach(d=>{
+    if(d.D<from)return;const lab=U.fmtMD(d.D)+'('+dowK(d.D)+') '+p;
+    const yday=d.D===U.addDays(today,-1)&&(+String(U.kstDT(new Date())).slice(11,13)||12)<10; // 어제 것은 오전 10시까지는 아직 찍을 시간 (아침 반납)
+    if(d.st==='noret'&&!yday)out.push({date:d.D,plate:p,kind:'noret',txt:lab+' 반납 없음'+(d.remain>0?' · 잔량 '+d.remain+'장 이월 중':d.remain<0?' · 출고보다 '+(-d.remain)+'장 더 씀':'')});
+    else if(d.st==='norec')out.push({date:d.D,plate:p,kind:'norec',txt:lab+' 기록 없음 · 시공 '+d.jobs.length+'곳'});
+    else if(d.st==='noout')out.push({date:d.D,plate:p,kind:'noout',txt:lab+' 출고 기록 없이 반납 '+d.inn+'장'});
+    if(d.lateOut)out.push({date:d.D,plate:p,kind:'lateout',txt:lab+' 반납 뒤에 찍은 출고 '+d.lateOut+'장 — 다음 날 것이면 작업일을 옮기세요'});
+  })});
+  return out.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+}
+function alertsHTML(){
+  ensureCss();let A=[];try{A=alerts()}catch(e){console.warn('[iocycle] alerts',e);return ''}
+  if(!A.length)return '';
+  const n={};A.forEach(a=>{n[a.kind]=(n[a.kind]||0)+1});
+  const head=[n.noret?'반납 없음 '+n.noret+'건':'',n.norec?'기록 없음 '+n.norec+'건':'',n.noout?'출고 없음 '+n.noout+'건':'',n.lateout?'반납 뒤 출고 '+n.lateout+'건':''].filter(Boolean).join(' · ');
+  const show=A.slice(0,8);
+  return `<div class="ia-notice bad cy-alerts"><div class="c"><strong>${esc(head)}</strong><br>${show.map(a=>`<u onclick="ioAdmin.goto('${esc(a.date)}')">${esc(a.txt)}</u>`).join('<br>')}${A.length>show.length?'<br><span>외 '+(A.length-show.length)+'건</span>':''}</div></div>`;
 }
 function sgn(n){return (n>0?'+':'')+n}
 function diffTxt(d){return d>0?'로스 '+d:d<0?'자투리 +'+(-d):'일치'} // 순환·제품 표시
@@ -258,6 +297,10 @@ function diffCls(d){return d>0?'bad':d<0?'ok':'ok'}
 /* ---------- 카드 ---------- */
 const CSS=`
 .cy-card .ia-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+.cy-alerts{align-items:flex-start;line-height:1.75}
+.cy-alerts .c u{text-decoration:none;cursor:pointer;color:var(--dm-ink);font-weight:700}
+.cy-alerts .c u::before{content:'⚠ ';color:var(--red)}
+.cy-alerts .c span{color:var(--dm-muted);font-size:12px}
 .cy-crew{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--dm-muted);margin-top:2px}
 .cy-crew b{color:var(--dm-ink)}
 .cy-crew u{color:var(--dm-blue);text-decoration:none;cursor:pointer;font-weight:700;font-size:12px}
@@ -328,10 +371,10 @@ const CSS=`
 function ensureCss(){if(!$('cyCss')){const s=document.createElement('style');s.id='cyCss';s.textContent=CSS;document.head.appendChild(s)}}
 function prodLines(cy){
   if(!cy.byProd.length)return '';
-  return `<div class="ia-prods">${cy.byProd.map(b=>`<div class="ia-prodsec"><div class="p"><b><span>${esc(b.k)}</span><span>${cy.open?'잔량 '+(b.out-b.used):cy.decided?diffTxt(b.diff):'대기'}</span></b><span>출고 ${b.out} · 사용 ${b.used}${b.asFree?' (AS '+b.asFree+')':''} · 반납 ${b.inn}</span></div></div>`).join('')}</div>`;
+  return `<div class="ia-prods">${cy.byProd.map(b=>`<div class="ia-prodsec"><div class="p"><b><span>${esc(b.k)}</span><span>${cy.open?'잔량 '+b.remain:cy.decided?diffTxt(b.diff):'대기'}</span></b><span>${b.carry?'이월 '+b.carry+' · ':''}출고 ${b.out} · 사용 ${b.used}${b.asFree?' (AS '+b.asFree+')':''} · 반납 ${cy.open?'전':b.inn}</span></div></div>`).join('')}</div>`;
 }
 function jobLines(cy){
-  if(!cy.jobs.length)return `<div class="cy-jobs">연결된 시공 없음${cy.open?' · 시공보고가 들어오면 자동으로 붙어요':''}</div>`;
+  if(!cy.jobs.length)return `<div class="cy-jobs">${esc(U.fmtMD(cy.D))} 연결된 시공 없음${cy.open&&cy.D>=U.kstDate(0)?' · 스케줄에 잡히면 자동으로 붙어요':''}</div>`;
   const lab=r=>r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='load'?'확인 중':r.st==='future'?'예정':r.st==='zero'?'0장':r.asFree?'AS 무상 '+r.asFree:r.sold+'장';
   return `<div class="cy-jobs">${cy.jobs.map(r=>`<div class="j ${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'<span style="color:var(--red)">AS</span> ':''}${esc(r.addr)}${r.auto?'':' <span style="color:var(--dm-blue)">수동</span>'}<small>${esc(r.prod||'')}${r.py?' · '+esc(r.py)+'평':''}${r.asFree&&r.defect?' · 시공하자 → '+(r.prev.length?esc(r.prev.join('·'))+' 로스 −'+r.asFree:'이전작업자 미기재'):''}</small></span><b>${lab(r)}</b></div>`).join('')}</div>`;
 }
@@ -342,13 +385,9 @@ function peopleLines(cy){
 }
 function metrics(cy){
   const m=(lab,val,cls)=>`<div><span>${lab}</span><b class="${cls||''}">${val}</b><small>장</small></div>`;
-  if(cy.open)return m('출고 누적',cy.out)+m('사용 (자동)',cy.used)+m('차 잔량',cy.remain,cy.remain<0?'ia-loss':'')+m('반납','–','dimv');
-  return m('출고',cy.out)+m('사용',cy.used)+m('반납',cy.inn)+m(cy.decided&&cy.diff<0?'자투리':'로스',cy.decided?(cy.diff<0?'+'+(-cy.diff):String(cy.diff)):'–',cy.decided?(cy.diff>0?'ia-loss':'ia-fit'):'dimv');
-}
-function histHTML(plate,list,cur){
-  const past=list.filter(c=>c!==cur).slice(-6).reverse();if(!past.length)return '';
-  const k=NP(plate);
-  return `<details class="cy-hist" ${HIST_OPEN[k]?'open':''} ontoggle="ioCycle.hist('${esc(k)}',this.open)"><summary>지난 기록 ${past.length}건</summary>${past.map(c=>`<div class="h" onclick="ioCycle.openBy('${esc(plate)}',${c.startTs})"><span>${esc(cyLabel(c))} · ${esc(c.crew.join('·'))}</span><b class="${c.decided?diffCls(c.diff):''}">${c.decided?diffTxt(c.diff):stChip(c)[1]}</b></div>`).join('')}</details>`;
+  if(cy.open)return m(cy.carry?'이월+출고':'출고',cy.carry+cy.out)+m('사용 (자동)',cy.used)+m('차 잔량',cy.remain,cy.remain<0?'ia-loss':'')+m('반납','–','dimv');
+  if(cy.st==='noout')return m('출고','–','dimv')+m('사용',cy.used)+m('반납',cy.inn)+m('로스','–','dimv');
+  return m(cy.carry?'이월+출고':'출고',cy.carry+cy.out)+m('사용',cy.used)+m('반납',cy.inn)+m(cy.decided&&cy.diff<0?'자투리':'로스',cy.decided?(cy.diff<0?'+'+(-cy.diff):String(cy.diff)):'–',cy.decided?(cy.diff>0?'ia-loss':'ia-fit'):'dimv');
 }
 function prodLabel(j){const k=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);if(k)return k.replace('1M ','1M·');return /이전설치/.test(String(j.category||'')+String(j.time||''))?'이전설치':'제품 미정'}
 function upcomingHTML(v,up,from){ // 갈 현장: 선택 날짜 이후 이 차량의 첫 시공일 목록 (출고 전 실을 양 참고)
@@ -356,67 +395,73 @@ function upcomingHTML(v,up,from){ // 갈 현장: 선택 날짜 이후 이 차량
   return `<div class="cy-jobs cy-next"><div class="nh">${esc(U.fmtMD(up.date))} 갈 현장 ${up.list.length}곳${up.date===from?'':' <small>다음 시공일</small>'}</div>${up.list.map(j=>`<div class="j"><span>${/^AS$/i.test(j.time)?'<span style="color:var(--red)">AS</span>':esc(String(j.time||'').slice(0,2))} ${esc(String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,18))}${add[j.id]?' <span style="color:var(--dm-blue)">수동</span>':''}</span><b>${esc(prodLabel(j))}${j.py?' · '+esc(j.py)+'평':''}</b></div>`).join('')}</div>`;
 }
 function goLink(d,txt){return `<u style="color:var(--dm-blue);cursor:pointer;text-decoration:none;font-weight:700" onclick="ioAdmin.goto('${esc(d)}')">${txt}</u>`}
-function cardHTML(v){ // 카드는 달력 날짜(D) 기준: 그 날짜가 들어가는 순환을 보여 주고, 없으면 그날 갈 현장 + [출고]. 출고 작업일 = D, 반납 작업일 = 그 순환의 마지막 작업일
-  const S_=cardHTML.S||{};const D=S_.from||U.kstDate(0);
-  const {cur,prev,next,list,consumed}=cycleOn(v.plate,D);
+function cardHTML(v){ // 카드 = 차량 × 달력 날짜(작업일). 그날 출고·사용·반납·로스(+이월). 기록 없으면 그날 갈 현장 + [출고]
+  const S_=cardHTML.S||{};const D=S_.from||U.kstDate(0);const today=U.kstDate(0);
+  const {cur,prev,next,list}=cycleOn(v.plate,D);
   const open=!!(cur&&cur.open);
   const dayJobs=schedJobs(v.plate,D);
-  const showUp=cur?(open&&D>cur.toW&&dayJobs.length>0):dayJobs.length>0; // 갈 현장: 순환 없으면 그날 현장, 열린 순환인데 그날(내일 이후) 현장이 아직 안 붙었으면 그것
-  const who=cur?cur.crew:crewFor(v.plate,D); // 그날 실제 팀은 스케줄 기준
+  const showUp=!cur&&dayJobs.length>0; // 기록 없는 날의 갈 현장 (오늘·내일)
+  const who=cur?cur.crew:crewFor(v.plate,D);
   const chip=cur?stChip(cur):dayJobs.length?['','출고 전']:['','시공 없음'];
-  const tgt=cur||prev; // 반납·보고 대상: 그 날짜의 순환, 없으면 바로 앞 순환(어제 실은 걸 오늘 반납)
-  const outW=D; // 출고 작업일 = 달력 날짜 (대장 결정 2026-10-02: 내일 것은 달력을 내일로 옮겨서 찍는다. 시각·자동 규칙 없음)
-  // 그 작업일에 이미 남긴 기록이 있으면 [출고]/[반납]은 빈 폼 대신 그 기록을 열어 고침 (v32). 같은 날 두 번 실었으면 수정 화면의 [따로 추가]
-  // 2026-10-06: 기록 찾기는 순환과 상관없이 '이 차량의 그 작업일 기록' 전체에서 — 같은 날짜에 순환이 둘 겹쳐도(반납 뒤 또 출고) 그날 반납·출고를 바로 연다. 전엔 순환의 마지막 반납(다른 날짜)이 열렸음
-  const lastOf=(arr,w)=>arr.filter(r=>(r.wdate||r.date)===w).sort((a,b)=>a.ts-b.ts).pop()||null;
-  const allOuts=list.reduce((a,c)=>a.concat(c.outs),[]),allIns=list.reduce((a,c)=>a.concat(c.ins),[]);
-  const outRec=lastOf(allOuts,outW),inRec=lastOf(allIns,D);
-  const inW=(cur||inRec)?D:(tgt?(tgt.open?tgt.lastW:tgt.toW):D); // 반납 작업일도 달력 날짜. 그 날짜에 순환이 없으면 바로 앞 순환에 늦은 반납
+  const lastOf=(arr,w)=>arr.filter(r=>wOf(r)===w).sort((a,b)=>a.ts-b.ts).pop()||null;
+  const outRec=cur?lastOf(cur.outs,D):null,inRec=cur?lastOf(cur.ins,D):null; // 그 작업일에 이미 찍은 기록이 있으면 [출고]/[반납]은 그 기록을 열어 고침. 같은 날 두 번이면 수정 화면의 [따로 추가]
   const edited=(cur?cur.outs.concat(cur.ins):[]).filter(r=>nn(r.editN)>0).length;
   let mine=false;try{mine=!!X.myPlate&&U.normPlate(X.myPlate())===NP(v.plate)}catch(e){}
-  let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(who.join('·')||'담당 미지정')}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`; // 2026-10-04: 팀 번호 대신 차량번호가 카드 이름 (차량 기준이니까)
-  h+=`<div class="cy-crew"><span class="ia-tiny">${cur?esc(cyLabel(cur))+' · '+(cur.open?'출고 '+esc(String(cur.startAt||'').slice(5,16)):'반납 '+esc(String(cur.endAt||'').slice(5,16))):esc(U.fmtMD(D))}</span></div>`;
-  if(cur){h+=`<div class="ia-metrics">${metrics(cur)}</div>${prodLines(cur)}${jobLines(cur)}${!cur.open?peopleLines(cur):''}`;
+  const carrySrc=cur&&cur.carry>0?cur.carryFrom:'';
+  let h=`<div class="ia-team cy-card${mine?' mine':''}"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(who.join('·')||'담당 미지정')}</small></span><span class="ia-status ${chip[0]}">${chip[1]}</span></div>`;
+  const when=cur?(cur.open?(cur.outs.length?'출고 '+esc(String(cur.startAt||'').slice(5,16)):cur.virtual?'이월 중':'기록 없음'):'반납 '+esc(String(cur.endAt||'').slice(5,16))):'';
+  h+=`<div class="cy-crew"><span class="ia-tiny">${esc(U.fmtMD(D))}${when?' · '+when:''}</span></div>`;
+  if(cur){
+    if(cur.carry>0)h+=`<div class="ia-tiny" style="margin-top:4px">이월 <b>${cur.carry}장</b> ← ${carrySrc?goLink(carrySrc,esc(U.fmtMD(carrySrc))+' 반납 없음'):'전날'}</div>`;
+    h+=`<div class="ia-metrics">${metrics(cur)}</div>${prodLines(cur)}${jobLines(cur)}${!cur.open?peopleLines(cur):''}`;
     const foot=[];
+    if(cur.st==='noret'||cur.st==='carry'){foot.push(`<b style="color:${cur.st==='noret'?'var(--red)':'var(--dm-blue)'}">${cur.st==='noret'?'반납 기록이 없어요':'이월 확인됨'}</b> — 잔량 ${cur.remain}장은 다음 날로 이월${cur.carried&&cur.ov.carry?' · '+esc(cur.ov.carry.by||'')+' '+esc(String(cur.ov.carry.at||'').slice(5,16)):''}<br>${cur.st==='noret'?'반납했는데 안 찍었으면 [반납], 2박 출장처럼 일부러면 ':'아니면 '}<u style="cursor:pointer;color:var(--dm-blue);font-weight:700" onclick="ioCycle.carryAck('${esc(v.plate)}','${esc(D)}',${cur.carried?0:1})">${cur.carried?'이월 확인 해제':'이월 확인'}</u>`)}
+    if(cur.st==='norec')foot.push(`<b style="color:var(--red)">출고·반납 기록이 없어요</b> — 시공 ${cur.jobs.length}곳은 갔어요. 기억나는 대로 [출고]·[반납]을 넣어 주세요`);
+    if(cur.st==='noout')foot.push(`<b style="color:var(--dm-amber)">출고 기록이 없어요</b> — 출고를 넣으면 로스가 계산돼요`);
+    if(cur.lateOut)foot.push(`<b style="color:var(--dm-amber)">반납 뒤에 찍은 출고 ${cur.lateOut}장</b> — 다음 날 것이면 ${admin()?'[출고]로 열어 날짜를 옮겨 주세요':'당번이 작업일을 옮기면 돼요'}`);
+    if(cur.open&&cur.remain<0)foot.push(`출고보다 <b>${-cur.remain}장</b> 더 썼어요 — 출고 기록 확인`);
     if(cur.miss.length)foot.push(`시공보고 미입력 <b>${cur.miss.length}건</b> — 들어오면 자동 반영`);
+    if(!cur.open&&cur.carryWait&&(cur.carryWait.miss||cur.carryWait.asMiss))foot.push(`이월해 준 날${carrySrc?'('+esc(U.fmtMD(carrySrc))+')':''}의 시공보고 미입력 <b>${(cur.carryWait.miss||0)+(cur.carryWait.asMiss||0)}건</b> — 들어오면 확정`);
     if(!cur.open&&(cur.future||[]).length)foot.push(`아직 안 간 시공 <b>${cur.future.length}건</b> — 시공 뒤 시공보고가 들어오면 확정`);
     if(cur.asMiss.length)foot.push(`AS보고서 미제출 <b>${cur.asMiss.length}건</b>`);
     if(cur.st==='scrap')foot.push(`가져간 것보다 ${-cur.diff}장 더 깔았어요 → 자투리 활용 +${-cur.diff}로 기록`);
     if(cur.zero&&!cur.open)foot.push('반납 0장으로 닫힘');
     if(cur.ov.confirm)foot.push(`확정 ${esc(cur.ov.confirm.by||'')} ${esc(String(cur.ov.confirm.at||'').slice(5,16))}`);
     if(edited)foot.push(`고친 기록 <b>${edited}건</b> — [보고]에서 원래 값 확인`);
-    if(!cur.open){ // 닫힌 날: 다음 실을 날로 가는 링크 한 줄
-      if(next)foot.push(`${goLink(next.fromW,esc(U.fmtMD(next.fromW))+' 출고 '+next.out+'장 있음')}`);
-      else{const nx=upcomingOf(v.plate,U.addDays(cur.toW,1),consumed);if(nx.date)foot.push(`다음 시공 ${goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳')}`)}
-    }
+    if(next)foot.push(`${goLink(next.D,esc(U.fmtMD(next.D))+(next.outs.length?' 출고 '+next.out+'장 있음':next.ins.length?' 반납 '+next.inn+'장 있음':' 기록'))}`);
+    else{const nx=upcomingOf(v.plate,U.addDays(D,1),null);if(nx.date)foot.push(`다음 시공 ${goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳')}`)}
     if(foot.length)h+=`<div class="ia-teamfoot">${foot.join('<br>')}</div>`;
-  }else{ // 그날 기록 없음: 한 줄만 (시공 없음 · 다음 시공 · 미리 찍은 출고) — 2026-10-04 카드에 줄이 쌓이지 않게
+  }else{ // 그날 기록 없음: 한 줄만 (시공 없음 · 이월 중 · 다음 시공 · 미리 찍은 출고)
     const parts=[];
-    if(!dayJobs.length){const nx=upcomingOf(v.plate,U.addDays(D,1),consumed);parts.push(`${esc(U.fmtMD(D))} 시공 없음`);if(nx.date)parts.push('다음 시공 '+goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳'))}
-    if(next)parts.push(goLink(next.fromW,esc(U.fmtMD(next.fromW))+' 출고 '+next.out+'장 있음'));
+    if(!dayJobs.length){parts.push(`${esc(U.fmtMD(D))} 시공 없음`);const nx=upcomingOf(v.plate,U.addDays(D,1),null);if(nx.date)parts.push('다음 시공 '+goLink(nx.date,esc(U.fmtMD(nx.date))+' '+nx.list.length+'곳'))}
+    if(prev&&prev.open&&Object.keys(prev.carryOut||{}).length)parts.push(`${goLink(prev.D,esc(U.fmtMD(prev.D))+' 반납 없음')} · 잔량 ${prev.remain}장 이월 중`);
+    if(next)parts.push(goLink(next.D,esc(U.fmtMD(next.D))+(next.outs.length?' 출고 '+next.out+'장 있음':' 기록 있음')));
     if(parts.length)h+=`<div class="ia-tiny" style="margin-top:6px;line-height:1.7">${parts.join(' · ')}</div>`;
   }
   if(showUp)h+=upcomingHTML(v,{date:D,list:dayJobs},D);
-  // [수정]은 누구나: 작업자가 내일 날짜 카드에서 갈 현장이 맞는지 보고 틀리면 고친 뒤 [출고] (대장 결정 2026-10-02). 로스 확정·작업일 변경만 당번
-  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}',${cur?cur.startTs:0})">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(outW)}','${outRec?esc(outRec.id):''}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(inW)}','${inRec?esc(inRec.id):''}')">반납</button><button type="button" class="ia-button quiet" ${tgt?`onclick="ioCycle.report('${esc(v.plate)}',${tgt.startTs})"`:'disabled'}>보고</button>${open?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}','${esc(D)}')">반납 0장</button>`:''}</div>`;
-  return h+'</div>'; // 지난 기록 목록은 카드에서 뺌(달력으로 이동하거나 월간에서) — 2026-10-04
+  // [수정]은 누구나(갈 현장 넣고 빼기). 로스 확정·작업일 변경은 당번
+  const canZero=open&&cur.remain>=0&&(cur.outs.length>0||cur.carry>0);
+  const tgt=cur||prev;
+  h+=`<div class="cy-acts"><button type="button" class="ia-button quiet" onclick="ioCycle.openBy('${esc(v.plate)}','${esc(D)}')">수정</button><button type="button" class="ia-button${open?'':' primary'}" onclick="ioOpen('out','${esc(v.plate)}','${esc(D)}','${outRec?esc(outRec.id):''}')">출고</button><button type="button" class="ia-button${open?' primary':''}" onclick="ioOpen('in','${esc(v.plate)}','${esc(D)}','${inRec?esc(inRec.id):''}')">반납</button><button type="button" class="ia-button quiet" ${tgt?`onclick="ioCycle.report('${esc(v.plate)}','${esc(tgt.D)}')"`:'disabled'}>보고</button>${canZero?`<button type="button" class="ia-button zero" onclick="ioCycle.zero('${esc(v.plate)}','${esc(D)}')">반납 0장</button>`:''}</div>`;
+  return h+'</div>';
 }
 function monthHTML(vehs,from,to){
   let h='';const tot={out:0,used:0,inn:0,diff:0,n:0,und:0,loss:0,scrap:0};
   vehs.forEach(v=>{
-    const {list}=latestOf(v.plate);const cys=list.filter(c=>!c.open&&c.toW>=from&&c.toW<=to);
-    if(!cys.length)return;
-    const t={out:0,used:0,inn:0,diff:0,n:0,und:0,loss:0,scrap:0};
-    cys.forEach(c=>{if(c.decided){t.n++;t.out+=c.out;t.used+=c.used;t.inn+=c.inn;t.diff+=c.diff;if(c.diff>0)t.loss+=c.diff;else t.scrap+=-c.diff}else t.und++});
-    ['out','used','inn','diff','n','und','loss','scrap'].forEach(f=>tot[f]+=t[f]);
-    h+=`<div class="ia-team cy-card"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(cys[cys.length-1].crew.join('·'))}</small></span><span class="ia-status ${t.diff>0?'bad':t.n?'ok':''}">${t.n?'확정 '+t.n+'회'+(t.und?' · 대기 '+t.und:''):'대기 '+t.und}</span></div>
+    const {list}=latestOf(v.plate);const ds=list.filter(d=>!d.virtual&&d.D>=from&&d.D<=to);
+    if(!ds.length)return;
+    const t={out:0,used:0,inn:0,diff:0,n:0,und:0,noret:0,loss:0,scrap:0};
+    ds.forEach(d=>{t.out+=d.out;t.used+=d.used;t.inn+=d.inn;if(d.open){if(d.st==='noret'||d.st==='norec')t.noret++}else if(d.decided){t.n++;t.diff+=d.diff;if(d.diff>0)t.loss+=d.diff;else t.scrap+=-d.diff}else t.und++});
+    ['out','used','inn','diff','n','und','noret','loss','scrap'].forEach(f=>tot[f]+=t[f]);
+    const stTxt=[t.n?'확정 '+t.n+'일':'',t.und?'대기 '+t.und:'',t.noret?'반납 없음 '+t.noret:''].filter(Boolean).join(' · ')||'기록 없음';
+    h+=`<div class="ia-team cy-card"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(ds[ds.length-1].crew.join('·'))}</small></span><span class="ia-status ${t.noret||t.diff>0?'bad':t.n?'ok':''}">${stTxt}</span></div>
       <div class="ia-metrics"><div><span>출고</span><b>${t.out}</b><small>장</small></div><div><span>사용</span><b>${t.used}</b><small>장</small></div><div><span>로스</span><b class="${t.loss?'ia-loss':t.n?'ia-fit':'dimv'}">${t.n?t.loss:'–'}</b><small>장</small></div><div><span>자투리</span><b class="${t.n?'ia-fit':'dimv'}">${t.n?'+'+t.scrap:'–'}</b><small>장</small></div></div></div>`;
   });
-  h+=`<div class="ia-tiny" style="margin:4px 2px 12px">회사 로스 <b style="color:${tot.loss?'var(--red)':'var(--dm-ink)'}">${tot.loss}장</b> · 자투리 활용 <b>+${tot.scrap}장</b> (확정 ${tot.n}건${tot.und?' · 대조 대기 '+tot.und+'건 제외':''}) · 반납일이 이 달인 것만</div>`;
+  h+=`<div class="ia-tiny" style="margin:4px 2px 12px">회사 로스 <b style="color:${tot.loss?'var(--red)':'var(--dm-ink)'}">${tot.loss}장</b> · 자투리 활용 <b>+${tot.scrap}장</b> (확정 ${tot.n}일${tot.und?' · 대조 대기 '+tot.und+'일 제외':''}${tot.noret?' · 반납 없음 '+tot.noret+'일 제외':''}) · 출고·사용·반납은 이 달 작업일 전부, 로스는 반납해서 확정된 날만</div>`;
   return h||`<div class="ia-empty">이 달에 정산된 날이 없어요</div>`;
 }
 function cardsHTML(M,S){
-  ensureCss();
+  ensureCss();daysInvalidate();
   const ym=String(S.from||U.kstDate(0)).slice(0,7);
   if(S.mode==='month')return `<div class="ia-teams">${monthHTML(M.veh,S.from,S.to)}</div>`+peopleSection(ym);
   cardHTML.S=S;
@@ -430,7 +475,7 @@ function cardsHTML(M,S){
    · 저장본 = {cutoff:마지막 날, openFrom:이후 기록을 읽기 시작할 기록일, upto:{차량키:ts — 이 ts까지는 저장본에 들어감}, used:[정산된 시공 id], entries:[{n,date,amt,kind,note,used,...}]}
      차량별로 '앞에서부터 확정된 순환까지'만 저장본에 넣고(그 뒤 열린·미확정 순환은 평소 계산 몫), 닫힌 지 60일 넘은 미확정 순환은 넘어감(다음 저장 때 다시 봄) */
 const LNODE=(X.beta?'io_ledger_beta/':'io_ledger/')+RK;
-const SNAP_DAY=10,LV=1; // LV: 장부 계산 규칙 버전 — 바꾸면 저장본을 다시 만듦
+const SNAP_DAY=10,LV=2; // LV: 장부 계산 규칙 버전 — 바꾸면 저장본을 다시 만듦 (2=날짜 기준)
 let SNAP;            // undefined=아직 안 읽음, null=저장본 없음
 let SNAP_FORCE=false,SNAP_BUSY=false,SNAP_FAIL=0;
 function loadSnap(){if(SNAP!==undefined||MLOAD.snap)return;MLOAD.snap=1;
@@ -451,14 +496,19 @@ function ledgerCalc(recs,o){ // 직원별 기록 계산. o.build=저장본 만�
   let asLoading=false,asNoPrev=0,openFrom='';const stale=o.build?addDays(to,-60):'';
   Object.keys(vehicles()).forEach(p=>{const np=NP(p);
     const rm={};Object.keys(recs||{}).forEach(k=>{const r=recs[k];if(r&&NP(r.vehicle)===np&&nn(r.ts)>(upto[np]||0))rm[k]=r});
-    let cut=true;
-    cyclesOf(p,rm,arr(o.used)).forEach(c=>{
-      const settled=!c.open&&c.decided&&c.toW>=CY_START&&c.toW<=to;
-      const put=()=>c.crew.forEach(n=>add(n,{date:c.toW,amt:-c.diff,kind:'cycle',note:p+' · 출고 '+c.out+' 사용 '+c.used+' 반납 '+c.inn,used:c.used,plate:p,startTs:c.startTs}));
+    let cut=true,pend=[]; // pend: 반납 없이 열린 날들(이월 중) — 뒤에 닫힌 날이 오면 그 날과 한 묶음으로 저장본에 들어감
+    const firstDate=list=>list.reduce((m,x)=>{const d=x.outs.concat(x.ins).map(r=>String(r.date||'')).filter(Boolean).sort()[0]||x.D;return (!m||d<m)?d:m},'');
+    const stop=list=>{cut=false;const d0=firstDate(list);if(d0&&(!openFrom||d0<openFrom))openFrom=d0};
+    daysOf(p,rm).forEach(c=>{ // 날짜별 장부: 반납한 날(닫힌 날)에 그날 담당에게 로스·자투리 (이월분 포함)
+      const settled=!c.open&&c.decided&&c.D>=CY_START&&c.D<=to;
+      const put=()=>c.crew.forEach(n=>add(n,{date:c.D,amt:-c.diff,kind:'cycle',note:p+' · '+(c.carry?'이월 '+c.carry+' ':'')+'출고 '+c.out+' 사용 '+c.used+' 반납 '+c.inn,used:c.used,plate:p,startTs:c.startTs,D:c.D}));
       if(!o.build){if(settled)put();return}
-      if(cut&&(settled||(!c.open&&c.toW<=stale))){if(settled)put();c.jobs.forEach(r=>used.add(r.id));upto[np]=Math.max(upto[np]||0,...c.outs.concat(c.ins).map(r=>nn(r.ts)))}
-      else{cut=false;const d0=c.outs.concat(c.ins).map(r=>String(r.date||'')).filter(Boolean).sort()[0]||'';if(d0&&(!openFrom||d0<openFrom))openFrom=d0}
+      if(!cut)return;
+      if(c.open){if(!c.virtual)pend.push(c);return}
+      if(settled||c.D<=stale){if(settled)put();pend.concat([c]).forEach(x=>{x.jobs.forEach(r=>used.add(r.id));upto[np]=Math.max(upto[np]||0,...x.outs.concat(x.ins).map(r=>nn(r.ts)))});pend=[]}
+      else stop(pend.concat([c]));
     });
+    if(cut&&pend.length)stop(pend); // 마지막이 반납 전인 날이면 그 날부터는 평소 계산 몫
   });
   const asFrom=o.asFrom||CY_START,asTo=o.asTo||today;
   jobs().forEach(j=>{
@@ -526,111 +576,121 @@ function peopleSection(ym){
 function pplToggle(){PPL_OPEN=!PPL_OPEN;try{localStorage.setItem('io_ppl_open',PPL_OPEN?'1':'0')}catch(e){}rerender()}
 function person(n){PSEL=(PSEL===n)?'':n;try{localStorage.setItem('io_person',PSEL)}catch(e){}rerender()}
 
-/* ---------- 수정 모달 ---------- */
+/* ---------- 수정 모달 (그날 갈 현장 넣고 빼기 · 로스 확정) ---------- */
 function md(html){let m=$('cyMd');if(!m){m=document.createElement('div');m.className='ia-md';m.id='cyMd';m.setAttribute('onclick','if(event.target===this)ioCycle.close()');m.innerHTML='<div class="ia-md-in cy-md" id="cyMdIn"></div>';document.body.appendChild(m)}$('cyMdIn').innerHTML=html;m.classList.add('show')}
 function close(){const m=$('cyMd');if(m)m.classList.remove('show');SEL=null}
-function cur(){if(!SEL||!SEL.startTs)return null;return cyclesOf(SEL.plate).find(c=>c.startTs===SEL.startTs)||null}
-function openBy(plate,startTs){SEL={plate,startTs:+startTs};render()}
-function upcomingFor(plate,cy){ // 모달용 갈 현장 후보: 그 날짜의 이 지역 시공 전부 (이 차량 것은 체크됨). 순환 없으면 달력 날짜(그날 시공 없으면 다음 시공일), 열린 순환이면 아직 안 붙은 다음 날부터, 닫힌 순환은 없음(다음 날 카드 몫)
-  const S=cardHTML.S||{};const D=S.from||U.kstDate(0);
-  const {consumed}=latestOf(plate);const linked=new Set(cy?cy.jobs.map(r=>r.id):[]);
-  if(cy&&!cy.open)return {date:'',list:[]};
-  const okJ=j=>j&&jobOK(j)&&!linked.has(j.id)&&!(consumed&&consumed.has(j.id));
-  let d='';
-  if(cy){const from=cy.toW>=D?U.addDays(cy.toW,1):D;d=upcomingOf(plate,from,consumed).date;if(!d){d=jobs().filter(j=>okJ(j)&&j.date>=from).map(j=>j.date).sort()[0]||''}}
-  else{d=jobs().some(j=>okJ(j)&&j.date===D)?D:(jobs().filter(j=>okJ(j)&&j.date>D).map(j=>j.date).sort()[0]||'')}
+function cur(){if(!SEL)return null;return findDay(SEL.plate,SEL.key)}
+function openBy(plate,key){daysInvalidate();SEL={plate,key:String(key||''),D:DK.test(String(key||''))?String(key):''};render()}
+function selDate(){ // 모달이 보는 작업일: 날짜로 열었으면 그 날짜, 옛 ts로 열었으면 그 날, 없으면 카드의 달력 날짜
+  if(!SEL)return U.kstDate(0);if(SEL.D)return SEL.D;const d=cur();if(d)return d.D;const S=cardHTML.S||{};return S.from||U.kstDate(0);
+}
+function upcomingFor(plate,day){ // 모달용 '갈 현장' 후보 (기록 없는 날): 그 날짜의 이 지역 시공 전부 — 이 차량 것은 체크됨. 그날 시공이 없으면 다음 시공일
+  const D=selDate();const okJ=j=>j&&jobOK(j);
+  let d=jobs().some(j=>okJ(j)&&j.date===D)?D:(jobs().filter(j=>okJ(j)&&j.date>D).map(j=>j.date).sort()[0]||'');
   if(!d)return {date:'',list:[]};
   const on=new Set(schedJobs(plate,d).map(j=>j.id));
-  return {date:d,list:jobs().filter(j=>j&&jobOK(j)&&j.date===d&&!linked.has(j.id)&&!(consumed&&consumed.has(j.id))).sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(j=>({j,on:on.has(j.id),auto:jobMatches(j,plate)}))};
+  return {date:d,list:jobs().filter(j=>okJ(j)&&j.date===d).sort((a,b)=>String(a.time).localeCompare(String(b.time))).map(j=>({j,on:on.has(j.id),auto:jobMatches(j,plate)}))};
 }
 function render(){
   const cy=cur();if(!SEL){close();return}
-  const plate=SEL.plate;
+  const plate=SEL.plate;const D=selDate();
   const adm=admin();
-  const up=upcomingFor(plate,cy);
+  const up=cy?{date:'',list:[]}:upcomingFor(plate,null);
   const crew=cy?cy.crew:(up.date?crewFor(plate,up.date):vehCrew(plate));
   let h;
   if(cy){const chip=stChip(cy);
-    h=`<h3>${esc(plate)} · ${esc(cyLabel(cy))} <span class="ia-status ${chip[0]}">${chip[1]}</span></h3>
-    <div class="ia-tiny">출고 ${cy.out} − 사용 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''} − 반납 ${cy.open?'(전)':cy.inn} = ${cy.open?'잔량 '+cy.remain:cy.decided?diffTxt(cy.diff):'대조 대기'}</div>`;
-  }else h=`<h3>${esc(plate)} <span class="ia-status">${up.date?esc(U.fmtMD(up.date))+' 준비':'기록 없음'}</span></h3>`;
+    h=`<h3>${esc(plate)} · ${esc(U.fmtMD(D))} <span class="ia-status ${chip[0]}">${chip[1]}</span></h3>
+    <div class="ia-tiny">${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 사용 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''} − 반납 ${cy.open?'(전)':cy.inn} = ${cy.open?'잔량 '+cy.remain:cy.decided?diffTxt(cy.diff):'대조 대기'}</div>`;
+  }else h=`<h3>${esc(plate)} · ${esc(U.fmtMD(D))} <span class="ia-status">${up.date?esc(U.fmtMD(up.date))+' 준비':'기록 없음'}</span></h3>`;
   const src=cy?cy.crewSrc:(up.date&&crewFromJobs(schedJobs(plate,up.date)).length?'스케줄':'기본');
   h+=`<label>담당${cy?'':up.date?' · '+esc(U.fmtMD(up.date)):''}</label>
     <div class="ia-tiny" style="margin:2px 0 8px;line-height:1.6"><b style="font-size:15px;color:var(--dm-text,inherit)">${esc(crew.join(' · ')||'미지정')}</b> · ${src==='스케줄'?'스케줄 탭 배정 그대로 — 틀리면 스케줄 탭에서 고치면 따라와요':src==='출고'?'출고 때 적은 담당 (그날 스케줄 없음)':'팀설정 기본 (그날 스케줄 없음)'}</div>`;
   if(cy){
-  // 후보 시공: 기간 안 이 지역 시공 중 이 순환에 안 붙은 것(차량 다름) — 넣을 수 있게
-  const linkedIds=new Set(cy.jobs.map(r=>r.id));
-  const dels=cy.ov.del||{};
-  const cand=jobs().filter(j=>j&&jobOK(j)&&j.date>=cy.fromW&&j.date<=cy.toW&&!linkedIds.has(j.id)).slice(0,12); // 뺀 시공도 보여서 다시 넣을 수 있게
-  const cons=latestOf(plate).consumed||new Set(); // 이 차량의 다른 순환에 이미 붙은 시공 — 체크하면 이 순환으로 옮겨 옴
-  h+=`<label>연결된 시공</label>`;
-  h+=cy.jobs.map(r=>`<div class="jl"><input type="checkbox" checked data-id="${esc(r.id)}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'AS ':''}${esc(r.addr)} <span class="ia-tiny">${esc([r.sasu,r.busasu].filter(Boolean).join('·'))}${r.auto?'':' · <span style="color:var(--dm-blue)">수동</span>'}</span></span><b>${r.sold?r.sold+'장':r.asFree?'AS '+r.asFree:r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':'0'}</b></div>`).join('')||'<div class="ia-tiny">없음</div>';
-  if(cand.length)h+=`<label>같은 기간 다른 시공</label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}" data-auto="${jobMatches(j,cy.plate)?1:0}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc(namesOf(j).join('·'))}${vehOfJob(j)?' · '+esc(X.vehicleOf?X.vehicleOf(j):j.vehicle):''}${dels[j.id]?' · <span style="color:var(--dm-amber)">뺀 시공</span>':cons.has(j.id)?' · <span style="color:var(--dm-amber)">이 차 다른 날에 연결됨</span>':''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
+    const linkedIds=new Set(cy.jobs.map(r=>r.id));
+    const vo=vehOv(plate);const dels=Object.assign({},vo.del||{},(cy.ov&&cy.ov.del)||{});
+    const cand=jobs().filter(j=>j&&jobOK(j)&&j.date===D&&!linkedIds.has(j.id)).slice(0,12); // 그날 이 지역의 다른 시공(뺀 것 포함) — 체크하면 이 차량으로
+    h+=`<label>연결된 시공</label>`;
+    h+=cy.jobs.map(r=>`<div class="jl"><input type="checkbox" checked data-id="${esc(r.id)}" data-auto="${r.auto?1:0}"><span>${esc(U.fmtMD(r.date))} ${r.isAs?'AS ':''}${esc(r.addr)} <span class="ia-tiny">${esc([r.sasu,r.busasu].filter(Boolean).join('·'))}${r.auto?'':' · <span style="color:var(--dm-blue)">수동</span>'}</span></span><b>${r.sold?r.sold+'장':r.asFree?'AS '+r.asFree:r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 없음':r.st==='future'?'예정':'0'}</b></div>`).join('')||'<div class="ia-tiny">없음</div>';
+    if(cand.length)h+=`<label>그날 다른 시공</label>`+cand.map(j=>`<div class="jl cand"><input type="checkbox" data-add="${esc(j.id)}" data-auto="${jobMatches(j,plate)?1:0}"><span>${esc(U.fmtMD(j.date))} ${/^AS$/i.test(j.time)?'AS ':''}${esc(String(j.addr||'').slice(0,18))} <span class="ia-tiny">${esc(namesOf(j).join('·'))}${vehOfJob(j)?' · '+esc(X.vehicleOf?X.vehicleOf(j):j.vehicle):''}${dels[j.id]?' · <span style="color:var(--dm-amber)">뺀 시공</span>':''}</span></span><b>${(+j.sold||0)?j.sold+'장':'—'}</b></div>`).join('');
   }
   if(up.list.length)h+=`<label>${esc(U.fmtMD(up.date))} 갈 현장</label>`+up.list.map(x=>`<div class="jl${x.on?'':' cand'}"><input type="checkbox" ${x.on?'checked':''} data-up="${esc(x.j.id)}" data-auto="${x.auto?1:0}"><span>${/^AS$/i.test(x.j.time)?'AS ':esc(String(x.j.time||'').slice(0,2))+' '}${esc(String(x.j.addr||'').replace(/\(.*?\)/g,'').slice(0,18))} <span class="ia-tiny">${esc(namesOf(x.j).join('·'))}${vehOfJob(x.j)?' · '+esc(X.vehicleOf?X.vehicleOf(x.j):x.j.vehicle):''}</span></span><b>${esc(prodLabel(x.j))}${x.j.py?' · '+esc(x.j.py)+'평':''}</b></div>`).join('');
-  const last=(cy&&cy.ov.at)?cy.ov:vehOv(plate);
+  const last=(cy&&cy.ov&&cy.ov.at)?cy.ov:vehOv(plate);
   if(last.at)h+=`<div class="cy-note">마지막 수정 ${esc(last.by||'')} ${esc(String(last.at||'').slice(5,16))}</div>`;
-  const touched=!!(cy&&(cy.ov.add||cy.ov.del));
+  const touched=dayTouched(plate,D,cy);
   h+=`<div class="bt"><button type="button" class="ia-btn" onclick="ioCycle.close()">닫기</button>${touched?`<button type="button" class="ia-btn" onclick="ioCycle.reset()">스케줄대로</button>`:''}${adm&&cy&&cy.decided?`<button type="button" class="ia-btn ${cy.confirmed?'':'ok'}" onclick="ioCycle.confirm(${cy.confirmed?0:1})">${cy.confirmed?'확정 해제':'로스 확정'}</button>`:''}<button type="button" class="ia-btn pri" onclick="ioCycle.save()">저장</button></div>`;
   md(h);
 }
+function dayTouched(plate,D,cy){ // 그날 시공에 수동으로 넣고 뺀 게 있나 (차량 설정 add/del 중 그날 시공 + 옛 순환별 add/del)
+  const vo=vehOv(plate);const ids=new Set(jobs().filter(j=>j&&j.date===D).map(j=>j.id));
+  if(Object.keys(vo.add||{}).some(id=>ids.has(id))||Object.keys(vo.del||{}).some(id=>ids.has(id)))return true;
+  return !!(cy&&cy.ov&&(cy.ov.add||cy.ov.del));
+}
+function legacyClear(plate,cy){ // 옛 순환 키에 남은 add/del/crew 지우기 (날짜 기준으로 바뀐 뒤 꼬이지 않게)
+  const k=cy&&cy.ov&&cy.ov._legacyKey;if(!k)return Promise.resolve();
+  return db.ref(NODE+'/'+NP(plate)+'/'+k).update({add:null,del:null,crew:null});
+}
 function saveEdit(){
   if(!SEL)return;const cy=cur();const plate=SEL.plate;
-  // 차량 설정: 갈 현장 넣기·빼기 (담당은 안 저장 — 2026-10-06b: 스케줄 탭 기준)
+  // 차량 설정(_veh add/del)만 씀 — 시공은 자기 날짜에만 붙으니 '이 시공이 이 차량 것이냐'만 정하면 됨
   const vo=vehOv(plate);const vadd=Object.assign({},vo.add||{}),vdel=Object.assign({},vo.del||{});
+  document.querySelectorAll('#cyMdIn input[data-id]').forEach(el=>{const id=el.dataset.id,auto=el.dataset.auto==='1';if(el.checked){delete vdel[id];if(!auto)vadd[id]=1}else{delete vadd[id];if(auto)vdel[id]=1}});
+  document.querySelectorAll('#cyMdIn input[data-add]').forEach(el=>{const id=el.dataset.add;if(el.checked){delete vdel[id];if(el.dataset.auto!=='1')vadd[id]=1}}); // 스케줄상 이 차량 시공이면 '뺀 것'만 풀고, 남의 시공이면 수동 추가
   document.querySelectorAll('#cyMdIn input[data-up]').forEach(el=>{const id=el.dataset.up,auto=el.dataset.auto==='1';if(el.checked){delete vdel[id];if(!auto)vadd[id]=1;else delete vadd[id]}else{delete vadd[id];if(auto)vdel[id]=1}});
   const vpatch={add:Object.keys(vadd).length?vadd:null,del:Object.keys(vdel).length?vdel:null};
-  if(!cy){
-    saveVeh(plate,vpatch).then(()=>{X.toast('저장했어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));return}
-  const del=Object.assign({},cy.ov.del||{}),add=Object.assign({},cy.ov.add||{});
-  document.querySelectorAll('#cyMdIn input[data-id]').forEach(el=>{const id=el.dataset.id;const row=cy.jobs.find(r=>r.id===id);if(!el.checked){if(row&&row.auto)del[id]=1;delete add[id]}else{delete del[id];if(row&&!row.auto)add[id]=1}});
-  document.querySelectorAll('#cyMdIn input[data-add]').forEach(el=>{if(el.checked){delete del[el.dataset.add];if(el.dataset.auto!=='1')add[el.dataset.add]=1}}); // 스케줄상 이 차량 시공이면 '뺀 것'만 풀고, 남의 시공이면 수동 추가
-  const patch={crew:null,add:Object.keys(add).length?add:null,del:Object.keys(del).length?del:null}; // crew:null — 전에 저장된 담당 수정도 지움
-  patch.scrap=null; // 자투리 수동 입력 폐지 — 사용이 출고보다 많으면 자동으로 자투리 활용
-  if(cy.confirmed&&!confirm('확정된 정산이에요. 수정하면 확정이 풀리고 다시 계산돼요. 계속할까요?'))return;
-  patch.confirm=null;
-  Promise.all([save(cy,patch),saveVeh(plate,vpatch)]).then(()=>{X.toast('저장했어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
+  if(cy&&cy.confirmed&&!confirm('확정된 정산이에요. 수정하면 확정이 풀리고 다시 계산돼요. 계속할까요?'))return;
+  const ps=[saveVeh(plate,vpatch),legacyClear(plate,cy)];
+  if(cy&&cy.confirmed)ps.push(save(cy,{confirm:null}));
+  Promise.all(ps).then(()=>{X.toast('저장했어요');close();daysInvalidate();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
 }
-function reset(){ // 수동으로 넣고 뺀 것·담당 수정을 전부 지우고 스케줄 자동 연결로 되돌림
-  const cy=cur();if(!cy)return;
+function reset(){ // 그날 시공에 수동으로 넣고 뺀 것을 지우고 스케줄 자동 연결로
+  if(!SEL)return;const cy=cur();const plate=SEL.plate;const D=selDate();
   if(!confirm('이 날의 수동 연결을 지우고 스케줄대로 되돌릴까요?'))return;
-  save(cy,{add:null,del:null,crew:null,confirm:null}).then(()=>{X.toast('스케줄대로 되돌렸어요');close();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
+  const vo=vehOv(plate);const ids=new Set(jobs().filter(j=>j&&j.date===D).map(j=>j.id));
+  const vadd=Object.assign({},vo.add||{}),vdel=Object.assign({},vo.del||{});
+  Object.keys(vadd).forEach(id=>{if(ids.has(id))delete vadd[id]});Object.keys(vdel).forEach(id=>{if(ids.has(id))delete vdel[id]});
+  const ps=[saveVeh(plate,{add:Object.keys(vadd).length?vadd:null,del:Object.keys(vdel).length?vdel:null}),legacyClear(plate,cy)];
+  if(cy)ps.push(save(cy,{confirm:null}));
+  Promise.all(ps).then(()=>{X.toast('스케줄대로 되돌렸어요');close();daysInvalidate();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
 }
+function byName(){const n=(localStorage.getItem('io_admin_name')||'').trim()||prompt('이름')||'';if(n)try{localStorage.setItem('io_admin_name',n)}catch(e){}return n}
 function confirmCy(on){
   const cy=cur();if(!cy||!admin())return;
-  const by=(localStorage.getItem('io_admin_name')||'').trim()||prompt('담당자 이름')||'';if(!by)return;
-  try{localStorage.setItem('io_admin_name',by)}catch(e){}
-  save(cy,{confirm:on?{by,at:U.kstDT(new Date()),diff:cy.diff,out:cy.out,used:cy.used,inn:cy.inn}:null}).then(()=>{X.toast(on?'로스 확정':'확정 해제');close();rerender()}).catch(e=>X.toast('저장 실패',true));
+  const by=byName();if(!by)return;
+  save(cy,{confirm:on?{by,at:U.kstDT(new Date()),diff:cy.diff,out:cy.out,carry:cy.carry,used:cy.used,inn:cy.inn}:null}).then(()=>{X.toast(on?'로스 확정':'확정 해제');close();daysInvalidate();rerender()}).catch(e=>X.toast('저장 실패',true));
 }
-function zero(plate,D){ // D: 카드의 달력 날짜 — 반납 0장의 작업일도 달력 날짜 (2026-10-06)
-  const {cur:cy}=latestOf(plate);
-  if(!cy||!cy.open){X.toast('반납할 출고 기록이 없어요',true);return}
-  if(!confirm(plate+' · 출고 '+cy.out+'장 / 사용 '+cy.used+'장\n\n남은 매트가 0장이라 반납할 게 없나요?\n"반납 0장"으로 닫아요.'+(cy.remain>0?'\n\n⚠ 계산상 잔량 '+cy.remain+'장이 남아 있어야 해요. 그대로 닫으면 '+cy.remain+'장이 로스로 잡혀요.':'')))return;
-  try{window.ioZeroReturn(plate,/^\d{4}-\d{2}-\d{2}$/.test(String(D||''))?D:cy.lastW)}catch(e){X.toast('반납 0장 기록을 못 만들었어요 (iolog.js 버전 확인)',true)}
+function carryAck(plate,D,on){ // [이월 확인] — 일부러 반납 안 하고 다음 날로 (2박 출장). 경고 목록에서 빠지고 카드엔 '이월 확인됨'
+  daysInvalidate();const d=findDay(plate,D);if(!d||!d.open){X.toast('반납 전인 날만 이월 확인을 할 수 있어요',true);return}
+  const by=byName();if(!by)return;
+  save(d,{carry:on?{by,at:U.kstDT(new Date()),remain:d.remain}:null}).then(()=>{X.toast(on?'이월 확인 — 다음 날 반납 때 같이 계산돼요':'이월 확인 해제');daysInvalidate();rerender()}).catch(e=>X.toast('저장 실패: '+String(e&&e.message||e),true));
+}
+function zero(plate,D){ // 반납 0장: 그 작업일(달력 날짜)의 열린 장부를 닫음
+  daysInvalidate();const cy=findDay(plate,D)||latestOf(plate).cur;
+  if(!cy||!cy.open||!cy.outs.length&&!cy.carry){X.toast('반납할 출고 기록이 없어요',true);return}
+  if(!confirm(plate+' · '+U.fmtMD(cy.D)+(cy.carry?' · 이월 '+cy.carry+'장':'')+' · 출고 '+cy.out+'장 / 사용 '+cy.used+'장\n\n남은 매트가 0장이라 반납할 게 없나요?\n"반납 0장"으로 닫아요.'+(cy.remain>0?'\n\n⚠ 계산상 잔량 '+cy.remain+'장이 남아 있어야 해요. 그대로 닫으면 '+cy.remain+'장이 로스로 잡혀요.':'')))return;
+  try{window.ioZeroReturn(plate,cy.D)}catch(e){X.toast('반납 0장 기록을 못 만들었어요 (iolog.js 버전 확인)',true)}
 }
 function hist(k,open){HIST_OPEN[k]=!!open}
 
-/* ---------- 공유 화면용 (그날 반납으로 닫힌 순환 + 열린 순환) ---------- */
+/* ---------- 공유 화면용 (그 작업일의 장부) ---------- */
 function shareHTML(date,onlyPlate){
   const plates=Object.keys(vehicles()).filter(p=>!onlyPlate||NP(p)===NP(onlyPlate));
   let h='';
-  plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>(c.open&&c.fromW<=date)||(!c.open&&c.toW===date)).forEach(c=>{
+  plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>c.D===date).forEach(c=>{
     const chip=stChip(c);
     h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${esc(p)}<small>${esc(c.crew.join(' / '))}</small></div>
-      <div class="io-sh-rc"><span>출고 <b>${c.out}</b> − 사용 <b>${c.used}</b>${c.asFree?' (AS '+c.asFree+')':''} − 반납 <b>${c.open?'–':c.inn}</b>${c.open?' → 차 잔량 <b>'+c.remain+'</b>':' → <b>'+(c.decided?diffTxt(c.diff):'대조 대기')+'</b>'}</span><span class="io-veh-diff ${chip[0]==='bad'?'plus':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':'dim'}">${chip[1]}</span></div>
-      ${c.byProd.length?`<div class="io-rc-prod">${c.byProd.map(b=>esc(b.k)+' '+(c.open?'잔 '+(b.out-b.used):c.decided?diffTxt(b.diff):'대기')).join(' · ')}</div>`:''}
+      <div class="io-sh-rc"><span>${c.carry?'이월 <b>'+c.carry+'</b> + ':''}출고 <b>${c.out}</b> − 사용 <b>${c.used}</b>${c.asFree?' (AS '+c.asFree+')':''} − 반납 <b>${c.open?'–':c.inn}</b>${c.open?' → 차 잔량 <b>'+c.remain+'</b>':' → <b>'+(c.decided?diffTxt(c.diff):'대조 대기')+'</b>'}</span><span class="io-veh-diff ${chip[0]==='bad'?'plus':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':'dim'}">${chip[1]}</span></div>
+      ${c.byProd.length?`<div class="io-rc-prod">${c.byProd.map(b=>esc(b.k)+' '+(c.open?'잔 '+b.remain:c.decided?diffTxt(b.diff):'대기')).join(' · ')}</div>`:''}
       ${!c.open&&c.crew.length?`<div class="io-rc-prod">${c.crew.map(n=>esc(n)+' '+(c.decided?netTxt(c.diff):'—')).join(' · ')} <span style="opacity:.7">(공동작업 기준 · 로스 − / 자투리 +)</span></div>`:''}</div>`;
   })});
   return h?`<div class="io-sh-nx" style="margin-top:0;margin-bottom:10px"><div class="io-sh-nxh">📦 정산 · ${esc(U.fmtD(date))}</div>${h}</div>`:'';
 }
 function shareText(date,onlyPlate){
   const plates=Object.keys(vehicles()).filter(p=>!onlyPlate||NP(p)===NP(onlyPlate));const out=[];
-  plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>(c.open&&c.fromW<=date)||(!c.open&&c.toW===date)).forEach(c=>{
-    out.push(RN+' '+p+' · 정산 ('+cyLabel(c)+')\n담당: '+c.crew.join(' / ')+'\n출고 '+c.out+'장\n사용 '+c.used+'장 — 시공 '+c.sold+'장'+(c.asFree?' / AS 무상 '+c.asFree+'장':'')+'\n반납 '+(c.open?'(전) · 차 잔량 '+c.remain+'장':c.inn+'장')+(c.open?'':'\n'+(c.decided?diffTxt(c.diff):'대조 대기'))+(c.decided?'\n'+c.crew.map(n=>n+': '+netTxt(c.diff)).join(' / ')+' (공동작업 기준)':'')+'\n상태: '+stChip(c)[1]);
+  plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>c.D===date).forEach(c=>{
+    out.push(RN+' '+p+' · 정산 ('+cyLabel(c)+')\n담당: '+c.crew.join(' / ')+(c.carry?'\n이월 '+c.carry+'장':'')+'\n출고 '+c.out+'장\n사용 '+c.used+'장 — 시공 '+c.sold+'장'+(c.asFree?' / AS 무상 '+c.asFree+'장':'')+'\n반납 '+(c.open?'(전) · 차 잔량 '+c.remain+'장':c.inn+'장')+(c.open?'':'\n'+(c.decided?diffTxt(c.diff):'대조 대기'))+(c.decided?'\n'+c.crew.map(n=>n+': '+netTxt(c.diff)).join(' / ')+' (공동작업 기준)':'')+'\n상태: '+stChip(c)[1]);
   })});
   return out.join('\n\n');
 }
-
 /* ---------- 보고 화면 — 차량 한 대 · 현재 순환, 휴대폰 한 화면 스크린샷 → 단톡방 ---------- */
 const REP_CSS=`
 #cyRep{display:none;position:fixed;inset:0;background:var(--bg);z-index:993;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
@@ -708,7 +768,7 @@ function jobLabel(r){return r.st==='miss'?'미입력':r.st==='asmiss'?'AS보고 
 function reportHTML(cy){
   const chip=stChip(cy);
   const chipCls=chip[0]==='bad'?'bad':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':chip[0]==='blue'?'blue':'';
-  let h=`<div class="cyr-hd"><div><div class="cyr-t">📦 출고·반납 보고</div><div class="cyr-s">${esc(RN)} ${esc(cy.plate)} · ${esc(cy.crew.join('·'))}<br>${esc(U.fmtD(cy.fromW))}${!cy.open&&cy.toW!==cy.fromW?' ~ '+esc(U.fmtD(cy.toW)):''}${cy.open?' · 반납 전':' · 반납 '+esc(String(cy.endAt||'').slice(5,16))}</div></div><span class="cyr-chip ${chipCls}">${chip[1]}</span></div>`;
+  let h=`<div class="cyr-hd"><div><div class="cyr-t">📦 출고·반납 보고</div><div class="cyr-s">${esc(RN)} ${esc(cy.plate)} · ${esc(cy.crew.join('·'))}<br>${esc(U.fmtD(cy.D))}${cy.carry?' · 이월 '+cy.carry+'장 포함':''}${cy.open?' · 반납 전':' · 반납 '+esc(String(cy.endAt||'').slice(5,16))}</div></div><span class="cyr-chip ${chipCls}">${chip[1]}</span></div>`;
   // 기록 띠: 출고·반납 기록(시각·장수·사진) 한 줄
   const recChip=r=>`<div class="cyr-rec">${recThumb(r)}<div class="t"><span class="cyr-tag ${r.type==='in'?'in':'out'}">${r.type==='in'?'반납':'출고'}</span> ${esc(U.hm(r.at))}${r.wdate&&r.wdate!==r.date?' <span style="color:var(--sub)">'+esc(U.fmtMD(r.wdate))+' 것</span>':''}<b>${recQty(r)}장${r.late?' · <span style="color:var(--yellow)">지연</span>':''}${nn(r.editN)?' · <span style="color:var(--yellow)">수정 '+nn(r.editN)+'회'+origTxt(r)+'</span>':''}</b></div></div>`;
   h+=`<div class="cyr-sec"><div class="cyr-recs">${cy.outs.map(recChip).join('')}${cy.ins.map(recChip).join('')}${cy.open?`<div class="cyr-rec"><div class="t"><span class="cyr-tag in">반납</span> 전<b>차 잔량 ${cy.remain}장</b></div></div>`:''}</div></div>`;
@@ -717,10 +777,11 @@ function reportHTML(cy){
   const keys=PRODUCTS.map(p=>p.k).filter(k=>PO[k]||PI[k]||cy.byProd.some(b=>b.k===k)).concat(Object.keys(Object.assign({},PO,PI)).filter(k=>!PRODUCTS.some(p=>p.k===k)));
   h+=`<div class="cyr-sec"><div class="cyr-sh"><span>제품별 대조</span><small>출고 − 사용 − 반납 = 로스</small></div>`;
   keys.forEach(k=>{const b=cy.byProd.find(x=>x.k===k)||{out:0,inn:0,sold:0,asFree:0,scrap:0,used:0,diff:0};
-    const dTxt=cy.open?'잔 '+(b.out-b.used):cy.decided?diffTxt(b.diff):'대기';
+    const dTxt=cy.open?'잔 '+b.remain:cy.decided?diffTxt(b.diff):'대기';
     const dCls=cy.open?'dim':!cy.decided?'warn':diffCls(b.diff);
     const useQ=[b.sold?'시공 '+b.sold:'',b.asFree?'AS 무상 '+b.asFree:''].filter(Boolean).join(' · ');
     h+=`<div class="cyr-prod"><div class="cyr-ph"><span>${esc(k)}</span><span class="d ${dCls}">${dTxt}</span></div>
+      ${b.carry?`<div class="cyr-pl out"><span class="cyr-tag use">이월</span><b>${b.carry}장</b><span class="q">전날 반납 안 한 잔량</span></div>`:''}
       <div class="cyr-pl out"><span class="cyr-tag out">출고</span><b>${b.out}장</b><span class="q">${esc(partsStr(PO[k]))}</span></div>
       <div class="cyr-pl use"><span class="cyr-tag use">사용</span><b>${b.used}장</b><span class="q">${esc(useQ)}</span></div>
       <div class="cyr-pl in"><span class="cyr-tag in">반납</span><b>${cy.open?'–':b.inn+'장'}</b><span class="q">${cy.open?'반납 전':esc(partsStr(PI[k])||'')}</span></div></div>`;
@@ -733,7 +794,7 @@ function reportHTML(cy){
   const totCls=cy.decided?diffCls(cy.diff):'warn';
   const totTxt=cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 · 로스 0':cy.diff>0?'로스 '+cy.diff+'장':'자투리 활용 +'+(-cy.diff)+'장'):'대조 대기';
   const waitWhy=[].concat(cy.miss.length?['시공보고 미입력 '+cy.miss.length]:[]).concat(cy.asMiss.length?['AS보고 없음 '+cy.asMiss.length]:[]).join(' · ');
-  h+=`<div class="cyr-sec"><div class="cyr-tot" style="margin-top:0;padding-top:0;border-top:none"><span>합계 · 출고 ${cy.out} − 사용 ${cy.used} − 반납 ${cy.open?'–':cy.inn}</span><span class="${cy.open?'':totCls}">${cy.open?'잔량 '+cy.remain+'장':totTxt}</span></div>
+  h+=`<div class="cyr-sec"><div class="cyr-tot" style="margin-top:0;padding-top:0;border-top:none"><span>합계 · ${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 사용 ${cy.used} − 반납 ${cy.open?'–':cy.inn}</span><span class="${cy.open?'':totCls}">${cy.open?'잔량 '+cy.remain+'장':totTxt}</span></div>
     ${waitWhy&&!cy.open?`<div class="cyr-note" style="text-align:left;margin-top:4px">${esc(waitWhy)} — 들어오면 자동 반영</div>`:''}
     ${!cy.open&&cy.crew.length?`<div class="cyr-people">${cy.crew.map(n=>`<span>${esc(n)} <b class="${cy.decided&&cy.diff>0?'bad':''}">${cy.decided?netTxt(cy.diff):'—'}</b></span>`).join('')}<span>공동작업 기준 · 로스 − / 자투리 +</span></div>`:''}
     ${cy.ov&&cy.ov.confirm?`<div class="cyr-note">확정 ${esc(cy.ov.confirm.by||'')} ${esc(String(cy.ov.confirm.at||'').slice(5,16))}</div>`:''}</div>`;
@@ -742,24 +803,26 @@ function reportHTML(cy){
 }
 function reportText(cy){
   const L=[];
-  L.push(`[${RN} · ${cy.plate} · ${cy.crew.join('·')}] 출고·반납 보고 ${cy.open?U.fmtMD(cy.fromW):cyLabel(cy)}`);
+  L.push(`[${RN} · ${cy.plate} · ${cy.crew.join('·')}] 출고·반납 보고 ${cyLabel(cy)}`);
   L.push('담당: '+cy.crew.join(' / '));
   const PO=partsByProd(cy.outs),PI=partsByProd(cy.ins);
   cy.outs.forEach(r=>L.push('출고 '+U.hm(r.at)+' '+recQty(r)+'장'+(r.late?' (지연 입력)':'')));
   cy.ins.forEach(r=>L.push('반납 '+U.hm(r.at)+' '+recQty(r)+'장'));
+  if(cy.carry)L.push('이월 '+cy.carry+'장 (전날 반납 안 한 잔량)');
   if(cy.open)L.push('반납 전 · 차 잔량 '+cy.remain+'장');
-  cy.byProd.forEach(b=>{L.push('· '+b.k+': 출고 '+b.out+(PO[b.k]&&partsStr(PO[b.k])?' ('+partsStr(PO[b.k])+')':'')+' / 사용 '+b.used+' / 반납 '+(cy.open?'–':b.inn+(PI[b.k]&&partsStr(PI[b.k])?' ('+partsStr(PI[b.k])+')':''))+' → '+(cy.open?'잔 '+(b.out-b.used):cy.decided?diffTxt(b.diff):'대기'))});
+  cy.byProd.forEach(b=>{L.push('· '+b.k+': 출고 '+b.out+(PO[b.k]&&partsStr(PO[b.k])?' ('+partsStr(PO[b.k])+')':'')+' / 사용 '+b.used+' / 반납 '+(cy.open?'–':b.inn+(PI[b.k]&&partsStr(PI[b.k])?' ('+partsStr(PI[b.k])+')':''))+' → '+(cy.open?'잔 '+b.remain:cy.decided?diffTxt(b.diff):'대기'))});
   L.push('사용 '+cy.used+'장 (시공 '+cy.sold+(cy.asFree?' / AS 무상 '+cy.asFree:'')+')');cy.jobs.forEach(r=>{L.push('  '+(r.isAs?'AS ':'')+r.addr+' — '+jobLabel(r)+(r.asFree&&r.defect&&r.prev.length?' (시공하자 → '+r.prev.join('·')+' −'+r.asFree+')':''))});
   L.push('합계: '+(cy.open?'반납 후 확정':cy.decided?diffTxt(cy.diff):'대조 대기'));
   if(!cy.open&&cy.decided)L.push(cy.crew.map(n=>n+': '+netTxt(cy.diff)).join(' / ')+' (공동작업 기준 · 로스 − / 자투리 +)');
   L.push('상태: '+stChip(cy)[1]);
   return L.join('\n');
 }
-function repCycle(){if(!REP)return null;const {cur,list}=latestOf(REP.plate);return REP.startTs?(list.find(c=>c.startTs===REP.startTs)||null):cur}
+function repCycle(){if(!REP)return null;if(REP.key)return findDay(REP.plate,REP.key);return latestOf(REP.plate).cur}
 function renderReport(){const cy=repCycle();if(!cy){reportClose();return}ensureRep();$('cyRepIn').innerHTML=reportHTML(cy)}
-function report(plate,startTs){
-  const {cur}=latestOf(plate);if(!cur&&!startTs){X.toast('아직 출고 기록이 없어요');return}
-  REP={plate,startTs:startTs?+startTs:0};ensureRep();renderReport();$('cyRep').classList.add('show');$('cyRep').scrollTop=0;
+function report(plate,key){ // key: 작업일(또는 옛 시작 ts)
+  daysInvalidate();const {cur}=latestOf(plate);if(!cur&&!key){X.toast('아직 출고 기록이 없어요');return}
+  if(key&&!findDay(plate,key)){X.toast(U.fmtMD(String(key))+' 기록이 없어요');return}
+  REP={plate,key:key?String(key):''};ensureRep();renderReport();$('cyRep').classList.add('show');$('cyRep').scrollTop=0;
 }
 function reportClose(){REP=null;const d=$('cyRep');if(d)d.classList.remove('show')}
 function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
@@ -769,6 +832,6 @@ function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
 }
 
 /* ---------- 시작 ---------- */
-try{db.ref(NODE).on('value',s=>{OV=s.val()||{};rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,cyclesOf,latestOf,cycleOn,openBy,reset,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,relearn,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.startTs);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText,ledgerCalc,snapCutoff,snapBuild,snap:()=>SNAP,setSnap:v=>{SNAP=v},mrec:()=>MREC}};
+try{db.ref(NODE).on('value',s=>{OV=s.val()||{};daysInvalidate();rerender()})}catch(e){console.warn('[iocycle] fb',e)}
+window.ioCycle={ver:CY_VER,cardsHTML,alertsHTML,alerts,daysOf,cyclesOf,latestOf,cycleOn,dayOn,findDay,daysInvalidate,openBy,reset,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,relearn,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.D);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,carryAck,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText,ledgerCalc,snapCutoff,snapBuild,snap:()=>SNAP,setSnap:v=>{SNAP=v},mrec:()=>MREC}};
 })();
