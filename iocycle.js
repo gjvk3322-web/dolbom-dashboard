@@ -1,13 +1,13 @@
 /* iocycle.js — 돌봄매트 입출고 '날짜(작업일)' 기준 차량 카드 (부산·경기 공용) · v1 2026-09-30 순환 → 2026-10-06c 달력 기준으로 전환
    iolog.js(window.__io) 다음, ioadmin.js 다음에 불러옴 (iolog.js loadBoard가 순서대로 붙임).
 
-   ■ 카드 = 차량 × 작업일. 그날 장부 = 이월(전날 반납 안 한 잔량) + 출고 − 사용 − 반납
+   ■ 카드 = 차량 × 작업일. 명칭(2026-10-08): 판매 = 시공보고 판매갯수(+AS 무상) · 사용 = 이월 + 출고 − 반납(차에서 실제로 나간 것) · 로스 = 판매 − 사용
      · 기록은 '언제 찍었든' 작업일(wdate)만 본다. 10/4 저녁에 찍은 10/5 것 출고도, 나중에 당번이 넣은 출고도 그 작업일에 붙음. 찍은 시각 순서는 안 봄
      · 반납이 있는 날 = 닫힘 → 로스 확정 (시공보고·AS보고가 다 들어오면). 표시는 부호 하나로: −N = 안 돌아온 것, +N = 가져간 것보다 더 깐 것 ('자투리'란 말은 안 씀, 2026-10-06f). 다 써서 0장이면 [반납 0장]
      · 반납이 없는 날 = 열림 → 잔량(제품별)이 다음 날로 이월. 어제 이전이면 '반납 없음'(상단 경고, 모두에게). 2박 출장처럼 일부러면 [이월 확인] → 경고 꺼짐
      · 이월해 준 날의 시공보고가 비어 있으면 닫는 날도 '대조 대기'
      · 오후 반납 뒤 같은 작업일로 또 찍은 출고(오늘 카드에서 내일 것을 찍음) = 그날에 더해지되 '반납 뒤 출고' 안내 → 당번이 작업일을 옮기면 끝. 출고 폼은 그 상황에서 '오늘 것/내일 것'을 고르게 함
-   ■ 사용(자동) = 그날 이 차량으로 잡힌 시공보고 판매갯수(시공스케줄 Y열) + AS보고서(Firebase asReports)의 '들어간 장수' — 결제 무료면 무상 AS, 유상이면 판매. '자투리사용'은 0장
+   ■ 판매(자동, 코드에선 used) = 그날 이 차량으로 잡힌 시공보고 판매갯수(시공스케줄 Y열) + AS보고서(Firebase asReports)의 '들어간 장수' — 결제 무료면 무상 AS, 유상이면 판매. '자투리사용'은 0장
      시공 연결 = 스케줄 탭 팀 카드와 같은 차량 규칙(iolog.js vehicleOf) + 카드 [수정]에서 넣고 뺀 것(_veh.add/del). 시공은 자기 날짜에만 붙음
    ■ 로스 = 이월 + 출고 − (판매 + 무상 AS) − 반납 (제품·색상 합계 기준, 형태는 안 봄). 개인 기록 = 그날 담당 각각에 같은 값(공동작업 기준, 같은 부호)
      시공하자 AS를 무료로 하며 새 매트가 들어가면 그 장수는 AS보고서의 이전 작업자에게 −
@@ -26,7 +26,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.06f';
+const CY_VER='2026.10.08a';
 const CY_START=(X.cyStart&&/^\d{4}-\d{2}-\d{2}$/.test(String(X.cyStart)))?String(X.cyStart):'2026-10-05'; // 입출고 시작일 (2026-10-06 초기화 기준일) — 이 날 전 작업일은 기록도 시공도 안 봄 (경고·장부·카드 전부). 테스트는 __io.cyStart로 바꿈
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -220,8 +220,9 @@ function compute(day){ // 그날 시공 연결·계산. 시공은 자기 날짜�
   day.crew=orderCrew(sc.length?sc:day.seed.length?day.seed:vehCrew(day.plate)).slice(0,3);
   day.crewSrc=sc.length?'스케줄':day.seed.length?'출고':'기본';
   const prods=PRODUCTS.map(p=>p.k).filter(k=>by[k]).concat(Object.keys(by).filter(k=>!PRODUCTS.some(p=>p.k===k)));
-  day.byProd=prods.map(k=>{const b=by[k];const used=b.sold+b.asFree;return {k,carry:b.carry,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,used,diff:b.carry+b.out-used-b.inn,remain:b.carry+b.out-used}});
-  const T=day.byProd.reduce((t,b)=>{['carry','out','inn','sold','asFree','used','diff','remain'].forEach(f=>t[f]+=b[f]);return t},{carry:0,out:0,inn:0,sold:0,asFree:0,used:0,diff:0,remain:0});
+  // 명칭(2026-10-08, 승민 제안): 판매(used) = 시공보고 판매갯수 + AS 무상 · 사용(use) = 이월 + 출고 − 반납(차에서 실제로 나간 것) · 로스 = 판매 − 사용 (−면 안 돌아온 것, +면 가져간 것보다 더 깖)
+  day.byProd=prods.map(k=>{const b=by[k];const used=b.sold+b.asFree;return {k,carry:b.carry,out:b.out,inn:b.inn,sold:b.sold,asFree:b.asFree,used,use:b.carry+b.out-b.inn,diff:b.carry+b.out-used-b.inn,remain:b.carry+b.out-used}});
+  const T=day.byProd.reduce((t,b)=>{['carry','out','inn','sold','asFree','used','use','diff','remain'].forEach(f=>t[f]+=b[f]);return t},{carry:0,out:0,inn:0,sold:0,asFree:0,used:0,use:0,diff:0,remain:0});
   T.scrap=0;
   const future=linked.filter(r=>r.st==='future');
   Object.assign(day,T,{jobs:linked,miss,asMiss,future,asLoading,jobsN:linked.filter(r=>r.sold||r.asFree).length});
@@ -274,7 +275,7 @@ function alerts(){ // 모두에게 보이는 경고 — 어제 이전인데 반�
   plates.forEach(p=>{daysOf(p).forEach(d=>{
     if(d.D<from)return;const lab=U.fmtMD(d.D)+'('+dowK(d.D)+') '+p;
     const yday=d.D===U.addDays(today,-1)&&(+String(U.kstDT(new Date())).slice(11,13)||12)<10; // 어제 것은 오전 10시까지는 아직 찍을 시간 (아침 반납)
-    if(d.st==='noret'&&!yday)out.push({date:d.D,plate:p,kind:'noret',txt:lab+' 반납 없음'+(d.remain>0?' · 잔량 '+d.remain+'장 이월 중':d.remain<0?' · 출고보다 '+(-d.remain)+'장 더 씀':'')});
+    if(d.st==='noret'&&!yday)out.push({date:d.D,plate:p,kind:'noret',txt:lab+' 반납 없음'+(d.remain>0?' · 잔량 '+d.remain+'장 이월 중':d.remain<0?' · 출고보다 판매 '+(-d.remain)+'장 많음':'')});
     else if(d.st==='norec')out.push({date:d.D,plate:p,kind:'norec',txt:lab+' 기록 없음 · 시공 '+d.jobs.length+'곳'});
     else if(d.st==='noout')out.push({date:d.D,plate:p,kind:'noout',txt:lab+' 출고 기록 없이 반납 '+d.inn+'장'});
     if(d.lateOut)out.push({date:d.D,plate:p,kind:'lateout',txt:lab+' 반납 뒤에 찍은 출고 '+d.lateOut+'장 — 다음 날 것이면 작업일을 옮기세요'});
@@ -371,7 +372,7 @@ const CSS=`
 function ensureCss(){if(!$('cyCss')){const s=document.createElement('style');s.id='cyCss';s.textContent=CSS;document.head.appendChild(s)}}
 function prodLines(cy){
   if(!cy.byProd.length)return '';
-  return `<div class="ia-prods">${cy.byProd.map(b=>`<div class="ia-prodsec"><div class="p"><b><span>${esc(b.k)}</span><span>${cy.open?'잔량 '+b.remain:cy.decided?diffTxt(b.diff):'대기'}</span></b><span>${b.carry?'이월 '+b.carry+' · ':''}출고 ${b.out} · 사용 ${b.used}${b.asFree?' (AS '+b.asFree+')':''} · 반납 ${cy.open?'전':b.inn}</span></div></div>`).join('')}</div>`;
+  return `<div class="ia-prods">${cy.byProd.map(b=>`<div class="ia-prodsec"><div class="p"><b><span>${esc(b.k)}</span><span>${cy.open?'잔량 '+b.remain:cy.decided?diffTxt(b.diff):'대기'}</span></b><span>${b.carry?'이월 '+b.carry+' · ':''}출고 ${b.out} · 반납 ${cy.open?'전':b.inn}${cy.open?'':' · 사용 '+b.use}${cy.st==='noout'?'':''} · 판매 ${b.used}${b.asFree?' (AS '+b.asFree+')':''}</span></div></div>`).join('')}</div>`;
 }
 function jobLines(cy){
   if(!cy.jobs.length)return `<div class="cy-jobs">${esc(U.fmtMD(cy.D))} 연결된 시공 없음${cy.open&&cy.D>=U.kstDate(0)?' · 스케줄에 잡히면 자동으로 붙어요':''}</div>`;
@@ -385,9 +386,10 @@ function peopleLines(cy){
 }
 function metrics(cy){
   const m=(lab,val,cls)=>`<div><span>${lab}</span><b class="${cls||''}">${val}</b><small>장</small></div>`;
-  if(cy.open)return m(cy.carry?'이월+출고':'출고',cy.carry+cy.out)+m('사용 (자동)',cy.used)+m('차 잔량',cy.remain,cy.remain<0?'ia-loss':'')+m('반납','–','dimv');
-  if(cy.st==='noout')return m('출고','–','dimv')+m('사용',cy.used)+m('반납',cy.inn)+m('로스','–','dimv');
-  return m(cy.carry?'이월+출고':'출고',cy.carry+cy.out)+m('사용',cy.used)+m('반납',cy.inn)+m('로스',cy.decided?(cy.diff>0?'−'+cy.diff:cy.diff<0?'+'+(-cy.diff):'0'):'–',cy.decided?(cy.diff>0?'ia-loss':'ia-fit'):'dimv');
+  // 2026-10-08: 칸 = 출고 · 반납 · 사용(출고−반납) · 판매(시공보고). 로스는 오른쪽 위 칩에
+  if(cy.open)return m(cy.carry?'이월+출고':'출고',cy.carry+cy.out)+m('반납','–','dimv')+m('차 잔량',cy.remain,cy.remain<0?'ia-loss':'')+m('판매',cy.used);
+  if(cy.st==='noout')return m('출고','–','dimv')+m('반납',cy.inn)+m('사용','–','dimv')+m('판매',cy.used);
+  return m(cy.carry?'이월+출고':'출고',cy.carry+cy.out)+m('반납',cy.inn)+m('사용',cy.use)+m('판매',cy.used);
 }
 function prodLabel(j){const k=X.prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t);if(k)return k.replace('1M ','1M·');return /이전설치/.test(String(j.category||'')+String(j.time||''))?'이전설치':'제품 미정'}
 function upcomingHTML(v,up,from){ // 갈 현장: 선택 날짜 이후 이 차량의 첫 시공일 목록 (출고 전 실을 양 참고)
@@ -423,7 +425,7 @@ function cardHTML(v){ // 카드 = 차량 × 달력 날짜(작업일). 그날 출
     if(cur.st==='norec')foot.push(`<b style="color:var(--red)">출고·반납 기록이 없어요</b> — 시공 ${cur.jobs.length}곳은 갔어요. 기억나는 대로 [출고]·[반납]을 넣어 주세요`);
     if(cur.st==='noout')foot.push(`<b style="color:var(--dm-amber)">출고 기록이 없어요</b> — 출고를 넣으면 로스가 계산돼요`);
     if(cur.lateOut)foot.push(`<b style="color:var(--dm-amber)">반납 뒤에 찍은 출고 ${cur.lateOut}장</b> — 다음 날 것이면 ${admin()?'[출고]로 열어 날짜를 옮겨 주세요':'당번이 작업일을 옮기면 돼요'}`);
-    if(cur.open&&cur.remain<0)foot.push(`출고보다 <b>${-cur.remain}장</b> 더 썼어요 — 출고 기록 확인`);
+    if(cur.open&&cur.remain<0)foot.push(`출고보다 판매가 <b>${-cur.remain}장</b> 많아요 — 출고 기록 확인`);
     if(cur.miss.length)foot.push(`시공보고 미입력 <b>${cur.miss.length}건</b> — 들어오면 자동 반영`);
     if(!cur.open&&cur.carryWait&&(cur.carryWait.miss||cur.carryWait.asMiss))foot.push(`이월해 준 날${carrySrc?'('+esc(U.fmtMD(carrySrc))+')':''}의 시공보고 미입력 <b>${(cur.carryWait.miss||0)+(cur.carryWait.asMiss||0)}건</b> — 들어오면 확정`);
     if(!cur.open&&(cur.future||[]).length)foot.push(`아직 안 간 시공 <b>${cur.future.length}건</b> — 시공 뒤 시공보고가 들어오면 확정`);
@@ -459,9 +461,9 @@ function monthHTML(vehs,from,to){
     ['out','used','inn','diff','n','und','noret','loss','scrap'].forEach(f=>tot[f]+=t[f]);
     const stTxt=[t.n?'확정 '+t.n+'일':'',t.und?'대기 '+t.und:'',t.noret?'반납 없음 '+t.noret:''].filter(Boolean).join(' · ')||'기록 없음';
     h+=`<div class="ia-team cy-card"><div class="ia-teamtop"><span class="ia-teamname">${esc(v.plate)}<small style="font-size:13px">${esc(ds[ds.length-1].crew.join('·'))}</small></span><span class="ia-status ${t.noret||t.diff>0?'bad':t.n?'ok':''}">${stTxt}</span></div>
-      <div class="ia-metrics"><div><span>출고</span><b>${t.out}</b><small>장</small></div><div><span>사용</span><b>${t.used}</b><small>장</small></div><div><span>반납</span><b>${t.inn}</b><small>장</small></div><div><span>로스</span><b class="${t.diff>0?'ia-loss':t.n?'ia-fit':'dimv'}">${t.n?(t.diff>0?'−'+t.diff:t.diff<0?'+'+(-t.diff):'0'):'–'}</b><small>장</small></div></div></div>`;
+      <div class="ia-metrics"><div><span>출고</span><b>${t.out}</b><small>장</small></div><div><span>반납</span><b>${t.inn}</b><small>장</small></div><div><span>판매</span><b>${t.used}</b><small>장</small></div><div><span>로스</span><b class="${t.diff>0?'ia-loss':t.n?'ia-fit':'dimv'}">${t.n?(t.diff>0?'−'+t.diff:t.diff<0?'+'+(-t.diff):'0'):'–'}</b><small>장</small></div></div></div>`;
   });
-  h+=`<div class="ia-tiny" style="margin:4px 2px 12px">회사 로스 <b style="color:${tot.diff>0?'var(--red)':'var(--dm-ink)'}">${tot.diff>0?'−'+tot.diff:tot.diff<0?'+'+(-tot.diff):'0'}장</b> (−${tot.loss} / +${tot.scrap} · 확정 ${tot.n}일${tot.und?' · 대조 대기 '+tot.und+'일 제외':''}${tot.noret?' · 반납 없음 '+tot.noret+'일 제외':''}) · 출고·사용·반납은 이 달 작업일 전부, 로스는 반납해서 확정된 날만</div>`;
+  h+=`<div class="ia-tiny" style="margin:4px 2px 12px">회사 로스 <b style="color:${tot.diff>0?'var(--red)':'var(--dm-ink)'}">${tot.diff>0?'−'+tot.diff:tot.diff<0?'+'+(-tot.diff):'0'}장</b> (−${tot.loss} / +${tot.scrap} · 확정 ${tot.n}일${tot.und?' · 대조 대기 '+tot.und+'일 제외':''}${tot.noret?' · 반납 없음 '+tot.noret+'일 제외':''}) · 출고·반납·판매는 이 달 작업일 전부, 로스(판매 − 사용)는 반납해서 확정된 날만</div>`;
   return h||`<div class="ia-empty">이 달에 정산된 날이 없어요</div>`;
 }
 function cardsHTML(M,S){
@@ -505,7 +507,7 @@ function ledgerCalc(recs,o){ // 직원별 기록 계산. o.build=저장본 만�
     const stop=list=>{cut=false;const d0=firstDate(list);if(d0&&(!openFrom||d0<openFrom))openFrom=d0};
     daysOf(p,rm).forEach(c=>{ // 날짜별 장부: 반납한 날(닫힌 날)에 그날 담당에게 로스·자투리 (이월분 포함)
       const settled=!c.open&&c.decided&&c.D>=CY_START&&c.D<=to;
-      const put=()=>c.crew.forEach(n=>add(n,{date:c.D,amt:-c.diff,kind:'cycle',note:p+' · '+(c.carry?'이월 '+c.carry+' ':'')+'출고 '+c.out+' 사용 '+c.used+' 반납 '+c.inn,used:c.used,plate:p,startTs:c.startTs,D:c.D}));
+      const put=()=>c.crew.forEach(n=>add(n,{date:c.D,amt:-c.diff,kind:'cycle',note:p+' · '+(c.carry?'이월 '+c.carry+' ':'')+'출고 '+c.out+' 반납 '+c.inn+' 판매 '+c.used,used:c.used,plate:p,startTs:c.startTs,D:c.D}));
       if(!o.build){if(settled)put();return}
       if(!cut)return;
       if(c.open){if(!c.virtual)pend.push(c);return}
@@ -557,7 +559,7 @@ function calHTML(name,ym,all){
     cells+=`<div class="cy-cell${ds===today?' today':''}"><span class="n">${d}</span>${b?`<span class="v ${b.amt<0?'bad':b.amt>0?'ok':'zero'}">${b.amt>0?'+':''}${b.amt}</span>${b.as?'<span class="as">AS</span>':''}`:''}</div>`}
   const S=personSum(all);const first0=(all&&all.length)?all[0].date:'';
   return `<div class="cy-cal"><div class="ttl"><span>${esc(name)}</span><small>${first0?esc(U.fmtMD(first0))+'부터':''}</small></div>
-    <div class="cy-sum" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div><span>로스 누적</span><b class="${S.net<0?'bad':S.net>0?'ok':''}">${S.net>0?'+':''}${S.net}</b>${S.as?`<span style="margin-top:3px">하자 AS −${S.as}장 ${S.asN}건 포함</span>`:''}</div><div><span>로스율</span><b class="${S.rate>3?'bad':''}">${S.rate==null?'–':S.rate+'%'}</b><span style="margin-top:3px">사용 ${S.used}장 기준</span></div></div>
+    <div class="cy-sum" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div><span>로스 누적</span><b class="${S.net<0?'bad':S.net>0?'ok':''}">${S.net>0?'+':''}${S.net}</b>${S.as?`<span style="margin-top:3px">하자 AS −${S.as}장 ${S.asN}건 포함</span>`:''}</div><div><span>로스율</span><b class="${S.rate>3?'bad':''}">${S.rate==null?'–':S.rate+'%'}</b><span style="margin-top:3px">판매 ${S.used}장 기준</span></div></div>
     <div class="ttl" style="margin-top:10px"><span>${m}월</span></div><div class="cy-grid">${cells}</div>
     ${entries.length?`<div class="cy-led">${entries.slice().reverse().map(e=>`<div class="r"><span>${esc(U.fmtMD(e.date))} ${e.kind==='as'?'<span style="color:var(--dm-amber)">AS</span> ':''}${esc(e.note)}</span><b class="${e.amt<0?'bad':e.amt>0?'ok':''}">${e.amt>0?'+':''}${e.amt}</b></div>`).join('')}</div>`:''}</div>`;
 }
@@ -604,7 +606,7 @@ function render(){
   let h;
   if(cy){const chip=stChip(cy);
     h=`<h3>${esc(plate)} · ${esc(U.fmtMD(D))} <span class="ia-status ${chip[0]}">${chip[1]}</span></h3>
-    <div class="ia-tiny">${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 사용 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''} − 반납 ${cy.open?'(전)':cy.inn} = ${cy.open?'잔량 '+cy.remain:cy.decided?diffTxt(cy.diff):'대조 대기'}</div>`;
+    <div class="ia-tiny">${cy.open?`${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 판매 ${cy.used} = 차 잔량 ${cy.remain} (반납 전)`:`판매 ${cy.used}${cy.asFree?' (AS 무상 '+cy.asFree+')':''} − 사용 ${cy.use} (${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 반납 ${cy.inn}) = ${cy.decided?diffTxt(cy.diff):'대조 대기'}`}</div>`;
   }else h=`<h3>${esc(plate)} · ${esc(U.fmtMD(D))} <span class="ia-status">${up.date?esc(U.fmtMD(up.date))+' 준비':'기록 없음'}</span></h3>`;
   const src=cy?cy.crewSrc:(up.date&&crewFromJobs(schedJobs(plate,up.date)).length?'스케줄':'기본');
   h+=`<label>담당${cy?'':up.date?' · '+esc(U.fmtMD(up.date)):''}</label>
@@ -670,7 +672,7 @@ function carryAck(plate,D,on){ // [이월 확인] — 일부러 반납 안 하�
 function zero(plate,D){ // 반납 0장: 그 작업일(달력 날짜)의 열린 장부를 닫음
   daysInvalidate();const cy=findDay(plate,D)||latestOf(plate).cur;
   if(!cy||!cy.open||!cy.outs.length&&!cy.carry){X.toast('반납할 출고 기록이 없어요',true);return}
-  if(!confirm(plate+' · '+U.fmtMD(cy.D)+(cy.carry?' · 이월 '+cy.carry+'장':'')+' · 출고 '+cy.out+'장 / 사용 '+cy.used+'장\n\n남은 매트가 0장이라 반납할 게 없나요?\n"반납 0장"으로 닫아요.'+(cy.remain>0?'\n\n⚠ 계산상 잔량 '+cy.remain+'장이 남아 있어야 해요. 그대로 닫으면 '+cy.remain+'장이 로스로 잡혀요.':'')))return;
+  if(!confirm(plate+' · '+U.fmtMD(cy.D)+(cy.carry?' · 이월 '+cy.carry+'장':'')+' · 출고 '+cy.out+'장 / 판매 '+cy.used+'장\n\n남은 매트가 0장이라 반납할 게 없나요?\n"반납 0장"으로 닫아요.'+(cy.remain>0?'\n\n⚠ 계산상 잔량 '+cy.remain+'장이 남아 있어야 해요. 그대로 닫으면 '+cy.remain+'장이 로스로 잡혀요.':'')))return;
   try{window.ioZeroReturn(plate,cy.D)}catch(e){X.toast('반납 0장 기록을 못 만들었어요 (iolog.js 버전 확인)',true)}
 }
 function hist(k,open){HIST_OPEN[k]=!!open}
@@ -682,7 +684,7 @@ function shareHTML(date,onlyPlate){
   plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>c.D===date).forEach(c=>{
     const chip=stChip(c);
     h+=`<div class="io-sh-veh"><div class="io-sh-vh">🚚 ${esc(p)}<small>${esc(c.crew.join(' / '))}</small></div>
-      <div class="io-sh-rc"><span>${c.carry?'이월 <b>'+c.carry+'</b> + ':''}출고 <b>${c.out}</b> − 사용 <b>${c.used}</b>${c.asFree?' (AS '+c.asFree+')':''} − 반납 <b>${c.open?'–':c.inn}</b>${c.open?' → 차 잔량 <b>'+c.remain+'</b>':' → <b>'+(c.decided?diffTxt(c.diff):'대조 대기')+'</b>'}</span><span class="io-veh-diff ${chip[0]==='bad'?'plus':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':'dim'}">${chip[1]}</span></div>
+      <div class="io-sh-rc"><span>${c.open?`${c.carry?'이월 <b>'+c.carry+'</b> + ':''}출고 <b>${c.out}</b> − 판매 <b>${c.used}</b> → 차 잔량 <b>${c.remain}</b>`:`판매 <b>${c.used}</b>${c.asFree?' (AS '+c.asFree+')':''} − 사용 <b>${c.use}</b> (${c.carry?'이월 '+c.carry+' + ':''}출고 ${c.out} − 반납 ${c.inn}) → <b>${c.decided?diffTxt(c.diff):'대조 대기'}</b>`}</span><span class="io-veh-diff ${chip[0]==='bad'?'plus':chip[0]==='ok'?'ok':chip[0]==='wait'?'warn':'dim'}">${chip[1]}</span></div>
       ${c.byProd.length?`<div class="io-rc-prod">${c.byProd.map(b=>esc(b.k)+' '+(c.open?'잔 '+b.remain:c.decided?diffTxt(b.diff):'대기')).join(' · ')}</div>`:''}
       ${!c.open&&c.crew.length?`<div class="io-rc-prod">${c.crew.map(n=>esc(n)+' '+(c.decided?netTxt(c.diff):'—')).join(' · ')} <span style="opacity:.7">(공동작업 기준)</span></div>`:''}</div>`;
   })});
@@ -691,7 +693,7 @@ function shareHTML(date,onlyPlate){
 function shareText(date,onlyPlate){
   const plates=Object.keys(vehicles()).filter(p=>!onlyPlate||NP(p)===NP(onlyPlate));const out=[];
   plates.forEach(p=>{const {list}=latestOf(p);list.filter(c=>c.D===date).forEach(c=>{
-    out.push(RN+' '+p+' · 정산 ('+cyLabel(c)+')\n담당: '+c.crew.join(' / ')+(c.carry?'\n이월 '+c.carry+'장':'')+'\n출고 '+c.out+'장\n사용 '+c.used+'장 — 시공 '+c.sold+'장'+(c.asFree?' / AS 무상 '+c.asFree+'장':'')+'\n반납 '+(c.open?'(전) · 차 잔량 '+c.remain+'장':c.inn+'장')+(c.open?'':'\n'+(c.decided?diffTxt(c.diff):'대조 대기'))+(c.decided?'\n'+c.crew.map(n=>n+': '+netTxt(c.diff)).join(' / ')+' (공동작업 기준)':'')+'\n상태: '+stChip(c)[1]);
+    out.push(RN+' '+p+' · 정산 ('+cyLabel(c)+')\n담당: '+c.crew.join(' / ')+(c.carry?'\n이월 '+c.carry+'장':'')+'\n출고 '+c.out+'장\n반납 '+(c.open?'(전) · 차 잔량 '+c.remain+'장':c.inn+'장')+(c.open?'':'\n사용 '+c.use+'장 (이월+출고−반납)')+'\n판매 '+c.used+'장 — 시공 '+c.sold+'장'+(c.asFree?' / AS 무상 '+c.asFree+'장':'')+(c.open?'':'\n로스 = 판매 − 사용 → '+(c.decided?diffTxt(c.diff):'대조 대기'))+(c.decided?'\n'+c.crew.map(n=>n+': '+netTxt(c.diff)).join(' / ')+' (공동작업 기준)':'')+'\n상태: '+stChip(c)[1]);
   })});
   return out.join('\n\n');
 }
@@ -776,29 +778,30 @@ function reportHTML(cy){
   // 기록 띠: 출고·반납 기록(시각·장수·사진) 한 줄
   const recChip=r=>`<div class="cyr-rec">${recThumb(r)}<div class="t" style="cursor:pointer" onclick="ioCycle.reportClose();ioOpen('${r.type==='in'?'in':'out'}','${esc(cy.plate)}','${esc(wOf(r))}','${esc(r.id)}')"><span class="cyr-tag ${r.type==='in'?'in':'out'}">${r.type==='in'?'반납':'출고'}</span> ${esc(U.hm(r.at))}${r.wdate&&r.wdate!==r.date?' <span style="color:var(--sub)">'+esc(U.fmtMD(r.wdate))+' 것</span>':''}<b>${recQty(r)}장${r.late?' · <span style="color:var(--yellow)">지연</span>':''}${nn(r.editN)?' · <span style="color:var(--yellow)">수정 '+nn(r.editN)+'회'+origTxt(r)+'</span>':''}</b></div></div>`;
   h+=`<div class="cyr-sec"><div class="cyr-recs">${cy.outs.map(recChip).join('')}${cy.ins.map(recChip).join('')}${cy.open?`<div class="cyr-rec"><div class="t"><span class="cyr-tag in">반납</span> 전<b>차 잔량 ${cy.remain}장</b></div></div>`:''}</div></div>`;
-  // 제품별 대조: 출고 / 사용 / 반납 나란히 + 로스
+  // 제품별 대조: 출고 / 반납 / 사용(출고−반납) / 판매 + 로스(판매−사용)
   const PO=partsByProd(cy.outs),PI=partsByProd(cy.ins);
   const keys=PRODUCTS.map(p=>p.k).filter(k=>PO[k]||PI[k]||cy.byProd.some(b=>b.k===k)).concat(Object.keys(Object.assign({},PO,PI)).filter(k=>!PRODUCTS.some(p=>p.k===k)));
-  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>제품별 대조</span><small>출고 − 사용 − 반납 = 로스</small></div>`;
-  keys.forEach(k=>{const b=cy.byProd.find(x=>x.k===k)||{out:0,inn:0,sold:0,asFree:0,scrap:0,used:0,diff:0};
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>제품별 대조</span><small>판매 − 사용(출고 − 반납) = 로스</small></div>`;
+  keys.forEach(k=>{const b=cy.byProd.find(x=>x.k===k)||{carry:0,out:0,inn:0,sold:0,asFree:0,scrap:0,used:0,use:0,diff:0,remain:0};
     const dTxt=cy.open?'잔 '+b.remain:cy.decided?diffTxt(b.diff):'대기';
     const dCls=cy.open?'dim':!cy.decided?'warn':diffCls(b.diff);
     const useQ=[b.sold?'시공 '+b.sold:'',b.asFree?'AS 무상 '+b.asFree:''].filter(Boolean).join(' · ');
     h+=`<div class="cyr-prod"><div class="cyr-ph"><span>${esc(k)}</span><span class="d ${dCls}">${dTxt}</span></div>
       ${b.carry?`<div class="cyr-pl out"><span class="cyr-tag use">이월</span><b>${b.carry}장</b><span class="q">전날 반납 안 한 잔량</span></div>`:''}
       <div class="cyr-pl out"><span class="cyr-tag out">출고</span><b>${b.out}장</b><span class="q">${esc(partsStr(PO[k]))}</span></div>
-      <div class="cyr-pl use"><span class="cyr-tag use">사용</span><b>${b.used}장</b><span class="q">${esc(useQ)}</span></div>
-      <div class="cyr-pl in"><span class="cyr-tag in">반납</span><b>${cy.open?'–':b.inn+'장'}</b><span class="q">${cy.open?'반납 전':esc(partsStr(PI[k])||'')}</span></div></div>`;
+      <div class="cyr-pl in"><span class="cyr-tag in">반납</span><b>${cy.open?'–':b.inn+'장'}</b><span class="q">${cy.open?'반납 전':esc(partsStr(PI[k])||'')}</span></div>
+      ${cy.open?'':`<div class="cyr-pl use"><span class="cyr-tag use">사용</span><b>${b.use}장</b><span class="q">${b.carry?'이월 + ':''}출고 − 반납</span></div>`}
+      <div class="cyr-pl use"><span class="cyr-tag use">판매</span><b>${b.used}장</b><span class="q">${esc(useQ)}</span></div></div>`;
   });
   h+=`</div>`;
-  // 사용 내역 (현장별)
+  // 판매 내역 (현장별)
   const useSub=[`시공 ${cy.sold}`].concat(cy.asFree?['AS 무상 '+cy.asFree]:[]).join(' · ');
-  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>사용 ${cy.used}장 · 현장</span><small>${esc(useSub)}</small></div>${cy.jobs.map(r=>`<div class="cyr-j"><span>${r.isAs?'<span style="color:var(--red)">AS</span> ':esc(r.time||'')+' '}${esc(r.addr)}${r.prod?' <span style="opacity:.75">· '+esc(r.prod)+'</span>':''}${r.asFree&&r.defect?' <span style="color:var(--yellow)">시공하자 → '+(r.prev.length?esc(r.prev.join('·'))+' −'+r.asFree:'이전작업자 미기재')+'</span>':''}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${jobLabel(r)}</b></div>`).join('')||'<div class="cyr-j"><span>연결된 시공 없음</span></div>'}</div>`;
+  h+=`<div class="cyr-sec"><div class="cyr-sh"><span>판매 ${cy.used}장 · 현장</span><small>${esc(useSub)}</small></div>${cy.jobs.map(r=>`<div class="cyr-j"><span>${r.isAs?'<span style="color:var(--red)">AS</span> ':esc(r.time||'')+' '}${esc(r.addr)}${r.prod?' <span style="opacity:.75">· '+esc(r.prod)+'</span>':''}${r.asFree&&r.defect?' <span style="color:var(--yellow)">시공하자 → '+(r.prev.length?esc(r.prev.join('·'))+' −'+r.asFree:'이전작업자 미기재')+'</span>':''}</span><b class="${r.st==='miss'||r.st==='asmiss'?'miss':r.asFree?'free':''}">${jobLabel(r)}</b></div>`).join('')||'<div class="cyr-j"><span>연결된 시공 없음</span></div>'}</div>`;
   // 합계
   const totCls=cy.decided?diffCls(cy.diff):'warn';
   const totTxt=cy.open?'반납 후 확정':cy.decided?(cy.diff===0?'일치 · 로스 0':cy.diff>0?'로스 −'+cy.diff+'장':'로스 +'+(-cy.diff)+'장 (가져간 것보다 더 깖)'):'대조 대기';
   const waitWhy=[].concat(cy.miss.length?['시공보고 미입력 '+cy.miss.length]:[]).concat(cy.asMiss.length?['AS보고 없음 '+cy.asMiss.length]:[]).join(' · ');
-  h+=`<div class="cyr-sec"><div class="cyr-tot" style="margin-top:0;padding-top:0;border-top:none"><span>합계 · ${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 사용 ${cy.used} − 반납 ${cy.open?'–':cy.inn}</span><span class="${cy.open?'':totCls}">${cy.open?'잔량 '+cy.remain+'장':totTxt}</span></div>
+  h+=`<div class="cyr-sec"><div class="cyr-tot" style="margin-top:0;padding-top:0;border-top:none"><span>합계 · ${cy.open?`${cy.carry?'이월 '+cy.carry+' + ':''}출고 ${cy.out} − 판매 ${cy.used}`:`판매 ${cy.used} − 사용 ${cy.use}`}</span><span class="${cy.open?'':totCls}">${cy.open?'잔량 '+cy.remain+'장':totTxt}</span></div>
     ${waitWhy&&!cy.open?`<div class="cyr-note" style="text-align:left;margin-top:4px">${esc(waitWhy)} — 들어오면 자동 반영</div>`:''}
     ${!cy.open&&cy.crew.length?`<div class="cyr-people">${cy.crew.map(n=>`<span>${esc(n)} <b class="${cy.decided&&cy.diff>0?'bad':''}">${cy.decided?netTxt(cy.diff):'—'}</b></span>`).join('')}<span>공동작업 기준</span></div>`:''}
     ${cy.ov&&cy.ov.confirm?`<div class="cyr-note">확정 ${esc(cy.ov.confirm.by||'')} ${esc(String(cy.ov.confirm.at||'').slice(5,16))}</div>`:''}</div>`;
@@ -814,9 +817,9 @@ function reportText(cy){
   cy.ins.forEach(r=>L.push('반납 '+U.hm(r.at)+' '+recQty(r)+'장'));
   if(cy.carry)L.push('이월 '+cy.carry+'장 (전날 반납 안 한 잔량)');
   if(cy.open)L.push('반납 전 · 차 잔량 '+cy.remain+'장');
-  cy.byProd.forEach(b=>{L.push('· '+b.k+': 출고 '+b.out+(PO[b.k]&&partsStr(PO[b.k])?' ('+partsStr(PO[b.k])+')':'')+' / 사용 '+b.used+' / 반납 '+(cy.open?'–':b.inn+(PI[b.k]&&partsStr(PI[b.k])?' ('+partsStr(PI[b.k])+')':''))+' → '+(cy.open?'잔 '+b.remain:cy.decided?diffTxt(b.diff):'대기'))});
-  L.push('사용 '+cy.used+'장 (시공 '+cy.sold+(cy.asFree?' / AS 무상 '+cy.asFree:'')+')');cy.jobs.forEach(r=>{L.push('  '+(r.isAs?'AS ':'')+r.addr+' — '+jobLabel(r)+(r.asFree&&r.defect&&r.prev.length?' (시공하자 → '+r.prev.join('·')+' −'+r.asFree+')':''))});
-  L.push('합계: '+(cy.open?'반납 후 확정':cy.decided?diffTxt(cy.diff):'대조 대기'));
+  cy.byProd.forEach(b=>{L.push('· '+b.k+': 출고 '+b.out+(PO[b.k]&&partsStr(PO[b.k])?' ('+partsStr(PO[b.k])+')':'')+' / 반납 '+(cy.open?'–':b.inn+(PI[b.k]&&partsStr(PI[b.k])?' ('+partsStr(PI[b.k])+')':''))+(cy.open?'':' / 사용 '+b.use)+' / 판매 '+b.used+' → '+(cy.open?'잔 '+b.remain:cy.decided?diffTxt(b.diff):'대기'))});
+  L.push('판매 '+cy.used+'장 (시공 '+cy.sold+(cy.asFree?' / AS 무상 '+cy.asFree:'')+')');cy.jobs.forEach(r=>{L.push('  '+(r.isAs?'AS ':'')+r.addr+' — '+jobLabel(r)+(r.asFree&&r.defect&&r.prev.length?' (시공하자 → '+r.prev.join('·')+' −'+r.asFree+')':''))});
+  L.push('합계: '+(cy.open?'반납 후 확정':'판매 '+cy.used+' − 사용 '+cy.use+' = '+(cy.decided?diffTxt(cy.diff):'대조 대기')));
   if(!cy.open&&cy.decided)L.push(cy.crew.map(n=>n+': '+netTxt(cy.diff)).join(' / ')+' (공동작업 기준)');
   L.push('상태: '+stChip(cy)[1]);
   return L.join('\n');
