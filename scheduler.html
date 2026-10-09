@@ -323,7 +323,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.10.08.116';
+const VER='2026.10.09.117';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -723,7 +723,7 @@ const csvRow=i; // 시트 기록용 행번호는 별도 보관
 const doff=[]; // 휴무는 OFFS에서 가져옴
 if(OFFS[ds])OFFS[ds].forEach(n=>doff.push(n));
 const _recv=_recvIdx>=0?(r[_recvIdx]||'').trim():'';
-J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim(),sold:parseInt(String(r[24]||'').replace(/[^0-9]/g,''))||0,reportAt:(r[30]||'').trim(),receivedAt:_recv})}}
+J.push({id,csvRow,time:r[0],category:r[1]||'',addr:r[3]||'',date:ds,phone:r[4]||'',chatUrl:r[18]||'',channelName:r[19]||'',py:r[6]||'',scope:r[7]||'',doff,mat,dist:0,isNew:false,sasu:(r[10]||'').trim(),busasu:(r[11]||'').trim(),vehicle:(r[12]||'').trim(),color:(r[20]||'').trim(),sold:parseInt(String(r[24]||'').replace(/[^0-9]/g,''))||0,reportAt:(r[30]||'').trim(),receivedAt:_recv})}}
 
 function accumRecvDaily(text,reset){
 if(reset)recvDaily={};
@@ -1395,7 +1395,7 @@ if(typeof reportJobId!=='undefined'&&reportJobId){
   if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
     const _rjob=J.find(jj=>jj.id===reportJobId)||{};
     const sheetRow=(_rjob.csvRow||0)+1;
-    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob.date||'',address:_rjob.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{});
+    fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob.date||'',address:_rjob.addr||'',...reportData,time:_rjob.time||'',schedPhone:_rjob.phone||'',jobId:reportJobId})}).then(r=>r.text()).then(t=>{t=String(t||'').trim();if(t&&t!=='ok')showCustomerToast('⚠️ 시트에 기록 안 됨 — '+({'row mismatch':'이 집 줄을 못 찾음','empty row':'빈 줄','no row':'행 번호 없음'}[t]||t)+' (당번에게 알려 주세요)')}).catch(()=>{}); // 2026-10-09: 시간대·시트 연락처 동봉(서버가 전화로 줄 찾음) + 응답 확인
   }
 }
 showCustomerToast('✅ 시공보고서 저장 완료!');
@@ -1496,6 +1496,10 @@ showCustomerToast('📋 고객안내 메시지 복사 완료!');
 
 function submitReport(){
 const g=id=>document.getElementById(id).value;
+// 2026-10-09: 같은 단지 두 줄에서 다른 집 줄의 [보고서]를 잘못 연 채 제출하는 걸 막음 — 고른 색상이 이 줄의 예약 제품과 다르면 한 번 확인 (10/9 동탄 203호·1101호 건 자체는 서버가 주소 앞 12자로 줄을 찾던 버그 → Code.gs handleReportToScheduleV2로 해결)
+{const _rj=J.find(jj=>jj.id===reportJobId)||{};const _sched=String(_rj.mat&&_rj.mat[0]&&_rj.mat[0].t||'').trim();const _pick=String(g('rColor')||'').replace(/\(.*\)$/,'').trim();
+ if(_sched&&_pick&&_pick!=='미정'&&_sched!=='미정'&&_sched!==_pick){const _unit=(String(_rj.addr||'').match(/(\d+동\s*\d*호?)/)||[])[1]||'';
+  if(!confirm('이 줄은 '+_sched+' 예약이에요'+(_unit?' ('+_unit+')':'')+'.\n'+_pick+'(으)로 보고하는 게 맞아요?\n\n같은 단지 다른 집이면 [취소] 누르고 그 집 줄의 [보고서]를 여세요.'))return}}
 const txt=`📋 시공보고서
 1. 시공일자 : ${g('rDate')}
 2. 추천인 : ${g('rRef')}
@@ -1531,7 +1535,7 @@ fbSave('reports/'+reportJobId,reportData);
 if(typeof SHEET_REPORT_URL!=='undefined'&&SHEET_REPORT_URL){
 const _rjob2=J.find(jj=>jj.id===reportJobId)||{};
 const sheetRow=(_rjob2.csvRow||0)+1;
-fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob2.date||'',address:_rjob2.addr||'',...reportData,jobId:reportJobId})}).catch(()=>{})}
+fetch(SHEET_REPORT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'reportToSchedule',scheduleTeam:'부산',row:sheetRow,date:_rjob2.date||'',address:_rjob2.addr||'',...reportData,time:_rjob2.time||'',schedPhone:_rjob2.phone||'',jobId:reportJobId})}).then(r=>r.text()).then(t=>{t=String(t||'').trim();if(t&&t!=='ok')showSubmitToast('⚠️ 시트에 기록 안 됨 — '+({'row mismatch':'이 집 줄을 못 찾음','empty row':'빈 줄','no row':'행 번호 없음'}[t]||t)+' (당번에게 알려 주세요)')}).catch(()=>{})} // 2026-10-09: 시간대·시트 연락처 동봉 + 응답 확인
 
 // 시공보고서 텍스트 복사
 try{navigator.clipboard.writeText(txt).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);})}catch(e){}
