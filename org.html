@@ -575,6 +575,17 @@
   .ev-admin{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
   .ev-admin .section-title{margin:0 0 10px}
   .ev-admin .section-title h2{font-size:15px}
+  /* 후기 캐시백 블록 · 2026-10-12 */
+  .rc-wrap{margin-top:26px}
+  .rc-chart{width:100%;height:auto;display:block;overflow:visible}
+  .rc-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 0 2px}
+  .rc-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .rc-legend button{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;display:flex;align-items:center}
+  .rc-legend button.off{opacity:.35;text-decoration:line-through}
+  .rc-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  @media(max-width:900px){.rc-grid{grid-template-columns:1fr}}
+  .rc-tip{position:absolute;pointer-events:none;background:#212B36;color:#fff;font-size:12px;padding:7px 10px;border-radius:8px;white-space:nowrap;z-index:5;display:none;line-height:1.5}
+  .rc-bar:hover rect{opacity:.85}
 </style>
 </head>
 <body>
@@ -1183,6 +1194,40 @@
         <thead><tr><th>날짜</th><th>카테고리</th><th style="text-align:right">금액</th><th>메모</th><th>작성자</th><th style="width:60px"></th></tr></thead>
         <tbody id="budSpendBody"></tbody>
       </table></div>
+
+      <!-- 후기 캐시백 · 시트 자동 집계 · 2026-10-12 -->
+      <div class="rc-wrap" id="rcWrap">
+        <div class="section-title"><h2>후기 캐시백</h2><span class="hint" id="rcHint">불러오는 중…</span>
+          <span style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="rcReload">새로고침 ↻</button><button class="btn" id="rcSetBtn">예산 기준 설정</button></span></div>
+        <div class="grid kpis" id="rcCards"><div class="hint">불러오는 중…</div></div>
+        <div class="rc-grid">
+          <div class="card" style="padding:18px 20px;position:relative">
+            <div style="font-weight:700;font-size:13.5px;margin-bottom:4px">월별 후기이벤트 비용</div>
+            <div class="hint" style="margin-bottom:8px">막대 = 캐시백 이체분 + 계약후기 현장할인(3만원) + 공동구매 할인(판매금액 3%) · 선 = 시공 1건당 비용</div>
+            <div class="rc-legend" id="rcLegend1"></div>
+            <div id="rcChart1"></div>
+            <div class="rc-tip" id="rcTip"></div>
+          </div>
+          <div class="card" style="padding:18px 20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+              <div style="font-weight:700;font-size:13.5px">플랫폼별 참여율</div>
+              <select id="rcMonthSel" style="width:auto;padding:5px 8px;font-size:12px"></select>
+            </div>
+            <div class="hint" style="margin-bottom:8px">선택한 달 참여자 중 미션 완료 비율 · 괄호는 전월 대비</div>
+            <div id="rcMissionBars"></div>
+          </div>
+        </div>
+        <div class="card" style="padding:18px 20px;margin-top:16px;position:relative">
+          <div style="font-weight:700;font-size:13.5px;margin-bottom:4px">플랫폼별 참여율 추이</div>
+          <div class="hint" style="margin-bottom:8px">범례를 누르면 숨기거나 다시 볼 수 있어요</div>
+          <div class="rc-legend" id="rcLegend2"></div>
+          <div id="rcChart2"></div>
+        </div>
+        <div class="table-wrap" style="margin-top:16px"><table>
+          <thead><tr><th>월</th><th style="text-align:right">시공</th><th style="text-align:right">참여</th><th style="text-align:right">참여율</th><th style="text-align:right">캐시백 이체분</th><th style="text-align:right">계약후기 할인</th><th style="text-align:right">공동구매 할인</th><th style="text-align:right">총비용</th><th style="text-align:right">건당</th><th style="text-align:right">미지급</th><th style="text-align:right">예산</th></tr></thead>
+          <tbody id="rcBody"></tbody>
+        </table></div>
+      </div>
     </section>
 
     <section id="events" class="section">
@@ -1208,6 +1253,21 @@
     </section>
   </main>
 </div>
+
+<!-- 후기 캐시백: 예산 기준 설정 모달 -->
+<dialog id="rcModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><strong>후기 캐시백 예산 기준</strong><button class="mini-btn" onclick="rcModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr 1fr">
+      <label>시공 1건당 단가 (원) <input id="rcUnit" type="number" min="0" step="1000"><span class="hint" id="rcUnitHint"></span></label>
+      <label>예상 월 시공건수 <input id="rcJobs" type="number" min="0" step="10"><span class="hint" id="rcJobsHint"></span></label>
+      <div style="grid-column:1/-1;background:var(--panel2);border-radius:12px;padding:12px 14px;font-size:13px">추천 예산 = 단가 × 예상 시공건수 = <b id="rcSuggest">—</b></div>
+      <label style="grid-column:1/-1"><span id="rcPlanLabel">이달 예산 (원)</span> <input id="rcPlan" type="number" min="0" step="100000"><span class="hint">비워두면 예산 미설정 · 아래 버튼으로 추천값을 채울 수 있어요</span></label>
+      <div style="grid-column:1/-1;display:flex;gap:8px"><button class="btn" id="rcFillBtn" type="button">추천값으로 채우기</button></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="rcModal.close()">취소</button><button class="btn primary" id="rcSaveBtn">저장</button></div>
+  </form>
+</dialog>
 
 <!-- 이벤트: 관리자용 추가/수정 모달 -->
 <dialog id="evModal">
@@ -2571,6 +2631,15 @@ function renderBudget(){
     totSpent += spentBy[id];
     body += rowHtml('<span class="hint">삭제된 카테고리</span>', 0, spentBy[id], "");
   });
+  { // 후기 캐시백 자동 행 (시트 집계) · 2026-10-12
+    const rb = data.reviewBudget || {}, rp = Number((rb.plans || {})[budYm]) || 0;
+    const rm = (window.__rc.months || []).find(m => m.ym === budYm);
+    const rs = rm ? (rm.grand || 0) : 0;
+    totPlan += rp; totSpent += rs;
+    body += rowHtml('후기 캐시백 <span class="hint" style="font-weight:400">· 시트 자동</span>', rp, rs,
+      `<button class="mini-btn" onclick="rcOpenSettings('${budYm}')">예산</button>
+       <button class="mini-btn" onclick="goView('budget');document.getElementById('rcWrap').scrollIntoView({behavior:'smooth'})">상세</button>`);
+  }
   $("budBody").innerHTML = body || `<tr><td colspan="6" class="hint">카테고리가 없습니다. 오른쪽 위 [카테고리 추가]로 시작하세요. (예: 메타 광고, 네이버 광고, 체험단, 콘텐츠 제작)</td></tr>`;
 
   const remainTot = totPlan - totSpent;
@@ -3025,7 +3094,7 @@ function renderAll(){
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
    renderTiers, renderDecisionTable, renderForms, renderMeetings,
-   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance, renderBudget, renderEvents, renderStockSummary, renderFilm].forEach(fn => {
+   renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance, renderBudget, renderEvents, renderStockSummary, renderFilm, renderReviewCashback].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
   ensureUser(); renderWho();
@@ -3064,6 +3133,210 @@ async function loadLiveKPI(){
   if (data) renderKpis();
 }
 loadLiveKPI();
+
+/* ───────── 후기 캐시백 (시트 자동 집계) · 2026-10-12 ───────── */
+window.__rc = { months: null, hidden: {} };
+const RC_MISSIONS = [
+  {key:"contract", name:"계약 후기", color:"#00915E"}, {key:"review1", name:"첫날 후기①", color:"#E8A23D"},
+  {key:"review2", name:"첫날 후기②", color:"#F2C879"}, {key:"mamitalk", name:"마미톡", color:"#5B8DEF"},
+  {key:"instagram", name:"인스타", color:"#C0569A"}, {key:"chatroom", name:"카톡방", color:"#8E6DE0"},
+  {key:"threads", name:"쓰레드", color:"#2EB7B7"}, {key:"review_month", name:"한달 후기", color:"#E25555"}
+];
+const RC_STACK = [
+  {key:"transfer", name:"캐시백 이체분", color:"#00B173"},
+  {key:"contractDiscount", name:"계약후기 현장할인", color:"#9FE0C5"},
+  {key:"groupBuyDiscount", name:"공동구매 할인", color:"#E8A23D"}
+];
+const rcMan = n => Math.round((Number(n) || 0) / 10000).toLocaleString() + "만";
+const rcYmLabel = ym => ym ? ym.slice(2, 4) + "." + ym.slice(5, 7) : "";
+const rcThisYm = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); };
+const rcPrevYm = ym => { const [y, m] = ym.split("-").map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); };
+
+async function rcLoad(force){
+  const hint = $("rcHint"); if (!hint) return;
+  hint.textContent = "불러오는 중…";
+  try {
+    const j = await fetch(APPS_SCRIPT_URL + "?type=reviewMonthly" + (force ? "&_=" + Date.now() : "")).then(r => r.json());
+    if (!j || !j.success) throw new Error((j && j.error) || "응답 오류");
+    window.__rc.months = j.months || [];
+    window.__rc.at = new Date();
+    renderReviewCashback();
+    try { renderBudget(); } catch(_){}
+  } catch(e){
+    console.error("reviewMonthly", e);
+    hint.textContent = "시트 데이터를 불러오지 못했습니다 — Code.gs에 reviewMonthly 라우팅이 필요해요";
+    $("rcCards").innerHTML = '<div class="hint">데이터 없음</div>';
+  }
+}
+function rcPlanOf(ym){ return Number((((data || {}).reviewBudget || {}).plans || {})[ym]) || 0; }
+
+function renderReviewCashback(){
+  const ms = window.__rc.months; if (!ms || !$("rcCards")) return;
+  const thisYm = rcThisYm();
+  const cur = ms.find(m => m.ym === thisYm) || { ym: thisYm, jobs:0, participants:0, total:0, grand:0, remain:0, transfer:0, contractDiscount:0, groupBuyDiscount:0, perJob:0, rate:0, missions:{} };
+  const closed = ms.filter(m => m.ym < thisYm).slice(-3);          // 최근 3개월(마감된 달) 평균
+  const avgPerJob = closed.length ? Math.round(closed.reduce((s, m) => s + (m.perJob || 0), 0) / closed.length) : 0;
+  const avgRate = closed.length ? Math.round(closed.reduce((s, m) => s + (m.rate || 0), 0) / closed.length) : 0;
+  const pendingAll = ms.reduce((s, m) => s + (m.remain || 0), 0);
+  const plan = rcPlanOf(thisYm);
+  const pct = plan ? Math.round(cur.grand / plan * 100) : 0;
+  const at = window.__rc.at;
+  $("rcHint").textContent = `${ms[0] ? rcYmLabel(ms[0].ym) : ""}~${rcYmLabel(thisYm)} · 후기이벤트·캐시백지급로그·시공스케줄·월별퍼널 시트 집계` + (at ? ` · ${String(at.getHours()).padStart(2,"0")}:${String(at.getMinutes()).padStart(2,"0")} 갱신` : "");
+
+  $("rcCards").innerHTML =
+    dashCard("이달 예산", plan ? rcMan(plan) : "—", plan ? "원" : "", plan ? `집행 ${pct}%` : "예산 기준 설정에서 입력") +
+    dashCard("이달 총비용", rcMan(cur.grand), "원", `이체 ${rcMan(cur.transfer)} · 계약후기 ${rcMan(cur.contractDiscount)} · 공구 ${rcMan(cur.groupBuyDiscount)}`) +
+    dashCard("이달 참여", cur.participants, "명", `시공 ${cur.jobs}건 · 참여율 ${cur.rate}%`) +
+    dashCard("시공 1건당 (최근 3개월)", avgPerJob.toLocaleString(), "원", `참여율 평균 ${avgRate}% · 추천 예산 산정 근거`) +
+    dashCard("미지급 잔여", rcMan(pendingAll), "원", `전체 기간 누적 · 다음 달 이월분`);
+
+  rcDrawCostChart(ms);
+  rcDrawMissionTrend(ms);
+  // 월 선택
+  const sel = $("rcMonthSel");
+  const prevVal = sel.value;
+  sel.innerHTML = ms.slice().reverse().map(m => `<option value="${m.ym}">${m.ym.replace("-", "년 ")}월</option>`).join("");
+  const defYm = (prevVal && ms.some(m => m.ym === prevVal)) ? prevVal : (ms.length > 1 ? ms[ms.length - 2].ym : (ms[0] || {}).ym);
+  sel.value = defYm;
+  rcDrawMissionBars(defYm);
+
+  $("rcBody").innerHTML = ms.slice().reverse().map(m => {
+    const p = rcPlanOf(m.ym);
+    const over = p && m.grand > p;
+    return `<tr>
+      <td><b>${m.ym.replace("-", ".")}</b>${m.ym === thisYm ? ' <span class="hint">진행 중</span>' : ""}</td>
+      <td style="text-align:right">${m.jobs}</td>
+      <td style="text-align:right">${m.participants}</td>
+      <td style="text-align:right">${m.rate}%</td>
+      <td style="text-align:right">${rcMan(m.transfer)}</td>
+      <td style="text-align:right">${rcMan(m.contractDiscount)}</td>
+      <td style="text-align:right">${rcMan(m.groupBuyDiscount)} <span class="hint">${m.groupBuyCount}건</span></td>
+      <td style="text-align:right"><b>${rcMan(m.grand)}</b></td>
+      <td style="text-align:right">${(m.perJob || 0).toLocaleString()}</td>
+      <td style="text-align:right;${m.remain > 0 ? "color:var(--warn)" : ""}">${m.remain ? rcMan(m.remain) : "—"}</td>
+      <td style="text-align:right;${over ? "color:var(--bad);font-weight:700" : ""}">${p ? rcMan(p) + (over ? " 초과" : "") : '<span class="hint">—</span>'}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="11" class="hint">데이터가 없습니다.</td></tr>`;
+}
+
+function rcDrawCostChart(ms){
+  const W = 720, H = 250, padL = 48, padR = 44, padT = 14, padB = 30;
+  const n = ms.length; if (!n){ $("rcChart1").innerHTML = '<div class="hint">데이터 없음</div>'; return; }
+  const maxV = Math.max(1, ...ms.map(m => m.grand || 0), ...ms.map(m => rcPlanOf(m.ym)));
+  const maxP = Math.max(1, ...ms.map(m => m.perJob || 0));
+  const slot = (W - padL - padR) / n, bw = Math.min(40, slot * 0.6);
+  const y = v => padT + (H - padT - padB) * (1 - v / maxV);
+  const yp = v => padT + (H - padT - padB) * (1 - v / maxP);
+  let svg = `<svg class="rc-chart" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for (let i = 0; i <= 4; i++){
+    const v = maxV * i / 4, yy = y(v);
+    svg += `<line x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}" stroke="#E6EBE9" stroke-width="1"/>`;
+    svg += `<text x="${padL - 6}" y="${yy + 4}" font-size="10" fill="#7B8784" text-anchor="end">${Math.round(v/10000).toLocaleString()}만</text>`;
+  }
+  ms.forEach((m, i) => {
+    const cx = padL + slot * i + slot / 2, x = cx - bw / 2;
+    let base = 0;
+    const tip = `${m.ym.replace("-", ".")} · 총 ${rcMan(m.grand)}원&#10;이체 ${rcMan(m.transfer)} · 계약후기 ${rcMan(m.contractDiscount)} · 공구 ${rcMan(m.groupBuyDiscount)}&#10;시공 ${m.jobs}건 · 건당 ${(m.perJob||0).toLocaleString()}원`;
+    svg += `<g class="rc-bar" data-tip="${tip}">`;
+    RC_STACK.forEach(s => {
+      const v = m[s.key] || 0; if (!v) return;
+      const y1 = y(base + v), y2 = y(base);
+      svg += `<rect x="${x}" y="${y1}" width="${bw}" height="${Math.max(0, y2 - y1)}" fill="${s.color}" rx="2"/>`;
+      base += v;
+    });
+    const p = rcPlanOf(m.ym);
+    if (p) svg += `<line x1="${x - 4}" x2="${x + bw + 4}" y1="${y(p)}" y2="${y(p)}" stroke="#E25555" stroke-width="2" stroke-dasharray="4 3"/>`;
+    svg += `<rect x="${padL + slot * i}" y="${padT}" width="${slot}" height="${H - padT - padB}" fill="transparent"/></g>`;
+    svg += `<text x="${cx}" y="${H - padB + 16}" font-size="11" fill="#5B6763" text-anchor="middle">${rcYmLabel(m.ym)}</text>`;
+  });
+  const pts = ms.map((m, i) => `${padL + slot * i + slot / 2},${yp(m.perJob || 0)}`);
+  svg += `<polyline points="${pts.join(" ")}" fill="none" stroke="#212B36" stroke-width="2" stroke-linejoin="round"/>`;
+  ms.forEach((m, i) => { svg += `<circle cx="${padL + slot * i + slot / 2}" cy="${yp(m.perJob || 0)}" r="3.5" fill="#fff" stroke="#212B36" stroke-width="2"/>`; });
+  for (let i = 0; i <= 2; i++){ const v = maxP * i / 2; svg += `<text x="${W - padR + 6}" y="${yp(v) + 4}" font-size="10" fill="#7B8784">${Math.round(v/1000)}천</text>`; }
+  svg += `</svg>`;
+  $("rcChart1").innerHTML = svg;
+  $("rcLegend1").innerHTML = RC_STACK.map(s => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join("") +
+    `<span><i style="background:#212B36;height:2px;vertical-align:3px"></i>시공 1건당(우측축)</span><span><i style="background:#E25555;height:2px;vertical-align:3px"></i>월 예산</span>`;
+  const tipEl = $("rcTip"), card = $("rcChart1").parentElement;
+  $("rcChart1").querySelectorAll(".rc-bar").forEach(g => {
+    g.onmousemove = e => { const r = card.getBoundingClientRect(); tipEl.style.display = "block"; tipEl.innerHTML = g.dataset.tip.replace(/\n/g, "<br>"); tipEl.style.left = (e.clientX - r.left + 12) + "px"; tipEl.style.top = (e.clientY - r.top - 10) + "px"; };
+    g.onmouseleave = () => { tipEl.style.display = "none"; };
+  });
+}
+
+function rcDrawMissionTrend(ms){
+  const W = 720, H = 220, padL = 36, padR = 16, padT = 12, padB = 28;
+  const n = ms.length; if (n < 2){ $("rcChart2").innerHTML = '<div class="hint">두 달 이상 쌓이면 추세가 보여요</div>'; return; }
+  const slot = (W - padL - padR) / (n - 1);
+  const y = v => padT + (H - padT - padB) * (1 - v / 100);
+  let svg = `<svg class="rc-chart" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  [0, 25, 50, 75, 100].forEach(v => { svg += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="#E6EBE9"/><text x="${padL - 6}" y="${y(v) + 4}" font-size="10" fill="#7B8784" text-anchor="end">${v}%</text>`; });
+  ms.forEach((m, i) => { svg += `<text x="${padL + slot * i}" y="${H - padB + 16}" font-size="11" fill="#5B6763" text-anchor="middle">${rcYmLabel(m.ym)}</text>`; });
+  RC_MISSIONS.forEach(s => {
+    if (window.__rc.hidden[s.key]) return;
+    const pts = ms.map((m, i) => { const p = m.participants ? Math.round((m.missions || {})[s.key] / m.participants * 100) : 0; return [padL + slot * i, y(p), p]; });
+    svg += `<polyline points="${pts.map(p => p[0] + "," + p[1]).join(" ")}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach(p => { svg += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${s.color}"><title>${s.name} ${p[2]}%</title></circle>`; });
+  });
+  svg += `</svg>`;
+  $("rcChart2").innerHTML = svg;
+  $("rcLegend2").innerHTML = RC_MISSIONS.map(s => `<button class="${window.__rc.hidden[s.key] ? "off" : ""}" data-k="${s.key}"><i style="background:${s.color}"></i>${s.name}</button>`).join("");
+  $("rcLegend2").querySelectorAll("button").forEach(b => { b.onclick = () => { window.__rc.hidden[b.dataset.k] = !window.__rc.hidden[b.dataset.k]; rcDrawMissionTrend(ms); }; });
+}
+
+function rcDrawMissionBars(ym){
+  const ms = window.__rc.months || [];
+  const m = ms.find(x => x.ym === ym); const pv = ms.find(x => x.ym === rcPrevYm(ym));
+  if (!m){ $("rcMissionBars").innerHTML = '<div class="hint">데이터 없음</div>'; return; }
+  const pct = (mm, k) => mm && mm.participants ? Math.round(((mm.missions || {})[k] || 0) / mm.participants * 100) : null;
+  $("rcMissionBars").innerHTML = `<div class="hint" style="margin-bottom:6px">참여 ${m.participants}명 · 시공 ${m.jobs}건 · 참여율 ${m.rate}%</div>` + RC_MISSIONS.map(s => {
+    const p = pct(m, s.key) || 0, q = pct(pv, s.key);
+    const d = q == null ? "" : (p - q === 0 ? " (±0)" : ` (${p - q > 0 ? "+" : ""}${p - q}%p)`);
+    const dc = q == null || p - q === 0 ? "var(--muted)" : (p - q > 0 ? "var(--good)" : "var(--bad)");
+    return `<div class="rowbar"><div class="rowbar-top"><span class="rowbar-name">${s.name}</span><span class="rowbar-val">${(m.missions || {})[s.key] || 0}명 · <b>${p}%</b><span style="color:${dc}">${d}</span></span></div>
+      <div class="rowbar-track"><div class="rowbar-fill" style="width:${p}%;background:${s.color}"></div></div></div>`;
+  }).join("");
+}
+
+/* 예산 기준 설정 */
+let rcEditYm = null;
+function rcOpenSettings(ym){
+  rcEditYm = ym || budYm || rcThisYm();
+  const rb = (data || {}).reviewBudget || {};
+  const ms = window.__rc.months || [], thisYm = rcThisYm();
+  const closed = ms.filter(x => x.ym < thisYm).slice(-3);
+  const avgPerJob = closed.length ? Math.round(closed.reduce((s, x) => s + (x.perJob || 0), 0) / closed.length) : 0;
+  const avgJobs = closed.length ? Math.round(closed.reduce((s, x) => s + (x.jobs || 0), 0) / closed.length) : 0;
+  $("rcUnit").value = rb.unit || avgPerJob || "";
+  $("rcJobs").value = rb.jobs || avgJobs || "";
+  $("rcUnitHint").textContent = avgPerJob ? `최근 3개월 실제 건당 비용 ${avgPerJob.toLocaleString()}원` : "";
+  $("rcJobsHint").textContent = avgJobs ? `최근 3개월 평균 시공 ${avgJobs}건` : "";
+  $("rcPlanLabel").textContent = rcEditYm.replace("-", "년 ") + "월 예산 (원)";
+  $("rcPlan").value = rcPlanOf(rcEditYm) || "";
+  rcUpdateSuggest();
+  $("rcModal").showModal();
+}
+function rcUpdateSuggest(){
+  const u = Number($("rcUnit").value) || 0, j = Number($("rcJobs").value) || 0;
+  $("rcSuggest").textContent = u && j ? (u * j).toLocaleString() + "원 (" + rcMan(u * j) + ")" : "—";
+}
+$("rcUnit").oninput = rcUpdateSuggest; $("rcJobs").oninput = rcUpdateSuggest;
+$("rcFillBtn").onclick = () => { const u = Number($("rcUnit").value) || 0, j = Number($("rcJobs").value) || 0; if (u && j) $("rcPlan").value = Math.round(u * j / 100000) * 100000; };
+$("rcSaveBtn").onclick = async () => {
+  const unit = Number($("rcUnit").value) || 0, jobs = Number($("rcJobs").value) || 0, plan = Number($("rcPlan").value) || 0;
+  const prev = (data || {}).reviewBudget || {};
+  const payload = { unit, jobs, plans: Object.assign({}, prev.plans || {}), by: currentUser() || "", at: Date.now() };
+  if (plan > 0) payload.plans[rcEditYm] = plan; else delete payload.plans[rcEditYm];
+  if (await safeWrite("후기 캐시백 예산", () => orgRef.child("reviewBudget").set(payload), $("rcSaveBtn"))){
+    logAction("수정", `후기 캐시백 예산 ${rcEditYm}: ${plan ? rcMan(plan) + "원" : "미설정"} (단가 ${unit.toLocaleString()} × ${jobs}건)`);
+    $("rcModal").close();
+    renderReviewCashback();
+  }
+};
+$("rcSetBtn").onclick = () => rcOpenSettings(budYm);
+$("rcReload").onclick = () => rcLoad(true);
+$("rcMonthSel").onchange = e => rcDrawMissionBars(e.target.value);
+rcLoad();
 
 /* ───────── 월별 추이 (조종실 API + Firebase 캐시) ───────── */
 let hist = null;           // [{ym, label, revenue, installed, sample, reserved, live}]
@@ -5500,7 +5773,10 @@ async function dashReview(){
     let cards = "";
     if (rj && rj.success){
       cards += dashCard("이번달 후기 참여", rj.participants, "명", `지급완료 ${rj.paid}명`) +
-               dashCard("월 후기 지출", Math.round(rj.monthlySpend/10000).toLocaleString(), "만원", `예산 ${rj.budgetRate}%`);
+               dashCard("월 후기 지출", Math.round(rj.monthlySpend/10000).toLocaleString(), "만원", (() => {
+                 const p = Number((((data || {}).reviewBudget || {}).plans || {})[rj.month]) || 0;
+                 return p ? `예산 ${Math.round(rj.monthlySpend / p * 100)}% (${Math.round(p/10000).toLocaleString()}만)` : "예산 미설정 — 마케팅 예산 탭";
+               })());
       const lines = [
         {key:"contract", name:"계약 후기", cls:""}, {key:"review1", name:"첫날 후기①", cls:"gold"},
         {key:"review2", name:"첫날 후기②", cls:"gold"}, {key:"mamitalk", name:"마미톡", cls:""},
