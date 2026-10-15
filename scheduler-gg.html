@@ -12,8 +12,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>돌봄매트 경기 스케줄러</title>
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2026b">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=2026b">
 <link rel="manifest" href="./manifest-gg.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1891,10 +1891,10 @@ if(dongHoText){
 // 1) 웹 알림 (네비 앱에서도 보임)
 if('Notification' in window){
 if(Notification.permission==='granted'){
-new Notification('🏢 도착하면 확인하세요',{body:naviAddr+' '+dongHoText,icon:'./icon-192.png',tag:'dongho',requireInteraction:true});
+new Notification('🏢 도착하면 확인하세요',{body:naviAddr+' '+dongHoText,icon:'./icon-192.png?v=2026b',tag:'dongho',requireInteraction:true});
 }else if(Notification.permission!=='denied'){
 Notification.requestPermission().then(p=>{
-if(p==='granted')new Notification('🏢 도착하면 확인하세요',{body:naviAddr+' '+dongHoText,icon:'./icon-192.png',tag:'dongho',requireInteraction:true})})}}
+if(p==='granted')new Notification('🏢 도착하면 확인하세요',{body:naviAddr+' '+dongHoText,icon:'./icon-192.png?v=2026b',tag:'dongho',requireInteraction:true})})}}
 
 // 2) 화면 상단 고정 배너 (앱 돌아왔을 때 보임)
 const bar=document.getElementById('donghoBar');
