@@ -793,7 +793,7 @@ function setAccentColors(team){
 // ── 데이터 로딩 ──
 function showLoading(pct){document.getElementById('loadingBar').style.width=pct+'%';}
 
-// 🆕 booking 캘린더용 슬롯 요약 publish (개인정보 제외 · 시(市)+건수만)
+// 🆕 booking 캘린더용 슬롯 요약 publish (개인정보 제외 · 시(市)+건수 + 행정동 중심 좌표)
 function publishSlots(){
   var MEGA=['서울','부산','대구','인천','광주','대전','울산','세종'];
   function cityOf(addr){
@@ -803,6 +803,8 @@ function publishSlots(){
     var mg=a.match(/([가-힣]+군)/); if(mg) return mg[1].slice(0,-1);
     return a.slice(0,4)||'?';
   }
+  // 🆕 2026-10-15 고객 예약 페이지 동선 판정용 — 동선 검증과 같은 addrCoord의 행정동 중심 좌표 (고객 집 위치 아님 · 인식 실패는 0)
+  function slotPt(s){ try{ var p=addrCoord(s.address); return (p&&p.c)?[p.c[0],p.c[1]]:0; }catch(e){ return 0; } }
   var today=new Date(); today.setHours(0,0,0,0);
   var updates={};
   ['부산','경기'].forEach(function(region){
@@ -820,6 +822,7 @@ function publishSlots(){
       am.forEach(function(s){ var c=cityOf(s.address)||'?'; if(!cities[c])cities[c]={am:0,pm:0}; cities[c].am++; });
       pm.forEach(function(s){ var c=cityOf(s.address)||'?'; if(!cities[c])cities[c]={am:0,pm:0}; cities[c].pm++; });
       var rec={ps:ps, cities:cities};
+      try{ rec.pts={am:am.map(slotPt), pm:pm.map(slotPt)}; }catch(e){}  // 🆕 시간대별 작업 순서대로 (실패해도 기존 발행은 그대로)
       if(amBlk)rec.amClosed=true;  // 🆕 booking에서 오전 마감 처리
       if(pmBlk)rec.pmClosed=true;  // 🆕 booking에서 오후 마감 처리
       updates[region+'_'+ds]=rec;
@@ -837,6 +840,8 @@ function publishSlots(){
   });
   var cnt=Object.keys(updates).length;
   if(cnt){
+    // 🆕 고객 화면 동선 기준값 = 이 페이지 ROUTE_CFG (기준값을 바꾸면 고객 화면도 자동으로 따라감)
+    try{ updates['_route']={warn:ROUTE_CFG.warn,base:ROUTE_CFG.base,detour:ROUTE_CFG.detour,speedKmh:ROUTE_CFG.speedKmh}; }catch(e){}
     fbDb.ref('slots').update(updates)
       .then(function(){
         console.log('✅ 슬롯 기록 완료:',cnt,'일');  // 평소엔 조용히 콘솔에만

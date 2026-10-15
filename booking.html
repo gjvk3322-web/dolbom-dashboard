@@ -344,35 +344,84 @@ var fbDb=firebase.database();
 var CLOSED={};
 var TEAM='';
 var teamListener=null;
-var SLOTS={};        // 🆕 날짜별 슬롯 요약 (reservation이 Firebase에 기록)
-var CUST_CITY='';    // 🆕 고객 도시 (주소 입력 시 추출)
-var MEGA_C=['서울','부산','대구','인천','광주','대전','울산','세종'];
-function cityOf(addr){
-  var a=String(addr||'').replace(/^\(\d+\)\s*/,'').trim();
-  for(var i=0;i<MEGA_C.length;i++){ if(a.indexOf(MEGA_C[i])===0) return MEGA_C[i]; }
-  var mt=a.match(/([가-힣]+시)/); if(mt) return mt[1].slice(0,-1);
-  var mg=a.match(/([가-힣]+군)/); if(mg) return mg[1].slice(0,-1);
-  return a.slice(0,4)||'';
+var SLOTS={};        // 🆕 날짜별 슬롯 요약 (reservation이 Firebase에 기록: ps 팀 수 · cities 도시별 건수 · pts 행정동 좌표)
+var CUST_GEO='';     // 🆕 2026-10-15 고객 주소의 행정구역(시도 시군구 행정동) — 좌표 변환용
+var CUST_PT=null;    // 🆕 고객 행정동 중심 좌표 [위도,경도] (변환 실패 시 null → 동선 판정 생략, 건수만)
+var CUST_ROUTE=false;// 🆕 서비스 지역 주소만 동선 판정 (지역 밖 주소는 기존처럼 건수만)
+var DS_CACHE={};     // 🆕 날짜별 판정 캐시 (슬롯·주소가 바뀌면 비움)
+var ROUTE_DEF={warn:80,base:12,detour:1.3,speedKmh:75}; // reservation.html ROUTE_CFG와 같은 기본값 (발행값 slots/_route가 있으면 그걸 씀)
+function custPt(){
+  if(!CUST_PT&&CUST_GEO&&window.DolbomGeo){var r=window.DolbomGeo.addrCoord(CUST_GEO);CUST_PT=(r&&r.c)?r.c:null;}
+  return CUST_PT;
 }
-// 🆕 날짜별 오전/오후 가능 판정 (도시별 팀 점유 기반)
-function daySlot(dateStr){
-  var s=SLOTS[TEAM+'_'+dateStr];
-  if(!s || typeof s.ps!=='number') return null;
-  var cities=s.cities||{};
-  var used=0;  // 사용 중인 팀 수 (각 도시는 max(오전,오후)팀 필요)
-  for(var c in cities){ used+=Math.max(cities[c].am||0, cities[c].pm||0); }
-  var free=s.ps-used;  // 완전히 빈 팀 수
-  function can(T){
-    var cm=cities[CUST_CITY];
-    if(cm){  // 고객 도시에 이미 작업 중인 팀이 있음
-      var mx=Math.max(cm.am||0, cm.pm||0);
-      if((cm[T]||0)<mx) return true;  // 그 팀의 빈 시간대 활용 (같은 도시라 이동 OK)
-      return free>0;  // 같은 도시 한 건 더 → 빈 팀 필요
-    }
-    return free>0;  // 새 도시 → 빈 팀 있어야 (오전/오후 안 묶인 팀)
+function routeCfg(){var r=SLOTS&&SLOTS._route;return (r&&typeof r.warn==='number'&&typeof r.speedKmh==='number')?r:ROUTE_DEF;}
+// reservation.html coordTravel과 같은 식: 기본 시간 + 직선거리×우회계수 ÷ 속도 (분)
+function travelMin(c1,c2,cfg){
+  if(!c1||!c2)return null;
+  var R=6371,rad=function(x){return x*Math.PI/180;};
+  var dLa=rad(c2[0]-c1[0]),dLo=rad(c2[1]-c1[1]);
+  var h=Math.pow(Math.sin(dLa/2),2)+Math.cos(rad(c1[0]))*Math.cos(rad(c2[0]))*Math.pow(Math.sin(dLo/2),2);
+  return Math.round(cfg.base+R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))*cfg.detour/cfg.speedKmh*60);
+}
+// reservation.html bestAssignment과 같은 계산 — 그 날 오전·오후 작업 + 새 예약을 팀 수 안에서
+// 가장 유리하게 짝지었을 때 새 예약이 감당하는 이동시간(분)
+function newJobMinutes(s,T,me){
+  var pts=s.pts||{};
+  function mk(arr){var o=[];(arr||[]).forEach(function(p){o.push({co:(p&&p.length===2)?p:null});});return o;}
+  var ams=mk(pts.am),pms=mk(pts.pm),mine={co:me,isNew:true};
+  if(T==='am')ams.push(mine);else pms.push(mine);
+  var crews=Math.max(1,s.ps||1);
+  var n=Math.max(crews,ams.length,pms.length);
+  if(!ams.length||!pms.length)return 0;   // 한쪽 시간대가 비어 있으면 짝지을 필요 없음
+  var cfg=routeCfg();
+  if(n>6){                                // 6팀 초과: 가장 가까운 반대 시간대 작업 기준 (reservation과 동일)
+    var opp=(T==='am'?pms:ams).filter(function(x){return !x.isNew&&x.co;});
+    if(opp.length<crews)return 0;
+    var bm=null;opp.forEach(function(o){var t=travelMin(me,o.co,cfg);if(t!==null&&(bm===null||t<bm))bm=t;});
+    return bm;
   }
-  var amOk=!s.amClosed&&can('am'), pmOk=!s.pmClosed&&can('pm');  // 🆕 회의 등 차단 시 해당 시간대 전체 마감
-  return {am:amOk, pm:pmOk, full:(!amOk && !pmOk)};
+  var A=ams.slice();while(A.length<n)A.push(null);
+  var P=pms.slice();while(P.length<n)P.push(null);
+  var best=null,used=[],perm=[];
+  (function walk(d){
+    if(d===n){
+      var mx=0,my=0;
+      for(var i=0;i<n;i++){
+        var a=A[i],p=perm[i];if(!a||!p)continue;
+        var t=travelMin(a.co,p.co,cfg),tv=t===null?0:t;
+        if(tv>mx)mx=tv;
+        if(a.isNew||p.isNew)my=tv;
+      }
+      if(best===null||mx<best.mx||(mx===best.mx&&my<best.my))best={mx:mx,my:my};
+      return;
+    }
+    for(var j=0;j<n;j++){if(used[j])continue;used[j]=true;perm[d]=P[j];walk(d+1);used[j]=false;}
+  })(0);
+  return best.my;
+}
+// 🆕 2026-10-15 날짜별 오전/오후 가능 판정 — 예약관리(reservation.html)와 같은 기준
+//   ① 남은 자리: 오전 건수 < 팀 수, 오후 건수 < 팀 수 (예약관리 '오전/오후 N건 가능'과 같은 숫자)
+//   ② 차단(회의 등): 그 시간대 마감
+//   ③ 동선: 예약관리 동선 검증과 같은 계산으로 🔴(회사 권장 이동시간 이상)이면 그 시간대 숨김
+//   이전 방식(도시별 팀 점유 추정)은 오전이 다 찼는데 오후 작업만 있는 도시 고객에게 '오전 가능'을 띄움
+function daySlot(dateStr){
+  var key=TEAM+'_'+dateStr;
+  if(Object.prototype.hasOwnProperty.call(DS_CACHE,key))return DS_CACHE[key];
+  var s=SLOTS[key];
+  if(!s || typeof s.ps!=='number') return null;
+  var A=0,P=0,cities=s.cities||{};
+  for(var c in cities){ A+=cities[c].am||0; P+=cities[c].pm||0; }
+  var amOk=!s.amClosed&&A<s.ps, pmOk=!s.pmClosed&&P<s.ps;
+  var wantRoute=CUST_ROUTE&&!!s.pts&&!!CUST_GEO;
+  var me=wantRoute?custPt():null;
+  if(me){
+    var warn=routeCfg().warn;
+    if(amOk){var ta=newJobMinutes(s,'am',me);if(ta!==null&&ta>=warn)amOk=false;}
+    if(pmOk){var tp=newJobMinutes(s,'pm',me);if(tp!==null&&tp>=warn)pmOk=false;}
+  }
+  var res={am:amOk, pm:pmOk, full:(!amOk && !pmOk)};
+  if(!wantRoute||me||window.DolbomGeo)DS_CACHE[key]=res;  // 좌표 파일 로딩 전이면 저장 안 함 (로딩 후 다시 계산)
+  return res;
 }
 
 // 🆕 선택한 날짜들에 따라 희망시간 버튼 활성/비활성 (오후만인 날 → 오전 버튼 막기)
@@ -503,19 +552,27 @@ function searchAddr(){
       result.style.display='block';
       result.textContent='📍 '+(name?name+' ('+addr+')':addr);
       var detected=detectTeam(addr);
-      CUST_CITY=cityOf(addr);  // 🆕 고객 도시 추출 (오후 이어받기 매칭용)
+      CUST_ROUTE=(detected==='부산'||detected==='경기');  // 🆕 서비스 지역 주소만 동선 판정
+      CUST_GEO=[data.sido,data.sigungu,data.hname,data.bname1,data.bname].filter(Boolean).join(' ');  // 🆕 행정구역명만 (도로명은 다른 동 이름과 겹쳐 오인식)
+      CUST_PT=null;DS_CACHE={};
       if(detected==='blocked'||detected==='unknown'){switchTeam('부산')}
       else{switchTeam(detected)}
-      renderCal();checkSubmit();
+      dropFullDates();renderCal();checkSubmit();updateTimeAvail();
     }
   }).open();
+}
+// 🆕 주소·슬롯이 바뀌어 오전·오후 모두 마감이 된 선택 날짜는 해제
+function dropFullDates(){
+  var before=selectedDates.length;
+  selectedDates=selectedDates.filter(function(d){var s=daySlot(d);return !(s&&s.full);});
+  if(selectedDates.length!==before){updateDateDisplay();showToast('선택하신 날짜 중 마감된 날짜는 해제되었습니다');}
 }
 
 function toggleDateAny(){dateAny=!dateAny;var btn=document.getElementById('dateAnyBtn');if(dateAny){btn.classList.add('active');selectedDates=[];renderCal();updateDateDisplay()}else{btn.classList.remove('active')}checkSubmit()}
 
 var calYear,calMonth;
 (function(){var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
-  fbDb.ref('slots').on('value',function(snap){SLOTS=snap.val()||{};renderCal();updateTimeAvail();}); // 🆕 슬롯 실시간 구독
+  fbDb.ref('slots').on('value',function(snap){SLOTS=snap.val()||{};DS_CACHE={};dropFullDates();renderCal();updateTimeAvail();}); // 🆕 슬롯 실시간 구독
   renderCal();
 })();
 function changeMonth(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCal()}
@@ -947,6 +1004,7 @@ window.addEventListener('beforeunload',function(e){
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500)}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/geo-route.js?v=20261015"></script><!-- 🆕 주소→행정동 좌표 (동선 판정용, 주소 검색보다 먼저 로드) -->
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </body>
 </html>
