@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.21a';
+const IO_VER='2026.10.21b';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -1565,7 +1565,7 @@ async function ioSubmitEdit(items){ // v32: 기존 기록 고치기 — Firebase
     }else{
       try{await db.ref(NODE+'/'+r.id).update(chg)}catch(e){console.warn('[io] fb edit',e)}
       const payload={action:'ioEdit',id:r.id,region:RN,type:r.type,date:r.date,wdate:wd,at:r.at,vehicle:F.vehicle,worker:chg.worker,crew,items,note:chg.note,late:chg.late,editAt:chg.editAt,editBy:by,editN:chg.editN,photo,photoName,photoAt:chg.photoAt||'',photoGap:chg.photoGap||0,photoId:r.photoId||''}; // photoId: 시트에 원본 행이 없을 때 사진 링크 복원용
-      if(!obAdd({kind:'edit',id:'edit_'+r.id+'_'+now.getTime(),rid:r.id,payload,tries:0,ts:now.getTime()})){busy=false;renderForm();return}
+      if(!obAdd({kind:'edit',id:'edit_'+r.id+'_'+now.getTime(),rid:r.id,rk:RK,payload,tries:0,ts:now.getTime()})){busy=false;renderForm();return}
     }
     DONE={type:r.type,vehicle:F.vehicle,wdate:wd,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0),edit:true};
     busy=false;F=null;P=null;$('ioFile').value='';
@@ -1636,10 +1636,11 @@ async function ioFlush(manual){
       if(e.kind==='edit'&&!caps().edit){const a=obGet();const x=a.find(y=>y.id===e.id);if(x){x.err='시트 반영 대기 (IoLog.gs 업데이트 필요)';obSet(a)}continue} // 서버가 아직 ioEdit을 모르면 보내지 않고 둠 (중복 행 방지)
       let res;try{res=await post(e.payload)}catch(err){lastErr='네트워크 오류';break}
       if(res&&res.ok){sent++;
+        const node=(IO_BETA?'io_logs_beta/':'io_logs/')+((e.rec&&e.rec.rk)||e.rk||RK); // 기록을 찍은 지역 노드로 (대기함은 부산·경기 페이지가 공유하므로 현재 페이지 RK를 쓰면 다른 지역에 저장됨 — 2026-10-21 민우 820라1210 건)
         if(e.kind==='log'){const rec={...e.rec,status:'ok',photoId:res.photoId||'',photoUrl:res.photoId?viewUrl(res.photoId):'',sheetAt:kstDT(new Date())};
-          try{await db.ref(NODE+'/'+rec.id).set(rec)}catch(err){console.warn('[io] fb',err)}}
+          try{await db.ref(node+'/'+rec.id).set(rec)}catch(err){console.warn('[io] fb',err)}}
         else if(e.kind==='edit'&&e.rid){const upd={sheetEditAt:kstDT(new Date())};if(res.photoId){upd.photoId=res.photoId;upd.photoUrl=viewUrl(res.photoId)}
-          try{await db.ref(NODE+'/'+e.rid).update(upd)}catch(err){console.warn('[io] fb',err)}}
+          try{await db.ref(node+'/'+e.rid).update(upd)}catch(err){console.warn('[io] fb',err)}}
         obRemove(e.id);renderList();
       }else{
         const a=obGet();const x=a.find(y=>y.id===e.id);if(x){x.tries=(x.tries||0)+1;x.err=res&&res.error||'';obSet(a)}
