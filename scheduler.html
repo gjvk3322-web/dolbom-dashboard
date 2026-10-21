@@ -323,7 +323,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.10.21.118';
+const VER='2026.10.21.119';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -1795,7 +1795,8 @@ const reportData={type:'AS',date:g('arDate'),team:g('arTeam'),region:g('arRegion
 fbSave('asReports/'+asReportJobId,reportData);
 
 if(SHEET_REPORT_URL){
-fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...reportData,jobId:asReportJobId})}).catch(()=>{})}
+const _aj=J.find(x=>x.id===asReportJobId)||{}; // 2026-10-21: 시트 줄 찾기 정보 동봉 — 서버(AsReport.gs)가 AS보고 시트 + 시공스케줄 Y열(판매갯수)에 들어간 장수를 씀 ('N장'→N, 자투리사용→0)
+fetch(SHEET_REPORT_URL+'?type=as',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...reportData,jobId:asReportJobId,scheduleTeam:'부산',row:(_aj.csvRow||0)+1,address:_aj.addr||'',schedPhone:_aj.phone||'',time:_aj.time||'AS'})}).then(r=>r.text()).then(t=>{t=String(t||'').trim();if(t&&t!=='ok')toast('⚠️ 시트에 기록 안 됨 — '+({'row mismatch':'이 집 줄을 못 찾음','empty row':'빈 줄'}[t]||t)+' (당번에게 알려 주세요)','err')}).catch(()=>{})}
 
 document.getElementById('asReportText').textContent=txt;
 document.getElementById('asReportResult').style.display='block';
