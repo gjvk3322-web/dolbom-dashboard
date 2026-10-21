@@ -13,10 +13,11 @@
    ■ 로드: scheduler.html·scheduler-gg.html에서 guide.js 다음에 <script src="./stats.js?v=…"> — gShow(프로세스 탭 열기)를 감싸서 동작. */
 (function(){
 'use strict';
-const ST_VER='2026.10.21a';
+const ST_VER='2026.10.21b';
 const ST_START='2026-11-01';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const CACHE_MS=10*60*1000;
+const ORDER={부산:['민우','세욱','경필','영호','신영','상우'],경기:['선재','현진','재문','형석','경준','승민','재범','구연']}; // 표 순서(대장 지정). 여기 없는 이름은 팀설정·기록 순으로 뒤에
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const kst=off=>new Date(Date.now()+9*3600e3+(off||0)*86400e3).toISOString().slice(0,10);
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -126,9 +127,13 @@ function calc(){
       Object.keys(pp).forEach(n=>{const v=pp[n]||{};const p=get(reg,n);p.net+=nn(v.net);p.used+=nn(v.used);p.lossN+=nn(v.n);p.asLoss+=nn(v.as)})});
   });
   // 명단: 팀설정 직원 + 기록에 등장한 사람
-  const names={부산:(EMP.bs||[]).slice(),경기:(EMP.gg||[]).slice()};
-  Object.values(P).forEach(p=>{if(names[p.reg]&&names[p.reg].indexOf(p.n)<0)names[p.reg].push(p.n)});
-  const out=[];['부산','경기'].forEach(reg=>{(names[reg]||[]).forEach(n=>out.push(get(reg,n)))});
+  const names={부산:ORDER.부산.slice(),경기:ORDER.경기.slice()};
+  const push=(reg,n)=>{if(names[reg]&&n&&names[reg].indexOf(n)<0)names[reg].push(n)};
+  (EMP.bs||[]).forEach(n=>push('부산',n));(EMP.gg||[]).forEach(n=>push('경기',n));
+  Object.values(P).forEach(p=>push(p.reg,p.n));
+  const out=[];['부산','경기'].forEach(reg=>{let l=(names[reg]||[]).map(n=>get(reg,n));
+    if(cum)l=l.slice().sort((a,b)=>(b.as-a.as)||((b.work?b.as/b.work:0)-(a.work?a.as/a.work:0))||(b.work-a.work)); // 누적: AS 많은 순 (같으면 AS율 → 작업 수)
+    l.forEach(p=>out.push(p))});
   return {list:out,asAll,asPaid,asOld,asNone};
 }
 
@@ -138,7 +143,7 @@ function pct(a,b){return b?Math.round(a/b*1000)/10:null}
 function render(){
   const v=document.getElementById('stView');if(!v)return;
   const t=kst(0);
-  const head=`<div class="st-hd"><div><div class="st-title">직원별 작업 · AS · 로스</div><div class="st-sub">부산·경기 전원 · ${esc(ST_START.slice(5,7).replace(/^0/,''))}월 작업부터 · ${cum?'누적':'작업한 달 기준'}</div></div>
+  const head=`<div class="st-hd"><div><div class="st-title">직원별 작업 · AS · 로스</div><div class="st-sub">부산·경기 전원 · ${esc(ST_START.slice(5,7).replace(/^0/,''))}월 작업부터 · ${cum?'누적 · AS 많은 순':'작업한 달 기준'}</div></div>
     <div class="st-nav">${cum?'':`<button onclick="dolbomStats.prev()">‹</button><span class="ym">${esc(ymLabel())}</span><button onclick="dolbomStats.next()">›</button>`}<button class="${cum?'on':''}" onclick="dolbomStats.cum()">누적</button></div></div>`;
   if(busy&&!hist){v.innerHTML=head+'<div class="st-msg">불러오는 중…</div>';return}
   if(err&&!hist){v.innerHTML=head+'<div class="st-msg">'+esc(err)+'<br><u onclick="dolbomStats.refresh(1)" style="cursor:pointer">다시 시도</u></div>';return}
@@ -162,11 +167,7 @@ function render(){
       rowsH+=`<tr class="det"><td colspan="7">${det}${loss}</td></tr>`;
     }
   });
-  const foot=[];
-  if(R.asAll)foot.push(`이 기간 접수 AS ${R.asAll}건 중 유상수리 ${R.asPaid}건 제외${R.asOld?` · ${ST_START.slice(5,7).replace(/^0/,'')}월 전 시공분 ${R.asOld}건은 미집계`:''}${R.asNone?` · 원시공 못 찾음 ${R.asNone}건`:''}`);
-  foot.push('AS는 제품하자·시공하자·기타 모두 포함(유상수리만 제외) · 고객 번호로 원래 시공팀을 찾아 그 팀에 1건씩 · 로스율 = 로스 ÷ 판매');
-  const mine=STATS[RK]&&Object.keys(STATS[RK]).length;
-  if(!mine)foot.push('로스 숫자는 입출고 기록이 쌓이면 표시됨');
+  const foot=['AS는 제품하자·시공하자·기타 모두 포함(유상수리만 제외) · 로스 숫자는 입출고 기록이 쌓이면 표시됨'];
   v.innerHTML=head+`<table><thead><tr><th>이름</th><th>작업</th><th>AS</th><th>AS율</th><th>판매</th><th>로스</th><th>로스율</th></tr></thead><tbody>${rowsH||'<tr><td colspan="7" class="st-msg">표시할 직원이 없어요</td></tr>'}</tbody></table><div class="st-foot">${foot.map(esc).join('<br>')}</div>`;
 }
 function refresh(force){
