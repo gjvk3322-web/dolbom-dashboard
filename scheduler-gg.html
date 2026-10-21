@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.10.09.117';
+const VER='2026.10.21.118';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -357,7 +357,7 @@ const DOW_CLS=['dow-sun','dow-mon','dow-tue','dow-wed','dow-thu','dow-fri','dow-
 firebase.initializeApp({databaseURL:FB_URL});
 const db=firebase.database();
 
-let E=['민우','현진','선재','재문','형석','경준','승민','승훈'];
+let E=[]; // 직원 명단은 Firebase 팀설정에서만 읽음 (옛 기본값으로 배정되는 일 방지)
 // 직원별 고정 색상 (0파랑 1초록 2노랑 3핑크 4보라 5주황 6청록 7연두 8장미 9틸)
 const FIXED_COLOR={'민우':0,'현진':1,'선재':2,'재문':4,'형석':5,'경준':7,'승민':8,'승훈':3};
 // 색상 인덱스: 지정색 우선, 없으면 이름 해시 (명단 순서 무관 → 삭제해도 색 안 바뀜)
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 let lastAHash='';
 function aHash(obj){return JSON.stringify(obj||{})}
-let fbLoaded={a:false,lock:false,skip:false};
+let fbLoaded={a:false,lock:false,skip:false,emp:false,teams:false};
 let currentTab='sched';
 let fbPending=false;
 function fbRender(){
@@ -457,8 +457,8 @@ function fbRender(){
   setTimeout(()=>{fbPending=false;if(currentTab==='month')renderMonth();
 renderAll()},300);
 }
-db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(v)E=v;fbRender()});
-db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v.filter(t=>Array.isArray(t));else teams=[];fbRender()});
+db.ref('gg_employees').on('value',snap=>{const v=snap.val();if(Array.isArray(v)&&v.length){E=v;fbLoaded.emp=true}fbRender()});
+db.ref('gg_teams').on('value',snap=>{const v=snap.val();if(v)teams=v.filter(t=>Array.isArray(t));else teams=[];fbLoaded.teams=true;fbRender()});
 db.ref('gg_assignments').on('value',snap=>{
   if(isAssigning)return;
   const v=snap.val()||{};
@@ -844,6 +844,7 @@ return null;
 
 // ===== Auto Assign =====
 async function autoAssign(){
+if(!fbLoaded.emp||!fbLoaded.teams||!E.length){toast('⚠️ 직원·팀 목록을 아직 못 받아 자동 배정을 건너뜀 (새로고침)','ok');return}
 isAssigning=true;
 toast('⏳ 자동 배정 중...','ok');
 const _snapA=JSON.parse(JSON.stringify(A));
@@ -3135,8 +3136,11 @@ if(A[j.id]&&A[j.id].length===1&&!j.sasu&&!j.busasu){_badCh[j.id]=null;delete A[j
 if(badAssign){if(Object.keys(_badCh).length)db.ref('gg_assignments').update(_badCh);lastAHash=aHash(A)}
 
 // Firebase LOCK/SKIP 로드 대기 (최대 5초)
-if(!fbLoaded.lock||!fbLoaded.skip||!fbLoaded.a){
-await new Promise(r=>{const c=setInterval(()=>{if(fbLoaded.lock&&fbLoaded.skip&&fbLoaded.a){clearInterval(c);r()}},100);setTimeout(()=>{clearInterval(c);r()},5000)})}
+if(!fbLoaded.lock||!fbLoaded.skip||!fbLoaded.a||!fbLoaded.emp||!fbLoaded.teams){
+await new Promise(r=>{const c=setInterval(()=>{if(fbLoaded.lock&&fbLoaded.skip&&fbLoaded.a&&fbLoaded.emp&&fbLoaded.teams){clearInterval(c);r()}},100);setTimeout(()=>{clearInterval(c);r()},8000)})}
+
+// 명단(팀설정)에 없는 이름 자동 제거 — 퇴사·휴직자가 옛 데이터로 배정돼 있던 건 (오늘 이후만, 당번 기기에서만 저장)
+if(isAdmin&&fbLoaded.emp&&E.length){const _nm={};let _nmC=0;const _td=_todayKST();J.forEach(j=>{const a=A[j.id];if(!Array.isArray(a)||j.date<_td)return;const f=a.filter(e=>E.includes(e));if(f.length!==a.length){if(f.length)A[j.id]=f;else delete A[j.id];_nm[j.id]=A[j.id]||null;_nmC++}});if(_nmC){db.ref('gg_assignments').update(_nm);lastAHash=aHash(A);toast('⚠️ 명단에 없는 직원 배정 '+_nmC+'건 해제 → 재배정','ok')}}
 
 // 미배정 건 또는 1인 배정(사수만, 부사수 필요)이 있으면 자동 배정 실행
 const assignableJ=realJ.filter(j=>j.addr&&j.addr.trim());
@@ -3352,6 +3356,6 @@ document.addEventListener('visibilitychange',()=>{
 <!-- 현장 대응 프로세스 탭 (부산·경기 공용) — 내용 수정은 guide.js 배포 없이 앱 안에서 -->
 <script src="./guide.js?v=20260908b"></script>
 <!-- 📦 입·출고 기록 탭 (부산·경기 공용) — 사진 시각 스탬프 + 입출고기록 시트 + 드라이브 사진 -->
-<script src="./iolog.js?v=20261008a"></script>
+<script src="./iolog.js?v=20261021a"></script>
 </body>
 </html>

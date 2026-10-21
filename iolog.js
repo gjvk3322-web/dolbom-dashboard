@@ -85,13 +85,13 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.08a';
+const IO_VER='2026.10.21a';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
 const NODE=(IO_BETA?'io_logs_beta/':'io_logs/')+RK;
 const OWN_MIN=30;         // 본인 기록 취소 가능 시간(분) — 지나면 당번 모드에서만
-const DAYS=14;            // Firebase에서 불러오는 기록 기간(일) — 차량별 현황 계산용 (실사 주기 7~10일)
+const DAYS=45;            // Firebase에서 불러오는 기록 기간(일) — 차량별 현황·상단 경고(최근 30일)·이월 계산용. 14일이었을 땐 2주 지난 출고가 안 보여 '출고 기록 없이 반납' 가짜 경고가 뜸 (2026-10-21)
 const LIST_DAYS=7;        // 목록에 펼쳐 보이는 기간(일)
 const MAX_PX=1280;        // 업로드 사진 긴 변(px)
 const JPG_Q=0.76;
@@ -1677,7 +1677,7 @@ function init(){
   draftPurge(); // 날짜 지난 임시저장 폐기
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&F&&!busy){clearTimeout(_dsT);draftWrite();photoDraftSave()}});
   window.addEventListener('pagehide',()=>{if(F&&!busy){clearTimeout(_dsT);draftWrite()}});
-  try{db.ref(NODE).orderByChild('date').startAt(kstDate(-DAYS)).limitToLast(600).on('value',snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});LOGS=o;renderList()})}
+  try{db.ref(NODE).orderByChild('date').startAt(kstDate(-DAYS)).limitToLast(2000).on('value',snap=>{const o={};snap.forEach(ch=>{o[ch.key]=ch.val()});LOGS=o;renderList()})}
   catch(e){console.warn('[io] fb listen',e);renderList()}
   try{db.ref((IO_BETA?'io_recon_beta/':'io_recon/')+RK).orderByKey().startAt(kstDate(-DAYS)).on('value',snap=>{RECON=snap.val()||{};renderList();if(SH.open)renderShare()})}catch(e){console.warn('[io] recon listen',e)}
   window.addEventListener('online',()=>ioFlush(false));
