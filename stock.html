@@ -776,7 +776,7 @@ async function renderSummary(){
   const _fresh=!_force&&_mem&&Date.now()-_mem.at<STOCK_CACHE_MS;
   const _prev=_fresh?null:(_mem?{d:_mem.d,at:_mem.at}:loadStoredStock(myTeam));
   if(_prev){
-    sd=_prev.d;_stale=_prev.at;
+    sd=_prev.d;_stale=_prev.at;stockCache=sd; // 🔧 저장본으로 그릴 때도 전역 캐시를 이 팀 데이터로 맞춤 (다른 팀 응답이 남아 섞이던 문제)
     fetchStockData(true,myTeam).then(d=>{
       if(tab!=='summary'||team!==myTeam||mySeq!==stockRenderSeq)return;
       if(d&&!d.error){render();return}
@@ -1380,10 +1380,12 @@ function renderLedgerBox(){
 // 검증 줄에서 목록 합계와 lossData 합계를 대조 → 안 맞으면 ⚠️ (서버가 로스에 센 행과 목록이 다르다는 뜻).
 // 구버전 서버(lossLedger 없음)면 안내 한 줄만 표시.
 let lossLedgerData=null; // {evs, from, to, ok, missing}
+let lossLedgerSd=null;   // 🔧 2026-10-21 장부가 쓸 응답 — 카드(sd)와 같은 팀 데이터만 쓰게 (stockCache는 마지막으로 받은 팀이라 저장본 표시 중엔 다른 팀일 수 있음)
 let lossLedgerKey='';    // ''=전체 / 제품_색상 키 필터 (제품·색상별 분석 줄이나 칩 누르면 세팅)
 let lossLedgerOpen={};   // 펼쳐둔 날짜 {'2026-09-12':true}
 let lastPending=[];      // 종합탭 렌더 시점의 미제출 장소 (누적 로스율 카드 '확정 전' 표시용)
 function buildLossLedger(sd){
+  lossLedgerSd=sd&&!sd.error?sd:null;
   const LL=sd&&sd.lossLedger;
   if(!LL||!Array.isArray(LL.usedList)){lossLedgerData={evs:[],from:'',to:'',ok:false,missing:[],err:sd&&sd.lossLedgerError?String(sd.lossLedgerError):''};return}
   const evs=[];
@@ -1401,8 +1403,8 @@ function openLossLedger(key,scroll){
 }
 function toggleLossLedgerDay(ds){lossLedgerOpen[ds]=!lossLedgerOpen[ds];renderLossLedgerBox()}
 function renderLossLedgerBox(){
-  const box=document.getElementById('lossLedgerBox');if(!box||!lossLedgerData||!stockCache||!stockCache.lossData)return;
-  const ld=stockCache.lossData;const L=lossLedgerData;const fmt=n=>(n||0).toLocaleString();
+  const box=document.getElementById('lossLedgerBox');if(!box||!lossLedgerData||!lossLedgerSd||!lossLedgerSd.lossData)return;
+  const ld=lossLedgerSd.lossData;const L=lossLedgerData;const fmt=n=>(n||0).toLocaleString();
   if(!L.ok){box.innerHTML=`<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--dim);line-height:1.5">📒 <b style="color:var(--text)">구간 장부</b> — ${L.err?`서버 오류: <span style="color:var(--orange)">${L.err}</span> (Inventory.gs buildLossLedger_ 확인)`:`서버(Inventory.gs getStockSummary)가 lossLedger를 보내주면 ${ld.prevDate} 실사 → ${ld.currentDate} 실사 사이 시공·입고·출고가 날짜·현장별로 여기에 펼쳐져요 (아직 구버전 서버)`}</div>`;return}
   const key=lossLedgerKey;
   // 기준 숫자: 전체는 lossData, 제품 필터는 lossByProduct의 해당 줄
