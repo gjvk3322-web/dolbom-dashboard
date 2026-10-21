@@ -1669,7 +1669,7 @@ function adminAutoOpen(){
   ioShow();
 }
 // ioadmin.js가 같은 제품 정의·박스 환산 기준·날짜 헬퍼를 그대로 쓰도록 내보냄 (값을 따로 복사해 두지 않기 위해)
-window.__io={ver:IO_VER,beta:IO_BETA,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,jobsOf,jobs,assignOf,crewOf,vehicleOf,records:allRecords,prodKeyOfCode,partnerOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
+window.__io={ver:IO_VER,beta:IO_BETA,RK,RN,PRODUCTS,PART,TYPE,LATE_MIN,vehicles,employees,admin,board:loadBoard,jobsOf,jobs,assignOf,crewOf,vehicleOf,records:allRecords,prodKeyOfCode,partnerOf,view:ioView,toast:ioToast,canVoid,reasonOf,outbox:outboxInfo,myPlate,
   util:{esc,num,kstDate,kstDT,addDays,fmtD,fmtMD,hm,dowOf,normPlate,thumbUrl,viewUrl}};
 
 /* ---------- 시작 ---------- */

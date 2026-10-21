@@ -26,7 +26,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.08a';
+const CY_VER='2026.10.21a';
 const CY_START=(X.cyStart&&/^\d{4}-\d{2}-\d{2}$/.test(String(X.cyStart)))?String(X.cyStart):'2026-10-05'; // 입출고 시작일 (2026-10-06 초기화 기준일) — 이 날 전 작업일은 기록도 시공도 안 봄 (경고·장부·카드 전부). 테스트는 __io.cyStart로 바꿈
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -547,6 +547,15 @@ function snapBuild(){ // 저장본 만들기: 전체 기록을 읽어 cutoff까�
   try{db.ref(LNODE).transaction(cur=>{if(!force&&snapOK(cur)&&cur.cutoff>=cutoff)return;return snap}).then(res=>{const v=res&&res.snapshot&&res.snapshot.val();end(v||snap)}).catch(()=>{SNAP_FAIL=Date.now();end(SNAP||null)})}catch(e){SNAP_FAIL=Date.now();end(SNAP||null)}
 }
 function relearn(){if(!admin())return;SNAP_FORCE=true;rerender()}
+function statsMonthly(){ // 직원별 월별 로스 요약 {ym:{name:{net,used,n,as,asN}}} — 프로세스 탭 통합표(stats.js)용. 데이터 준비 전이면 null(불러오기 시작, 도착하면 rerender)
+  loadSnap();const S=snapOK(SNAP)?SNAP:null;const want=snapCutoff();
+  const due=SNAP!==undefined&&!!want&&(SNAP_FORCE||!S||S.cutoff<want);
+  if(due)snapBuild();else loadRecs(S?(S.openFrom||addDays(S.cutoff,1)):CY_START);
+  if(SNAP===undefined||MLOAD.all||!MREC.from)return null;
+  const {L,asLoading}=ledgerAll();if(asLoading)return null;
+  const out={};Object.keys(L).forEach(n=>L[n].forEach(e=>{if(!e||!e.date)return;const ym=e.date.slice(0,7);const o=(out[ym]=out[ym]||{});const p=(o[n]=o[n]||{net:0,used:0,n:0,as:0,asN:0});p.net+=nn(e.amt);if(e.kind==='as'){p.as+=-nn(e.amt);p.asN++}else{p.n++;p.used+=nn(e.used)}}));
+  return out;
+}
 function personSum(arr){const o={net:0,as:0,asN:0,n:0,used:0};(arr||[]).forEach(e=>{o.net+=e.amt;if(e.kind==='as'){o.as+=-e.amt;o.asN++}else{o.n++;o.used+=e.used||0}});o.rate=o.used&&o.net<0?Math.round(-o.net/o.used*1000)/10:(o.used?0:null);return o}
 function calHTML(name,ym,all){
   const entries=(all||[]).filter(e=>e.date.slice(0,7)===ym);
@@ -840,5 +849,5 @@ function reportCopy(){const cy=repCycle();if(!cy)return;const t=reportText(cy);
 
 /* ---------- 시작 ---------- */
 try{db.ref(NODE).on('value',s=>{OV=s.val()||{};daysInvalidate();rerender()})}catch(e){console.warn('[iocycle] fb',e)}
-window.ioCycle={ver:CY_VER,cardsHTML,alertsHTML,alerts,daysOf,cyclesOf,latestOf,cycleOn,dayOn,findDay,daysInvalidate,openBy,reset,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,relearn,ledgerAll,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.D);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,carryAck,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText,ledgerCalc,snapCutoff,snapBuild,snap:()=>SNAP,setSnap:v=>{SNAP=v},mrec:()=>MREC}};
+window.ioCycle={ver:CY_VER,cardsHTML,alertsHTML,alerts,daysOf,cyclesOf,latestOf,cycleOn,dayOn,findDay,daysInvalidate,openBy,reset,vehCrew,vehOv,crewFor,schedJobs,prodLabel,report,reportClose,reportCopy,person,pplToggle,relearn,ledgerAll,statsMonthly,open:v=>{const {cur:c}=latestOf(v.plate);if(c)openBy(v.plate,c.D);else X.toast('아직 출고 기록이 없어요')},close,save:saveEdit,confirm:confirmCy,carryAck,zero,hist,shareHTML,shareText,_t:{compute,parseQty,reportHTML,reportText,ledgerCalc,snapCutoff,snapBuild,snap:()=>SNAP,setSnap:v=>{SNAP=v},mrec:()=>MREC}};
 })();
