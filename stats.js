@@ -13,7 +13,7 @@
    ■ 로드: scheduler.html·scheduler-gg.html에서 guide.js 다음에 <script src="./stats.js?v=…"> — gShow(프로세스 탭 열기)를 감싸서 동작. */
 (function(){
 'use strict';
-const ST_VER='2026.10.21b';
+const ST_VER='2026.10.21c';
 const ST_START='2026-11-01';
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const CACHE_MS=10*60*1000;
@@ -33,6 +33,7 @@ let pollT=null,pollN=0;
 
 const CSS=`
 #stView{background:var(--card);border-radius:18px;padding:14px 14px 10px;margin:0 0 14px}
+#guideView{display:none!important}
 #stView .st-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 #stView .st-title{font-size:15px;font-weight:800;color:var(--text)}
 #stView .st-sub{font-size:11px;color:var(--dim);margin-top:2px}
@@ -181,6 +182,9 @@ function ensureShell(){
   const st=document.createElement('style');st.textContent=CSS;document.head.appendChild(st);
   const box=document.createElement('div');box.id='stView';
   pane.insertBefore(box,pane.firstChild);
+  // 2026-10-21 대장 결정: '현장 대응 프로세스' 카드(guide.js 내용)는 화면에서 없앰 — 탭에는 이 표만. 탭 이름도 📊 기록으로
+  const gv=document.getElementById('guideView');if(gv)gv.style.display='none';
+  const nb=document.getElementById('gNavBtn');if(nb)nb.innerHTML='<span>📊</span>기록';
   return true;
 }
 function show(){if(!ensureShell())return;if(!hist||Date.now()-histAt>CACHE_MS)refresh();else{render();publishMine()}}
@@ -188,7 +192,7 @@ function shiftYm(d){const [y,m]=ym.split('-').map(Number);const dt=new Date(Date
 window.dolbomStats={ver:ST_VER,show,refresh,prev:()=>shiftYm(-1),next:()=>shiftYm(1),cum:()=>{cum=!cum;openName='';render()},open:k=>{openName=openName===k?'':k;render()}};
 // 프로세스 탭 열기(gShow)에 끼워 넣음 — guide.js 다음에 로드돼야 함
 function hook(){const g=window.gShow;if(typeof g!=='function'){setTimeout(hook,300);return}
-  if(g.__st)return;const w=function(){const r=g.apply(this,arguments);try{show()}catch(e){console.warn('[stats]',e)}return r};w.__st=1;window.gShow=w;
+  if(g.__st)return;try{if(!ensureShell())setTimeout(()=>{try{ensureShell()}catch(e){}},1000)}catch(e){}const w=function(){const r=g.apply(this,arguments);try{show()}catch(e){console.warn('[stats]',e)}return r};w.__st=1;window.gShow=w;
   const p=document.getElementById('p-guide');if(p&&p.classList.contains('on'))try{show()}catch(e){}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();
 })();
