@@ -281,6 +281,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div style="background:#E8F5E9;border:1.5px solid #2E7D32;border-radius:10px;padding:12px;margin-bottom:10px;text-align:center">
         <div style="font-size:13px;font-weight:700;color:#2E7D32;margin-bottom:4px">📌 예약서를 저장 후 카톡 채널로 보내주세요!</div>
         <div style="font-size:11px;color:#5D4037;line-height:1.5">아래 카톡 상담 버튼을 눌러 채널 입장 후<br>방금 저장한 이미지를 전송해주시면 끝!</div>
+        <div id="holdNotice" style="display:none;font-size:11px;color:#2E7D32;line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px dashed #A5D6A7">✔ 선택하신 날짜 자리를 잡아두었습니다 · 예약금 입금 확인 후 확정됩니다</div>
       </div>
 
       <!-- 카톡 1버튼 (PC/모바일 통합) -->
@@ -349,12 +350,32 @@ var CUST_GEO='';     // 🆕 2026-10-15 고객 주소의 행정구역(시도 시
 var CUST_PT=null;    // 🆕 고객 행정동 중심 좌표 [위도,경도] (변환 실패 시 null → 동선 판정 생략, 건수만)
 var CUST_ROUTE=false;// 🆕 서비스 지역 주소만 동선 판정 (지역 밖 주소는 기존처럼 건수만)
 var DS_CACHE={};     // 🆕 날짜별 판정 캐시 (슬롯·주소가 바뀌면 비움)
-var ROUTE_DEF={warn:80,base:12,detour:1.3,speedKmh:75}; // reservation.html ROUTE_CFG와 같은 기본값 (발행값 slots/_route가 있으면 그걸 씀)
+var HOLDS={};        // 🆕 2026-10-23 접수했지만 아직 예약관리에서 입력 전인 건 (Firebase holds/{팀_날짜}/{id} = {s:'am'|'pm', p:[위도,경도]|0, t:접수시각, k:전화 해시})
+var HOLD_MAX_AGE=7*24*3600*1000; // 안전장치: 7일 지난 가예약은 무시 (정리는 예약관리가 함)
+function phoneKeyHash(ph){ // 전화 뒤 8자리 → 짧은 해시 (Firebase에 번호를 그대로 안 남기려고) — reservation.html과 같은 함수
+  var s='dolbom-hold:'+String(ph||'').replace(/[^0-9]/g,'').slice(-8),h=0x811c9dc5;
+  for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+  return ('0000000'+h.toString(16)).slice(-8);
+}
+// 그 날짜의 유효한 가예약 집계 (시간대별 건수 + 좌표)
+function holdsFor(key){
+  var h=HOLDS[key]||{},o={am:0,pm:0,pam:[],ppm:[]},now=Date.now();
+  for(var id in h){var x=h[id];if(!x||typeof x!=='object')continue;if(x.t&&now-x.t>HOLD_MAX_AGE)continue;
+    var pt=(x.p&&x.p.length===2)?x.p:0;
+    if(x.s==='pm'){o.pm++;o.ppm.push(pt);}else{o.am++;o.pam.push(pt);}}
+  return o;
+}
+var ROUTE_DEF={cust:45,base:12,detour:1.3,speedKmh:75}; // cust: 고객 화면 짝 허용 이동시간(분). reservation.html ROUTE_CFG가 slots/_route로 발행하면 그 값이 우선
 function custPt(){
   if(!CUST_PT&&CUST_GEO&&window.DolbomGeo){var r=window.DolbomGeo.addrCoord(CUST_GEO);CUST_PT=(r&&r.c)?r.c:null;}
   return CUST_PT;
 }
-function routeCfg(){var r=SLOTS&&SLOTS._route;return (r&&typeof r.warn==='number'&&typeof r.speedKmh==='number')?r:ROUTE_DEF;}
+function routeCfg(){
+  var o={},r=SLOTS&&SLOTS._route;
+  for(var k in ROUTE_DEF)o[k]=ROUTE_DEF[k];
+  if(r){for(var k2 in r)if(typeof r[k2]==='number')o[k2]=r[k2];}  // 발행값이 있으면 덮어씀 (cust가 없으면 기본 45)
+  return o;
+}
 // reservation.html coordTravel과 같은 식: 기본 시간 + 직선거리×우회계수 ÷ 속도 (분)
 function travelMin(c1,c2,cfg){
   if(!c1||!c2)return null;
@@ -363,61 +384,81 @@ function travelMin(c1,c2,cfg){
   var h=Math.pow(Math.sin(dLa/2),2)+Math.cos(rad(c1[0]))*Math.cos(rad(c2[0]))*Math.pow(Math.sin(dLo/2),2);
   return Math.round(cfg.base+R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))*cfg.detour/cfg.speedKmh*60);
 }
-// reservation.html bestAssignment과 같은 계산 — 그 날 오전·오후 작업 + 새 예약을 팀 수 안에서
-// 가장 유리하게 짝지었을 때 새 예약이 감당하는 이동시간(분)
-function newJobMinutes(s,T,me){
+// 오후 작업 목록을 팀 줄(n개)에 놓는 모든 순서를 돌며 fn(perm) 호출 — fn이 true를 돌려주면 중단
+function eachPerm(items,n,fn){
+  var used=[],perm=[],stop=false;
+  (function walk(d){
+    if(stop)return;
+    if(d===n){if(fn(perm))stop=true;return;}
+    for(var j=0;j<n;j++){if(used[j])continue;used[j]=true;perm[d]=items[j];walk(d+1);used[j]=false;if(stop)return;}
+  })(0);
+}
+// 그 날 이미 잡힌 작업만으로 가장 좋게 짝지었을 때 '가장 먼 짝'의 이동시간 (분) — 한쪽 시간대가 비면 0
+function existingWorst(A0,P0,crews,cfg){
+  if(!A0.length||!P0.length)return 0;
+  var n0=Math.max(crews,A0.length,P0.length);
+  var A=A0.slice();while(A.length<n0)A.push(null);
+  var P=P0.slice();while(P.length<n0)P.push(null);
+  var m0=null;
+  eachPerm(P,n0,function(perm){var mx=0;for(var i=0;i<n0;i++){var a=A[i],p=perm[i];if(!a||!p)continue;var t=travelMin(a.co,p.co,cfg)||0;if(t>mx)mx=t;}if(m0===null||mx<m0)m0=mx;return m0===0;});
+  return m0||0;
+}
+// 🆕 2026-10-23 새 예약(me)을 T 시간대에 넣을 수 있는지 — 팀마다 오전·오후 두 곳이 cust분 이내여야 한다는 규칙
+//   · 팀 줄 = 팀 수(ps). 한 팀은 오전 1건 + 오후 1건까지. 오전만·오후만 하는 팀은 이동 제한 없음(0분)
+//   · 새 예약이 들어간 뒤에도 모든 팀의 짝이 cust분 이내가 되는 배치가 하나라도 있으면 가능
+//   · 이미 cust분을 넘는 짝이 있는 날(CS가 사유를 적고 접수한 날)은 그 짝을 더 나쁘게 하지 않는 선까지 허용
+//   반환: 그런 배치에서 새 예약이 감당하는 가장 짧은 이동시간(분). 혼자 가는 팀이면 0. 불가능하면 null
+function newJobBest(s,T,me,cfg){
   var pts=s.pts||{};
-  function mk(arr){var o=[];(arr||[]).forEach(function(p){o.push({co:(p&&p.length===2)?p:null});});return o;}
-  var ams=mk(pts.am),pms=mk(pts.pm),mine={co:me,isNew:true};
-  if(T==='am')ams.push(mine);else pms.push(mine);
+  var mk=function(arr){var o=[];(arr||[]).forEach(function(p){o.push({co:(p&&p.length===2)?p:null});});return o;};
+  var A0=mk(pts.am),P0=mk(pts.pm);
   var crews=Math.max(1,s.ps||1);
-  var n=Math.max(crews,ams.length,pms.length);
-  if(!ams.length||!pms.length)return 0;   // 한쪽 시간대가 비어 있으면 짝지을 필요 없음
-  var cfg=routeCfg();
-  if(n>6){                                // 6팀 초과: 가장 가까운 반대 시간대 작업 기준 (reservation과 동일)
-    var opp=(T==='am'?pms:ams).filter(function(x){return !x.isNew&&x.co;});
+  var opp=(T==='am')?P0:A0;
+  if(!opp.length)return 0;                       // 반대 시간대 작업이 없으면 짝지을 것이 없음
+  var n=Math.max(crews,A0.length+(T==='am'?1:0),P0.length+(T==='pm'?1:0));
+  if(n>6){                                       // 팀 7개 이상이면 전수 계산 생략: 가장 가까운 반대 시간대 작업 기준
     if(opp.length<crews)return 0;
     var bm=null;opp.forEach(function(o){var t=travelMin(me,o.co,cfg);if(t!==null&&(bm===null||t<bm))bm=t;});
-    return bm;
+    return bm===null?0:bm;
   }
-  var A=ams.slice();while(A.length<n)A.push(null);
-  var P=pms.slice();while(P.length<n)P.push(null);
-  var best=null,used=[],perm=[];
-  (function walk(d){
-    if(d===n){
-      var mx=0,my=0;
-      for(var i=0;i<n;i++){
-        var a=A[i],p=perm[i];if(!a||!p)continue;
-        var t=travelMin(a.co,p.co,cfg),tv=t===null?0:t;
-        if(tv>mx)mx=tv;
-        if(a.isNew||p.isNew)my=tv;
-      }
-      if(best===null||mx<best.mx||(mx===best.mx&&my<best.my))best={mx:mx,my:my};
-      return;
-    }
-    for(var j=0;j<n;j++){if(used[j])continue;used[j]=true;perm[d]=P[j];walk(d+1);used[j]=false;}
-  })(0);
-  return best.my;
+  var othersLim=Math.max(cfg.cust,existingWorst(A0,P0,crews,cfg));
+  var me_={co:me,isNew:true};
+  var A1=A0.slice(),P1=P0.slice();
+  if(T==='am')A1.push(me_);else P1.push(me_);
+  while(A1.length<n)A1.push(null);while(P1.length<n)P1.push(null);
+  var best=null;
+  eachPerm(P1,n,function(perm){
+    var my=0;
+    for(var i=0;i<n;i++){var a=A1[i],p=perm[i];if(!a||!p)continue;var t=travelMin(a.co,p.co,cfg)||0;if(a.isNew||p.isNew)my=t;else if(t>othersLim)return false;}
+    if(best===null||my<best)best=my;
+    return best===0;
+  });
+  return best;
 }
-// 🆕 2026-10-15 날짜별 오전/오후 가능 판정 — 예약관리(reservation.html)와 같은 기준
+// 🆕 날짜별 오전/오후 가능 판정 — 예약관리(reservation.html)와 같은 건수 + 회사 동선 규칙
 //   ① 남은 자리: 오전 건수 < 팀 수, 오후 건수 < 팀 수 (예약관리 '오전/오후 N건 가능'과 같은 숫자)
-//   ② 차단(회의 등): 그 시간대 마감
-//   ③ 동선: 예약관리 동선 검증과 같은 계산으로 🔴(회사 권장 이동시간 이상)이면 그 시간대 숨김
-//   이전 방식(도시별 팀 점유 추정)은 오전이 다 찼는데 오후 작업만 있는 도시 고객에게 '오전 가능'을 띄움
+//   ② 차단(회의 등)·마감: 그 시간대/그 날 마감
+//   ③ 동선(2026-10-23): 새 예약을 넣었을 때 팀마다 오전·오후 두 곳이 cust분(기본 45) 이내로 짝지어질 수 있어야 함 — 안 되면 그 시간대 숨김
+//   (2026-10-15까지는 예약관리 🔴 기준 80분이었음 / 그 전 '도시별 팀 점유 추정'은 오전이 꽉 찬 날에도 오전 가능을 띄우던 방식)
 function daySlot(dateStr){
   var key=TEAM+'_'+dateStr;
   if(Object.prototype.hasOwnProperty.call(DS_CACHE,key))return DS_CACHE[key];
-  var s=SLOTS[key];
-  if(!s || typeof s.ps!=='number') return null;
-  var A=0,P=0,cities=s.cities||{};
+  var s0=SLOTS[key];
+  if(!s0 || typeof s0.ps!=='number') return null;
+  var A=0,P=0,cities=s0.cities||{};
   for(var c in cities){ A+=cities[c].am||0; P+=cities[c].pm||0; }
+  // 🆕 접수만 되고 아직 입력 전인 가예약도 자리를 차지한 것으로 봄 (접수 순서대로 자리가 잡히게)
+  var hd=holdsFor(key);
+  A+=hd.am; P+=hd.pm;
+  var s=s0;
+  if((hd.am||hd.pm)&&s0.pts){s={ps:s0.ps,amClosed:s0.amClosed,pmClosed:s0.pmClosed,pts:{am:(s0.pts.am||[]).concat(hd.pam),pm:(s0.pts.pm||[]).concat(hd.ppm)}};}
   var amOk=!s.amClosed&&A<s.ps, pmOk=!s.pmClosed&&P<s.ps;
   var wantRoute=CUST_ROUTE&&!!s.pts&&!!CUST_GEO;
   var me=wantRoute?custPt():null;
   if(me){
-    var warn=routeCfg().warn;
-    if(amOk){var ta=newJobMinutes(s,'am',me);if(ta!==null&&ta>=warn)amOk=false;}
-    if(pmOk){var tp=newJobMinutes(s,'pm',me);if(tp!==null&&tp>=warn)pmOk=false;}
+    var cfg=routeCfg();
+    if(amOk){var ta=newJobBest(s,'am',me,cfg);if(ta===null||ta>cfg.cust)amOk=false;}
+    if(pmOk){var tp=newJobBest(s,'pm',me,cfg);if(tp===null||tp>cfg.cust)pmOk=false;}
   }
   var res={am:amOk, pm:pmOk, full:(!amOk && !pmOk)};
   if(!wantRoute||me||window.DolbomGeo)DS_CACHE[key]=res;  // 좌표 파일 로딩 전이면 저장 안 함 (로딩 후 다시 계산)
@@ -573,6 +614,7 @@ function toggleDateAny(){dateAny=!dateAny;var btn=document.getElementById('dateA
 var calYear,calMonth;
 (function(){var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
   fbDb.ref('slots').on('value',function(snap){SLOTS=snap.val()||{};DS_CACHE={};dropFullDates();renderCal();updateTimeAvail();}); // 🆕 슬롯 실시간 구독
+  fbDb.ref('holds').on('value',function(snap){HOLDS=snap.val()||{};DS_CACHE={};dropFullDates();renderCal();updateTimeAvail();}); // 🆕 가예약 실시간 구독 (다른 고객이 방금 접수한 자리 즉시 반영)
   renderCal();
 })();
 function changeMonth(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}if(calMonth<0){calMonth=11;calYear--}renderCal()}
@@ -667,6 +709,7 @@ function buildBookingImage(){
   h+='<div style="font-size:14px;color:#333;line-height:1.9">';
   h+='희망일: '+dateText+'<br>';
   h+='희망시간: '+selectedTime+'<br>';
+  if(!dateAny&&selectedDates.length)h+='<span style="font-size:12.5px;color:#2E7D32">✔ 선택하신 날짜(1순위) 자리를 잡아두었습니다 · 예약금 입금 확인 후 확정됩니다</span><br>';
   h+='주소: '+addr+'<br>';
   h+='연락처: '+phone+'<br>';
   h+='평수: '+pyung+'평<br>';
@@ -781,6 +824,29 @@ function submitBooking(){
       consent:consentValues
     });
   }
+
+  // 🆕 희망일은 빠른 날짜 순으로 (화면의 1·2·3순위 표시와 시트 희망일1·2·3이 같아지게)
+  if(!dateAny)selectedDates.sort();
+
+  // 🆕 2026-10-23 1순위 날짜 자리를 즉시 잡아둠 — 예약관리에서 입력(또는 취소)되면 자동으로 풀림
+  //   다른 고객 화면엔 바로 반영되므로 같은 자리에 두 명이 접수하는 일이 줄어듦. 시간 '상관없음'이면 빈 쪽(동선이 나은 쪽)으로
+  try{
+    if(!dateAny&&selectedDates[0]&&TEAM){
+      var hKey=TEAM+'_'+selectedDates[0];
+      var hSlot=selectedTime.indexOf('오전')>=0?'am':selectedTime.indexOf('오후')>=0?'pm':'';
+      if(!hSlot){
+        var ds0=daySlot(selectedDates[0]);
+        if(ds0&&ds0.am&&!ds0.pm)hSlot='am';else if(ds0&&ds0.pm&&!ds0.am)hSlot='pm';
+        else{
+          var meP=custPt(),s0h=SLOTS[hKey];
+          if(meP&&s0h&&s0h.pts){var cfgH=routeCfg(),ta=newJobBest(s0h,'am',meP,cfgH),tp=newJobBest(s0h,'pm',meP,cfgH);hSlot=((tp===null?1e9:tp)<(ta===null?1e9:ta))?'pm':'am';}
+          else hSlot='am';
+        }
+      }
+      fbDb.ref('holds/'+hKey).push({s:hSlot,p:custPt()||0,t:firebase.database.ServerValue.TIMESTAMP,k:phoneKeyHash(phone)});
+      var hn=document.getElementById('holdNotice');if(hn)hn.style.display='block';
+    }
+  }catch(e){console.warn('가예약 기록 실패:',e);}
 
   // 5) 예약 데이터 전송 (handleBooking)
   var bookingData={

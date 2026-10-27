@@ -731,6 +731,42 @@ fbDb.ref('closedDates').on('value',snap=>{
   if(selectedDate) renderDayDetail(selectedDate);
 });
 
+// ── 🆕 2026-10-23 가예약(접수 대기) — 고객이 booking.html에서 접수하면 1순위 날짜 자리를 Firebase holds에 즉시 잡음 ──
+//   holds/{팀_날짜}/{id} = {s:'am'|'pm', p:[위도,경도]|0, t:접수시각, k:전화 해시}
+//   여기서는 ① 날짜 상세에 '접수 대기'로 보여주고 ② 접수함에서 사라진 건(입력·예약완료·취소)과 시공스케줄에 이미 들어간 건을 자동 삭제
+let HOLDS={};
+fbDb.ref('holds').on('value',snap=>{HOLDS=snap.val()||{};if(selectedDate)renderDayDetail(selectedDate);});
+function phoneKeyHash(ph){ // booking.html과 같은 함수
+  var s='dolbom-hold:'+String(ph||'').replace(/[^0-9]/g,'').slice(-8),h=0x811c9dc5;
+  for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+  return ('0000000'+h.toString(16)).slice(-8);
+}
+function holdsOn(team,ds){ // 그 날짜 가예약 목록 (만료 7일 제외)
+  const h=HOLDS[team+'_'+ds]||{},now=Date.now(),out=[];
+  Object.keys(h).forEach(id=>{const x=h[id];if(!x||typeof x!=='object')return;if(x.t&&now-x.t>7*24*3600*1000)return;out.push({id,slot:x.s==='pm'?'pm':'am',k:x.k||'',t:x.t||0});});
+  return out;
+}
+function holdName(k){ // 접수함 카드와 해시로 연결해 이름 표시
+  const b=(lastBookings||[]).find(b=>phoneKeyHash(b.phone)===k);
+  return b?b.name:'';
+}
+// 접수함(신규접수·입금완료) 목록이 올 때마다: 목록에 없는 가예약(처리 완료·취소)과 시공스케줄에 들어간 가예약은 삭제
+function cleanHolds(bookings){
+  try{
+    const pending=new Set((bookings||[]).map(b=>phoneKeyHash(b.phone)));
+    const inSched=new Set();
+    const today=new Date();today.setHours(0,0,0,0);
+    ['부산','경기'].forEach(team=>{const sc=schedAll[team]||{};Object.keys(sc).forEach(ds=>{const dt=new Date(ds);if(isNaN(dt.getTime())||dt<today)return;
+      ['am','pm'].forEach(sl=>(sc[ds][sl]||[]).forEach(s=>{const p8=String(s.phone||'').replace(/[^0-9]/g,'').slice(-8);if(p8.length===8)inSched.add(phoneKeyHash(p8));}));});});
+    const now=Date.now(),del={};let n=0;
+    Object.keys(HOLDS).forEach(key=>{const h=HOLDS[key]||{};Object.keys(h).forEach(id=>{const x=h[id]||{};
+      if(x.t&&now-x.t<10*60*1000)return;              // 접수 직후 10분은 건드리지 않음 (접수함에 아직 안 올라왔을 수 있음)
+      const gone=!pending.has(x.k), entered=inSched.has(x.k), old=x.t&&now-x.t>7*24*3600*1000;
+      if(gone||entered||old){del[key+'/'+id]=null;n++;}});});
+    if(n)fbDb.ref('holds').update(del).then(()=>console.log('🧹 가예약 정리',n,'건'));
+  }catch(e){console.warn('가예약 정리 건너뜀:',e);}
+}
+
 // ── 🆕 스케줄러와 동일한 Firebase 명단·팀 구성 구독 (단일 소스) ──
 let FB_EMP={부산:null,경기:null};   // 스케줄러 직원 명단 (문자열 배열)
 let FB_TEAMS={부산:null,경기:null}; // 스케줄러 팀 구성 [[이름,...],...]
@@ -828,20 +864,21 @@ function publishSlots(){
       updates[region+'_'+ds]=rec;
     });
   });
-  // 🆕 전원 휴무로 팀이 0인 미래 날짜도 마감 발행 (작업 0건이어도 막아야 함)
+  // 🆕 2026-10-23 작업이 없는 날도 앞으로 70일은 팀 수를 발행 — 고객 페이지가 '접수 대기(가예약)'를 팀 수와 비교하려면 ps가 필요
+  //   (전엔 작업 있는 날 + 전원 휴무일만 발행했음. 휴무로 팀 0이면 ps:0 → 마감)
   ['부산','경기'].forEach(function(region){
-    var offs2=OFFS_ALL[region]||{};
-    Object.keys(offs2).forEach(function(ds){
-      if(updates[region+'_'+ds]) return;  // 이미 작업 있는 날은 처리됨
-      var dt=new Date(ds); if(isNaN(dt.getTime())||dt<today) return;  // 미래만
-      var ps2=getCapacity(region,ds).crews; // 🆕 스케줄러 명단·팀 구성 기준
-      if(ps2===0) updates[region+'_'+ds]={ps:0, cities:{}};  // 팀 0 → 마감
-    });
+    for(var d=0; d<=70; d++){
+      var dt2=new Date(today); dt2.setDate(dt2.getDate()+d);
+      var ds=dt2.getFullYear()+'-'+String(dt2.getMonth()+1).padStart(2,'0')+'-'+String(dt2.getDate()).padStart(2,'0');
+      if(updates[region+'_'+ds]) continue;  // 작업 있는 날은 위에서 처리됨
+      var ps2=getCapacity(region,ds).crews; if(!isFinite(ps2)) ps2=0;
+      updates[region+'_'+ds]={ps:ps2, cities:{}, pts:{am:[],pm:[]}};
+    }
   });
   var cnt=Object.keys(updates).length;
   if(cnt){
     // 🆕 고객 화면 동선 기준값 = 이 페이지 ROUTE_CFG (기준값을 바꾸면 고객 화면도 자동으로 따라감)
-    try{ updates['_route']={warn:ROUTE_CFG.warn,base:ROUTE_CFG.base,detour:ROUTE_CFG.detour,speedKmh:ROUTE_CFG.speedKmh}; }catch(e){}
+    try{ updates['_route']={warn:ROUTE_CFG.warn,cust:ROUTE_CFG.cust,base:ROUTE_CFG.base,detour:ROUTE_CFG.detour,speedKmh:ROUTE_CFG.speedKmh}; }catch(e){}
     fbDb.ref('slots').update(updates)
       .then(function(){
         console.log('✅ 슬롯 기록 완료:',cnt,'일');  // 평소엔 조용히 콘솔에만
@@ -1367,8 +1404,13 @@ function renderDayDetail(ds){
   const pmRemain = maxPS - realCount(sc.pm); // 🆕 차단용 표시 제외
 
   // ── 🆕 배차판 그리드: 열=[오전|오후|AS|실측], 행=한 팀의 하루 동선 ──
-  const _amLbl=`☀️ 오전 <span style="font-size:11px;color:${amRemain>0?'var(--green)':'var(--red)'};">(${amRemain>0?amRemain+'건 가능':'마감'})</span>`;
-  const _pmLbl=`🌙 오후 <span style="font-size:11px;color:${pmRemain>0?'var(--green)':'var(--red)'};">(${pmRemain>0?pmRemain+'건 가능':'마감'})</span>`;
+  const _hd=holdsOn(currentTeam,ds), _hAm=_hd.filter(h=>h.slot==='am').length, _hPm=_hd.filter(h=>h.slot==='pm').length; // 🆕 접수 대기(가예약)
+  const _amLbl=`☀️ 오전 <span style="font-size:11px;color:${amRemain>0?'var(--green)':'var(--red)'};">(${amRemain>0?amRemain+'건 가능':'마감'}${_hAm?' · 대기 '+_hAm:''})</span>`;
+  const _pmLbl=`🌙 오후 <span style="font-size:11px;color:${pmRemain>0?'var(--green)':'var(--red)'};">(${pmRemain>0?pmRemain+'건 가능':'마감'}${_hPm?' · 대기 '+_hPm:''})</span>`;
+  if(_hd.length){ // 고객 화면에선 이 자리가 이미 닫혀 보임 — 접수함에서 입력·취소하면 자동으로 풀림
+    badgeHtml+=`<span class="badge" style="background:#FFF3E0;color:#B25000;font-size:10px">🕒 접수 대기 ${_hd.length}건: ${_hd.map(h=>(holdName(h.k)||'접수함 확인')+'('+(h.slot==='am'?'오전':'오후')+')').join(', ')}</span>`;
+    document.getElementById('detailBadges').innerHTML=badgeHtml;
+  }
   const dgCols=[
     {slot:'am',label:_amLbl,list:sc.am,kind:'ampm',time:'오전'},
     {slot:'pm',label:_pmLbl,list:sc.pm,kind:'ampm',time:'오후'},
@@ -1730,6 +1772,31 @@ loadData().then(function(){
 //  - 주기 30초 → 60초 (CS 여러 탭 × 2종 요청이 Apps Script 대기열을 만들었음)
 var bookingsBusy=false;
 setInterval(function(){ if(!document.hidden) loadNewBookings(); }, 60000);
+// 🆕 2026-10-23 5분마다 시공스케줄·휴무 CSV를 조용히 다시 읽어 고객 화면 슬롯을 재발행 (Apps Script는 안 부름)
+//   스케줄러·시트에서 바꾼 일정이 예약관리 새로고침 없이도 고객 화면에 반영되게. 입력 중(폼에 커서)이거나 탭이 안 보이면 건너뜀
+var _silentBusy=false;
+async function silentRefresh(){
+  if(_silentBusy||document.hidden)return;
+  const ae=document.activeElement;if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'))return;
+  _silentBusy=true;
+  try{
+    const [schedBS,schedGG,offBS,offGG]=await Promise.all([
+      fetch(SCHED_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(SCHED_CSV['경기']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(OFF_CSV['부산']+'&_='+Date.now()).then(r=>r.text()),
+      fetch(OFF_CSV['경기']+'&_='+Date.now()).then(r=>r.text())
+    ]);
+    parseScheduleDataTo(csvToObjects(schedBS),'부산');
+    parseScheduleDataTo(csvToObjects(schedGG),'경기');
+    OFFS_ALL['부산']=parseOffCSVTo(offBS);OFFS_ALL['경기']=parseOffCSVTo(offGG);OFFS=OFFS_ALL[currentTeam];
+    scheduleData=schedAll[currentTeam];
+    lastSync=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});updateSyncInfo();
+    renderCalendar();renderWeekView();if(selectedDate)renderDayDetail(selectedDate);
+    publishSlots();
+  }catch(e){console.warn('자동 갱신 건너뜀:',e);}
+  _silentBusy=false;
+}
+setInterval(silentRefresh, 5*60*1000);
 document.addEventListener('visibilitychange',function(){
   if(!document.hidden){ loadNewBookings(); }
 });
@@ -1751,6 +1818,7 @@ function loadNewBookings(){
       }
       lastBookings=data.bookings||[];
       renderNewBookings(lastBookings);
+      cleanHolds(lastBookings);  // 🆕 처리된 접수의 가예약 해제
       checkSmsExpiry();
       if(lastDeposits.length)renderDeposits(); // 접수 목록 바뀌면 입금 매칭도 갱신
       loadDeposits(false);
@@ -2302,7 +2370,7 @@ function updateBookingStatus(rowNumber,status,name){
 
 /* ───────── 같은 날 이동 동선 검증 (최선 배치 기준) ───────── */
 // 기준값 — 여기 숫자만 바꾸면 전체 반영 (분)
-const ROUTE_CFG={good:40,check:60,warn:80,base:12,detour:1.3,speedKmh:75}; // base: 출발·도착 시내 구간 고정 시간(분)
+const ROUTE_CFG={good:40,check:60,warn:80,cust:45,base:12,detour:1.3,speedKmh:75}; // base: 출발·도착 시내 구간 고정 시간(분) · cust: 고객 예약 페이지에서 오전↔오후 짝으로 허용하는 최대 이동시간(분, 2026-10-23 회사 규칙 45) — 바꾸면 이 페이지를 한 번 새로고침해야 고객 화면에 반영
 const REGION_COORD={
   수원:[37.263,127.028],화성:[37.199,126.831],오산:[37.149,127.077],평택:[36.992,127.112],안성:[37.008,127.279],용인:[37.241,127.177],
   이천:[37.272,127.435],여주:[37.298,127.637],양평:[37.491,127.487],광주시:[37.429,127.255],성남:[37.420,127.126],하남:[37.539,127.214],
