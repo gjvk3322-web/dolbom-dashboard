@@ -85,7 +85,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.21b';
+const IO_VER='2026.10.28a';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -825,7 +825,7 @@ function jobsOf(plate,fromDate,toDate){ // 스케줄(J)에서 이 차량의 시�
     if(j.sold==null){o.noSold=true;return} // 스케줄러가 판매갯수를 안 넘기는 구버전
     const q=+j.sold||0;
     if(q>0){o.sold+=q;o.n++;o.list.push({date:j.date,addr:String(j.addr||'').replace(/\(.*?\)/g,'').trim().slice(0,16),q,prod:prodKeyOfCode(j.mat&&j.mat[0]&&j.mat[0].t)})}
-    else if(t!=='AS'&&j.sasu)o.miss++;
+    else if(t!=='AS'&&j.sasu&&!j.reported)o.miss++; // 2026-10-28: 0장으로 보고된 건은 미입력 아님
   });
   return o;
 }
@@ -1358,7 +1358,7 @@ function formJobs(){ // v28/v36: 출고 = 작업일(F.wdate)에 이 차가 갈 �
   if(list){
     if(!list.length)return R;
     const sold=list.reduce((a,j)=>a+(+j.sold||0),0);
-    const lab=j=>{const q=+j.sold||0;if(q>0)return q+'장';if(/^AS$/i.test(String(j.time||'')))return 'AS';if(j.date>kstDate(0))return '예정';return String(j.sasu||'').trim()?'미입력':'—'};
+    const lab=j=>{const q=+j.sold||0;if(q>0)return q+'장';if(/^AS$/i.test(String(j.time||'')))return 'AS';if(j.date>kstDate(0))return '예정';if(j.reported)return '0장';return String(j.sasu||'').trim()?'미입력':'—'};
     R.label='현장 '+list.length+'곳';
     R.html=`<div class="iog-jobs">${list.map(j=>jobRowHTML(j,esc(lab(j)),lab(j)==='미입력'?'miss':'')).join('')}<div class="sum"><span>판매</span><span>${sold}장</span></div>${carryLine}</div>`;return R;
   }

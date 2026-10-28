@@ -26,7 +26,7 @@ if(!X||!X.util||!X.records){console.warn('[iocycle] iolog.js v27+ 필요');retur
 const U=X.util,PRODUCTS=X.PRODUCTS,PART=X.PART,RK=X.RK,RN=X.RN;
 const $=id=>document.getElementById(id),esc=U.esc;
 const NODE=(X.beta?'io_cycle_beta/':'io_cycle/')+RK;
-const CY_VER='2026.10.21a';
+const CY_VER='2026.10.28a';
 const CY_START=(X.cyStart&&/^\d{4}-\d{2}-\d{2}$/.test(String(X.cyStart)))?String(X.cyStart):'2026-10-05'; // 입출고 시작일 (2026-10-06 초기화 기준일) — 이 날 전 작업일은 기록도 시공도 안 봄 (경고·장부·카드 전부). 테스트는 __io.cyStart로 바꿈
 const NP=p=>U.normPlate(p)||'_';
 const nn=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
@@ -210,6 +210,7 @@ function compute(day){ // 그날 시공 연결·계산. 시공은 자기 날짜�
         if(String(a.pay||'')==='무료'){row.asFree=q;P(k).asFree+=q;row.st=q?'free':'zero'}else{row.sold=q;P(k).sold+=q;row.st=q?'ok':'zero'}}
     }
     else if(j.date>U.kstDate(0)){row.st='future'}
+    else if(j.reported){row.st='zero'} // 2026-10-28: 시공보고가 0장으로 들어온 건(이전시공·재시공 등 시공비만 받는 경우) — 미입력이 아니라 0장으로 확정
     else if(namesOf(j).length){row.st='miss';miss.push(row)}
     else row.st='none';
     linked.push(row);
