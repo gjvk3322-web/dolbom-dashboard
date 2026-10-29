@@ -408,6 +408,33 @@
   .okp-fb b{color:var(--accent-deep);font-size:11px;display:block;margin-bottom:2px}
   .okp-fb-btn{margin-top:6px}
   .form-files{display:flex;gap:6px;flex-wrap:wrap}
+  /* ── 복지 제안 (익명 게시판) ── */
+  .wf-notice{background:#FFF9EC;border:1px solid #F0E2BE;border-radius:14px;padding:12px 16px;font-size:13px;line-height:1.7;color:#5B4A1F;margin-bottom:16px}
+  .wf-adopted{background:linear-gradient(180deg,#F1FBF6,#E9F8F1);border:1px solid #D4EFE3;border-radius:16px;padding:16px 18px;margin-bottom:18px}
+  .wf-adopted h2{font-size:15px;margin:0 0 6px;color:var(--accent-deep)}
+  .wf-adopted .it{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-top:1px dashed #D4EFE3;font-size:13.5px;flex-wrap:wrap}
+  .wf-adopted .it:first-of-type{border-top:0}
+  .wf-adopted .it b{white-space:nowrap}
+  .wf-adopted .it span{color:#3D4844;flex:1;min-width:200px}
+  .wf-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .wf-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 2px rgba(33,43,54,.04)}
+  .wf-card.adopted{border-color:#BFE9D6}
+  .wf-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  .wf-title{font-size:15.5px;font-weight:800;flex:1;min-width:160px}
+  .wf-st{border-radius:999px;font-size:11px;font-weight:700;padding:3px 9px;white-space:nowrap}
+  .wf-body{font-size:13.5px;line-height:1.7;white-space:pre-wrap;color:#3D4844}
+  .wf-ans{margin-top:10px;background:var(--tint);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:9px 12px;font-size:13px;line-height:1.6;white-space:pre-wrap}
+  .wf-ans b{color:var(--accent-deep);display:block;font-size:11.5px;margin-bottom:2px}
+  .wf-foot{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .wf-like{border:1.5px solid #DDE5E1;background:#fff;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .wf-like.on{background:var(--tint);border-color:var(--accent);color:var(--accent-deep)}
+  .wf-meta{font-size:12px;color:var(--muted);margin-left:auto}
+  .wf-cmts{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+  .wf-cmt{font-size:13px;line-height:1.6;padding:5px 0;display:flex;gap:8px;align-items:flex-start}
+  .wf-cmt .t{flex:1;white-space:pre-wrap}
+  .wf-cmt .d{color:var(--muted);font-size:11.5px;white-space:nowrap}
+  .wf-cmt-in{display:flex;gap:6px;margin-top:6px}
+  .wf-cmt-in input{flex:1}
   .form-files a{text-decoration:none;display:inline-flex;align-items:center;gap:3px}
   /* ── 경영 데이터 섹션 (숨기기 가능) ── */
   .dash-filter{display:inline-flex;gap:0;margin:2px 0 20px;background:#EFF3F1;border-radius:12px;padding:4px}
@@ -615,7 +642,7 @@
       <div class="nav-group">기준 · 문서</div>
       <button data-view="manual">팀 매뉴얼</button>
       <button data-view="rules">운영 원칙</button>
-      <button data-view="forms">서류 서식</button>
+      <button data-view="welfare">복지 제안</button>
       <div class="nav-group">기타</div>
       <button data-view="events">이벤트</button>
       <button data-view="tools">도구 모음</button>
@@ -1051,17 +1078,19 @@
       </table></div>
     </section>
 
-    <!-- 서류 서식 -->
-    <section id="forms" class="section">
+    <!-- 복지 제안 (익명 게시판) -->
+    <section id="welfare" class="section">
       <div class="topbar">
         <div>
-          <h1>서류 서식</h1>
-          <div class="lead">회사에서 쓰는 서류의 표준 양식 모음. 카드를 누르면 작성 방법과 양식 본문이 열리고, <b>양식 복사</b> 버튼으로 그대로 복사해 쓸 수 있습니다.</div>
+          <h1>복지 제안</h1>
+          <div class="lead">이전 회사에서 좋았던 복지, 우리 회사에 있었으면 하는 복지를 <b>익명</b>으로 올려 주세요. 공감이 많은 제안부터 대표가 검토해 도입하고, 도입된 복지는 이 화면 위에 쌓입니다.</div>
         </div>
-        <button class="btn primary" id="addFormBtn">서식 추가</button>
+        <button class="btn primary" id="addWelfareBtn">제안 쓰기</button>
       </div>
-      <div class="form-filters" id="formFilters"></div>
-      <div id="formList"></div>
+      <div class="wf-notice">🔒 <b>작성자 정보는 저장되지 않습니다.</b> 이름·로그인 계정·활동 기록 어디에도 남지 않고, 대표도 누가 썼는지 알 수 없어요. 본인이 드러나는 내용(팀·입사 시기 등)만 피해 주세요. 수정·삭제는 글을 쓴 그 기기(브라우저)에서만 할 수 있습니다.</div>
+      <div id="wfAdopted"></div>
+      <div class="wf-filters" id="wfFilters"></div>
+      <div id="wfList"></div>
     </section>
 
     <!-- 시공팀 매뉴얼 -->
@@ -1498,25 +1527,32 @@
   </form>
 </dialog>
 
-<!-- 서식 모달 -->
-<dialog id="formModal">
+<!-- 복지 제안 쓰기 모달 -->
+<dialog id="wfModal">
   <form method="dialog" onsubmit="return false">
-    <div class="modal-head"><strong id="formModalTitle">서식 추가</strong><button class="mini-btn" onclick="formModal.close()">닫기</button></div>
+    <div class="modal-head"><strong id="wfModalTitle">복지 제안 쓰기</strong><button class="mini-btn" onclick="wfModal.close()">닫기</button></div>
     <div class="modal-body" style="grid-template-columns:1fr">
-      <input type="hidden" id="formId">
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
-        <div class="field"><label>서식 이름 *</label><input id="fTitle"></div>
-        <div class="field"><label>분류</label><input id="fCat" list="fCatList"><datalist id="fCatList"></datalist></div>
-      </div>
-      <div class="field"><label>용도</label><input id="fPurpose"></div>
-      <div class="field"><label>작성 방법</label><textarea id="fGuide"></textarea></div>
-      <div class="field"><label>서식 파일</label>
-        <input type="file" id="fFiles" multiple accept=".hwp,.hwpx,.doc,.docx,.xls,.xlsx,.pdf,.txt,.zip">
-        <div id="fFileList" style="margin-top:6px"></div>
-      </div>
-      <div class="field"><label>양식 본문</label><textarea id="fTemplate" style="min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:13px"></textarea></div>
+      <input type="hidden" id="wfId">
+      <div class="hint">익명으로 올라갑니다. 누가 썼는지는 어디에도 저장되지 않아요.</div>
+      <div class="field"><label>분류</label><div class="ev-radio" id="wfCatPick"></div></div>
+      <div class="field"><label>복지 이름 *</label><input id="wfTitle" placeholder="예: 결혼 휴가 5일 · 경조사비 지원 · 생일 반차"></div>
+      <div class="field"><label>어떤 복지인지 *</label><textarea id="wfBody" style="min-height:140px" placeholder="어떤 조건으로 뭘 받았는지, 이전 회사에선 어떻게 운영됐는지, 우리 회사에 맞게 바꾸면 좋을 점 — 편하게 적어 주세요"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn" onclick="formModal.close()">취소</button><button class="btn primary" id="saveFormBtn">저장</button></div>
+    <div class="modal-foot"><button class="btn" onclick="wfModal.close()">취소</button><button class="btn primary" id="saveWfBtn">익명으로 올리기</button></div>
+  </form>
+</dialog>
+
+<!-- 복지 제안: 관리자 상태·답변 모달 -->
+<dialog id="wfAnsModal">
+  <form method="dialog" onsubmit="return false">
+    <div class="modal-head"><div><strong>상태 · 대표 답변</strong><div class="tk-sub" id="wfAnsTitle"></div></div><button class="mini-btn" onclick="wfAnsModal.close()">닫기</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <input type="hidden" id="wfAnsId">
+      <div class="field"><label>상태</label><select id="wfAnsStatus"></select></div>
+      <div class="field"><label>답변 (전 직원에게 공개)</label><textarea id="wfAnsText" placeholder="예: 11월부터 시행 — 본인 결혼 시 유급 5일"></textarea></div>
+      <div class="hint">도입 확정으로 바꾸면 상단 '우리 회사 복지' 목록에 답변 내용이 그대로 올라갑니다.</div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="wfAnsModal.close()">취소</button><button class="btn primary" id="saveWfAnsBtn">저장</button></div>
   </form>
 </dialog>
 
@@ -3093,7 +3129,7 @@ function renderAll(){
   if (!data) return;
   if (document.activeElement !== $("companyMission")) $("companyMission").innerText = data.mission || "";
   [renderKpis, renderDepartments, renderPeople, renderDeptOptions,
-   renderTiers, renderDecisionTable, renderForms, renderMeetings,
+   renderTiers, renderDecisionTable, renderWelfare, renderMeetings,
    renderCalendar, renderTasks, renderTools, renderLogs, renderOkr, renderManual, renderOrgChart, renderLeave, renderAttendance, renderBudget, renderEvents, renderStockSummary, renderFilm, renderReviewCashback].forEach(fn => {
     try { fn(); } catch(e){ console.error(fn.name + " 렌더 오류:", e); }
   });
@@ -3552,59 +3588,6 @@ function renderDecisionTable(){
     </tr>`).join("") || `<tr><td colspan="5" class="lead">항목이 없습니다.</td></tr>`;
 }
 
-let formCatFilter = "전체";
-let openForms = {};
-function renderForms(){
-  const all = entries(data.forms).sort(byOrder);
-  const cats = [...new Set(all.map(f => (f.cat || "기타").trim() || "기타"))];
-  $("formFilters").innerHTML = ["전체", ...cats].map(c =>
-    `<button class="fchip ${c === formCatFilter ? "on" : ""}" data-c="${esc(c)}">${esc(c)}${c === "전체" ? ` ${all.length}` : ""}</button>`).join("");
-  $("formFilters").querySelectorAll(".fchip").forEach(b => b.onclick = () => setFormCat(b.dataset.c));
-  const list = all.filter(f => formCatFilter === "전체" || ((f.cat || "기타").trim() || "기타") === formCatFilter);
-  const fmt = t => { if (!t) return ""; const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()}`; };
-  $("formList").innerHTML = list.map(f => {
-    const open = !!openForms[f.id];
-    const guide = lines(f.guide || "");
-    return `<div class="form-card ${open ? "open" : ""}">
-      <div class="form-head" onclick="toggleForm('${f.id}')">
-        <div>
-          <span class="chip">${esc((f.cat || "기타").trim() || "기타")}</span>
-          <b class="form-title">${esc(f.title)}</b>
-          <div class="form-purpose">${esc(f.purpose || "")}</div>
-        </div>
-        <span class="form-arrow">${open ? "▾" : "▸"}</span>
-      </div>
-      ${open ? `<div class="form-body">
-        ${guide.length ? `<div class="form-sub">작성 방법</div><ol class="form-guide">${guide.map(g => `<li>${esc(g)}</li>`).join("")}</ol>` : ""}
-        ${toArr(f.files).length ? `<div class="form-sub">서식 파일</div><div class="form-files">${toArr(f.files).map(fl => `<a class="mini-btn" href="${esc(fl.url)}" target="_blank" rel="noopener">⬇ ${esc(fl.name)}${fl.size ? ` <span style="color:var(--muted)">(${fmtSize(fl.size)})</span>` : ""}</a>`).join("")}</div>` : ""}
-        ${(f.template || "").trim() ? `<div class="form-sub">양식 본문</div>
-        <pre class="form-pre">${esc(f.template)}</pre>` : ""}
-        <div class="form-actions">
-          <span class="form-meta">${f.updatedBy ? esc(f.updatedBy) + " · " + fmt(f.updatedAt) + " 수정" : ""}</span>
-          ${(f.template || "").trim() ? `<button class="mini-btn" onclick="copyForm('${f.id}', this)">📋 양식 복사</button>` : ""}
-          <button class="mini-btn" onclick="editForm('${f.id}')">수정</button>
-          <button class="mini-btn" onclick="deleteForm('${f.id}')">삭제</button>
-        </div>
-      </div>` : ""}
-    </div>`;
-  }).join("") || `<div class="lead">등록된 서식이 없습니다. 자주 쓰는 보고·접수 양식부터 추가하세요.</div>`;
-}
-window.setFormCat = c => { formCatFilter = c; renderForms(); };
-window.toggleForm = id => { openForms[id] = !openForms[id]; renderForms(); };
-window.copyForm = async (id, btn) => {
-  const f = (data.forms || {})[id]; if (!f) return;
-  try {
-    await navigator.clipboard.writeText(f.template || "");
-  } catch(e){
-    const ta = document.createElement("textarea");
-    ta.value = f.template || ""; document.body.appendChild(ta);
-    ta.select(); document.execCommand("copy"); ta.remove();
-  }
-  const old = btn.textContent; btn.textContent = "✓ 복사됨";
-  setTimeout(() => btn.textContent = old, 1500);
-  showToast(`'${f.title}' 양식이 복사되었습니다`);
-};
-
 function renderMeetings(){
   const list = entries(data.weekly).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   const field = (label, v) => v ? `<div class="meeting-field"><b>${label}</b><div>${esc(v)}</div></div>` : "";
@@ -4008,104 +3991,155 @@ $("saveDecisionBtn").onclick = async () => {
   }
 };
 
-/* ───────── 서류 서식 CRUD ───────── */
-const formModal = $("formModal");
-let formFiles = []; // 저장 대기 중인 첨부 목록: 기존 {name,url,size} 또는 신규 {name,size,file:File}
+/* ───────── 공용 파일 헬퍼 (매뉴얼 게시판에서 사용) ───────── */
 const fmtSize = b => b >= 1048576 ? (b/1048576).toFixed(1) + "MB" : Math.max(1, Math.round(b/1024)) + "KB";
-function renderFFileList(){
-  $("fFileList").innerHTML = formFiles.map((f, i) =>
-    `<span class="chip" style="display:inline-flex;align-items:center;gap:6px">${esc(f.name)} (${fmtSize(f.size || 0)})
-      <a style="cursor:pointer;font-weight:800" onclick="removeFFile(${i})">✕</a></span>`).join("")
-    || `<span class="hint" style="font-size:12px;color:var(--muted)">첨부된 파일이 없습니다.</span>`;
-}
-window.removeFFile = i => { formFiles.splice(i, 1); renderFFileList(); };
-$("fFiles").onchange = e => {
-  for (const file of e.target.files){
-    if (file.size > 10 * 1048576){ alert(`'${file.name}'은 10MB를 넘어 첨부할 수 없습니다.`); continue; }
-    formFiles.push({ name: file.name, size: file.size, file });
-  }
-  e.target.value = "";
-  renderFFileList();
-};
 const readB64 = file => new Promise((res, rej) => {
   const r = new FileReader();
   r.onload = () => res(String(r.result).split(",")[1]);
   r.onerror = () => rej(new Error("파일 읽기 실패"));
   r.readAsDataURL(file);
 });
-async function uploadFormFile(f){
-  const b64 = await readB64(f.file);
-  const resp = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify({ type: "formUpload", filename: f.name, mimeType: f.file.type || "application/octet-stream", data: b64 })
-  });
-  const j = await resp.json();
-  if (!j || !j.ok || !j.url) throw new Error((j && j.error) || "업로드 실패");
-  return { name: f.name, size: f.size, url: j.url };
+
+/* ───────── 복지 제안 (익명 게시판) ─────────
+   org/welfare/{id} = { title, body, cat, at, status, tok, likes:{tok:true}, comments:{id:{text, at, tok}}, answer:{text, at, by} }
+   익명 원칙: 글·댓글·공감에 이름·계정을 저장하지 않음. tok = 작성 기기의 랜덤 토큰 해시(localStorage) — 그 기기에서만 수정·삭제 가능, 사람과 연결되는 값 아님.
+   활동 기록에도 작성자는 "익명"으로만 남고, 관리자의 상태 변경·삭제만 관리자 이름으로 남음.
+   status: open 접수 → review 검토 중 → adopted 도입 확정 / hold 보류 / rejected 반려 (관리자만 변경) */
+const wfModal = $("wfModal"), wfAnsModal = $("wfAnsModal");
+const WF_CATS = ["경조사", "휴가", "건강", "금전·지원", "업무환경", "기타"];
+const WF_ST = { open:["접수", "#EEF2F0;color:#5B6763"], review:["검토 중", "#FFF7E0;color:#B8860B"], adopted:["도입 확정", "var(--tint);color:var(--accent-deep)"], hold:["보류", "#E8EEFF;color:#3554B8"], rejected:["반려", "#FDECEA;color:#C62828"] };
+function wfTok(){
+  let t = localStorage.getItem("orgAnonTok");
+  if (!t){ t = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("orgAnonTok", t); }
+  return tkHash(t + "|wf") + tkHash(t.split("").reverse().join("") + "|wf");
 }
-function fillCatDatalist(){
-  const cats = [...new Set(entries(data.forms).map(f => (f.cat || "").trim()).filter(Boolean))];
-  $("fCatList").innerHTML = cats.map(c => `<option value="${esc(c)}">`).join("");
+const wfMine = p => !!(p && p.tok && p.tok === wfTok());
+const wfFmt = t => { const d = new Date(t || 0); return `${d.getMonth()+1}/${d.getDate()}`; };
+const wfChip = st => { const s = WF_ST[st] || WF_ST.open; return `<span class="wf-st" style="background:${s[1]}">${s[0]}</span>`; };
+const wfLikeN = p => Object.keys(p.likes || {}).length;
+let wfSort = "likes", wfStFilter = "", wfOpenCmt = {};
+
+function renderWelfare(){
+  const el = $("wfList"); if (!el || !data) return;
+  // 재렌더로 입력 중인 댓글이 사라지지 않게 보존
+  const drafts = {}; document.querySelectorAll('[id^="wfCmtIn_"]').forEach(i => { if (i.value) drafts[i.id] = i.value; });
+  const admin = isAdminUser(), me = wfTok();
+  const all = entries(data.welfare);
+  const adopted = all.filter(p => p.status === "adopted").sort((a, b) => ((b.answer || {}).at || b.at || 0) - ((a.answer || {}).at || a.at || 0));
+  $("wfAdopted").innerHTML = adopted.length
+    ? `<div class="wf-adopted"><h2>🎁 우리 회사 복지 — 직원 제안으로 만들어진 것 ${adopted.length}개</h2>${adopted.map(p =>
+        `<div class="it"><b>${esc(p.title)}</b><span>${esc((p.answer || {}).text || "")}</span></div>`).join("")}</div>`
+    : "";
+  const cnt = st => all.filter(p => !st || (p.status || "open") === st).length;
+  $("wfFilters").innerHTML = [["", "전체"], ["open", "접수"], ["review", "검토 중"], ["adopted", "도입 확정"], ["hold", "보류"], ["rejected", "반려"]]
+    .map(([k, l]) => `<button class="fchip ${wfStFilter === k ? "on" : ""}" onclick="wfSetFilter('${k}')">${l} ${cnt(k)}</button>`).join("")
+    + `<span style="margin-left:auto;display:flex;gap:4px">
+        <button class="mini-btn hist-tab ${wfSort === "likes" ? "active" : ""}" onclick="wfSetSort('likes')">공감순</button>
+        <button class="mini-btn hist-tab ${wfSort === "new" ? "active" : ""}" onclick="wfSetSort('new')">최신순</button></span>`;
+  const list = all.filter(p => !wfStFilter || (p.status || "open") === wfStFilter)
+    .sort(wfSort === "new" ? (a, b) => (b.at || 0) - (a.at || 0) : (a, b) => wfLikeN(b) - wfLikeN(a) || (b.at || 0) - (a.at || 0));
+  el.innerHTML = list.map(p => {
+    const liked = !!((p.likes || {})[me]);
+    const cmts = entries(p.comments).sort((a, b) => (a.at || 0) - (b.at || 0));
+    const open = !!wfOpenCmt[p.id];
+    return `<div class="wf-card ${p.status === "adopted" ? "adopted" : ""}">
+      <div class="wf-top"><span class="chip">${esc(p.cat || "기타")}</span><span class="wf-title">${esc(p.title)}</span>${wfChip(p.status)}</div>
+      <div class="wf-body">${esc(p.body)}</div>
+      ${p.answer && p.answer.text ? `<div class="wf-ans"><b>대표 답변 · ${wfFmt(p.answer.at)}</b>${esc(p.answer.text)}</div>` : ""}
+      <div class="wf-foot">
+        <button class="wf-like ${liked ? "on" : ""}" onclick="wfLike('${p.id}')">👍 공감 ${wfLikeN(p)}</button>
+        <button class="mini-btn" onclick="wfToggleCmt('${p.id}')">💬 댓글 ${cmts.length}</button>
+        ${wfMine(p) ? `<button class="mini-btn" onclick="wfEdit('${p.id}')">수정</button><button class="mini-btn" onclick="wfDelMine('${p.id}')">삭제</button>` : ""}
+        ${admin ? `<button class="mini-btn" style="color:var(--accent-deep);font-weight:700" onclick="wfAnswer('${p.id}')">상태·답변</button><button class="mini-btn danger" onclick="wfDelAdmin('${p.id}')">삭제</button>` : ""}
+        <span class="wf-meta">익명 · ${wfFmt(p.at)}</span>
+      </div>
+      ${open ? `<div class="wf-cmts">${cmts.map(c => `<div class="wf-cmt"><span class="t">${esc(c.text)}</span><span class="d">익명 · ${wfFmt(c.at)}</span>${(c.tok === me || admin) ? `<button class="mini-btn" onclick="wfDelCmt('${p.id}','${c.id}')">삭제</button>` : ""}</div>`).join("") || `<div class="hint">첫 댓글을 남겨 보세요.</div>`}
+        <div class="wf-cmt-in"><input id="wfCmtIn_${p.id}" placeholder="익명 댓글 · Enter로 등록" onkeydown="if(event.key==='Enter'){event.preventDefault();wfAddCmt('${p.id}')}"><button class="mini-btn" onclick="wfAddCmt('${p.id}')">등록</button></div></div>` : ""}
+    </div>`;
+  }).join("") || `<div class="lead" style="padding:34px;border:1.5px dashed var(--line);border-radius:14px;text-align:center">${wfStFilter ? "해당 상태의 제안이 없습니다." : "아직 제안이 없어요. 오른쪽 위 <b>제안 쓰기</b>로 첫 복지를 제안해 보세요."}</div>`;
+  Object.entries(drafts).forEach(([id, v]) => { const i = $(id); if (i) i.value = v; });
 }
-$("addFormBtn").onclick = () => {
-  $("formModalTitle").textContent = "서식 추가";
-  $("formId").value = ""; $("fTitle").value = ""; $("fCat").value = "";
-  $("fPurpose").value = ""; $("fGuide").value = ""; $("fTemplate").value = "";
-  formFiles = []; renderFFileList();
-  fillCatDatalist();
-  formModal.showModal();
+window.wfSetFilter = k => { wfStFilter = k; renderWelfare(); };
+window.wfSetSort = k => { wfSort = k; renderWelfare(); };
+window.wfToggleCmt = id => { wfOpenCmt[id] = !wfOpenCmt[id]; renderWelfare(); };
+window.wfLike = async id => {
+  const p = (data.welfare || {})[id]; if (!p) return;
+  const me = wfTok(), on = !!((p.likes || {})[me]);
+  try { await orgRef.child(`welfare/${id}/likes/${me}`).set(on ? null : true); }
+  catch(e){ showToast("공감 저장에 실패했어요 — 인터넷 연결을 확인해 주세요", true); }
 };
-window.editForm = id => {
-  const f = (data.forms || {})[id]; if (!f) return;
-  $("formModalTitle").textContent = "서식 수정";
-  $("formId").value = id;
-  $("fTitle").value = f.title || ""; $("fCat").value = f.cat || "";
-  $("fPurpose").value = f.purpose || ""; $("fGuide").value = f.guide || "";
-  $("fTemplate").value = f.template || "";
-  formFiles = toArr(f.files).map(x => ({ name: x.name, size: x.size, url: x.url }));
-  renderFFileList();
-  fillCatDatalist();
-  formModal.showModal();
+window.wfAddCmt = async id => {
+  const inp = $("wfCmtIn_" + id); const text = ((inp && inp.value) || "").trim(); if (!text) return;
+  try { await orgRef.child(`welfare/${id}/comments/${newId("wc_")}`).set({ text, at: Date.now(), tok: wfTok() }); if (inp) inp.value = ""; }
+  catch(e){ showToast("댓글 저장에 실패했어요", true); }
 };
-window.deleteForm = id => {
-  const f = (data.forms || {})[id]; if (!f) return;
-  if (!canDeleteItem(f)) return alert(DEL_DENY_MSG);
-  if (!confirm(`'${f.title}' 서식을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
-  softDelete("forms", id, "서식: " + f.title);
+window.wfDelCmt = async (id, cid) => {
+  const c = ((((data.welfare || {})[id]) || {}).comments || {})[cid]; if (!c) return;
+  if (c.tok !== wfTok() && !isAdminUser()) return;
+  if (!confirm("이 댓글을 삭제할까요?")) return;
+  await orgRef.child(`welfare/${id}/comments/${cid}`).remove().catch(() => showToast("삭제에 실패했어요", true));
 };
-$("saveFormBtn").onclick = async () => {
-  const title = $("fTitle").value.trim();
-  const template = $("fTemplate").value;
-  if (!title) return alert("서식 이름은 필수입니다.");
-  if (!template.trim() && !formFiles.length) return alert("서식 파일 또는 양식 본문 중 하나는 있어야 합니다.");
-  const btn = $("saveFormBtn");
-  const files = [];
-  try {
-    btn.disabled = true;
-    for (let i = 0; i < formFiles.length; i++){
-      const f = formFiles[i];
-      if (f.url){ files.push({ name: f.name, size: f.size || 0, url: f.url }); continue; }
-      btn.textContent = `업로드 중… (${i + 1}/${formFiles.length})`;
-      files.push(await uploadFormFile(f));
-    }
-  } catch(e){
-    console.error(e);
-    btn.disabled = false; btn.textContent = "저장";
-    return alert("파일 업로드에 실패했습니다.\n원인: " + (e && e.message || e) + "\n(Code.gs에 formUpload 처리가 없으면 이 메시지가 뜹니다)");
+function wfRenderCats(sel){
+  $("wfCatPick").innerHTML = WF_CATS.map(c => `<label><input type="radio" name="wfCat" value="${esc(c)}" ${c === sel ? "checked" : ""}> ${esc(c)}</label>`).join("");
+}
+$("addWelfareBtn").onclick = () => {
+  $("wfModalTitle").textContent = "복지 제안 쓰기"; $("wfId").value = "";
+  $("wfTitle").value = ""; $("wfBody").value = ""; wfRenderCats("기타");
+  $("saveWfBtn").textContent = "익명으로 올리기";
+  wfModal.showModal(); setTimeout(() => $("wfTitle").focus(), 50);
+};
+window.wfEdit = id => {
+  const p = (data.welfare || {})[id]; if (!p || !wfMine(p)) return alert("이 기기에서 쓴 글만 수정할 수 있어요.");
+  $("wfModalTitle").textContent = "제안 수정"; $("wfId").value = id;
+  $("wfTitle").value = p.title || ""; $("wfBody").value = p.body || ""; wfRenderCats(p.cat || "기타");
+  $("saveWfBtn").textContent = "저장";
+  wfModal.showModal();
+};
+$("saveWfBtn").onclick = async () => {
+  const title = $("wfTitle").value.trim(), body = $("wfBody").value.trim();
+  if (!title) return alert("복지 이름을 적어 주세요.");
+  if (!body) return alert("어떤 복지인지 적어 주세요.");
+  const catEl = document.querySelector('input[name="wfCat"]:checked');
+  const cat = catEl ? catEl.value : "기타";
+  const editId = $("wfId").value;
+  const prev = editId ? ((data.welfare || {})[editId] || {}) : null;
+  if (editId && !wfMine(prev)) return alert("이 기기에서 쓴 글만 수정할 수 있어요.");
+  const ok = editId
+    ? await safeWrite("제안 수정", () => orgRef.child("welfare/" + editId).update({ title, body, cat, updatedAt: Date.now() }), $("saveWfBtn"))
+    : await safeWrite("제안", () => orgRef.child("welfare/" + newId("wf_")).set({ title, body, cat, at: Date.now(), status: "open", tok: wfTok() }), $("saveWfBtn"));
+  if (ok){
+    orgRef.child("logs/" + newId("lg_")).set({ t: Date.now(), by: "익명", act: editId ? "수정" : "제안", what: "복지 제안: " + title }).catch(() => {});
+    wfModal.close();
   }
-  btn.textContent = "저장";
-  const id = $("formId").value || newId("f_");
-  const prev = (data.forms || {})[$("formId").value] || {};
-  const rec = {
-    title, cat: $("fCat").value.trim(), purpose: $("fPurpose").value.trim(),
-    guide: $("fGuide").value, template, files,
-    order: prev.order || nextOrder(data.forms),
-    updatedAt: Date.now(), updatedBy: currentUser() || "?"
-  };
-  if (await safeWrite("서식", () => orgRef.child("forms/" + id).set(rec), btn)){
-    logAction($("formId").value ? "수정" : "추가", "서식: " + title);
-    openForms[id] = true;
-    formModal.close();
+};
+window.wfDelMine = async id => {
+  const p = (data.welfare || {})[id]; if (!p || !wfMine(p)) return;
+  if (!confirm(`'${p.title}' 제안을 삭제할까요? 익명 보호를 위해 휴지통 없이 바로 지워집니다.`)) return;
+  try { await orgRef.child("welfare/" + id).remove(); showToast("삭제했어요"); }
+  catch(e){ alert("삭제에 실패했습니다. 인터넷 연결을 확인해 주세요."); }
+};
+window.wfDelAdmin = id => {
+  const p = (data.welfare || {})[id]; if (!p) return;
+  if (!isAdminUser()) return alert("관리자만 삭제할 수 있어요.");
+  if (!confirm(`'${p.title}' 제안을 삭제할까요? 휴지통에서 복구할 수 있습니다.`)) return;
+  softDelete("welfare", id, "복지 제안: " + p.title);
+};
+window.wfAnswer = id => {
+  const p = (data.welfare || {})[id]; if (!p) return;
+  if (!isAdminUser()) return alert("관리자만 할 수 있어요.");
+  $("wfAnsId").value = id; $("wfAnsTitle").textContent = p.title;
+  $("wfAnsStatus").innerHTML = Object.entries(WF_ST).map(([k, v]) => `<option value="${k}" ${k === (p.status || "open") ? "selected" : ""}>${v[0]}</option>`).join("");
+  $("wfAnsText").value = (p.answer && p.answer.text) || "";
+  wfAnsModal.showModal();
+};
+$("saveWfAnsBtn").onclick = async () => {
+  const id = $("wfAnsId").value, p = (data.welfare || {})[id]; if (!p) return;
+  const status = $("wfAnsStatus").value, text = $("wfAnsText").value.trim();
+  if (status === "adopted" && !text) return alert("도입 확정은 답변(시행 내용·시기)을 함께 적어 주세요. 복지 목록에 그대로 표시돼요.");
+  const upd = { status, answer: text ? { text, at: Date.now(), by: currentUser() || "관리자" } : null };
+  if (await safeWrite("상태·답변", () => orgRef.child("welfare/" + id).update(upd), $("saveWfAnsBtn"))){
+    logAction("상태 변경", `복지 제안: ${p.title} → ${WF_ST[status][0]}`);
+    wfAnsModal.close();
   }
 };
 
