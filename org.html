@@ -1535,7 +1535,7 @@
       <input type="hidden" id="wfId">
       <div class="hint">익명으로 올라갑니다. 누가 썼는지는 어디에도 저장되지 않아요.</div>
       <div class="field"><label>분류</label><div class="ev-radio" id="wfCatPick"></div></div>
-      <div class="field"><label>복지 이름 *</label><input id="wfTitle" placeholder="예: 결혼 휴가 5일 · 경조사비 지원 · 생일 반차"></div>
+      <div class="field"><label>복지 이름 *</label><input id="wfTitle" placeholder="복지 이름"></div>
       <div class="field"><label>어떤 복지인지 *</label><textarea id="wfBody" style="min-height:140px" placeholder="어떤 조건으로 뭘 받았는지, 이전 회사에선 어떻게 운영됐는지, 우리 회사에 맞게 바꾸면 좋을 점 — 편하게 적어 주세요"></textarea></div>
     </div>
     <div class="modal-foot"><button class="btn" onclick="wfModal.close()">취소</button><button class="btn primary" id="saveWfBtn">익명으로 올리기</button></div>
@@ -4017,6 +4017,7 @@ const wfMine = p => !!(p && p.tok && p.tok === wfTok());
 const wfFmt = t => { const d = new Date(t || 0); return `${d.getMonth()+1}/${d.getDate()}`; };
 const wfChip = st => { const s = WF_ST[st] || WF_ST.open; return `<span class="wf-st" style="background:${s[1]}">${s[0]}</span>`; };
 const wfLikeN = p => Object.keys(p.likes || {}).length;
+const wfTitleOf = body => { const l = String(body || "").split("\n").map(x => x.trim()).find(Boolean) || ""; return l.length > 40 ? l.slice(0, 40) + "…" : l; };
 let wfSort = "likes", wfStFilter = "", wfOpenCmt = {};
 
 function renderWelfare(){
