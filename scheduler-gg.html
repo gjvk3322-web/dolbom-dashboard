@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.10.28.120';
+const VER='2026.11.03.122';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -1265,7 +1265,17 @@ toast('🔓 확정 해제','ok');renderAll()}
 // ===== 시공보고서 =====
 let currentChatUrl='';
 let reportJobId='';let currentChannelName='';
-const PRICE_MAP={'마블50(16000)':16000,'마블50(16900)':16900,'코튼50(16000)':16000,'코튼50(16900)':16900,'모던50(16000)':16000,'모던50(16900)':16900,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
+const PRICE_MAP={'마블50(16900)':16900,'코튼50(16900)':16900,'모던50(16900)':16900,'마블50(16000)':16000,'코튼50(16000)':16000,'모던50(16000)':16000,'모던1m17(64500)':64500,'모던1m22(76500)':76500,'베이지1m17(64500)':64500,'베이지1m22(76500)':76500,'모던1m17(67000)':67000,'모던1m22(79500)':79500,'베이지1m17(67000)':67000,'베이지1m22(79500)':79500,'마블50(17500)':17500,'코튼50(17500)':17500,'모던50(17500)':17500,'모던1m17':64500,'모던1m22':76500,'베이지1m17':64500,'베이지1m22':76500};
+// 구 표기(괄호 없는 1M·500) → 인상 전 가격 옵션으로 매핑 (기존 예약·저장 보고서 호환)
+const OLD_COLOR_MAP={'마블50':'마블50(16900)','코튼50':'코튼50(16900)','모던50':'모던50(16900)','모던1m17':'모던1m17(64500)','모던1m22':'모던1m22(76500)','베이지1m17':'베이지1m17(64500)','베이지1m22':'베이지1m22(76500)'};
+const normColor=c=>OLD_COLOR_MAP[c]||c;
+// 2026-11-03 가격 인상: 접수일(시트 '접수일시' 열)이 PRICE_CHANGE_DATE 이후인 예약만 인상 후 가격을 기본값으로 — 기존 예약(접수일 그 전·접수일 없음)은 인상 전 가격 유지
+const PRICE_CHANGE_DATE='2026-11-04';
+const NEW_PRICE_MAP={'마블50(16900)':'마블50(17500)','코튼50(16900)':'코튼50(17500)','모던50(16900)':'모던50(17500)','모던1m17(64500)':'모던1m17(67000)','모던1m22(76500)':'모던1m22(79500)','베이지1m17(64500)':'베이지1m17(67000)','베이지1m22(76500)':'베이지1m22(79500)'};
+function recvDateOf(j){const rd=String((j&&j.receivedAt)||'').replace(/\./g,'-').replace(/\s/g,'');const m=rd.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);return m?`${m[1]}-${String(+m[2]).padStart(2,'0')}-${String(+m[3]).padStart(2,'0')}`:''}
+function isNewPriceJob(j){const d=recvDateOf(j);return !!d&&d>=PRICE_CHANGE_DATE}
+function defaultReportColor(j){let c=normColor(j.mat&&j.mat.length?j.mat[0].t:'');if(isNewPriceJob(j)&&NEW_PRICE_MAP[c])c=NEW_PRICE_MAP[c];return c}
+function priceHintHtml(j){const d=recvDateOf(j);if(!d)return '<div id="rPriceHint" style="font-size:10px;color:var(--yellow);margin-top:3px">접수일 기록 없음 · 인상 전 가격으로 두었으니 기존/신규 확인 후 선택</div>';const md=d.slice(5).replace('-','/');return isNewPriceJob(j)?'<div id="rPriceHint" style="font-size:10px;color:var(--green);margin-top:3px">'+md+' 접수 · 인상 후 가격 기본 적용 (11/4 이후 접수)</div>':'<div id="rPriceHint" style="font-size:10px;color:var(--dim);margin-top:3px">'+md+' 접수 · 기존 예약이라 인상 전 가격 기본 적용</div>'}
 
 function formatFee(el){
 const v=el.value;
@@ -1329,8 +1339,8 @@ const apt=addr;
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
-let colorVal=j.mat.length?j.mat[0].t:'';if(colorVal==='마블50'||colorVal==='코튼50'||colorVal==='모던50')colorVal=colorVal+'(16900)';
-const colorOpts=['마블50(16900)','코튼50(16900)','모던50(16900)','---','마블50(16000)','코튼50(16000)','모던50(16000)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+let colorVal=defaultReportColor(j);
+const colorOpts=['마블50(16900)','코튼50(16900)','모던50(16900)','---','모던1m17(64500)','모던1m22(76500)','베이지1m17(64500)','베이지1m22(76500)','---','모던1m17(67000)','모던1m22(79500)','베이지1m17(67000)','베이지1m22(79500)','마블50(17500)','코튼50(17500)','모던50(17500)','미정'];
 const colorSelect=colorOpts.map(c=>c==='---'?'<option disabled>──────────</option>':`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
 const eS='background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.3);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--font)';
@@ -1350,7 +1360,7 @@ const html=`
 <span style="${lA}">6. 동호수</span><input id="rUnit" value="${unit}" style="${aS}" readonly>
 <span style="${lA}">7. 연락처</span><input id="rPhone" value="${j.phone}" style="${aS}" readonly>
 <span style="${lA}">8. 평수</span><input id="rPy" value="${j.py}평" style="${aS}" readonly>
-<span style="${lE}">9. 색상</span><select id="rColor" style="${eS}" onchange="calcReport()">${colorSelect}</select>
+<span style="${lE}">9. 색상</span><div><select id="rColor" style="${eS}" onchange="calcReport()">${colorSelect}</select>${priceHintHtml(j)}</div>
 <span style="${lE}">10. 시공범위</span><input id="rScope" value="${j.scope}" style="${eS}">
 <span style="${lE}">11. 신축여부</span><select id="rNew" style="${eS}"><option>구축</option><option>신축</option></select>
 </div>
@@ -1358,7 +1368,7 @@ const html=`
 <div style="display:grid;grid-template-columns:82px 1fr;gap:4px;align-items:center">
 <span style="${lE}">12. 시공비</span><div><input id="rInstallFee" value="X" style="${eS};width:100%;box-sizing:border-box" placeholder="X 또는 금액 입력" oninput="rInstallFeeManual=true;formatFee(this);calcReport()"><div id="rInstallFeeWarn" style="display:none;margin-top:4px;padding:5px 7px;background:#5a1a1a;border:1px solid #c0392b;border-radius:5px;color:#ff8a80;font-size:10px;font-weight:700;line-height:1.3"></div></div>
 <span style="${lE}">13. 공동구매</span><select id="rGonggu" style="${eS}" onchange="calcReport()"><option value="X">X</option><option value="O">O (장당500원 할인)</option><option value="O3">O (3% 할인)</option></select>
-<span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" id="rExtraDiscountChk" onchange="document.getElementById('rExtraDiscount').style.display=this.checked?'block':'none';if(!this.checked){document.getElementById('rExtraDiscount').value='';};calcReport()">추가할인</label><input id="rExtraDiscount" type="text" inputmode="numeric" placeholder="금액 입력" style="display:none;${eS};width:90px;font-size:10px" oninput="formatFee(this);calcReport()"></div>
+<span style="${lE}">14. 할인적용</span><div id="rDiscountWrap" style="display:flex;gap:4px;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="30000" data-name="웰컴3만" onchange="calcReport()">웰컴3만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="20000" data-name="지인2만" onchange="calcReport()">지인2만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="인스타1만" onchange="calcReport()">인스타1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="10000" data-name="단톡1만" onchange="calcReport()">단톡1만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" class="rDiscount" value="50000" data-name="베페5만" onchange="calcReport()">베페5만</label><label style="display:flex;align-items:center;gap:3px;${eS};cursor:pointer;padding:6px 8px;font-size:10px;white-space:nowrap"><input type="checkbox" id="rExtraDiscountChk" onchange="document.getElementById('rExtraDiscount').style.display=this.checked?'block':'none';if(!this.checked){document.getElementById('rExtraDiscount').value='';};calcReport()">추가할인</label><input id="rExtraDiscount" type="text" inputmode="numeric" placeholder="금액 입력" style="display:none;${eS};width:90px;font-size:10px" oninput="formatFee(this);calcReport()"></div>
 <span style="${lE}">15. 결제방법</span><select id="rPay" style="${eS}"><option>온누리상품권</option><option>카드</option><option>현금</option><option>계좌이체</option><option>복합</option></select>
 <span style="${lE}">16. 판매갯수</span><input id="rQty" value="${j.mat.length?j.mat[0].q:''}" type="number" style="${eS}" oninput="calcReport()">
 <span style="${lG}">17. 판매비용</span><input id="rPrice" value="0원" style="${autoS}" readonly>
@@ -1378,7 +1388,7 @@ calcReport();
 db.ref('reports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
 if(d.ref)document.getElementById('rRef').value=d.ref;
-if(d.color){const sel=document.getElementById('rColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16900)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
+if(d.color){const sel=document.getElementById('rColor');let targetColor=normColor(d.color);for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
 if(d.scope)document.getElementById('rScope').value=d.scope;
 if(d.isNew){const sel=document.getElementById('rNew');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===d.isNew)sel.selectedIndex=i;}}
 if(d.installFee)document.getElementById('rInstallFee').value=d.installFee;
@@ -1689,8 +1699,8 @@ const apt=addr;
 const unitMatch=addr.match(/(\d+동\s*\d*호?)/);
 const unit=unitMatch?unitMatch[1]:'';
 
-let colorVal=j.mat.length?j.mat[0].t:'';if(colorVal==='마블50'||colorVal==='코튼50'||colorVal==='모던50')colorVal=colorVal+'(16900)';
-const colorOpts=['마블50(16900)','코튼50(16900)','모던50(16900)','---','마블50(16000)','코튼50(16000)','모던50(16000)','---','모던1m17','모던1m22','베이지1m17','베이지1m22','미정'];
+let colorVal=normColor(j.mat.length?j.mat[0].t:''); // AS는 기존 고객 → 인상 전 가격 기본
+const colorOpts=['마블50(16900)','코튼50(16900)','모던50(16900)','---','모던1m17(64500)','모던1m22(76500)','베이지1m17(64500)','베이지1m22(76500)','---','모던1m17(67000)','모던1m22(79500)','베이지1m17(67000)','베이지1m22(79500)','마블50(17500)','코튼50(17500)','모던50(17500)','미정'];
 const colorSelect=colorOpts.map(c=>c==='---'?'<option disabled>──────────</option>':`<option${c===colorVal?' selected':''}>${c}</option>`).join('');
 
 const aS='background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--dim);font-size:11px;font-family:var(--font)';
@@ -1740,7 +1750,7 @@ calcAsReport();
 loadPrevHistory(j);
 db.ref('asReports/'+jobId).once('value').then(snap=>{
 const d=snap.val();if(!d)return;
-if(d.color){const sel=document.getElementById('arColor');let targetColor=d.color;if(d.color==='마블50'||d.color==='코튼50'||d.color==='모던50')targetColor=d.color+'(16900)';for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
+if(d.color){const sel=document.getElementById('arColor');let targetColor=normColor(d.color);for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===targetColor)sel.selectedIndex=i;}}
 if(d.scope)document.getElementById('arScope').value=d.scope;
 if(d.prevWorker){const pw=d.prevWorker.split(', ');if(pw[0]){const sel=document.getElementById('arPrev1');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[0])sel.selectedIndex=i;}}if(pw[1]){const sel=document.getElementById('arPrev2');for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===pw[1])sel.selectedIndex=i;}}}
 if(d.content)document.getElementById('arContent').value=d.content;
