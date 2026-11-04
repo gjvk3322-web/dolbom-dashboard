@@ -19,6 +19,7 @@ html{font-size:16px}
 body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.45;-webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;padding:14px 14px 120px;display:flex;flex-direction:column}
 .colL,.colR,.colC{display:contents}
+.g-qr img{max-width:440px}
 .top{order:0}.g-py{order:1}.g-scope{order:2}.g-prod{order:3}.g-res{order:4}.g-cta{order:5}.g-cmp{order:6}.g-staff{order:7}.g-qr{order:8}
 @media (min-width:960px){
   html{font-size:17px}
@@ -27,15 +28,18 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
   .colL,.colR{display:block;min-width:0}
   .colR{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}
   .g-qr img{max-width:360px}
+  .g-qr{padding:10px}
   .res .big{font-size:46px}
 }
 @media (min-width:1320px){
   .wrap{max-width:1520px;grid-template-columns:380px minmax(0,1fr)}
   .colR{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px;align-items:start;grid-template-areas:"res cmp" "cta cmp" ". cmp"}
   .colR .g-res{grid-area:res}.colR .g-cta{grid-area:cta}.colR .colC{grid-area:cmp;display:block;min-width:0}
-  .colR{align-self:start;position:static;max-height:none;overflow:visible}
+  .colR{align-self:stretch;position:static;max-height:none;overflow:visible;grid-template-rows:auto auto 1fr}
   .colR .g-res{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}
-  .g-qr img{max-width:440px}
+  .colR .colC{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}
+  .g-qr img{max-width:260px}
+  .g-qr{padding:10px}
 }
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 12px;flex-wrap:wrap}
 .docs{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;min-width:0}
@@ -280,7 +284,7 @@ details summary::-webkit-details-marker{display:none}
     <div class="note" id="cmpNote"></div>
   </div>
   <!-- 부스 QR 포스터 (직원 화면에서만) -->
-  <div class="card g-qr" id="cardQr"><img src="assets/fair-qr.png" alt="카카오톡 채널 추가 후 '박람회' 입력 — 우리집 무료 견적서 받기" style="display:block;width:100%;max-width:440px;margin:0 auto;border-radius:12px"></div>
+  <div class="card g-qr" id="cardQr"><img src="assets/fair-qr.png" alt="카카오톡 채널 추가 후 '박람회' 입력 — 우리집 무료 견적서 받기" style="display:block;width:100%;margin:0 auto;border-radius:12px"></div>
   </div><!-- /colC -->
 
   <!-- 고객용 CTA -->
