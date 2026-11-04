@@ -74,20 +74,25 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .res{background:#17201b;color:#fff;border-radius:var(--radius);padding:18px 16px;margin-bottom:12px}
 .res .ttl{font-size:12.5px;color:#b9c4bd;font-weight:600}
 .res .big{font-size:38px;font-weight:900;letter-spacing:-.03em;line-height:1.1;margin:4px 0 2px}
+.res .big.range{font-size:30px}
+@media (max-width:420px){.res .big.range{font-size:24px}.res .big .tilde{font-size:16px;margin:0 2px}}
+.res .big .tilde{font-size:20px;font-weight:600;color:#cfd8d2;margin:0 4px}
 .res .big small{font-size:16px;font-weight:600;color:#cfd8d2;margin-left:2px}
 .res .sub{font-size:13px;color:#cfd8d2}
 .res .lines{margin-top:12px;border-top:1px solid rgba(255,255,255,.12);padding-top:8px}
 .ln{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px;color:#dfe6e2}
-.ln b{font-weight:800;color:#fff}
+.ln b{font-weight:800;color:#fff;white-space:nowrap}
+.ln>span:first-child{min-width:0}
+@media (max-width:420px){.ln{font-size:13px}.ln b{font-size:12.5px}}
 .ln.dim{color:#9fb0a7;font-size:13px}
 .ln .m{color:#FFD54F}
 .tg{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .tg button{border:1px solid rgba(255,255,255,.25);background:transparent;color:#cfd8d2;border-radius:50px;padding:7px 12px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
 .tg button.on{background:#FFD54F;color:#17201b;border-color:#FFD54F}
-.fin{margin-top:12px;background:rgba(255,213,79,.12);border:1px solid rgba(255,213,79,.35);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.fin{margin-top:12px;background:rgba(255,213,79,.12);border:1px solid rgba(255,213,79,.35);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
 .fin .l{font-size:13px;color:#FFD54F;font-weight:700}
-.fin .v{font-size:24px;font-weight:900;color:#FFD54F;letter-spacing:-.02em}
-.fin .v small{display:block;font-size:11.5px;font-weight:600;color:#e9d08a;text-align:right}
+.fin .v{font-size:26px;font-weight:900;color:#FFD54F;letter-spacing:-.02em;white-space:nowrap}
+.fin .v small{display:block;font-size:11.5px;font-weight:600;color:#e9d08a;text-align:left;white-space:normal}
 /* 비교 */
 .cmp{margin-top:4px}
 .bar{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
@@ -226,6 +231,7 @@ details summary::-webkit-details-marker{display:none}
       <button data-k="review" class="on">후기 캐시백 10만</button>
     </div>
     <div class="fin"><div class="l" id="finLabel">후기까지 받으면 최종</div><div class="v"><span id="rFinal">0</span>원<small id="rPer"></small></div></div>
+    <div id="rOthers"></div>
   </div>
   <div class="card g-res" id="resEmpty"><div class="ph">평형 → 범위 → 제품을 고르면 금액이 바로 나와요</div></div>
 
@@ -342,23 +348,24 @@ function update(keepInputs){
   $('#res').style.display=q?'block':'none';$('#resEmpty').style.display=q?'none':'block';
   $('#cardCmp').style.display=q?'block':'none';$('#cardCta').style.display=(q&&isCustomer)?'block':'none';
   if(!q)return;
-  $('#rPay').textContent=fmt(q.pay);
-  var qw=quoteWide();
-  $('#rSub').textContent=houseLabel()+' · '+q.p.name+' '+q.qty+'장'+(qw&&qw.qty!==q.qty?' (거실 넓은편 '+qw.qty+'장)':'')+(q.srQty?' · 작은방 약 '+q.srQty+'장 포함':'');
+  var qw=quoteWide();var R=qw&&qw.qty!==q.qty; // 거실 보통~넓은편 범위
+  var rng=function(a,b,pre){return (pre||'')+fmt(a)+(R?'~'+fmt(b):'')};
+  var bigEl=$('#rPay').parentNode;bigEl.className='big'+(R?' range':'');
+  $('#rPay').innerHTML=fmt(q.pay)+(R?'<span class="tilde">~</span>'+fmt(qw.pay):'');
+  $('#rSub').textContent=houseLabel()+' · '+q.p.name+' '+q.qty+(R?'~'+qw.qty:'')+'장'+(R?' (거실 보통~넓은편)':'')+(q.srQty?' · 작은방 약 '+q.srQty+'장 포함':'');
   var L='';
-  L+='<div class="ln"><span>'+q.p.name+' '+q.qty+'장 × '+fmt(q.p.price)+'원</span><b>'+fmt(q.matCost)+'원</b></div>';
+  L+='<div class="ln"><span>'+q.p.name+' '+q.qty+(R?'~'+qw.qty:'')+'장 × '+fmt(q.p.price)+'원</span><b>'+rng(q.matCost,R&&qw.matCost)+'원</b></div>';
   if(q.install)L+='<div class="ln"><span>시공비 (소량 추가)</span><b>+'+fmt(q.install)+'원</b></div>';
   L+='<div class="ln"><span class="m">🎁 박람회 쿠폰</span><b class="m">−'+fmt(COUPON_AMT)+'원</b></div>';
-  L+='<div class="ln"><span class="m">🎁 박람회 할인 3%</span><b class="m">−'+fmt(q.gb)+'원</b></div>';
+  L+='<div class="ln"><span class="m">🎁 박람회 할인 3%</span><b class="m">'+rng(q.gb,R&&qw.gb,'−')+'원</b></div>';
   L+='<div class="ln"><span class="m">계약 후기 작성</span><b class="m">−'+fmt(CONTRACT_REVIEW)+'원</b></div>';
-  if(q.on)L+='<div class="ln"><span class="m">온누리상품권 결제 7%</span><b class="m">−'+fmt(q.on)+'원</b></div>';
+  if(q.on)L+='<div class="ln"><span class="m">온누리상품권 결제 7%</span><b class="m">'+rng(q.on,R&&qw.on,'−')+'원</b></div>';
   if(q.cb)L+='<div class="ln dim"><span>시공 후 후기 캐시백 (최대)</span><b>−'+fmt(q.cb)+'원</b></div>';
-  if(qw&&qw.qty!==q.qty)L+='<div class="ln" style="margin-top:6px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.12)"><span>거실이 넓은 편이면 <b>'+qw.qty+'장</b></span><b>'+fmt(qw.pay)+'원'+(qw.cb?' <span style="font-weight:500;color:#9fb0a7">(후기 후 '+fmt(qw.fin)+')</span>':'')+'</b></div>';
-  var others=PRODUCTS.filter(function(p){return p.key!==q.p.key}).map(function(p){var o=quoteFor(p,false),ow=quoteWide(p);return o?'<div class="ln dim"><span>'+p.name+'로 하면 '+o.qty+(ow&&ow.qty!==o.qty?'~'+ow.qty:'')+'장</span><b>'+fmt(o.pay)+(ow&&ow.qty!==o.qty?'~'+fmt(ow.pay):'')+'원</b></div>':''}).join('');
-  if(others)L+='<div style="margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.12)"><div class="ln dim" style="padding-bottom:0"><span>다른 제품으로 하면</span></div>'+others+'</div>';
   $('#rLines').innerHTML=L;
   $('#finLabel').textContent=S.review?'후기 캐시백까지 받으면 최종':'최종 체감가';
-  $('#rFinal').textContent=fmt(q.fin);$('#rPer').textContent='장당 '+fmt(q.per)+'원 · 정가 대비 '+man(q.totalMat+q.install-q.fin)+' 절약';
+  $('#rFinal').textContent=fmt(q.fin)+(R?'~'+fmt(qw.fin):'');$('#rPer').textContent='장당 '+fmt(q.per)+'원 · 정가 대비 '+man(q.totalMat+q.install-q.fin)+' 절약';
+  var others=PRODUCTS.filter(function(p){return p.key!==q.p.key}).map(function(p){var o=quoteFor(p,false),ow=quoteWide(p);var r2=ow&&ow.qty!==o.qty;return o?'<div class="ln dim" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span>'+p.name+'로 하면 <b style="color:#dfe6e2">'+o.qty+(r2?'~'+ow.qty:'')+'장</b></span><b>'+fmt(o.pay)+(r2?'~'+fmt(ow.pay):'')+'원</b></div>'+(o.cb?'<div style="text-align:right;font-size:11.5px;color:#9fb0a7">후기 후 '+fmt(o.fin)+(r2?'~'+fmt(ow.fin):'')+'원</div>':'')+'</div>':''}).join('');
+  $('#rOthers').innerHTML=others?'<div style="margin-top:12px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.12)"><div class="ln dim" style="padding-bottom:0"><span>다른 제품으로 하면</span></div>'+others+'</div>':'';
   $('#benefitTg').querySelectorAll('button').forEach(function(b){b.className=S[b.dataset.k]?'on':''});
   if(!cmpInputsDrawn||!keepInputs){if(!cmpInputsDrawn){renderCmpInputs();cmpInputsDrawn=true}}
   renderCmp(q);
