@@ -50,8 +50,9 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
     .cust .colR .g-res{order:1}.cust .colR .g-cta{order:2}.cust .colR .g-gpt{order:3}.cust .colR .g-cmp{align-self:start} /* 고객 보기: 1행 결과|비교 · 2행 상담 버튼 · 3행 TPU 카드 */
     /* 견적 전: 고객이 기다리며 보는 화면 — GPT 카드가 오른쪽 열(비교+QR 포스터) 높이만큼 늘어나고 내용 확대 */
     .noq .colR .g-gpt{grid-row:1/3}
-    .noq .colR .gpt .gq{font-size:32px}.noq .colR .gpt .gs{font-size:18px;margin-top:12px}.noq .colR .gpt .gpill{font-size:16px;padding:11px 22px;margin-top:18px}
-    .noq .colR .gpt .gqr{width:200px;margin-top:22px;padding:10px}.noq .colR .gpt .gcap{font-size:13.5px;margin-top:12px}
+    .noq .colR .gpt{justify-content:flex-start;padding-top:44px} /* 세로 가운데 말고 위에서부터 — 제목이 눈높이에 오게 */
+    .noq .colR .gpt .gq{font-size:34px}.noq .colR .gpt .gs{font-size:19px;margin-top:14px}.noq .colR .gpt .gpill{font-size:16px;padding:11px 22px;margin-top:20px}
+    .noq .colR .gpt .gqr{width:240px;margin-top:26px;padding:12px}.noq .colR .gpt .gcap{font-size:14px;margin-top:14px}
     /* 모바일용 order를 PC 순서로 덮어씀: 1행 GPT|비교 · 2행 결과|QR · 3행 CTA */
     .colR .g-gpt,.colR .g-cmp{order:1}.colR .g-res,.colR .g-qr{order:2}.colR .g-cta{order:3}
   }
@@ -518,8 +519,8 @@ function update(keepInputs){
   T+='</div>';
   var L=T;
   $('#rLines').innerHTML=L;
-  $('#finLabel').textContent='혜택 모두 적용 시 장당';
-  $('#rFinal').textContent=fmt(q.per);$('#rPer').textContent='정가 '+fmt(q.p.price)+'원 대비 총 '+man(q.totalMat+q.install-q.fin)+' 절약'+(q.cb?' · 후기 캐시백 '+man(q.cb)+'은 시공 후 입금 (결제일 '+fmt(q.pay)+(R?'~'+fmt(qw.pay):'')+'원)':'');
+  $('#finLabel').textContent=q.p.name+' ('+q.p.spec+') · 혜택 모두 적용 시 장당';
+  $('#rFinal').textContent=fmt(q.per);$('#rPer').textContent='정가 '+fmt(q.p.price)+'원 대비 총 '+man(q.totalMat+q.install-q.fin)+' 절약'; // 결제일 금액 안내는 뺌 (표의 '시공 후 후기 캐시백' 행으로 충분)
   $('#benefitTg').querySelectorAll('button').forEach(function(b){b.className=S[b.dataset.k]?'on':''});
   renderCmp(q);
 }
