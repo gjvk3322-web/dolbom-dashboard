@@ -65,6 +65,8 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .step{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;margin-bottom:12px}
 .step .n{width:24px;height:24px;border-radius:50%;background:var(--text);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
 .step .hint{font-size:12px;font-weight:500;color:var(--dim);margin-left:auto}
+.reset{margin-left:auto;border:1.5px solid var(--line);background:#fff;border-radius:50px;padding:7px 12px;font-size:12.5px;font-weight:700;font-family:inherit;color:var(--sub);cursor:pointer}
+.reset:hover{border-color:var(--red);color:var(--red)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px 0;min-width:74px;flex:0 0 auto;text-align:center;font-size:17px;font-weight:700;cursor:pointer;color:var(--text)}
 .chip.on{border-color:var(--green);background:var(--green2);color:var(--green)}
@@ -72,6 +74,9 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .inp{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:18px;font-weight:700;font-family:inherit;width:100%;background:#fff;color:var(--text)}
 .inp:focus{outline:none;border-color:var(--green)}
 .unit{font-size:15px;color:var(--sub);font-weight:700}
+.qtyWrap{display:flex;align-items:center;gap:8px;flex:0 0 auto}.qtyWrap .inp{width:120px}
+@media (max-width:520px){.qtyWrap{flex-basis:100%;margin-top:8px}.qtyWrap .inp{flex:1;width:auto}}
+#cardPy .row{flex-wrap:wrap}
 .seg{display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px}
 .seg button{flex:1;border:0;background:#fff;padding:11px 4px;font-size:14px;font-weight:700;font-family:inherit;color:var(--sub);cursor:pointer}
 .seg button.on{background:var(--text);color:#fff}
@@ -117,8 +122,12 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .tbl .n{text-align:right;font-weight:800;color:#fff;white-space:nowrap}
 .tbl .y{color:#FFD54F}
 .tbl .d{color:#9fb0a7;font-weight:600;font-size:13px}
-.rvq{cursor:pointer}.rvq u{text-decoration-color:rgba(255,213,79,.6);color:#FFD54F;font-size:12px;margin-left:4px;white-space:nowrap}
-#reviewInfo{margin-top:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px}
+.tbl .sub{border-bottom:0;padding-bottom:2px}.tbl .sub small{font-weight:500;font-size:11.5px}
+.rvp{max-width:640px;margin:10px auto;text-align:left;background:#fff;border-radius:14px;padding:18px 20px;color:var(--text)}
+.rvh{font-size:13.5px;color:var(--sub);line-height:1.6;margin-bottom:10px}.rvh b{color:var(--green)}
+.rvi{padding:12px 0;border-bottom:1px solid var(--line)}.rvi:last-of-type{border-bottom:0}
+.rvi .rvn{display:flex;justify-content:space-between;font-size:16px;font-weight:800}.rvi .rvn b{color:var(--green);white-space:nowrap;margin-left:10px}
+.rvi .rvw{font-size:13.5px;color:var(--sub);margin-top:3px}
 .rvt{font-size:12px;color:#dfe6e2;font-weight:700;margin-bottom:4px}
 .rvm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:0 10px;align-items:center;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.08);font-size:12.5px;color:#dfe6e2}
 .rvm:last-of-type{border-bottom:0}
@@ -192,20 +201,22 @@ details summary::-webkit-details-marker{display:none}
   <div class="top">
     <div class="brand">돌봄매트<small id="subTitle" style="display:none"></small></div>
     <div class="docs" id="docChips"></div>
-    <div class="badge">박람회 전용 견적</div>
+    <div class="badge">박람회 전용 견적 · 2027.5.8까지 유효</div>
   </div>
 
   <div class="colL">
   <!-- 1. 평형 -->
   <div class="card g-py" id="cardPy">
-    <div class="step"><span class="n">1</span>우리 집 <span class="hint" id="pyHint">공급면적 기준</span></div>
+    <div class="step"><span class="n">1</span>우리 집 <button type="button" class="reset" id="btnReset">새 상담 (초기화)</button></div>
     <div class="seg" id="segMode" style="margin:0 0 12px"><button data-v="py" class="on">평형으로</button><button data-v="dim">치수로 (가장 정확)</button></div>
     <div id="pyBox">
     <div class="row" style="gap:8px">
       <div class="chips" id="pyChips" style="flex:0 0 auto"></div>
       <input class="inp" id="pyInput" type="number" inputmode="numeric" placeholder="직접 입력" min="10" max="99" style="min-width:0">
       <span class="unit">평</span>
+      <span class="qtyWrap"><input class="inp" id="qtyInput" type="number" inputmode="numeric" placeholder="장수" min="1" max="999" style="min-width:0"><span class="unit">장</span></span>
     </div>
+    <div class="note" id="qtyHint" style="display:none;margin-top:6px">장수를 직접 넣으면 평형 대신 그 장수로 계산해요 (선택한 제품 기준)</div>
     <div class="seg" id="segExpand">
       <button data-v="1" class="on">확장형</button><button data-v="0">비확장형</button>
     </div>
@@ -271,7 +282,6 @@ details summary::-webkit-details-marker{display:none}
       <button data-k="review" class="on">후기 캐시백 10만</button>
     </div>
     <div class="fin"><div class="l" id="finLabel">후기까지 받으면 최종</div><div class="v"><span id="rFinal">0</span>원<small id="rPer"></small></div></div>
-    <div id="rOthers"></div>
   </div>
   <div class="card g-res" id="resEmpty"><div class="ph">평형 → 범위 → 제품을 고르면 금액이 바로 나와요</div></div>
 
@@ -293,7 +303,7 @@ details summary::-webkit-details-marker{display:none}
       <a href="https://pf.kakao.com/_UMyBK/chat" target="_blank" rel="noopener">카톡 채널 상담</a>
       <a class="g" href="https://my.dolbommat.com/booking.html?from=fair" target="_blank" rel="noopener">무료 실측 예약</a>
     </div>
-    <div class="note" style="text-align:center">박람회 혜택(쿠폰 5만 + 3%)은 <b id="ctaExp"></b>까지 예약금 결제 시 적용돼요 · 계약 후기 할인·5인 공동구매 할인과는 중복 적용되지 않아요</div>
+    <div class="note" style="text-align:center">이 견적과 박람회 혜택(쿠폰 5만 + 3%)은 <b id="ctaExp"></b>까지(박람회 후 6개월) 예약금 결제 시 적용돼요 · 계약 후기 할인·5인 공동구매 할인과는 중복 적용되지 않아요</div>
   </div>
   </div><!-- /colR -->
 
@@ -309,9 +319,8 @@ details summary::-webkit-details-marker{display:none}
 /* ===== 설정 ===== */
 var API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 var FAIR_NAME='벡스코 헬시베이비페어';
-var COUPON_AMT=50000, COUPON_EXP='2026-12-31';   // 박람회 쿠폰 5만원 (스케줄러 할인 '베페5만'과 동일)
+var COUPON_AMT=50000, COUPON_EXP='2027-05-08', VALID_LABEL='박람회 후 6개월';   // 박람회 쿠폰 5만원 (스케줄러 할인 '베페5만'과 동일) · 견적·혜택 유효기간: 박람회 마지막 날(11.8) 기준 6개월
 var REVIEW_CASHBACK=100000, ONNURI=7, FAIR_PCT=3;
-var reviewInfoOpen=false;function toggleReviewInfo(){reviewInfoOpen=!reviewInfoOpen;var el=document.getElementById('reviewInfo');if(el)el.style.display=reviewInfoOpen?'block':'none'}
 var REVIEW_MISSIONS=[ // review-event.html 미션과 동일 (계약후기 제외)
   {n:'입주자 단톡방',w:'카톡·노크타운 등 단톡방에 설치 중 사진 + 한 줄',r:'1만'},
   {n:'시공 당일 후기 ①',w:'맘스홀릭 카페 › 돌봄매트 게시판',r:'2만'},
@@ -323,9 +332,9 @@ var REVIEW_MISSIONS=[ // review-event.html 미션과 동일 (계약후기 제외
 ]; // 박람회 3% 할인(항상 적용). 계약후기 3만·5인 공동구매는 박람회 쿠폰과 중복 불가라 미적용
 var INSTALL_FEE=100000, THRESH_500=99, THRESH_1000=24;
 var PRODUCTS=[
-  {key:'17',name:'1M 17T',full:'1000매트 17T',spec:'1M×1M · 1.7cm',price:67000,is1000:true,sched:'모던1m17(67000)'},
-  {key:'22',name:'1M 22T',full:'1000매트 22T',spec:'1M×1M · 2.2cm',price:79500,is1000:true,sched:'모던1m22(79500)'},
-  {key:'50',name:'500 22T',full:'500매트 22T',spec:'50×50 · 2.2cm',price:17500,is1000:false,sched:'모던50(17500)'}
+  {key:'17',name:'1M 1.7cm',full:'1000매트 1.7cm',spec:'1M×1M',price:67000,is1000:true,sched:'모던1m17(67000)'},
+  {key:'22',name:'1M 2.2cm',full:'1000매트 2.2cm',spec:'1M×1M',price:79500,is1000:true,sched:'모던1m22(79500)'},
+  {key:'50',name:'500 2.2cm',full:'500매트 2.2cm',spec:'50×50cm',price:17500,is1000:false,sched:'모던50(17500)'}
 ];
 /* quote.html과 동일한 수량 테이블 (500매트 장수 기준, 1M은 ÷4 올림) */
 var PYEONG_DATA={
@@ -353,7 +362,8 @@ var DOCS=[
   {id:'kc',label:'KC 안전인증',sub:'어린이제품 안전확인 신고확인증 (2026.9)',pages:2,pre:'kc-',pad:1,ext:'.jpg'},
   {id:'test',label:'시험성적서',sub:'FITI 시험연구원 · 합격 (11쪽)',pages:11,pre:'test-',pad:2,ext:'.jpg'},
   {id:'gpt',label:'TPU vs PU',sub:'GPT에게 물어봤어요 · QR로 답변 보기',files:['gpt-tpu-pu.jpg']},
-  {id:'biz',label:'사업자등록증',sub:'돌봄 본사 · 제조사',files:['biz-dolbom.jpg','biz-maker.jpg']}
+  {id:'biz',label:'사업자등록증',sub:'돌봄 본사 · 제조사',files:['biz-dolbom.jpg','biz-maker.jpg']},
+  {id:'review',label:'후기 이벤트',sub:'후기 미션 7개 · 최대 10만원 캐시백',html:true}
 ];
 var DOC_DIR='assets/fair-docs/';
 function docFiles(d){if(d.files)return d.files.map(function(f){return DOC_DIR+f});var a=[];for(var i=1;i<=d.pages;i++){a.push(DOC_DIR+d.pre+String(i).padStart(d.pad,'0')+d.ext)}return a}
@@ -361,18 +371,23 @@ function renderDocChips(){document.getElementById('docChips').innerHTML=DOCS.map
   document.querySelectorAll('#docChips button').forEach(function(b){b.onclick=function(){openDoc(b.dataset.doc)}})}
 function openDoc(id){
   var d=DOCS.find(function(x){return x.id===id});if(!d)return;
-  var files=docFiles(d);
   document.getElementById('dvTitle').textContent=d.label;document.getElementById('dvSub').textContent=d.sub||'';
-  document.getElementById('dvBody').innerHTML=files.map(function(f,i){return '<img src="'+f+'" alt="'+d.label+' '+(i+1)+'" loading="'+(i<2?'eager':'lazy')+'" id="dvp'+i+'">'}).join('');
+  if(d.html){document.getElementById('dvBody').innerHTML=reviewPanelHtml()}
+  else{var files=docFiles(d);document.getElementById('dvBody').innerHTML=files.map(function(f,i){return '<img src="'+f+'" alt="'+d.label+' '+(i+1)+'" loading="'+(i<2?'eager':'lazy')+'" id="dvp'+i+'">'}).join('')}
   document.getElementById('dvNav').innerHTML=DOCS.map(function(x){return '<button type="button" data-doc="'+x.id+'"'+(x.id===id?' class="on"':'')+'>'+x.label+'</button>'}).join('');
   document.querySelectorAll('#dvNav button').forEach(function(b){b.onclick=function(){openDoc(b.dataset.doc)}});
   document.getElementById('dvBody').scrollTop=0;
   document.getElementById('docViewer').classList.add('on');document.body.style.overflow='hidden';
 }
+function reviewPanelHtml(){
+  return '<div class="rvp"><div class="rvh">시공 후 후기를 올리면 미션별로 캐시백이 계좌로 입금돼요 · 7개 모두 하면 최대 <b>10만원</b></div>'+
+    REVIEW_MISSIONS.map(function(m,i){return '<div class="rvi"><div class="rvn">'+(i+1)+'. '+m.n+'<b>'+m.r+'</b></div><div class="rvw">'+m.w+'</div></div>'}).join('')+
+    '<div class="rvh" style="margin-top:14px">시공 당일 카톡으로 안내 페이지를 보내드려요 · 사진과 함께 올리고 페이지에서 인증하면 돼요<br>계약 후기(3만) 할인은 박람회 쿠폰과 중복 적용되지 않아요</div></div>';
+}
 function closeDoc(){document.getElementById('docViewer').classList.remove('on');document.body.style.overflow='';document.getElementById('dvBody').innerHTML=''}
 
 /* ===== 상태 ===== */
-var S={py:0,expand:true,scope:0,sr:0,prod:null,onnuri:true,review:true,cq:[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}]};
+var S={py:0,qtyManual:0,expand:true,scope:0,sr:0,prod:null,onnuri:true,review:true,cq:[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}]};
 var CQ_LABELS=['A사','B사','C사'], CQ_SIZES=[50,60,65,70,80,100,120,130,140];
 S.mode='py';S.rooms=[{name:'거실',w:'',h:''},{name:'복도',w:'',h:''},{name:'주방',w:'',h:''}];
 function toMm(v){var n=parseFloat(String(v).replace(/[^0-9.]/g,''));if(!n)return 0;return n<=30?Math.round(n*1000):(n<=999?Math.round(n*10):Math.round(n))}
@@ -398,9 +413,11 @@ function calcQty(py,si,useWide){
 function quoteFor(p,wide){
   if(!p)return null;wide=!!wide;
   var base500,srQty=0,areaM2,scopeName;
-  if(S.mode==='dim'){var a=dimArea();if(!a)return null;areaM2=a*1.1;base500=Math.ceil(a*1.1/0.25);scopeName=dimRoomsLabel()+' (치수 입력)'}
+  if(S.mode==='py'&&S.qtyManual>0){var selP=S.prod||p;areaM2=selP.is1000?S.qtyManual:S.qtyManual/4;base500=selP.is1000?S.qtyManual*4:S.qtyManual;if(!p.is1000&&!selP.is1000)base500=S.qtyManual;scopeName='장수 직접 입력 '+S.qtyManual+'장 ('+selP.name+' 기준)'}
+  else if(S.mode==='dim'){var a=dimArea();if(!a)return null;areaM2=a*1.1;base500=Math.ceil(a*1.1/0.25);scopeName=dimRoomsLabel()+' (치수 입력)'}
   else{if(!S.py)return null;base500=calcQty(S.py,S.scope,wide);var sr500=S.sr>0?S.sr*calcQty(S.py,'room',wide):0;areaM2=(base500+sr500)/4;base500+=sr500;srQty=S.sr>0?(p.is1000?Math.ceil(sr500/4):sr500):0;scopeName=SCOPE_NAMES[S.scope]+(S.sr?' + 작은방 '+S.sr+'개':'')}
   var qty=p.is1000?Math.ceil(areaM2):base500;
+  if(S.mode==='py'&&S.qtyManual>0&&(S.prod||p).key===p.key)qty=S.qtyManual; // 선택 제품은 입력 장수 그대로
   var srCost=0;
   var matCost=qty*p.price, totalMat=matCost, totalQty=qty;
   var thr=p.is1000?THRESH_1000:THRESH_500, install=totalQty<=thr?INSTALL_FEE:0;
@@ -411,9 +428,9 @@ function quoteFor(p,wide){
   return {p:p,qty:qty,srQty:srQty,srCost:srCost,matCost:matCost,totalMat:totalMat,totalQty:totalQty,install:install,on:on,gb:gb,pay:pay,cb:cb,fin:fin,per:totalQty?Math.round(fin/totalQty):0,perPay:totalQty?Math.round(pay/totalQty):0,areaM2:areaM2,scopeName:scopeName};
 }
 function quote(){return quoteFor(S.prod,false)}
-function quoteWide(p){return S.mode==='dim'?null:quoteFor(p||S.prod,true)}
-function houseLabel(){return S.mode==='dim'?('치수 입력 · '+dimRoomsLabel()):(S.py+'평 '+(S.expand?'확장형':'비확장형')+' · '+SCOPE_NAMES[S.scope]+(S.sr?' + 작은방 '+S.sr+'개':''))}
-function scopeShort(){return S.mode==='dim'?dimRoomsLabel():(SCOPE_NAMES[S.scope]+(S.sr?'+작은방 '+S.sr+'개':''))}
+function quoteWide(p){return (S.mode==='dim'||(S.mode==='py'&&S.qtyManual>0))?null:quoteFor(p||S.prod,true)}
+function houseLabel(){if(S.mode==='py'&&S.qtyManual>0)return '장수 직접 입력 '+S.qtyManual+'장'+(S.py?' ('+S.py+'평)':'');return S.mode==='dim'?('치수 입력 · '+dimRoomsLabel()):(S.py+'평 '+(S.expand?'확장형':'비확장형')+' · '+SCOPE_NAMES[S.scope]+(S.sr?' + 작은방 '+S.sr+'개':''))}
+function scopeShort(){if(S.mode==='py'&&S.qtyManual>0)return '직접 입력';return S.mode==='dim'?dimRoomsLabel():(SCOPE_NAMES[S.scope]+(S.sr?'+작은방 '+S.sr+'개':''))}
 
 /* ===== 렌더 ===== */
 function renderPy(){
@@ -448,16 +465,16 @@ function update(keepInputs){
   T+=row('박람회 쿠폰',neg(COUPON_AMT),R&&neg(COUPON_AMT),'y');
   T+=row('박람회 할인 3%',neg(q.gb),R&&neg(qw.gb),'y');
   if(q.on)T+=row('온누리상품권 결제 7%',neg(q.on),R&&neg(qw.on),'y');
+  var oth=PRODUCTS.filter(function(p){return p.key!==q.p.key});
+  if(oth.length){T+='<div class="d sub" style="grid-column:1/-1;padding-top:10px">다른 제품으로 하면 <small>(혜택·후기 캐시백 모두 적용 최종가)</small></div>';
+    oth.forEach(function(p){var o=quoteFor(p,false),ow=quoteWide(p);if(!o)return;var r2=ow&&ow.qty!==o.qty;T+=row(p.name+' <b style="color:#fff">'+o.qty+(r2?'~'+ow.qty:'')+'장</b>',fmt(o.fin),r2?fmt(ow.fin):(R?fmt(o.fin):false))})}
   T+=row('예상 결제 금액',fmt(q.pay),R&&fmt(qw.pay),'sum','sum');
-  if(q.cb)T+=row('<span class="rvq" onclick="toggleReviewInfo()">시공 후 후기 캐시백 (최대) <u>어디에 쓰나요?</u></span>',neg(q.cb),R&&neg(q.cb),'d','d');
+  if(q.cb)T+=row('시공 후 후기 캐시백 (최대)',neg(q.cb),R&&neg(q.cb),'d','d');
   T+='</div>';
-  T+='<div id="reviewInfo" style="display:'+(reviewInfoOpen?'block':'none')+'"><div class="rvt">후기 미션 7개 · 합계 최대 10만원 캐시백 (시공 후 계좌 입금)</div>'+REVIEW_MISSIONS.map(function(m){return '<div class="rvm"><span class="rvn">'+m.n+'</span><span class="rvw">'+m.w+'</span><b>'+m.r+'</b></div>'}).join('')+'<div class="rvt" style="margin-top:6px;color:#9fb0a7">시공 당일 카톡으로 안내 페이지를 보내드려요 · 사진과 함께 올리고 페이지에서 인증하면 돼요</div></div>';
   var L=T;
   $('#rLines').innerHTML=L;
   $('#finLabel').textContent=S.review?'후기 캐시백까지 받으면 최종':'최종 체감가';
   $('#rFinal').textContent=fmt(q.fin)+(R?'~'+fmt(qw.fin):'');$('#rPer').textContent='장당 '+fmt(q.per)+'원 · 정가 대비 '+man(q.totalMat+q.install-q.fin)+' 절약';
-  var others=PRODUCTS.filter(function(p){return p.key!==q.p.key}).map(function(p){var o=quoteFor(p,false),ow=quoteWide(p);var r2=ow&&ow.qty!==o.qty;return o?'<div class="ln dim" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span>'+p.name+'로 하면 <b style="color:#dfe6e2">'+o.qty+(r2?'~'+ow.qty:'')+'장</b></span><b>'+fmt(o.pay)+(r2?'~'+fmt(ow.pay):'')+'원</b></div>'+(o.cb?'<div style="text-align:right;font-size:11.5px;color:#9fb0a7">후기 후 '+fmt(o.fin)+(r2?'~'+fmt(ow.fin):'')+'원</div>':'')+'</div>':''}).join('');
-  $('#rOthers').innerHTML=others?'<div style="margin-top:12px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.12)"><div class="ln dim" style="padding-bottom:0"><span>다른 제품으로 하면</span></div>'+others+'</div>':'';
   $('#benefitTg').querySelectorAll('button').forEach(function(b){b.className=S[b.dataset.k]?'on':''});
   renderCmp(q);
 }
@@ -472,7 +489,7 @@ function renderDims(){
 function setMode(m){
   S.mode=m;$('#segMode').querySelectorAll('button').forEach(function(x){x.className=x.dataset.v===m?'on':''});
   $('#pyBox').style.display=m==='py'?'block':'none';$('#scopeBox').style.display=m==='py'?'block':'none';$('#dimBox').style.display=m==='dim'?'block':'none';
-  $('#pyHint').textContent=m==='py'?'공급면적 기준':'도면·실측 치수';$('#scopeTitle').textContent=m==='py'?'시공 범위':'공간별 치수';
+  $('#scopeTitle').textContent=m==='py'?'시공 범위':'공간별 치수';
   if(m==='dim')renderDims();update(true);
 }
 
@@ -506,7 +523,7 @@ function defaultQuote(){ // 평형 미입력 시 비교 기준: 34평 확장형 
 function renderCmp(q){
   var rows=cqRows(q);
   var ours={own:true,label:'돌봄매트 '+q.p.name,total:q.fin,n:q.totalQty,unit:q.p.price,size:q.p.is1000?100:50,perM2:Math.round(q.fin/q.areaM2)};
-  $('#cmpNote').textContent='기준: '+(q.isDefault?'34평 확장형 거실+복도+주방 · 1M 40장 (평형을 넣으면 그 집 기준으로 바뀜)':houseLabel()+' · '+q.p.name+' '+q.qty+'장')+' · 돌봄매트는 박람회 혜택·후기 캐시백까지 모두 적용한 금액';
+  $('#cmpNote').textContent='기준: '+(q.isDefault?'34평 확장형 거실+복도+주방 · 1M 40장 (평형을 넣으면 그 집 기준으로 바뀜)':houseLabel()+' · '+q.p.name+' '+q.qty+'장')+' · 돌봄매트는 박람회 혜택·후기 캐시백까지 모두 적용한 금액 · 견적 유효 '+COUPON_EXP.replace(/-/g,'.')+'까지('+VALID_LABEL+')';
   if(!rows.length){$('#cmpList').innerHTML='';return}
   var all=rows.concat([ours]).sort(function(a,b){return a.total-b.total});
   var max=Math.max.apply(null,all.map(function(r){return r.total}))||1;
@@ -527,7 +544,7 @@ function renderCmp(q){
 
 /* ===== 직원 패널: 요약/링크/저장 ===== */
 function customerLink(){
-  var q=new URLSearchParams();q.set('q','1');q.set('py',S.py);q.set('ex',S.expand?1:0);q.set('sc',S.scope);q.set('sr',S.sr);q.set('p',S.prod.key);q.set('on',S.onnuri?1:0);q.set('rv',S.review?1:0);
+  var q=new URLSearchParams();q.set('q','1');q.set('py',S.py);q.set('ex',S.expand?1:0);q.set('sc',S.scope);if(S.qtyManual)q.set('qn',S.qtyManual);q.set('sr',S.sr);q.set('p',S.prod.key);q.set('on',S.onnuri?1:0);q.set('rv',S.review?1:0);
   if(S.mode==='dim'){q.set('m','dim');q.set('rm',S.rooms.filter(function(r){return toMm(r.w)&&toMm(r.h)}).map(function(r){return r.name+':'+toMm(r.w)+':'+toMm(r.h)}).join(';'))}
   var cq=S.cq.map(function(x){var u=String(x.unit||'').replace(/[^0-9]/g,''),z=String(x.size||'').replace(/[^0-9]/g,'');return u&&z?u+':'+z:''}).filter(Boolean);if(cq.length)q.set('cq',cq.join(';'));
   return 'https://my.dolbommat.com/fair.html?'+q.toString();
@@ -536,12 +553,13 @@ function summaryText(){
   var q=quote();if(!q)return '';
   var name=$('#fName').value.trim(), memo=$('#fMemo').value.trim(), apt=$('#fApt').value.trim();
   var toMan=function(n){return Math.floor((n||0)/10000)+'만원'};
-  var ICON=['1️⃣','2️⃣','3️⃣'], SHORT={'22':'(1M 2.2cm)','17':'(1M 1.7cm)','50':'(50cm 2.2cm)'};
+  var ICON=['1️⃣','2️⃣','3️⃣'], SHORT={'22':'(1M×1M)','17':'(1M×1M)','50':'(50×50cm)'};
   var FEAT={'22':'층간소음, 아이안전','17':'아이안전, 반려동물 추천','50':'층간소음, 아이안전, 합리적 가격'};
   var L=[];
   L.push('[베이비페어 예상 견적]'+(name?' · '+name+' 님':''));
   if(apt)L.push(apt);
   if(S.mode==='dim'){var rs=S.rooms.filter(function(r){return toMm(r.w)&&toMm(r.h)}).map(function(r){return r.name+' '+(toMm(r.w)/1000).toFixed(1)+'×'+(toMm(r.h)/1000).toFixed(1)+'m'});L.push('치수 기준 '+q.areaM2.toFixed(1)+'㎡ ('+rs.join(', ')+')')}
+  else if(S.qtyManual>0) L.push((S.py?S.py+'평 · ':'')+'장수 직접 입력 '+S.qtyManual+'장 ('+S.prod.name+' 기준)');
   else L.push(S.py+'평('+scopeShort()+')'+(S.expand?'확장형':'비확장')+' · 거실 보통/넓은편 두 가지');
   L.push('');
   // 제품 3종 — 선택 제품을 1️⃣로, 나머지는 순서대로
@@ -561,7 +579,7 @@ function summaryText(){
   L.push('✔️박람회 쿠폰(-5만)✔️박람회 할인(-3%)');
   var b2=[];if(S.review)b2.push('✔️후기작성(-10만)');if(S.onnuri)b2.push('✔️온누리 결제(-7%)');
   for(var i=0;i<b2.length;i+=2)L.push(b2[i]+(b2[i+1]||''));
-  L.push('※ 박람회 혜택은 '+COUPON_EXP.slice(5).replace('-','.')+'까지 예약금 결제 시 적용');
+  L.push('※ 이 견적과 박람회 혜택은 '+COUPON_EXP.replace(/-/g,'.')+'까지('+VALID_LABEL+') 예약금 결제 시 적용');
   L.push('※ 박람회 쿠폰은 계약 후기 할인(3만)·5인 공동구매 할인과 중복 적용되지 않아요');
   var cr=cqRows(q);
   if(cr.length){L.push('');L.push('🔍 받아오신 견적과 비교 (같은 면적)');cr.forEach(function(r){var d=r.total-q.fin;L.push('· '+r.label+' '+toMan(r.total)+' ('+r.size+'cm '+r.n+'장)'+' → 돌봄매트가 '+(d>0?toMan(d)+' 저렴':d<0?toMan(-d)+' 비쌈':'같음'))});L.push('· 돌봄매트 '+q.p.name+' '+q.qty+'장 '+toMan(q.fin)+' (박람회 혜택·후기 캐시백 모두 적용)')}
@@ -601,7 +619,7 @@ async function ping(){
   if(serverOk)flushUnsynced();
 }
 function fingerprint(){ // 같은 상담을 여러 번 복사해도 한 건만 저장되게 — 입력값이 하나라도 바뀌면 새 기록
-  return JSON.stringify([$('#fName').value.trim(),$('#fPhone').value.trim(),$('#fApt').value.trim(),$('#fMemo').value.trim(),S.mode,S.py,S.expand,S.scope,S.sr,S.prod&&S.prod.key,S.onnuri,S.review,S.rooms,S.cq]);
+  return JSON.stringify([$('#fName').value.trim(),$('#fPhone').value.trim(),$('#fApt').value.trim(),$('#fMemo').value.trim(),S.mode,S.py,S.qtyManual,S.expand,S.scope,S.sr,S.prod&&S.prod.key,S.onnuri,S.review,S.rooms,S.cq]);
 }
 function buildRec(q){
   return {id:Date.now().toString(36)+DEV,date:todayKst(),time:new Date(Date.now()+9*3600e3).toISOString().slice(11,16),fair:FAIR_NAME,name:$('#fName').value.trim(),apt:$('#fApt').value.trim(),phone:$('#fPhone').value.trim(),py:S.mode==='dim'?Math.round(q.areaM2)+'㎡':S.py,expand:S.mode==='dim'?'치수':(S.expand?'확장':'비확장'),scope:q.scopeName,sr:S.sr,prod:q.p.full,sched:q.p.sched,qty:q.qty,qtyWide:(quoteWide()||{}).qty||'',srQty:q.srQty,gross:q.totalMat+q.install,pay:q.pay,fin:q.fin,onnuri:S.onnuri?'Y':'N',group:'박람회3%',review:S.review?'Y':'N',memo:$('#fMemo').value.trim(),link:customerLink(),summary:summaryText(),dev:DEV,fp:fingerprint(),synced:false};
@@ -630,6 +648,19 @@ async function saveAndCopy(){
   if(!rec.synced){setSync('시트 저장 중…',false);var ok=await pushRec(rec);if(ok){rec.synced=true;setRecs(a);renderRecs()}setSync(ok?'시트 저장 완료 · 박람회상담 시트':'시트 저장 실패 — 기기에 저장됨, 다음 복사 때 재시도',ok)}
   flushUnsynced();
 }
+function resetAll(){
+  if(quote()&&!confirm('현재 상담 내용을 지우고 새 상담을 시작할까요?\n(저장된 상담 목록은 그대로 남아요)'))return;
+  S.py=0;S.qtyManual=0;S.expand=true;S.scope=0;S.sr=0;S.prod=null;S.onnuri=true;S.review=true;
+  S.cq=[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}];
+  S.rooms=[{name:'거실',w:'',h:''},{name:'복도',w:'',h:''},{name:'주방',w:'',h:''}];
+  $('#pyInput').value='';$('#qtyInput').value='';$('#qtyHint').style.display='none';$('#srCount').textContent='0';
+  ['fName','fPhone','fApt','fMemo'].forEach(function(id){$('#'+id).value=''});
+  $('#segExpand').querySelectorAll('button').forEach(function(x){x.className=x.dataset.v==='1'?'on':''});
+  $('#scopeBtns').querySelectorAll('button').forEach(function(x){x.className=x.dataset.i==='0'?'on':''});
+  cmpInputsDrawn=false;renderPy();renderProds();
+  if(history.replaceState)history.replaceState(null,'',location.pathname); // 고객 링크로 열었던 값도 제거
+  setMode('py');window.scrollTo({top:0,behavior:'smooth'});toast('새 상담 준비 완료');
+}
 function setSync(msg,ok){var el=$('#syncMsg');el.className='sync '+(ok?'ok':'');el.textContent=msg}
 function exportAll(){
   var a=recs();if(!a.length){toast('기록이 없어요');return}
@@ -640,6 +671,7 @@ function exportAll(){
 
 /* ===== 이벤트 ===== */
 $('#pyInput').addEventListener('input',function(){var v=parseInt(this.value)||0;S.py=v>=10&&v<=99?v:0;renderPy();update()});
+$('#qtyInput').addEventListener('input',function(){var v=parseInt(this.value)||0;S.qtyManual=v>0&&v<=999?v:0;$('#qtyHint').style.display=S.qtyManual?'block':'none';update()});
 $('#segExpand').querySelectorAll('button').forEach(function(b){b.onclick=function(){S.expand=b.dataset.v==='1';$('#segExpand').querySelectorAll('button').forEach(function(x){x.className=x===b?'on':''});update()}});
 $('#scopeBtns').querySelectorAll('button').forEach(function(b){b.onclick=function(){S.scope=parseInt(b.dataset.i);$('#scopeBtns').querySelectorAll('button').forEach(function(x){x.className=x===b?'on':''});update()}});
 $('#srMinus').onclick=function(){S.sr=Math.max(0,S.sr-1);$('#srCount').textContent=S.sr;update()};
@@ -649,14 +681,14 @@ $('#dimAdd').onclick=function(){S.rooms.push({name:'방 '+(S.rooms.length-2),w:'
 $('#benefitTg').querySelectorAll('button').forEach(function(b){b.onclick=function(){S[b.dataset.k]=!S[b.dataset.k];update()}});
 $('#btnCopy').onclick=saveAndCopy;
 $('#btnLink').onclick=function(){if(!quote()){toast('견적을 먼저 만들어주세요');return}copy(customerLink(),'고객 링크 복사')};
-$('#btnExport').onclick=exportAll;
+$('#btnExport').onclick=exportAll;$('#btnReset').onclick=resetAll;
 $('#dvClose').onclick=closeDoc;$('#docViewer').addEventListener('click',function(e){if(e.target===this)closeDoc()});document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDoc()});
 
 /* ===== 시작 ===== */
 (function init(){
   $('#ctaExp').textContent=COUPON_EXP.replace(/-/g,'.');
   var q=new URLSearchParams(location.search);
-  if(q.has('py')){S.py=parseInt(q.get('py'))||0;S.expand=q.get('ex')!=='0';S.scope=Math.min(2,Math.max(0,parseInt(q.get('sc'))||0));S.sr=Math.min(4,Math.max(0,parseInt(q.get('sr'))||0));
+  if(q.has('py')){S.py=parseInt(q.get('py'))||0;S.qtyManual=parseInt(q.get('qn'))||0;if(S.qtyManual){$('#qtyInput').value=S.qtyManual;$('#qtyHint').style.display='block'}S.expand=q.get('ex')!=='0';S.scope=Math.min(2,Math.max(0,parseInt(q.get('sc'))||0));S.sr=Math.min(4,Math.max(0,parseInt(q.get('sr'))||0));
     S.prod=PRODUCTS.find(function(p){return p.key===q.get('p')})||null;S.onnuri=q.get('on')!=='0';S.review=q.get('rv')!=='0';
     if(S.py&&PY_CHIPS.indexOf(S.py)<0)$('#pyInput').value=S.py;
     $('#segExpand').querySelectorAll('button').forEach(function(x){x.className=(x.dataset.v==='1')===S.expand?'on':''});
@@ -665,7 +697,7 @@ $('#dvClose').onclick=closeDoc;$('#docViewer').addEventListener('click',function
     if(q.get('cq'))q.get('cq').split(';').slice(0,3).forEach(function(x,i){var a=x.split(':');if(a.length===3)a=a.slice(1);S.cq[i]={total:'',unit:a[0]||'',size:a[1]||''}});
     if(q.get('m')==='dim'&&q.get('rm')){S.rooms=q.get('rm').split(';').map(function(x){var a=x.split(':');return {name:a[0]||'공간',w:a[1]||'',h:a[2]||''}}).filter(function(r){return r.w&&r.h});if(!S.py)S.py=0}
   }
-  if(isCustomer){$('#cardStaff').style.display='none';$('#cardQr').style.display='none';$('#resTitle').textContent='고객님 예상 결제 금액'}
+  if(isCustomer){$('#cardStaff').style.display='none';$('#cardQr').style.display='none';$('#btnReset').style.display='none';$('#resTitle').textContent='고객님 예상 결제 금액'}
   else{renderRecs(); ping();}
   renderDocChips();renderPy();renderProds();if(new URLSearchParams(location.search).get('m')==='dim')setMode('dim');else update();
 })();
