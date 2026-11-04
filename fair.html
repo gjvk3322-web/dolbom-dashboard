@@ -21,6 +21,10 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .colL,.colR,.colA,.colC{display:contents}
 .g-qr img{max-width:440px}
 .top{order:0}.g-py{order:1}.g-scope{order:2}.g-prod{order:3}.g-res{order:4}.g-cta{order:5}.g-gpt{order:6}.g-cmp{order:7}.g-staff{order:8}.g-qr{order:9}
+/* 고객 보기(?view=c, ?q=): 우리 견적 → 다른 업체 비교 → 상담 버튼 → 평형/범위/제품 → TPU 카드 */
+.cust #cardCmp .step .n{display:none} /* 고객 화면에선 비교 카드가 2번째라 '4' 번호 숨김 */
+@media (max-width:959px){.cust .g-res{order:1}.cust .g-cmp{order:2}.cust .g-cta{order:3}.cust .g-py{order:4}.cust .g-scope{order:5}.cust .g-prod{order:6}.cust .g-gpt{order:7}}
+@media (min-width:960px) and (max-width:1319px){.cust .colR{display:flex;flex-direction:column}.cust .g-res{order:1}.cust .g-cmp{order:2}.cust .g-cta{order:3}.cust .g-gpt{order:4}}
 @media (min-width:960px){
   html{font-size:17px}
   .wrap{max-width:1200px;padding:18px 22px 60px;display:grid;grid-template-columns:400px minmax(0,1fr);gap:0 18px;align-items:start}
@@ -43,6 +47,11 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
     .colR .colA,.colR .colC{display:grid;grid-template-rows:subgrid;align-items:stretch;align-content:start}
     .colR .gpt{display:flex;flex-direction:column;justify-content:center} /* 비교 카드가 더 길면 그 높이에 맞춰 늘어나고 내용은 가운데 */
     .colR .g-res,.colR .g-qr,.colR .g-cta{align-self:start} /* 2행(결과|QR)은 시작선만 맞추고 높이는 각자 */
+    .cust .colR .g-res{order:1}.cust .colR .g-cta{order:2}.cust .colR .g-gpt{order:3}.cust .colR .g-cmp{align-self:start} /* 고객 보기: 1행 결과|비교 · 2행 상담 버튼 · 3행 TPU 카드 */
+    /* 견적 전: 고객이 기다리며 보는 화면 — GPT 카드가 오른쪽 열(비교+QR 포스터) 높이만큼 늘어나고 내용 확대 */
+    .noq .colR .g-gpt{grid-row:1/3}
+    .noq .colR .gpt .gq{font-size:32px}.noq .colR .gpt .gs{font-size:18px;margin-top:12px}.noq .colR .gpt .gpill{font-size:16px;padding:11px 22px;margin-top:18px}
+    .noq .colR .gpt .gqr{width:200px;margin-top:22px;padding:10px}.noq .colR .gpt .gcap{font-size:13.5px;margin-top:12px}
     /* 모바일용 order를 PC 순서로 덮어씀: 1행 GPT|비교 · 2행 결과|QR · 3행 CTA */
     .colR .g-gpt,.colR .g-cmp{order:1}.colR .g-res,.colR .g-qr{order:2}.colR .g-cta{order:3}
   }
@@ -53,8 +62,10 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .docs{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;min-width:0}
 .docs button{border:1.5px solid var(--line);background:#fff;border-radius:50px;padding:8px 13px;font-size:13px;font-weight:700;font-family:inherit;color:var(--text);cursor:pointer;white-space:nowrap;box-shadow:var(--sh)}
 .docs button:hover{border-color:var(--green);color:var(--green)}
+.docs a.staffLink{border:1.5px dashed #c9d1cc;background:#fff;border-radius:50px;padding:8px 13px;font-size:13px;font-weight:700;color:var(--sub);text-decoration:none;white-space:nowrap}
+.docs a.staffLink:hover{border-color:var(--green);color:var(--green)}
 .docs button small{font-weight:500;color:var(--dim);margin-left:3px;font-size:11px}
-@media (max-width:959px){.docs{order:3;flex-basis:100%;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding:4px 0 2px;scrollbar-width:none}.docs::-webkit-scrollbar{display:none}.docs button{padding:9px 12px}}
+@media (max-width:959px){.docs{order:3;flex-basis:100%;justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding:4px 0 2px;scrollbar-width:none}.docs::-webkit-scrollbar{display:none}.docs button,.docs a.staffLink{padding:9px 12px}}
 /* 자료 뷰어 */
 .dv{position:fixed;inset:0;background:rgba(10,14,12,.94);z-index:100;display:none;flex-direction:column}
 .dv.on{display:flex}
@@ -193,9 +204,10 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .cta a.g{background:var(--green);color:#fff}
 .rec{border-top:1px solid var(--line);padding:10px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
 .rec .t{font-weight:700}.rec .t small{display:block;font-weight:500;color:var(--dim);font-size:11.5px}
-.rec button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer}
+.rec button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 8px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+.rec button.rx{color:var(--red);border-color:#f0d3ca}
 /* 시트 연동 상태: 글자 없이 점 하나 (화면을 고객과 같이 보므로) — 마우스 올리면 상태 툴팁 */
-.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9d1cc;margin-left:5px;vertical-align:middle}
+.sdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9d1cc;vertical-align:middle}
 .sdot.ok{background:var(--green)}.sdot.err{background:var(--red)}
 /* TPU vs PU 카드 (결과 아래) */
 .gpt{text-align:center;padding:22px 16px 18px;cursor:pointer}
@@ -215,7 +227,7 @@ details summary::-webkit-details-marker{display:none}
 @media (max-width:380px){.res .big{font-size:32px}.chip{font-size:15px;min-width:52px}}
 </style>
 </head>
-<body>
+<body class="noq">
 <div class="wrap">
   <div class="top">
     <div class="brand">돌봄매트<small id="subTitle" style="display:none"></small></div>
@@ -271,12 +283,11 @@ details summary::-webkit-details-marker{display:none}
 
   <!-- 직원 패널 -->
   <div class="card staff g-staff" id="cardStaff">
-    <div class="step"><span class="n">5</span>상담 기록 · 카톡 전송 <span class="hint">직원용<i class="sdot" id="syncDot" title="서버 확인 중"></i></span></div>
+    <div class="step"><span class="n">5</span>상담 기록 · 카톡 전송 <span class="hint"><i class="sdot" id="syncDot" title="서버 확인 중"></i></span></div>
     <div class="grid">
       <input class="inp" id="fName" placeholder="고객명">
-      <input class="inp" id="fPhone" type="tel" inputmode="numeric" placeholder="연락처">
+      <input class="inp" id="fApt" placeholder="아파트명 (선택)">
     </div>
-    <input class="inp" id="fApt" placeholder="아파트명 (선택)" style="margin-top:8px">
     <input class="inp" id="fMemo" placeholder="메모" style="margin-top:8px">
     <div class="btns">
       <button class="btn y" id="btnCopy">요약 복사 (자동 저장)</button>
@@ -310,7 +321,6 @@ details summary::-webkit-details-marker{display:none}
     </div>
     <div class="fin"><div class="l" id="finLabel">후기까지 받으면 최종</div><div class="v"><span id="rFinal">0</span>원<small id="rPer"></small></div></div>
   </div>
-  <div class="card g-res" id="resEmpty"><div class="ph">평형 → 범위 → 제품을 고르면 금액이 바로 나와요</div></div>
 
   <!-- 고객용 CTA -->
   <div class="card g-cta" id="cardCta" style="display:none">
@@ -397,7 +407,12 @@ var DOCS=[
 var DOC_DIR='assets/fair-docs/';
 function docCust(d){return (isCustomer&&d.cust)?d.cust:null}
 function docFiles(d){var c=docCust(d),fl=(c&&c.files)||d.files;if(fl)return fl.map(function(f){return DOC_DIR+f});var a=[];for(var i=1;i<=d.pages;i++){a.push(DOC_DIR+d.pre+String(i).padStart(d.pad,'0')+d.ext)}return a}
-function renderDocChips(){document.getElementById('docChips').innerHTML=DOCS.map(function(d){return '<button type="button" data-doc="'+d.id+'">'+d.label+'</button>'}).join('');
+/* 직원용 링크 칩 — 고객 보기(?view=c, ?q=)에서는 칩 자체가 안 만들어짐. 주소는 소스에 통으로 안 적히게 조각으로 조립 (fair.html은 공개 페이지라 진짜 보호는 각 페이지 쪽 로그인으로) */
+var STAFF_LINKS=[
+  {label:'예약 현황',url:['https://my.dolbommat.com/','reser','vation','.html'].join('')},
+  {label:'카톡 채널',url:['https://business.kakao.com/','space/','10118','572/','channel/','_UMyBK','/chats'].join('')}
+];
+function renderDocChips(){document.getElementById('docChips').innerHTML=DOCS.map(function(d){return '<button type="button" data-doc="'+d.id+'">'+d.label+'</button>'}).join('')+(isCustomer?'':STAFF_LINKS.map(function(l){return '<a class="staffLink" href="'+l.url+'" target="_blank" rel="noopener" title="직원용 · 새 탭에서 열려요">'+l.label+'</a>'}).join(''));
   document.querySelectorAll('#docChips button').forEach(function(b){b.onclick=function(){openDoc(b.dataset.doc)}})}
 function openDoc(id){
   var d=DOCS.find(function(x){return x.id===id});if(!d)return;
@@ -476,7 +491,7 @@ function renderProds(){
 var cmpInputsDrawn=false;
 function update(keepInputs){
   var q=quote();
-  $('#res').style.display=q?'block':'none';$('#resEmpty').style.display=q?'none':'block';
+  $('#res').style.display=q?'block':'none';document.body.classList.toggle('noq',!q); // 견적 전(noq): PC에서 GPT 카드가 오른쪽 열 높이만큼 커짐
   $('#cardCmp').style.display='block';$('#cardCta').style.display=(q&&isCustomer)?'block':'none';
   if(!cmpInputsDrawn){renderCmpInputs();cmpInputsDrawn=true}
   if(!q){renderCmp(defaultQuote());return}
@@ -494,7 +509,7 @@ function update(keepInputs){
   if(q.install)T+=row('시공비 (소량 추가)','+'+fmt(q.install),R&&'+'+fmt(qw.install||q.install));
   T+=row('박람회 쿠폰',neg(COUPON_AMT),R&&neg(COUPON_AMT),'y');
   T+=row('박람회 할인 3%',neg(q.gb),R&&neg(qw.gb),'y');
-  if(q.on)T+=row('온누리상품권 결제 7%',neg(q.on),R&&neg(qw.on),'y');
+  if(q.on)T+=row('온누리상품권 결제 7% <small style="font-size:11.5px;color:#9fb0a7;font-weight:500">(구매시 적용)</small>',neg(q.on),R&&neg(qw.on),'y');
   if(q.cb)T+=row('시공 후 후기 캐시백 (최대)',neg(q.cb),R&&neg(q.cb),'y');
   var oth=PRODUCTS.filter(function(p){return p.key!==q.p.key});
   if(oth.length){T+='<div class="d sub" style="grid-column:1/-1;padding-top:10px">다른 제품으로 하면 <small>(혜택·후기 캐시백 모두 적용 최종가)</small></div>';
@@ -592,6 +607,11 @@ function summaryText(){
   else if(S.qtyManual>0) L.push((S.py?S.py+'평 · ':'')+'장수 직접 입력 '+S.qtyManual+'장 ('+S.prod.name+' 기준)');
   else L.push(S.py+'평('+scopeShort()+')'+(S.expand?'확장형':'비확장'));
   L.push('');
+  // 다른 부스 견적과 비교하는 링크를 맨 위에 (카톡 미리보기에서 잘리지 않게)
+  L.push('🔍 돌봄매트와 다른 매트 견적 비교');
+  L.push('👉 '+customerLink());
+  L.push('다른 부스에서 받은 견적의 장당 가격·매트 크기만 넣으면 같은 면적 기준으로 바로 비교돼요');
+  L.push('');
   // 제품 3종 — 선택 제품을 1️⃣로, 나머지는 순서대로
   var order=[S.prod].concat(PRODUCTS.filter(function(p){return p.key!==S.prod.key}));
   order.forEach(function(p,i){
@@ -615,8 +635,6 @@ function summaryText(){
   L.push('');
   L.push('더 많은 정보는 아래 링크에서!');
   L.push('👉 https://m.site.naver.com/279vd');
-  L.push('내 견적 다시 보기 (언제든 열려요)');
-  L.push('👉 '+customerLink());
   return L.join('\n');
 }
 function copy(txt,msg){
@@ -634,9 +652,31 @@ function todayKst(){return new Date(Date.now()+9*3600e3).toISOString().slice(0,1
 function renderRecs(){
   var a=recs().filter(function(r){return r.date===todayKst()}).reverse();
   $('#recCount').textContent=a.length;
-  $('#recList').innerHTML=a.length?a.map(function(r){return '<div class="rec"><div class="t">'+(r.name||'(이름없음)')+(r.apt?' · '+r.apt:'')+' · '+r.py+(String(r.py).indexOf('㎡')>=0?' ':'평 ')+r.prod+' '+r.qty+'장<small>'+r.time+' · '+(r.phone||'연락처 없음')+' · 결제 '+fmt(r.pay)+'원'+(r.synced?' · 시트 저장됨':' · 시트 미전송')+'</small></div><div class="row" style="gap:4px"><button data-id="'+r.id+'" class="rc">요약</button><button data-id="'+r.id+'" class="rl">링크</button></div></div>'}).join(''):'<div class="ph">아직 없어요</div>';
+  $('#recList').innerHTML=a.length?a.map(function(r){return '<div class="rec"><div class="t">'+(r.name||'(이름없음)')+(r.apt?' · '+r.apt:'')+' · '+r.py+(String(r.py).indexOf('㎡')>=0?' ':'평 ')+r.prod+' '+r.qty+'장<small>'+r.time+' · 결제 '+fmt(r.pay)+'원'+(r.synced?' · 시트 저장됨':' · 시트 미전송')+'</small></div><div class="row" style="gap:4px"><button data-id="'+r.id+'" class="rc">요약</button><button data-id="'+r.id+'" class="rl">링크</button><button data-id="'+r.id+'" class="rx" title="이 기록 삭제">삭제</button></div></div>'}).join(''):'<div class="ph">아직 없어요</div>';
   $('#recList').querySelectorAll('.rc').forEach(function(b){b.onclick=function(){var r=recs().find(function(x){return x.id===b.dataset.id});if(r)copy(r.summary,'요약 복사 — 카톡에 붙여넣기')}});
   $('#recList').querySelectorAll('.rl').forEach(function(b){b.onclick=function(){var r=recs().find(function(x){return x.id===b.dataset.id});if(r)copy(r.link,'고객 링크 복사')}});
+  $('#recList').querySelectorAll('.rx').forEach(function(b){b.onclick=function(){deleteRec(b.dataset.id)}});
+}
+/* 기록 삭제: 기기에서 바로 지우고, 시트에 올라간 기록이면 시트 행도 삭제(fairDelete). 연결이 없으면 대기열에 두고 다음 접속 때 삭제 */
+function delq(){try{return JSON.parse(localStorage.getItem('fair_del')||'[]')}catch(e){return []}}
+function setDelq(a){try{localStorage.setItem('fair_del',JSON.stringify(a))}catch(e){}}
+async function delOnServer(id){
+  var ctl=new AbortController();var t=setTimeout(function(){ctl.abort()},45000);
+  try{var r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'fairDelete',id:id}),signal:ctl.signal});var j={};try{j=JSON.parse(await r.text())}catch(e){}return !!(j&&j.ok)}
+  catch(e){return false}finally{clearTimeout(t)}
+}
+var delFlushing=false;
+async function flushDeletes(){
+  if(delFlushing||!serverOk)return;delFlushing=true;
+  try{var q=delq();for(var i=0;i<q.length;i++){if(await delOnServer(q[i])){q.splice(i,1);i--;setDelq(q)}}}finally{delFlushing=false}
+}
+function deleteRec(id){
+  var a=recs(),r=a.find(function(x){return x.id===id});if(!r)return;
+  if(!confirm('이 상담 기록을 지울까요?\n'+(r.name||'(이름없음)')+' · '+r.time+' · '+r.prod+' '+r.qty+'장'+(r.synced?'\n(박람회상담 시트의 행도 같이 지워져요)':'')))return;
+  setRecs(a.filter(function(x){return x.id!==id}));renderRecs();
+  if(!r.synced){toast('기록 삭제');return}
+  var q=delq();q.push(id);setDelq(q);
+  flushDeletes().then(function(){toast(delq().indexOf(id)<0?'기록 삭제 · 시트에서도 지웠어요':'기기에서 삭제 · 시트 행은 연결되면 지워져요')});
 }
 async function ping(){
   try{var ctl=new AbortController();var t=setTimeout(function(){ctl.abort()},15000);
@@ -644,13 +684,13 @@ async function ping(){
     serverOk=/"fair"\s*:\s*true/.test(txt);
   }catch(e){serverOk=false}
   setSync(serverOk?'시트 연동 됨 — 요약 복사하면 박람회상담 시트에 자동 저장':'시트 연동 전 — 요약 복사 시 이 기기에만 저장',serverOk);
-  if(serverOk)flushUnsynced();
+  if(serverOk){flushUnsynced();flushDeletes()}
 }
 function fingerprint(){ // 같은 상담을 여러 번 복사해도 한 건만 저장되게 — 입력값이 하나라도 바뀌면 새 기록
-  return JSON.stringify([$('#fName').value.trim(),$('#fPhone').value.trim(),$('#fApt').value.trim(),$('#fMemo').value.trim(),S.mode,S.py,S.qtyManual,S.expand,S.scope,S.sr,S.prod&&S.prod.key,S.onnuri,S.review,S.rooms,S.cq]);
+  return JSON.stringify([$('#fName').value.trim(),$('#fApt').value.trim(),$('#fMemo').value.trim(),S.mode,S.py,S.qtyManual,S.expand,S.scope,S.sr,S.prod&&S.prod.key,S.onnuri,S.review,S.rooms,S.cq]);
 }
 function buildRec(q){
-  return {id:Date.now().toString(36)+DEV,date:todayKst(),time:new Date(Date.now()+9*3600e3).toISOString().slice(11,16),fair:FAIR_NAME,name:$('#fName').value.trim(),apt:$('#fApt').value.trim(),phone:$('#fPhone').value.trim(),py:S.mode==='dim'?Math.round(q.areaM2)+'㎡':S.py,expand:S.mode==='dim'?'치수':(S.expand?'확장':'비확장'),scope:q.scopeName,sr:S.sr,prod:q.p.full,sched:q.p.sched,qty:q.qty,qtyWide:(quoteWide()||{}).qty||'',srQty:q.srQty,gross:q.totalMat+q.install,pay:q.pay,fin:q.fin,onnuri:S.onnuri?'Y':'N',group:'박람회3%',review:S.review?'Y':'N',memo:$('#fMemo').value.trim(),link:customerLink(),summary:summaryText(),dev:DEV,fp:fingerprint(),synced:false};
+  return {id:Date.now().toString(36)+DEV,date:todayKst(),time:new Date(Date.now()+9*3600e3).toISOString().slice(11,16),fair:FAIR_NAME,name:$('#fName').value.trim(),apt:$('#fApt').value.trim(),phone:'',py:S.mode==='dim'?Math.round(q.areaM2)+'㎡':S.py,expand:S.mode==='dim'?'치수':(S.expand?'확장':'비확장'),scope:q.scopeName,sr:S.sr,prod:q.p.full,sched:q.p.sched,qty:q.qty,qtyWide:(quoteWide()||{}).qty||'',srQty:q.srQty,gross:q.totalMat+q.install,pay:q.pay,fin:q.fin,onnuri:S.onnuri?'Y':'N',group:'박람회3%',review:S.review?'Y':'N',memo:$('#fMemo').value.trim(),link:customerLink(),summary:summaryText(),dev:DEV,fp:fingerprint(),synced:false};
 }
 async function pushRec(rec){ // 시트 전송 (성공 시 synced). 실패해도 기기에 남고 다음 기회에 재시도
   var ctl=new AbortController();var t=setTimeout(function(){ctl.abort()},45000);
@@ -682,7 +722,7 @@ function resetAll(){
   S.cq=[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}];
   S.rooms=[{name:'거실',w:'',h:''},{name:'복도',w:'',h:''},{name:'주방',w:'',h:''}];
   $('#pyInput').value='';$('#qtyInput').value='';$('#qtyHint').style.display='none';$('#srCount').textContent='0';
-  ['fName','fPhone','fApt','fMemo'].forEach(function(id){$('#'+id).value=''});
+  ['fName','fApt','fMemo'].forEach(function(id){$('#'+id).value=''});
   $('#segExpand').querySelectorAll('button').forEach(function(x){x.className=x.dataset.v==='1'?'on':''});
   $('#scopeBtns').querySelectorAll('button').forEach(function(x){x.className=x.dataset.i==='0'?'on':''});
   cmpInputsDrawn=false;renderPy();renderProds();
@@ -692,8 +732,8 @@ function resetAll(){
 function setSync(msg,ok){var el=$('#syncDot');el.className='sdot '+(ok?'ok':(/실패/.test(msg)?'err':''));el.title=msg} // 글자 대신 점 색으로만 (초록=시트 연동, 회색=기기 저장, 빨강=전송 실패)
 function exportAll(){
   var a=recs();if(!a.length){toast('기록이 없어요');return}
-  var head=['날짜','시간','고객명','아파트','연락처','평형','유형','범위','작은방','제품','장수','정가합계','결제예상','최종체감','온누리','박람회할인','후기','메모','링크'];
-  var rows=a.map(function(r){return [r.date,r.time,r.name,r.apt||'',r.phone,r.py,r.expand,r.scope,r.sr,r.prod,r.qty,r.gross,r.pay,r.fin,r.onnuri,r.group,r.review,r.memo,r.link].map(function(v){return String(v==null?'':v).replace(/[\t\n]/g,' ')}).join('\t')});
+  var head=['날짜','시간','고객명','아파트','평형','유형','범위','작은방','제품','장수','정가합계','결제예상','최종체감','온누리','박람회할인','후기','메모','링크'];
+  var rows=a.map(function(r){return [r.date,r.time,r.name,r.apt||'',r.py,r.expand,r.scope,r.sr,r.prod,r.qty,r.gross,r.pay,r.fin,r.onnuri,r.group,r.review,r.memo,r.link].map(function(v){return String(v==null?'':v).replace(/[\t\n]/g,' ')}).join('\t')});
   copy(head.join('\t')+'\n'+rows.join('\n'),a.length+'건 복사 — 시트에 붙여넣기');
 }
 
@@ -726,7 +766,8 @@ $('#dvClose').onclick=closeDoc;$('#docViewer').addEventListener('click',function
     if(q.get('cq'))q.get('cq').split(';').slice(0,3).forEach(function(x,i){var a=x.split(':');if(a.length===3)a=a.slice(1);S.cq[i]={total:'',unit:a[0]||'',size:a[1]||''}});
     if(q.get('m')==='dim'&&q.get('rm')){S.rooms=q.get('rm').split(';').map(function(x){var a=x.split(':');return {name:a[0]||'공간',w:a[1]||'',h:a[2]||''}}).filter(function(r){return r.w&&r.h});if(!S.py)S.py=0}
   }
-  if(isCustomer){$('#cardStaff').style.display='none';$('#cardQr').style.display='none';$('#btnReset').style.display='none';$('#resTitle').textContent='고객님 예상 결제 금액'}
+  if(isCustomer){document.body.classList.add('cust');$('#cardStaff').style.display='none';$('#cardQr').style.display='none';$('#btnReset').style.display='none';$('#resTitle').textContent='고객님 예상 결제 금액';
+    var ch=document.createElement('div');ch.className='note';ch.style.margin='-4px 0 10px';ch.textContent='다른 부스에서 받은 견적의 장당 가격과 매트 크기를 넣으면 같은 면적 기준으로 비교돼요 · 업체 이름은 안 적어도 돼요';$('#cmpInputs').parentNode.insertBefore(ch,$('#cmpInputs'))}
   else{renderRecs(); ping();}
   renderDocChips();renderPy();renderProds();if(new URLSearchParams(location.search).get('m')==='dim')setMode('dim');else update();
 })();
