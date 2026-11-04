@@ -62,7 +62,7 @@ body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);co
 .stepper button{width:44px;height:40px;border:0;background:#fff;font-size:22px;font-weight:700;cursor:pointer;color:var(--text);font-family:inherit}
 .stepper span{width:44px;text-align:center;font-size:17px;font-weight:800}
 .prods{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.prod{position:relative;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:16px 8px 12px;text-align:center;cursor:pointer}
+.prod{position:relative;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px 8px 12px;text-align:center;cursor:pointer}
 .prod.on{border-color:var(--green);background:var(--green2)}
 .prod .tag{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:800;padding:2px 9px;border-radius:50px;color:#fff;background:var(--green);white-space:nowrap}
 .prod .tag.o{background:#EF6C00}.prod .tag.g{background:var(--gold)}
@@ -258,9 +258,9 @@ var COUPON_AMT=50000, COUPON_EXP='2026-12-31';   // 박람회 쿠폰 5만원 (�
 var CONTRACT_REVIEW=30000, REVIEW_CASHBACK=100000, ONNURI=7, FAIR_PCT=3; // 박람회 3% 할인(항상 적용, 5인 공동구매와 중복 불가)
 var INSTALL_FEE=100000, THRESH_500=99, THRESH_1000=24;
 var PRODUCTS=[
-  {key:'22',name:'1M 22T',full:'1000매트 22T',spec:'1M×1M · 2.2cm',price:79500,is1000:true,tag:'추천',tagCls:'',sched:'모던1m22(79500)'},
-  {key:'17',name:'1M 17T',full:'1000매트 17T',spec:'1M×1M · 1.7cm',price:67000,is1000:true,tag:'애견·난방',tagCls:'o',sched:'모던1m17(67000)'},
-  {key:'50',name:'500 22T',full:'500매트 22T',spec:'50×50 · 2.2cm',price:17500,is1000:false,tag:'실속형',tagCls:'g',sched:'모던50(17500)'}
+  {key:'17',name:'1M 17T',full:'1000매트 17T',spec:'1M×1M · 1.7cm',price:67000,is1000:true,sched:'모던1m17(67000)'},
+  {key:'22',name:'1M 22T',full:'1000매트 22T',spec:'1M×1M · 2.2cm',price:79500,is1000:true,sched:'모던1m22(79500)'},
+  {key:'50',name:'500 22T',full:'500매트 22T',spec:'50×50 · 2.2cm',price:17500,is1000:false,sched:'모던50(17500)'}
 ];
 /* quote.html과 동일한 수량 테이블 (500매트 장수 기준, 1M은 ÷4 올림) */
 var PYEONG_DATA={
@@ -332,7 +332,7 @@ function renderPy(){
   $('#pyChips').querySelectorAll('.chip').forEach(function(b){b.onclick=function(){S.py=parseInt(b.dataset.p);$('#pyInput').value='';renderPy();update()}});
 }
 function renderProds(){
-  var h='';PRODUCTS.forEach(function(p,i){h+='<div class="prod'+(S.prod&&S.prod.key===p.key?' on':'')+'" data-i="'+i+'"><span class="tag '+p.tagCls+'">'+p.tag+'</span><div class="nm">'+p.name+'</div><div class="sp">'+p.spec+'</div><div class="pr">'+fmt(p.price)+'<small>원/장</small></div></div>'});
+  var h='';PRODUCTS.forEach(function(p,i){h+='<div class="prod'+(S.prod&&S.prod.key===p.key?' on':'')+'" data-i="'+i+'"><div class="nm">'+p.name+'</div><div class="sp">'+p.spec+'</div><div class="pr">'+fmt(p.price)+'<small>원/장</small></div></div>'});
   $('#prods').innerHTML=h;
   $('#prods').querySelectorAll('.prod').forEach(function(d){d.onclick=function(){S.prod=PRODUCTS[parseInt(d.dataset.i)];renderProds();update()}});
 }
