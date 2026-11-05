@@ -317,6 +317,8 @@ details summary::-webkit-details-marker{display:none}
     <div class="sub" id="rSub"></div>
     <div class="lines" id="rLines"></div>
     <div class="tg" id="benefitTg">
+      <button data-k="coupon" class="on">박람회 쿠폰 5만</button>
+      <button data-k="fair" class="on">박람회 할인 3%</button>
       <button data-k="onnuri" class="on">온누리상품권 7%</button>
       <button data-k="review" class="on">후기 캐시백 10만</button>
     </div>
@@ -433,7 +435,7 @@ function reviewPanelHtml(){
 function closeDoc(){document.getElementById('docViewer').classList.remove('on');document.body.style.overflow='';document.getElementById('dvBody').innerHTML=''}
 
 /* ===== 상태 ===== */
-var S={py:0,qtyManual:0,expand:true,scope:0,sr:0,prod:null,onnuri:true,review:true,cq:[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}]};
+var S={py:0,qtyManual:0,expand:true,scope:0,sr:0,prod:null,coupon:true,fair:true,onnuri:true,review:true,cq:[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}]};
 var CQ_LABELS=['A사','B사','C사'], CQ_SIZES=[50,60,65,70,80,100,120,130,140];
 S.mode='py';S.rooms=[{name:'거실',w:'',h:''},{name:'복도',w:'',h:''},{name:'주방',w:'',h:''}];
 function toMm(v){var n=parseFloat(String(v).replace(/[^0-9.]/g,''));if(!n)return 0;return n<=30?Math.round(n*1000):(n<=999?Math.round(n*10):Math.round(n))}
@@ -467,11 +469,11 @@ function quoteFor(p,wide){
   var srCost=0;
   var matCost=qty*p.price, totalMat=matCost, totalQty=qty;
   var thr=p.is1000?THRESH_1000:THRESH_500, install=totalQty<=thr?INSTALL_FEE:0;
-  var on=S.onnuri?Math.round(totalMat*ONNURI/100):0, gb=Math.round(totalMat*FAIR_PCT/100);
-  var p1=COUPON_AMT+on+gb;
+  var on=S.onnuri?Math.round(totalMat*ONNURI/100):0, gb=S.fair?Math.round(totalMat*FAIR_PCT/100):0, cp=S.coupon?COUPON_AMT:0;
+  var p1=cp+on+gb;
   var pay=Math.max(0,totalMat+install-p1);
   var cb=S.review?REVIEW_CASHBACK:0, fin=Math.max(0,pay-cb);
-  return {p:p,qty:qty,srQty:srQty,srCost:srCost,matCost:matCost,totalMat:totalMat,totalQty:totalQty,install:install,on:on,gb:gb,pay:pay,cb:cb,fin:fin,per:totalQty?Math.round(fin/totalQty):0,perPay:totalQty?Math.round(pay/totalQty):0,areaM2:areaM2,scopeName:scopeName};
+  return {p:p,qty:qty,srQty:srQty,srCost:srCost,matCost:matCost,totalMat:totalMat,totalQty:totalQty,install:install,cp:cp,on:on,gb:gb,pay:pay,cb:cb,fin:fin,per:totalQty?Math.round(fin/totalQty):0,perPay:totalQty?Math.round(pay/totalQty):0,areaM2:areaM2,scopeName:scopeName};
 }
 function quote(){return quoteFor(S.prod,false)}
 function quoteWide(p){return (S.mode==='dim'||(S.mode==='py'&&S.qtyManual>0))?null:quoteFor(p||S.prod,true)}
@@ -508,8 +510,8 @@ function update(keepInputs){
   T+='<div class="h" style="text-align:left">단위: 원</div>'+(R?'<div class="h">보통<b>'+q.qty+'장</b></div><div class="h">넓은편<b>'+qw.qty+'장</b></div>':'<div class="h"><b>'+q.qty+'장</b></div>');
   T+=row(q.p.name+' × '+fmt(q.p.price)+'원',fmt(q.matCost),R&&fmt(qw.matCost));
   if(q.install)T+=row('시공비 (소량 추가)','+'+fmt(q.install),R&&'+'+fmt(qw.install||q.install));
-  T+=row('박람회 쿠폰',neg(COUPON_AMT),R&&neg(COUPON_AMT),'y');
-  T+=row('박람회 할인 3%',neg(q.gb),R&&neg(qw.gb),'y');
+  if(q.cp)T+=row('박람회 쿠폰',neg(q.cp),R&&neg(qw.cp),'y');
+  if(q.gb)T+=row('박람회 할인 3%',neg(q.gb),R&&neg(qw.gb),'y');
   if(q.on)T+=row('온누리상품권 결제 7% <small style="font-size:11.5px;color:#9fb0a7;font-weight:500">(구매시 적용)</small>',neg(q.on),R&&neg(qw.on),'y');
   if(q.cb)T+=row('시공 후 후기 캐시백 (최대)',neg(q.cb),R&&neg(q.cb),'y');
   var oth=PRODUCTS.filter(function(p){return p.key!==q.p.key});
@@ -590,7 +592,7 @@ function renderCmp(q){
 
 /* ===== 직원 패널: 요약/링크/저장 ===== */
 function customerLink(){
-  var q=new URLSearchParams();q.set('q','1');q.set('py',S.py);q.set('ex',S.expand?1:0);q.set('sc',S.scope);if(S.qtyManual)q.set('qn',S.qtyManual);q.set('sr',S.sr);q.set('p',S.prod.key);q.set('on',S.onnuri?1:0);q.set('rv',S.review?1:0);
+  var q=new URLSearchParams();q.set('q','1');q.set('py',S.py);q.set('ex',S.expand?1:0);q.set('sc',S.scope);if(S.qtyManual)q.set('qn',S.qtyManual);q.set('sr',S.sr);q.set('p',S.prod.key);q.set('cp',S.coupon?1:0);q.set('fd',S.fair?1:0);q.set('on',S.onnuri?1:0);q.set('rv',S.review?1:0);
   if(S.mode==='dim'){q.set('m','dim');q.set('rm',S.rooms.filter(function(r){return toMm(r.w)&&toMm(r.h)}).map(function(r){return r.name+':'+toMm(r.w)+':'+toMm(r.h)}).join(';'))}
   var cq=S.cq.map(function(x){var u=String(x.unit||'').replace(/[^0-9]/g,''),z=String(x.size||'').replace(/[^0-9]/g,'');return u&&z?u+':'+z:''}).filter(Boolean);if(cq.length)q.set('cq',cq.join(';'));
   return 'https://my.dolbommat.com/fair.html?'+q.toString();
@@ -625,11 +627,10 @@ function summaryText(){
     L.push('');
   });
   L.push('🎁 체감가 적용된 혜택 안내');
-  L.push('✔️박람회 쿠폰(-5만)✔️박람회 할인(-3%)');
-  var b2=[];if(S.review)b2.push('✔️후기작성(-10만)');if(S.onnuri)b2.push('✔️온누리 결제(-7%)');
+  var b2=[];if(S.coupon)b2.push('✔️박람회 쿠폰(-5만)');if(S.fair)b2.push('✔️박람회 할인(-3%)');if(S.review)b2.push('✔️후기작성(-10만)');if(S.onnuri)b2.push('✔️온누리 결제(-7%)');
   for(var i=0;i<b2.length;i+=2)L.push(b2[i]+(b2[i+1]||''));
   L.push('※ 이 견적과 박람회 혜택은 '+COUPON_EXP.replace(/-/g,'.')+'까지('+VALID_LABEL+') 예약금 결제 시 적용');
-  L.push('※ 박람회 쿠폰은 계약 후기 할인(3만)·5인 공동구매 할인과 중복 적용되지 않아요');
+  if(S.coupon)L.push('※ 박람회 쿠폰은 계약 후기 할인(3만)·5인 공동구매 할인과 중복 적용되지 않아요');
   var cr=cqRows(q);
   if(cr.length){L.push('');L.push('🔍 받아오신 견적과 비교 (같은 면적)');cr.forEach(function(r){var d=r.total-q.fin;L.push('· '+r.label+' '+toMan(r.total)+' ('+r.size+'cm '+r.n+'장)'+' → 돌봄매트가 '+(d>0?toMan(d)+' 저렴':d<0?toMan(-d)+' 비쌈':'같음'))});L.push('· 돌봄매트 '+q.p.name+' '+q.qty+'장 '+toMan(q.fin)+' (박람회 혜택·후기 캐시백 모두 적용)')}
   if(memo){L.push('');L.push('📝 '+memo)}
@@ -688,10 +689,10 @@ async function ping(){
   if(serverOk){flushUnsynced();flushDeletes()}
 }
 function fingerprint(){ // 같은 상담을 여러 번 복사해도 한 건만 저장되게 — 입력값이 하나라도 바뀌면 새 기록
-  return JSON.stringify([$('#fName').value.trim(),$('#fApt').value.trim(),$('#fMemo').value.trim(),S.mode,S.py,S.qtyManual,S.expand,S.scope,S.sr,S.prod&&S.prod.key,S.onnuri,S.review,S.rooms,S.cq]);
+  return JSON.stringify([$('#fName').value.trim(),$('#fApt').value.trim(),$('#fMemo').value.trim(),S.mode,S.py,S.qtyManual,S.expand,S.scope,S.sr,S.prod&&S.prod.key,S.coupon,S.fair,S.onnuri,S.review,S.rooms,S.cq]);
 }
 function buildRec(q){
-  return {id:Date.now().toString(36)+DEV,date:todayKst(),time:new Date(Date.now()+9*3600e3).toISOString().slice(11,16),fair:FAIR_NAME,name:$('#fName').value.trim(),apt:$('#fApt').value.trim(),phone:'',py:S.mode==='dim'?Math.round(q.areaM2)+'㎡':S.py,expand:S.mode==='dim'?'치수':(S.expand?'확장':'비확장'),scope:q.scopeName,sr:S.sr,prod:q.p.full,sched:q.p.sched,qty:q.qty,qtyWide:(quoteWide()||{}).qty||'',srQty:q.srQty,gross:q.totalMat+q.install,pay:q.pay,fin:q.fin,onnuri:S.onnuri?'Y':'N',group:'박람회3%',review:S.review?'Y':'N',memo:$('#fMemo').value.trim(),link:customerLink(),summary:summaryText(),dev:DEV,fp:fingerprint(),synced:false};
+  return {id:Date.now().toString(36)+DEV,date:todayKst(),time:new Date(Date.now()+9*3600e3).toISOString().slice(11,16),fair:FAIR_NAME,name:$('#fName').value.trim(),apt:$('#fApt').value.trim(),phone:'',py:S.mode==='dim'?Math.round(q.areaM2)+'㎡':S.py,expand:S.mode==='dim'?'치수':(S.expand?'확장':'비확장'),scope:q.scopeName,sr:S.sr,prod:q.p.full,sched:q.p.sched,qty:q.qty,qtyWide:(quoteWide()||{}).qty||'',srQty:q.srQty,gross:q.totalMat+q.install,pay:q.pay,fin:q.fin,onnuri:S.onnuri?'Y':'N',group:(S.coupon?'베페5만':'')+(S.coupon&&S.fair?'+':'')+(S.fair?'박람회3%':''),review:S.review?'Y':'N',memo:$('#fMemo').value.trim(),link:customerLink(),summary:summaryText(),dev:DEV,fp:fingerprint(),synced:false};
 }
 async function pushRec(rec){ // 시트 전송 (성공 시 synced). 실패해도 기기에 남고 다음 기회에 재시도
   var ctl=new AbortController();var t=setTimeout(function(){ctl.abort()},45000);
@@ -719,7 +720,7 @@ async function saveAndCopy(){
 }
 function resetAll(){
   if(quote()&&!confirm('현재 상담 내용을 지우고 새 상담을 시작할까요?\n(저장된 상담 목록은 그대로 남아요)'))return;
-  S.py=0;S.qtyManual=0;S.expand=true;S.scope=0;S.sr=0;S.prod=null;S.onnuri=true;S.review=true;
+  S.py=0;S.qtyManual=0;S.expand=true;S.scope=0;S.sr=0;S.prod=null;S.coupon=true;S.fair=true;S.onnuri=true;S.review=true;
   S.cq=[{total:'',unit:'',size:''},{total:'',unit:'',size:''},{total:'',unit:'',size:''}];
   S.rooms=[{name:'거실',w:'',h:''},{name:'복도',w:'',h:''},{name:'주방',w:'',h:''}];
   $('#pyInput').value='';$('#qtyInput').value='';$('#qtyHint').style.display='none';$('#srCount').textContent='0';
@@ -759,7 +760,7 @@ $('#dvClose').onclick=closeDoc;$('#docViewer').addEventListener('click',function
   $('#ctaExp').textContent=COUPON_EXP.replace(/-/g,'.');
   var q=new URLSearchParams(location.search);
   if(q.has('py')){S.py=parseInt(q.get('py'))||0;S.qtyManual=parseInt(q.get('qn'))||0;if(S.qtyManual){$('#qtyInput').value=S.qtyManual;$('#qtyHint').style.display='block'}S.expand=q.get('ex')!=='0';S.scope=Math.min(2,Math.max(0,parseInt(q.get('sc'))||0));S.sr=Math.min(4,Math.max(0,parseInt(q.get('sr'))||0));
-    S.prod=PRODUCTS.find(function(p){return p.key===q.get('p')})||null;S.onnuri=q.get('on')!=='0';S.review=q.get('rv')!=='0';
+    S.prod=PRODUCTS.find(function(p){return p.key===q.get('p')})||null;S.coupon=q.get('cp')!=='0';S.fair=q.get('fd')!=='0';S.onnuri=q.get('on')!=='0';S.review=q.get('rv')!=='0';
     if(S.py&&PY_CHIPS.indexOf(S.py)<0)$('#pyInput').value=S.py;
     $('#segExpand').querySelectorAll('button').forEach(function(x){x.className=(x.dataset.v==='1')===S.expand?'on':''});
     $('#scopeBtns').querySelectorAll('button').forEach(function(x){x.className=parseInt(x.dataset.i)===S.scope?'on':''});
