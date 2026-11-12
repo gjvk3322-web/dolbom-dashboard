@@ -228,6 +228,24 @@ const dateKey=now.getFullYear()+'-'+mm+'-'+dd;
 const surveyDateKey=dateKey; // 실사일 = 실제 조사한 날짜 (<=로 당일 작업 자동 제외)
 let invSubmitDate=dateKey; // 🆕 재고조사 제출 날짜 (날짜 칸에서 변경 가능, 기본=오늘)
 let incomingDate=dateKey;
+// 🆕 2026-11-12 실사 당일 입고 규칙: 재고조사 날(수요일·조사 기록 있는 날) 입고는 '실사에 포함됐는지'를 반드시 고르게 함.
+//   포함(실사 전 도착) → 그 날짜 그대로 저장 (서버는 실사 당일 입고를 '실사에 이미 센 것'으로 봄)
+//   미포함(실사 후 도착) → 재고 반영일을 다음 날로 저장 → 다음 구간 입고로 정확히 잡힘 (실제 입고일은 비고에 남김)
+let inTiming=null; // null=미선택 / 'before'=실사에 포함 / 'after'=실사에 미포함
+function inNeedsTiming(d){if(!/^\d{4}-\d{2}-\d{2}$/.test(d||''))return false;return new Date(d+'T00:00:00').getDay()===3||(histDates||[]).includes(d)}
+function inNextDay(d){const t=new Date(d+'T00:00:00');t.setDate(t.getDate()+1);return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')}
+function inMD(d){const p=d.split('-');return parseInt(p[1])+'/'+parseInt(p[2])}
+function setInTiming(v){inTiming=v;renderInTiming()}
+function renderInTiming(){const box=document.getElementById('inTimingBox');if(!box)return;const d=document.getElementById('inDate')?.value||'';
+  if(!inNeedsTiming(d)){box.innerHTML='';return}
+  const bs=(on,col)=>`flex:1;padding:10px 8px;border-radius:8px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;line-height:1.45;border:1px solid ${on?col:'var(--border)'};background:${on?'rgba(255,255,255,.08)':'var(--bg)'};color:${on?col:'var(--dim)'}`;
+  let h=`<div style="margin-bottom:12px;padding:11px 12px;border:1px solid ${inTiming?'var(--border)':'var(--orange)'};border-radius:10px;background:var(--card)">`;
+  h+=`<div style="font-size:12px;font-weight:700;margin-bottom:8px">⚠️ ${inMD(d)}은 재고조사 날 — 이 입고 물량이 그날 재고조사 숫자에 들어갔나요?</div>`;
+  h+=`<div style="display:flex;gap:8px"><div style="${bs(inTiming==='before','var(--green,#4ade80)')}" onclick="setInTiming('before')">✅ 들어감<br><span style="font-size:10px;font-weight:400">조사 전에 도착해서 같이 셈</span></div><div style="${bs(inTiming==='after','var(--orange)')}" onclick="setInTiming('after')">⏭ 안 들어감<br><span style="font-size:10px;font-weight:400">조사 끝난 뒤 도착</span></div></div>`;
+  if(inTiming==='after')h+=`<div style="font-size:10px;color:var(--orange);margin-top:8px;line-height:1.5">재고 반영일을 <b>${inMD(inNextDay(d))}</b>로 저장해요 (실제 입고일 ${inMD(d)}은 비고에 남음). 이렇게 해야 이번 조사가 '부족', 다음 조사가 '잉여'로 튀지 않아요.</div>`;
+  else if(inTiming==='before')h+=`<div style="font-size:10px;color:var(--dim);margin-top:8px">${inMD(d)}자 그대로 저장해요 (조사 숫자에 이미 포함된 입고).</div>`;
+  else h+=`<div style="font-size:10px;color:var(--dim);margin-top:8px">골라야 저장돼요. 잘못 고르면 로스율이 한 주는 부족, 다음 주는 잉여로 튑니다.</div>`;
+  box.innerHTML=h+`</div>`}
 const urlTeam=new URLSearchParams(window.location.search).get('team');
 const urlTab=new URLSearchParams(window.location.search).get('tab');
 function fk(l){return l.replace(/[.#$/\[\]]/g,'_')}
@@ -663,12 +681,14 @@ function renderOutgoing(){
 function renderIncoming(){
   if(ioMode==='out')return renderOutgoing();
   let h=renderTabs()+renderIoSeg();
-  h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:13px;color:var(--dim)">📥 ${team} 입고 날짜:</span><input type="date" id="inDate" value="${incomingDate}" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit"></div>`;
+  h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:13px;color:var(--dim)">📥 ${team} 입고 날짜:</span><input type="date" id="inDate" value="${incomingDate}" onchange="inTiming=null;renderInTiming()" style="padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit"></div>`;
+  h+=`<div id="inTimingBox"></div>`;
   h+=buildTable('in',null);
   h+=`<div class="memo-sec"><div class="memo-hd">📝 비고</div><div class="memo-bd"><textarea class="memo" id="inMemo" placeholder=""></textarea></div></div>`;
   document.getElementById('app').innerHTML=h;document.getElementById('barEl').style.display='block';
   document.getElementById('bl').innerHTML=`📥 <b>${team} 입고</b>`;
-  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='입고 기록 저장';sb.className='btn btn-in';sb.onclick=submitIn;calc('in')}
+  const sb=document.getElementById('sbtn');sb.disabled=false;sb.textContent='입고 기록 저장';sb.className='btn btn-in';sb.onclick=submitIn;calc('in');
+  renderInTiming();if(histDates===null){histDates=[];loadHistDates().then(renderInTiming)}}
 
 // 시공기준표 (평수별 센터 박스수)
 const STD={
@@ -2334,15 +2354,19 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
   const items=[];PR.forEach(p=>{p.colors.forEach(c=>{TY.forEach(t=>{const v=parseInt(document.getElementById(`in_${p.id}_${c}_${t}`)?.value)||0;
     if(v>0)items.push({product:p.name+' '+p.badge,color:c,type:t,qty:v,sheets:v*bpbOf(p,t)})})})});
   if(items.length===0){toast('수량을 입력하세요');btn.disabled=false;btn.textContent='입고 기록 저장';return}
-  const memo=document.getElementById('inMemo')?.value||'';
-  const selDate=document.getElementById('inDate')?.value||dateKey;
-  incomingDate=selDate;
+  const memo0=document.getElementById('inMemo')?.value||'';
+  const arrDate=document.getElementById('inDate')?.value||dateKey; // 실제 입고일
+  incomingDate=arrDate;
+  if(inNeedsTiming(arrDate)&&!inTiming){toast('⚠️ 재고조사 숫자에 들어간 입고인지 먼저 골라주세요');document.getElementById('inTimingBox')?.scrollIntoView({behavior:'smooth',block:'center'});btn.disabled=false;btn.textContent='입고 기록 저장';return}
+  const inAfter=inNeedsTiming(arrDate)&&inTiming==='after';
+  const selDate=inAfter?inNextDay(arrDate):arrDate; // 재고 반영일 (실사 후 도착이면 다음 날)
+  const memo=inAfter?('[실사 후 도착 · 실제 입고 '+arrDate+' → 재고 반영 '+selDate+'] '+memo0).trim():memo0;
   const hm=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0');
   // 🆕 두 저장소(Firebase + Apps Script) 모두 성공해야 진짜 입고 완료
   let fbOK=false, gsOK=false;
   try{
     // 1) Firebase 저장
-    await db.ref('incoming/'+team+'/'+selDate+'_'+hm.replace(':','')).set({time:hm,date:selDate,items:items,memo:memo});
+    await db.ref('incoming/'+team+'/'+selDate+'_'+hm.replace(':','')).set({time:hm,date:selDate,items:items,memo:memo,arrived:arrDate,timing:inNeedsTiming(arrDate)?inTiming:''});
     fbOK=true;
     // 2) Apps Script 저장 — 응답까지 await로 기다림 (실패 시 사용자에게 알림)
     try{
@@ -2356,7 +2380,8 @@ async function submitIn(){if(!team)return;const btn=document.getElementById('sbt
     // 4) 결과 안내 — 두 저장소 상태에 따라 메시지 다르게
     if(fbOK&&gsOK){
       stockCache=null;stockCacheByTeam={}; // 🆕 종합 탭 캐시 무효화 → 다음 진입 시 최신 데이터 fetch
-      toast('✅ '+team+' 입고 완료! (재고 갱신됨)');
+      toast(inAfter?'✅ '+team+' 입고 완료 · 조사 후 도착이라 '+inMD(selDate)+'자로 반영':'✅ '+team+' 입고 완료! (재고 갱신됨)');
+      inTiming=null;renderInTiming();
     }else if(fbOK&&!gsOK){
       toast('⚠️ Firebase 저장 OK / 시트 저장 실패 — 종합 재고에 반영 안 됨!');
     }
