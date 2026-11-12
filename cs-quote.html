@@ -1685,6 +1685,9 @@ function calcQtyFromPyeong(py, scopeIdx, useWide) {
   return Math.round(lowerVal + (upperVal - lowerVal) * ratio);
 }
 
+// 1M 매트 넓은편(최대) 여유분: 29평 이하 +2장, 30평 이상 +3장 (2026-11-12, 500매트는 그대로)
+function wideExtra1000(py){return py>=30?3:2}
+
 // 방 1칸당 수량 (실제 데이터 기반)
 function calcRoomQtyPerOne(py, useWide) {
   return calcQtyFromPyeong(py, 'room', useWide);
@@ -1858,7 +1861,7 @@ function recalculate() {
       } else {
         // 새 lookup 테이블 기반 계산 (실제 시공 데이터 + 평형별 보간)
         var base500 = calcQtyFromPyeong(py, currentScopeIdx, forceWide);
-        qty = p.is1000 ? Math.ceil(base500/4) : base500;
+        qty = p.is1000 ? Math.ceil(base500/4) + (forceWide ? wideExtra1000(py) : 0) : base500;
       }
 
       var smallRoomQty = 0;

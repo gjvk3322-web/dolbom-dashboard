@@ -470,6 +470,7 @@ function quoteFor(p,wide){
   else if(S.mode==='dim'){var a=dimArea();if(!a)return null;areaM2=a*1.1;base500=Math.ceil(a*1.1/0.25);scopeName=dimRoomsLabel()+' (치수 입력)'}
   else{if(!S.py)return null;base500=calcQty(S.py,S.scope,wide);var sr500=S.sr>0?S.sr*calcQty(S.py,'room',wide):0;areaM2=(base500+sr500)/4;base500+=sr500;srQty=S.sr>0?(p.is1000?Math.ceil(sr500/4):sr500):0;scopeName=SCOPE_NAMES[S.scope]+(S.sr?' + 작은방 '+S.sr+'개':'')}
   var qty=p.is1000?Math.ceil(areaM2):base500;
+  if(p.is1000&&wide&&S.mode==='py'&&!(S.qtyManual>0)&&S.py)qty+=(S.py>=30?3:2); // 1M 넓은편(최대) 여유분: 29평 이하 +2장, 30평 이상 +3장 (2026-11-12, 500매트는 그대로)
   if(S.mode==='py'&&S.qtyManual>0&&(S.prod||p).key===p.key)qty=S.qtyManual; // 선택 제품은 입력 장수 그대로
   var srCost=0;
   var matCost=qty*p.price, totalMat=matCost, totalQty=qty;
