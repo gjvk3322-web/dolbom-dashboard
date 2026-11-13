@@ -28,7 +28,7 @@ html{overflow-x:hidden;-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;
 .hd{padding:20px 16px 12px;padding-top:max(32px, env(safe-area-inset-top));position:sticky;top:0;z-index:100;background:var(--bg)}
 .hd h1{font-size:18px;font-weight:900;letter-spacing:-.3px}.hd-sub{font-size:11px;color:var(--dim);margin-top:4px}
 .nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);z-index:100;max-width:600px;margin:0 auto;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-.nav a{flex:1;padding:8px 4px 12px;text-align:center;font-size:10px;font-weight:600;color:var(--dim);text-decoration:none;border-top:2px solid transparent;transition:color .15s}
+.nav a{flex:1;min-width:0;padding:8px 2px 12px;text-align:center;font-size:10px;font-weight:600;color:var(--dim);text-decoration:none;border-top:2px solid transparent;transition:color .15s;white-space:nowrap;overflow:hidden;letter-spacing:-.2px}
 .nav a.on{color:var(--text);border-top-color:var(--text)}
 .nav a span{display:block;font-size:18px;margin-bottom:2px}
 .pane{display:none;padding:8px 16px 20px}.pane.on{display:block}
@@ -324,7 +324,7 @@ localStorage.setItem('dolbom_region','gg');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.11.03.122';
+const VER='2026.11.13.123';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=1995986285';
@@ -3370,5 +3370,7 @@ document.addEventListener('visibilitychange',()=>{
 <script src="./stats.js?v=20261021c"></script>
 <!-- 📦 입·출고 기록 탭 (부산·경기 공용) — 사진 시각 스탬프 + 입출고기록 시트 + 드라이브 사진 -->
 <script src="./iolog.js?v=20261028a"></script>
+<!-- ℹ️ 정보 탭 (부산·경기 공용) — 직원 연락처·계좌·업체·사고 대응·인증서. 내용은 Firebase /info, 수정은 관리자만(앱 안에서) -->
+<script src="./info.js?v=20261113a"></script>
 </body>
 </html>
