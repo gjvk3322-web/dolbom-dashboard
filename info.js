@@ -14,15 +14,18 @@
    ■ 데이터 구조
      info/meta                          {seeded:true, at:수정시각}
      info/secs/{분류id}                  {t:이름, ic:아이콘, urgent:빨간 강조, o:순서, items:{…}}
-     info/secs/{분류id}/items/{항목id}    {t:제목, o:순서, rows:[{k:종류, l:이름, v:값}]}
+     info/secs/{분류id}/items/{항목id}    {t:제목, o:순서, rows:[{k:종류, l:이름, v:값, n:덧붙이는 메모(선택)}]}
        k = tel 전화 · acct 계좌 · addr 주소 · link 링크 · text 메모 · steps 순서 · warn 주의
+       n = 전화·계좌·주소·링크 줄 아래에 작게 보이는 한 줄 (예: 입사 2022.12.31)
+   ■ [편집] 화면 맨 아래 '전체 내보내기 / 가져오기' — 내용 전체를 글자(JSON)로 복사해 보관하거나, 붙여넣어 한 번에 채움(전체 교체).
+     실제 연락처·계좌를 한꺼번에 넣을 때도 이 파일이 아니라 가져오기로 넣는다.
    ■ 값이 비어 있는 줄·항목·분류는 직원 화면에 안 보임 (편집 화면에서만 '미입력'으로 보임)
    ■ 코드를 고치면 scheduler.html·scheduler-gg.html의 info.js?v= 값도 같이 올릴 것 (캐시)
    ============================================================ */
 (function(){
 'use strict';
 
-const IN_VER='2026.11.13a';
+const IN_VER='2026.11.13b';
 const GATE_APP='dolbomGate';   // auth.js가 만든 로그인된 Firebase 앱 이름
 const NODE='info';
 const LS_OPEN='dolbom_info_open';
@@ -83,6 +86,7 @@ const CSS=`
 .in-row.blk>.in-l.cap{display:block;margin-bottom:5px}
 .in-v{min-width:0;font-size:14.5px;font-weight:500;color:var(--text);line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
 .in-v.pre{white-space:pre-wrap;font-size:14px;color:var(--sub)}
+.in-w{display:inline-block;max-width:100%}
 .in-v.url{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 100%}
 .in-tel{flex-shrink:0;display:inline-block;padding:7px 12px;border-radius:10px;background:rgba(90,200,250,.12);color:var(--blue);font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .in-tel:active{transform:scale(.97)}
@@ -90,6 +94,9 @@ const CSS=`
 .in-chip{padding:8px 10px;border-radius:10px;border:none;background:rgba(255,255,255,.07);color:var(--sub);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;white-space:nowrap}
 .in-chip.go{background:rgba(90,200,250,.12);color:var(--blue)}
 .in-chip:active{transform:scale(.96)}
+.in-note{flex:1 1 100%;min-width:0;font-size:12px;font-weight:500;color:var(--dim);line-height:1.45;word-break:keep-all;overflow-wrap:anywhere}
+.in-row.has-note{align-items:flex-start}
+.in-row.has-note .in-acts{margin-top:1px}
 .in-none{font-size:12px;color:var(--dim);font-weight:500}
 .in-none.pad{padding:8px 0 10px}
 .in-steps{list-style:none;margin:0;padding:0}
@@ -104,6 +111,8 @@ const CSS=`
 .in-mini.del{color:var(--red)}
 .in-add{display:block;width:100%;padding:13px;border-radius:14px;border:1px dashed rgba(90,200,250,.4);background:rgba(90,200,250,.06);color:var(--blue);font-size:14px;font-weight:800;font-family:var(--font);cursor:pointer;margin:8px 0 16px}
 .in-add.sm{padding:10px;font-size:13px;border-radius:12px;margin:8px 0 0}
+.in-io{display:flex;gap:8px;margin:-6px 0 16px}
+.in-io button{flex:1;padding:12px 8px;border-radius:12px;border:none;background:var(--card2);color:var(--sub);font-size:12.5px;font-weight:700;font-family:var(--font);cursor:pointer}
 .in-hint{font-size:12px;line-height:1.5;color:var(--orange);background:rgba(255,159,10,.08);border-radius:10px;padding:9px 12px;margin-bottom:8px;word-break:keep-all}
 .in-empty{text-align:center;color:var(--dim);padding:36px 0;font-size:13px;line-height:1.6}
 .in-lock{background:rgba(255,159,10,.08);border:1px solid rgba(255,159,10,.32);border-radius:14px;padding:14px;margin-bottom:10px}
@@ -131,6 +140,9 @@ const CSS=`
 .in-er-top select{flex:0 0 76px;width:76px;font-size:14px;font-weight:700;padding-left:10px}
 .in-er-top input{flex:1}
 .in-er-top .in-mini{height:42px}
+.in-er input[data-f="n"]{margin-top:6px;padding:9px 12px;color:var(--sub)}
+#inImpFile{font-size:14px;padding:10px 12px}
+#inImp{min-height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;line-height:1.4;word-break:break-all}
 .in-addrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 .in-addrow button{padding:10px 12px;border-radius:10px;border:1px dashed rgba(90,200,250,.4);background:rgba(90,200,250,.06);color:var(--blue);font-size:13px;font-weight:800;font-family:var(--font);cursor:pointer}
 .in-btn2{display:block;width:100%;margin-top:8px;padding:12px;border-radius:10px;border:none;background:var(--card2);color:var(--text);font-size:13px;font-weight:800;font-family:var(--font);cursor:pointer}
@@ -188,7 +200,7 @@ function fail(e){
 /* ---------- 데이터 ---------- */
 const byO=(a,b)=>((a.o||0)-(b.o||0))||String(a.id).localeCompare(String(b.id));
 const hasVal=r=>String(r.v||'').trim()!=='';
-function cleanRow(r){r=r||{};return {k:KINDS[r.k]?r.k:'text',l:String(r.l==null?'':r.l),v:String(r.v==null?'':r.v)}}
+function cleanRow(r){r=r||{};return {k:KINDS[r.k]?r.k:'text',l:String(r.l==null?'':r.l),v:String(r.v==null?'':r.v),n:String(r.n==null?'':r.n)}}
 function itemsOf(sec){
   const o=(sec&&sec.items)||{};
   return Object.keys(o).filter(k=>o[k]&&typeof o[k]==='object').map(k=>({id:k,t:String(o[k].t||''),o:+o[k].o||0,rows:arr(o[k].rows).map(cleanRow)})).sort(byO);
@@ -209,7 +221,7 @@ function applyQuery(list){
     const secHit=nrm(s.t).includes(k),items=[];
     s.items.forEach(it=>{
       if(secHit||nrm(it.t).includes(k)){items.push(it);return}
-      const rows=it.rows.filter(r=>nrm(r.l).includes(k)||nrm(r.v).includes(k));
+      const rows=it.rows.filter(r=>nrm(r.l).includes(k)||nrm(r.v).includes(k)||nrm(r.n).includes(k));
       if(rows.length)items.push(Object.assign({},it,{rows}));
     });
     if(items.length)out.push(Object.assign({},s,{items}));
@@ -237,12 +249,12 @@ function seedData(bs,gg){
     {t:'경기 시공팀',rows:people(gg)},
     {t:'사무실',rows:[r('tel','관리자'),r('tel','CS')]}
   ]);
-  sec('💳','계좌번호',false,[{t:'회사 계좌',rows:[r('acct','입금 계좌')]}]);
+  sec('💳','계좌번호',false,[{t:'입금 계좌',rows:[r('acct','부산 계좌'),r('acct','경기 계좌'),r('text','결제 후')]}]);
   sec('🏭','폐기물 업체',false,[
     {t:'부산',rows:[r('addr','주소'),r('tel','전화'),r('text','운영 시간·메모')]},
     {t:'경기',rows:[r('addr','주소'),r('tel','전화'),r('text','운영 시간·메모')]}
   ]);
-  sec('🚜','지게차',false,[{t:'부산',rows:[r('tel','지게차 기사님')]}]);
+  sec('🚜','지게차·화물 기사님',false,[{t:'부산',rows:[r('tel','지게차 기사님')]},{t:'경기',rows:[r('tel','화물 기사님')]}]);
   sec('📜','인증서',false,[{t:'인증서·성적서',rows:[r('link','KC 인증서'),r('link','라돈 검사 성적서')]}]);
   return {meta:{seeded:true,at:Date.now()},secs:secsObj};
 }
@@ -304,25 +316,28 @@ function renderNotice(){
 
 /* ---------- 보기 화면 ---------- */
 function reg(v){return REG.push(v)-1}
+// 계좌·주소는 띄어쓰기에서만 줄이 바뀌게(번호 중간의 '-'에서 끊기지 않게) 낱말 단위로 감쌈
+function words(v){return String(v).split(/\s+/).filter(Boolean).map(w=>`<span class="in-w">${esc(w)}</span>`).join(' ')}
 function rowHtml(r){
   const K=KINDS[r.k],l=esc(r.l);
-  if(!hasVal(r))return `<div class="in-row"><div class="in-main"><span class="in-l">${l||esc(K.n)}</span><span class="in-none">미입력</span></div></div>`;
+  const nt=MULTI[r.k]?'':String(r.n||'').trim(),note=nt?`<span class="in-note">${esc(nt)}</span>`:'',rc=nt?'in-row has-note':'in-row';
+  if(!hasVal(r))return `<div class="in-row"><div class="in-main"><span class="in-l">${l||esc(K.n)}</span><span class="in-none">미입력</span>${note}</div></div>`;
   const v=r.k==='tel'?fmtTel(r.v):String(r.v).trim();
   if(r.k==='tel'){
-    return `<div class="in-row"><div class="in-main">${l?`<span class="in-l">${l}</span>`:''}<a class="in-tel" href="${esc(telHref(v))}">${esc(v)}</a></div><div class="in-acts"><button class="in-chip" data-act="copy" data-i="${reg(v)}">복사</button></div></div>`;
+    return `<div class="${rc}"><div class="in-main">${l?`<span class="in-l">${l}</span>`:''}<a class="in-tel" href="${esc(telHref(v))}">${esc(v)}</a>${note}</div><div class="in-acts"><button class="in-chip" data-act="copy" data-i="${reg(v)}">복사</button></div></div>`;
   }
   if(r.k==='acct'){
-    return `<div class="in-row"><div class="in-main">${l?`<span class="in-l cap">${l}</span>`:''}<span class="in-v">${esc(v)}</span></div><div class="in-acts"><button class="in-chip go" data-act="copy" data-i="${reg(v)}">복사</button></div></div>`;
+    return `<div class="${rc}"><div class="in-main">${l?`<span class="in-l cap">${l}</span>`:''}<span class="in-v">${words(v)}</span>${note}</div><div class="in-acts"><button class="in-chip go" data-act="copy" data-i="${reg(v)}">복사</button></div></div>`;
   }
   if(r.k==='addr'){
     const i=reg(v);
-    return `<div class="in-row"><div class="in-main">${l?`<span class="in-l cap">${l}</span>`:''}<span class="in-v">${esc(v)}</span></div><div class="in-acts"><button class="in-chip go" data-act="map" data-i="${i}">지도</button><button class="in-chip" data-act="copy" data-i="${i}">복사</button></div></div>`;
+    return `<div class="${rc}"><div class="in-main">${l?`<span class="in-l cap">${l}</span>`:''}<span class="in-v">${words(v)}</span>${note}</div><div class="in-acts"><button class="in-chip go" data-act="map" data-i="${i}">지도</button><button class="in-chip" data-act="copy" data-i="${i}">복사</button></div></div>`;
   }
   if(r.k==='link'){
     const u=safeUrl(v);
     if(!u)return `<div class="in-row blk">${l?`<span class="in-l cap">${l}</span>`:''}<div class="in-v pre">${esc(v)}</div></div>`;
     const i=reg(u);
-    return `<div class="in-row"><div class="in-main">${l?`<span class="in-l">${l}</span>`:`<span class="in-v url">${esc(u)}</span>`}</div><div class="in-acts"><button class="in-chip go" data-act="open" data-i="${i}">열기</button><button class="in-chip" data-act="copy" data-i="${i}">복사</button></div></div>`;
+    return `<div class="${rc}"><div class="in-main">${l?`<span class="in-l">${l}</span>`:`<span class="in-v url">${esc(u)}</span>`}${note}</div><div class="in-acts"><button class="in-chip go" data-act="open" data-i="${i}">열기</button><button class="in-chip" data-act="copy" data-i="${i}">복사</button></div></div>`;
   }
   if(r.k==='steps'){
     return `<div class="in-row blk">${l?`<span class="in-l cap">${l}</span>`:''}<ol class="in-steps">${lines(v).map((s,n)=>`<li><span class="in-n">${n+1}</span><span>${esc(s)}</span></li>`).join('')}</ol></div>`;
@@ -373,7 +388,7 @@ function render(){
   if(edit&&!searching&&secs().length){const miss=missingNames();if(miss.length)h+=`<div class="in-hint">팀설정 명단 중 연락처에 없는 이름 · ${esc(miss.join(', '))}</div>`}
   if(!list.length&&!(edit&&!searching))h+=`<div class="in-empty">${searching?'검색 결과가 없어요':'등록된 정보가 없어요'+(isAdmin()&&lock==='locked'&&!secs().length?'<br>편집을 누르면 기본 분류가 만들어져요':'')}</div>`;
   list.forEach((s,i)=>{h+=secHtml(s,i,list.length,searching)});
-  if(edit&&!searching)h+='<button class="in-add" data-act="secNew">＋ 분류 추가</button>';
+  if(edit&&!searching)h+='<button class="in-add" data-act="secNew">＋ 분류 추가</button><div class="in-io"><button data-act="exp">전체 내보내기</button><button data-act="imp">가져오기</button></div>';
   body.innerHTML=h;
 }
 
@@ -386,7 +401,7 @@ function ovClose(force){
 function ovBar(isNew){
   $('inOvBar').innerHTML=(isNew?'':'<button class="del" data-act="ovDel">삭제</button>')+'<button class="cancel" data-act="ovClose">취소</button><button class="save" data-act="ovSave">저장</button>';
 }
-function setSaving(on){saving=on;const b=document.querySelector('#inOvBar .save');if(b){b.disabled=on;b.textContent=on?'저장 중…':'저장'}}
+function setSaving(on){saving=on;const b=document.querySelector('#inOvBar .save');if(b){if(!b.getAttribute('data-t'))b.setAttribute('data-t',b.textContent);b.disabled=on;b.textContent=on?'저장 중…':b.getAttribute('data-t')}}
 
 function openSec(id){
   const s=id?secOf(id):null;if(id&&!s)return;
@@ -403,7 +418,7 @@ function erHtml(r,i,n){
   const opts=Object.keys(KINDS).map(k=>`<option value="${k}"${k===r.k?' selected':''}>${KINDS[k].n}</option>`).join('');
   const val=MULTI[r.k]
     ?`<textarea data-f="v" placeholder="${esc(K.ph)}">${esc(r.v)}</textarea>`
-    :`<input data-f="v" ${r.k==='tel'?'type="tel" inputmode="tel"':r.k==='link'?'type="url" inputmode="url"':'type="text"'} autocomplete="off" autocapitalize="off" placeholder="${esc(K.ph)}" value="${esc(r.v)}">`;
+    :`<input data-f="v" ${r.k==='tel'?'type="tel" inputmode="tel"':r.k==='link'?'type="url" inputmode="url"':'type="text"'} autocomplete="off" autocapitalize="off" placeholder="${esc(K.ph)}" value="${esc(r.v)}"><input data-f="n" type="text" autocomplete="off" placeholder="메모 (선택) 예) 입사 2022.12.31" value="${esc(r.n||'')}">`;
   return `<div class="in-er" data-ri="${i}"><div class="in-er-top"><select data-f="k">${opts}</select><input data-f="l" type="text" autocomplete="off" placeholder="${esc(K.lp)}" value="${esc(r.l)}"><button type="button" class="in-mini" data-act="rowUp" data-ri="${i}"${i===0?' disabled':''}>▲</button><button type="button" class="in-mini" data-act="rowDown" data-ri="${i}"${i===n-1?' disabled':''}>▼</button><button type="button" class="in-mini del" data-act="rowDel" data-ri="${i}">✕</button></div>${val}</div>`;
 }
 function renderRows(){const el=$('inRows');if(el)el.innerHTML=draft.rows.map((r,i)=>erHtml(r,i,draft.rows.length)).join('')}
@@ -411,7 +426,7 @@ function openItem(sid,iid){
   const s=secOf(sid);if(!s)return;
   const it=iid?s.items.find(x=>x.id===iid):null;if(iid&&!it)return;
   ctx={type:'item',sid,iid:iid||'',o:it?it.o:0};
-  draft={t:it?it.t:'',rows:it?it.rows.map(r=>({k:r.k,l:r.l,v:r.v})):[],paste:''};
+  draft={t:it?it.t:'',rows:it?it.rows.map(r=>({k:r.k,l:r.l,v:r.v,n:r.n||''})):[],paste:''};
   $('inForm').innerHTML=`<label>제목</label><input id="inFT" type="text" maxlength="40" autocomplete="off" placeholder="예) 부산 시공팀" value="${esc(draft.t)}">
     <label>내용</label><div id="inRows"></div>
     <div class="in-addrow">${Object.keys(KINDS).map(k=>`<button type="button" data-act="rowAdd" data-k="${k}">＋ ${KINDS[k].n}</button>`).join('')}</div>
@@ -424,23 +439,25 @@ function openItem(sid,iid){
 function syncDraft(){
   if(!draft||!ctx)return;
   const g=id=>{const el=$(id);return el?el.value:''};
+  if(ctx.type==='imp'){draft.txt=g('inImp');return}
   draft.t=g('inFT');
   if(ctx.type==='sec'){draft.ic=g('inFIc');return}
   document.querySelectorAll('#inRows .in-er').forEach(el=>{
     const r=draft.rows[+el.getAttribute('data-ri')];if(!r)return;
     r.k=el.querySelector('[data-f="k"]').value;r.l=el.querySelector('[data-f="l"]').value;r.v=el.querySelector('[data-f="v"]').value;
+    const ne=el.querySelector('[data-f="n"]');if(ne)r.n=ne.value;
   });
   draft.paste=g('inPaste');
 }
-// "홍길동 010-1234-5678" → 전화 줄, 주소(https://…)가 있으면 링크 줄, 번호가 없으면 이름만 있는 전화 줄
+// "홍길동 010-1234-5678 입사 2024.01.02" → 전화 줄(번호 앞 = 이름, 번호 뒤 = 메모), 주소(https://…)가 있으면 링크 줄, 번호가 없으면 이름만 있는 전화 줄
 function parsePaste(txt){
   const tidy=s=>String(s||'').replace(/[\t|]+/g,' ').replace(/^[\s:·,\-\/]+|[\s:·,\-\/]+$/g,'').replace(/\s{2,}/g,' ');
   return lines(txt).map(line=>{
     let m=line.match(/https?:\/\/\S+/i);
     if(m)return {k:'link',l:tidy(line.replace(m[0],' ')),v:m[0]};
     m=line.match(/(?:\+82[\s.\-]?\d{1,2}|0\d{1,2})[\s.\-)]?\d{3,4}[\s.\-]?\d{4}|1[5-9]\d{2}[\s.\-]?\d{4}/);
-    if(m)return {k:'tel',l:tidy(line.replace(m[0],' ')),v:m[0].trim()};
-    return {k:'tel',l:tidy(line),v:''};
+    if(m){const i=line.indexOf(m[0]);return {k:'tel',l:tidy(line.slice(0,i)),v:m[0].trim(),n:tidy(line.slice(i+m[0].length))}}
+    return {k:'tel',l:tidy(line),v:'',n:''};
   });
 }
 function fixVal(k,v){
@@ -450,9 +467,65 @@ function fixVal(k,v){
   if(!MULTI[k])v=v.replace(/\n+/g,' ');
   return v;
 }
+// 저장용 줄: 앞뒤 공백 정리, 전화 표기 통일, 메모는 한 줄 종류에만(비어 있으면 저장 안 함)
+function packRow(r){
+  r=r||{};const k=KINDS[r.k]?r.k:'text';
+  const o={k,l:String(r.l==null?'':r.l).slice(0,80).trim(),v:fixVal(k,String(r.v==null?'':r.v).slice(0,4000))};
+  const n=MULTI[k]?'':String(r.n==null?'':r.n).slice(0,200).replace(/\s+/g,' ').trim();
+  if(n)o.n=n;
+  return o;
+}
+/* ---------- 전체 내보내기 / 가져오기 (관리자 편집 화면) ---------- */
+function exportData(){
+  return {v:1,secs:secs().map(s=>({ic:s.ic,t:s.t,urgent:s.urgent,items:s.items.map(it=>({t:it.t,rows:it.rows.map(r=>{const o={k:r.k,l:r.l,v:r.v};if(r.n)o.n=r.n;return o})}))}))};
+}
+// 붙여넣은 글자 → 저장 형태. 형식이 틀리면 이유를 담아 throw
+function normImport(txt){
+  let o,t=String(txt||'').replace(/^\uFEFF/,'').trim();
+  try{o=JSON.parse(t)}catch(e){
+    const a=t.indexOf('{'),b=t.lastIndexOf('}');
+    try{if(a<0||b<=a)throw e;o=JSON.parse(t.slice(a,b+1))}catch(e2){throw new Error('형식이 맞지 않아요 — 받은 파일을 그대로 고르거나 내용을 처음부터 끝까지 붙여넣어 주세요')}
+  }
+  const list=Array.isArray(o)?o:(o&&Array.isArray(o.secs)?o.secs:null);
+  if(!list||!list.length)throw new Error('가져올 분류가 없어요');
+  if(list.length>60)throw new Error('분류가 너무 많아요 (최대 60개)');
+  const out={};let ni=0,nr=0,so=0;
+  list.forEach(s=>{
+    if(!s||typeof s!=='object')return;
+    const t=String(s.t==null?'':s.t).slice(0,60).trim();if(!t)return;
+    const items={};let io=0;
+    arr(s.items).slice(0,80).forEach(it=>{
+      if(!it||typeof it!=='object')return;
+      const rows=arr(it.rows).slice(0,200).map(packRow).filter(r=>r.l||r.v||r.n);
+      const tt=String(it.t==null?'':it.t).slice(0,60).trim();
+      if(!tt&&!rows.length)return;
+      io+=10;items[nid()]={t:tt,o:io,rows};ni++;nr+=rows.length;
+    });
+    so+=10;out[nid()]={t,ic:String(s.ic==null?'':s.ic).slice(0,8).trim()||'📁',urgent:!!s.urgent,o:so,items};
+  });
+  const ns=Object.keys(out).length;
+  if(!ns)throw new Error('가져올 분류가 없어요');
+  return {secs:out,ns,ni,nr};
+}
+function openImport(){
+  ctx={type:'imp'};draft={txt:''};
+  $('inForm').innerHTML='<label>파일 고르기</label><input id="inImpFile" type="file" accept=".json,.txt,application/json,text/plain"><label>또는 내용 붙여넣기</label><textarea id="inImp" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>';
+  $('inOvBar').innerHTML='<button class="cancel" data-act="ovClose">취소</button><button class="save" data-act="ovSave">가져오기</button>';
+  draft0=JSON.stringify(draft);ovOpen('가져오기');
+  setTimeout(()=>{try{$('inImp').focus()}catch(e){}},50);
+}
+function doImport(){
+  let r;
+  try{r=normImport(draft.txt)}catch(e){say(e.message||'가져오지 못했어요','copy');return}
+  const cur=secs().length;
+  if(!confirm('분류 '+r.ns+'개 · 항목 '+r.ni+'개 · '+r.nr+'줄을 가져올까요?'+(cur?'\n지금 있는 분류 '+cur+'개는 지워지고 이 내용으로 바뀌어요.':'')))return;
+  setSaving(true);
+  gdb.ref(NODE).update({secs:r.secs,'meta/seeded':true,'meta/at':Date.now()}).then(()=>{ovClose(true);say('가져왔어요','ok')}).catch(e=>{setSaving(false);fail(e)});
+}
 function saveOv(){
   if(saving||!ctx||!gdb)return;
   syncDraft();
+  if(ctx.type==='imp'){doImport();return}
   const t=String(draft.t||'').trim();
   let p;
   if(ctx.type==='sec'){
@@ -461,7 +534,7 @@ function saveOv(){
     if(ctx.sid)p=gdb.ref(NODE+'/secs/'+ctx.sid).update({t,ic,urgent:!!draft.urgent});
     else{const id=nid(),all=secs();open.add(id);saveOpen();p=gdb.ref(NODE+'/secs/'+id).set({t,ic,urgent:!!draft.urgent,o:(all.length?all[all.length-1].o:0)+10})}
   }else{
-    const rows=draft.rows.map(r=>({k:KINDS[r.k]?r.k:'text',l:String(r.l||'').trim(),v:fixVal(r.k,r.v)})).filter(r=>r.l||r.v);
+    const rows=draft.rows.map(packRow).filter(r=>r.l||r.v||r.n);
     if(!t&&!rows.length){say('내용을 입력해 주세요','copy');return}
     const s=secOf(ctx.sid);if(!s){say('분류가 없어졌어요 — 닫고 다시 시도해 주세요','copy');return}
     const id=ctx.iid||nid();
@@ -511,6 +584,8 @@ function onClick(e){
   const val=()=>{const v=REG[+el.getAttribute('data-i')];return v==null?'':String(v)};
   if(act!=='tog')e.stopPropagation();
   switch(act){
+    case 'exp':if(edit){if(!secs().length){say('내보낼 내용이 없어요','copy');break}copyText(JSON.stringify(exportData()))}break;
+    case 'imp':if(edit)openImport();break;
     case 'tog':if(nrm(q))return;if(open.has(sid))open.delete(sid);else open.add(sid);saveOpen();render();break;
     case 'copy':{const v=val();if(v)copyText(v);break}
     case 'map':{const v=val();if(v)window.open('https://map.naver.com/p/search/'+encodeURIComponent(v),'_blank','noopener');break}
@@ -536,14 +611,23 @@ function onOvClick(e){
     case 'ovDel':delOv();break;
     case 'icPick':{const i=$('inFIc');if(i)i.value=el.getAttribute('data-ic')||'';break}
     case 'urgTog':draft.urgent=!draft.urgent;el.classList.toggle('on',draft.urgent);break;
-    case 'rowAdd':{syncDraft();draft.rows.push({k:el.getAttribute('data-k'),l:'',v:''});renderRows();const er=document.querySelector('#inRows .in-er:last-child');if(er){const f=er.querySelector('[data-f="l"]');try{f.focus();er.scrollIntoView({block:'center'})}catch(x){}}break}
+    case 'rowAdd':{syncDraft();draft.rows.push({k:el.getAttribute('data-k'),l:'',v:'',n:''});renderRows();const er=document.querySelector('#inRows .in-er:last-child');if(er){const f=er.querySelector('[data-f="l"]');try{f.focus();er.scrollIntoView({block:'center'})}catch(x){}}break}
     case 'rowDel':syncDraft();draft.rows.splice(ri,1);renderRows();break;
     case 'rowUp':case 'rowDown':{syncDraft();const j=ri+(act==='rowUp'?-1:1);if(j<0||j>=draft.rows.length)break;const t=draft.rows[ri];draft.rows[ri]=draft.rows[j];draft.rows[j]=t;renderRows();break}
-    case 'pasteAdd':{syncDraft();const add=parsePaste(draft.paste);if(!add.length){say('붙여넣은 내용이 없어요','copy');break}draft.rows=draft.rows.filter(r=>String(r.l).trim()||String(r.v).trim()).concat(add);draft.paste='';const pe=$('inPaste');if(pe)pe.value='';renderRows();say(add.length+'줄 추가됐어요 — 저장을 눌러야 반영돼요','ok');break}
+    case 'pasteAdd':{syncDraft();const add=parsePaste(draft.paste);if(!add.length){say('붙여넣은 내용이 없어요','copy');break}draft.rows=draft.rows.filter(r=>String(r.l).trim()||String(r.v).trim()||String(r.n||'').trim()).concat(add);draft.paste='';const pe=$('inPaste');if(pe)pe.value='';renderRows();say(add.length+'줄 추가됐어요 — 저장을 눌러야 반영돼요','ok');break}
   }
 }
 function onOvChange(e){
   const t=e.target;
+  if(t&&t.id==='inImpFile'){ // 고른 파일의 글자를 붙여넣기 칸에 채움 (가져오기는 [가져오기]를 눌러야 실행)
+    const f=t.files&&t.files[0];if(!f)return;
+    if(f.size>2*1024*1024){say('파일이 너무 커요','copy');t.value='';return}
+    const rd=new FileReader();
+    rd.onload=()=>{const el=$('inImp');if(el)el.value=String(rd.result||'')};
+    rd.onerror=()=>say('파일을 읽지 못했어요','copy');
+    rd.readAsText(f);
+    return;
+  }
   if(t&&t.getAttribute&&t.getAttribute('data-f')==='k'&&draft&&ctx&&ctx.type==='item'){syncDraft();renderRows()} // 종류를 바꾸면 입력칸 모양(한 줄/여러 줄)도 바뀜
 }
 
