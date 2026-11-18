@@ -2,6 +2,8 @@
    차에 실은(출고) / 창고로 내린(입고) 자재를 시각 스탬프 사진과 함께 기록
    저장: Apps Script IoLog.gs(입출고기록 시트 + 드라이브 '입출고사진' 폴더) ← 원본, Firebase io_logs/{bs|gg} ← 앱 실시간 목록
    로드: scheduler.html / scheduler-gg.html 맨 아래 guide.js 다음 <script src="./iolog.js?v=..."> (코드 수정 시 v 값도 변경)
+   v2026.11.18a 사진 '갤러리에서 선택' 추가 — 일부 안드로이드 폰은 capture(카메라 직행) 시 메모리 부족으로 브라우저가 리로드돼 화면이 초기화됨.
+     [카메라 촬영]/[갤러리에서 선택] 두 버튼. 갤러리 사진은 파일 시각(lastModified)으로 photoGap 기록 → 30분 넘으면 관리자 목록에 '사진 N분 전' 태그(기존 로직)
    v11 (2026-09-17k) 별도 📦 탭을 없애고 🚗 차량 탭(p-fair) 맨 위에 붙임 — 하단 탭 5개. 차량 탭을 열면(sw('fair')) 갱신·첫 도움말·재전송.
      p-fair가 없는 페이지에서는 예전처럼 별도 탭을 만듦
 
@@ -85,7 +87,7 @@
    v18 (2026-09-20f) 제출하면 그 기록이 들어간 날짜의 카드로 화면이 따라감 — 15시 이후 출고는 다음 영업일 카드에 들어가서, 오늘 카드만 보면 '출고가 안 된 것'처럼 보이던 문제 */
 (function(){
 'use strict';
-const IO_VER='2026.10.28a';
+const IO_VER='2026.11.18a';
 const IO_BETA=/\/beta\//.test(location.pathname); // 🧪 베타: my.dolbommat.com/beta/… 에서 열면 Firebase는 *_beta 노드, 시트·드라이브 전송 없음, 대기함도 분리 — 실데이터 안 건드림
 const RK=/scheduler-gg/i.test(location.pathname)?'gg':'bs';
 const RN=RK==='gg'?'경기':'부산';
@@ -586,6 +588,12 @@ svg.gi{width:18px;height:18px;flex-shrink:0}
 .iog-photo.has{padding:0;border-style:solid;border-color:var(--dm-green);display:block}
 .iog-photo img{width:100%;display:block}
 .iog-photo .re{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.62);color:#fff;border:none;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer}
+.iog-photo .re.g{right:auto;left:10px}
+.iog-photo .pk{display:flex;gap:8px;width:100%;margin-top:10px}
+.iog-photo .pk button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border-radius:10px;border:1px solid var(--dm-line);background:var(--dm-soft,rgba(255,255,255,.06));color:var(--dm-ink);font-family:var(--font);font-size:13px;font-weight:800;cursor:pointer}
+.iog-photo .pk button svg.gi{width:18px;height:18px}
+.iog-photo.empty{display:block;cursor:default}
+.iog-photo.empty .hd{display:flex;align-items:center;gap:12px}
 .iog-photo .busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:14px}
 .iog-memonote{margin-top:15px}
 .iog-memonote summary{font-size:12.5px;color:var(--dm-muted);min-height:32px;cursor:pointer;font-weight:700}
@@ -729,7 +737,8 @@ function ensureShell(){
   </div>
   <div class="io-foot" id="ioFoot"><div class="io-foot-in"><div class="iog-total"><span id="ioFootCnt">1개 제품 · 합계</span><strong><span id="ioFootTot">0</span><small>장</small></strong></div>
     <button type="button" class="io-submit" id="ioSubmitBtn" onclick="ioNext()">입력 내용 확인</button><div class="iog-hint" id="ioFootHint"></div></div></div>
-  <input type="file" id="ioFile" accept="image/*" capture="environment" style="display:none" onchange="ioPhotoChange(this)">`;
+  <input type="file" id="ioFile" accept="image/*" capture="environment" style="display:none" onchange="ioPhotoChange(this)">
+  <input type="file" id="ioFileG" accept="image/*" style="display:none" onchange="ioPhotoChange(this)">`;
   document.body.appendChild(ov);
   const sh=document.createElement('div');sh.className='io-sh';sh.id='ioShare';
   sh.innerHTML='<div class="io-sh-in" id="ioShareIn"></div><div class="io-sh-ft"><div class="io-sh-ft-in"><button type="button" class="io-sh-btn" onclick="ioShareClose()">✕ 닫기</button><button type="button" class="io-sh-btn lnk" id="ioShareCopyBtn" onclick="ioShareCopy()">텍스트로 복사</button></div></div>';
@@ -1255,7 +1264,7 @@ function ioEditWdate(v){if(!F||!F.edit||!admin())return;if(!/^\d{4}-\d{2}-\d{2}$
 function ioClose(){
   if(busy)return;
   if(F&&!F.edit&&formHasContent()){draftWrite();photoDraftSave();ioToast('임시 저장했어요 · 다시 열면 이어쓸 수 있어요')}
-  $('ioOv').classList.remove('show');F=null;P=null;DONE=null;$('ioFile').value='';{const hd=$('ioHead');if(hd)hd.innerHTML=''}
+  $('ioOv').classList.remove('show');F=null;P=null;DONE=null;$('ioFile').value='';{const g=$('ioFileG');if(g)g.value=''}{const hd=$('ioHead');if(hd)hd.innerHTML=''}
 }
 function ioType(t){
   if(!F)return;const old=F.type;if(old===t){renderForm();return}
@@ -1388,7 +1397,7 @@ function renderForm(){
   let h=`<div id="ioItems"></div>
   <button type="button" class="iog-addproduct" onclick="ioAddItem()"${F.items.length>=PRODUCTS.length?' disabled':''}>${gi('plus')} 다른 제품 추가</button>
   <div class="iog-sectionlabel" id="ioSecPhoto"><span>적재 사진</span><span class="iog-st${hasPhoto?' ok':''}">${P?'사진 1장':E&&E.photoId?'기존 사진':'필수'}</span></div>
-  <div class="iog-photo${hasPhoto?' has':''}" id="ioPhotoBox" onclick="ioPickPhoto()">${P?`<img id="ioPrev" alt=""><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:E&&E.photoId?`<img src="${thumbUrl(E.photoId,800)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto()">다시 촬영</button>`:`${gi('camera')}<span><strong>사진 촬영하기</strong><small>박스와 낱장이 함께 보이는 사진</small></span>`}</div>
+  <div class="iog-photo${hasPhoto?' has':' empty'}" id="ioPhotoBox">${P?`<img id="ioPrev" alt=""><button type="button" class="re g" onclick="event.stopPropagation();ioPickPhoto('g')">갤러리</button><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto('c')">다시 촬영</button>`:E&&E.photoId?`<img src="${thumbUrl(E.photoId,800)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" class="re g" onclick="event.stopPropagation();ioPickPhoto('g')">갤러리</button><button type="button" class="re" onclick="event.stopPropagation();ioPickPhoto('c')">다시 촬영</button>`:`<div class="hd">${gi('camera')}<span><strong>적재 사진 등록</strong><small>박스와 낱장이 함께 보이는 사진 · 촬영 중 화면이 초기화되면 카메라 앱으로 찍고 [갤러리에서 선택]</small></span></div><div class="pk"><button type="button" onclick="ioPickPhoto('c')">${gi('camera')}카메라 촬영</button><button type="button" onclick="ioPickPhoto('g')">🖼 갤러리에서 선택</button></div>`}</div>
   <details class="iog-memonote"${F.note?' open':''}><summary>메모 남기기 <span class="iog-tiny">선택</span></summary><textarea id="ioNote" placeholder="예) 오후 현장용 추가 적재" maxlength="200" oninput="ioNote(this.value)">${esc(F.note)}</textarea></details>
   ${E?`<button type="button" class="iog-button quiet full" style="margin-top:14px" onclick="ioVoidFromForm()">이 기록 취소</button>`:''}`;
   $('ioForm').innerHTML=h;
@@ -1453,7 +1462,7 @@ function ioWorker(v){F.worker=v;F.crewTouched=true;if(v&&!F.crew2)F.crew2=partne
 function ioCrew2(v){F.crew2=v===F.worker?'':v;F.crewTouched=true;drawPreview();draftSave()} // v27 담당 2번째
 
 /* ---------- 사진 ---------- */
-function ioPickPhoto(){if(busy)return;const f=$('ioFile');f.value='';f.click()}
+function ioPickPhoto(m){if(busy)return;const f=$(m==='g'?'ioFileG':'ioFile');if(!f)return;f.value='';f.click()} // m: 'c' 카메라 직행 / 'g' 갤러리(사진 보관함)
 function ioPhotoChange(inp){
   const file=inp.files&&inp.files[0];if(!file)return;
   const box=$('ioPhotoBox');if(box)box.insertAdjacentHTML('beforeend','<div class="busy" id="ioPhotoBusy">사진 준비 중…</div>');
@@ -1464,6 +1473,8 @@ function ioPhotoChange(inp){
     if(F&&F.step==='photo')F.step=F.vehicle?'item':'veh'; // 사진 찍으면 제품으로 (차량이 아직이면 차량으로)
     renderForm();
     draftWrite();photoDraftSave();
+    const gap=Math.round((P.at.getTime()-P.taken)/60000);
+    if(gap>=LATE_MIN)ioToast(gap+'분 전에 찍은 사진이에요 · 기록에 표시돼요');
   };
   img.onerror=()=>{URL.revokeObjectURL(url);const b=$('ioPhotoBusy');if(b)b.remove();ioToast('사진을 읽지 못했어요. 다시 촬영해주세요',true)};
   img.src=url;
@@ -1537,7 +1548,7 @@ async function ioSubmit(){
     localStorage.setItem('io_last_vehicle',F.vehicle);
     clearTimeout(_dsT);draftClear(F.type); // 제출된 건 임시저장 삭제 — 다음에 열면 빈 폼
     DONE={type:rec.type,vehicle:rec.vehicle,wdate:rec.wdate,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0)};
-    busy=false;F=null;P=null;$('ioFile').value='';
+    busy=false;F=null;P=null;$('ioFile').value='';{const g=$('ioFileG');if(g)g.value=''}
     $('ioFoot').style.display='none';const hd=$('ioHead');if(hd)hd.innerHTML='';$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){} // v15: 닫지 않고 완료 화면 — 그날 기록 화면(단톡방 공유용)은 버튼으로
     ioToast('✅ '+TYPE[rec.type].n+' 기록 저장 · 사진 전송 중');
     renderList();ioFlush(false);
@@ -1568,7 +1579,7 @@ async function ioSubmitEdit(items){ // v32: 기존 기록 고치기 — Firebase
       if(!obAdd({kind:'edit',id:'edit_'+r.id+'_'+now.getTime(),rid:r.id,rk:RK,payload,tries:0,ts:now.getTime()})){busy=false;renderForm();return}
     }
     DONE={type:r.type,vehicle:F.vehicle,wdate:wd,total:items.reduce((a,it)=>a+num(it.total)+num(it.tQty),0),edit:true};
-    busy=false;F=null;P=null;$('ioFile').value='';
+    busy=false;F=null;P=null;$('ioFile').value='';{const g=$('ioFileG');if(g)g.value=''}
     $('ioFoot').style.display='none';{const hd=$('ioHead');if(hd)hd.innerHTML=''}$('ioForm').innerHTML=successHtml();try{$('ioOv').scrollTop=0}catch(e){}
     ioToast('✅ '+TYPE[DONE.type].n+' 기록 수정');
     renderList();ioFlush(false);
