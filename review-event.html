@@ -749,7 +749,7 @@ const MISSIONS=[
     desc:_row('어디에','셀인 · 강사모 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
   {id:'instagram',short:'인스타',icon:'📸',title:'인스타그램 후기',reward:10000,
     desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진·짧은 이야기와 함께 후기 작성')+_row('필수','@dolbommat 팔로우 + 태그')+_row('추천','해시태그 3~5개')},
-  {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',reward:10000,
+  {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',reward:10000,resumeAt:'2026-11-25',
     desc:_row('어디에','쓰레드 (주제 태그 1개 선택 — 예: 매트시공)')+_row('무엇을','짧은 경험담과 사진 1~3장')+_row('추천','본문에 돌봄매트 자연스럽게 언급')},
   {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,
     desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_row('추천','시공매트 · 돌봄매트 자연스럽게 언급'),
@@ -762,9 +762,21 @@ const MISSIONS=[
 const MAX_REWARD=150000;
 
 // 스텝 구성: [계약후기, 설문, 단톡방~한달후기, 캐시백 신청]
-const STEPS=[{type:'mission',m:0},{type:'survey',short:'설문',icon:'✍️'}];
-for(let i=1;i<MISSIONS.length;i++)STEPS.push({type:'mission',m:i});
-STEPS.push({type:'final',short:'신청',icon:'💰'});
+const STEP_SURVEY={type:'survey',short:'설문',icon:'✍️'},STEP_FINAL={type:'final',short:'신청',icon:'💰'};
+const STEPS=[];
+// 일시중단 미션(isPaused)은 아직 달성 안 한 고객에게는 단계에서 아예 숨김 — 달성한 고객은 그대로 보임
+function rebuildSteps(){
+  const key=st=>st.type==='mission'?'m'+st.m:st.type;
+  const cur=(typeof curStep==='number'&&STEPS[curStep])?key(STEPS[curStep]):null;
+  STEPS.length=0;STEPS.push({type:'mission',m:0},STEP_SURVEY);
+  for(let i=1;i<MISSIONS.length;i++){
+    const m=MISSIONS[i];
+    if(isPaused(m)&&!((typeof missionState!=='undefined'&&missionState[m.id])||{}).done)continue;
+    STEPS.push({type:'mission',m:i});
+  }
+  STEPS.push(STEP_FINAL);
+  if(cur){const j=STEPS.findIndex(st=>key(st)===cur);curStep=j>=0?j:Math.min(curStep,STEPS.length-1);}
+}
 const SURVEY_STEP=1;
 
 let missionState={};
@@ -778,6 +790,10 @@ let serverFresh=false;   // 서버 최신 상태 확인 여부 — 확인 전엔
 let reupOpen=false;      // 달성 미션 사진 교체 UI 열림 여부
 
 function stepLocked(i){return i>SURVEY_STEP && !surveyDone;}
+// 일시중단 미션: resumeAt(KST 0시) 전까지 참여 막음 — 이미 달성한 건은 그대로 유지 (2026-11-18 쓰레드)
+function isPaused(m){return !!(m&&m.resumeAt)&&Date.now()<new Date(m.resumeAt+'T00:00:00+09:00').getTime();}
+function resumeLabel(m){const d=new Date(m.resumeAt+'T00:00:00+09:00');return (d.getMonth()+1)+'월 '+d.getDate()+'일('+'일월화수목금토'[d.getDay()]+')';}
+rebuildSteps();
 
 // ── 로컬 저장 (phone별) ──
 const LS_KEY=(k)=>'dolbom_'+k+'_'+(PHONE||'guest');
@@ -1068,6 +1084,7 @@ function dotState(i){
   if(st.type==='mission'){
     const s=missionState[MISSIONS[st.m].id]||{};
     if(s.done)return 'done';
+    if(isPaused(MISSIONS[st.m]))return 'lock';
     if(stepLocked(i))return 'lock';
     if(skipped[MISSIONS[st.m].id])return 'skip';
     return '';
@@ -1092,7 +1109,7 @@ function renderDots(){
 
 function missionCardHTML(mIdx){
   const m=MISSIONS[mIdx];const s=missionState[m.id]||{};const done=s.done;const paid=s.paid;
-  const badgeText=paid?'지급완료':done?'달성':stepLocked(curStep)?'잠김':skipped[m.id]?'건너뜀':'미달성';
+  const badgeText=paid?'지급완료':done?'달성':isPaused(m)?'일시중단':stepLocked(curStep)?'잠김':skipped[m.id]?'건너뜀':'미달성';
   const badgeCls=(paid||done)?'done':'pending';
   let h='<div class="mission-card"><div class="mission-header" style="cursor:default">'
     +'<div class="mission-icon '+(done?'done':'pending')+'"><span style="font-size:15px;font-weight:800;color:'+(done?'var(--green)':'var(--text3)')+'">'+(done?'✓':(mIdx+1))+'</span></div>'
@@ -1120,6 +1137,9 @@ function missionCardHTML(mIdx){
       }
     }
     h+='<button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
+  }else if(isPaused(m)){
+    h+='<div class="locked-box"><div class="lk-title">잠시 쉬어가는 미션이에요</div><div class="lk-sub">'+resumeLabel(m)+'부터 다시 참여할 수 있어요. 그때 다시 들러주세요 🙂</div></div>'
+      +'<button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
   }else if(locked){
     h+='<div class="locked-box"><div class="lk-title">설문을 완료하면 참여할 수 있어요</div><div class="lk-sub">미션 내용은 미리 확인하실 수 있어요. 설문(1분)을 마치면 업로드가 열립니다.</div>'
       +'<button class="lk-btn" onclick="gotoStep(SURVEY_STEP)">설문 하러 가기</button></div>'
@@ -1140,6 +1160,7 @@ function missionCardHTML(mIdx){
 }
 
 function renderStep(){
+  rebuildSteps();
   updateSummary();
   renderDots();
   const st=STEPS[curStep];
@@ -1239,6 +1260,7 @@ function renderClaimSummary(){
     let st,cls;
     if(s.paid){st='지급완료';cls='paid';}
     else if(s.done){st='+'+m.reward.toLocaleString()+'원';cls='done';}
+    else if(isPaused(m))return;
     else{st='미달성';cls='no';undoneCnt++;undoneAmt+=m.reward;}
     rows+='<div class="cs-row"><span class="cs-name">'+m.title+'</span><span class="cs-st '+cls+'">'+st+'</span></div>';
   });
@@ -1658,13 +1680,14 @@ function recomputePaid(){
   MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
 }
 function pickInitialStep(){
+  rebuildSteps();
   const c=missionState[MISSIONS[0].id]||{};
   if(!c.done&&!skipped[MISSIONS[0].id]){curStep=0;return;}
   if(!surveyDone){curStep=SURVEY_STEP;return;}
   curStep=STEPS.length-1;
   for(let i=SURVEY_STEP+1;i<STEPS.length-1;i++){
     const m=MISSIONS[STEPS[i].m];const s=missionState[m.id]||{};
-    if(!s.done&&!skipped[m.id]){curStep=i;break;}
+    if(!s.done&&!skipped[m.id]&&!isPaused(m)){curStep=i;break;}
   }
 }
 function hideLoading(){const o=document.getElementById('loadingOverlay');if(o)o.style.display='none';}
