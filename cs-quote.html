@@ -2241,7 +2241,7 @@ function renderReply(results, py) {
   var PRODUCT_REPLY_INFO = {
     mat1000_22: { badge: '대형사이즈', feature: '층간소음, 아이안전' },
     //PET-PAUSE mat1000_17: { badge: '대형사이즈', feature: '아이안전, 반려동물 추천' },
-    mat1000_17: { badge: '대형사이즈', feature: '아이안전' }, //PET-TEMP
+    mat1000_17: { badge: '대형사이즈', feature: '아이안전, 난방효율⬆️' }, //PET-TEMP
     mat500:     { badge: '실속형',     feature: '층간소음, 아이안전, 합리적 가격' }
   };
 
@@ -2292,6 +2292,12 @@ function renderReply(results, py) {
     }
     text += '· 특징: ' + info.feature + '\n\n';
   });
+
+  // 1000매트 코팅 안내 (1000매트가 견적에 있을 때만)
+  var hasMat1000 = results.some(function(r){ return r.product.key === 'mat1000_22' || r.product.key === 'mat1000_17'; });
+  if (hasMat1000) {
+    text += '※ 1000매트는 미끄럼방지 + 황변방지(UV) + 방오코팅이 적용되어 있어요. 미끄럼방지 강도는 제품마다 조금 다를 수 있어요 🙏\n\n';
+  }
 
   // 적용 혜택 (체크된 것만 표시, 한 줄에 2개씩, 정액→비율 순서)
   text += '🎁 체감가 적용된 혜택 안내\n';
