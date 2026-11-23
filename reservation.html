@@ -84,6 +84,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .onnuri-done{background:#fff;border:1.5px solid #4caf6a;color:#2e7d46;}
 .onnuri-done.on{background:#eefaf1;}
 
+/* 📁 관련서류 다운로드 버튼·모달 (파일은 /cs-docs/) */
+.cs-links button.docs-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--shadow);cursor:pointer;font-family:inherit;transition:all .15s;}
+.cs-links button.docs-btn:hover{border-color:var(--accent);color:var(--accent);}
+.docs-list{overflow:auto;flex:1;padding:6px 18px 4px;}
+.docs-grp{font-size:12px;font-weight:700;color:#888;margin:12px 0 6px;}
+.docs-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e3e5e8;border-radius:10px;margin-bottom:6px;background:#fafbfc;}
+.docs-name{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:#222;}
+.docs-name small{display:block;font-size:11px;font-weight:500;color:#999;margin-top:1px;}
+.docs-row a{flex:none;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;text-decoration:none;}
+.docs-view{border:1.5px solid #d0d4da;color:#555;background:#fff;}
+.docs-dl{background:var(--accent,#e07a6f);color:#fff;}
+.docs-foot{padding:8px 18px 16px;}
+.docs-foot a{display:block;text-align:center;padding:11px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;background:#fff;border:1.5px solid var(--accent,#e07a6f);color:var(--accent,#e07a6f);}
+
 /* ───── 📝 인수인계 메모 스트립 (오전CS·오후CS·기타 공유) — 제목 줄 없이 메모 줄 + 입력 줄만 ───── */
 .memo-strip{margin:12px 16px 0;background:var(--card);border:1.5px solid #ffd8a8;border-radius:12px;box-shadow:var(--shadow);padding:4px 12px 8px;}
 .memo-list{display:none;max-height:152px;overflow-y:auto;}
@@ -260,6 +274,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <a href="https://my.dolbommat.com/scheduler-gg.html" target="_blank" rel="noopener">📅 경기팀 스케줄</a>
   <a href="https://docs.google.com/spreadsheets/d/1JNwNSVlP3TxNXhjbgJx1kxVm98o9ZB3bHEmlys79Rmg/edit?gid=1847472331#gid=1847472331" target="_blank" rel="noopener">📊 상담 참고 시트</a>
   <button type="button" class="onnuri-btn" id="onnuriBtn" onclick="onnuriOpen()">💳 온누리 월말 안내</button>
+  <button type="button" class="docs-btn" onclick="docsOpen()">📁 관련서류</button>
 </div>
 
 <!-- 📝 인수인계 메모 — 오전CS·오후CS·기타가 공유하는 한 줄 메모 (Firebase csMemo, 부산/경기 공통) -->
@@ -2219,9 +2234,9 @@ function copyReservationConfirm(){
     text+='✨ 이전설치 시 기존 매트와 새 매트는 색감·질감 차이가 있을 수 있어요.\n';
     text+='✨ 잘린 매트·경사 매트는 새 집 구조에 따라 재사용이 어려울 수 있어, 새 매트가 추가될 수 있어요. 추가 수량은 시공 완료 후 확정되고, 실제 사용 수량 기준으로 정산됩니다.\n';
   }
-  if(isMoveMsg) text+='\n';
-  text+='👉 주의사항 및 안내사항\n';
-  text+='https://my.dolbommat.com/notice.html\n\n';
+  text+='✨ 본사 직영 시공팀 2명이 방문하여 약 3~4시간 소요됩니다.\n';
+  text+='✨ 현장 상황이나 교통으로 도착이 늦어질 경우, 미리 연락드립니다.\n';
+  text+='✨ 안내드린 견적은 예상 수량 기준이며, 최종 금액은 실제 시공 수량을 기준으로 정산됩니다.\n\n';
   text+='👉 시공가이드 & 후기이벤트 참여 링크입니다!\n';
   text+='https://my.dolbommat.com/review-event.html?phone='+phone+'&tab=before\n\n';
   text+='👉 온누리상품권 카드 결제 안내\n';
@@ -2982,6 +2997,51 @@ function onnuriToggleDone(){
   }
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')onnuriClose();});
+/* ───── 📁 관련서류 다운로드 — 파일은 레포 /cs-docs/ (서류 바꿀 땐 같은 이름으로 덮어쓰기 + 아래 목록·zip 갱신) ───── */
+var DOCS_LIST=[
+  {g:'🏢 사업자 서류',items:[
+    {n:'[부산] 사업자등록증',f:'biz-busan.png',d:'[부산]사업자등록증.png'},
+    {n:'[경기] 사업자등록증',f:'biz-gg.png',d:'[경기]사업자등록증.png'},
+    {n:'[부산] 통장사본',f:'bank-busan.png',d:'[부산]통장사본.png'},
+    {n:'[경기] 통장사본',f:'bank-gg.pdf',d:'[경기]통장사본.pdf'}]},
+  {g:'✅ 인증 · 시험 성적서',items:[
+    {n:'안전확인서',s:'2026년 9월',f:'safety-check-202609.pdf',d:'[돌봄]안전확인서_2026.09.pdf'},
+    {n:'검사성적서',s:'2026년 9월',f:'test-report-202609.pdf',d:'[돌봄]검사성적서_2026.09.pdf'},
+    {n:'라돈 테스트',f:'radon-test.pdf',d:'[돌봄]라돈테스트.pdf'},
+    {n:'층간소음 저감 인증서',f:'noise-cert.pdf',d:'[돌봄]층간소음저감인증서.pdf'},
+    {n:'매트 CE 인증',f:'ce-cert.pdf',d:'[돌봄]매트CE인증.pdf'},
+    {n:'공기순환통로 디자인 특허증',f:'design-patent.pdf',d:'[돌봄]공기순환통로디자인특허증.pdf'}]},
+  {g:'📝 양식',items:[
+    {n:'견적서 양식',s:'한글(.hwp) — 보기 없이 다운로드만',f:'quote-form.hwp',d:'[돌봄]견적서양식.hwp',noView:true}]}
+];
+function docsEsc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function docsOpen(){
+  var ov=document.getElementById('docsOv');
+  if(!ov){
+    var h='';
+    DOCS_LIST.forEach(function(g){
+      h+='<div class="docs-grp">'+g.g+'</div>';
+      g.items.forEach(function(it){
+        var u='/cs-docs/'+it.f;
+        h+='<div class="docs-row"><div class="docs-name">'+docsEsc(it.n)+(it.s?'<small>'+docsEsc(it.s)+'</small>':'')+'</div>'
+          +(it.noView?'':'<a class="docs-view" href="'+u+'" target="_blank" rel="noopener">보기</a>')
+          +'<a class="docs-dl" href="'+u+'" download="'+docsEsc(it.d)+'">다운로드</a></div>';
+      });
+    });
+    ov=document.createElement('div');ov.id='docsOv';ov.className='onnuri-ov';
+    ov.innerHTML='<div class="onnuri-box">'
+      +'<div class="onnuri-head"><span>📁 돌봄매트 관련서류</span><button onclick="docsClose()">✕</button></div>'
+      +'<div class="docs-list">'+h+'</div>'
+      +'<div class="docs-foot"><a href="/cs-docs/dolbom-docs-all.zip" download="돌봄매트_관련서류.zip">📦 전체 한 번에 받기 (zip)</a></div>'
+      +'</div>';
+    ov.addEventListener('click',function(e){if(e.target===ov)docsClose();});
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+}
+function docsClose(){var ov=document.getElementById('docsOv');if(ov)ov.style.display='none';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')docsClose();});
+
 </script>
 </body>
 </html>
