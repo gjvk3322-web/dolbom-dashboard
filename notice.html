@@ -15,27 +15,23 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <script src="https://www.dolbommat.com/tracking.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f5f7f3;--card:#fff;--text:#1a1a1a;--text2:#555;--text3:#999;--border:#e0e0e0;--green:#2E7D32;--green-light:#E8F5E9;--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:500px;margin:0 auto;padding-bottom:40px}
+body{font-family:'Noto Sans KR',sans-serif;background:#f5f7f3;color:#1a1a1a;min-height:100vh;max-width:500px;margin:0 auto;padding-bottom:40px;word-break:keep-all}
 .header{background:linear-gradient(135deg,#2E7D32,#1B5E20);padding:24px 20px;text-align:center}
-.header h1{color:#fff;font-size:17px;font-weight:700}
-.header p{color:rgba(255,255,255,0.7);font-size:11px;margin-top:3px}
+.header h1{color:#fff;font-size:18px;font-weight:700}
+.header p{color:rgba(255,255,255,0.75);font-size:12px;margin-top:4px}
 .container{padding:16px}
-.section{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-.section-title{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.item{padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:13px;line-height:1.7;color:var(--text2)}
-.item:last-child{border-bottom:none;padding-bottom:0}
-.item strong{color:var(--text);font-weight:600}
-.item .sub{font-size:11px;color:var(--text3);margin-top:2px;padding-left:12px}
-.highlight{background:var(--green-light);border-radius:8px;padding:12px 14px;margin:12px 0}
-.highlight strong{color:var(--green)}
-.price-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
-.price-table th{background:#f5f5f5;padding:8px;text-align:left;font-weight:600;color:var(--text2)}
-.price-table td{padding:8px;border-top:1px solid #f0f0f0}
-.price-table td:last-child{text-align:right;font-weight:600;color:var(--green)}
-.footer{text-align:center;padding:20px;font-size:11px;color:var(--text3);line-height:1.6}
-.back-btn{display:block;margin:16px auto;padding:14px 40px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;text-decoration:none}
+.notice-box{background:#FFF8E1;border-radius:14px;padding:20px 18px}
+.notice-box .title{font-size:16px;font-weight:700;color:#E65100;margin-bottom:12px}
+.notice-section{margin-top:16px;padding-top:14px;border-top:1px dashed #F0D8A0}
+.notice-section-label{font-size:13px;font-weight:700;color:#BF6E00;margin-bottom:8px;letter-spacing:0.3px}
+.notice-item{font-size:13.5px;color:#795548;line-height:1.75;margin-bottom:6px}
+.notice-sub{color:#795548;font-size:12px;line-height:1.75}
+.notice-intro{font-size:13.5px;color:#8D6E63;line-height:1.75;padding-bottom:14px;margin-bottom:2px;border-bottom:1px dashed #F0D8A0}
+.notice-intro+.notice-section{border-top:0;margin-top:12px;padding-top:0}
+.notice-end{text-align:center;font-size:13px;color:#795548;line-height:1.7;margin-top:16px}
+.back-btn{display:block;text-align:center;background:#2E7D32;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:15px;border-radius:12px;margin-top:16px}
+.footer{text-align:center;padding:20px;font-size:11px;color:#999;line-height:1.6}
 </style>
 </head>
 <body>
@@ -47,109 +43,66 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <div class="header">
   <h1>돌봄매트 예약 안내사항</h1>
-  <p>시공 예약 전 아래 내용을 꼭 확인해주세요</p>
+  <p>편안하고 깔끔한 시공을 위해 미리 확인 부탁드립니다</p>
 </div>
 
 <div class="container">
 
-  <!-- 예약금 -->
-  <div class="section">
-    <div class="section-title">💰 예약금 안내</div>
-    <div class="item">
-      <strong>예약금 20만원</strong> 입금 시 예약이 확정됩니다.<br>
-      잔금 완납 시 예약금은 <strong>전액 환급</strong>됩니다.
+  <div class="notice-box">
+
+    <div class="notice-intro">소중한 우리 집 시공이 처음부터 끝까지 만족스러우실 수 있도록, 미리 알아두시면 좋은 내용을 정리했습니다.</div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">시공 일정</div>
+      <div class="notice-item">이사 전, 이사 당일, 입주청소 당일에는 시공이 <strong style="color:#e53935">불가</strong>합니다. 짐과 먼지가 정리된 상태에서 시공해야 더 깔끔하게 마무리할 수 있어, 이사 완료 후 <strong>1~2일 뒤</strong> 시공을 권장드립니다.</div>
+      <div class="notice-item">일요일은 돌봄매트 휴무일입니다.</div>
     </div>
-    <div class="highlight">
-      <strong>기업은행 030-505520-04-011</strong><br>
-      <span style="font-size:13px">허민석(돌봄) / 20만원</span><br>
-      <span style="font-size:12px;color:#2E7D32;margin-top:4px;display:block">입금 후 입금자 성함을 카카오톡으로 알려주세요!</span>
+
+    <div class="notice-section">
+      <div class="notice-section-label">시공 당일</div>
+      <div class="notice-item">작업은 약 <strong>3~4시간</strong> 소요되며, 집 구조와 작업 환경에 따라 다소 달라질 수 있습니다.</div>
+      <div class="notice-item">오후 시공은 오전 작업을 마친 뒤 방문드리며, 정확한 도착 시간은 <strong>시공 당일 오전 중</strong>에 미리 안내드립니다.</div>
+      <div class="notice-item">시공 하루 전 바닥 청소와 가벼운 짐 정리를 해주시면 더욱 꼼꼼하고 빠르게 작업해 드릴 수 있습니다.</div>
+      <div class="notice-item">원하시는 배치를 직접 확인하실 수 있도록 <strong>작업 시작과 마무리 시에는 함께해 주시길 부탁드립니다.</strong> 부재 중 설치된 부분은 이후 변경이 어려우며, 변경 요청 시 비용이 발생합니다.</div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">견적 · 최종 금액</div>
+      <div class="notice-item">견적·실측 수량은 참고용입니다. 최종 금액은 <strong style="color:#BF360C">시공 당일 실제로 시공된 매트 수량</strong>만큼만 정산해 드립니다.</div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">추가 비용 안내</div>
+      <div class="notice-item">다른 작업(에어컨·TV 설치 등)과 시공일이 겹칠 경우 <strong style="color:#BF360C">+10만원</strong>이 추가됩니다.</div>
+      <div class="notice-item">소량 시공 시 시공비 <strong style="color:#BF360C">+10만원</strong>이 추가됩니다.<br><span class="notice-sub">1000매트 24장 이하 / 500매트 99장 이하</span></div>
+      <div class="notice-item">현재 온누리상품권으로 할인된 가격에 결제하실 수 있으며, 이벤트 종료 시 아래 정상가로 결제됩니다.<br><span class="notice-sub">· 1000매트 22T (1M × 1M, 두께 2.2cm) 79,500원<br>· 1000매트 17T (1M × 1M, 두께 1.7cm) 67,000원<br>· 500매트 22T (50cm × 50cm, 두께 2.2cm) 17,500원</span></div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">AS 안내</div>
+      <div class="notice-item">오래 믿고 사용하실 수 있도록 매트 박리(기포) 현상은 <strong>2년</strong>간 보증해 드립니다. 매트 3장에서 500원 동전 크기 이상 발생 시 조치해 드립니다.</div>
+      <div class="notice-item">시공 하자는 <strong>4개월</strong>간 무상 AS를 제공해 드립니다. 고객 부주의 및 사용에 의한 손상은 제외됩니다.</div>
+      <div class="notice-item">화장실 앞을 제외한 방문 앞은 경사매트 뒷부분을 재단해 마감하며, 이 과정에서 약간의 단차가 발생할 수 있습니다.</div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">환불 · 반품 안내</div>
+      <div class="notice-item">시공 <strong>72시간 전</strong>부터는 예약 변경·취소 시 예약금 환불이 <strong style="color:#e53935">불가</strong>합니다. 해당 일정에 다른 고객님의 예약을 받을 수 없기 때문이니 양해 부탁드립니다.</div>
+      <div class="notice-item">매트는 고객님 댁 구조에 맞춰 재단하는 맞춤 상품으로 재사용이 어려워, 설치 후 반품·환불이 <strong style="color:#e53935">불가</strong>합니다.</div>
+      <div class="notice-item">논슬립 코팅 강도는 제품마다 다소 차이가 있을 수 있으며, 이로 인한 교환·반품은 <strong style="color:#e53935">불가</strong>합니다.</div>
+      <div class="notice-item">쿠션감이 있는 매트 특성상 가구나 의자에 의한 눌림이 생길 수 있습니다.</div>
+    </div>
+
+    <div class="notice-section">
+      <div class="notice-section-label">기타 안내</div>
+      <div class="notice-item">시공 사진은 돌봄매트 마케팅에 활용될 수 있습니다.</div>
+      <div class="notice-item">공동구매로 진행하실 경우, 예약 후 함께하실 분의 휴대폰 뒷자리를 알려주시면 할인을 적용해 드립니다.</div>
     </div>
   </div>
 
-  <!-- 취소 규정 -->
-  <div class="section">
-    <div class="section-title">🚫 취소 규정</div>
-    <div class="item">
-      시공 <strong>72시간 전</strong> 이후에는 취소가 불가합니다.<br>
-      취소 시 예약금 20만원은 <strong>환불되지 않습니다.</strong>
-    </div>
-  </div>
+  <div class="notice-end">궁금하신 점은 언제든 카카오톡 채널로 편하게 문의해 주세요.<br>방문 당일 꼼꼼하게 시공하겠습니다.</div>
 
-  <!-- 결제 안내 -->
-  <div class="section">
-    <div class="section-title">💳 결제 안내</div>
-    <div class="item">
-      현재 <strong>온누리상품권</strong>으로 할인된 가격에 결제 가능합니다.<br>
-      온누리상품권 이벤트 종료 시 아래 정상가로 결제됩니다.
-    </div>
-    <table class="price-table">
-      <tr><th>제품</th><th>두께</th><th style="text-align:right">정상가 (장당)</th></tr>
-      <tr><td>1000매트</td><td>22T</td><td>79,500원</td></tr>
-      <tr><td>1000매트</td><td>17T</td><td>67,000원</td></tr>
-      <tr><td>500매트</td><td>22T</td><td>17,500원</td></tr>
-    </table>
-  </div>
-
-  <!-- 시공비 -->
-  <div class="section">
-    <div class="section-title">🔧 시공비 안내</div>
-    <div class="item">
-      소량 시공 시 <strong>시공비 10만원</strong>이 발생합니다.
-      <div class="sub">• 1000매트 25장 이하</div>
-      <div class="sub">• 500매트 100장 이하</div>
-    </div>
-  </div>
-
-  <!-- 작업 시간 -->
-  <div class="section">
-    <div class="section-title">⏱️ 작업 시간</div>
-    <div class="item">
-      작업 시간은 약 <strong>3~4시간</strong> 소요되며, 작업 환경에 따라 달라질 수 있습니다.
-    </div>
-    <div class="item">
-      오후 작업은 오전 작업 완료 후 방문드리며, 정확한 시간은 <strong>작업 당일 오전 중</strong>으로 안내드립니다.
-    </div>
-    <div class="item">
-      <strong>일요일은 돌봄매트 휴무</strong>입니다.
-    </div>
-  </div>
-
-  <!-- 시공 전 준비 -->
-  <div class="section">
-    <div class="section-title">📋 시공 전 준비사항</div>
-    <div class="item">
-      이사 완료 후 <strong>1~2일 뒤</strong> 시공을 권장합니다.
-    </div>
-    <div class="item">
-      입주청소, 이사와 같은 날 시공은 <strong style="color:#e53935">불가</strong>합니다.<br>
-      에어컨 설치, TV 설치 등 기타 작업과 겹칠 경우 <strong>추가금 10만원</strong>이 발생합니다.
-    </div>
-    <div class="item">
-      시공 당일 <strong>가벼운 물건은 미리 치워주시면</strong> 작업 시간이 단축됩니다.
-    </div>
-  </div>
-
-  <!-- 현장 안내 -->
-  <div class="section">
-    <div class="section-title">🏠 현장 안내</div>
-    <div class="item">
-      작업 <strong>시작과 끝</strong>에는 현장에 계셔야 합니다.<br>
-      부재 시 설치 부분에 대한 추후 변경은 불가하며, 추가 비용은 고객님 부담입니다.
-    </div>
-  </div>
-
-  <!-- 기타 -->
-  <div class="section">
-    <div class="section-title">📸 기타 안내</div>
-    <div class="item">
-      작업 사진은 돌봄매트 <strong>마케팅에 활용</strong>될 수 있습니다.
-    </div>
-    <div class="item">
-      <strong>공동구매</strong> 진행 시, 예약 후 같이 하실 분의 <strong>휴대폰 뒷자리</strong>를 공유해주시면 할인이 적용됩니다.
-    </div>
-  </div>
-
-  <a href="https://pf.kakao.com/_UMyBK/chat" class="back-btn">확인했습니다 💬 카카오톡으로 돌아가기</a>
+  <a href="https://pf.kakao.com/_UMyBK/chat" class="back-btn">확인했습니다 · 카카오톡으로 돌아가기</a>
 
   <div class="footer">
     돌봄매트 | 7,600가정이 선택한 층간소음 매트<br>
