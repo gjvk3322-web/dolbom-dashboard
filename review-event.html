@@ -749,30 +749,79 @@ function _ka(s){return '<span style="word-break:keep-all">'+s+'</span>';}
 // 카카오톡 채널 채팅 — 블로그 미션 글 링크 전달용
 const KAKAO_CH_URL='https://pf.kakao.com/_UMyBK/chat';
 
+// 금액은 미션 정의에 두지 않고 아래 PLAN_REWARDS(고객별 보상표)에서 관리 — rewardOf(m)으로 읽음
 const MISSIONS=[
-  {id:'contract',short:'계약후기',icon:'📝',title:'웰컴쿠폰(계약후기) 작성',reward:30000,tag:'시공 전 작성',tag2:'당일 할인 적용',
+  {id:'contract',short:'계약후기',icon:'📝',title:'웰컴쿠폰(계약후기) 작성',tag:'시공 전 작성',tag2:'당일 할인 적용',
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','돌봄매트 게시판에 작성 후 작업당일 쿠폰을 제출해주셔야 적용됩니다.')},
-  {id:'chatroom',short:'단톡방',icon:'💬',title:'입주자 단톡방(카톡, 노크타운 등)',reward:10000,tag:'시공 중 업로드',
+  {id:'chatroom',short:'단톡방',icon:'💬',title:'입주자 단톡방(카톡, 노크타운 등)',tag:'시공 중 업로드',
     desc:_row('어디에','입주자 단톡방 (카톡 · 노크타운 등)')+_row('무엇을','설치 중인 사진과 한 줄 후기')},
-  {id:'review1',short:'당일후기1',icon:'⭐',title:'시공 당일 후기 ①',reward:20000,
+  {id:'review1',short:'당일후기1',icon:'⭐',title:'시공 당일 후기 ①',
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','시공 당일 후기 작성')},
-  {id:'review2',short:'당일후기2',icon:'🌟',title:'시공 당일 후기 ②',reward:20000,
-    desc:_row('어디에','셀인 · 강사모 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
-  {id:'instagram',short:'인스타',icon:'📸',title:'인스타그램 후기',reward:10000,
+  {id:'review2',short:'당일후기2',icon:'🌟',title:'시공 당일 후기 ②',
+    desc:_row('어디에','셀인 · 다이렉트 결혼준비 중 1곳')+_row('무엇을','시공 당일 후기 작성')},
+  {id:'instagram',short:'인스타',icon:'📸',title:'인스타그램 후기',
     desc:_row('어디에','인스타그램')+_row('무엇을','시공 사진·짧은 이야기와 함께 후기 작성')+_row('필수','@dolbommat 팔로우 + 태그')+_row('추천','해시태그 3~5개')},
-  {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',reward:10000,resumeAt:'2026-11-25',
+  {id:'threads',short:'쓰레드',icon:'🧵',title:'쓰레드 후기',resumeAt:'2026-11-25',
     desc:_row('어디에','쓰레드 (주제 태그 1개 선택 — 예: 매트시공)')+_row('무엇을','짧은 경험담과 사진 1~3장')+_row('추천','본문에 돌봄매트 자연스럽게 언급')},
-  {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,
+  {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',
     desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_row('추천','시공매트 · 돌봄매트 자연스럽게 언급'),
     link:'mamitalk',linkLabel:'마미톡 앱',customUrl:'go-mamitalk.html'},
-  {id:'blog',short:'블로그',icon:'📗',title:'네이버 블로그 비교 후기',reward:20000,tag:'기존 글 5개 이상인 블로그만',sendLink:true,
+  {id:'blog',short:'블로그',icon:'📗',title:'네이버 블로그 비교 후기',tag:'기존 글 5개 이상인 블로그만',sendLink:true,
     desc:_row('어디에','본인 네이버 블로그')+_row('무엇을',_ka('비교한 브랜드 + 돌봄매트를 고른 이유'))+_must(_ka('제목에 비교 브랜드 2개 이상<br>직접 찍은 사진 5장 이상'))},
-  {id:'review_month',short:'한달후기',icon:'📅',title:'한 달 후 후기',reward:20000,
-    desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','한 달 사용 후기 작성')}
+  // 2026-12 개편 — 신규 보상표(plan 2) 고객에게만 보이는 미션: 2주 후기 ①② · 3개월 후기
+  {id:'review_2w1',short:'2주후기1',icon:'📆',title:'2주 후 후기 ①',tag:'시공 2주 후 작성',
+    desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','2주 사용 후기 작성')},
+  {id:'review_2w2',short:'2주후기2',icon:'🗓️',title:'2주 후 후기 ②',tag:'시공 2주 후 작성',
+    desc:_row('어디에','시공 당일 후기 ②와 같은 카페')+_row('무엇을','2주 사용 후기 작성')},
+  {id:'review_month',short:'한달후기',icon:'📅',title:'한 달 후 후기',
+    desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','한 달 사용 후기 작성')},
+  {id:'review_3m',short:'3개월후기',icon:'🏡',title:'3개월 후 후기',tag:'시공 3개월 후 작성',
+    desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','3개월 사용 후기 작성')}
 ];
-const MAX_REWARD=150000;
+const MAX_REWARD=150000; // 두 보상표 모두 합계 15만원
 
-// 스텝 구성: [계약후기, 설문, 단톡방~한달후기, 캐시백 신청]
+// ── 보상표 (2026-12 개편) ── 서버(Code.gs 맨 아래 RV_REWARDS · RV_GATE_DAYS)와 같은 값으로 유지할 것
+//  plan 1 = 11/30까지 참여를 시작한 고객(기존 금액·미션 그대로) / plan 2 = 12/1 이후 처음 참여한 고객
+//  어느 보상표인지는 서버가 고객별로 내려줌(plan · rewards · gates). 금액이 0원인 미션은 그 고객 화면에 나오지 않음
+const PLAN2_FROM='2026-12-01';
+const PLAN_REWARDS={
+  1:{contract:30000,chatroom:10000,review1:20000,review2:20000,instagram:10000,threads:10000,mamitalk:10000,blog:20000,review_2w1:0,review_2w2:0,review_month:20000,review_3m:0},
+  2:{contract:30000,chatroom:10000,review1:10000,review2:10000,instagram:10000,threads:10000,mamitalk:10000,blog:20000,review_2w1:10000,review_2w2:10000,review_month:10000,review_3m:10000}
+};
+// 기간 잠금(plan 2): 당일 후기를 올린 날 기준 N일 뒤부터 참여 — 실제 날짜는 서버가 계산해 gates로 내려줌
+const GATE_DAYS={review_2w1:14,review_2w2:14,review_month:30,review_3m:90};
+const GATE_TERM={review_2w1:'2주',review_2w2:'2주',review_month:'한 달',review_3m:'3개월'};
+function todayKST(){return new Date(Date.now()+9*3600000).toISOString().slice(0,10);}
+function _noRowGates(p){const g={};if(p===2)Object.keys(GATE_DAYS).forEach(k=>{g[k]='need_day';});return g;}
+let rvPlan=todayKST()>=PLAN2_FROM?2:1;   // 서버 응답 전 임시값(오늘 날짜 기준) — 번호 없이 둘러보는 화면도 이 값을 씀
+// 미리보기: 휴대폰 번호 없이 ?plan=2 (또는 1)로 열면 해당 보상표 화면을 볼 수 있음 — 둘러보기 전용(실제 금액·미션은 서버가 고객별로 정함)
+if(!PHONE){const _pv=new URLSearchParams(location.search).get('plan');if(_pv==='1'||_pv==='2')rvPlan=Number(_pv);}
+let rvRewards=PLAN_REWARDS[rvPlan];
+let rvGates=_noRowGates(rvPlan);         // 미션ID → 열리는 날('yyyy-MM-dd') 또는 'need_day'(당일 후기 먼저)
+// 서버 응답(plan · rewards · gates) 반영 — 값이 없으면(구버전 서버·예전 캐시) 기존 보상표로 처리
+function applyPlan(d){
+  const p=(d&&Number(d.plan)===2)?2:1;
+  rvPlan=p;
+  rvRewards=Object.assign({},PLAN_REWARDS[p],(d&&d.rewards&&typeof d.rewards==='object')?d.rewards:{});
+  rvGates=(p===2&&d&&d.gates&&typeof d.gates==='object')?d.gates:{};
+}
+function rewardOf(m){return Number(rvRewards[m.id])||0;}
+function isActive(m){return rewardOf(m)>0;}   // 이 고객의 보상표에 있는 미션인지
+function missionNo(mIdx){let n=0;for(let i=0;i<=mIdx;i++)if(isActive(MISSIONS[i]))n++;return n;} // 화면에 보이는 미션 번호
+// 기간 잠금 상태: '' = 참여 가능 · 'need_day' = 당일 후기 먼저 · 'yyyy-MM-dd' = 그날부터 (최종 확인은 서버가 함)
+function gateOf(m){
+  if(rvPlan!==2||!GATE_DAYS[m.id])return '';
+  if((missionState[m.id]||{}).done)return '';
+  const g=rvGates[m.id];
+  if(!g)return '';
+  if(g==='need_day')return g;
+  return todayKST()<g?g:'';
+}
+function _gateParts(ymd){const p=String(ymd).split('-').map(Number);return {m:p[1],d:p[2],w:'일월화수목금토'[new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()]};}
+function gateLabel(ymd){const g=_gateParts(ymd);return g.m+'월 '+g.d+'일('+g.w+')';}
+function gateShort(ymd){const g=_gateParts(ymd);return g.m+'/'+g.d;}
+
+// 스텝 구성: [계약후기, 설문, 단톡방~한달후기(신규 보상표는 2주후기·3개월후기 포함), 캐시백 신청]
 const STEP_SURVEY={type:'survey',short:'설문',icon:'✍️'},STEP_FINAL={type:'final',short:'신청',icon:'💰'};
 const STEPS=[];
 // 일시중단 미션(isPaused)은 아직 달성 안 한 고객에게는 단계에서 아예 숨김 — 달성한 고객은 그대로 보임
@@ -782,6 +831,7 @@ function rebuildSteps(){
   STEPS.length=0;STEPS.push({type:'mission',m:0},STEP_SURVEY);
   for(let i=1;i<MISSIONS.length;i++){
     const m=MISSIONS[i];
+    if(!isActive(m))continue; // 이 고객의 보상표에 없는 미션(0원)은 단계에서 제외
     if(isPaused(m)&&!((typeof missionState!=='undefined'&&missionState[m.id])||{}).done)continue;
     STEPS.push({type:'mission',m:i});
   }
@@ -834,8 +884,9 @@ function _ansFirst(q){const a=getSurveyAns();if(!a||!a[q]||!a[q].length)return '
   const i=v.indexOf('(');if(i>2)v=v.slice(0,i).trim();
   return v;}
 
-// review2 · 한달후기 플랫폼 선택 (phone별 저장)
-function getPlat(mid){try{return localStorage.getItem(LS_KEY('p_'+mid))||'';}catch(e){return '';}}
+// review2 · 2주후기② · 한달후기 · 3개월후기 플랫폼 선택 (phone별 저장)
+// 강사모는 2026-11 종료 — 예전에 저장된 '강사모' 선택은 미선택으로 취급
+function getPlat(mid){try{const v=localStorage.getItem(LS_KEY('p_'+mid))||'';return v==='gangsamo'?'':v;}catch(e){return '';}}
 function setPlat(mid,p){try{localStorage.setItem(LS_KEY('p_'+mid),p);}catch(e){} renderStep();}
 
 const DISC_TXT={
@@ -868,14 +919,6 @@ const PLATFORM_GUIDES={
     body:['집 인테리어 스타일','매트를 고민한 이유','컬러·사이즈 선택','시공 후 인테리어 느낌','문·펜트리·벽면 마감','만족한 점과 아쉬운 점'],
     photos:['거실 전체','복도','문 앞·펜트리','벽면 마감','가구 주변','시공 전후 비교'],
     tips:['육아보다 인테리어·공간 느낌 중심으로','컬러 조합 이야기가 반응이 좋아요','맘스홀릭 글과 내용·사진을 다르게 해주세요']},
-  gangsamo:{name:'강사모',disc:'cashback',
-    quick:['추천 제목 골라 복사하기','반려견 생활 중심으로 적기','아이(강아지) 실제 모습 사진','작성 완료 화면 인증하기'],
-    titles:['강아지 발 미끄러지는 게 신경 쓰여서 매트 시공했어요','반려견 있는 집 시공매트 실제 사용 느낌'],
-    combo:{heads:['강아지 미끄러짐 때문에','강아지 키우는 집이라','반려견 발 미끄러지는 게 신경 쓰여서','{r} 반려견 있는 집','노견 키우다 보니'],
-      tails:['거실 시공매트 해봤어요','시공매트 시공한 후기','바닥 매트 시공했어요','시공매트 실제 사용 느낌']},
-    body:['반려견과 기존 바닥 생활','어떤 점이 신경 쓰였는지','시공매트를 선택한 이유','시공 직후 느낌','청소·관리 첫인상','반려견 실제 모습'],
-    photos:['시공 전 바닥','시공 후 전체','반려견이 매트 위에 있는 모습','청소하는 모습'],
-    tips:['미끄러움·청소·털 관리 등 실제 생활 이야기 중심으로','치료·예방 같은 의료적 표현은 쓰지 말아 주세요','맘스홀릭 글과 내용·사진을 다르게 해주세요']},
   direct:{name:'다이렉트 결혼준비',disc:'cashback',
     quick:['추천 제목 골라 복사하기','신혼집·입주 관점으로 적기','새집 전체 느낌 사진','작성 완료 화면 인증하기'],
     titles:['새집 인테리어와 어울리는 시공매트 고른 후기','{r} 신혼집 층간소음매트 후기'],
@@ -917,8 +960,7 @@ const PLATFORM_GUIDES={
     // 추천 제목 복사 없이 규칙+예시 1개 — 예시는 6종 중 하나가 고객마다 다르게 보여 제목이 겹치지 않게 함
     titleGuide:{label:'제목 가이드',
       rules:['<b>시공매트 · 돌봄매트 · 비교한 브랜드명 2개 이상</b>을 넣어주세요.'],
-      examples:['시공매트 비교 후기, ○○매트·△△매트 알아보고 돌봄매트로 정한 이유','(동네) 시공매트 비교, ○○매트·△△매트·돌봄매트 중 고른 후기','○○매트 vs △△매트 vs 돌봄매트, 아기 시공매트 비교 후기','돌봄매트 시공매트 n개월 후기, ○○매트 △△매트와 비교하고 선택한 이유','(개월 수)개월 아기 집 시공매트, ○○매트·△△매트·돌봄매트 비교 후기','층간소음 시공매트 비교, ○○매트·△△매트·돌봄매트 중 돌봄매트 시공 후기'],
-      note:'실제로 비교한 브랜드로, 내 말로 바꿔 써주세요.'},
+      examples:['시공매트 비교 후기, ○○매트·△△매트 알아보고 돌봄매트로 정한 이유','(동네) 시공매트 비교, ○○매트·△△매트·돌봄매트 중 고른 후기','○○매트 vs △△매트 vs 돌봄매트, 아기 시공매트 비교 후기','돌봄매트 시공매트 n개월 후기, ○○매트 △△매트와 비교하고 선택한 이유','(개월 수)개월 아기 집 시공매트, ○○매트·△△매트·돌봄매트 비교 후기','층간소음 시공매트 비교, ○○매트·△△매트·돌봄매트 중 돌봄매트 시공 후기']},
     bodyLabel:'본문 가이드',
     body:['매트가 필요했던 이유','다른 브랜드와 고민했던 점','돌봄매트를 선택한 이유','시공 후 사용 후기'],
     bodyNotes:['제목에 쓴 브랜드를 본문에도 자연스럽게 언급해 주세요'],
@@ -934,7 +976,24 @@ const PLATFORM_GUIDES={
       tails:['사용해본 솔직 후기','써보니 장단점','실사용 후기','살아보니 어땠는지','청소·틈새까지 솔직 후기']},
     body:['처음 시공했을 때','한 달 동안 사용한 환경','가장 좋았던 점','생각보다 아쉬웠던 점','청소·관리','지금 다시 선택한다면?'],
     photos:['시공 직후와 같은 각도의 지금 모습','틈새·눌림 등 실제 상태','생활 모습'],
-    tips:['청소·틈새·눌림처럼 당일엔 몰랐던 이야기가 제일 읽혀요','아쉬운 점을 솔직하게 적어도 괜찮아요','당일 후기와 같은 각도 비교 사진이 신뢰를 높여요']}
+    tips:['청소·틈새·눌림처럼 당일엔 몰랐던 이야기가 제일 읽혀요','아쉬운 점을 솔직하게 적어도 괜찮아요','당일 후기와 같은 각도 비교 사진이 신뢰를 높여요']},
+  // 2026-12 개편(신규 보상표): 2주 후기 ①② 공통 · 3개월 후기
+  twoweek:{name:'2주 후기',disc:'cashback',
+    quick:['추천 제목 골라 복사하기','2주 동안 써본 이야기 적기','지금 모습 사진 3장 안팎','작성 완료 화면 인증하기'],
+    titles:['시공매트 2주 써보니 달라진 점','아이 있는 집 시공매트 2주 사용 후기'],
+    combo:{heads:['시공매트 2주','{r} 시공매트 2주','층간소음매트 2주','아이 있는 집 시공매트 2주'],
+      tails:['사용해본 솔직 후기','써보니 달라진 점','실사용 후기','지내보니 어땠는지','청소까지 해본 후기']},
+    body:['시공하고 2주가 지난 지금','아이·가족의 반응','생활에서 달라진 점','청소·관리해본 느낌','아쉬운 점이 있다면','고민 중인 분께 한마디'],
+    photos:['시공 직후와 같은 각도의 지금 모습','아이가 매트 위에서 지내는 모습','청소하는 모습'],
+    tips:['당일 후기와 겹치지 않게 — 2주 동안 "살아본 이야기" 중심으로','아쉬운 점을 솔직하게 적어도 괜찮아요','다른 카페에 올린 글과는 내용·사진을 다르게 해주세요']},
+  month3:{name:'3개월 후기',disc:'cashback',
+    quick:['어디에 쓸지 선택하기','3개월 살아본 이야기 적기','시공 직후와 같은 각도 사진 비교','작성 완료 화면 인증하기'],
+    titles:['시공매트 3개월, 다시 선택한다면?','아이 있는 집 시공매트 3개월 사용 후 솔직 후기'],
+    combo:{heads:['시공매트 3개월','{r} 시공매트 3개월','층간소음매트 3개월','아이 있는 집 시공매트 3개월'],
+      tails:['사용해본 솔직 후기','써보니 장단점','실사용 후기','살아보니 어땠는지','틈새·눌림까지 솔직 후기']},
+    body:['시공한 지 3개월','그동안 사용한 환경','지금도 만족하는 점','쓰다 보니 아쉬웠던 점','틈새·눌림·청소 상태','지금 다시 선택한다면?'],
+    photos:['시공 직후와 같은 각도의 지금 모습','틈새·눌림 등 실제 상태','생활 모습'],
+    tips:['오래 써봐야 알 수 있는 이야기가 제일 읽혀요','아쉬운 점을 솔직하게 적어도 괜찮아요','한 달 후기와 겹치지 않게 그 뒤의 변화를 적어주세요']}
 };
 
 // 미션 → 가이드 키 (review2·month는 선택값 반영)
@@ -948,6 +1007,8 @@ function guideKeyFor(m){
   if(m.id==='chatroom')return 'chatroom';
   if(m.id==='blog')return 'blog';
   if(m.id==='review_month')return 'month';
+  if(m.id==='review_2w1'||m.id==='review_2w2')return 'twoweek';
+  if(m.id==='review_3m')return 'month3';
   return null;
 }
 
@@ -1023,8 +1084,8 @@ function toggleGuideDetail(){guideDetailOpen=!guideDetailOpen;
   if(d){d.style.display=guideDetailOpen?'block':'none';}
   if(b){b.textContent=guideDetailOpen?'작성 팁 접기':'자세한 작성 팁 보기';}
 }
-function platSelectorHTML(mid,opts){
-  const cur=getPlat(mid);
+function platSelectorHTML(mid,opts,dflt){ // dflt: 아직 고르지 않았을 때 기본으로 표시할 값
+  const cur=getPlat(mid)||dflt||'';
   let h='<div class="g-plat"><div class="g-label">어디에 작성하시겠어요?</div><div class="g-plat-btns">';
   opts.forEach(o=>{h+='<div class="g-plat-btn'+(cur===o.k?' on':'')+'" onclick="setPlat(\''+mid+'\',\''+o.k+'\')">'+o.n+'</div>';});
   h+='</div></div>';
@@ -1061,18 +1122,21 @@ function photosHTML(g){
 }
 function guideBlockHTML(m){
   let h='';
-  // 플랫폼 선택 (review2 · 한달후기)
+  // 플랫폼 선택 (review2 · 2주후기② · 한달후기 · 3개월후기)
   if(m.id==='review2'){
-    h+=platSelectorHTML('review2',[{k:'sellin',n:'셀인'},{k:'gangsamo',n:'강사모'},{k:'direct',n:'다이렉트 결혼준비'}]);
+    h+=platSelectorHTML('review2',[{k:'sellin',n:'셀인'},{k:'direct',n:'다이렉트 결혼준비'}]);
     if(!getPlat('review2'))return h; // 선택 전엔 가이드 미노출
   }
-  if(m.id==='review_month'){
+  if(m.id==='review_2w2'){ // 당일 후기 ②에서 고른 카페를 기본으로 표시
+    h+=platSelectorHTML('2w2',[{k:'sellin',n:'셀인'},{k:'direct',n:'다이렉트 결혼준비'}],getPlat('review2'));
+  }
+  if(m.id==='review_month'||m.id==='review_3m'){
     const opts=[{k:'moms',n:'맘스홀릭'}];
     const r2=getPlat('review2');
     if(r2==='sellin')opts.push({k:'sellin',n:'셀인'});
-    else if(r2==='gangsamo')opts.push({k:'gangsamo',n:'강사모'});
     else if(r2==='direct')opts.push({k:'direct',n:'다이렉트 결혼준비'});
-    h+=platSelectorHTML('month',opts);
+    if(m.id==='review_3m')h+=platSelectorHTML('3m',opts,getPlat('month'));
+    else h+=platSelectorHTML('month',opts);
   }
   const key=guideKeyFor(m);if(!key)return h;
   const g=PLATFORM_GUIDES[key];if(!g)return h;
@@ -1134,6 +1198,7 @@ function dotState(i){
     const s=missionState[MISSIONS[st.m].id]||{};
     if(s.done)return 'done';
     if(isPaused(MISSIONS[st.m]))return 'lock';
+    if(gateOf(MISSIONS[st.m]))return 'lock';
     if(stepLocked(i))return 'lock';
     if(skipped[MISSIONS[st.m].id])return 'skip';
     return '';
@@ -1156,16 +1221,31 @@ function renderDots(){
   });
 }
 
+// 기간 잠금 안내 (신규 보상표): 2주·한 달·3개월 후기는 당일 후기를 올린 날 기준으로 열림
+function gotoMission(id){const i=STEPS.findIndex(st=>st.type==='mission'&&MISSIONS[st.m].id===id);if(i>=0)gotoStep(i);}
+function gateBoxHTML(m,g){
+  const term=GATE_TERM[m.id]||'';
+  const nextBtn='<button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
+  if(g==='need_day'){
+    return '<div class="locked-box"><div class="lk-title">시공 당일 후기를 먼저 올려주세요</div>'
+      +'<div class="lk-sub">당일 후기를 올린 날부터 <b>'+term+' 뒤</b>에 열리는 미션이에요.</div>'
+      +'<button class="lk-btn" onclick="gotoMission(\'review1\')">당일 후기 쓰러 가기</button></div>'+nextBtn;
+  }
+  return '<div class="locked-box"><div class="lk-title">'+gateLabel(g)+'부터 참여할 수 있어요</div>'
+    +'<div class="lk-sub">당일 후기를 올린 날부터 <b>'+term+' 뒤</b>에 열리는 미션이에요.<br>그때 다시 들러주세요 🙂</div></div>'+nextBtn;
+}
+
 function missionCardHTML(mIdx){
   const m=MISSIONS[mIdx];const s=missionState[m.id]||{};const done=s.done;const paid=s.paid;
-  const badgeText=paid?'지급완료':done?'달성':isPaused(m)?'일시중단':stepLocked(curStep)?'잠김':skipped[m.id]?'건너뜀':'미달성';
+  const gate=gateOf(m); // 기간 잠금: '' · 'need_day' · 'yyyy-MM-dd'
+  const badgeText=paid?'지급완료':done?'달성':isPaused(m)?'일시중단':gate?'오픈 전':stepLocked(curStep)?'잠김':skipped[m.id]?'건너뜀':'미달성';
   const badgeCls=(paid||done)?'done':'pending';
   let h='<div class="mission-card"><div class="mission-header" style="cursor:default">'
-    +'<div class="mission-icon '+(done?'done':'pending')+'"><span style="font-size:15px;font-weight:800;color:'+(done?'var(--green)':'var(--text3)')+'">'+(done?'✓':(mIdx+1))+'</span></div>'
+    +'<div class="mission-icon '+(done?'done':'pending')+'"><span style="font-size:15px;font-weight:800;color:'+(done?'var(--green)':'var(--text3)')+'">'+(done?'✓':missionNo(mIdx))+'</span></div>'
     +'<div class="mission-info"><h4>'+m.title+'</h4>'
     +((m.tag||m.tag2)?('<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+(m.tag?'<span style="font-size:10px;font-weight:700;color:var(--orange);background:rgba(245,159,0,.1);padding:2px 6px;border-radius:4px;white-space:nowrap">'+m.tag+'</span>':'')+(m.tag2?'<span style="font-size:10px;font-weight:700;color:var(--green);background:rgba(32,201,151,.12);padding:2px 6px;border-radius:4px;white-space:nowrap">'+m.tag2+'</span>':'')+'</div>'):'')
     +(m.desc?'<div style="font-size:12.5px;color:var(--text2);margin-top:5px;font-weight:500;line-height:1.45">'+m.desc+'</div>':'')
-    +'<div class="reward">+'+m.reward.toLocaleString()+'원</div></div>'
+    +'<div class="reward">+'+rewardOf(m).toLocaleString()+'원</div></div>'
     +'<span class="mission-badge '+badgeCls+'" '+(paid?'style="background:#e3faf1;color:#20c997"':'')+'>'+badgeText+'</span>'
     +'</div><div class="mission-body open" style="display:block">';
   const locked=stepLocked(curStep);
@@ -1190,6 +1270,8 @@ function missionCardHTML(mIdx){
   }else if(isPaused(m)){
     h+='<div class="locked-box"><div class="lk-title">잠시 쉬어가는 미션이에요</div><div class="lk-sub">'+resumeLabel(m)+'부터 다시 참여할 수 있어요. 그때 다시 들러주세요 🙂</div></div>'
       +'<button class="next-btn" onclick="gotoNext()">'+(curStep===STEPS.length-2?'캐시백 신청으로':'다음으로')+'</button>';
+  }else if(gate){
+    h+=gateBoxHTML(m,gate);
   }else if(locked){
     h+='<div class="locked-box"><div class="lk-title">설문을 완료하면 참여할 수 있어요</div><div class="lk-sub">미션 내용은 미리 확인하실 수 있어요. 설문(1분)을 마치면 업로드가 열립니다.</div>'
       +'<button class="lk-btn" onclick="gotoStep(SURVEY_STEP)">설문 하러 가기</button></div>'
@@ -1239,7 +1321,7 @@ function renderStep(){
 // ── 상단 요약 (금액/상태) ──
 function updateSummary(){
   let earned=0;
-  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=rewardOf(m);});
   document.getElementById('rewardTotal').textContent=earned.toLocaleString()+'원';
   document.getElementById('progressBar').style.width=Math.round(earned/MAX_REWARD*100)+'%';
   document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+MAX_REWARD.toLocaleString()+'원';
@@ -1306,12 +1388,13 @@ function renderClaimSummary(){
   const box=document.getElementById('claimSummary');if(!box)return;
   let rows='',undoneCnt=0,undoneAmt=0;
   MISSIONS.forEach((m,i)=>{
+    if(!isActive(m))return; // 이 고객의 보상표에 없는 미션
     const s=missionState[m.id]||{};
     let st,cls;
     if(s.paid){st='지급완료';cls='paid';}
-    else if(s.done){st='+'+m.reward.toLocaleString()+'원';cls='done';}
+    else if(s.done){st='+'+rewardOf(m).toLocaleString()+'원';cls='done';}
     else if(isPaused(m))return;
-    else{st='미달성';cls='no';undoneCnt++;undoneAmt+=m.reward;}
+    else{const g=gateOf(m);st=(g&&g!=='need_day')?gateShort(g)+' 오픈':'미달성';cls='no';undoneCnt++;undoneAmt+=rewardOf(m);}
     rows+='<div class="cs-row"><span class="cs-name">'+m.title+'</span><span class="cs-st '+cls+'">'+st+'</span></div>';
   });
   let note='<div class="cs-note">달성한 미션만큼만 <b>먼저</b> 신청할 수 있어요.';
@@ -1324,7 +1407,7 @@ function renderClaimSummary(){
 // ── 캐시백 버튼/보류 배너 ──
 function updateCashbackBtn(){
   let earned=0;
-  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=rewardOf(m);});
   const remain=earned-paidTotal;
   const isPending=payStatus.indexOf('신청완료')>=0;
   const isPaid=payStatus.indexOf('지급완료')>=0;
@@ -1591,11 +1674,12 @@ async function submitMission(mIdx,isReup){
   try{
     const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'reviewPhoto',phone:PHONE,missionId:m.id,imageData:uploadData[mIdx],
-        platform:(m.id==='review2'?getPlat('review2'):m.id==='review_month'?getPlat('month'):''),guideVersion:GUIDE_VERSION})});
+        platform:(m.id==='review2'?getPlat('review2'):m.id==='review_month'?getPlat('month'):m.id==='review_2w1'?'moms':m.id==='review_2w2'?(getPlat('2w2')||getPlat('review2')):m.id==='review_3m'?(getPlat('3m')||getPlat('month')):''),guideVersion:GUIDE_VERSION})});
     const txt=await res.text();
     let result={};try{result=JSON.parse(txt)}catch(e){}
     if(result.error){btn.disabled=false;btn.textContent=isReup?'사진 교체하기':'미션 달성하기';showToast('업로드 실패: '+result.error);return;}
     missionState[m.id]={done:true,url:result.url||'',submittedAt:new Date().toISOString()};
+    if(result.plan){applyPlan(result);recomputePaid();} // 서버가 내려준 보상표·잠금 날짜 반영 (당일 후기를 올리면 2주·한 달·3개월 날짜가 정해짐)
     delete skipped[m.id];saveSkip();
     delete uploadData[mIdx];
     if(isReup){
@@ -1603,7 +1687,7 @@ async function submitMission(mIdx,isReup){
       showToast('사진이 교체됐어요');
       renderStep();
     }else{
-      fireConfetti();showToast(m.title+' 달성! +'+m.reward.toLocaleString()+'원');
+      fireConfetti();showToast(m.title+' 달성! +'+rewardOf(m).toLocaleString()+'원');
       if(m.sendLink)renderStep(); // 글 링크 전달 안내를 보여주기 위해 자동으로 넘기지 않음
       else setTimeout(gotoNext,1200);
     }
@@ -1618,12 +1702,18 @@ async function requestCashback(){
   if(!document.getElementById('cashbackConsent').checked){showToast('개인정보 수집에 동의해 주세요');return;}
   const bank=document.getElementById('accBank').value,name=document.getElementById('accName').value.trim(),num=document.getElementById('accNum').value.trim();
   if(!bank||!name||!num){showToast('계좌 정보를 모두 입력해 주세요');return;}
-  let earned=0;MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=m.reward;});
+  let earned=0;MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=rewardOf(m);});
   const reqAmt=earned-paidTotal;if(reqAmt<=0){showToast('신청 가능한 캐시백이 없습니다');return;}
   const btn=document.getElementById('cashbackBtn');btn.disabled=true;btn.textContent='신청 중...';
   try{
-    await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+    const cbRes=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({type:'cashback',phone:PHONE,bank,accountName:name,accountNum:num,totalEarned:earned,paidAmount:paidTotal,requestAmount:reqAmt,submittedAt:new Date().toISOString()})});
+    // 신청 금액은 서버가 시트 기준으로 다시 계산함 — 신청할 금액이 없다고 답하면 완료 화면을 띄우지 않고 최신 상태로 맞춤
+    let cbTxt='';try{cbTxt=(await cbRes.text()).trim();}catch(e){}
+    if(cbTxt==='no amount'||cbTxt==='no user'){
+      showToast('신청 가능한 캐시백이 확인되지 않아요. 잠시 후 다시 확인해 주세요');
+      await syncFromServer();renderStep();return;
+    }
     document.getElementById('successAmt').textContent=reqAmt.toLocaleString()+'원';
     document.getElementById('successNote').innerHTML='<b>'+nextPayoutDate()+' 저녁 6~10시</b> 사이 순차적으로 입금됩니다.<br>감사합니다!';
     document.getElementById('successOverlay').classList.add('show');
@@ -1728,7 +1818,7 @@ let lastSync=0;
 
 function recomputePaid(){
   paidTotal=0;
-  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=m.reward;});
+  MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].paid)paidTotal+=rewardOf(m);});
 }
 function pickInitialStep(){
   rebuildSteps();
@@ -1738,7 +1828,7 @@ function pickInitialStep(){
   curStep=STEPS.length-1;
   for(let i=SURVEY_STEP+1;i<STEPS.length-1;i++){
     const m=MISSIONS[STEPS[i].m];const s=missionState[m.id]||{};
-    if(!s.done&&!skipped[m.id]&&!isPaused(m)){curStep=i;break;}
+    if(!s.done&&!skipped[m.id]&&!isPaused(m)&&!gateOf(m)){curStep=i;break;} // 아직 열리지 않은(기간 잠금) 미션은 건너뜀
   }
 }
 function hideLoading(){const o=document.getElementById('loadingOverlay');if(o)o.style.display='none';}
@@ -1751,9 +1841,10 @@ function fillAccount(acc){
 }
 function saveCache(){
   try{localStorage.setItem(LS_KEY('cache'),JSON.stringify({cachedAt:Date.now(),
-    data:{ms:missionState,ps:payStatus,hold:holdReason,svy:surveyDone,nps:surveyNps}}));}catch(e){}
+    data:{ms:missionState,ps:payStatus,hold:holdReason,svy:surveyDone,nps:surveyNps,plan:rvPlan,rw:rvRewards,gates:rvGates}}));}catch(e){}
 }
 function applyBootstrap(d){
+  applyPlan(d); // 고객별 보상표 · 기간 잠금
   if(d.missions)Object.keys(d.missions).forEach(id=>{missionState[id]=d.missions[id];});
   payStatus=(d.cashback&&d.cashback.status)||'';
   holdReason=(d.hold&&d.hold.active)?(d.hold.reason||'확인이 필요한 접수 건이 있어요.'):'';
@@ -1779,6 +1870,7 @@ async function legacyLoad(){
     .then(d=>{if(d&&d.done){surveyDone=true;if(typeof d.nps==='number')surveyNps=d.nps;try{localStorage.setItem(LS_KEY('svy'),'1');}catch(e){}}}).catch(()=>{});
   const res=await fetch(API_URL+'?type=reviewEvent&phone='+encodeURIComponent(PHONE));
   const data=await res.json();
+  applyPlan(data); // 고객별 보상표 · 기간 잠금
   if(data.missions)Object.keys(data.missions).forEach(id=>{missionState[id]=data.missions[id];});
   if(data.status)payStatus=data.status;
   recomputePaid();
@@ -1810,6 +1902,7 @@ async function loadData(){
   try{
     const c=JSON.parse(localStorage.getItem(LS_KEY('cache'))||'null');
     if(c&&c.data&&c.cachedAt&&(Date.now()-c.cachedAt)<=CACHE_MAX_MS){
+      applyPlan({plan:c.data.plan,rewards:c.data.rw,gates:c.data.gates}); // 캐시에 저장된 보상표 (없으면 기존 보상표)
       Object.keys(c.data.ms||{}).forEach(id=>{missionState[id]=c.data.ms[id];});
       payStatus=c.data.ps||'';
       if(c.data.hold)holdReason=c.data.hold;
