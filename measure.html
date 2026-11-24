@@ -54,16 +54,12 @@ button { touch-action: manipulation; }
 }
 .restore-bar button.x { border: none; background: transparent; font-size: 15px; padding: 2px 6px; color: #b39a55; }
 
-/* 모바일: 치수 → 견적 → 현장 체크 → 실측 결과 순서로 한 줄 / 넓은 화면: 2단 */
-.layout { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; }
-.col { display: contents; }
-#secDim { order: 1; }
-#secQuote { order: 2; }
-#secCheck { order: 3; }
-#secReply { order: 4; }
+/* 폰: 현장 체크 → 실측 치수 → 견적 → 실측 결과 순서로 한 줄
+   넓은 화면: 왼쪽 현장 체크 / 오른쪽 실측 치수·견적·실측 결과 */
+.layout { max-width: 1180px; margin: 0 auto; }
 @media (min-width: 900px) {
   .layout { display: grid; grid-template-columns: 400px 1fr; gap: 14px; align-items: start; }
-  .col { display: block; min-width: 0; }
+  .col { min-width: 0; }
 }
 
 .card {
@@ -81,7 +77,7 @@ button { touch-action: manipulation; }
 }
 .card-title .sub { font-size: 10px; color: #999; font-weight: 400; margin-left: auto; }
 
-/* ===== ① 실측 치수 ===== */
+/* ===== ② 실측 치수 ===== */
 .site-input {
   width: 100%; padding: 9px 11px; margin-bottom: 10px;
   border: 1.5px solid #e0ddd6; border-radius: 8px; background: #fff;
@@ -124,7 +120,6 @@ button { touch-action: manipulation; }
   background: #fff; font-size: 12px; font-weight: 600; color: #666; cursor: pointer;
 }
 .dim-chip:active { transform: scale(.96); }
-.dim-chip.minus { color: #d32f2f; border-color: #f0c0c0; }
 
 .dim-total { background: #E8F5E9; border-radius: 10px; padding: 10px 12px; }
 .dim-total-head {
@@ -152,7 +147,7 @@ button { touch-action: manipulation; }
 .dim-ovr::placeholder { font-family: 'Noto Sans KR', sans-serif; font-size: 11px; color: #aaa; }
 .dim-ovr:focus { outline: none; border-color: #2E7D32; }
 
-/* ===== ② 견적 ===== */
+/* ===== ③ 견적 ===== */
 .seg { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid #e0ddd6; }
 .seg-btn {
   flex: 1; padding: 9px 2px; border: none; background: #fff;
@@ -328,7 +323,7 @@ button { touch-action: manipulation; }
 .empty-state-icon { font-size: 30px; margin-bottom: 8px; }
 .empty-state-text { font-size: 13px; line-height: 1.6; }
 
-/* ===== ③ 현장 체크 ===== */
+/* ===== ① 현장 체크 ===== */
 .chk-progress {
   font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
   color: #2E7D32; background: #E8F5E9; border-radius: 10px; padding: 2px 8px;
@@ -440,20 +435,28 @@ button { touch-action: manipulation; }
 <div class="layout">
 
   <div class="col">
-    <!-- ===== ① 실측 치수 ===== -->
+    <!-- ===== ① 현장 체크 ===== -->
+    <div class="card" id="secCheck">
+      <div class="card-title">
+        <span class="num">1</span> 현장 체크
+        <span class="chk-progress" id="chkProgress">0/10</span>
+        <span class="chk-flagcount" id="chkFlagCount" style="display:none"></span>
+        <button type="button" class="chk-say-toggle" id="chkSayToggle" onclick="toggleSayAll()">💬 안내 멘트</button>
+      </div>
+      <div class="chk-list" id="chkList"></div>
+      <textarea class="chk-note" id="chkNote" placeholder="메모 (색상·희망 일정 등)" oninput="onNoteInput()"></textarea>
+    </div>
+  </div>
+
+  <div class="col">
+    <!-- ===== ② 실측 치수 ===== -->
     <div class="card" id="secDim">
-      <div class="card-title"><span class="num">1</span> 실측 치수 <span class="sub">가로 × 세로 · mm</span></div>
+      <div class="card-title"><span class="num">2</span> 실측 치수 <span class="sub">가로 × 세로 · mm</span></div>
       <input type="text" class="site-input" id="siteInput" placeholder="현장 (예: ○○아파트 34평)" autocomplete="off" oninput="recalculate()">
       <div id="dimRooms"></div>
       <div class="dim-chips">
-        <button type="button" class="dim-chip" onclick="addRoom('거실')">+ 거실</button>
-        <button type="button" class="dim-chip" onclick="addRoom('복도')">+ 복도</button>
-        <button type="button" class="dim-chip" onclick="addRoom('주방')">+ 주방</button>
         <button type="button" class="dim-chip" onclick="addRoom('방')">+ 방</button>
-        <button type="button" class="dim-chip" onclick="addRoom('아일랜드')">+ 아일랜드</button>
-        <button type="button" class="dim-chip" onclick="addRoom('팬트리')">+ 팬트리</button>
         <button type="button" class="dim-chip" onclick="addRoom('기타')">+ 기타</button>
-        <button type="button" class="dim-chip minus" onclick="addRoom('', true)">− 제외</button>
       </div>
       <div class="dim-total">
         <div class="dim-total-head">
@@ -473,24 +476,10 @@ button { touch-action: manipulation; }
       </div>
     </div>
 
-    <!-- ===== ③ 현장 체크 ===== -->
-    <div class="card" id="secCheck">
-      <div class="card-title">
-        <span class="num">3</span> 현장 체크
-        <span class="chk-progress" id="chkProgress">0/10</span>
-        <span class="chk-flagcount" id="chkFlagCount" style="display:none"></span>
-        <button type="button" class="chk-say-toggle" id="chkSayToggle" onclick="toggleSayAll()">💬 안내 멘트</button>
-      </div>
-      <div class="chk-list" id="chkList"></div>
-      <textarea class="chk-note" id="chkNote" placeholder="메모 (색상·희망 일정 등)" oninput="onNoteInput()"></textarea>
-    </div>
-  </div>
-
-  <div class="col">
-    <!-- ===== ② 견적 ===== -->
+    <!-- ===== ③ 견적 ===== -->
     <div id="secQuote">
       <div class="card">
-        <div class="card-title"><span class="num">2</span> 견적</div>
+        <div class="card-title"><span class="num">3</span> 견적</div>
         <div class="seg" id="prodSeg">
           <button type="button" class="seg-btn active" data-prod="all" onclick="setProd('all')">전체</button>
           <button type="button" class="seg-btn" data-prod="mat1000_22" onclick="setProd('mat1000_22')">1000 22T</button>
@@ -530,7 +519,7 @@ button { touch-action: manipulation; }
 <div class="toast" id="toast"></div>
 
 <script>
-var MEASURE_VER = '2026.11.24.1';
+var MEASURE_VER = '2026.11.24.2';
 
 // ===== 제품 데이터 =====
 // 가격·시공비 기준은 cs-quote.html과 같은 값 — 바뀌면 여기도 같이 수정
@@ -600,7 +589,7 @@ var CHECK_GROUPS = [
 
 // ===== 상태 =====
 var DEFAULT_ROOM_NAMES = ['거실', '복도', '주방'];
-var rooms = [];            // { id, name, minus(제외 구역), w, h }
+var rooms = [];            // { id, name, minus, w, h } — minus(제외 구역)는 추가 버튼을 뺐고(2026-11-24), 저장돼 있던 줄만 그대로 계산
 var roomIdCounter = 0;
 var selProd = 'all';       // 'all' 또는 제품 key
 var selectedBenefits = { review_contract: true, group_buy: true, onnuri: true, review_event: true };
@@ -634,21 +623,19 @@ function initRooms() {
   });
   renderRooms();
 }
-// 같은 이름이 이미 있으면 번호를 붙임 (방·기타는 처음부터 번호)
+// 방 1, 방 2 … 처럼 안 쓰는 번호를 붙임 (이름은 줄에서 바로 고칠 수 있음)
 function nextRoomName(base) {
   var names = rooms.map(function(r){ return r.name; });
-  var numbered = (base === '방' || base === '기타');
-  if (!numbered && names.indexOf(base) < 0) return base;
-  var i = numbered ? 1 : 2;
+  var i = 1;
   while (names.indexOf(base + ' ' + i) >= 0) i++;
   return base + ' ' + i;
 }
-function addRoom(base, minus) {
-  var r = { id: roomIdCounter++, name: minus ? '' : nextRoomName(base), minus: !!minus, w: '', h: '' };
+function addRoom(base) {
+  var r = { id: roomIdCounter++, name: nextRoomName(base), minus: false, w: '', h: '' };
   rooms.push(r);
   renderRooms();
   recalculate();
-  var first = document.querySelector('#dimRoom' + r.id + (minus ? ' .dim-name' : ' .dim-input'));
+  var first = document.querySelector('#dimRoom' + r.id + ' .dim-input');
   if (first) first.focus();
 }
 function removeRoom(id) {
