@@ -2557,15 +2557,30 @@ var WELCOME_DEFAULT_TEXT =
   '✔️ KC 인증 · 유해물질 전부 불검출\n' +
   '✔️ 62% 층간소음 저감 (KCL 국가 공인)\n' +
   '✔️ 매월 140가구 본사 직접 시공\n' +
-  '✔️ 국공립 어린이집 80곳+\n' +
+  '✔️ 국공립 어린이집 90곳+\n' +
   '✔️ 의료용품·유아식기 등급 TPU 매트\n' +
   '✔️ 5성급 호텔 키즈라운지 시공\n\n' +
   '아이의 안전부터 이웃을 생각한 층간소음까지.\n' +
   '돌봄매트가 편안한 일상을 만들어드립니다.\n\n' +
+  '돌봄매트는 매년 어린이 안전검사를 실시합니다!\n' +
+  '👉 https://m.site.naver.com/2lHKT\n' +
   '돌봄매트 실시간 후기\n' +
-  '👉 https://m.site.naver.com/2cZKR\n\n' +
-  '🎬 바닥손상 없는 공기순환통로\n' +
+  '👉 https://m.site.naver.com/2cZKR\n' +
+  '바닥손상 없는 공기순환통로\n' +
   '👉 https://my.dolbommat.com/video-air.html';
+
+// 환영 메시지 기본 문구 버전 — 문구를 바꿀 때 이 값을 올리면
+// 각 브라우저에 저장돼 있던 옛 환영 메시지가 1회 초기화되어 새 기본 문구가 적용됨
+// (설정 저장을 한 번이라도 누른 브라우저는 옛 문구가 localStorage에 남아 있기 때문 — 예약 양식과 같은 방식)
+var WELCOME_TEXT_VER = '20261124';
+(function migrateWelcomeText(){
+  try {
+    if (localStorage.getItem('dolbom_welcome_text_ver') !== WELCOME_TEXT_VER) {
+      localStorage.removeItem('dolbom_welcome_text');
+      localStorage.setItem('dolbom_welcome_text_ver', WELCOME_TEXT_VER);
+    }
+  } catch (e) {}
+})();
 
 var QUOTE_FORM_DEFAULT_TEXT =
   '돌봄매트 견적안내 💕\n' +
