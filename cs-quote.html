@@ -119,7 +119,7 @@ body {
 .welcome-btn-closing { background: #1F7A52; color: #fff; } /* 3단계: 마무리 인사 */
 .welcome-btn-booking { background: #00796B; color: #fff; } /* 4단계: 예약 양식 */
 .welcome-btn-deposit { background: #00695C; color: #fff; } /* 5단계: 예약금 */
-.welcome-btn-fair    { background: #004D40; color: #fff; } /* 베페 예약 — 예약 양식 바로 아래, 가장 진한 청록 */
+.welcome-btn-press   { background: #004D40; color: #fff; } /* 눌림 자국 안내 — 예약 양식 바로 아래, 가장 진한 청록 */
 .welcome-btn-custom { background: #546e7a; color: #fff; position: relative; }
 .welcome-btn-add {
   background: #fff; color: #8b6914; border: 1.5px dashed #c8a64d;
@@ -1197,7 +1197,7 @@ body {
             ➕ <span>커스텀 추가</span>
           </button>
         </div>
-        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 베페 예약, 색상관련, 낱장 추가 구매, AS 접수 안내, (동적 커스텀들), + 커스텀 추가 -->
+        <!-- 오른쪽 열: 환영 메시지, 견적 양식, 마무리 인사, 예약 양식, 눌림 자국 안내, 색상관련, 낱장 추가 구매, AS 접수 안내, (동적 커스텀들), + 커스텀 추가 -->
         <div class="welcome-col">
           <button class="welcome-btn welcome-btn-text" onclick="copyWelcomeText()">
             1️⃣ <span>환영 메시지</span>
@@ -1211,8 +1211,8 @@ body {
           <button class="welcome-btn welcome-btn-booking" onclick="copyBookingUrl()">
             3️⃣ <span>예약 양식</span>
           </button>
-          <button class="welcome-btn welcome-btn-fair" onclick="copyFairBooking()">
-            🎪 <span>베페 예약</span>
+          <button class="welcome-btn welcome-btn-press" onclick="copyPressCare()">
+            🛋️ <span>눌림 자국 안내</span>
           </button>
           <button class="welcome-btn welcome-btn-color" onclick="copyColorInfo()">
             🎨 <span>색상관련</span>
@@ -2877,22 +2877,17 @@ function copyAsIntake() {
   }
 }
 
-// 🎪 베페(베이비페어) 예약 고객 안내 — 박람회 혜택 적용 조건 + 매트 눌림 안내(press-care.html)
-function copyFairBooking() {
+// 🛋️ 눌림 자국 안내 — 가구·의자 눌림 안내 + 다리미 복원 영상 페이지(press-care.html) 링크
+function copyPressCare() {
   var text =
-    '베이비페어에서 예약해 주셔서 감사합니다 🎉\n' +
-    '박람회 혜택(5만원 할인 + 3% 추가 할인, 둘 다 적용!)은 아래 두 가지만 해주시면 적용돼요.\n\n' +
-    '1. 돌봄매트 부스 사진을 찍어주시고\n' +
-    '2. 맘스홀릭 돌봄매트 게시판에 부스 사진과 함께 "예약 완료" 글을 올려주세요.\n\n' +
-    '📌 맘스홀릭 돌봄매트 게시판 바로가기\n' +
-    'https://cafe.naver.com/f-e/cafes/10094499/menus/1064?viewType=L\n\n' +
-    '📌 매트 눌림 안내\n' +
+    '안녕하세요, 돌봄매트입니다!\n' +
     '쿠션감이 있는 제품이다 보니 가구 및 의자에 의한 눌림은 있을 수 있습니다!\n' +
-    '편안하게 사용하시고, 눌린 자국은 영상처럼 다리미로 복원이 가능할 수 있어 추후 복원을 추천드려요!\n' +
-    '👉 https://my.dolbommat.com/press-care.html';
+    '눌린 자국은 아래 영상처럼 다리미로 복원이 가능할 수 있으니, 편안하게 사용하시고 추후 복원해 보시길 추천드립니다 😊\n\n' +
+    '👉 다리미 복원 영상 보기\n' +
+    'https://my.dolbommat.com/press-care.html';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
-      showToast('✅ 베페 예약 안내 복사 완료! 카톡에 붙여넣으세요');
+      showToast('✅ 눌림 자국 안내 복사 완료! 카톡에 붙여넣으세요');
     }).catch(function(){ fallbackCopy(text); });
   } else {
     fallbackCopy(text);
@@ -2914,7 +2909,17 @@ function copyAsWarranty() {
 }
 
 function copyClosingMessage() {
-  var text = '궁금하신 내용 있으시면 언제든 카톡 주시면 최대한 빠른 답변드리겠습니다!';
+  var text =
+    '고객님 😊\n' +
+    '시공을 결정하시기 전에\n' +
+    '아직 고민되거나 더 궁금한 부분이 있으실까요?\n\n' +
+    '① 다른 업체와의 차이\n' +
+    '② 시공 시기나 이사 계획\n' +
+    '③ 비용 부담이나 시공 범위\n' +
+    '④ 오래 사용했을 때 틈새 먼지·변색·바닥 곰팡이\n' +
+    '⑤ 층간소음 완화 효과\n\n' +
+    '가장 고민되는 번호 하나만 편하게 보내 주세요.\n' +
+    '고객님 상황에 맞춰 그 부분까지 자세히 안내해 드릴게요!';
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function(){
       showToast('✅ 마무리 인사 복사 완료! 카톡에 붙여넣으세요');
