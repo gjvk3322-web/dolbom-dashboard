@@ -323,7 +323,7 @@ localStorage.setItem('dolbom_region','bs');
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ===== Config =====
-const VER='2026.11.24.125';
+const VER='2026.11.24.126';
 const FB_URL='https://dolbom-schedule-default-rtdb.asia-southeast1.firebasedatabase.app';
 const SHEET_ID='1dhcmDkkDGe3Bw4jY3vfPcJGq5H-EGhB3mL4BXqgJiBQ';
 const CSV_URL='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&gid=144225567';
@@ -3332,16 +3332,21 @@ function closeConfirm(){document.getElementById('confirmOverlay').classList.remo
 // 1분마다 구글시트 자동 갱신
 setInterval(()=>{if(syncStatus!=='syncing')refreshSheet(false)},180*1000); // 배정 저장 중엔 건너뜀 (쓰는 도중 읽으면 옛 값이 보임)
 
-// 5분마다 새 버전 체크 — [perf] HTML 전체(200KB)를 다시 받지 않고 HEAD 요청으로 ETag만 비교, ETag가 없으면 기존 방식으로
+// 5분마다 새 버전 체크 — [perf] 평소엔 HEAD 요청으로 ETag만 확인하고, ETag가 달라졌을 때만 HTML을 받아 VER을 비교
+// GitHub Pages는 어떤 파일을 push하든 사이트 전체 파일의 ETag가 새로 찍힘 → ETag만 보고 배너를 띄우면 스케줄러가 그대로여도 '새 버전'이 뜸. 배너는 VER이 실제로 다를 때만 띄움
 let _pageTag='';
-function _headTag(){return fetch(location.pathname+'?_='+Date.now(),{method:'HEAD',cache:'no-store'}).then(r=>r.headers.get('etag')||r.headers.get('last-modified')||'')}
+function _resTag(r){return (r.headers.get('etag')||r.headers.get('last-modified')||'').replace(/^W\//,'')}
+function _headTag(){return fetch(location.pathname+'?_='+Date.now(),{method:'HEAD',cache:'no-store'}).then(_resTag)}
+function _verCheck(){return fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>{const t=_resTag(r);return r.text().then(html=>{
+const m=html.match(/const VER='([^']+)'/);
+if(!m)return; // 배포 도중 오류 페이지 등 VER을 못 읽으면 다음 주기에 다시 확인
+if(m[1]!==VER)document.getElementById('updateBar').style.display='block';
+if(t)_pageTag=t
+})})}
 _headTag().then(t=>{_pageTag=t}).catch(()=>{});
 setInterval(()=>{
-if(_pageTag){_headTag().then(t=>{if(t&&t!==_pageTag)document.getElementById('updateBar').style.display='block'}).catch(()=>{});return}
-fetch(location.href+'?_='+Date.now()).then(r=>r.text()).then(html=>{
-const m=html.match(/const VER='([^']+)'/);
-if(m&&m[1]!==VER)document.getElementById('updateBar').style.display='block'
-}).catch(()=>{})
+if(_pageTag){_headTag().then(t=>{if(t&&t!==_pageTag)return _verCheck()}).catch(()=>{});return}
+_verCheck().catch(()=>{})
 },5*60*1000);
 // [perf] 서비스워커: SDK·폰트·아이콘만 캐시 (HTML·guide.js·iolog.js·시트 CSV·Firebase·Apps Script는 항상 네트워크)
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
