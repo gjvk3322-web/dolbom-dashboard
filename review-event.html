@@ -211,6 +211,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .tb-copy{background:#E8B548;color:#fff}
 .tb-roll{background:#fff;border:1.5px solid #E8B548;color:#A07A20}
 .body-check{margin-top:8px;font-size:11.5px;color:#7A5C10;background:#FFFAE8;border-radius:8px;padding:8px 10px;line-height:1.6}
+/* 제목 가이드(규칙+예시형, 복사 버튼 없음) — 블로그 미션 */
+.tg-rule{font-size:12.5px;color:#5C4810;line-height:1.55;word-break:keep-all}
+.tb-title.tg-ex{margin-top:8px;padding:8px 10px;font-size:12.5px;font-weight:600}
+.tg-ex b{color:#A07A20;font-weight:800;margin-right:5px}
+.g-sub-note{margin-top:8px;padding-top:8px;border-top:1px dashed #bce6cd;font-size:11.5px;color:#3a6b53;line-height:1.6;word-break:keep-all}
+.g-ka .g-quick-row,.g-ka .g-step-row,.g-ka .g-tip-row{word-break:keep-all}
 .hold-note{margin-top:6px;font-size:11px;color:var(--red);font-weight:600}
 /* 설문 */
 .svy-q{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:10px 16px}
@@ -738,6 +744,11 @@ function toggleChecklist(el){
 function _row(label,val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--text3,#9aa0a6)">'+label+'</span><span style="font-size:12.5px;color:var(--text2);font-weight:500;line-height:1.4">'+val+'</span></div>';}
 function _must(val){return '<div style="display:flex;gap:6px;margin-top:4px"><span style="flex:0 0 38px;font-size:11px;font-weight:700;color:var(--red)">필수</span><span style="font-size:12px;color:var(--red);font-weight:600;line-height:1.4">'+val+'</span></div>';}
 
+// 긴 문구는 단어 단위로 줄바꿈
+function _ka(s){return '<span style="word-break:keep-all">'+s+'</span>';}
+// 카카오톡 채널 채팅 — 블로그 미션 글 링크 전달용
+const KAKAO_CH_URL='https://pf.kakao.com/_UMyBK/chat';
+
 const MISSIONS=[
   {id:'contract',short:'계약후기',icon:'📝',title:'웰컴쿠폰(계약후기) 작성',reward:30000,tag:'시공 전 작성',tag2:'당일 할인 적용',
     desc:_row('어디에','맘스홀릭 카페 &gt; 돌봄매트 게시판')+_row('무엇을','돌봄매트 게시판에 작성 후 작업당일 쿠폰을 제출해주셔야 적용됩니다.')},
@@ -754,8 +765,8 @@ const MISSIONS=[
   {id:'mamitalk',short:'마미톡',icon:'📱',title:'마미톡 후기',reward:10000,
     desc:_row('어디에','마미톡 [육아는 템빨] 카테고리')+_row('무엇을','시공 후기 작성')+_row('추천','시공매트 · 돌봄매트 자연스럽게 언급'),
     link:'mamitalk',linkLabel:'마미톡 앱',customUrl:'go-mamitalk.html'},
-  {id:'blog',short:'블로그',icon:'📗',title:'네이버 블로그 비교 후기',reward:20000,tag:'기존 글 5개 이상',
-    desc:_row('어디에','본인 네이버 블로그')+_row('무엇을','비교해 본 업체 리스트 + 돌봄매트를 선택한 이유')+_must('사진 포함 · 기존 게시글 5개 이상인 블로그만 참여 가능')},
+  {id:'blog',short:'블로그',icon:'📗',title:'네이버 블로그 비교 후기',reward:20000,tag:'기존 글 5개 이상인 블로그만',sendLink:true,
+    desc:_row('어디에','본인 네이버 블로그')+_row('무엇을',_ka('비교한 브랜드 + 돌봄매트를 고른 이유'))+_must(_ka('제목에 비교 브랜드 2개 이상<br>직접 찍은 사진 5장 이상'))},
   {id:'review_month',short:'한달후기',icon:'📅',title:'한 달 후 후기',reward:20000,
     desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','한 달 사용 후기 작성')}
 ];
@@ -900,12 +911,22 @@ const PLATFORM_GUIDES={
     body:['예: "오늘 저희 집 시공매트 작업하고 있어요. 궁금하신 분 계시면 써보고 후기 알려드릴게요 :)"'],
     photos:['설치 중인 모습 1장'],
     tips:['같은 아파트 이웃의 신뢰가 목표라 짧고 자연스럽게가 최고예요','브랜드·키워드를 반복하지 않아도 됩니다']},
-  blog:{name:'네이버 블로그',disc:'cashback',
-    quick:['비교해 본 업체 리스트 정리하기','돌봄매트를 고른 이유 적기','사진 포함해 발행하기','작성 완료 화면 인증하기'],
+  // 네이버 블로그 (2026-11-24 개편): 제목 → 본문 → 마무리 체크 3박스만 항상 보이고, 사진 구성·노출 팁은 '자세한 작성 팁'에 접어둠
+  blog:{name:'네이버 블로그',disc:'cashback',pinBody:true,quickLast:true,
     titles:[],
-    body:['시공매트를 알아본 이유 (아이·층간소음 등)','비교해 본 업체 리스트 (업체별로 본 기준: 가격·두께·소재·컬러·A/S 등)','최종적으로 돌봄매트를 선택한 이유','시공 과정과 완성 모습','실제로 써보니 어떤지'],
-    photos:['시공 전 바닥','받은 샘플·컬러 비교','시공 과정','완성된 거실·복도','생활 모습'],
-    tips:['기존 게시글이 5개 이상 있는 블로그만 참여할 수 있어요','비교한 업체는 내가 직접 본 사실 위주로 적어주세요 — 다른 업체를 깎아내리거나 단정하는 표현은 피해 주세요','사진은 5장 이상이면 검색 노출에 유리해요','제목과 본문 첫 문단에 \'시공매트\'를 자연스럽게 넣어주세요','글 하단에 혜택 받은 후기라는 문구를 꼭 남겨주세요 (네이버 블로그는 표시 의무가 엄격해요)']},
+    // 추천 제목 복사 없이 규칙+예시 1개 — 예시는 6종 중 하나가 고객마다 다르게 보여 제목이 겹치지 않게 함
+    titleGuide:{label:'제목 가이드',
+      rules:['<b>시공매트 · 돌봄매트 · 비교한 브랜드명 2개 이상</b>을 넣어주세요.'],
+      examples:['시공매트 비교 후기, ○○매트·△△매트 알아보고 돌봄매트로 정한 이유','(동네) 시공매트 비교, ○○매트·△△매트·돌봄매트 중 고른 후기','○○매트 vs △△매트 vs 돌봄매트, 아기 시공매트 비교 후기','돌봄매트 시공매트 n개월 후기, ○○매트 △△매트와 비교하고 선택한 이유','(개월 수)개월 아기 집 시공매트, ○○매트·△△매트·돌봄매트 비교 후기','층간소음 시공매트 비교, ○○매트·△△매트·돌봄매트 중 돌봄매트 시공 후기'],
+      note:'실제로 비교한 브랜드로, 내 말로 바꿔 써주세요.'},
+    bodyLabel:'본문 가이드',
+    body:['매트가 필요했던 이유','다른 브랜드와 고민했던 점','돌봄매트를 선택한 이유','시공 후 사용 후기'],
+    bodyNotes:['제목에 쓴 브랜드를 본문에도 자연스럽게 언급해 주세요'],
+    quickLabel:'마무리 체크',
+    quick:['직접 찍은 사진 5장 이상 넣기','글 맨 위에 혜택 문구 한 줄 넣기','\'전체공개·검색허용\'으로 발행하기','인증 후 링크를 카카오톡 채널로 보내고 후기 링크에 업로드하기'],
+    photos:['시공 전 바닥','받아본 샘플 비교','시공 과정','완성된 거실·복도','아이와 생활하는 모습'],
+    tips:['맘카페 후기를 복사하지 말고 새로 써주세요 — 같은 글과 사진은 검색에서 빠질 수 있어요','AI(챗GPT 등)로 쓰지 말고 내 말투 그대로 써주세요','글은 1,000자 이상, 소제목으로 나눠 쓰면 좋아요','평수 · 아이 개월 수 · 사용 기간 같은 숫자를 넣어주세요','첫 문단과 태그에 \'시공매트\' · \'돌봄매트\' · 비교한 브랜드명을 넣어주세요'],
+    discNote:'<b>혜택 문구</b>는 글 <b>맨 위</b>에 넣어주세요 🙂'},
   month:{name:'한 달 후기',disc:'cashback',
     quick:['어디에 쓸지 선택하기','한 달 살아본 이야기 적기','당일 후기와 같은 각도 사진 비교','작성 완료 화면 인증하기'],
     titles:['시공매트 한 달, 다시 선택한다면?','아이 있는 집 시공매트 한 달 사용 후 청소·틈새 후기'],
@@ -1009,6 +1030,35 @@ function platSelectorHTML(mid,opts){
   h+='</div></div>';
   return h;
 }
+// 제목 가이드 박스(규칙+예시, 복사 버튼 없음). 예시는 휴대폰 번호 끝자리 기준으로 고객마다 다른 것을 보여줌
+function _tgExamples(list,n){
+  if(!list||list.length<=n)return (list||[]).slice();
+  const d=String(PHONE||'').replace(/\D/g,'');
+  const off=d?parseInt(d.slice(-3),10)%list.length:0;
+  const out=[];for(let i=0;i<n;i++)out.push(list[(off+i)%list.length]);
+  return out;
+}
+function titleGuideHTML(tg){
+  let h='<div class="title-box"><div class="tb-label">'+(tg.label||'제목 가이드')+'</div>';
+  (tg.rules||[]).forEach(r=>{h+='<div class="tg-rule">'+r+'</div>';});
+  _tgExamples(tg.examples,tg.show||1).forEach(e=>{h+='<div class="tb-title tg-ex"><b>예)</b>'+e+'</div>';});
+  if(tg.note)h+='<div class="body-check">'+tg.note+'</div>';
+  return h+'</div>';
+}
+// 본문 순서 (bodyLabel·bodyNotes는 선택 항목)
+function bodyHTML(g){
+  if(!(g.body&&g.body.length))return '';
+  let h='<div class="g-steps"><div class="g-label">'+(g.bodyLabel||'이 순서로 적으면 편해요')+'</div>';
+  g.body.forEach((b,i)=>{h+='<div class="g-step-row">'+(i+1)+'. '+b+'</div>';});
+  if(g.bodyNotes&&g.bodyNotes.length)h+='<div class="g-sub-note">'+g.bodyNotes.map(n=>'※ '+n).join('<br>')+'</div>';
+  return h+'</div>';
+}
+function photosHTML(g){
+  if(!(g.photos&&g.photos.length))return '';
+  let h='<div class="g-photos"><div class="g-label">추천 사진 구성</div>';
+  g.photos.forEach(p=>{h+='<div class="g-photo-row">· '+p+'</div>';});
+  return h+'</div>';
+}
 function guideBlockHTML(m){
   let h='';
   // 플랫폼 선택 (review2 · 한달후기)
@@ -1026,10 +1076,12 @@ function guideBlockHTML(m){
   }
   const key=guideKeyFor(m);if(!key)return h;
   const g=PLATFORM_GUIDES[key];if(!g)return h;
-  // 빠른 작성 가이드
-  h+='<div class="g-quick"><div class="g-label">3분 작성 가이드</div>';
-  g.quick.forEach((q,i)=>{h+='<div class="g-quick-row"><span class="gq-n">'+(i+1)+'</span>'+q+'</div>';});
-  h+='</div>';
+  const ka=g.pinBody?' g-ka':'';
+  // 빠른 작성 가이드 — quickLast면 본문 가이드 뒤에 표시 (블로그 '마무리 체크')
+  let qh='<div class="g-quick'+ka+'"><div class="g-label">'+(g.quickLabel||'3분 작성 가이드')+'</div>';
+  g.quick.forEach((q,i)=>{qh+='<div class="g-quick-row"><span class="gq-n">'+(i+1)+'</span>'+q+'</div>';});
+  qh+='</div>';
+  if(!g.quickLast)h+=qh;
   // 제목/첫 문장 박스
   if(_titlePool(g).length){
     h+='<div class="title-box"><div class="tb-label">'+(g.titleLabel||'추천 제목 — 복사해서 쓰세요')+'</div>'
@@ -1037,22 +1089,19 @@ function guideBlockHTML(m){
       +'<div class="tb-title" id="genTitle"></div>'
       +'<div class="tb-btns"><button class="tb-copy" onclick="copyTitle()">복사</button><button class="tb-roll" onclick="rollTitle()">다른 문장</button></div></div>';
   }
+  // 제목 가이드 (추천 제목 복사 대신 규칙+예시만 — 블로그)
+  if(g.titleGuide)h+=titleGuideHTML(g.titleGuide);
+  // 본문 가이드: pinBody면 접지 않고 항상 표시
+  if(g.pinBody)h+='<div class="g-ka">'+bodyHTML(g)+'</div>';
+  if(g.quickLast)h+=qh;
   // 접이식 상세
   h+='<button class="g-detail-btn" id="gDetailBtn" onclick="toggleGuideDetail()">'+(guideDetailOpen?'작성 팁 접기':'자세한 작성 팁 보기')+'</button>';
   h+='<div id="gDetail" style="display:'+(guideDetailOpen?'block':'none')+'">';
   h+=personalHintsHTML();
-  if(g.body&&g.body.length){
-    h+='<div class="g-steps"><div class="g-label">이 순서로 적으면 편해요</div>';
-    g.body.forEach((b,i)=>{h+='<div class="g-step-row">'+(i+1)+'. '+b+'</div>';});
-    h+='</div>';
-  }
-  if(g.photos&&g.photos.length){
-    h+='<div class="g-photos"><div class="g-label">추천 사진 구성</div>';
-    g.photos.forEach(p=>{h+='<div class="g-photo-row">· '+p+'</div>';});
-    h+='</div>';
-  }
+  if(!g.pinBody)h+=bodyHTML(g);
+  h+=photosHTML(g);
   if(g.tips&&g.tips.length){
-    h+='<div class="g-tips"><div class="g-label">노출에 도움 되는 작성 팁</div>';
+    h+='<div class="g-tips'+ka+'"><div class="g-label">노출에 도움 되는 작성 팁</div>';
     g.tips.forEach(t=>{h+='<div class="g-tip-row">- '+t+'</div>';});
     h+='</div>';
   }
@@ -1124,6 +1173,7 @@ function missionCardHTML(mIdx){
     h+='<div style="padding-top:12px"><p style="font-size:13px;color:var(--green);font-weight:600">'+(paid?'지급완료!':'달성 완료!')+' ('+(s.submittedAt?new Date(s.submittedAt).toLocaleDateString('ko'):'')+')</p>'
       +((s.url&&s.url.toString().indexOf('http')===0)?'<button class="photo-btn" onclick="showPhotoModal(\''+s.url.toString().replace(/'/g,"\\'")+'\')">사진 보기</button>':'')
       +'</div>';
+    if(m.sendLink&&!paid)h+='<div class="cs-note">📎 글 <b>링크</b>를 카카오톡 채널로 보내주세요. <a href="'+KAKAO_CH_URL+'" target="_blank" rel="noopener" style="color:var(--primary-dark);font-weight:700;text-decoration:underline;white-space:nowrap">채널 열기 →</a></div>';
     if(!paid){
       if(reupOpen){
         h+='<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">'
@@ -1149,7 +1199,7 @@ function missionCardHTML(mIdx){
     if(m.link)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>'+(m.linkLabel||'카페')+'에서 작성하기</span><span class="arrow">→</span></button>';
     else if(m.links)h+='<button class="go-write-btn" onclick="openWriteLink('+mIdx+')"><span>카페 선택해서 작성하기</span><span class="arrow">→</span></button>';
     const _gk=guideKeyFor(m),_gg=_gk?PLATFORM_GUIDES[_gk]:null;
-    if(_gg&&_gg.disc)h+='<div class="mini-disc" onclick="copyDisclosure(\''+_gg.disc+'\')">※ 후기 본문에 <b>혜택 받고 작성했다는 문구</b>도 한 문장 같이 넣어주세요 🙂 <span class="md-copy">예시 문구 복사</span></div>';
+    if(_gg&&_gg.disc)h+='<div class="mini-disc" onclick="copyDisclosure(\''+_gg.disc+'\')">※ '+(_gg.discNote||'후기 본문에 <b>혜택 받고 작성했다는 문구</b>도 한 문장 같이 넣어주세요 🙂')+' <span class="md-copy">예시 문구 복사</span></div>';
     h+='<div class="upload-zone" id="uzone'+mIdx+'"><input type="file" accept="image/*" onchange="handleUpload('+mIdx+',this)"><div class="txt" style="padding:6px 0">작성 완료 화면을 업로드해 주세요</div></div>'
       +'<div class="upload-preview" id="uprev'+mIdx+'"><img id="uimg'+mIdx+'"></div>'
       +'<button class="submit-btn primary" onclick="submitMission('+mIdx+')" id="msubmit'+mIdx+'" disabled>후기 인증하기</button>'
@@ -1554,7 +1604,8 @@ async function submitMission(mIdx,isReup){
       renderStep();
     }else{
       fireConfetti();showToast(m.title+' 달성! +'+m.reward.toLocaleString()+'원');
-      setTimeout(gotoNext,1200);
+      if(m.sendLink)renderStep(); // 글 링크 전달 안내를 보여주기 위해 자동으로 넘기지 않음
+      else setTimeout(gotoNext,1200);
     }
   }catch(e){btn.disabled=false;btn.textContent=isReup?'사진 교체하기':'미션 달성하기';showToast('전송 실패');}
 }
