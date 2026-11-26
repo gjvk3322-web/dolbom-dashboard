@@ -1443,7 +1443,7 @@ body {
       <div class="capture-cta">
         <div class="cta-urgency">부산·경기<br>직영팀 운영</div>
         <div class="cta-headline">
-          후기 작성 시 <b>최대 100,000원 캐시백</b>
+          후기 작성 시 <b>최대 120,000원 캐시백</b>
         </div>
         <div class="cta-sub">
           무료 샘플부터 시공·후기까지, 본사 직영팀이 책임지고 함께합니다.
@@ -1573,7 +1573,7 @@ var BENEFITS = [
   { key:'review_contract', name:'계약 후기 작성',     desc:'샘플박스 3만원 쿠폰 지급',  type:'fixed',   discount:30000, label:'-30,000원', phase:1 },
   { key:'group_buy',       name:'5인 공동구매',       desc:'5인 이상 공동구매 시',       type:'percent', discount:3,     label:'-3%',       phase:1 },
   { key:'onnuri',          name:'온누리 결제',    desc:'디지털온누리 앱 7% 할인',    type:'percent', discount:7,     label:'-7%',       phase:1 },
-  { key:'review_event',    name:'후기 이벤트',         desc:'원하는 만큼 작성 시 캐시백',  type:'fixed',   discount:100000, label:'-100,000원', phase:2 }
+  { key:'review_event',    name:'후기 이벤트',         desc:'원하는 만큼 작성 시 캐시백',  type:'fixed',   discount:120000, label:'-120,000원', phase:2 }
 ];
 
 // ===== 상태 =====
@@ -2234,7 +2234,7 @@ function renderReply(results, py) {
     review_contract: '계약 후기(-3만)',
     group_buy: '공구(-3%)',
     onnuri: '온누리 결제(-7%)',
-    review_event: '후기작성(-10만)'
+    review_event: '후기작성(-12만)'
   };
 
   // 제품별 카톡 양식 라벨 (코드 기본값과 다른 카피로 보낼 때 사용)
@@ -2296,7 +2296,7 @@ function renderReply(results, py) {
   // 1000매트 코팅 안내 (1000매트가 견적에 있을 때만)
   var hasMat1000 = results.some(function(r){ return r.product.key === 'mat1000_22' || r.product.key === 'mat1000_17'; });
   if (hasMat1000) {
-    text += '※ 1000매트는 미끄럼방지 + 황변방지(UV) + 방오코팅이 적용되어 있어요. 미끄럼방지 강도는 제품마다 조금 다를 수 있어요 🙏\n\n';
+    text += '※ 1000매트는 논슬립·방오·황변억제 코팅이 적용되어 있어요. 미끄럼방지 강도는 제품마다 조금 다를 수 있어요 🙏\n\n';
   }
 
   // 적용 혜택 (체크된 것만 표시, 한 줄에 2개씩, 정액→비율 순서)
@@ -2617,9 +2617,21 @@ var BOOKING_TEXT_VER = '20260916';
   } catch (e) {}
 })();
 
+// 후기 안내 기본 문구 버전 — 문구를 바꿀 때 이 값을 올리면
+// 각 브라우저에 저장돼 있던 옛 후기 안내 문구가 1회 초기화되어 새 기본 문구가 적용됨 (예약 양식과 같은 방식)
+var REVIEW_TEXT_VER = '20261126';
+(function migrateReviewText(){
+  try {
+    if (localStorage.getItem('dolbom_review_text_ver') !== REVIEW_TEXT_VER) {
+      localStorage.removeItem('dolbom_review_text');
+      localStorage.setItem('dolbom_review_text_ver', REVIEW_TEXT_VER);
+    }
+  } catch (e) {}
+})();
+
 var REVIEW_DEFAULT_TEXT =
   '후기 이벤트 참여하시면\n' +
-  '최대 13만원 상당 혜택을 드려요!\n\n' +
+  '최대 15만원 상당 혜택을 드려요!\n\n' +
   '👉 https://my.dolbommat.com/review-event.html';
 
 function getWelcomeText() {

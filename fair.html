@@ -366,15 +366,28 @@ details summary::-webkit-details-marker{display:none}
 var API_URL='https://script.google.com/macros/s/AKfycbwo33sv9L1y722IdcfUm_i_nhmgZCCQX-grPEXGYbLemeI3WUx-f3C1Mi8ZxunmZ6D6lw/exec';
 var FAIR_NAME='벡스코 헬시베이비페어';
 var COUPON_AMT=50000, COUPON_EXP='2027-05-08', VALID_LABEL='박람회 후 6개월';   // 박람회 쿠폰 5만원 (스케줄러 할인 '베페5만'과 동일) · 견적·혜택 유효기간: 박람회 마지막 날(11.8) 기준 6개월
-var REVIEW_CASHBACK=100000, ONNURI=7, FAIR_PCT=3;
+var REVIEW_CASHBACK=120000, ONNURI=7, FAIR_PCT=3;
 var RUG_MAX_M2=6; // 장수 직접 입력이 이 면적 이하(1M 6장·500 24장)면 '러그형' — 박람회 쿠폰 2만 + 온누리 7%만 적용
-var REVIEW_MISSIONS=[ // review-event.html 미션과 동일 (계약후기 제외)
+var REVIEW_MISSIONS=(new Date(Date.now()+9*3600000).toISOString().slice(0,10)>='2026-12-01')?[
+  {n:'입주자 단톡방',w:'카톡·노크타운 등 단톡방에 설치 중 사진 + 한 줄',r:'1만'},
+  {n:'시공 당일 후기 ①',w:'맘스홀릭 카페 › 돌봄매트 게시판',r:'1만'},
+  {n:'시공 당일 후기 ②',w:'셀인 · 다이렉트 결혼준비 중 1곳',r:'1만'},
+  {n:'인스타그램',w:'@dolbommat 팔로우 + 태그, 사진과 함께',r:'1만'},
+  {n:'쓰레드',w:'주제 태그 1개 + 사진 1~3장',r:'1만'},
+  {n:'마미톡',w:'[육아는 템빨] 카테고리',r:'1만'},
+  {n:'네이버 블로그 비교 후기',w:'기존 글 5개 이상인 본인 블로그 · 비교한 브랜드와 고른 이유',r:'2만'},
+  {n:'2주 후 후기 ①',w:'맘스홀릭 카페 › 돌봄매트 게시판 · 시공 2주 후',r:'1만'},
+  {n:'2주 후 후기 ②',w:'당일 후기 ②와 같은 카페 · 시공 2주 후',r:'1만'},
+  {n:'한 달 후 후기',w:'당일 후기와 같은 곳에 한 달 사용 후기',r:'1만'},
+  {n:'3개월 후 후기',w:'당일 후기와 같은 곳에 3개월 사용 후기',r:'1만'}
+]:[
   {n:'입주자 단톡방',w:'카톡·노크타운 등 단톡방에 설치 중 사진 + 한 줄',r:'1만'},
   {n:'시공 당일 후기 ①',w:'맘스홀릭 카페 › 돌봄매트 게시판',r:'2만'},
   {n:'시공 당일 후기 ②',w:'셀인 · 다이렉트 결혼준비 중 1곳',r:'2만'},
   {n:'인스타그램',w:'@dolbommat 팔로우 + 태그, 사진과 함께',r:'1만'},
   {n:'쓰레드',w:'주제 태그 1개 + 사진 1~3장',r:'1만'},
   {n:'마미톡',w:'[육아는 템빨] 카테고리',r:'1만'},
+  {n:'네이버 블로그 비교 후기',w:'기존 글 5개 이상인 본인 블로그 · 비교한 브랜드와 고른 이유',r:'2만'},
   {n:'한 달 후 후기',w:'당일 후기와 같은 곳에 한 달 사용 후기',r:'2만'}
 ]; // 박람회 3% 할인(항상 적용). 계약후기 3만·5인 공동구매는 박람회 쿠폰과 중복 불가라 미적용
 var INSTALL_FEE=100000, THRESH_500=99, THRESH_1000=24;
@@ -410,7 +423,7 @@ var DOCS=[
   {id:'test',label:'시험성적서',sub:'FITI 시험연구원 · 합격 (11쪽)',pages:11,pre:'test-',pad:2,ext:'.jpg'},
   {id:'gpt',label:'TPU vs PU',sub:'GPT에게 물어봤어요 · QR로 답변 보기',files:['gpt-tpu-pu.jpg']},
   {id:'biz',label:'사업자등록증',sub:'돌봄 본사 · 제조사',files:['biz-dolbom.jpg','biz-maker.jpg'],cust:{sub:'돌봄 본사',files:['biz-dolbom.jpg']}}, /* 고객 링크(?view=c, ?q=)에서는 제조사(경국) 등록증 숨김 */
-  {id:'review',label:'후기 이벤트',sub:'후기 미션 7개 · 최대 10만원 캐시백',html:true}
+  {id:'review',label:'후기 이벤트',sub:'후기 미션 '+REVIEW_MISSIONS.length+'개 · 최대 12만원 캐시백',html:true}
 ];
 var DOC_DIR='assets/fair-docs/';
 function docCust(d){return (isCustomer&&d.cust)?d.cust:null}
@@ -433,7 +446,7 @@ function openDoc(id){
   document.getElementById('docViewer').classList.add('on');document.body.style.overflow='hidden';
 }
 function reviewPanelHtml(){
-  return '<div class="rvp"><div class="rvh">시공 후 후기를 올리면 미션별로 캐시백이 계좌로 입금돼요 · 7개 모두 하면 최대 <b>10만원</b></div>'+
+  return '<div class="rvp"><div class="rvh">시공 후 후기를 올리면 미션별로 캐시백이 계좌로 입금돼요 · '+REVIEW_MISSIONS.length+'개 모두 하면 최대 <b>12만원</b></div>'+
     REVIEW_MISSIONS.map(function(m,i){return '<div class="rvi"><div class="rvn">'+(i+1)+'. '+m.n+'<b>'+m.r+'</b></div><div class="rvw">'+m.w+'</div></div>'}).join('')+
     '<div class="rvh" style="margin-top:14px">시공 당일 카톡으로 안내 페이지를 보내드려요 · 사진과 함께 올리고 페이지에서 인증하면 돼요<br>계약 후기(3만) 할인은 박람회 쿠폰과 중복 적용되지 않아요</div></div>';
 }
@@ -643,7 +656,7 @@ function summaryText(){
     L.push('');
   });
   L.push('🎁 체감가 적용된 혜택 안내');
-  var b2=[];if(S.couponAmt)b2.push('✔️박람회 쿠폰(-'+man(S.couponAmt).replace('원','')+')');if(S.fair)b2.push('✔️박람회 할인(-3%)');if(S.review)b2.push('✔️후기작성(-10만)');if(S.onnuri)b2.push('✔️온누리 결제(-7%)');
+  var b2=[];if(S.couponAmt)b2.push('✔️박람회 쿠폰(-'+man(S.couponAmt).replace('원','')+')');if(S.fair)b2.push('✔️박람회 할인(-3%)');if(S.review)b2.push('✔️후기작성(-12만)');if(S.onnuri)b2.push('✔️온누리 결제(-7%)');
   for(var i=0;i<b2.length;i+=2)L.push(b2[i]+(b2[i+1]||''));
   L.push('※ 이 견적과 박람회 혜택은 '+COUPON_EXP.replace(/-/g,'.')+'까지('+VALID_LABEL+') 예약금 결제 시 적용');
   if(S.couponAmt)L.push('※ 박람회 쿠폰은 계약 후기 할인(3만)·5인 공동구매 할인과 중복 적용되지 않아요');

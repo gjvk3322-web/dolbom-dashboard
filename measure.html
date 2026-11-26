@@ -542,7 +542,7 @@ var BENEFITS = [
   { key:'review_contract', name:'계약 후기 작성',     desc:'샘플박스 3만원 쿠폰 지급',  type:'fixed',   discount:30000, label:'-30,000원', phase:1 },
   { key:'group_buy',       name:'5인 공동구매',       desc:'5인 이상 공동구매 시',       type:'percent', discount:3,     label:'-3%',       phase:1 },
   { key:'onnuri',          name:'온누리 결제',    desc:'디지털온누리 앱 7% 할인',    type:'percent', discount:7,     label:'-7%',       phase:1 },
-  { key:'review_event',    name:'후기 이벤트',         desc:'원하는 만큼 작성 시 캐시백',  type:'fixed',   discount:100000, label:'-100,000원', phase:2 }
+  { key:'review_event',    name:'후기 이벤트',         desc:'원하는 만큼 작성 시 캐시백',  type:'fixed',   discount:120000, label:'-120,000원', phase:2 }
 ];
 
 // ===== 현장 체크 항목 =====
@@ -1124,7 +1124,7 @@ function buildReply(results) {
     review_contract: '계약 후기(-3만)',
     group_buy: '공구(-3%)',
     onnuri: '온누리 결제(-7%)',
-    review_event: '후기작성(-10만)'
+    review_event: '후기작성(-12만)'
   };
   var PRODUCT_REPLY_INFO = {
     mat1000_22: { feature: '층간소음, 아이안전' },
@@ -1177,7 +1177,7 @@ function buildReply(results) {
 
   var hasMat1000 = shown.some(function(r){ return r.product.is1000; });
   if (hasMat1000) {
-    text += '※ 1000매트는 미끄럼방지 + 황변방지(UV) + 방오코팅이 적용되어 있어요. 미끄럼방지 강도는 제품마다 조금 다를 수 있어요 🙏\n\n';
+    text += '※ 1000매트는 논슬립·방오·황변억제 코팅이 적용되어 있어요. 미끄럼방지 강도는 제품마다 조금 다를 수 있어요 🙏\n\n';
   }
 
   if (shown.length > 0 && anyBenefit) {
