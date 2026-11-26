@@ -282,7 +282,7 @@ function goForm(e,from){
 }
 function toggleBrandSound(){
   var v=document.getElementById('brandVideo'); if(!v) return;
-  v.muted=!v.muted; if(!v.muted){ v.currentTime=0; var p=v.play(); if(p&&p.catch)p.catch(function(){}); }
+  v.muted=!v.muted; if(!v.muted && v.paused){ var p=v.play(); if(p&&p.catch)p.catch(function(){}); }
   document.getElementById('bvLabel').textContent=v.muted?'소리 켜기':'소리 끄기';
   document.getElementById('bvWave').setAttribute('d',v.muted?'M23 9l-6 6M17 9l6 6':'M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14');
   try{ if(!v.muted && typeof sampleTrack==='function') sampleTrack('sample_video_unmute',{event_category:'engagement'}); }catch(_){}
