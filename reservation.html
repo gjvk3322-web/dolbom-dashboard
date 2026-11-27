@@ -96,6 +96,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .docs-view{border:1.5px solid #d0d4da;color:#555;background:#fff;}
 .docs-dl{background:var(--accent,#e07a6f);color:#fff;}
 .docs-foot{padding:8px 18px 16px;}
+/* 🖼️ 사진·영상 다운로드 모달 (파일은 /cs-media/) */
+.media-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.media-card{border:1px solid #e3e5e8;border-radius:10px;background:#fafbfc;overflow:hidden;display:flex;flex-direction:column;}
+.media-card img,.media-card video{width:100%;display:block;background:#eee;}
+.media-card img{aspect-ratio:1000/1380;object-fit:cover;cursor:zoom-in;}
+.media-card.wide{grid-column:1/-1;}
+.media-card .media-cap{padding:7px 9px 2px;font-size:12.5px;font-weight:600;color:#222;line-height:1.35;}
+.media-card .media-cap small{display:block;font-size:11px;font-weight:500;color:#999;}
+.media-card .media-btns{display:flex;gap:6px;padding:6px 9px 9px;margin-top:auto;}
+.media-card .media-btns a{flex:1;text-align:center;font-size:12px;font-weight:700;padding:6px 0;border-radius:8px;text-decoration:none;}
 .docs-foot a{display:block;text-align:center;padding:11px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;background:#fff;border:1.5px solid var(--accent,#e07a6f);color:var(--accent,#e07a6f);}
 
 /* ───── 📝 인수인계 메모 스트립 (오전CS·오후CS·기타 공유) — 제목 줄 없이 메모 줄 + 입력 줄만 ───── */
@@ -275,6 +285,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <a href="https://docs.google.com/spreadsheets/d/1JNwNSVlP3TxNXhjbgJx1kxVm98o9ZB3bHEmlys79Rmg/edit?gid=1847472331#gid=1847472331" target="_blank" rel="noopener">📊 상담 참고 시트</a>
   <button type="button" class="onnuri-btn" id="onnuriBtn" onclick="onnuriOpen()">💳 온누리 월말 안내</button>
   <button type="button" class="docs-btn" onclick="docsOpen()">📁 관련서류</button>
+  <button type="button" class="docs-btn" onclick="mediaOpen()">🖼️ 사진·영상</button>
 </div>
 
 <!-- 📝 인수인계 메모 — 오전CS·오후CS·기타가 공유하는 한 줄 메모 (Firebase csMemo, 부산/경기 공통) -->
@@ -3042,6 +3053,42 @@ function docsOpen(){
 }
 function docsClose(){var ov=document.getElementById('docsOv');if(ov)ov.style.display='none';}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')docsClose();});
+/* ───── 🖼️ 사진·영상 다운로드 — 파일은 레포 /cs-media/ (바꿀 땐 같은 이름으로 덮어쓰기 + 썸네일·zip 갱신, 추가는 아래 목록에 한 줄) ───── */
+var MEDIA_LIST=[
+  {t:'img',n:'01 · 100cm TPU 매트 기능',f:'card-01.png',th:'thumb-01.jpg',d:'[돌봄]소개카드_01_100cm TPU 매트.png'},
+  {t:'img',n:'02 · 업계 6년 차 · 7,600가구',f:'card-02.png',th:'thumb-02.jpg',d:'[돌봄]소개카드_02_업계6년차.png'},
+  {t:'img',n:'03 · 박리 2년 무상 A/S',f:'card-03.png',th:'thumb-03.jpg',d:'[돌봄]소개카드_03_박리 2년 무상AS.png'},
+  {t:'img',n:'04 · 매년 어린이 안전검사',f:'card-04.png',th:'thumb-04.jpg',d:'[돌봄]소개카드_04_매년 안전검사.png'},
+  {t:'vid',n:'공기순환 케어 시스템 영상',s:'3초 · MP4',f:'air-care.mp4',d:'[돌봄]공기순환 케어 영상.mp4'}
+];
+function mediaOpen(){
+  var ov=document.getElementById('mediaOv');
+  if(!ov){
+    var h='';
+    MEDIA_LIST.forEach(function(it){
+      var u='/cs-media/'+it.f;
+      var pv=it.t==='vid'
+        ?'<video src="'+u+'" muted loop playsinline autoplay preload="metadata"></video>'
+        :'<img src="/cs-media/'+it.th+'" alt="" loading="lazy" onclick="window.open(\''+u+'\',\'_blank\')">';
+      h+='<div class="media-card'+(it.t==='vid'?' wide':'')+'">'+pv
+        +'<div class="media-cap">'+docsEsc(it.n)+(it.s?'<small>'+docsEsc(it.s)+'</small>':'')+'</div>'
+        +'<div class="media-btns"><a class="docs-view" href="'+u+'" target="_blank" rel="noopener">보기</a>'
+        +'<a class="docs-dl" href="'+u+'" download="'+docsEsc(it.d)+'">다운로드</a></div></div>';
+    });
+    ov=document.createElement('div');ov.id='mediaOv';ov.className='onnuri-ov';
+    ov.innerHTML='<div class="onnuri-box">'
+      +'<div class="onnuri-head"><span>🖼️ 돌봄매트 사진·영상</span><button onclick="mediaClose()">✕</button></div>'
+      +'<div class="docs-list"><div class="media-grid" style="margin-top:10px">'+h+'</div></div>'
+      +'<div class="docs-foot"><a href="/cs-media/dolbom-media-all.zip" download="돌봄매트_사진영상.zip">📦 전체 한 번에 받기 (zip)</a></div>'
+      +'</div>';
+    ov.addEventListener('click',function(e){if(e.target===ov)mediaClose();});
+    document.body.appendChild(ov);
+  }
+  ov.style.display='flex';
+  var v=ov.querySelector('video');if(v){try{v.play();}catch(e){}}
+}
+function mediaClose(){var ov=document.getElementById('mediaOv');if(ov){ov.style.display='none';var v=ov.querySelector('video');if(v)v.pause();}}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')mediaClose();});
 
 </script>
 </body>
