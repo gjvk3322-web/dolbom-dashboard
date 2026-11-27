@@ -391,10 +391,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div id="topSummary">
     <div class="reward-header">
       <div class="reward-amount" id="rewardTotal">0원</div>
-      <div class="reward-max">최대 15만원 캐시백</div>
+      <div class="reward-max" id="rewardMax">최대 17만원 캐시백</div>
     </div>
     <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-    <div class="progress-label" id="progressLabel">0 / 150,000원</div>
+    <div class="progress-label" id="progressLabel">0 / 170,000원</div>
     <div class="paid-info" id="paidInfo">
       <div class="row"><span class="label">지급완료</span><span class="value green" id="paidAmount">0원</span></div>
       <div class="row"><span class="label">신청 가능</span><span class="value primary" id="remainAmount">0원</span></div>
@@ -778,15 +778,16 @@ const MISSIONS=[
   {id:'review_3m',short:'3개월후기',icon:'🏡',title:'3개월 후 후기',tag:'시공 3개월 후 작성',
     desc:_row('어디에','시공 당일 후기와 같은 곳')+_row('무엇을','3개월 사용 후기 작성')}
 ];
-const MAX_REWARD=150000; // 두 보상표 모두 합계 15만원
+// 최대 금액 = 이 고객 보상표의 미션 합계 (기존 고객 15만원 · 2026-11-27 이후 첫 참여 고객 17만원 = 웰컴쿠폰(계약후기) 5만 + 후기 12만)
+function maxReward(){let s=0;MISSIONS.forEach(m=>{s+=rewardOf(m);});return s;}
 
-// ── 보상표 (2026-12 개편) ── 서버(Code.gs 맨 아래 RV_REWARDS · RV_GATE_DAYS)와 같은 값으로 유지할 것
-//  plan 1 = 11/30까지 참여를 시작한 고객(기존 금액·미션 그대로) / plan 2 = 12/1 이후 처음 참여한 고객
+// ── 보상표 (2026-12 개편 · 2026-11-27 적용일을 12/1→11/27로 앞당김) ── 서버(Code.gs 맨 아래 RV_REWARDS · RV_GATE_DAYS)와 같은 값으로 유지할 것
+//  plan 1 = 11/26까지 참여를 시작한 고객(기존 금액·미션 그대로, 웰컴쿠폰 3만 · 합계 15만) / plan 2 = 11/27 이후 처음 참여한 고객(웰컴쿠폰 5만 · 합계 17만)
 //  어느 보상표인지는 서버가 고객별로 내려줌(plan · rewards · gates). 금액이 0원인 미션은 그 고객 화면에 나오지 않음
-const PLAN2_FROM='2026-12-01';
+const PLAN2_FROM='2026-11-27';
 const PLAN_REWARDS={
   1:{contract:30000,chatroom:10000,review1:20000,review2:20000,instagram:10000,threads:10000,mamitalk:10000,blog:20000,review_2w1:0,review_2w2:0,review_month:20000,review_3m:0},
-  2:{contract:30000,chatroom:10000,review1:10000,review2:10000,instagram:10000,threads:10000,mamitalk:10000,blog:20000,review_2w1:10000,review_2w2:10000,review_month:10000,review_3m:10000}
+  2:{contract:50000,chatroom:10000,review1:10000,review2:10000,instagram:10000,threads:10000,mamitalk:10000,blog:20000,review_2w1:10000,review_2w2:10000,review_month:10000,review_3m:10000}
 };
 // 기간 잠금(plan 2): 당일 후기를 올린 날 기준 N일 뒤부터 참여 — 실제 날짜는 서버가 계산해 gates로 내려줌
 const GATE_DAYS={review_2w1:14,review_2w2:14,review_month:30,review_3m:90};
@@ -1323,8 +1324,10 @@ function updateSummary(){
   let earned=0;
   MISSIONS.forEach(m=>{if(missionState[m.id]&&missionState[m.id].done)earned+=rewardOf(m);});
   document.getElementById('rewardTotal').textContent=earned.toLocaleString()+'원';
-  document.getElementById('progressBar').style.width=Math.round(earned/MAX_REWARD*100)+'%';
-  document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+MAX_REWARD.toLocaleString()+'원';
+  const maxR=maxReward(); // 이 고객 보상표 기준 최대 금액 (15만 또는 17만)
+  document.getElementById('progressBar').style.width=(maxR?Math.min(100,Math.round(earned/maxR*100)):0)+'%';
+  document.getElementById('progressLabel').textContent=earned.toLocaleString()+' / '+maxR.toLocaleString()+'원';
+  const rmx=document.getElementById('rewardMax');if(rmx)rmx.textContent='최대 '+(maxR/10000)+'만원 캐시백';
   const remain=earned-paidTotal;
   const isPending=payStatus.indexOf('신청완료')>=0;
   const isPaid=payStatus.indexOf('지급완료')>=0;

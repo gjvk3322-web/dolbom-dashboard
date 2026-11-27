@@ -323,7 +323,7 @@ details summary::-webkit-details-marker{display:none}
       <button data-cp="20000">박람회 쿠폰 2만</button>
       <button data-k="fair" class="on">박람회 할인 3%</button>
       <button data-k="onnuri" class="on">온누리상품권 7%</button>
-      <button data-k="review" class="on">후기 캐시백 10만</button>
+      <button data-k="review" class="on">후기 캐시백 12만</button>
       <button data-k="installFee" class="on" id="tgInstall" style="display:none">시공비 10만 (소량)</button>
     </div>
     <div class="fin"><div class="l" id="finLabel">후기까지 받으면 최종</div><div class="v"><span id="rFinal">0</span>원<small id="rPer"></small></div></div>
@@ -368,7 +368,7 @@ var FAIR_NAME='벡스코 헬시베이비페어';
 var COUPON_AMT=50000, COUPON_EXP='2027-05-08', VALID_LABEL='박람회 후 6개월';   // 박람회 쿠폰 5만원 (스케줄러 할인 '베페5만'과 동일) · 견적·혜택 유효기간: 박람회 마지막 날(11.8) 기준 6개월
 var REVIEW_CASHBACK=120000, ONNURI=7, FAIR_PCT=3;
 var RUG_MAX_M2=6; // 장수 직접 입력이 이 면적 이하(1M 6장·500 24장)면 '러그형' — 박람회 쿠폰 2만 + 온누리 7%만 적용
-var REVIEW_MISSIONS=(new Date(Date.now()+9*3600000).toISOString().slice(0,10)>='2026-12-01')?[
+var REVIEW_MISSIONS=(new Date(Date.now()+9*3600000).toISOString().slice(0,10)>='2026-11-27')?[
   {n:'입주자 단톡방',w:'카톡·노크타운 등 단톡방에 설치 중 사진 + 한 줄',r:'1만'},
   {n:'시공 당일 후기 ①',w:'맘스홀릭 카페 › 돌봄매트 게시판',r:'1만'},
   {n:'시공 당일 후기 ②',w:'셀인 · 다이렉트 결혼준비 중 1곳',r:'1만'},
@@ -389,7 +389,7 @@ var REVIEW_MISSIONS=(new Date(Date.now()+9*3600000).toISOString().slice(0,10)>='
   {n:'마미톡',w:'[육아는 템빨] 카테고리',r:'1만'},
   {n:'네이버 블로그 비교 후기',w:'기존 글 5개 이상인 본인 블로그 · 비교한 브랜드와 고른 이유',r:'2만'},
   {n:'한 달 후 후기',w:'당일 후기와 같은 곳에 한 달 사용 후기',r:'2만'}
-]; // 박람회 3% 할인(항상 적용). 계약후기 3만·5인 공동구매는 박람회 쿠폰과 중복 불가라 미적용
+]; // 박람회 3% 할인(항상 적용). 계약후기 5만(웰컴쿠폰, 2026-11-27 3만→5만)·5인 공동구매는 박람회 쿠폰과 중복 불가라 미적용
 var INSTALL_FEE=100000, THRESH_500=99, THRESH_1000=24;
 var PRODUCTS=[
   {key:'17',name:'1M 1.7cm',full:'1000매트 1.7cm',spec:'1M×1M',price:67000,is1000:true,sched:'모던1m17(67000)'},
@@ -448,7 +448,7 @@ function openDoc(id){
 function reviewPanelHtml(){
   return '<div class="rvp"><div class="rvh">시공 후 후기를 올리면 미션별로 캐시백이 계좌로 입금돼요 · '+REVIEW_MISSIONS.length+'개 모두 하면 최대 <b>12만원</b></div>'+
     REVIEW_MISSIONS.map(function(m,i){return '<div class="rvi"><div class="rvn">'+(i+1)+'. '+m.n+'<b>'+m.r+'</b></div><div class="rvw">'+m.w+'</div></div>'}).join('')+
-    '<div class="rvh" style="margin-top:14px">시공 당일 카톡으로 안내 페이지를 보내드려요 · 사진과 함께 올리고 페이지에서 인증하면 돼요<br>계약 후기(3만) 할인은 박람회 쿠폰과 중복 적용되지 않아요</div></div>';
+    '<div class="rvh" style="margin-top:14px">시공 당일 카톡으로 안내 페이지를 보내드려요 · 사진과 함께 올리고 페이지에서 인증하면 돼요<br>계약 후기(5만) 할인은 박람회 쿠폰과 중복 적용되지 않아요</div></div>';
 }
 function closeDoc(){document.getElementById('docViewer').classList.remove('on');document.body.style.overflow='';document.getElementById('dvBody').innerHTML=''}
 
@@ -659,7 +659,7 @@ function summaryText(){
   var b2=[];if(S.couponAmt)b2.push('✔️박람회 쿠폰(-'+man(S.couponAmt).replace('원','')+')');if(S.fair)b2.push('✔️박람회 할인(-3%)');if(S.review)b2.push('✔️후기작성(-12만)');if(S.onnuri)b2.push('✔️온누리 결제(-7%)');
   for(var i=0;i<b2.length;i+=2)L.push(b2[i]+(b2[i+1]||''));
   L.push('※ 이 견적과 박람회 혜택은 '+COUPON_EXP.replace(/-/g,'.')+'까지('+VALID_LABEL+') 예약금 결제 시 적용');
-  if(S.couponAmt)L.push('※ 박람회 쿠폰은 계약 후기 할인(3만)·5인 공동구매 할인과 중복 적용되지 않아요');
+  if(S.couponAmt)L.push('※ 박람회 쿠폰은 계약 후기 할인(5만)·5인 공동구매 할인과 중복 적용되지 않아요');
   var cr=cqRows(q);
   if(cr.length){L.push('');L.push('🔍 받아오신 견적과 비교 (같은 면적)');cr.forEach(function(r){var d=r.total-q.fin;L.push('· '+r.label+' '+toMan(r.total)+' ('+r.size+'cm '+r.n+'장)'+' → 돌봄매트가 '+(d>0?toMan(d)+' 저렴':d<0?toMan(-d)+' 비쌈':'같음'))});L.push('· 돌봄매트 '+q.p.name+' '+q.qty+'장 '+toMan(q.fin)+' (박람회 혜택·후기 캐시백 모두 적용)')}
   if(memo){L.push('');L.push('📝 '+memo)}
